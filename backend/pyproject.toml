@@ -1,0 +1,25 @@
+[project]
+name = "mc-backend"
+version = "0.1.0"
+description = "Backend API"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.116.1",
+    "httpx>=0.28.1",
+    "pydantic>=2.11.9",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+    "python-dotenv>=1.1.1",
+    "python-jose>=3.5.0",
+    "trio>=0.31.0",
+    "uvicorn>=0.35.0",
+]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+markers = [
+    "anyio: mark test to run with anyio",
+]
+[tool.anyio]
+backend = ["asyncio"]
