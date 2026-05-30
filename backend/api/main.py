@@ -1,4 +1,35 @@
-from fastapi import FastAPI, Request, HTTPException
+# api/main.py
+from fastapi import FastAPI
+from core.database import engine, Base
+from api import models 
+from api.routes import animal_route
+
+# 1. Creación de las tablas en la base de datos local
+Base.metadata.create_all(bind=engine)
+
+# 2. Inicialización de la aplicación FastAPI
+app = FastAPI(
+    title="VITA - Sistema de Gestión y Trazabilidad Ganadera Inteligente",
+    description="API para la gestión del ganado, lectura de caravanas y registro de pesadas.",
+    version="1.0.0"
+)
+
+# 3. Inclusión de las rutas (Endpoints)
+# Acá es donde le "enchufamos" al main todas las rutas que fuiste creando
+app.include_router(animal_route.router)  # Ruta para gestión de animales
+
+# 4. Endpoint de control (Health Check)
+@app.get("/", tags=["Estado del Sistema"])
+def read_root():
+    return {
+        "status": "online",
+        "mensaje": "La API de trazabilidad está funcionando correctamente."
+    }
+
+
+
+
+"""from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -120,4 +151,4 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=True
-    )
+    )"""

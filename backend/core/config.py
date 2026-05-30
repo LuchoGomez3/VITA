@@ -1,8 +1,24 @@
 import os
+from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 
-class Config:
+
+
+class Settings(BaseSettings):
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://usuario:password@localhost:5432/mayoral_db")
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+settings = Settings()
+
+"""class Config:
     def __init__(self):
+        
+
+        
+
+
         load_dotenv()
         self.AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
         self.AZURE_OPENAI_MODEL_NAME = os.getenv("AZURE_OPENAI_MODEL_NAME")
@@ -24,4 +40,4 @@ class Config:
         # JWT
         self.JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "insecure-dev-secret")
         self.JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-        self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+        self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60"))"""
