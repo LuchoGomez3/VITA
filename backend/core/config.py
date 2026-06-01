@@ -1,27 +1,56 @@
 import os
+from enum import Enum
+
 from dotenv import load_dotenv
 
-class Config:
-    def __init__(self):
-        load_dotenv()
-        self.AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
-        self.AZURE_OPENAI_MODEL_NAME = os.getenv("AZURE_OPENAI_MODEL_NAME")
-        self.AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-        self.AZURE_OPENAI_SUBSCRIPTION_KEY = os.getenv("AZURE_OPENAI_SUBSCRIPTION_KEY") 
-        self.AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
-        self.DB_URL = os.getenv("DB_URL")
+load_dotenv()
 
-        # Api config
-        self.TITLE: str = "Mastercard backend API"
-        self.DESCRIPTION: str = "API para ejecutar procesos"
-        self.VERSION: str = "1.0.0"
+
+class EnvironmentOption(str, Enum):
+    LOCAL = "local"
+    TEST = "test"
+    STAGING = "staging"
+    PRODUCTION = "production"
+
+
+class Settings:
+    def __init__(self):
+        # App metadata
+        self.APP_NAME: str = os.getenv("APP_NAME", "VITA API")
+        self.APP_DESCRIPTION: str = os.getenv(
+            "APP_DESCRIPTION", "API de trazabilidad ganadera"
+        )
+        self.VERSION: str = os.getenv("APP_VERSION", "0.1.0")
+
+        # Environment
+        env_raw = os.getenv("ENVIRONMENT", "local").lower()
+        self.ENVIRONMENT: EnvironmentOption = EnvironmentOption(env_raw)
+        self.DEBUG: bool = self.ENVIRONMENT in (
+            EnvironmentOption.LOCAL,
+            EnvironmentOption.TEST,
+        )
+
+        # Database
+        self.POSTGRES_URI: str = os.getenv(
+            "POSTGRES_URI",
+            "postgresql+asyncpg://postgres:postgres@localhost:5432/vita",
+        )
+
+        # JWT
+        self.JWT_SECRET: str = os.getenv("JWT_SECRET_KEY", "insecure-dev-secret")
+        self.JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+        self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(
+            os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60")
+        )
+
+        # CORS
         self.CORS_ALLOW_ORIGINS: list[str] = ["*"]
         self.CORS_ALLOW_CREDENTIALS: bool = True
         self.CORS_ALLOW_METHODS: list[str] = ["*"]
         self.CORS_ALLOW_HEADERS: list[str] = ["*"]
-        self.LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
 
-        # JWT
-        self.JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "insecure-dev-secret")
-        self.JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-        self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+        # Logging
+        self.LOG_LEVEL: str = os.getenv("LOG_LEVEL", "DEBUG")
+
+
+settings = Settings()

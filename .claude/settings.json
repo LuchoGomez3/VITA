@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv sync *)",
+      "Bash(uv run *)",
+      "Bash(uvx ruff *)",
+      "Bash(PYTHONPATH=__TRACKED_VAR__:__TRACKED_VAR__/.. uv run --no-sync pytest)"
+    ]
+  }
+}
