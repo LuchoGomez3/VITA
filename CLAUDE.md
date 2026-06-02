@@ -9,12 +9,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Domain goal**: digitize the animal life cycle (identification, weighing, health events, movements, commercialization), surface productive KPIs (notably GPD — daily weight gain), and comply with **SENASA Resolution 530/2025** (mandatory individual electronic identification), generating export files for **SIGBIOTRAZA / SIGSA**.
 - **Defining constraint**: **offline-first**. Producers work in the field ("la manga") with no connectivity. Every feature must be designed first for how it works without internet; connectivity is an optional enhancement, never a requirement.
 - **Multi-tenant**: data is isolated per establishment (`establecimiento`) via Supabase Row Level Security. Six roles: `administrator`, `owner`, `veterinarian`, `capataz`, `asset_manager`, `external_buyer`.
+- **Identification / reading**: an animal's identifier can be read by RFID Bluetooth, entered manually, or captured by **OCR of the visual ear tag**. OCR is a valid reading method alongside the others — design identification flows so any of these can supply the identifier.
 
 ### Hard constraints — do NOT do these
 
 These are settled team/product decisions. Do not reintroduce them even if they seem like reasonable improvements:
 
-- **Do not** propose or implement OCR of visual ear tags (discarded; identification is RFID Bluetooth + manual).
 - **Do not** propose or implement blockchain for traceability.
 - **Do not** add, mention, or scaffold any economic/pricing module (Rosgan/Liniers scraping, herd valuation, sale simulator) in shared code, docs, or commits.
 - **Do not** weaken offline-first to simplify an implementation.

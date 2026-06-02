@@ -4,7 +4,20 @@
       "Bash(uv sync *)",
       "Bash(uv run *)",
       "Bash(uvx ruff *)",
-      "Bash(PYTHONPATH=__TRACKED_VAR__:__TRACKED_VAR__/.. uv run --no-sync pytest)"
+      "Bash(PYTHONPATH=__TRACKED_VAR__:__TRACKED_VAR__/.. uv run --no-sync pytest)",
+      "Bash(.venv/bin/pip list *)",
+      "Bash(.venv/bin/python -c \"import asyncpg, sqlalchemy, sqlmodel, fastapi, jose; print\\('asyncpg', asyncpg.__version__\\); print\\('sqlalchemy', sqlalchemy.__version__\\)\")",
+      "Bash(.venv/bin/python -c \"import supabase; print\\('supabase ok'\\)\")",
+      "mcp__claude_ai_Supabase__list_projects",
+      "Bash(.venv/bin/ruff check *)",
+      "Bash(.venv/bin/ruff format *)",
+      "Bash(.venv/bin/python -m pytest -q)",
+      "Bash(.venv/bin/python -c \"import aiosqlite, reportlab; print\\('aiosqlite', aiosqlite.__version__\\); print\\('reportlab', reportlab.Version\\)\")",
+      "Bash(PYTHONPATH=.:.. .venv/bin/python -m pytest tests/test_health.py tests/test_auth.py tests/test_usuarios.py -q)",
+      "Bash(PYTHONPATH=.:.. .venv/bin/python -c ' *)",
+      "Bash(PYTHONPATH=.:.. .venv/bin/python -m pytest -q)",
+      "Bash(PYTHONPATH=.:.. AUTH_PROVIDER=local .venv/bin/python -c \"from core.server import create_fastapi_app; app=create_fastapi_app\\(\\); print\\('app ok, rutas:', len\\([r for r in app.routes]\\)\\)\")",
+      "Bash(PYTHONPATH=.:.. AUTH_PROVIDER=local .venv/bin/python -c \"from core.server import create_fastapi_app; app=create_fastapi_app\\(\\); print\\('app ok, rutas:', len\\(app.routes\\)\\)\")"
     ]
   }
 }

@@ -7,10 +7,12 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from core.config import EnvironmentOption, settings
 from core.contextmanager import lifespan
+from api.shared.exceptions import DomainException
 from core.middlewares import (
     cache_request_body_middleware,
     camel_case_to_snake_case_middleware,
     custom_exception_handler,
+    domain_exception_handler,
     response_time_middleware,
 )
 from core.router import get_global_router
@@ -46,6 +48,7 @@ def create_fastapi_app() -> FastAPI:
     )
 
     app.add_exception_handler(HTTPException, custom_exception_handler)
+    app.add_exception_handler(DomainException, domain_exception_handler)
 
     # Add cache request body middleware
     app.middleware("http")(cache_request_body_middleware)
