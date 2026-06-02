@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from api.auth.dependencies import get_current_user
 from api.auth.service import AuthService
+from api.modules.usuarios.models import Usuario
 from api.shared.schemas import StandardResponse
 from core.config import settings
 
@@ -31,5 +32,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 @router.get("/me", response_model=StandardResponse)
-async def me(current_user: dict = Depends(get_current_user)):
-    return StandardResponse(success=True, data={"username": current_user["username"]})
+async def me(current_user: Usuario = Depends(get_current_user)):
+    return StandardResponse(
+        success=True,
+        data={
+            "id": str(current_user.id),
+            "nombre": current_user.nombre,
+            "apellido": current_user.apellido,
+            "email": current_user.email,
+        },
+    )

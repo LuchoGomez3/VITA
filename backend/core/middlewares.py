@@ -6,7 +6,10 @@ from collections.abc import Callable
 from typing import Any
 
 from fastapi import HTTPException, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+
+from api.shared.exceptions import DomainException
 
 logger = logging.getLogger(__name__)
 
@@ -146,4 +149,20 @@ async def custom_exception_handler(request: Request, exc: Exception) -> JSONResp
             "error": "An unexpected error occurred. Please try again.",
             "status": 500,
         },
+    )
+
+
+async def domain_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Traduce una ``DomainException`` a ``StandardResponse(success=False, ...)``."""
+    if not isinstance(exc, DomainException):
+        # Salvaguarda: nunca debería registrarse para otro tipo.
+        return await custom_exception_handler(request, exc)
+
+    error: dict[str, Any] = {"code": exc.code, "message": exc.message}
+    if exc.details is not None:
+        error["details"] = jsonable_encoder(exc.details)
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"success": False, "data": None, "meta": None, "errors": [error]},
     )

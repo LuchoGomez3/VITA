@@ -1,7 +1,14 @@
+import sys
+from pathlib import Path
+
 import uvicorn
 
-from core.config import EnvironmentOption, settings
-from core.logger import logging
+# Agregar la raíz del monorepo a PYTHONPATH para imports desde database/
+_monorepo_root = Path(__file__).parent.parent
+sys.path.insert(0, str(_monorepo_root))
+
+from core.config import EnvironmentOption, settings  # noqa: E402
+from core.logger import logging  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

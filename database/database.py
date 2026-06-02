@@ -3,8 +3,15 @@ from sqlmodel import SQLModel
 
 from core.config import settings
 
+# Cuando se conecta a través del pooler transaccional de Supabase, asyncpg no
+# puede reutilizar prepared statements (cada transacción puede tocar un backend
+# distinto), así que deshabilitamos su cache.
+connect_args: dict = {}
+if settings.DB_USE_PGBOUNCER:
+    connect_args["statement_cache_size"] = 0
+
 engine = create_async_engine(
-    settings.POSTGRES_URI,
+    settings.DATABASE_URL,
     echo=settings.DEBUG,
     future=True,
     pool_pre_ping=True,
@@ -12,6 +19,7 @@ engine = create_async_engine(
     max_overflow=10,
     pool_timeout=30,
     pool_recycle=3600,
+    connect_args=connect_args,
 )
 
 AsyncSessionLocal = async_sessionmaker(
