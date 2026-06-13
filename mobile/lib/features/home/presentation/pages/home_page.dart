@@ -1,10 +1,12 @@
+import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+/// Pagina de inicio de la app.
 class HomePage extends StatelessWidget {
+  /// Crea una nueva pagina de inicio.
   const HomePage({super.key});
 
   @override
@@ -41,9 +43,9 @@ class HomePage extends StatelessWidget {
                     'Primer modulo con capas presentation, domain y data.',
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  AppButton(
+                  AppFilledButton(
                     label: 'Abrir modulo',
-                    onPressed: () => context.go(AppRoutes.animalRegister),
+                    onPressed: () => context.go(AppRoutes.animalRegisterStep1),
                   ),
                 ],
               ),
@@ -62,7 +64,7 @@ class HomePage extends StatelessWidget {
                     'Ejemplo de navegación a una feature separada usando un id en la ruta.',
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  AppButton(
+                  AppFilledButton(
                     label: 'Ver animal A-001',
                     onPressed: () => context.go(
                       AppRoutes.animalDetailById('A-001'),
