@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 /// La idea es que widgets, pages y el tema global consuman colores desde aca
 /// para mantener consistencia visual y evitar hex sueltos en la UI.
 class AppColors {
-
   const AppColors._();
+
   /// Verde principal de la marca.
   ///
   /// Se usa en acciones principales: botones filled, progreso, highlights,
@@ -43,12 +43,18 @@ class AppColors {
   /// Opciones disponibles para personalizacion de caravanas.
   /// Opcion amarilla
   static const earTagYellow = Color(0xFFF4CF3D);
+
   /// Opcion beige
   static const earTagBeige = Color(0xFFE8E2D2);
+
   /// Opcion lilac
   static const earTagLilac = Color(0xFFE5D1E3);
+
   /// Opcion naranja
   static const earTagOrange = Color(0xFFE76B3A);
+
+  /// Opcion azul usada por caravanas mock en genealogia.
+  static const earTagBlue = Color(0xFF7CB6E8);
 
   /// Mapeo de los colores oficiales al sistema de tema de Flutter.
   ///

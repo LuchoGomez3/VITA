@@ -1,6 +1,8 @@
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_page.dart';
+import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_step_three_page.dart';
+import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_step_two_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,6 +12,7 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     /// Ruta inicial de la app.
     initialLocation: AppRoutes.home,
+
     /// Rutas de la app.
     routes: [
       /// Ruta de la pantalla de inicio.
@@ -20,6 +23,14 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.animalRegisterStep1,
         builder: (context, state) => const RegistrarAnimalPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.animalRegisterStep2,
+        builder: (context, state) => const RegistrarAnimalStepTwoPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.animalRegisterStep3,
+        builder: (context, state) => const RegistrarAnimalStepThreePage(),
       ),
       GoRoute(
         path: AppRoutes.animalDetail,
