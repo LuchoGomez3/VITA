@@ -148,7 +148,8 @@ class AnimalDetailPage extends StatelessWidget {
         Row(
           children: [
             Expanded(child: _buildDataCell('Raza', 'Brahman')),
-            Expanded(child: _buildDataCell('Sexo', 'Novillo')),
+            Expanded(child: _buildDataCell('Sexo', 'Macho')),
+            Expanded(child:_buildDataCell('Categoría', 'Novillo'))
           ],
         ),
         const SizedBox(height: AppSpacing.md),

@@ -18,7 +18,8 @@ class AnimalDetailCubit extends Cubit<AnimalDetailState> {
       // Emitimos el estado con los datos cargados
       emit(AnimalDetailLoaded(
         raza: 'Brahman',
-        sexo: 'Novillo',
+        sexo: 'Macho',
+        categoria: 'Novillo',
         pesoActual: 410,
       ));
 

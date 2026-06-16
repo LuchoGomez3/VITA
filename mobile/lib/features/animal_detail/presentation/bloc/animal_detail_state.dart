@@ -10,11 +10,13 @@ class AnimalDetailLoaded extends AnimalDetailState {
   final String raza;
   final String sexo;
   final int pesoActual;
-  
+  final String categoria;
+
   AnimalDetailLoaded({
     required this.raza, 
     required this.sexo, 
     required this.pesoActual,
+    required this.categoria,
   });
 }
 
