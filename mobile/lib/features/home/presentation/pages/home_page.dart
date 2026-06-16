@@ -45,7 +45,7 @@ class HomePage extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   AppFilledButton(
                     label: 'Abrir modulo',
-                    onPressed: () => context.go(AppRoutes.animalRegisterStep1),
+                    onPressed: () => context.push(AppRoutes.animalRegisterStep1),
                   ),
                 ],
               ),
@@ -66,7 +66,7 @@ class HomePage extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   AppFilledButton(
                     label: 'Ver animal A-001',
-                    onPressed: () => context.go(
+                    onPressed: () => context.push(
                       AppRoutes.animalDetailById('A-001'),
                     ),
                   ),
@@ -88,8 +88,8 @@ class HomePage extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   AppFilledButton(
                     label: 'Ver reporte de SENASA',
-                    onPressed: () => context.go(
-                      AppRoutes.senasaReport,
+                    onPressed: () => context.push(
+                      AppRoutes.senasaMenu,
                     ),
                   ),
                 ],

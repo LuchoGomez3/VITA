@@ -40,3 +40,6 @@ markers = [
 ]
 [tool.anyio]
 backend = ["asyncio"]
+
+[tool.setuptools]
+packages = ["api", "core"]
