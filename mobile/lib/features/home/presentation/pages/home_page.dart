@@ -15,7 +15,7 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Trazabilidad ganadera'),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,6 +68,28 @@ class HomePage extends StatelessWidget {
                     label: 'Ver animal A-001',
                     onPressed: () => context.go(
                       AppRoutes.animalDetailById('A-001'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            AppSurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Reporte de SENASA',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  const Text(
+                    'Generación offline de planillas de movimientos y existencias en formato TXT y CSV.',
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  AppFilledButton(
+                    label: 'Ver reporte de SENASA',
+                    onPressed: () => context.go(
+                      AppRoutes.senasaReport,
                     ),
                   ),
                 ],

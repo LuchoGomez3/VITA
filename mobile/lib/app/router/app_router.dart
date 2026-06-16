@@ -1,6 +1,7 @@
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:go_router/go_router.dart';
 
@@ -27,6 +28,10 @@ class AppRouter {
           final animalId = state.pathParameters['animalId']!;
           return AnimalDetailPage(animalId: animalId);
         },
+      ),
+      GoRoute(
+        path: AppRoutes.senasaReport,
+        builder: (context, state) => const SenasaReportPage(),
       ),
     ],
   );
