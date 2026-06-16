@@ -1,0 +1,46 @@
+name: frontend_mayoral
+
+packages:
+  - .
+
+command:
+  bootstrap:
+    dependencies:
+      flutter_lints: ^6.0.0
+      freezed_annotation: ^3.1.0
+      json_annotation: ^4.9.0
+    dev_dependencies:
+      build_runner: ^2.5.4
+      freezed: ^3.2.3
+      json_serializable: ^6.9.5
+
+scripts:
+  analyze:
+    run: melos exec -- "flutter analyze"
+    description: Analiza el código Dart y Flutter del proyecto.
+
+  format:
+    run: melos exec -- "dart format . --output=none --set-exit-if-changed"
+    description: Verifica que el código esté correctamente formateado.
+
+  format:fix:
+    run: melos exec -- "dart format ."
+    description: Aplica formato automáticamente.
+
+  test:
+    run: melos exec --dir-exists=test -- "flutter test --no-pub --coverage"
+    description: Ejecuta las pruebas unitarias y genera cobertura.
+
+  test:selective:
+    run: melos exec --diff="origin/main" --dir-exists=test -- "flutter test --no-pub"
+    description: Ejecuta pruebas solo sobre paquetes modificados.
+
+  build:
+    run: melos exec --depends-on="build_runner" -- "dart run build_runner build"
+    description: Ejecuta la generación de código con build_runner.
+
+  clean:
+    run: melos exec -- "flutter clean"
+    description: Ejecuta flutter clean.
+sdkPath: .fvm/flutter_sdk
+
