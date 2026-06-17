@@ -67,33 +67,45 @@ class _EarTagColorItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            height: 52,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: option.color,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              border: Border.all(
-                color: isSelected ? AppColors.primary : AppColors.border,
-                width: isSelected ? 2 : 1,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            hoverColor: Colors.transparent,
+            child: AnimatedContainer(
+              curve: Curves.easeOut,
+              duration: const Duration(milliseconds: 180),
+              height: 52,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: option.color,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(
+                  color: isSelected ? AppColors.primary : AppColors.border,
+                  width: isSelected ? 2 : 1,
+                ),
               ),
             ),
           ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: Text(
             option.name,
             style: AppTypography.smallEmphasis,
             textAlign: TextAlign.center,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

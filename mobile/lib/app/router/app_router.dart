@@ -1,8 +1,10 @@
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_page.dart';
+import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_step_four_page.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_step_three_page.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_step_two_page.dart';
+import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_success_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:go_router/go_router.dart';
 
@@ -31,6 +33,14 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.animalRegisterStep3,
         builder: (context, state) => const RegistrarAnimalStepThreePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.animalRegisterStep4,
+        builder: (context, state) => const RegistrarAnimalStepFourPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.animalRegisterSuccess,
+        builder: (context, state) => const RegistrarAnimalSuccessPage(),
       ),
       GoRoute(
         path: AppRoutes.animalDetail,

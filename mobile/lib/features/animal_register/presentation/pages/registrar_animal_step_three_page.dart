@@ -195,7 +195,7 @@ class _RegistrarAnimalStepThreePageState extends State<RegistrarAnimalStepThreeP
               child: AppFilledButton(
                 label: AnimalRegisterStrings.stepThreeNextButton,
                 icon: const Icon(Icons.arrow_forward),
-                onPressed: () {},
+                onPressed: () => context.push(AppRoutes.animalRegisterStep4),
               ),
             ),
           ],

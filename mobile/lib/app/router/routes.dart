@@ -14,6 +14,12 @@ class AppRoutes {
   /// Ruta de la pantalla de registro de animal paso 3.
   static const animalRegisterStep3 = '/registrar-animal/paso-3';
 
+  /// Ruta de la pantalla de registro de animal paso 4.
+  static const animalRegisterStep4 = '/registrar-animal/paso-4';
+
+  /// Ruta de la pantalla de exito de registro de animal.
+  static const animalRegisterSuccess = '/registrar-animal/exito';
+
   /// Ruta de la pantalla de detalle de animal.
   static const animalDetail = '/animals/:animalId';
 

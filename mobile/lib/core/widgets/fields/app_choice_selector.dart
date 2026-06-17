@@ -16,7 +16,7 @@ class AppChoiceOption<T> {
   final String label;
 }
 
-/// Selector reutilizable de una unica opcion basado en `ChoiceChip`.
+/// Selector reutilizable de una unica opcion.
 class AppChoiceSelector<T> extends StatelessWidget {
   /// Crea un selector de opciones con seleccion unica.
   const AppChoiceSelector({
@@ -76,23 +76,71 @@ class AppChoiceSelector<T> extends StatelessWidget {
           runSpacing: AppSpacing.xxs,
           children: options
               .map(
-                (option) => ChoiceChip(
-                  label: Text(option.label),
-                  selected: option.value == value,
-                  showCheckmark: false,
+                (option) => _AppChoiceChip(
+                  label: option.label,
+                  isSelected: option.value == value,
                   selectedColor: selectedColor,
-                  backgroundColor: unSelectedColor,
-                  side: const BorderSide(color: AppColors.border),
-                  shape: const StadiumBorder(),
-                  labelStyle: AppTypography.mediumEmphasis.copyWith(
-                    color: option.value == value ? selectedTextColor : unSelectedTextColor,
-                  ),
-                  onSelected: (_) => onChanged(option.value),
+                  selectedTextColor: selectedTextColor,
+                  unSelectedColor: unSelectedColor,
+                  unSelectedTextColor: unSelectedTextColor,
+                  onTap: () => onChanged(option.value),
                 ),
               )
               .toList(),
         ),
       ],
+    );
+  }
+}
+
+class _AppChoiceChip extends StatelessWidget {
+  const _AppChoiceChip({
+    required this.label,
+    required this.isSelected,
+    required this.selectedColor,
+    required this.selectedTextColor,
+    required this.unSelectedColor,
+    required this.unSelectedTextColor,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final Color selectedColor;
+  final Color selectedTextColor;
+  final Color unSelectedColor;
+  final Color unSelectedTextColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = isSelected ? selectedColor : unSelectedColor;
+    final textColor = isSelected ? selectedTextColor : unSelectedTextColor;
+    final borderColor = isSelected ? selectedColor : AppColors.border;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xs,
+        ),
+        decoration: ShapeDecoration(
+          color: backgroundColor,
+          shape: StadiumBorder(
+            side: BorderSide(color: borderColor),
+          ),
+        ),
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          style: AppTypography.mediumEmphasis.copyWith(color: textColor),
+          child: Text(label),
+        ),
+      ),
     );
   }
 }
