@@ -84,6 +84,14 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
+  /// Texto pequeno con enfasis, util para microcopys o metadata.
+  static const mediumEmphasis = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textSecondary,
+  );
+
   /// Texto para acciones primarias en botones filled.
   static const filledButton = TextStyle(
     fontFamily: _baseFontFamily,

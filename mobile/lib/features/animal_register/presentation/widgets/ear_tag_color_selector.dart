@@ -3,69 +3,66 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 
 /// Opcion visual para seleccionar el color de una caravana.
 class EarTagColorOption {
-  /// Crea una nueva opcion de color de caravana.
+  /// Crea una opcion de color con su nombre visible.
   const EarTagColorOption({
     required this.name,
-    required this.isSelected,
     required this.color,
   });
 
-  /// Nombre de la opcion de color de caravana.
+  /// Nombre visible del color.
   final String name;
-  /// Indica si la opcion de color de caravana esta seleccionada.
-  final bool isSelected;
-  /// Color de la opcion de color de caravana.
+
+  /// Color asociado a la opcion.
   final Color color;
 }
 
-/// Selector reutilizable de colores de caravana dentro del flujo de registro.
+/// Selector de colores de caravana distribuido en todo el ancho disponible.
 class EarTagColorSelector extends StatelessWidget {
-  /// Crea un nuevo selector de colores de caravana.
+  /// Crea un selector de color de caravana.
   const EarTagColorSelector({
     required this.options,
-    required this.isSelected,
+    required this.selectedColor,
     required this.onChanged,
     super.key,
   });
 
-  /// Opciones de color de caravana.
+  /// Opciones de color disponibles.
   final List<EarTagColorOption> options;
-  /// Indica si la opcion de color de caravana esta seleccionada.
-  final bool isSelected;
-  /// Callback para cuando se selecciona un color de caravana.
+
+  /// Color seleccionado actualmente.
+  final Color selectedColor;
+
+  /// Callback que informa el nuevo color seleccionado.
   final ValueChanged<Color> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
-      children: options
-          .map(
-            (option) => _EarTagColorItem(
-              option: option,
-              isSelected: false,
-              onTap: () => onChanged(option.color),
+    return Row(
+      children: [
+        for (var index = 0; index < options.length; index++) ...[
+          if (index > 0) const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: _EarTagColorItem(
+              option: options[index],
+              isSelected: options[index].color == selectedColor,
+              onTap: () => onChanged(options[index].color),
             ),
-          )
-          .toList(),
+          ),
+        ],
+      ],
     );
   }
 }
 
 class _EarTagColorItem extends StatelessWidget {
-  /// Crea un nuevo item de color de caravana.
   const _EarTagColorItem({
     required this.option,
     required this.isSelected,
     required this.onTap,
   });
 
-  /// Opcion de color de caravana.
   final EarTagColorOption option;
-  /// Indica si la opcion de color de caravana esta seleccionada.
   final bool isSelected;
-  /// Callback para cuando se selecciona un color de caravana.
   final VoidCallback onTap;
 
   @override
@@ -73,30 +70,29 @@ class _EarTagColorItem extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadius.sm),
       onTap: onTap,
-      child: Expanded(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              height: 52,
-              decoration: BoxDecoration(
-                color: option.color,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.border,
-                  width: isSelected ? 2 : 1,
-                ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: 52,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: option.color,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              border: Border.all(
+                color: isSelected ? AppColors.primary : AppColors.border,
+                width: isSelected ? 2 : 1,
               ),
             ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              option.name,
-              style: AppTypography.smallEmphasis,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            option.name,
+            style: AppTypography.smallEmphasis,
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
