@@ -28,18 +28,18 @@ class SenasaMenuPage extends StatelessWidget {
     // Mocks del historial
     final List<_RecentDocument> recentDocuments = [
       const _RecentDocument(
-        title: 'DT-e - Movimiento de Egreso Tropa 402',
+        title: 'TRI - Ingreso de Animales',
         date: 'Hoy, 14:32',
         format: 'PDF',
         status: 'Generado con éxito',
-        icon: Icons.picture_as_pdf,
+        icon: Icons.local_shipping_outlined,
       ),
       const _RecentDocument(
         title: 'Declaración Dispositivos (Alta Terneros)',
         date: 'Ayer, 09:15',
         format: 'TXT',
         status: 'Exportado para SIGSA',
-        icon: Icons.code,
+        icon: Icons.qr_code_scanner,
       ),
     ];
 
@@ -47,7 +47,7 @@ class SenasaMenuPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('SENASA SIGSA'),
         centerTitle: true,
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.pop(AppRoutes.home)),
+        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.pop()),
       ),
       body: SafeArea(
         child: Column(
@@ -101,6 +101,7 @@ class SenasaMenuPage extends StatelessWidget {
                 },
               ),
             ),
+            // --- BOTÓN DIRECTO ---
             Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: SizedBox(
@@ -108,71 +109,16 @@ class SenasaMenuPage extends StatelessWidget {
                 child: AppFilledButton(
                   label: 'Generar nuevo archivo',
                   icon: const Icon(Icons.add_circle_outline),
-                  onPressed: () => _showGenerationOptionsBottomSheet(context),
+                  onPressed: () {
+                    // Navegamos directo a la configuración de parámetros sin parámetros extra
+                    context.push(AppRoutes.senasaReport);
+                  },
                 ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  void _showGenerationOptionsBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('¿Qué trámite desea realizar?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: AppSpacing.md),
-
-                // Opción 1: Archivo TXT para caravanas
-                ListTile(
-                  leading: const Icon(Icons.qr_code_scanner, color: Colors.blue),
-                  title: const Text('Declaración de Dispositivos', style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Archivo TXT masivo con RFIDs para subir a SIGSA.'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    context.push(AppRoutes.senasaReport, extra: 'DECLARACION_RFID'); // Enviamos el parámetro
-                  },
-                ),
-                const Divider(),
-
-                // Opción 2: DT-e (PDF)
-                ListTile(
-                  leading: const Icon(Icons.local_shipping_outlined, color: Colors.red),
-                  title: const Text('Generación de DT-e', style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Documento PDF para el traslado de tropas.'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    context.push(AppRoutes.senasaReport, extra: 'DTE');
-                  },
-                ),
-                const Divider(),
-
-                // Opción 3: TRI / Existencias
-                ListTile(
-                  leading: const Icon(Icons.assignment_outlined, color: Colors.green),
-                  title: const Text('TRI / Cambio de Categoría', style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text('Planilla CSV para actualización de existencias.'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    context.push(AppRoutes.senasaReport, extra: 'TRI');
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

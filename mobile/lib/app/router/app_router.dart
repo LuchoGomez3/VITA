@@ -32,12 +32,12 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: AppRoutes.senasaReport,
-        builder: (context, state) => const SenasaReportPage(),
-      ),
-      GoRoute(
         path: AppRoutes.senasaMenu,
         builder: (context, state) => const SenasaMenuPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.senasaReport,
+        builder: (context, state) => const SenasaReportPage(),
       ),
     ],
   );
