@@ -6,7 +6,7 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 
 //widgets
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/step_progress_header.dart';
+//import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/step_progress_header.dart';
 //Pasos
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step1_filters.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step2_validation.dart';
@@ -42,19 +42,15 @@ class _SenasaReportPageState extends State<SenasaReportPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(SenasaStrings.pageTitle),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (_currentStep > 1) {
-              setState(() => _currentStep--); // Resta un paso atrás fluidamente
-            } else {
-              context.pop();
-            }
-          },
-        ),
+      appBar: AppHeader(
+        title: SenasaStrings.pageTitle,
+        onBackPressed: () {
+          if (_currentStep > 1){
+            setState(() => _currentStep--);
+          } else {
+            context.pop();
+          }
+        },
       ),
       body: SafeArea(
         child: Column(

@@ -1,7 +1,6 @@
-import 'package:frontend_mayoral/core/theme/theme.dart';
-import 'package:frontend_mayoral/core/widgets/widgets.dart';
-import 'package:frontend_mayoral/core/widgets/buttons/buttons.dart';
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/theme/theme.dart';
+// (Si AppColors no está en theme.dart, importá el archivo correcto de colores acá)
 
 class StepProgressBar extends StatelessWidget {
   final int currentStep;
@@ -36,13 +35,16 @@ class StepProgressBar extends StatelessWidget {
               children: [
                 Text(
                   'PASO $currentStep DE $totalSteps',
-                  style:
-                      AppTypography.mediumEmphasis, // Un estilo de texto pequeño con énfasis para el indicador de paso
+                  // Usamos 'overline' (ideal para mayúsculas chiquitas) y le damos el color primario
+                  style: AppTypography.mediumEmphasis,
                 ),
                 Flexible(
                   child: Text(
                     stepTitle,
+                    // Usamos 'caption' para el subtítulo con un gris suave
                     style: AppTypography.smallEmphasis,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
                   ),
                 ),
               ],
@@ -50,15 +52,13 @@ class StepProgressBar extends StatelessWidget {
           ),
 
           // --- LA BARRA DE PROGRESO CON ANIMACIÓN DE DESLIZAMIENTO ---
-          // Al usar LayoutBuilder medimos el ancho real disponible para que la barra
-          // se desplace de lado a lado rellenando exactamente el espacio físico.
           LayoutBuilder(
             builder: (context, constraints) {
               final double availableWidth = constraints.maxWidth;
 
               return Container(
                 width: availableWidth,
-                height: 2.5, // El grosor sutil y minimalista que elegiste
+                height: 2.5, // Grosor sutil y minimalista
                 color: Colors.grey.shade200, // Fondo de la barra no completada
                 alignment: Alignment.centerLeft,
                 child: AnimatedContainer(

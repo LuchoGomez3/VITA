@@ -4,6 +4,16 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 
+//widgets
+//import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/step_progress_header.dart';
+//Pasos
+import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step1_filters.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step2_validation.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step3_format.dart';
+
+//Strings
+import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
+
 class _RecentDocument {
   final String title;
   final String date;
@@ -44,10 +54,8 @@ class SenasaMenuPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('SENASA SIGSA'),
-        centerTitle: true,
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.pop()),
+      appBar: AppHeader(
+        title: SenasaStrings.menuPageTitle,
       ),
       body: SafeArea(
         child: Column(
@@ -58,10 +66,10 @@ class SenasaMenuPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Documentación Reciente', style: AppTypography.pageTitle),
+                  const Text(SenasaStrings.menuPageSubtitle, style: AppTypography.pageTitle),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    'Historial de archivos oficiales exportados para SIGSA.',
+                    SenasaStrings.menuPageDescription,
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],

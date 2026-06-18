@@ -1,4 +1,11 @@
 class SenasaStrings {
+
+  // --- Menú ---
+  static const String menuPageTitle = 'Reporte de SENASA';
+  static const String menuPageSubtitle = 'Documentación Reciente';
+  static const String menuPageDescription = 'Historial de archivos oficiales exportados para SENASA.';
+
+
   // --- Títulos Generales ---
   static const String pageTitle = 'Exportar a SENASA';
   static const String step1Title = 'Selección de registros';
