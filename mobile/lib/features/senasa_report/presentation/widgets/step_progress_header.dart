@@ -1,3 +1,6 @@
+import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/core/widgets/buttons/buttons.dart';
 import 'package:flutter/material.dart';
 
 class StepProgressBar extends StatelessWidget {
@@ -19,7 +22,7 @@ class StepProgressBar extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      color: Colors.white,
+      color: AppColors.background, // Fondo del header para que resalte sobre el contenido
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -33,23 +36,13 @@ class StepProgressBar extends StatelessWidget {
               children: [
                 Text(
                   'PASO $currentStep DE $totalSteps',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                    letterSpacing: 1.1,
-                  ),
+                  style:
+                      AppTypography.mediumEmphasis, // Un estilo de texto pequeño con énfasis para el indicador de paso
                 ),
                 Flexible(
                   child: Text(
                     stepTitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.right,
+                    style: AppTypography.smallEmphasis,
                   ),
                 ),
               ],
