@@ -35,9 +35,16 @@ class SenasaStrings {
 
   // --- Paso 3: Formatos ---
   static const String step3FormatTitle = 'Formato de exportación requerido';
+  static const String step3pdf = 'PDF';
   static const String formatPdfDesc = 'Ideal para impresión y soporte físico con firma';
+  static const String step3csv = 'CSV';
   static const String formatCsvDesc = 'Estructura delimitada optimizada para existencias';
+  static const String step3txt = 'TXT';
   static const String formatTxtDesc = 'Texto plano obligatorio para importación masiva SIGSA';
+  static const String formName = 'Ingrese su nombre y apellido.';
+  static const String formDNI = 'Ingrese su DNI.';
+  static const String responsableName = 'Nombre del Responsable';
+  static const String responsableDNI = 'DNI';
 
   // --- Widgets ---
 

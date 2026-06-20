@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/theme/app_borders.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/core/widgets/fields/fields.dart';
 
 //Strings
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
@@ -14,83 +17,69 @@ class ReportStep3Format extends StatelessWidget {
     required this.onFormatChanged,
   });
 
-  Widget _buildFormatOption(BuildContext context, String format, String subtitle, IconData icon) {
-    final bool isSelected = selectedFormat == format;
-    return InkWell(
-      onTap: () => onFormatChanged(format),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.04) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade300,
-            width: isSelected ? 1.8 : 1.0,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade600, size: 24),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    format,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: isSelected ? Theme.of(context).primaryColor : Colors.black87,
-                    ),
-                  ),
-                  Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                ],
-              ),
-            ),
-            Container(
-              width: 18,
-              height: 18,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade400, width: 2),
-              ),
-              child: isSelected
-                  ? Center(
-                      child: Container(
-                        width: 9,
-                        height: 9,
-                        decoration: BoxDecoration(shape: BoxShape.circle, color: Theme.of(context).primaryColor),
-                      ),
-                    )
-                  : null,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Padding(
-            padding: EdgeInsets.only(left: 4.0, bottom: 12.0),
+            padding: EdgeInsets.only(left: AppSpacing.xxs, bottom: AppSpacing.sm),
             child: Text(
               SenasaStrings.step3FormatTitle,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              style: AppTypography.pageTitle,
             ),
           ),
-          _buildFormatOption(context, 'PDF', SenasaStrings.formatPdfDesc, Icons.picture_as_pdf),
-          const SizedBox(height: AppSpacing.sm),
-          _buildFormatOption(context, 'CSV', SenasaStrings.formatCsvDesc, Icons.grid_on),
-          const SizedBox(height: AppSpacing.sm),
-          _buildFormatOption(context, 'TXT', SenasaStrings.formatTxtDesc, Icons.code),
+          // Seleccion de formato
+          AppSelectableCard<String>(
+            value: SenasaStrings.step3pdf, 
+            groupValue: selectedFormat, 
+            title: SenasaStrings.step3pdf, 
+            subtitle: SenasaStrings.formatPdfDesc, 
+            icon: Icons.picture_as_pdf, 
+            onChanged: onFormatChanged
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            AppSelectableCard<String>(
+            value: SenasaStrings.step3csv, 
+            groupValue: selectedFormat, 
+            title: SenasaStrings.step3csv, 
+            subtitle: SenasaStrings.formatCsvDesc, 
+            icon: Icons.grid_on, 
+            onChanged: onFormatChanged
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            AppSelectableCard<String>(
+            value: SenasaStrings.step3txt, 
+            groupValue: selectedFormat, 
+            title: SenasaStrings.step3txt, 
+            subtitle: SenasaStrings.formatTxtDesc, 
+            icon: Icons.code, 
+            onChanged: onFormatChanged
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            const Padding(
+              padding: EdgeInsets.only(left: AppSpacing.xxs, bottom: AppSpacing.sm),
+              child: Text(
+                SenasaStrings.responsableName,
+                style: AppTypography.pageTitle,
+              ),
+            ),
+            const AppTextFormField(
+              hintText: SenasaStrings.formName
+              ),const SizedBox(height: AppSpacing.sm),
+            const Padding(
+              padding: EdgeInsets.only(left: AppSpacing.xxs, bottom: AppSpacing.sm),
+              child: Text(
+                SenasaStrings.responsableDNI,
+                style: AppTypography.pageTitle,
+              ),
+            ),
+            //const SizedBox(height: AppSpacing.sm),
+            const AppTextFormField(
+              hintText: SenasaStrings.formDNI
+              ),
         ],
       ),
     );
