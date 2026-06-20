@@ -32,25 +32,14 @@ class ReportStep1Filters extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(SenasaStrings.step1SectionEvent, style: AppTypography.pageTitle),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  SenasaStrings.step1SectionEventDesc,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
+          const AppSubsectionTitleAndDescription(
+            title: SenasaStrings.step1SectionEvent,
+            description: SenasaStrings.step1SectionEventDesc,
           ),
-          const SizedBox(height: AppSpacing.lg),
 
           DateRangeSelector(
             startDate: startDate,

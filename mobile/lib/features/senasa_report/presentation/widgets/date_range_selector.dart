@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
-import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart'; // Acá debería estar exportado AppDateFormField
 
 //Strings
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
@@ -8,7 +8,6 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/strings/sen
 class DateRangeSelector extends StatelessWidget {
   final DateTime startDate;
   final DateTime endDate;
-  // Esta función es el "teléfono" para avisarle a la pantalla principal que cambiaron las fechas
   final Function(DateTime newStart, DateTime newEnd) onDatesChanged;
 
   const DateRangeSelector({
@@ -18,68 +17,21 @@ class DateRangeSelector extends StatelessWidget {
     required this.onDatesChanged,
   });
 
-  // --- Lógica del Calendario encapsulada acá adentro ---
-  Future<void> _selectDate(BuildContext context, bool isStart) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: isStart ? startDate : endDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Theme.of(context).primaryColor,
-              onPrimary: Colors.white,
-              onSurface: const Color(0xFF6D4C41),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      DateTime newStart = startDate;
-      DateTime newEnd = endDate;
-
-      // Validación cruzada automática
-      if (isStart) {
-        newStart = picked;
-        if (newStart.isAfter(newEnd)) newEnd = newStart;
-      } else {
-        newEnd = picked;
-        if (newEnd.isBefore(newStart)) newStart = newEnd;
-      }
-
-      // Le mandamos las fechas actualizadas al padre
-      onDatesChanged(newStart, newEnd);
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-  }
-
   // --- Atajos visuales de diseño ---
   Widget _buildDateShortcutChip(BuildContext context, String label, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
         decoration: BoxDecoration(
-          color: Theme.of(context).primaryColor.withOpacity(0.06),
-          border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.15)),
-          borderRadius: BorderRadius.circular(20),
+          color: AppColors.primary.withOpacity(0.06),
+          border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            color: Theme.of(context).primaryColor,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
+          style: AppTypography.datePickerChip,
         ),
       ),
     );
@@ -91,15 +43,15 @@ class DateRangeSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.only(left: 4.0, bottom: 4.0),
+          padding: EdgeInsets.only(left: AppSpacing.xxs, bottom: AppSpacing.xxs),
           child: Text(
             SenasaStrings.dateSelectorTitle,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14 /*, color: Colors.black87*/),
+            style: AppTypography.pageTitle,
           ),
         ),
         AppSurfaceCard(
           child: Padding(
-            padding: const EdgeInsets.all(1.0),
+            padding: const EdgeInsets.all(AppSpacing.xxxs), // Ajustado según tu diseño
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -130,74 +82,35 @@ class DateRangeSelector extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
 
-                // Selectores Desde / Hasta
+                // Selectores Desde / Hasta usando el componente del Core
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: InkWell(
-                        onTap: () => _selectDate(context, true),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Desde', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Icon(Icons.calendar_today, size: 14, color: Theme.of(context).primaryColor),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      _formatDate(startDate),
-                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                      child: AppDateFormField(
+                        title: 'Desde', // O reemplazalo por un string de SenasaStrings
+                        hintText: 'Fecha',
+                        value: startDate,
+                        onChanged: (newStart) {
+                          DateTime finalEnd = endDate;
+                          // Validación cruzada: Si "Desde" es mayor que "Hasta", igualamos "Hasta"
+                          if (newStart.isAfter(finalEnd)) finalEnd = newStart;
+                          onDatesChanged(newStart, finalEnd);
+                        },
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
-                      child: InkWell(
-                        onTap: () => _selectDate(context, false),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Hasta', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Icon(Icons.calendar_today, size: 14, color: Theme.of(context).primaryColor),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      _formatDate(endDate),
-                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                      child: AppDateFormField(
+                        title: 'Hasta', // O reemplazalo por un string de SenasaStrings
+                        hintText: 'Fecha',
+                        value: endDate,
+                        onChanged: (newEnd) {
+                          DateTime finalStart = startDate;
+                          // Validación cruzada: Si "Hasta" es menor que "Desde", igualamos "Desde"
+                          if (newEnd.isBefore(finalStart)) finalStart = newEnd;
+                          onDatesChanged(finalStart, newEnd);
+                        },
                       ),
                     ),
                   ],

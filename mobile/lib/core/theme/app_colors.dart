@@ -40,6 +40,20 @@ class AppColors {
   /// Borde neutro para inputs, cards y divisores suaves.
   static const border = Color(0xFFE1D3CF);
 
+  static const chipBorder = Color(0xFFE0E0E0);
+
+  /// Validacion de datos
+  /// Positivo
+  /// Fondo contenedor de validacion positiva
+  static const borderPositiveContainer = Color(0xFF80CBC4);
+  static const backgroundPositiveContainer = Color(0xFFE0F2F1);
+
+  /// Color icono check
+  static const checkIcon = Color(0xFF00897B);
+
+  /// Color texto
+  static const positiveText = Color(0xFF004D40);
+
   /// Opciones disponibles para personalizacion de caravanas.
   /// Opcion amarilla
   static const earTagYellow = Color(0xFFF4CF3D);

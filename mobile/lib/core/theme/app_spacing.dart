@@ -5,6 +5,9 @@
 class AppSpacing {
   const AppSpacing._();
 
+  /// Espaciado muy pequeno para elementos muy cercanos.
+  static const xxxs = 1.0;
+
   /// Espaciado extra pequeno para elementos muy cercanos.
   static const xxs = 4.0;
 

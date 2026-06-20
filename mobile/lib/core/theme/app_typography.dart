@@ -6,7 +6,6 @@ import 'package:frontend_mayoral/core/theme/app_colors.dart';
 /// Este archivo centraliza tamanos, pesos y colores de texto para que las
 /// pantallas reutilicen estilos consistentes y no definan `TextStyle` sueltos.
 class AppTypography {
-
   const AppTypography._();
   // TODO(branding): cambiar a 'Poppins' cuando la fuente este agregada
   // en assets/fonts y declarada en pubspec.yaml.
@@ -76,6 +75,14 @@ class AppTypography {
     color: AppColors.primary,
   );
 
+  /// Texto para botones de seleccion de fecha predeterminada hoy, mes, 30 dias, ultimos 7 dias.
+  static const datePickerChip = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: AppColors.primary,
+  );
+
   /// Texto pequeno con enfasis, util para microcopys o metadata.
   static const smallEmphasis = TextStyle(
     fontFamily: _baseFontFamily,
@@ -92,6 +99,9 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
+  /// Texto Validacion Positiva
+  static const positiveText = TextStyle(color: AppColors.positiveText, fontWeight: FontWeight.w500, fontSize: 13);
+
   /// Texto para acciones primarias en botones filled.
   static const filledButton = TextStyle(
     fontFamily: _baseFontFamily,
@@ -107,6 +117,14 @@ class AppTypography {
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
   );
+
+  static TextStyle selectableChipStyle({required bool isSelected}) {
+    return TextStyle(
+      fontSize: 13,
+      color: isSelected ? Colors.white : Colors.grey.shade800,
+      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+    );
+  }
 
   /// Adaptacion de los estilos oficiales al `TextTheme` de Flutter.
   ///

@@ -1,10 +1,8 @@
 class SenasaStrings {
-
   // --- Menú ---
   static const String menuPageTitle = 'Reporte de SENASA';
   static const String menuPageSubtitle = 'Documentación Reciente';
   static const String menuPageDescription = 'Historial de archivos oficiales exportados para SENASA.';
-
 
   // --- Títulos Generales ---
   static const String pageTitle = 'Exportar a SENASA';
@@ -26,6 +24,7 @@ class SenasaStrings {
   static const String step1SectionEst = 'Datos del Establecimiento';
 
   // --- Paso 2: Validación ---
+  static const String step2Description = "Validacion de datos";
   static const String step2SuccessBanner =
       'El 100% de los registros seleccionados cumplen con los requisitos obligatorios de SENASA.';
   static const String step2SummaryTitle = 'Datos recopilados';

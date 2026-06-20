@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart'; // Acá debería estar exportado el AppDropdownFormField
+import 'package:frontend_mayoral/core/theme/theme.dart';
 
 //Strings
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
@@ -16,45 +17,29 @@ class EstablishmentSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Lista de prueba (Mocks) con RENSPAs reales simulados de Argentina
-    final List<String> origenes = SenasaStrings.establishmentOptions;
+    // 1. Convertimos la lista de Strings en una lista de AppDropdownOption
+    final List<AppDropdownOption<String>> dropdownOptions = SenasaStrings.establishmentOptions
+        .map((e) => AppDropdownOption<String>(value: e, label: e))
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.only(left: 4.0, bottom: 4.0),
+          padding: EdgeInsets.only(left: AppSpacing.xxs, bottom: AppSpacing.xxs),
           child: Text(
             SenasaStrings.establishmentSectionTitle,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+            style: AppTypography.pageTitle,
           ),
         ),
         AppSurfaceCard(
           child: Padding(
-            padding: const EdgeInsets.all(1.0),
-            child: DropdownButtonFormField<String>(
-              isExpanded: true, // Evita desborde de píxeles horizontales
-              value: selectedOrigen,
-              decoration: const InputDecoration(
-                labelText: SenasaStrings.establishmentSelectorLabel,
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-              ),
-              items: origenes
-                  .map(
-                    (e) => DropdownMenuItem(
-                      value: e,
-                      child: Text(
-                        e,
-                        style: const TextStyle(fontSize: 13),
-                        overflow: TextOverflow.ellipsis, // Recorta el RENSPA con ... si la pantalla es chica
-                      ),
-                    ),
-                  )
-                  .toList(),
+            padding: const EdgeInsets.all(AppSpacing.xxxs),
+            child: AppDropdownFormField<String>(
+              // 2. Usamos el componente del Core
+              hintText: SenasaStrings.establishmentSelectorLabel,
+              initialValue: selectedOrigen,
+              options: dropdownOptions,
               onChanged: onOrigenChanged,
             ),
           ),
