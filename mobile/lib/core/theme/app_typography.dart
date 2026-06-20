@@ -102,6 +102,22 @@ class AppTypography {
   /// Texto Validacion Positiva
   static const positiveText = TextStyle(color: AppColors.positiveText, fontWeight: FontWeight.w500, fontSize: 13);
 
+  /// Titulo grande para pantallas de resultado o confirmacion.
+  static const successTitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  /// Subtitulo destacado para pantallas de resultado o confirmacion.
+  static const successSubtitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textSecondary,
+  );
+
   /// Texto para acciones primarias en botones filled.
   static const filledButton = TextStyle(
     fontFamily: _baseFontFamily,

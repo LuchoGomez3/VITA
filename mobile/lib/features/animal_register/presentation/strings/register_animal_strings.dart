@@ -232,4 +232,120 @@ class AnimalRegisterStrings {
 
   /// Detalle mock del potrero seleccionado.
   static const stepThreeMockDestinationDetails = '142 ha · 342 animales actualmente';
+
+  // Paso 4: revision.
+
+  /// Subtitulo del app bar para el paso de revision.
+  static const stepFourSubtitle = 'Paso 4 de 4 • Revisar';
+
+  /// Titulo principal del paso de revision.
+  static const stepFourTitle = 'REVISAR ANTES DE GUARDAR';
+
+  /// Descripcion del paso de revision.
+  static const stepFourDescription =
+      'Tocá cualquier sección para editarla. El alta se guarda en este dispositivo y se sincroniza cuando vuelva la señal.';
+
+  /// Titulo de la seccion de identificacion.
+  static const stepFourIdentificationTitle = 'IDENTIFICACIÓN';
+
+  /// Titulo de la seccion de datos basicos.
+  static const stepFourBasicDataTitle = 'DATOS BÁSICOS';
+
+  /// Titulo de la seccion de genealogia y destino.
+  static const stepFourGenealogyTitle = 'GENEALOGÍA Y DESTINO';
+
+  /// Numero visual usado en la caravana de revision.
+  static const stepFourIdentificationVisualTag = '003 1295';
+
+  /// RFID mostrado en la seccion de identificacion.
+  static const stepFourIdentificationRfid = '982 000 412 991 416';
+
+  /// Descripcion visual de la caravana.
+  static const stepFourIdentificationTag = 'Caravana 003 1295 · amarilla';
+
+  /// Label del campo raza.
+  static const stepFourBreedLabel = 'Raza';
+
+  /// Valor mock del campo raza.
+  static const stepFourBreedValue = 'Aberdeen Angus';
+
+  /// Label del campo sexo.
+  static const stepFourSexLabel = 'Sexo';
+
+  /// Valor mock del campo sexo.
+  static const stepFourSexValue = 'Hembra';
+
+  /// Label del campo fecha de nacimiento.
+  static const stepFourBirthDateLabel = 'Fecha de nacimiento';
+
+  /// Valor mock del campo fecha de nacimiento.
+  static const stepFourBirthDateValue = '14/03/2025 · 2 m 1 día';
+
+  /// Label del campo categoria.
+  static const stepFourCategoryLabel = 'Categoría';
+
+  /// Valor mock del campo categoria.
+  static const stepFourCategoryValue = 'Ternera';
+
+  /// Label del campo peso al nacer.
+  static const stepFourBirthWeightLabel = 'Peso al nacer';
+
+  /// Valor mock del campo peso al nacer.
+  static const stepFourBirthWeightValue = '32,5 kg';
+
+  /// Label del campo madre.
+  static const stepFourMotherLabel = 'Madre';
+
+  /// Valor mock del campo madre.
+  static const stepFourMotherValue = '003 0421 · Aberdeen';
+
+  /// Label del campo padre.
+  static const stepFourFatherLabel = 'Padre';
+
+  /// Valor mock del campo padre.
+  static const stepFourFatherValue = '— (sin datos)';
+
+  /// Label del campo potrero.
+  static const stepFourDestinationLabel = 'Potrero';
+
+  /// Valor mock del campo potrero.
+  static const stepFourDestinationValue = 'La Cumbre · 142 ha';
+
+  /// Texto del boton para volver al paso anterior.
+  static const stepFourBackButton = 'Atrás';
+
+  /// Texto del boton para guardar el animal.
+  static const stepFourSaveButton = 'Guardar animal';
+
+  /// Texto del boton para editar una seccion de revision.
+  static const stepFourEditButton = 'Editar';
+
+  // Pantalla de exito.
+
+  /// Titulo principal de la pantalla de exito.
+  static const successTitle = 'Animal dado de alta';
+
+  /// Subtitulo de la pantalla de exito.
+  static const successSubtitle = 'La ternera 003 1295 ya forma parte del rodeo de La Sirena.';
+
+  /// Texto del boton para iniciar otra alta.
+  static const successRegisterAnotherButton = 'Dar de alta otro animal';
+
+  /// Texto del boton para ver la ficha del animal.
+  static const successViewDetailsButton = 'Ver ficha de 003 1295';
+
+  /// Texto de la accion para volver al inicio.
+  static const successBackHomeButton = 'Volver al inicio';
+
+  /// Numero visual mock mostrado en la tarjeta de exito.
+  static const successMockVisualTag = '003 1295';
+
+  /// Titulo mock del animal registrado.
+  static const successMockAnimalTitle = 'Aberdeen Angus · Ternera';
+
+  /// RFID mock del animal registrado.
+  static const successMockRfid = '982 000 412 991 416';
+
+  /// Destino mock del animal registrado.
+  static const successMockDestination = 'La Cumbre';
 }

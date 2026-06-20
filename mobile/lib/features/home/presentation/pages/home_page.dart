@@ -4,7 +4,7 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:go_router/go_router.dart';
 
-/// Pagina de inicio de la app.
+/// Pagina de inicio de la app. (TODO:Agus: Esto no va, es solo un mock para la demo.)
 class HomePage extends StatelessWidget {
   /// Crea una nueva pagina de inicio.
   const HomePage({super.key});
