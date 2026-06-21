@@ -30,6 +30,30 @@ class HomePage extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: AppSpacing.lg),
+            
+            /// Tarjeta temporal para el desarrollo del modulo de Sign Up
+            AppSurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Módulo Sign Up (Dev)',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  const Text(
+                    'Acceso directo a la nueva pantalla de Welcome.',
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  AppFilledButton(
+                    label: 'Ver Welcome Page',
+                    onPressed: () => context.push(AppRoutes.welcome),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
             AppSurfaceCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

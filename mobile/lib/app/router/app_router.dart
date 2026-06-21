@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/features/animal_register/presentation/pages/reg
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_step_two_page.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_success_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
+import 'package:frontend_mayoral/features/sign_up/presentation/pages/sign_up_welcome_first_time.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion del router de la app.
@@ -17,6 +18,12 @@ class AppRouter {
 
     /// Rutas de la app.
     routes: [
+
+      GoRoute(
+        path: AppRoutes.welcome,
+        builder: (context, state) => const WelcomePage(),
+      ),
+
       /// Ruta de la pantalla de inicio.
       GoRoute(
         path: AppRoutes.home,
