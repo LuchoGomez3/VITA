@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AnimalRegistration {
 
- String get rfidTagNumber; AnimalSex get sex; String get breed; DateTime get birthDate; String get lotId; String get establishmentId; double get initialWeight; String? get visualTag; String? get motherId; String? get fatherId; String? get categoryId; String? get coat; String? get observations; AnimalWeighingMethod get weighingMethod; DateTime? get weighingDate;
+ String get rfidTagNumber; String get visualTag; AnimalSex get sex; String get breed; DateTime get birthDate; String get lotId; String get lotName; String get establishmentId; String get categoryId; String get categoryName; double get initialWeight; String? get motherId; String? get fatherId; String? get coat; String? get observations; AnimalWeighingMethod get weighingMethod; DateTime? get weighingDate;
 /// Create a copy of AnimalRegistration
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $AnimalRegistrationCopyWith<AnimalRegistration> get copyWith => _$AnimalRegistra
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AnimalRegistration&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.sex, sex) || other.sex == sex)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.birthDate, birthDate) || other.birthDate == birthDate)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.initialWeight, initialWeight) || other.initialWeight == initialWeight)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.motherId, motherId) || other.motherId == motherId)&&(identical(other.fatherId, fatherId) || other.fatherId == fatherId)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.coat, coat) || other.coat == coat)&&(identical(other.observations, observations) || other.observations == observations)&&(identical(other.weighingMethod, weighingMethod) || other.weighingMethod == weighingMethod)&&(identical(other.weighingDate, weighingDate) || other.weighingDate == weighingDate));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AnimalRegistration&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.sex, sex) || other.sex == sex)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.birthDate, birthDate) || other.birthDate == birthDate)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.lotName, lotName) || other.lotName == lotName)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.initialWeight, initialWeight) || other.initialWeight == initialWeight)&&(identical(other.motherId, motherId) || other.motherId == motherId)&&(identical(other.fatherId, fatherId) || other.fatherId == fatherId)&&(identical(other.coat, coat) || other.coat == coat)&&(identical(other.observations, observations) || other.observations == observations)&&(identical(other.weighingMethod, weighingMethod) || other.weighingMethod == weighingMethod)&&(identical(other.weighingDate, weighingDate) || other.weighingDate == weighingDate));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,rfidTagNumber,sex,breed,birthDate,lotId,establishmentId,initialWeight,visualTag,motherId,fatherId,categoryId,coat,observations,weighingMethod,weighingDate);
+int get hashCode => Object.hash(runtimeType,rfidTagNumber,visualTag,sex,breed,birthDate,lotId,lotName,establishmentId,categoryId,categoryName,initialWeight,motherId,fatherId,coat,observations,weighingMethod,weighingDate);
 
 @override
 String toString() {
-  return 'AnimalRegistration(rfidTagNumber: $rfidTagNumber, sex: $sex, breed: $breed, birthDate: $birthDate, lotId: $lotId, establishmentId: $establishmentId, initialWeight: $initialWeight, visualTag: $visualTag, motherId: $motherId, fatherId: $fatherId, categoryId: $categoryId, coat: $coat, observations: $observations, weighingMethod: $weighingMethod, weighingDate: $weighingDate)';
+  return 'AnimalRegistration(rfidTagNumber: $rfidTagNumber, visualTag: $visualTag, sex: $sex, breed: $breed, birthDate: $birthDate, lotId: $lotId, lotName: $lotName, establishmentId: $establishmentId, categoryId: $categoryId, categoryName: $categoryName, initialWeight: $initialWeight, motherId: $motherId, fatherId: $fatherId, coat: $coat, observations: $observations, weighingMethod: $weighingMethod, weighingDate: $weighingDate)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $AnimalRegistrationCopyWith<$Res>  {
   factory $AnimalRegistrationCopyWith(AnimalRegistration value, $Res Function(AnimalRegistration) _then) = _$AnimalRegistrationCopyWithImpl;
 @useResult
 $Res call({
- String rfidTagNumber, AnimalSex sex, String breed, DateTime birthDate, String lotId, String establishmentId, double initialWeight, String? visualTag, String? motherId, String? fatherId, String? categoryId, String? coat, String? observations, AnimalWeighingMethod weighingMethod, DateTime? weighingDate
+ String rfidTagNumber, String visualTag, AnimalSex sex, String breed, DateTime birthDate, String lotId, String lotName, String establishmentId, String categoryId, String categoryName, double initialWeight, String? motherId, String? fatherId, String? coat, String? observations, AnimalWeighingMethod weighingMethod, DateTime? weighingDate
 });
 
 
@@ -62,19 +62,21 @@ class _$AnimalRegistrationCopyWithImpl<$Res>
 
 /// Create a copy of AnimalRegistration
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? rfidTagNumber = null,Object? sex = null,Object? breed = null,Object? birthDate = null,Object? lotId = null,Object? establishmentId = null,Object? initialWeight = null,Object? visualTag = freezed,Object? motherId = freezed,Object? fatherId = freezed,Object? categoryId = freezed,Object? coat = freezed,Object? observations = freezed,Object? weighingMethod = null,Object? weighingDate = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? rfidTagNumber = null,Object? visualTag = null,Object? sex = null,Object? breed = null,Object? birthDate = null,Object? lotId = null,Object? lotName = null,Object? establishmentId = null,Object? categoryId = null,Object? categoryName = null,Object? initialWeight = null,Object? motherId = freezed,Object? fatherId = freezed,Object? coat = freezed,Object? observations = freezed,Object? weighingMethod = null,Object? weighingDate = freezed,}) {
   return _then(_self.copyWith(
 rfidTagNumber: null == rfidTagNumber ? _self.rfidTagNumber : rfidTagNumber // ignore: cast_nullable_to_non_nullable
+as String,visualTag: null == visualTag ? _self.visualTag : visualTag // ignore: cast_nullable_to_non_nullable
 as String,sex: null == sex ? _self.sex : sex // ignore: cast_nullable_to_non_nullable
 as AnimalSex,breed: null == breed ? _self.breed : breed // ignore: cast_nullable_to_non_nullable
 as String,birthDate: null == birthDate ? _self.birthDate : birthDate // ignore: cast_nullable_to_non_nullable
 as DateTime,lotId: null == lotId ? _self.lotId : lotId // ignore: cast_nullable_to_non_nullable
+as String,lotName: null == lotName ? _self.lotName : lotName // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
+as String,categoryId: null == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
+as String,categoryName: null == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
 as String,initialWeight: null == initialWeight ? _self.initialWeight : initialWeight // ignore: cast_nullable_to_non_nullable
-as double,visualTag: freezed == visualTag ? _self.visualTag : visualTag // ignore: cast_nullable_to_non_nullable
-as String?,motherId: freezed == motherId ? _self.motherId : motherId // ignore: cast_nullable_to_non_nullable
+as double,motherId: freezed == motherId ? _self.motherId : motherId // ignore: cast_nullable_to_non_nullable
 as String?,fatherId: freezed == fatherId ? _self.fatherId : fatherId // ignore: cast_nullable_to_non_nullable
-as String?,categoryId: freezed == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
 as String?,coat: freezed == coat ? _self.coat : coat // ignore: cast_nullable_to_non_nullable
 as String?,observations: freezed == observations ? _self.observations : observations // ignore: cast_nullable_to_non_nullable
 as String?,weighingMethod: null == weighingMethod ? _self.weighingMethod : weighingMethod // ignore: cast_nullable_to_non_nullable
@@ -161,10 +163,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String rfidTagNumber,  AnimalSex sex,  String breed,  DateTime birthDate,  String lotId,  String establishmentId,  double initialWeight,  String? visualTag,  String? motherId,  String? fatherId,  String? categoryId,  String? coat,  String? observations,  AnimalWeighingMethod weighingMethod,  DateTime? weighingDate)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String rfidTagNumber,  String visualTag,  AnimalSex sex,  String breed,  DateTime birthDate,  String lotId,  String lotName,  String establishmentId,  String categoryId,  String categoryName,  double initialWeight,  String? motherId,  String? fatherId,  String? coat,  String? observations,  AnimalWeighingMethod weighingMethod,  DateTime? weighingDate)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AnimalRegistration() when $default != null:
-return $default(_that.rfidTagNumber,_that.sex,_that.breed,_that.birthDate,_that.lotId,_that.establishmentId,_that.initialWeight,_that.visualTag,_that.motherId,_that.fatherId,_that.categoryId,_that.coat,_that.observations,_that.weighingMethod,_that.weighingDate);case _:
+return $default(_that.rfidTagNumber,_that.visualTag,_that.sex,_that.breed,_that.birthDate,_that.lotId,_that.lotName,_that.establishmentId,_that.categoryId,_that.categoryName,_that.initialWeight,_that.motherId,_that.fatherId,_that.coat,_that.observations,_that.weighingMethod,_that.weighingDate);case _:
   return orElse();
 
 }
@@ -182,10 +184,10 @@ return $default(_that.rfidTagNumber,_that.sex,_that.breed,_that.birthDate,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String rfidTagNumber,  AnimalSex sex,  String breed,  DateTime birthDate,  String lotId,  String establishmentId,  double initialWeight,  String? visualTag,  String? motherId,  String? fatherId,  String? categoryId,  String? coat,  String? observations,  AnimalWeighingMethod weighingMethod,  DateTime? weighingDate)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String rfidTagNumber,  String visualTag,  AnimalSex sex,  String breed,  DateTime birthDate,  String lotId,  String lotName,  String establishmentId,  String categoryId,  String categoryName,  double initialWeight,  String? motherId,  String? fatherId,  String? coat,  String? observations,  AnimalWeighingMethod weighingMethod,  DateTime? weighingDate)  $default,) {final _that = this;
 switch (_that) {
 case _AnimalRegistration():
-return $default(_that.rfidTagNumber,_that.sex,_that.breed,_that.birthDate,_that.lotId,_that.establishmentId,_that.initialWeight,_that.visualTag,_that.motherId,_that.fatherId,_that.categoryId,_that.coat,_that.observations,_that.weighingMethod,_that.weighingDate);}
+return $default(_that.rfidTagNumber,_that.visualTag,_that.sex,_that.breed,_that.birthDate,_that.lotId,_that.lotName,_that.establishmentId,_that.categoryId,_that.categoryName,_that.initialWeight,_that.motherId,_that.fatherId,_that.coat,_that.observations,_that.weighingMethod,_that.weighingDate);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -199,10 +201,10 @@ return $default(_that.rfidTagNumber,_that.sex,_that.breed,_that.birthDate,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String rfidTagNumber,  AnimalSex sex,  String breed,  DateTime birthDate,  String lotId,  String establishmentId,  double initialWeight,  String? visualTag,  String? motherId,  String? fatherId,  String? categoryId,  String? coat,  String? observations,  AnimalWeighingMethod weighingMethod,  DateTime? weighingDate)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String rfidTagNumber,  String visualTag,  AnimalSex sex,  String breed,  DateTime birthDate,  String lotId,  String lotName,  String establishmentId,  String categoryId,  String categoryName,  double initialWeight,  String? motherId,  String? fatherId,  String? coat,  String? observations,  AnimalWeighingMethod weighingMethod,  DateTime? weighingDate)?  $default,) {final _that = this;
 switch (_that) {
 case _AnimalRegistration() when $default != null:
-return $default(_that.rfidTagNumber,_that.sex,_that.breed,_that.birthDate,_that.lotId,_that.establishmentId,_that.initialWeight,_that.visualTag,_that.motherId,_that.fatherId,_that.categoryId,_that.coat,_that.observations,_that.weighingMethod,_that.weighingDate);case _:
+return $default(_that.rfidTagNumber,_that.visualTag,_that.sex,_that.breed,_that.birthDate,_that.lotId,_that.lotName,_that.establishmentId,_that.categoryId,_that.categoryName,_that.initialWeight,_that.motherId,_that.fatherId,_that.coat,_that.observations,_that.weighingMethod,_that.weighingDate);case _:
   return null;
 
 }
@@ -214,20 +216,22 @@ return $default(_that.rfidTagNumber,_that.sex,_that.breed,_that.birthDate,_that.
 
 
 class _AnimalRegistration implements AnimalRegistration {
-  const _AnimalRegistration({required this.rfidTagNumber, required this.sex, required this.breed, required this.birthDate, required this.lotId, required this.establishmentId, required this.initialWeight, this.visualTag, this.motherId, this.fatherId, this.categoryId, this.coat, this.observations, this.weighingMethod = AnimalWeighingMethod.manual, this.weighingDate});
+  const _AnimalRegistration({required this.rfidTagNumber, required this.visualTag, required this.sex, required this.breed, required this.birthDate, required this.lotId, required this.lotName, required this.establishmentId, required this.categoryId, required this.categoryName, required this.initialWeight, this.motherId, this.fatherId, this.coat, this.observations, this.weighingMethod = AnimalWeighingMethod.manual, this.weighingDate});
   
 
 @override final  String rfidTagNumber;
+@override final  String visualTag;
 @override final  AnimalSex sex;
 @override final  String breed;
 @override final  DateTime birthDate;
 @override final  String lotId;
+@override final  String lotName;
 @override final  String establishmentId;
+@override final  String categoryId;
+@override final  String categoryName;
 @override final  double initialWeight;
-@override final  String? visualTag;
 @override final  String? motherId;
 @override final  String? fatherId;
-@override final  String? categoryId;
 @override final  String? coat;
 @override final  String? observations;
 @override@JsonKey() final  AnimalWeighingMethod weighingMethod;
@@ -243,16 +247,16 @@ _$AnimalRegistrationCopyWith<_AnimalRegistration> get copyWith => __$AnimalRegis
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AnimalRegistration&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.sex, sex) || other.sex == sex)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.birthDate, birthDate) || other.birthDate == birthDate)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.initialWeight, initialWeight) || other.initialWeight == initialWeight)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.motherId, motherId) || other.motherId == motherId)&&(identical(other.fatherId, fatherId) || other.fatherId == fatherId)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.coat, coat) || other.coat == coat)&&(identical(other.observations, observations) || other.observations == observations)&&(identical(other.weighingMethod, weighingMethod) || other.weighingMethod == weighingMethod)&&(identical(other.weighingDate, weighingDate) || other.weighingDate == weighingDate));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AnimalRegistration&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.sex, sex) || other.sex == sex)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.birthDate, birthDate) || other.birthDate == birthDate)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.lotName, lotName) || other.lotName == lotName)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.initialWeight, initialWeight) || other.initialWeight == initialWeight)&&(identical(other.motherId, motherId) || other.motherId == motherId)&&(identical(other.fatherId, fatherId) || other.fatherId == fatherId)&&(identical(other.coat, coat) || other.coat == coat)&&(identical(other.observations, observations) || other.observations == observations)&&(identical(other.weighingMethod, weighingMethod) || other.weighingMethod == weighingMethod)&&(identical(other.weighingDate, weighingDate) || other.weighingDate == weighingDate));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,rfidTagNumber,sex,breed,birthDate,lotId,establishmentId,initialWeight,visualTag,motherId,fatherId,categoryId,coat,observations,weighingMethod,weighingDate);
+int get hashCode => Object.hash(runtimeType,rfidTagNumber,visualTag,sex,breed,birthDate,lotId,lotName,establishmentId,categoryId,categoryName,initialWeight,motherId,fatherId,coat,observations,weighingMethod,weighingDate);
 
 @override
 String toString() {
-  return 'AnimalRegistration(rfidTagNumber: $rfidTagNumber, sex: $sex, breed: $breed, birthDate: $birthDate, lotId: $lotId, establishmentId: $establishmentId, initialWeight: $initialWeight, visualTag: $visualTag, motherId: $motherId, fatherId: $fatherId, categoryId: $categoryId, coat: $coat, observations: $observations, weighingMethod: $weighingMethod, weighingDate: $weighingDate)';
+  return 'AnimalRegistration(rfidTagNumber: $rfidTagNumber, visualTag: $visualTag, sex: $sex, breed: $breed, birthDate: $birthDate, lotId: $lotId, lotName: $lotName, establishmentId: $establishmentId, categoryId: $categoryId, categoryName: $categoryName, initialWeight: $initialWeight, motherId: $motherId, fatherId: $fatherId, coat: $coat, observations: $observations, weighingMethod: $weighingMethod, weighingDate: $weighingDate)';
 }
 
 
@@ -263,7 +267,7 @@ abstract mixin class _$AnimalRegistrationCopyWith<$Res> implements $AnimalRegist
   factory _$AnimalRegistrationCopyWith(_AnimalRegistration value, $Res Function(_AnimalRegistration) _then) = __$AnimalRegistrationCopyWithImpl;
 @override @useResult
 $Res call({
- String rfidTagNumber, AnimalSex sex, String breed, DateTime birthDate, String lotId, String establishmentId, double initialWeight, String? visualTag, String? motherId, String? fatherId, String? categoryId, String? coat, String? observations, AnimalWeighingMethod weighingMethod, DateTime? weighingDate
+ String rfidTagNumber, String visualTag, AnimalSex sex, String breed, DateTime birthDate, String lotId, String lotName, String establishmentId, String categoryId, String categoryName, double initialWeight, String? motherId, String? fatherId, String? coat, String? observations, AnimalWeighingMethod weighingMethod, DateTime? weighingDate
 });
 
 
@@ -280,19 +284,21 @@ class __$AnimalRegistrationCopyWithImpl<$Res>
 
 /// Create a copy of AnimalRegistration
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? rfidTagNumber = null,Object? sex = null,Object? breed = null,Object? birthDate = null,Object? lotId = null,Object? establishmentId = null,Object? initialWeight = null,Object? visualTag = freezed,Object? motherId = freezed,Object? fatherId = freezed,Object? categoryId = freezed,Object? coat = freezed,Object? observations = freezed,Object? weighingMethod = null,Object? weighingDate = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? rfidTagNumber = null,Object? visualTag = null,Object? sex = null,Object? breed = null,Object? birthDate = null,Object? lotId = null,Object? lotName = null,Object? establishmentId = null,Object? categoryId = null,Object? categoryName = null,Object? initialWeight = null,Object? motherId = freezed,Object? fatherId = freezed,Object? coat = freezed,Object? observations = freezed,Object? weighingMethod = null,Object? weighingDate = freezed,}) {
   return _then(_AnimalRegistration(
 rfidTagNumber: null == rfidTagNumber ? _self.rfidTagNumber : rfidTagNumber // ignore: cast_nullable_to_non_nullable
+as String,visualTag: null == visualTag ? _self.visualTag : visualTag // ignore: cast_nullable_to_non_nullable
 as String,sex: null == sex ? _self.sex : sex // ignore: cast_nullable_to_non_nullable
 as AnimalSex,breed: null == breed ? _self.breed : breed // ignore: cast_nullable_to_non_nullable
 as String,birthDate: null == birthDate ? _self.birthDate : birthDate // ignore: cast_nullable_to_non_nullable
 as DateTime,lotId: null == lotId ? _self.lotId : lotId // ignore: cast_nullable_to_non_nullable
+as String,lotName: null == lotName ? _self.lotName : lotName // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
+as String,categoryId: null == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
+as String,categoryName: null == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
 as String,initialWeight: null == initialWeight ? _self.initialWeight : initialWeight // ignore: cast_nullable_to_non_nullable
-as double,visualTag: freezed == visualTag ? _self.visualTag : visualTag // ignore: cast_nullable_to_non_nullable
-as String?,motherId: freezed == motherId ? _self.motherId : motherId // ignore: cast_nullable_to_non_nullable
+as double,motherId: freezed == motherId ? _self.motherId : motherId // ignore: cast_nullable_to_non_nullable
 as String?,fatherId: freezed == fatherId ? _self.fatherId : fatherId // ignore: cast_nullable_to_non_nullable
-as String?,categoryId: freezed == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
 as String?,coat: freezed == coat ? _self.coat : coat // ignore: cast_nullable_to_non_nullable
 as String?,observations: freezed == observations ? _self.observations : observations // ignore: cast_nullable_to_non_nullable
 as String?,weighingMethod: null == weighingMethod ? _self.weighingMethod : weighingMethod // ignore: cast_nullable_to_non_nullable
@@ -307,7 +313,7 @@ as DateTime?,
 /// @nodoc
 mixin _$RegisteredAnimal {
 
- String get id; AnimalRegistration get registration; AnimalSyncStatus get syncStatus; String? get syncErrorCode;
+ String get id; AnimalRegistration get registration; AnimalSyncStatus get syncStatus; DateTime get createdAt; DateTime get updatedAt; String get displayDestination; String get displayCategory; String? get syncErrorCode;
 /// Create a copy of RegisteredAnimal
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -318,16 +324,16 @@ $RegisteredAnimalCopyWith<RegisteredAnimal> get copyWith => _$RegisteredAnimalCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisteredAnimal&&(identical(other.id, id) || other.id == id)&&(identical(other.registration, registration) || other.registration == registration)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisteredAnimal&&(identical(other.id, id) || other.id == id)&&(identical(other.registration, registration) || other.registration == registration)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.displayDestination, displayDestination) || other.displayDestination == displayDestination)&&(identical(other.displayCategory, displayCategory) || other.displayCategory == displayCategory)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,registration,syncStatus,syncErrorCode);
+int get hashCode => Object.hash(runtimeType,id,registration,syncStatus,createdAt,updatedAt,displayDestination,displayCategory,syncErrorCode);
 
 @override
 String toString() {
-  return 'RegisteredAnimal(id: $id, registration: $registration, syncStatus: $syncStatus, syncErrorCode: $syncErrorCode)';
+  return 'RegisteredAnimal(id: $id, registration: $registration, syncStatus: $syncStatus, createdAt: $createdAt, updatedAt: $updatedAt, displayDestination: $displayDestination, displayCategory: $displayCategory, syncErrorCode: $syncErrorCode)';
 }
 
 
@@ -338,7 +344,7 @@ abstract mixin class $RegisteredAnimalCopyWith<$Res>  {
   factory $RegisteredAnimalCopyWith(RegisteredAnimal value, $Res Function(RegisteredAnimal) _then) = _$RegisteredAnimalCopyWithImpl;
 @useResult
 $Res call({
- String id, AnimalRegistration registration, AnimalSyncStatus syncStatus, String? syncErrorCode
+ String id, AnimalRegistration registration, AnimalSyncStatus syncStatus, DateTime createdAt, DateTime updatedAt, String displayDestination, String displayCategory, String? syncErrorCode
 });
 
 
@@ -355,12 +361,16 @@ class _$RegisteredAnimalCopyWithImpl<$Res>
 
 /// Create a copy of RegisteredAnimal
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? registration = null,Object? syncStatus = null,Object? syncErrorCode = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? registration = null,Object? syncStatus = null,Object? createdAt = null,Object? updatedAt = null,Object? displayDestination = null,Object? displayCategory = null,Object? syncErrorCode = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,registration: null == registration ? _self.registration : registration // ignore: cast_nullable_to_non_nullable
 as AnimalRegistration,syncStatus: null == syncStatus ? _self.syncStatus : syncStatus // ignore: cast_nullable_to_non_nullable
-as AnimalSyncStatus,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
+as AnimalSyncStatus,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,displayDestination: null == displayDestination ? _self.displayDestination : displayDestination // ignore: cast_nullable_to_non_nullable
+as String,displayCategory: null == displayCategory ? _self.displayCategory : displayCategory // ignore: cast_nullable_to_non_nullable
+as String,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -452,10 +462,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  AnimalRegistration registration,  AnimalSyncStatus syncStatus,  String? syncErrorCode)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  AnimalRegistration registration,  AnimalSyncStatus syncStatus,  DateTime createdAt,  DateTime updatedAt,  String displayDestination,  String displayCategory,  String? syncErrorCode)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisteredAnimal() when $default != null:
-return $default(_that.id,_that.registration,_that.syncStatus,_that.syncErrorCode);case _:
+return $default(_that.id,_that.registration,_that.syncStatus,_that.createdAt,_that.updatedAt,_that.displayDestination,_that.displayCategory,_that.syncErrorCode);case _:
   return orElse();
 
 }
@@ -473,10 +483,10 @@ return $default(_that.id,_that.registration,_that.syncStatus,_that.syncErrorCode
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  AnimalRegistration registration,  AnimalSyncStatus syncStatus,  String? syncErrorCode)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  AnimalRegistration registration,  AnimalSyncStatus syncStatus,  DateTime createdAt,  DateTime updatedAt,  String displayDestination,  String displayCategory,  String? syncErrorCode)  $default,) {final _that = this;
 switch (_that) {
 case _RegisteredAnimal():
-return $default(_that.id,_that.registration,_that.syncStatus,_that.syncErrorCode);}
+return $default(_that.id,_that.registration,_that.syncStatus,_that.createdAt,_that.updatedAt,_that.displayDestination,_that.displayCategory,_that.syncErrorCode);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -490,10 +500,10 @@ return $default(_that.id,_that.registration,_that.syncStatus,_that.syncErrorCode
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  AnimalRegistration registration,  AnimalSyncStatus syncStatus,  String? syncErrorCode)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  AnimalRegistration registration,  AnimalSyncStatus syncStatus,  DateTime createdAt,  DateTime updatedAt,  String displayDestination,  String displayCategory,  String? syncErrorCode)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisteredAnimal() when $default != null:
-return $default(_that.id,_that.registration,_that.syncStatus,_that.syncErrorCode);case _:
+return $default(_that.id,_that.registration,_that.syncStatus,_that.createdAt,_that.updatedAt,_that.displayDestination,_that.displayCategory,_that.syncErrorCode);case _:
   return null;
 
 }
@@ -505,12 +515,16 @@ return $default(_that.id,_that.registration,_that.syncStatus,_that.syncErrorCode
 
 
 class _RegisteredAnimal implements RegisteredAnimal {
-  const _RegisteredAnimal({required this.id, required this.registration, required this.syncStatus, this.syncErrorCode});
+  const _RegisteredAnimal({required this.id, required this.registration, required this.syncStatus, required this.createdAt, required this.updatedAt, required this.displayDestination, required this.displayCategory, this.syncErrorCode});
   
 
 @override final  String id;
 @override final  AnimalRegistration registration;
 @override final  AnimalSyncStatus syncStatus;
+@override final  DateTime createdAt;
+@override final  DateTime updatedAt;
+@override final  String displayDestination;
+@override final  String displayCategory;
 @override final  String? syncErrorCode;
 
 /// Create a copy of RegisteredAnimal
@@ -523,16 +537,16 @@ _$RegisteredAnimalCopyWith<_RegisteredAnimal> get copyWith => __$RegisteredAnima
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisteredAnimal&&(identical(other.id, id) || other.id == id)&&(identical(other.registration, registration) || other.registration == registration)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisteredAnimal&&(identical(other.id, id) || other.id == id)&&(identical(other.registration, registration) || other.registration == registration)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.displayDestination, displayDestination) || other.displayDestination == displayDestination)&&(identical(other.displayCategory, displayCategory) || other.displayCategory == displayCategory)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,registration,syncStatus,syncErrorCode);
+int get hashCode => Object.hash(runtimeType,id,registration,syncStatus,createdAt,updatedAt,displayDestination,displayCategory,syncErrorCode);
 
 @override
 String toString() {
-  return 'RegisteredAnimal(id: $id, registration: $registration, syncStatus: $syncStatus, syncErrorCode: $syncErrorCode)';
+  return 'RegisteredAnimal(id: $id, registration: $registration, syncStatus: $syncStatus, createdAt: $createdAt, updatedAt: $updatedAt, displayDestination: $displayDestination, displayCategory: $displayCategory, syncErrorCode: $syncErrorCode)';
 }
 
 
@@ -543,7 +557,7 @@ abstract mixin class _$RegisteredAnimalCopyWith<$Res> implements $RegisteredAnim
   factory _$RegisteredAnimalCopyWith(_RegisteredAnimal value, $Res Function(_RegisteredAnimal) _then) = __$RegisteredAnimalCopyWithImpl;
 @override @useResult
 $Res call({
- String id, AnimalRegistration registration, AnimalSyncStatus syncStatus, String? syncErrorCode
+ String id, AnimalRegistration registration, AnimalSyncStatus syncStatus, DateTime createdAt, DateTime updatedAt, String displayDestination, String displayCategory, String? syncErrorCode
 });
 
 
@@ -560,12 +574,16 @@ class __$RegisteredAnimalCopyWithImpl<$Res>
 
 /// Create a copy of RegisteredAnimal
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? registration = null,Object? syncStatus = null,Object? syncErrorCode = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? registration = null,Object? syncStatus = null,Object? createdAt = null,Object? updatedAt = null,Object? displayDestination = null,Object? displayCategory = null,Object? syncErrorCode = freezed,}) {
   return _then(_RegisteredAnimal(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,registration: null == registration ? _self.registration : registration // ignore: cast_nullable_to_non_nullable
 as AnimalRegistration,syncStatus: null == syncStatus ? _self.syncStatus : syncStatus // ignore: cast_nullable_to_non_nullable
-as AnimalSyncStatus,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
+as AnimalSyncStatus,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,displayDestination: null == displayDestination ? _self.displayDestination : displayDestination // ignore: cast_nullable_to_non_nullable
+as String,displayCategory: null == displayCategory ? _self.displayCategory : displayCategory // ignore: cast_nullable_to_non_nullable
+as String,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

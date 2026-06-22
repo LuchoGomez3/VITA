@@ -35,22 +35,41 @@ enum AnimalSyncStatus {
   rejected,
 }
 
+extension AnimalSexBackendValue on AnimalSex {
+  /// Backend-compatible value for the animal sex enum.
+  String get backendValue => switch (this) {
+    AnimalSex.male => 'macho',
+    AnimalSex.female => 'hembra',
+  };
+}
+
+extension AnimalWeighingMethodBackendValue on AnimalWeighingMethod {
+  /// Backend-compatible value for the initial weighing method enum.
+  String get backendValue => switch (this) {
+    AnimalWeighingMethod.manual => 'manual',
+    AnimalWeighingMethod.bluetoothScale => 'balanza_bluetooth',
+    AnimalWeighingMethod.artificialIntelligence => 'estimacion_ia',
+  };
+}
+
 /// Data required to register an animal and its initial weighing.
 @freezed
 sealed class AnimalRegistration with _$AnimalRegistration {
   /// Creates an animal registration request.
   const factory AnimalRegistration({
     required String rfidTagNumber,
+    required String visualTag,
     required AnimalSex sex,
     required String breed,
     required DateTime birthDate,
     required String lotId,
+    required String lotName,
     required String establishmentId,
+    required String categoryId,
+    required String categoryName,
     required double initialWeight,
-    String? visualTag,
     String? motherId,
     String? fatherId,
-    String? categoryId,
     String? coat,
     String? observations,
     @Default(AnimalWeighingMethod.manual) AnimalWeighingMethod weighingMethod,
@@ -66,6 +85,10 @@ sealed class RegisteredAnimal with _$RegisteredAnimal {
     required String id,
     required AnimalRegistration registration,
     required AnimalSyncStatus syncStatus,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    required String displayDestination,
+    required String displayCategory,
     String? syncErrorCode,
   }) = _RegisteredAnimal;
 }

@@ -55,14 +55,15 @@ extension RegisterAnimalEventPatterns on RegisterAnimalEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _DraftChanged value)?  draftChanged,TResult Function( _NextStepRequested value)?  nextStepRequested,TResult Function( _PreviousStepRequested value)?  previousStepRequested,TResult Function( _StepRequested value)?  stepRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _DraftChanged value)?  draftChanged,TResult Function( _NextStepRequested value)?  nextStepRequested,TResult Function( _PreviousStepRequested value)?  previousStepRequested,TResult Function( _StepRequested value)?  stepRequested,TResult Function( _SubmitRequested value)?  submitRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _DraftChanged() when draftChanged != null:
 return draftChanged(_that);case _NextStepRequested() when nextStepRequested != null:
 return nextStepRequested(_that);case _PreviousStepRequested() when previousStepRequested != null:
 return previousStepRequested(_that);case _StepRequested() when stepRequested != null:
-return stepRequested(_that);case _:
+return stepRequested(_that);case _SubmitRequested() when submitRequested != null:
+return submitRequested(_that);case _:
   return orElse();
 
 }
@@ -80,14 +81,15 @@ return stepRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _DraftChanged value)  draftChanged,required TResult Function( _NextStepRequested value)  nextStepRequested,required TResult Function( _PreviousStepRequested value)  previousStepRequested,required TResult Function( _StepRequested value)  stepRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _DraftChanged value)  draftChanged,required TResult Function( _NextStepRequested value)  nextStepRequested,required TResult Function( _PreviousStepRequested value)  previousStepRequested,required TResult Function( _StepRequested value)  stepRequested,required TResult Function( _SubmitRequested value)  submitRequested,}){
 final _that = this;
 switch (_that) {
 case _DraftChanged():
 return draftChanged(_that);case _NextStepRequested():
 return nextStepRequested(_that);case _PreviousStepRequested():
 return previousStepRequested(_that);case _StepRequested():
-return stepRequested(_that);}
+return stepRequested(_that);case _SubmitRequested():
+return submitRequested(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -101,14 +103,15 @@ return stepRequested(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _DraftChanged value)?  draftChanged,TResult? Function( _NextStepRequested value)?  nextStepRequested,TResult? Function( _PreviousStepRequested value)?  previousStepRequested,TResult? Function( _StepRequested value)?  stepRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _DraftChanged value)?  draftChanged,TResult? Function( _NextStepRequested value)?  nextStepRequested,TResult? Function( _PreviousStepRequested value)?  previousStepRequested,TResult? Function( _StepRequested value)?  stepRequested,TResult? Function( _SubmitRequested value)?  submitRequested,}){
 final _that = this;
 switch (_that) {
 case _DraftChanged() when draftChanged != null:
 return draftChanged(_that);case _NextStepRequested() when nextStepRequested != null:
 return nextStepRequested(_that);case _PreviousStepRequested() when previousStepRequested != null:
 return previousStepRequested(_that);case _StepRequested() when stepRequested != null:
-return stepRequested(_that);case _:
+return stepRequested(_that);case _SubmitRequested() when submitRequested != null:
+return submitRequested(_that);case _:
   return null;
 
 }
@@ -125,13 +128,14 @@ return stepRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( RegisterAnimalDraft draft)?  draftChanged,TResult Function()?  nextStepRequested,TResult Function()?  previousStepRequested,TResult Function( RegisterAnimalStep step)?  stepRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( RegisterAnimalDraft draft)?  draftChanged,TResult Function()?  nextStepRequested,TResult Function()?  previousStepRequested,TResult Function( RegisterAnimalStep step)?  stepRequested,TResult Function()?  submitRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DraftChanged() when draftChanged != null:
 return draftChanged(_that.draft);case _NextStepRequested() when nextStepRequested != null:
 return nextStepRequested();case _PreviousStepRequested() when previousStepRequested != null:
 return previousStepRequested();case _StepRequested() when stepRequested != null:
-return stepRequested(_that.step);case _:
+return stepRequested(_that.step);case _SubmitRequested() when submitRequested != null:
+return submitRequested();case _:
   return orElse();
 
 }
@@ -149,13 +153,14 @@ return stepRequested(_that.step);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( RegisterAnimalDraft draft)  draftChanged,required TResult Function()  nextStepRequested,required TResult Function()  previousStepRequested,required TResult Function( RegisterAnimalStep step)  stepRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( RegisterAnimalDraft draft)  draftChanged,required TResult Function()  nextStepRequested,required TResult Function()  previousStepRequested,required TResult Function( RegisterAnimalStep step)  stepRequested,required TResult Function()  submitRequested,}) {final _that = this;
 switch (_that) {
 case _DraftChanged():
 return draftChanged(_that.draft);case _NextStepRequested():
 return nextStepRequested();case _PreviousStepRequested():
 return previousStepRequested();case _StepRequested():
-return stepRequested(_that.step);}
+return stepRequested(_that.step);case _SubmitRequested():
+return submitRequested();}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -169,13 +174,14 @@ return stepRequested(_that.step);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( RegisterAnimalDraft draft)?  draftChanged,TResult? Function()?  nextStepRequested,TResult? Function()?  previousStepRequested,TResult? Function( RegisterAnimalStep step)?  stepRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( RegisterAnimalDraft draft)?  draftChanged,TResult? Function()?  nextStepRequested,TResult? Function()?  previousStepRequested,TResult? Function( RegisterAnimalStep step)?  stepRequested,TResult? Function()?  submitRequested,}) {final _that = this;
 switch (_that) {
 case _DraftChanged() when draftChanged != null:
 return draftChanged(_that.draft);case _NextStepRequested() when nextStepRequested != null:
 return nextStepRequested();case _PreviousStepRequested() when previousStepRequested != null:
 return previousStepRequested();case _StepRequested() when stepRequested != null:
-return stepRequested(_that.step);case _:
+return stepRequested(_that.step);case _SubmitRequested() when submitRequested != null:
+return submitRequested();case _:
   return null;
 
 }
@@ -387,6 +393,38 @@ as RegisterAnimalStep,
 
 
 }
+
+/// @nodoc
+
+
+class _SubmitRequested implements RegisterAnimalEvent {
+  const _SubmitRequested();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SubmitRequested);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'RegisterAnimalEvent.submitRequested()';
+}
+
+
+}
+
+
+
 
 /// @nodoc
 mixin _$RegisterAnimalDraft {
@@ -675,7 +713,7 @@ as String?,
 /// @nodoc
 mixin _$RegisterAnimalState {
 
- RegisterAnimalStep get currentStep; RegisterAnimalDraft get draft;
+ RegisterAnimalStep get currentStep; RegisterAnimalDraft get draft; ResultState<RegisteredAnimal> get submitResult;
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -686,16 +724,16 @@ $RegisterAnimalStateCopyWith<RegisterAnimalState> get copyWith => _$RegisterAnim
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,currentStep,draft);
+int get hashCode => Object.hash(runtimeType,currentStep,draft,submitResult);
 
 @override
 String toString() {
-  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft)';
+  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, submitResult: $submitResult)';
 }
 
 
@@ -706,11 +744,11 @@ abstract mixin class $RegisterAnimalStateCopyWith<$Res>  {
   factory $RegisterAnimalStateCopyWith(RegisterAnimalState value, $Res Function(RegisterAnimalState) _then) = _$RegisterAnimalStateCopyWithImpl;
 @useResult
 $Res call({
- RegisterAnimalStep currentStep, RegisterAnimalDraft draft
+ RegisterAnimalStep currentStep, RegisterAnimalDraft draft, ResultState<RegisteredAnimal> submitResult
 });
 
 
-$RegisterAnimalDraftCopyWith<$Res> get draft;
+$RegisterAnimalDraftCopyWith<$Res> get draft;$ResultStateCopyWith<RegisteredAnimal, $Res> get submitResult;
 
 }
 /// @nodoc
@@ -723,11 +761,12 @@ class _$RegisterAnimalStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? currentStep = null,Object? draft = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? currentStep = null,Object? draft = null,Object? submitResult = null,}) {
   return _then(_self.copyWith(
 currentStep: null == currentStep ? _self.currentStep : currentStep // ignore: cast_nullable_to_non_nullable
 as RegisterAnimalStep,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
-as RegisterAnimalDraft,
+as RegisterAnimalDraft,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
+as ResultState<RegisteredAnimal>,
   ));
 }
 /// Create a copy of RegisterAnimalState
@@ -738,6 +777,15 @@ $RegisterAnimalDraftCopyWith<$Res> get draft {
   
   return $RegisterAnimalDraftCopyWith<$Res>(_self.draft, (value) {
     return _then(_self.copyWith(draft: value));
+  });
+}/// Create a copy of RegisterAnimalState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<RegisteredAnimal, $Res> get submitResult {
+  
+  return $ResultStateCopyWith<RegisteredAnimal, $Res>(_self.submitResult, (value) {
+    return _then(_self.copyWith(submitResult: value));
   });
 }
 }
@@ -818,10 +866,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<RegisteredAnimal> submitResult)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisterAnimalState() when $default != null:
-return $default(_that.currentStep,_that.draft);case _:
+return $default(_that.currentStep,_that.draft,_that.submitResult);case _:
   return orElse();
 
 }
@@ -839,10 +887,10 @@ return $default(_that.currentStep,_that.draft);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<RegisteredAnimal> submitResult)  $default,) {final _that = this;
 switch (_that) {
 case _RegisterAnimalState():
-return $default(_that.currentStep,_that.draft);}
+return $default(_that.currentStep,_that.draft,_that.submitResult);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -856,10 +904,10 @@ return $default(_that.currentStep,_that.draft);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<RegisteredAnimal> submitResult)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisterAnimalState() when $default != null:
-return $default(_that.currentStep,_that.draft);case _:
+return $default(_that.currentStep,_that.draft,_that.submitResult);case _:
   return null;
 
 }
@@ -871,11 +919,12 @@ return $default(_that.currentStep,_that.draft);case _:
 
 
 class _RegisterAnimalState implements RegisterAnimalState {
-  const _RegisterAnimalState({required this.currentStep, required this.draft});
+  const _RegisterAnimalState({required this.currentStep, required this.draft, this.submitResult = const ResultState<RegisteredAnimal>.initial()});
   
 
 @override final  RegisterAnimalStep currentStep;
 @override final  RegisterAnimalDraft draft;
+@override@JsonKey() final  ResultState<RegisteredAnimal> submitResult;
 
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
@@ -887,16 +936,16 @@ _$RegisterAnimalStateCopyWith<_RegisterAnimalState> get copyWith => __$RegisterA
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,currentStep,draft);
+int get hashCode => Object.hash(runtimeType,currentStep,draft,submitResult);
 
 @override
 String toString() {
-  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft)';
+  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, submitResult: $submitResult)';
 }
 
 
@@ -907,11 +956,11 @@ abstract mixin class _$RegisterAnimalStateCopyWith<$Res> implements $RegisterAni
   factory _$RegisterAnimalStateCopyWith(_RegisterAnimalState value, $Res Function(_RegisterAnimalState) _then) = __$RegisterAnimalStateCopyWithImpl;
 @override @useResult
 $Res call({
- RegisterAnimalStep currentStep, RegisterAnimalDraft draft
+ RegisterAnimalStep currentStep, RegisterAnimalDraft draft, ResultState<RegisteredAnimal> submitResult
 });
 
 
-@override $RegisterAnimalDraftCopyWith<$Res> get draft;
+@override $RegisterAnimalDraftCopyWith<$Res> get draft;@override $ResultStateCopyWith<RegisteredAnimal, $Res> get submitResult;
 
 }
 /// @nodoc
@@ -924,11 +973,12 @@ class __$RegisterAnimalStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? currentStep = null,Object? draft = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? currentStep = null,Object? draft = null,Object? submitResult = null,}) {
   return _then(_RegisterAnimalState(
 currentStep: null == currentStep ? _self.currentStep : currentStep // ignore: cast_nullable_to_non_nullable
 as RegisterAnimalStep,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
-as RegisterAnimalDraft,
+as RegisterAnimalDraft,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
+as ResultState<RegisteredAnimal>,
   ));
 }
 
@@ -940,6 +990,15 @@ $RegisterAnimalDraftCopyWith<$Res> get draft {
   
   return $RegisterAnimalDraftCopyWith<$Res>(_self.draft, (value) {
     return _then(_self.copyWith(draft: value));
+  });
+}/// Create a copy of RegisterAnimalState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<RegisteredAnimal, $Res> get submitResult {
+  
+  return $ResultStateCopyWith<RegisteredAnimal, $Res>(_self.submitResult, (value) {
+    return _then(_self.copyWith(submitResult: value));
   });
 }
 }

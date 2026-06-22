@@ -10,11 +10,15 @@ void main() {
     final useCase = RegisterAnimalUseCase(repository);
     final registration = AnimalRegistration(
       rfidTagNumber: '982000412991416',
+      visualTag: '003 1295',
       sex: AnimalSex.female,
       breed: 'Aberdeen Angus',
       birthDate: DateTime(2025, 3, 14),
       lotId: 'lot-id',
+      lotName: 'La Cumbre',
       establishmentId: 'establishment-id',
+      categoryId: 'category-id',
+      categoryName: 'Ternera',
       initialWeight: 32.5,
     );
 
@@ -28,6 +32,10 @@ void main() {
           id: 'local-animal-id',
           registration: registration,
           syncStatus: AnimalSyncStatus.pending,
+          createdAt: DateTime(2025, 3, 14),
+          updatedAt: DateTime(2025, 3, 14),
+          displayDestination: 'La Cumbre',
+          displayCategory: 'Ternera',
         ),
       ),
     );
@@ -47,6 +55,10 @@ class _FakeAnimalRegistrationRepository implements AnimalRegistrationRepository 
         id: 'local-animal-id',
         registration: registration,
         syncStatus: AnimalSyncStatus.pending,
+        createdAt: DateTime(2025, 3, 14),
+        updatedAt: DateTime(2025, 3, 14),
+        displayDestination: 'La Cumbre',
+        displayCategory: 'Ternera',
       ),
     );
   }

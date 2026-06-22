@@ -1,4 +1,5 @@
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/register_animal_page.dart';
@@ -44,7 +45,12 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.animalRegisterSuccess,
-        builder: (context, state) => const RegistrarAnimalSuccessPage(),
+        builder: (context, state) {
+          final registeredAnimal = state.extra! as RegisteredAnimal;
+          return RegistrarAnimalSuccessPage(
+            registeredAnimal: registeredAnimal,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.animalDetail,

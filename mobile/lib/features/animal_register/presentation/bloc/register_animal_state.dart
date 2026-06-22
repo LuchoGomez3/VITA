@@ -57,5 +57,6 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
   const factory RegisterAnimalState({
     required RegisterAnimalStep currentStep,
     required RegisterAnimalDraft draft,
+    @Default(ResultState<RegisteredAnimal>.initial()) ResultState<RegisteredAnimal> submitResult,
   }) = _RegisterAnimalState;
 }

@@ -16,4 +16,7 @@ sealed class RegisterAnimalEvent with _$RegisterAnimalEvent {
 
   /// Opens a specific step, for example from the review screen.
   const factory RegisterAnimalEvent.stepRequested(RegisterAnimalStep step) = _StepRequested;
+
+  /// Persists the current draft locally through the offline-first flow.
+  const factory RegisterAnimalEvent.submitRequested() = _SubmitRequested;
 }
