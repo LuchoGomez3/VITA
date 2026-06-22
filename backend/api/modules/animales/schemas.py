@@ -7,10 +7,15 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, field_validator
 
 from api.shared.enums import EstadoAnimal, MetodoPesaje, SexoAnimal
+from api.shared.schemas import SyncFields
 
 
-class AnimalCreate(BaseModel):
+class AnimalCreate(SyncFields):
     """Alta de un animal. Incluye el pesaje inicial (criterio 'debe tener peso').
+
+    Hereda de ``SyncFields``: el cliente offline-first puede enviar su propio
+    ``id``/``created_at``/``updated_at``/``deleted_at`` y el backend los respeta
+    (alta idempotente con last-write-wins).
 
     El número de caravana llega como string ya resuelto (Bluetooth/manual/OCR
     son del lado móvil; el backend es agnóstico al método de captura).
@@ -62,7 +67,10 @@ class AnimalCreate(BaseModel):
         return v
 
 
-class AnimalUpdate(BaseModel):
+class AnimalUpdate(SyncFields):
+    """Edición de un animal. Hereda ``SyncFields``: ``updated_at`` es el que dirime
+    el conflicto (last-write-wins) y ``deleted_at`` permite propagar un soft delete."""
+
     raza: str | None = None
     fecha_nacimiento: date | None = None
     categoria_id: UUID | None = None
@@ -91,3 +99,6 @@ class AnimalRead(BaseModel):
     observaciones: str | None = None
     created_at: datetime
     updated_at: datetime
+    # Se expone para la descarga delta: un registro con deleted_at != null le indica
+    # al cliente que debe borrarlo localmente.
+    deleted_at: datetime | None = None
