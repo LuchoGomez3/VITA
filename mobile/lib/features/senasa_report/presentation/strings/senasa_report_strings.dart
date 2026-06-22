@@ -45,6 +45,21 @@ class SenasaStrings {
   static const String formDNI = 'Ingrese su DNI.';
   static const String responsableName = 'Nombre del Responsable';
   static const String responsableDNI = 'DNI';
+  static const String responsibleNameRequired =
+      'Ingrese el nombre del responsable.';
+  static const String responsibleDniRequired = 'Ingrese el DNI.';
+
+  // --- Generacion del reporte ---
+  static const String generationTitle = 'Generando reporte...';
+  static const String generationDescription =
+      'Compilando 142 movimientos con CUIG,\n'
+      'RENSPA y firma digital del responsable.';
+  static const String validatingData = 'Validando integridad de datos';
+  static const String sortingEvents = 'Ordenando por fecha y tipo de evento';
+  static const String compilingPdf = 'Compilando PDF con firma digital';
+  static const String preparingDownload =
+      'Preparando archivo para descarga';
+  static const String inProgress = 'en curso';
 
   // --- Widgets ---
 
@@ -62,6 +77,8 @@ class SenasaStrings {
   // Selector establecimiento
   static const String establishmentSelectorLabel = 'Seleccione el Establecimiento';
   static const String establishmentSectionTitle = 'Datos del Establecimiento';
+  static const String establishmentRequired =
+      'Seleccione un establecimiento.';
   static final List<String> establishmentOptions = [
     'Estancia La Paz (RENSPA: 04.012.3.00142/00)',
     'El Carrizal (RENSPA: 08.111.2.00516/01)',

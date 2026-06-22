@@ -1,23 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
-
-//widgets
-//import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/step_progress_header.dart';
-//Pasos
+import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step1_filters.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step2_validation.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step3_format.dart';
-
-//Strings
-import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
-
-//cubits
-import 'package:frontend_mayoral/features/senasa_report/presentation/bloc/senasa_report_cubit.dart';
-import 'package:frontend_mayoral/features/senasa_report/presentation/bloc/senasa_report_state.dart';
+import 'package:go_router/go_router.dart';
 
 class SenasaReportPage extends StatefulWidget {
   const SenasaReportPage({super.key});
@@ -27,6 +16,11 @@ class SenasaReportPage extends StatefulWidget {
 }
 
 class _SenasaReportPageState extends State<SenasaReportPage> {
+  final _stepOneFormKey = GlobalKey<FormState>();
+  final _stepThreeFormKey = GlobalKey<FormState>();
+  final _responsibleNameController = TextEditingController();
+  final _responsibleDniController = TextEditingController();
+
   // GESTIÓN DEL FLUJO ÚNICO
   int _currentStep = 1; // 1: Parámetros, 2: Validación y Formato
 
@@ -34,10 +28,17 @@ class _SenasaReportPageState extends State<SenasaReportPage> {
   String _selectedMovement = 'Ingreso';
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 7));
   DateTime _endDate = DateTime.now();
-  String? _selectedOrigen;
+  String? _selectedOrigin;
 
   // ESTADOS DEL PASO 2 (Exportación)
   String _selectedFormat = 'PDF';
+
+  @override
+  void dispose() {
+    _responsibleNameController.dispose();
+    _responsibleDniController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +46,7 @@ class _SenasaReportPageState extends State<SenasaReportPage> {
       appBar: AppHeader(
         title: SenasaStrings.pageTitle,
         onBackPressed: () {
-          if (_currentStep > 1){
+          if (_currentStep > 1) {
             setState(() => _currentStep--);
           } else {
             context.pop();
@@ -86,6 +87,7 @@ class _SenasaReportPageState extends State<SenasaReportPage> {
       case 1:
         return ReportStep1Filters(
           key: const ValueKey('Step1'),
+          formKey: _stepOneFormKey,
           selectedMovement: _selectedMovement,
           onMovementChanged: (val) => setState(() => _selectedMovement = val),
           startDate: _startDate,
@@ -94,8 +96,8 @@ class _SenasaReportPageState extends State<SenasaReportPage> {
             _startDate = start;
             _endDate = end;
           }),
-          selectedOrigen: _selectedOrigen,
-          onOrigenChanged: (val) => setState(() => _selectedOrigen = val),
+          selectedOrigin: _selectedOrigin,
+          onOriginChanged: (value) => setState(() => _selectedOrigin = value),
         );
       case 2:
         return ReportStep2Validation(
@@ -107,8 +109,11 @@ class _SenasaReportPageState extends State<SenasaReportPage> {
       case 3:
         return ReportStep3Format(
           key: const ValueKey('Step3'),
+          formKey: _stepThreeFormKey,
           selectedFormat: _selectedFormat,
           onFormatChanged: (val) => setState(() => _selectedFormat = val),
+          responsibleNameController: _responsibleNameController,
+          responsibleDniController: _responsibleDniController,
         );
       default:
         return const SizedBox.shrink();
@@ -125,7 +130,11 @@ class _SenasaReportPageState extends State<SenasaReportPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), offset: const Offset(0, -4), blurRadius: 10),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            offset: const Offset(0, -4),
+            blurRadius: 10,
+          ),
         ],
       ),
       child: SizedBox(
@@ -133,18 +142,26 @@ class _SenasaReportPageState extends State<SenasaReportPage> {
         child: AppFilledButton(
           label: label,
           icon: Icon(_currentStep == 3 ? Icons.download : Icons.arrow_forward),
-          onPressed: () {
-            if (_currentStep < 3) {
-              setState(() => _currentStep++);
-            } else {
-              // Fin del flujo: Lógica de descarga final del archivo
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Generando archivo $_selectedFormat exitosamente...')),
-              );
-            }
-          },
+          onPressed: _handleBottomButtonPressed,
         ),
       ),
     );
+  }
+
+  void _handleBottomButtonPressed() {
+    if (_currentStep == 1 &&
+        !(_stepOneFormKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    if (_currentStep < 3) {
+      setState(() => _currentStep++);
+      return;
+    }
+
+    final isValid = _stepThreeFormKey.currentState?.validate() ?? false;
+    if (isValid) {
+      context.push(AppRoutes.senasaReportGeneration);
+    }
   }
 }

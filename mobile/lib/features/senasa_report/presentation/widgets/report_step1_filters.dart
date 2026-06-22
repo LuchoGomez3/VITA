@@ -1,65 +1,85 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
-//widgets
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/date_range_selector.dart';
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/event_type_selector.dart';
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/establishment_data_form.dart';
-
-//Strings
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/date_range_selector.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/establishment_data_form.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/event_type_selector.dart';
 
+/// Displays the filters used to select records for a SENASA report.
 class ReportStep1Filters extends StatelessWidget {
-  final String selectedMovement;
-  final ValueChanged<String> onMovementChanged;
-  final DateTime startDate;
-  final DateTime endDate;
-  final Function(DateTime start, DateTime end) onDatesChanged;
-  final String? selectedOrigen;
-  final ValueChanged<String?> onOrigenChanged;
-
+  /// Creates the first step of the SENASA report flow.
   const ReportStep1Filters({
-    super.key,
+    required this.formKey,
     required this.selectedMovement,
     required this.onMovementChanged,
     required this.startDate,
     required this.endDate,
     required this.onDatesChanged,
-    required this.selectedOrigen,
-    required this.onOrigenChanged,
+    required this.selectedOrigin,
+    required this.onOriginChanged,
+    super.key,
   });
+
+  /// Key used to validate the first-step fields.
+  final GlobalKey<FormState> formKey;
+
+  /// Currently selected movement type.
+  final String selectedMovement;
+
+  /// Called when the movement type changes.
+  final ValueChanged<String> onMovementChanged;
+
+  /// Start date of the report period.
+  final DateTime startDate;
+
+  /// End date of the report period.
+  final DateTime endDate;
+
+  /// Called when the report period changes.
+  final void Function(DateTime start, DateTime end) onDatesChanged;
+
+  /// Currently selected establishment.
+  final String? selectedOrigin;
+
+  /// Called when the establishment changes.
+  final ValueChanged<String?> onOriginChanged;
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const AppSubsectionTitleAndDescription(
-            title: SenasaStrings.step1SectionEvent,
-            description: SenasaStrings.step1SectionEventDesc,
-          ),
-
-          DateRangeSelector(
-            startDate: startDate,
-            endDate: endDate,
-            onDatesChanged: onDatesChanged,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-
-          EventTypeSelector(
-            selectedMovement: selectedMovement,
-            onChanged: onMovementChanged,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-
-          EstablishmentSelector(
-            selectedOrigen: selectedOrigen,
-            onOrigenChanged: onOrigenChanged,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-        ],
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.md,
+      ),
+      child: Form(
+        key: formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const AppSubsectionTitleAndDescription(
+              title: SenasaStrings.step1SectionEvent,
+              description: SenasaStrings.step1SectionEventDesc,
+            ),
+            DateRangeSelector(
+              startDate: startDate,
+              endDate: endDate,
+              onDatesChanged: onDatesChanged,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            EventTypeSelector(
+              selectedMovement: selectedMovement,
+              onChanged: onMovementChanged,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            EstablishmentSelector(
+              selectedOrigin: selectedOrigin,
+              onOriginChanged: onOriginChanged,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+          ],
+        ),
       ),
     );
   }

@@ -26,6 +26,9 @@ class AppRoutes {
   static const senasaMenu = '/senasa-menu';
   static const senasaReport = '/senasa-report';
 
+  /// Ruta de generacion del reporte SENASA.
+  static const senasaReportGeneration = '/senasa-report/generando';
+
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {
     return '/animals/$animalId';

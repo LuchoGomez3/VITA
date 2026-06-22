@@ -1,32 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:frontend_mayoral/core/widgets/widgets.dart'; // Acá debería estar exportado el AppDropdownFormField
 import 'package:frontend_mayoral/core/theme/theme.dart';
-
-//Strings
+import 'package:frontend_mayoral/core/validators/validators.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 
+/// Establishment selector used by the SENASA report filters.
 class EstablishmentSelector extends StatelessWidget {
-  final String? selectedOrigen;
-  final ValueChanged<String?> onOrigenChanged;
-
+  /// Creates the establishment selector.
   const EstablishmentSelector({
+    required this.selectedOrigin,
+    required this.onOriginChanged,
     super.key,
-    required this.selectedOrigen,
-    required this.onOrigenChanged,
   });
+
+  /// Currently selected establishment.
+  final String? selectedOrigin;
+
+  /// Called when the selected establishment changes.
+  final ValueChanged<String?> onOriginChanged;
 
   @override
   Widget build(BuildContext context) {
-    // 1. Convertimos la lista de Strings en una lista de AppDropdownOption
-    final List<AppDropdownOption<String>> dropdownOptions = SenasaStrings.establishmentOptions
-        .map((e) => AppDropdownOption<String>(value: e, label: e))
-        .toList();
+    final dropdownOptions = SenasaStrings.establishmentOptions
+        .map(
+          (establishment) => AppDropdownOption<String>(
+            value: establishment,
+            label: establishment,
+          ),
+        )
+        .toList(growable: false);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.only(left: AppSpacing.xxs, bottom: AppSpacing.xxs),
+          padding: EdgeInsets.only(
+            left: AppSpacing.xxs,
+            bottom: AppSpacing.xxs,
+          ),
           child: Text(
             SenasaStrings.establishmentSectionTitle,
             style: AppTypography.pageTitle,
@@ -36,11 +47,14 @@ class EstablishmentSelector extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.xxxs),
             child: AppDropdownFormField<String>(
-              // 2. Usamos el componente del Core
               hintText: SenasaStrings.establishmentSelectorLabel,
-              initialValue: selectedOrigen,
+              initialValue: selectedOrigin,
               options: dropdownOptions,
-              onChanged: onOrigenChanged,
+              validator: (value) => FormValidators.requiredField(
+                value,
+                message: SenasaStrings.establishmentRequired,
+              ),
+              onChanged: onOriginChanged,
             ),
           ),
         ),
