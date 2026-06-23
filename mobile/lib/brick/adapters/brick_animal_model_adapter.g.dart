@@ -7,33 +7,33 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromRest(
   OfflineFirstWithRestRepository? repository,
 }) async {
   return BrickAnimalModel(
-    localId: data['local_id'] as String,
-    rfidTagNumber: data['rfid_tag_number'] as String,
-    visualTag: data['visual_tag'] as String,
-    sex: BrickAnimalSex.values[data['sex'] as int],
-    breed: data['breed'] as String,
-    birthDate: DateTime.parse(data['birth_date'] as String),
-    categoryId: data['category_id'] as String,
-    categoryName: data['category_name'] as String,
-    lotId: data['lot_id'] as String,
-    lotName: data['lot_name'] as String,
-    establishmentId: data['establishment_id'] as String,
-    initialWeight: data['initial_weight'] as double,
-    weighingMethod:
-        BrickAnimalWeighingMethod.values[data['weighing_method'] as int],
-    weighingDate: DateTime.parse(data['weighing_date'] as String),
-    motherId: data['mother_id'] == null ? null : data['mother_id'] as String?,
-    fatherId: data['father_id'] == null ? null : data['father_id'] as String?,
-    coat: data['coat'] == null ? null : data['coat'] as String?,
-    observations: data['observations'] == null
+    localId: data['id'] as String,
+    rfidTagNumber: data['nro_caravana_rfid'] as String,
+    visualTag: data['caravana_visual'] as String,
+    sex: brickAnimalSexFromBackend(data['sexo'] as String),
+    breed: data['raza'] as String,
+    birthDate: DateTime.parse(data['fecha_nacimiento'] as String),
+    categoryId: data['categoria_id'] as String,
+    lotId: data['lote_id'] as String,
+    establishmentId: data['establecimiento_id'] as String,
+    initialWeight: data['peso_inicial'] as double,
+    weighingMethod: brickAnimalWeighingMethodFromBackend(
+      data['metodo_pesaje'] as String?,
+    ),
+    weighingDate: DateTime.parse(data['fecha_pesaje'] as String),
+    motherId: data['madre_id'] == null ? null : data['madre_id'] as String?,
+    fatherId: data['padre_id'] == null ? null : data['padre_id'] as String?,
+    coat: data['pelaje'] == null ? null : data['pelaje'] as String?,
+    observations: data['observaciones'] == null
         ? null
-        : data['observations'] as String?,
-    syncStatus: BrickAnimalSyncStatus.values[data['sync_status'] as int],
-    syncErrorCode: data['sync_error_code'] == null
-        ? null
-        : data['sync_error_code'] as String?,
+        : data['observaciones'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
+    deletedAt: data['deleted_at'] == null
+        ? null
+        : data['deleted_at'] == null
+        ? null
+        : DateTime.tryParse(data['deleted_at'] as String),
   );
 }
 
@@ -43,30 +43,27 @@ Future<Map<String, dynamic>> _$BrickAnimalModelToRest(
   OfflineFirstWithRestRepository? repository,
 }) async {
   return {
-    'local_id': instance.localId,
-    'rfid_tag_number': instance.rfidTagNumber,
-    'visual_tag': instance.visualTag,
-    'sex': BrickAnimalSex.values.indexOf(instance.sex),
-    'breed': instance.breed,
-    'birth_date': instance.birthDate.toIso8601String(),
-    'category_id': instance.categoryId,
-    'category_name': instance.categoryName,
-    'lot_id': instance.lotId,
-    'lot_name': instance.lotName,
-    'establishment_id': instance.establishmentId,
-    'initial_weight': instance.initialWeight,
-    'weighing_method': BrickAnimalWeighingMethod.values.indexOf(
+    'id': instance.localId,
+    'nro_caravana_rfid': instance.rfidTagNumber,
+    'caravana_visual': instance.visualTag,
+    'sexo': brickAnimalSexToBackend(instance.sex),
+    'raza': instance.breed,
+    'fecha_nacimiento': brickDateToBackend(instance.birthDate),
+    'categoria_id': instance.categoryId,
+    'lote_id': instance.lotId,
+    'establecimiento_id': instance.establishmentId,
+    'peso_inicial': instance.initialWeight,
+    'metodo_pesaje': brickAnimalWeighingMethodToBackend(
       instance.weighingMethod,
     ),
-    'weighing_date': instance.weighingDate.toIso8601String(),
-    'mother_id': instance.motherId,
-    'father_id': instance.fatherId,
-    'coat': instance.coat,
-    'observations': instance.observations,
-    'sync_status': BrickAnimalSyncStatus.values.indexOf(instance.syncStatus),
-    'sync_error_code': instance.syncErrorCode,
+    'fecha_pesaje': instance.weighingDate.toIso8601String(),
+    'madre_id': instance.motherId,
+    'padre_id': instance.fatherId,
+    'pelaje': instance.coat,
+    'observaciones': instance.observations,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
+    'deleted_at': instance.deletedAt?.toIso8601String(),
   };
 }
 
@@ -103,6 +100,11 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromSqlite(
         : data['sync_error_code'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
+    deletedAt: data['deleted_at'] == null
+        ? null
+        : data['deleted_at'] == null
+        ? null
+        : DateTime.tryParse(data['deleted_at'] as String),
   )..primaryKey = data['_brick_id'] as int;
 }
 
@@ -136,6 +138,7 @@ Future<Map<String, dynamic>> _$BrickAnimalModelToSqlite(
     'sync_error_code': instance.syncErrorCode,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
+    'deleted_at': instance.deletedAt?.toIso8601String(),
   };
 }
 
@@ -144,6 +147,8 @@ class BrickAnimalModelAdapter
     extends OfflineFirstWithRestAdapter<BrickAnimalModel> {
   BrickAnimalModelAdapter();
 
+  @override
+  final restRequest = BrickAnimalRequestTransformer.new;
   @override
   final Map<String, RuntimeSqliteColumnDefinition> fieldsToSqliteColumns = {
     'primaryKey': const RuntimeSqliteColumnDefinition(
@@ -281,6 +286,12 @@ class BrickAnimalModelAdapter
     'updatedAt': const RuntimeSqliteColumnDefinition(
       association: false,
       columnName: 'updated_at',
+      iterable: false,
+      type: DateTime,
+    ),
+    'deletedAt': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'deleted_at',
       iterable: false,
       type: DateTime,
     ),

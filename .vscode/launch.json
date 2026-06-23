@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    
+    {
+      "name": "Mobile: debug local backend",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "mobile",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=VITA_BACKEND_BASE_URL=http://10.0.2.2:8000",
+        "--dart-define=VITA_BACKEND_ACCESS_TOKEN=${input:vitaBackendAccessToken}"
+      ]
+    },
+    {
+      "name": "Mobile: debug offline only",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "mobile",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=VITA_BACKEND_BASE_URL=http://10.0.2.2:8000"
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "vitaBackendAccessToken",
+      "type": "promptString",
+      "description": "Supabase JWT para Authorization: Bearer <token>",
+      "password": true
+    }
+  ]
+}

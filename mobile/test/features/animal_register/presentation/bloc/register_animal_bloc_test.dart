@@ -17,7 +17,7 @@ void main() {
       repository = _FakeAnimalRegistrationRepository();
       bloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
-        mockContext: const AnimalRegistrationMockContext(),
+        registrationContext: const AnimalRegistrationMockContext(),
       );
       addTearDown(bloc.close);
     });
@@ -55,7 +55,7 @@ void main() {
       final reviewBloc = RegisterAnimalBloc(
         initialStep: RegisterAnimalStep.review,
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
-        mockContext: const AnimalRegistrationMockContext(),
+        registrationContext: const AnimalRegistrationMockContext(),
       );
       addTearDown(reviewBloc.close);
 

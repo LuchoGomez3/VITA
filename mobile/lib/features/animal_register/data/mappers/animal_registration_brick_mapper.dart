@@ -37,8 +37,6 @@ class AnimalRegistrationBrickMapper {
       fatherId: registration.fatherId,
       coat: registration.coat,
       observations: registration.observations,
-      syncStatus: BrickAnimalSyncStatus.pending,
-      syncErrorCode: null,
       createdAt: timestamp,
       updatedAt: timestamp,
     );
@@ -85,6 +83,10 @@ class AnimalRegistrationBrickMapper {
   /// endpoint without leaking transport concerns into presentation.
   static Map<String, dynamic> toBackendPayload(BrickAnimalModel model) {
     return <String, dynamic>{
+      'id': model.localId,
+      'created_at': model.createdAt.toIso8601String(),
+      'updated_at': model.updatedAt.toIso8601String(),
+      'deleted_at': model.deletedAt?.toIso8601String(),
       'nro_caravana_rfid': model.rfidTagNumber,
       'sexo': model.sex.toDomain().backendValue,
       'raza': model.breed,
@@ -100,9 +102,6 @@ class AnimalRegistrationBrickMapper {
       'peso_inicial': model.initialWeight,
       'metodo_pesaje': model.weighingMethod.toDomain().backendValue,
       'fecha_pesaje': model.weighingDate.toIso8601String(),
-      // Pending backend alignment:
-      // the mobile app generates `localId` as a UUID now, but the current
-      // `AnimalCreate` backend schema does not accept a client-defined `id`.
     };
   }
 

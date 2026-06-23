@@ -34,7 +34,9 @@ class RegisterAnimalPage extends StatelessWidget {
   Widget build(BuildContext context) {
     // TODO(agustin): Move this wiring to a feature/module composition root so
     // presentation stops depending on concrete data-layer implementations.
-    final mockContext = const AnimalRegistrationMockContext();
+    // TODO(agustin): Replace this mock context with the real
+    // AnimalRegistrationContext once session/catalog data is available.
+    const mockContext = AnimalRegistrationMockContext();
     final repository = AnimalRegistrationRepositoryImpl(
       brickStore: AppBrickRepository.instance,
     );
@@ -43,7 +45,7 @@ class RegisterAnimalPage extends StatelessWidget {
       create: (_) => RegisterAnimalBloc(
         initialStep: initialStep,
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
-        mockContext: mockContext,
+        registrationContext: mockContext,
       ),
       child: const _RegisterAnimalView(),
     );

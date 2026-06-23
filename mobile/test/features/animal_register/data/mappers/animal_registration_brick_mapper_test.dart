@@ -58,12 +58,8 @@ void main() {
         initialWeight: 32.5,
         weighingMethod: BrickAnimalWeighingMethod.manual,
         weighingDate: now,
-        motherId: null,
         fatherId: 'father-id',
-        coat: null,
         observations: 'Sin novedades',
-        syncStatus: BrickAnimalSyncStatus.pending,
-        syncErrorCode: null,
         createdAt: now,
         updatedAt: now,
       );
@@ -75,6 +71,45 @@ void main() {
       expect(registeredAnimal.displayCategory, 'Ternera');
       expect(registeredAnimal.registration.sex, AnimalSex.female);
       expect(registeredAnimal.registration.fatherId, 'father-id');
+    });
+
+    test('maps Brick models to the backend animal creation payload', () {
+      final now = DateTime.utc(2025, 3, 14, 12);
+      final model = BrickAnimalModel(
+        localId: '5b1f1111-1111-4111-8111-111111111111',
+        rfidTagNumber: '982000412991416',
+        visualTag: '003 1295',
+        sex: BrickAnimalSex.female,
+        breed: 'Aberdeen Angus',
+        birthDate: DateTime(2025, 3, 14),
+        categoryId: 'category-id',
+        categoryName: 'Ternera',
+        lotId: 'lot-id',
+        lotName: 'La Cumbre',
+        establishmentId: 'establishment-id',
+        initialWeight: 32.5,
+        weighingMethod: BrickAnimalWeighingMethod.bluetoothScale,
+        weighingDate: now,
+        motherId: 'mother-id',
+        fatherId: 'father-id',
+        coat: 'Negro',
+        observations: 'Sin novedades',
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      final payload = AnimalRegistrationBrickMapper.toBackendPayload(model);
+
+      expect(payload['id'], model.localId);
+      expect(payload['created_at'], now.toIso8601String());
+      expect(payload['updated_at'], now.toIso8601String());
+      expect(payload['deleted_at'], isNull);
+      expect(payload['nro_caravana_rfid'], '982000412991416');
+      expect(payload['sexo'], 'hembra');
+      expect(payload['fecha_nacimiento'], '2025-03-14');
+      expect(payload['lote_id'], 'lot-id');
+      expect(payload['establecimiento_id'], 'establishment-id');
+      expect(payload['metodo_pesaje'], 'balanza_bluetooth');
     });
   });
 }

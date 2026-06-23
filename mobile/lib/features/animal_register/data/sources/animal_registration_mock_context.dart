@@ -1,12 +1,14 @@
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 
 /// Temporary mock context for the animal registration flow.
 ///
 /// This keeps establishment, lot, category, and genealogy mappings out of
 /// presentation while the real auth/catalog flows are still under development.
-// TODO(agustin): Replace these hardcoded business identifiers with real
-// session/catalog sources before reusing this pattern in other features.
-class AnimalRegistrationMockContext {
+// TODO(agustin): Remove this mock when establishment, lot, category, and
+// genealogy data are loaded from the real session/catalog sources.
+class AnimalRegistrationMockContext implements AnimalRegistrationContext {
+  /// Creates the temporary mock context.
   const AnimalRegistrationMockContext();
 
   static const _defaultEstablishmentId = '8b75eb38-8b0f-44dc-979f-89ce2817b63d';
@@ -37,12 +39,14 @@ class AnimalRegistrationMockContext {
   };
 
   /// ID of the establishment used while the session flow is still mocked.
+  @override
   String get establishmentId => _defaultEstablishmentId;
 
   /// Human-readable lot name used in the success summary.
   String get defaultLotName => _defaultLotName;
 
   /// Resolves the lot destination selected in the flow.
+  @override
   String resolveLotId(String destinationSelectionId) {
     final lotId = _destinationLotIdsBySelection[destinationSelectionId];
     if (lotId == null) {
@@ -56,6 +60,7 @@ class AnimalRegistrationMockContext {
   }
 
   /// Resolves the current lot display name.
+  @override
   String resolveLotName(String destinationSelectionId) {
     final lotId = resolveLotId(destinationSelectionId);
     if (lotId == _defaultLotId) {
@@ -69,6 +74,7 @@ class AnimalRegistrationMockContext {
   }
 
   /// Resolves the backend-ready category identifier from the UI label.
+  @override
   String resolveCategoryId(String categoryName) {
     final categoryId = _categoryIdsByName[categoryName];
     if (categoryId == null) {
@@ -82,6 +88,7 @@ class AnimalRegistrationMockContext {
   }
 
   /// Resolves the mother ID from the selected option key.
+  @override
   String? resolveMotherId(String? motherSelectionId) {
     if (motherSelectionId == null) {
       return null;
@@ -91,6 +98,7 @@ class AnimalRegistrationMockContext {
   }
 
   /// Resolves the father ID from the selected option key.
+  @override
   String? resolveFatherId(String? fatherSelectionId) {
     if (fatherSelectionId == null) {
       return null;

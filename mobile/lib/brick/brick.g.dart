@@ -3,7 +3,9 @@ import 'package:brick_core/query.dart';
 // ignore: unused_import, unused_shown_name, unnecessary_import
 import 'package:brick_sqlite/db.dart';
 // ignore: unused_import, unused_shown_name, unnecessary_import
-import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart';// GENERATED CODE DO NOT EDIT
+import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart';
+// ignore: unused_import, unused_shown_name, unnecessary_import
+import 'package:brick_rest/brick_rest.dart';// GENERATED CODE DO NOT EDIT
 // ignore: unused_import
 import 'dart:convert';
 import 'package:brick_sqlite/brick_sqlite.dart' show SqliteModel, SqliteAdapter, SqliteModelDictionary, RuntimeSqliteColumnDefinition, SqliteProvider;
