@@ -23,7 +23,10 @@ class AppRoutes {
   /// Ruta de la pantalla de detalle de animal.
   static const animalDetail = '/animals/:animalId';
 
+  /// Route for the SENASA report menu.
   static const senasaMenu = '/senasa-menu';
+
+  /// Route for the SENASA report filters.
   static const senasaReport = '/senasa-report';
 
   /// Ruta de generacion del reporte SENASA.

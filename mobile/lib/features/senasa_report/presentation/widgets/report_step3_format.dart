@@ -71,15 +71,6 @@ class ReportStep3Format extends StatelessWidget {
               icon: Icons.grid_on,
               onChanged: onFormatChanged,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            AppSelectableCard<String>(
-              value: SenasaStrings.step3txt,
-              groupValue: selectedFormat,
-              title: SenasaStrings.step3txt,
-              subtitle: SenasaStrings.formatTxtDesc,
-              icon: Icons.code,
-              onChanged: onFormatChanged,
-            ),
             const SizedBox(height: AppSpacing.lg),
             AppTextFormField(
               controller: responsibleNameController,

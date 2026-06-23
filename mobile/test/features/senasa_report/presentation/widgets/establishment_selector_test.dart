@@ -13,6 +13,7 @@ void main() {
           body: Form(
             key: formKey,
             child: EstablishmentSelector(
+              establishments: const [],
               selectedOrigin: null,
               onOriginChanged: (_) {},
             ),

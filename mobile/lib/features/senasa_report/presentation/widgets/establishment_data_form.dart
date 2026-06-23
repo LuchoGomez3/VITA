@@ -2,16 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/validators/validators.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 
 /// Establishment selector used by the SENASA report filters.
 class EstablishmentSelector extends StatelessWidget {
   /// Creates the establishment selector.
   const EstablishmentSelector({
+    required this.establishments,
     required this.selectedOrigin,
     required this.onOriginChanged,
     super.key,
   });
+
+  /// Establishments available to the authenticated user.
+  final List<SenasaEstablishment> establishments;
 
   /// Currently selected establishment.
   final String? selectedOrigin;
@@ -21,11 +26,13 @@ class EstablishmentSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dropdownOptions = SenasaStrings.establishmentOptions
+    final dropdownOptions = establishments
         .map(
           (establishment) => AppDropdownOption<String>(
-            value: establishment,
-            label: establishment,
+            value: establishment.id,
+            label: establishment.renspa == null
+                ? establishment.name
+                : '${establishment.name} (RENSPA: ${establishment.renspa})',
           ),
         )
         .toList(growable: false);

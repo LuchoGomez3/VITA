@@ -16,6 +16,9 @@ class SenasaStrings {
   static const String btnContinue = 'Continuar y Validar';
   static const String btnNext = 'Siguiente';
   static const String btnGenerate = 'Generar Archivo';
+  static const String establishmentsLoadError = 'No se pudieron cargar los establecimientos.';
+  static const String retry = 'Reintentar';
+  static const String reportReady = 'Reporte generado correctamente.';
 
   // --- Paso 1: Filtros ---
   static const String step1SectionEvent = 'Datos del Evento';
@@ -26,12 +29,10 @@ class SenasaStrings {
   // --- Paso 2: Validación ---
   static const String step2Description = "Validacion de datos";
   static const String step2SuccessBanner =
-      'El 100% de los registros seleccionados cumplen con los requisitos obligatorios de SENASA.';
+      'La validación definitiva se realizará en el servidor al generar el archivo.';
   static const String step2SummaryTitle = 'Datos recopilados';
   static const String step2EventLabel = 'Evento:';
   static const String step2PeriodLabel = 'Período:';
-  static const String step2AnimalsLabel = 'Animales involucrados:';
-  static const String step2CategoriesLabel = 'Categorías:';
 
   // --- Paso 3: Formatos ---
   static const String step3FormatTitle = 'Formato de exportación requerido';
@@ -39,14 +40,11 @@ class SenasaStrings {
   static const String formatPdfDesc = 'Ideal para impresión y soporte físico con firma';
   static const String step3csv = 'CSV';
   static const String formatCsvDesc = 'Estructura delimitada optimizada para existencias';
-  static const String step3txt = 'TXT';
-  static const String formatTxtDesc = 'Texto plano obligatorio para importación masiva SIGSA';
   static const String formName = 'Ingrese su nombre y apellido.';
   static const String formDNI = 'Ingrese su DNI.';
   static const String responsableName = 'Nombre del Responsable';
   static const String responsableDNI = 'DNI';
-  static const String responsibleNameRequired =
-      'Ingrese el nombre del responsable.';
+  static const String responsibleNameRequired = 'Ingrese el nombre del responsable.';
   static const String responsibleDniRequired = 'Ingrese el DNI.';
 
   // --- Generacion del reporte ---
@@ -57,8 +55,7 @@ class SenasaStrings {
   static const String validatingData = 'Validando integridad de datos';
   static const String sortingEvents = 'Ordenando por fecha y tipo de evento';
   static const String compilingPdf = 'Compilando PDF con firma digital';
-  static const String preparingDownload =
-      'Preparando archivo para descarga';
+  static const String preparingDownload = 'Preparando archivo para descarga';
   static const String inProgress = 'en curso';
 
   // --- Widgets ---
@@ -72,16 +69,30 @@ class SenasaStrings {
 
   // Selector tipo de evento
   static const String eventSelectorTitle = 'Tipo de evento';
-  static final List<String> eventTypes = ['Nacimientos', 'Mortandad', 'Ingreso', 'Egreso', 'Cambio de categoría'];
+  static const List<String> eventTypes = [
+    'Vacunación',
+    'Tratamiento',
+    'Desparasitación',
+    'Diagnóstico',
+    'Análisis',
+    'Ingreso',
+    'Egreso',
+    'Movimiento',
+  ];
+
+  static const Map<String, String> eventTypeApiValues = {
+    'Vacunación': 'vacunacion',
+    'Tratamiento': 'tratamiento',
+    'Desparasitación': 'desparasitacion',
+    'Diagnóstico': 'diagnostico',
+    'Análisis': 'analisis',
+    'Ingreso': 'ingreso',
+    'Egreso': 'egreso',
+    'Movimiento': 'movimiento',
+  };
 
   // Selector establecimiento
   static const String establishmentSelectorLabel = 'Seleccione el Establecimiento';
   static const String establishmentSectionTitle = 'Datos del Establecimiento';
-  static const String establishmentRequired =
-      'Seleccione un establecimiento.';
-  static final List<String> establishmentOptions = [
-    'Estancia La Paz (RENSPA: 04.012.3.00142/00)',
-    'El Carrizal (RENSPA: 08.111.2.00516/01)',
-    'Estancia Los Pinos (RENSPA: 01.002.5.00089/00)',
-  ];
+  static const String establishmentRequired = 'Seleccione un establecimiento.';
 }

@@ -1,21 +1,54 @@
 import 'package:flutter/material.dart';
-import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
+import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/generate_senasa_report_use_case.dart';
+import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/get_senasa_establishments_use_case.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/bloc/senasa_report_cubit.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step1_filters.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step2_validation.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step3_format.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
-class SenasaReportPage extends StatefulWidget {
-  const SenasaReportPage({super.key});
+/// SENASA report flow connected to the backend.
+class SenasaReportPage extends StatelessWidget {
+  /// Creates the report page with its domain use cases.
+  const SenasaReportPage({
+    required this.getEstablishments,
+    required this.generateReport,
+    super.key,
+  });
+
+  /// Loads establishments available to the authenticated user.
+  final GetSenasaEstablishmentsUseCase getEstablishments;
+
+  /// Generates the selected report file.
+  final GenerateSenasaReportUseCase generateReport;
 
   @override
-  State<SenasaReportPage> createState() => _SenasaReportPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => SenasaReportCubit(
+        getEstablishments: getEstablishments,
+        generateReport: generateReport,
+      )..loadEstablishments(),
+      child: const _SenasaReportView(),
+    );
+  }
 }
 
-class _SenasaReportPageState extends State<SenasaReportPage> {
+class _SenasaReportView extends StatefulWidget {
+  const _SenasaReportView();
+
+  @override
+  State<_SenasaReportView> createState() => _SenasaReportViewState();
+}
+
+class _SenasaReportViewState extends State<_SenasaReportView> {
   final _stepOneFormKey = GlobalKey<FormState>();
   final _stepThreeFormKey = GlobalKey<FormState>();
   final _responsibleNameController = TextEditingController();
@@ -42,33 +75,37 @@ class _SenasaReportPageState extends State<SenasaReportPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppHeader(
-        title: SenasaStrings.pageTitle,
-        onBackPressed: () {
-          if (_currentStep > 1) {
-            setState(() => _currentStep--);
-          } else {
-            context.pop();
-          }
-        },
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            StepProgressBar(
-              currentStep: _currentStep,
-              totalSteps: 3,
-              stepTitle: _getStepTitle(),
-            ),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: _buildCurrentStepView(), // Inyecta el widget correspondiente
+    return BlocConsumer<SenasaReportCubit, SenasaReportState>(
+      listenWhen: (previous, current) => previous.generation != current.generation,
+      listener: _onStateChanged,
+      builder: (context, state) => Scaffold(
+        appBar: AppHeader(
+          title: SenasaStrings.pageTitle,
+          onBackPressed: () {
+            if (_currentStep > 1) {
+              setState(() => _currentStep--);
+            } else {
+              context.pop();
+            }
+          },
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              StepProgressBar(
+                currentStep: _currentStep,
+                totalSteps: 3,
+                stepTitle: _getStepTitle(),
               ),
-            ),
-            _buildBottomButton(),
-          ],
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _buildCurrentStepView(state),
+                ),
+              ),
+              _buildBottomButton(state),
+            ],
+          ),
         ),
       ),
     );
@@ -82,22 +119,31 @@ class _SenasaReportPageState extends State<SenasaReportPage> {
   }
 
   // Selecciona el widget modular del cuerpo
-  Widget _buildCurrentStepView() {
+  Widget _buildCurrentStepView(SenasaReportState state) {
     switch (_currentStep) {
       case 1:
-        return ReportStep1Filters(
-          key: const ValueKey('Step1'),
-          formKey: _stepOneFormKey,
-          selectedMovement: _selectedMovement,
-          onMovementChanged: (val) => setState(() => _selectedMovement = val),
-          startDate: _startDate,
-          endDate: _endDate,
-          onDatesChanged: (start, end) => setState(() {
-            _startDate = start;
-            _endDate = end;
-          }),
-          selectedOrigin: _selectedOrigin,
-          onOriginChanged: (value) => setState(() => _selectedOrigin = value),
+        return state.establishments.when(
+          initial: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error) => _EstablishmentsError(
+            message: error.message,
+            onRetry: context.read<SenasaReportCubit>().loadEstablishments,
+          ),
+          data: (establishments) => ReportStep1Filters(
+            key: const ValueKey('Step1'),
+            establishments: establishments,
+            formKey: _stepOneFormKey,
+            selectedMovement: _selectedMovement,
+            onMovementChanged: (val) => setState(() => _selectedMovement = val),
+            startDate: _startDate,
+            endDate: _endDate,
+            onDatesChanged: (start, end) => setState(() {
+              _startDate = start;
+              _endDate = end;
+            }),
+            selectedOrigin: _selectedOrigin,
+            onOriginChanged: (value) => setState(() => _selectedOrigin = value),
+          ),
         );
       case 2:
         return ReportStep2Validation(
@@ -120,13 +166,13 @@ class _SenasaReportPageState extends State<SenasaReportPage> {
     }
   }
 
-  Widget _buildBottomButton() {
-    String label = SenasaStrings.btnContinue;
+  Widget _buildBottomButton(SenasaReportState state) {
+    var label = SenasaStrings.btnContinue;
     if (_currentStep == 2) label = SenasaStrings.btnNext;
     if (_currentStep == 3) label = SenasaStrings.btnGenerate;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -142,15 +188,18 @@ class _SenasaReportPageState extends State<SenasaReportPage> {
         child: AppFilledButton(
           label: label,
           icon: Icon(_currentStep == 3 ? Icons.download : Icons.arrow_forward),
-          onPressed: _handleBottomButtonPressed,
+          onPressed:
+              state.generation is Loading<GeneratedSenasaReport> ||
+                  (_currentStep == 1 && state.establishments is! Data<List<SenasaEstablishment>>)
+              ? null
+              : _handleBottomButtonPressed,
         ),
       ),
     );
   }
 
   void _handleBottomButtonPressed() {
-    if (_currentStep == 1 &&
-        !(_stepOneFormKey.currentState?.validate() ?? false)) {
+    if (_currentStep == 1 && !(_stepOneFormKey.currentState?.validate() ?? false)) {
       return;
     }
 
@@ -160,8 +209,84 @@ class _SenasaReportPageState extends State<SenasaReportPage> {
     }
 
     final isValid = _stepThreeFormKey.currentState?.validate() ?? false;
-    if (isValid) {
-      context.push(AppRoutes.senasaReportGeneration);
+    if (isValid && _selectedOrigin != null) {
+      context.read<SenasaReportCubit>().generate(
+        SenasaReportRequest(
+          establishmentId: _selectedOrigin!,
+          format: _selectedFormat.toLowerCase(),
+          from: DateTime(
+            _startDate.year,
+            _startDate.month,
+            _startDate.day,
+          ),
+          to: DateTime(
+            _endDate.year,
+            _endDate.month,
+            _endDate.day,
+            23,
+            59,
+            59,
+          ),
+          eventType: SenasaStrings.eventTypeApiValues[_selectedMovement] ?? _selectedMovement.toLowerCase(),
+          responsibleName: _responsibleNameController.text.trim(),
+          responsibleDni: _responsibleDniController.text.trim(),
+        ),
+      );
     }
+  }
+
+  Future<void> _onStateChanged(
+    BuildContext context,
+    SenasaReportState state,
+  ) async {
+    await state.generation.whenOrNull(
+      data: (report) async {
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [
+              XFile.fromData(
+                report.bytes,
+                mimeType: report.mediaType,
+                name: report.filename,
+              ),
+            ],
+            fileNameOverrides: [report.filename],
+          ),
+        );
+      },
+      error: (error) async {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.message)),
+        );
+      },
+    );
+  }
+}
+
+class _EstablishmentsError extends StatelessWidget {
+  const _EstablishmentsError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.sm),
+            AppOutlinedButton(
+              label: SenasaStrings.retry,
+              onPressed: onRetry,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

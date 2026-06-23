@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/date_range_selector.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/establishment_data_form.dart';
@@ -11,6 +12,7 @@ class ReportStep1Filters extends StatelessWidget {
   /// Creates the first step of the SENASA report flow.
   const ReportStep1Filters({
     required this.formKey,
+    required this.establishments,
     required this.selectedMovement,
     required this.onMovementChanged,
     required this.startDate,
@@ -20,6 +22,9 @@ class ReportStep1Filters extends StatelessWidget {
     required this.onOriginChanged,
     super.key,
   });
+
+  /// Establishments available to the authenticated user.
+  final List<SenasaEstablishment> establishments;
 
   /// Key used to validate the first-step fields.
   final GlobalKey<FormState> formKey;
@@ -74,6 +79,7 @@ class ReportStep1Filters extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             EstablishmentSelector(
+              establishments: establishments,
               selectedOrigin: selectedOrigin,
               onOriginChanged: onOriginChanged,
             ),

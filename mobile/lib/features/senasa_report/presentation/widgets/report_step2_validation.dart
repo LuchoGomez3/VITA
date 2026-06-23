@@ -60,16 +60,6 @@ class ReportStep2Validation extends StatelessWidget {
                     child: Divider(height: AppSpacing.xxxs),
                   ),
                   _buildSummaryRow(Icons.date_range, SenasaStrings.step2PeriodLabel, '$formattedStart - $formattedEnd'),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                    child: Divider(height: AppSpacing.xxxs),
-                  ),
-                  _buildSummaryRow(Icons.pets, SenasaStrings.step2AnimalsLabel, '42 de la firma'),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                    child: Divider(height: AppSpacing.xxxs),
-                  ),
-                  _buildSummaryRow(Icons.category, SenasaStrings.step2CategoriesLabel, 'Terneros (12), Novillos (30)'),
                 ],
               ),
             ),
