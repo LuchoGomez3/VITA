@@ -40,6 +40,15 @@ class AppColors {
   /// Borde neutro para inputs, cards y divisores suaves.
   static const border = Color(0xFFE1D3CF);
 
+  /// Color principal para estados de error.
+  static const error = Color(0xFFD32F2F);
+
+  /// Fondo suave para bloques de error.
+  static const errorContainer = Color(0xFFFFEBEE);
+
+  /// Borde para bloques o campos en estado de error.
+  static const errorBorder = Color(0xFFE53935);
+
   /// Opciones disponibles para personalizacion de caravanas.
   /// Opcion amarilla
   static const earTagYellow = Color(0xFFF4CF3D);
@@ -66,7 +75,7 @@ class AppColors {
     onPrimary: onPrimary,
     secondary: textSecondary,
     onSecondary: onPrimary,
-    error: Color(0xFFB3261E),
+    error: error,
     onError: onPrimary,
     surface: surface,
     onSurface: textPrimary,

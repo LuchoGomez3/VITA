@@ -1,0 +1,77 @@
+import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/features/sign_up/presentation/strings/sign_up_strings.dart';
+
+class SignUpTermsCard extends StatefulWidget {
+  const SignUpTermsCard({super.key});
+
+  @override
+  State<SignUpTermsCard> createState() => _SignUpTermsCardState();
+}
+
+class _SignUpTermsCardState extends State<SignUpTermsCard> {
+  bool _isAccepted = false;
+
+  void _toggleAccepted() {
+    setState(() {
+      _isAccepted = !_isAccepted;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _toggleAccepted,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3EFE9),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: _isAccepted,
+                onChanged: (value) {
+                  setState(() {
+                    _isAccepted = value ?? false;
+                  });
+                },
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                side: const BorderSide(color: Colors.black26, width: 1.5),
+                activeColor: AppColors.primary,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: RichText(
+                text: const TextSpan(
+                  style: AppTypography.termsBody,
+                  children: const [
+                    TextSpan(text: SignUpStrings.termsPrefix),
+                    TextSpan(
+                      text: SignUpStrings.termsOwner,
+                      style: AppTypography.termsEmphasis,
+                    ),
+                    TextSpan(text: SignUpStrings.termsMiddle),
+                    TextSpan(
+                      text: SignUpStrings.termsPrivacy,
+                      style: AppTypography.termsLink,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

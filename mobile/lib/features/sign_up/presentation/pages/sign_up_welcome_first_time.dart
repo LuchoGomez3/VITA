@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/sign_up/presentation/strings/sign_up_strings.dart';
+import 'package:go_router/go_router.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -31,7 +33,7 @@ class WelcomePage extends StatelessWidget {
     );
   }
 }
-
+// TODO: (FRANCO) Agregar imagen de la empresa en lugar del placeholder.
 class _LogoPlaceholder extends StatelessWidget {
   const _LogoPlaceholder();
 
@@ -94,7 +96,7 @@ class _ActionButtons extends StatelessWidget {
           label: WelcomeStrings.createAccountButton,
           icon: const Icon(Icons.add),
           onPressed: () {
-            // TODO: Implement navigation to sign up page
+            context.push(AppRoutes.signUp);
           },
         ),
         const SizedBox(height: AppSpacing.md),
