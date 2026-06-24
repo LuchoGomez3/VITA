@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
-import 'package:frontend_mayoral/brick/repository.dart';
+import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_register/data/repositories/animal_registration_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
@@ -44,7 +44,6 @@ final _registration = AnimalRegistration(
   categoryId: 'category-id',
   categoryName: 'Ternera',
   initialWeight: 32.5,
-  weighingMethod: AnimalWeighingMethod.manual,
   weighingDate: DateTime(2025, 3, 14),
 );
 

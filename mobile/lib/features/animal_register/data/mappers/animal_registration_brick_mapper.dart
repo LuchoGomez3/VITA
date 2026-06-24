@@ -3,11 +3,19 @@ import 'dart:math';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 
-/// Maps animal registration domain entities to Brick models and back.
+/// Mapper entre dominio, Brick y contrato backend.
+///
+/// Esta clase es una frontera de data: evita que las capas de dominio y
+/// presentacion conozcan detalles de Brick, SQLite o nombres de campos REST.
 class AnimalRegistrationBrickMapper {
   const AnimalRegistrationBrickMapper._();
 
-  /// Creates a persistible Brick model from the domain registration request.
+  /// Convierte una solicitud de dominio en un modelo persistible por Brick.
+  ///
+  /// Aca nace la identidad offline-first del registro: si no se inyecta
+  /// [localId], se genera un UUID en mobile. Ese UUID viaja luego al backend
+  /// como `id`, permitiendo registrar sin conexion y sincronizar despues sin
+  /// depender de IDs autogenerados por el servidor.
   static BrickAnimalModel toBrick(
     AnimalRegistration registration, {
     DateTime? now,
@@ -42,7 +50,11 @@ class AnimalRegistrationBrickMapper {
     );
   }
 
-  /// Creates the domain result returned by the offline repository.
+  /// Convierte un modelo Brick guardado en un resultado de dominio.
+  ///
+  /// El repository usa este metodo para devolverle al use case/BLoC un
+  /// [RegisteredAnimal], sin exponerles `BrickAnimalModel` ni detalles de la
+  /// base local.
   static RegisteredAnimal toDomain(BrickAnimalModel model) {
     final registration = AnimalRegistration(
       rfidTagNumber: model.rfidTagNumber,
@@ -76,11 +88,12 @@ class AnimalRegistrationBrickMapper {
     );
   }
 
-  /// Future backend payload contract for `POST /v1/animales`.
+  /// Construye el payload que espera `POST /api/v1/animales`.
   ///
-  /// This is intentionally unused in the first offline-local cut. It documents
-  /// the mapping we will need once the sync flow is enabled against the FastAPI
-  /// endpoint without leaking transport concerns into presentation.
+  /// Brick usa sus adapters generados para serializar el request real, pero
+  /// mantener este metodo explicito ayuda a testear y auditar el contrato con
+  /// backend. Tambien sirve como documentacion viva de la traduccion
+  /// lowerCamelCase/mobile -> snake_case/backend.
   static Map<String, dynamic> toBackendPayload(BrickAnimalModel model) {
     return <String, dynamic>{
       'id': model.localId,
@@ -105,6 +118,11 @@ class AnimalRegistrationBrickMapper {
     };
   }
 
+  /// Genera un UUID v4 para identificar el registro creado offline.
+  ///
+  /// Se implementa localmente para no introducir una dependencia nueva solo para
+  /// esta operacion. Si el proyecto adopta una libreria UUID compartida, este
+  /// helper se puede reemplazar.
   static String _generateUuid() {
     final random = Random.secure();
     final bytes = List<int>.generate(16, (_) => random.nextInt(256));
@@ -123,6 +141,7 @@ class AnimalRegistrationBrickMapper {
   }
 }
 
+/// Traduce el enum de sexo del dominio al enum persistido por Brick.
 extension on AnimalSex {
   BrickAnimalSex toBrickModel() => switch (this) {
     AnimalSex.male => BrickAnimalSex.male,
@@ -130,6 +149,7 @@ extension on AnimalSex {
   };
 }
 
+/// Traduce el enum de sexo persistido por Brick al enum del dominio.
 extension on BrickAnimalSex {
   AnimalSex toDomain() => switch (this) {
     BrickAnimalSex.male => AnimalSex.male,
@@ -137,6 +157,7 @@ extension on BrickAnimalSex {
   };
 }
 
+/// Traduce el metodo de pesaje del dominio al enum persistido por Brick.
 extension on AnimalWeighingMethod {
   BrickAnimalWeighingMethod toBrickModel() => switch (this) {
     AnimalWeighingMethod.manual => BrickAnimalWeighingMethod.manual,
@@ -145,6 +166,7 @@ extension on AnimalWeighingMethod {
   };
 }
 
+/// Traduce el metodo de pesaje persistido por Brick al enum del dominio.
 extension on BrickAnimalWeighingMethod {
   AnimalWeighingMethod toDomain() => switch (this) {
     BrickAnimalWeighingMethod.manual => AnimalWeighingMethod.manual,
@@ -153,6 +175,7 @@ extension on BrickAnimalWeighingMethod {
   };
 }
 
+/// Traduce el estado local de sincronizacion de Brick al dominio.
 extension on BrickAnimalSyncStatus {
   AnimalSyncStatus toDomain() => switch (this) {
     BrickAnimalSyncStatus.pending => AnimalSyncStatus.pending,

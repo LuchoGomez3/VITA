@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend_mayoral/brick/authenticated_backend_client.dart';
-import 'package:frontend_mayoral/brick/backend_access_token_provider.dart';
+import 'package:frontend_mayoral/brick/auth/authenticated_backend_client.dart';
+import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
+import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -11,7 +12,7 @@ void main() {
     test('adds the bearer token to backend requests', () async {
       final client = AuthenticatedBackendClient(
         tokenProvider: const _FakeTokenProvider('jwt-token'),
-        onAnimalSyncResult: (_) async {},
+        onSyncResult: (_) async {},
         inner: MockClient((request) async {
           expect(request.headers['Authorization'], 'Bearer jwt-token');
           return http.Response(_successBody, 201);
@@ -24,11 +25,11 @@ void main() {
       );
     });
 
-    test('reports synchronized animals after a successful backend response', () async {
-      final results = <AnimalSyncResult>[];
+    test('reports synchronized resources after a successful backend response', () async {
+      final results = <BackendSyncResult>[];
       final client = AuthenticatedBackendClient(
         tokenProvider: const _FakeTokenProvider('jwt-token'),
-        onAnimalSyncResult: (result) async => results.add(result),
+        onSyncResult: (result) async => results.add(result),
         inner: MockClient((request) async {
           return http.Response(_successBody, 201);
         }),
@@ -40,15 +41,16 @@ void main() {
       );
 
       expect(results.single.localId, _requestBody['id']);
+      expect(results.single.resourcePath, '/api/v1/animales');
       expect(results.single.synchronized, isTrue);
       expect(results.single.errorCode, isNull);
     });
 
     test('reports functional backend errors as rejected sync results', () async {
-      final results = <AnimalSyncResult>[];
+      final results = <BackendSyncResult>[];
       final client = AuthenticatedBackendClient(
         tokenProvider: const _FakeTokenProvider('jwt-token'),
-        onAnimalSyncResult: (result) async => results.add(result),
+        onSyncResult: (result) async => results.add(result),
         inner: MockClient((request) async {
           return http.Response(
             jsonEncode({
@@ -73,10 +75,10 @@ void main() {
     });
 
     test('does not report server errors so Brick can retry them', () async {
-      final results = <AnimalSyncResult>[];
+      final results = <BackendSyncResult>[];
       final client = AuthenticatedBackendClient(
         tokenProvider: const _FakeTokenProvider('jwt-token'),
-        onAnimalSyncResult: (result) async => results.add(result),
+        onSyncResult: (result) async => results.add(result),
         inner: MockClient((request) async {
           return http.Response('server error', 500);
         }),

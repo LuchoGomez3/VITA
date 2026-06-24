@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
-import 'package:frontend_mayoral/brick/repository.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
-import 'package:frontend_mayoral/features/animal_register/data/repositories/animal_registration_repository_impl.dart';
-import 'package:frontend_mayoral/features/animal_register/data/sources/animal_registration_mock_context.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
-import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/register_animal_app_bar_title.dart';
@@ -19,34 +15,31 @@ import 'package:frontend_mayoral/features/animal_register/presentation/widgets/s
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/steps/register_animal_review_step.dart';
 import 'package:go_router/go_router.dart';
 
+/// Factory usada por composition root/router para construir el BLoC.
+typedef RegisterAnimalBlocFactory =
+    RegisterAnimalBloc Function({
+      RegisterAnimalStep initialStep,
+    });
+
 /// Hosts the complete animal registration flow.
 class RegisterAnimalPage extends StatelessWidget {
   /// Creates the animal registration flow.
   const RegisterAnimalPage({
+    required this.createBloc,
     this.initialStep = RegisterAnimalStep.identification,
     super.key,
   });
+
+  /// Crea el BLoC con dependencias ya resueltas fuera de presentation.
+  final RegisterAnimalBlocFactory createBloc;
 
   /// Step displayed when the flow is opened.
   final RegisterAnimalStep initialStep;
 
   @override
   Widget build(BuildContext context) {
-    // TODO(agustin): Move this wiring to a feature/module composition root so
-    // presentation stops depending on concrete data-layer implementations.
-    // TODO(agustin): Replace this mock context with the real
-    // AnimalRegistrationContext once session/catalog data is available.
-    const mockContext = AnimalRegistrationMockContext();
-    final repository = AnimalRegistrationRepositoryImpl(
-      brickStore: AppBrickRepository.instance,
-    );
-
     return BlocProvider(
-      create: (_) => RegisterAnimalBloc(
-        initialStep: initialStep,
-        registerAnimalUseCase: RegisterAnimalUseCase(repository),
-        registrationContext: mockContext,
-      ),
+      create: (_) => createBloc(initialStep: initialStep),
       child: const _RegisterAnimalView(),
     );
   }
