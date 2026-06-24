@@ -1,9 +1,9 @@
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
-import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_page.dart';
-import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_step_four_page.dart';
-import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_step_three_page.dart';
-import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_step_two_page.dart';
+import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
+import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
+import 'package:frontend_mayoral/features/animal_register/presentation/pages/register_animal_page.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_success_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:go_router/go_router.dart';
@@ -24,23 +24,39 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.animalRegisterStep1,
-        builder: (context, state) => const RegistrarAnimalPage(),
+        builder: (context, state) => const RegisterAnimalPage(
+          createBloc: createRegisterAnimalBloc,
+        ),
       ),
       GoRoute(
         path: AppRoutes.animalRegisterStep2,
-        builder: (context, state) => const RegistrarAnimalStepTwoPage(),
+        builder: (context, state) => const RegisterAnimalPage(
+          createBloc: createRegisterAnimalBloc,
+          initialStep: RegisterAnimalStep.basicData,
+        ),
       ),
       GoRoute(
         path: AppRoutes.animalRegisterStep3,
-        builder: (context, state) => const RegistrarAnimalStepThreePage(),
+        builder: (context, state) => const RegisterAnimalPage(
+          createBloc: createRegisterAnimalBloc,
+          initialStep: RegisterAnimalStep.genealogy,
+        ),
       ),
       GoRoute(
         path: AppRoutes.animalRegisterStep4,
-        builder: (context, state) => const RegistrarAnimalStepFourPage(),
+        builder: (context, state) => const RegisterAnimalPage(
+          createBloc: createRegisterAnimalBloc,
+          initialStep: RegisterAnimalStep.review,
+        ),
       ),
       GoRoute(
         path: AppRoutes.animalRegisterSuccess,
-        builder: (context, state) => const RegistrarAnimalSuccessPage(),
+        builder: (context, state) {
+          final registeredAnimal = state.extra! as RegisteredAnimal;
+          return RegistrarAnimalSuccessPage(
+            registeredAnimal: registeredAnimal,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.animalDetail,
