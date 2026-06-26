@@ -23,7 +23,7 @@ class SenasaReportGenerationPage extends StatelessWidget {
                 child: Center(
                   child: ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: 420),
-                    child: Column(
+                    child: const Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _ReportProgressIndicator(),
