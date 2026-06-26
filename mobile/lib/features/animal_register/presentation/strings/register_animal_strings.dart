@@ -302,8 +302,11 @@ class AnimalRegisterStrings {
   /// Label del campo padre.
   static const stepFourFatherLabel = 'Padre';
 
+  /// Value displayed when optional information is missing.
+  static const stepFourNoDataValue = '— (sin datos)';
+
   /// Valor mock del campo padre.
-  static const stepFourFatherValue = '— (sin datos)';
+  static const String stepFourFatherValue = stepFourNoDataValue;
 
   /// Label del campo potrero.
   static const stepFourDestinationLabel = 'Potrero';
