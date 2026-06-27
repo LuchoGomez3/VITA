@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AppConfig {
 
- String get appName; String get environment; bool get enableLogs;
+ String get appName; String get environment; String get backendBaseUrl; bool get enableLogs;
 /// Create a copy of AppConfig
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $AppConfigCopyWith<AppConfig> get copyWith => _$AppConfigCopyWithImpl<AppConfig>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppConfig&&(identical(other.appName, appName) || other.appName == appName)&&(identical(other.environment, environment) || other.environment == environment)&&(identical(other.enableLogs, enableLogs) || other.enableLogs == enableLogs));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppConfig&&(identical(other.appName, appName) || other.appName == appName)&&(identical(other.environment, environment) || other.environment == environment)&&(identical(other.backendBaseUrl, backendBaseUrl) || other.backendBaseUrl == backendBaseUrl)&&(identical(other.enableLogs, enableLogs) || other.enableLogs == enableLogs));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,appName,environment,enableLogs);
+int get hashCode => Object.hash(runtimeType,appName,environment,backendBaseUrl,enableLogs);
 
 @override
 String toString() {
-  return 'AppConfig(appName: $appName, environment: $environment, enableLogs: $enableLogs)';
+  return 'AppConfig(appName: $appName, environment: $environment, backendBaseUrl: $backendBaseUrl, enableLogs: $enableLogs)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $AppConfigCopyWith<$Res>  {
   factory $AppConfigCopyWith(AppConfig value, $Res Function(AppConfig) _then) = _$AppConfigCopyWithImpl;
 @useResult
 $Res call({
- String appName, String environment, bool enableLogs
+ String appName, String environment, String backendBaseUrl, bool enableLogs
 });
 
 
@@ -62,10 +62,11 @@ class _$AppConfigCopyWithImpl<$Res>
 
 /// Create a copy of AppConfig
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? appName = null,Object? environment = null,Object? enableLogs = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? appName = null,Object? environment = null,Object? backendBaseUrl = null,Object? enableLogs = null,}) {
   return _then(_self.copyWith(
 appName: null == appName ? _self.appName : appName // ignore: cast_nullable_to_non_nullable
 as String,environment: null == environment ? _self.environment : environment // ignore: cast_nullable_to_non_nullable
+as String,backendBaseUrl: null == backendBaseUrl ? _self.backendBaseUrl : backendBaseUrl // ignore: cast_nullable_to_non_nullable
 as String,enableLogs: null == enableLogs ? _self.enableLogs : enableLogs // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -152,10 +153,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String appName,  String environment,  bool enableLogs)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String appName,  String environment,  String backendBaseUrl,  bool enableLogs)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppConfig() when $default != null:
-return $default(_that.appName,_that.environment,_that.enableLogs);case _:
+return $default(_that.appName,_that.environment,_that.backendBaseUrl,_that.enableLogs);case _:
   return orElse();
 
 }
@@ -173,10 +174,10 @@ return $default(_that.appName,_that.environment,_that.enableLogs);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String appName,  String environment,  bool enableLogs)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String appName,  String environment,  String backendBaseUrl,  bool enableLogs)  $default,) {final _that = this;
 switch (_that) {
 case _AppConfig():
-return $default(_that.appName,_that.environment,_that.enableLogs);case _:
+return $default(_that.appName,_that.environment,_that.backendBaseUrl,_that.enableLogs);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -193,10 +194,10 @@ return $default(_that.appName,_that.environment,_that.enableLogs);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String appName,  String environment,  bool enableLogs)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String appName,  String environment,  String backendBaseUrl,  bool enableLogs)?  $default,) {final _that = this;
 switch (_that) {
 case _AppConfig() when $default != null:
-return $default(_that.appName,_that.environment,_that.enableLogs);case _:
+return $default(_that.appName,_that.environment,_that.backendBaseUrl,_that.enableLogs);case _:
   return null;
 
 }
@@ -208,11 +209,12 @@ return $default(_that.appName,_that.environment,_that.enableLogs);case _:
 
 
 class _AppConfig implements AppConfig {
-  const _AppConfig({required this.appName, required this.environment, this.enableLogs = true});
+  const _AppConfig({required this.appName, required this.environment, required this.backendBaseUrl, this.enableLogs = true});
   
 
 @override final  String appName;
 @override final  String environment;
+@override final  String backendBaseUrl;
 @override@JsonKey() final  bool enableLogs;
 
 /// Create a copy of AppConfig
@@ -225,16 +227,16 @@ _$AppConfigCopyWith<_AppConfig> get copyWith => __$AppConfigCopyWithImpl<_AppCon
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppConfig&&(identical(other.appName, appName) || other.appName == appName)&&(identical(other.environment, environment) || other.environment == environment)&&(identical(other.enableLogs, enableLogs) || other.enableLogs == enableLogs));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppConfig&&(identical(other.appName, appName) || other.appName == appName)&&(identical(other.environment, environment) || other.environment == environment)&&(identical(other.backendBaseUrl, backendBaseUrl) || other.backendBaseUrl == backendBaseUrl)&&(identical(other.enableLogs, enableLogs) || other.enableLogs == enableLogs));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,appName,environment,enableLogs);
+int get hashCode => Object.hash(runtimeType,appName,environment,backendBaseUrl,enableLogs);
 
 @override
 String toString() {
-  return 'AppConfig(appName: $appName, environment: $environment, enableLogs: $enableLogs)';
+  return 'AppConfig(appName: $appName, environment: $environment, backendBaseUrl: $backendBaseUrl, enableLogs: $enableLogs)';
 }
 
 
@@ -245,7 +247,7 @@ abstract mixin class _$AppConfigCopyWith<$Res> implements $AppConfigCopyWith<$Re
   factory _$AppConfigCopyWith(_AppConfig value, $Res Function(_AppConfig) _then) = __$AppConfigCopyWithImpl;
 @override @useResult
 $Res call({
- String appName, String environment, bool enableLogs
+ String appName, String environment, String backendBaseUrl, bool enableLogs
 });
 
 
@@ -262,10 +264,11 @@ class __$AppConfigCopyWithImpl<$Res>
 
 /// Create a copy of AppConfig
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? appName = null,Object? environment = null,Object? enableLogs = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? appName = null,Object? environment = null,Object? backendBaseUrl = null,Object? enableLogs = null,}) {
   return _then(_AppConfig(
 appName: null == appName ? _self.appName : appName // ignore: cast_nullable_to_non_nullable
 as String,environment: null == environment ? _self.environment : environment // ignore: cast_nullable_to_non_nullable
+as String,backendBaseUrl: null == backendBaseUrl ? _self.backendBaseUrl : backendBaseUrl // ignore: cast_nullable_to_non_nullable
 as String,enableLogs: null == enableLogs ? _self.enableLogs : enableLogs // ignore: cast_nullable_to_non_nullable
 as bool,
   ));

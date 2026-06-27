@@ -6,7 +6,6 @@ import 'package:frontend_mayoral/core/theme/app_colors.dart';
 /// Este archivo centraliza tamanos, pesos y colores de texto para que las
 /// pantallas reutilicen estilos consistentes y no definan `TextStyle` sueltos.
 class AppTypography {
-
   const AppTypography._();
   // TODO(branding): cambiar a 'Poppins' cuando la fuente este agregada
   // en assets/fonts y declarada en pubspec.yaml.
@@ -81,6 +80,30 @@ class AppTypography {
     fontFamily: _baseFontFamily,
     fontSize: 12,
     fontWeight: FontWeight.w700,
+    color: AppColors.textSecondary,
+  );
+
+  /// Texto pequeno con enfasis, util para microcopys o metadata.
+  static const mediumEmphasis = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textSecondary,
+  );
+
+  /// Titulo grande para pantallas de resultado o confirmacion.
+  static const successTitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  /// Subtitulo destacado para pantallas de resultado o confirmacion.
+  static const successSubtitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
     color: AppColors.textSecondary,
   );
 

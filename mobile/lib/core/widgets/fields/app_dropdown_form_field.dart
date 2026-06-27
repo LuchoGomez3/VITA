@@ -3,17 +3,18 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 
 /// Opcion simple para reutilizar en el dropdown de la app.
 class AppDropdownOption<T> {
-
   /// Crea una opcion simple para reutilizar en el dropdown de la app.
   const AppDropdownOption({
     /// El valor de la opcion.
     required this.value,
+
     /// El label de la opcion.
     required this.label,
   });
 
   /// El valor de la opcion.
   final T value;
+
   /// El label de la opcion.
   final String label;
 }
@@ -44,22 +45,31 @@ class AppDropdownFormField<T> extends StatelessWidget {
 
   /// Hint del campo.
   final String hintText;
+
   /// Opciones del campo.
   final List<AppDropdownOption<T>> options;
+
   /// Valor inicial del campo.
   final T? initialValue;
+
   /// Titulo del campo.
   final String? title;
+
   /// Estilo del titulo del campo.
   final TextStyle? titleStyle;
+
   /// Validador del campo.
   final String? Function(T?)? validator;
+
   /// Callback para cuando el valor del campo cambia.
   final ValueChanged<T?>? onChanged;
+
   /// Indica si el campo esta habilitado.
   final bool enabled;
+
   /// Texto de ayuda del campo.
   final String? helperText;
+
   /// Icono del campo.
   final Widget? icon;
 
@@ -83,7 +93,8 @@ class AppDropdownFormField<T> extends StatelessWidget {
           validator: validator,
           onChanged: enabled ? onChanged : null,
           isExpanded: true,
-          icon: icon ??
+          icon:
+              icon ??
               const Icon(
                 Icons.chevron_right,
                 color: AppColors.textSecondary,
