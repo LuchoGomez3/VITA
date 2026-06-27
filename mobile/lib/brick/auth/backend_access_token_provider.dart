@@ -19,7 +19,7 @@ abstract class BackendAccessTokenProvider {
 /// login. En VS Code se carga desde `.vscode/launch.json` con:
 /// `--dart-define=VITA_BACKEND_ACCESS_TOKEN=<jwt>`.
 ///
-/// TODO(agustin): Reemplazar por un provider conectado a Supabase Auth cuando
+// TODO(agustin): Reemplazar por un provider conectado a Supabase Auth cuando
 /// exista el flujo real de autenticacion mobile. Ese provider deberia obtener
 /// el token de la sesion actual y refrescarlo cuando expire.
 class DartDefineBackendAccessTokenProvider implements BackendAccessTokenProvider {

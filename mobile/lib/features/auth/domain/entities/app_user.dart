@@ -1,10 +1,12 @@
-import 'package:frontend_mayoral/features/auth/domain/entities/user_role.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/user_role.dart';
 
 part 'app_user.freezed.dart';
 
+/// Authenticated user profile used by the app domain.
 @freezed
 abstract class AppUser with _$AppUser {
+  /// Creates an authenticated user profile.
   const factory AppUser({
     required int id,
     required String username,

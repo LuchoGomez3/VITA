@@ -134,6 +134,7 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
+  /// Text style for selectable chips that changes with selection state.
   static TextStyle selectableChipStyle({required bool isSelected}) {
     return TextStyle(
       fontSize: 13,

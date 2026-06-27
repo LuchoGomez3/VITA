@@ -24,7 +24,7 @@ class AppDropdownOption<T> {
 /// Este widget envuelve `DropdownButtonFormField` de Flutter y le aplica los
 /// estilos default de la app para mantener consistencia visual.
 ///
-/// TODO(forms): definir una estrategia comun de validaciones por tipo de campo.
+// TODO(forms): definir una estrategia comun de validaciones por tipo de campo.
 /// Hoy se expone `validator` para que cada pantalla pueda consumir validadores
 /// especificos desde `core/validators` o desde su feature.
 class AppDropdownFormField<T> extends StatelessWidget {

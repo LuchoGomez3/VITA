@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:frontend_mayoral/core/theme/theme.dart'; // Ajustá la ruta según tu proyecto
+import 'package:frontend_mayoral/core/theme/theme.dart';
 
 /// Un banner reutilizable para mostrar mensajes de éxito o validación positiva.
 class AppSuccessBanner extends StatelessWidget {
+  /// Creates a success banner with [message].
+  const AppSuccessBanner({
+    required this.message,
+    super.key,
+  });
+
   /// El mensaje que se mostrará en el banner.
   final String message;
-
-  const AppSuccessBanner({
-    super.key,
-    required this.message,
-  });
 
   @override
   Widget build(BuildContext context) {

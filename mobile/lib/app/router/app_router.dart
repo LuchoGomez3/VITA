@@ -1,5 +1,6 @@
 import 'package:frontend_mayoral/app/config/config.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
@@ -80,8 +81,8 @@ class AppRouter {
         path: AppRoutes.senasaReport,
         builder: (context, state) {
           final repository = SenasaReportRepositoryImpl(
-            baseUrl: AppConfig.current.apiBaseUrl,
-            accessToken: AppConfig.current.apiAccessToken,
+            baseUrl: AppConfig.current.backendBaseUrl,
+            tokenProvider: const DartDefineBackendAccessTokenProvider(),
           );
           return SenasaReportPage(
             getEstablishments: GetSenasaEstablishmentsUseCase(repository),

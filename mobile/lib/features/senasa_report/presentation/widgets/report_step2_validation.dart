@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
-//Strings
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 
+/// Paso de validacion visual previo a la generacion del reporte SENASA.
 class ReportStep2Validation extends StatelessWidget {
-  final String selectedMovement;
-  final DateTime startDate;
-  final DateTime endDate;
-
+  /// Crea el resumen de validacion para el evento y rango seleccionados.
   const ReportStep2Validation({
-    super.key,
     required this.selectedMovement,
     required this.startDate,
     required this.endDate,
+    super.key,
   });
+
+  /// Tipo de evento elegido para el reporte.
+  final String selectedMovement;
+
+  /// Fecha inicial del periodo reportado.
+  final DateTime startDate;
+
+  /// Fecha final del periodo reportado.
+  final DateTime endDate;
 
   Widget _buildSummaryRow(IconData icon, String label, String value) {
     return Row(
@@ -32,9 +38,9 @@ class ReportStep2Validation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String formattedStart =
+    final formattedStart =
         '${startDate.day.toString().padLeft(2, '0')}/${startDate.month.toString().padLeft(2, '0')}/${startDate.year}';
-    final String formattedEnd =
+    final formattedEnd =
         '${endDate.day.toString().padLeft(2, '0')}/${endDate.month.toString().padLeft(2, '0')}/${endDate.year}';
 
     return SingleChildScrollView(

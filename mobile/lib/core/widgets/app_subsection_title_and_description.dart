@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:frontend_mayoral/core/theme/theme.dart'; // Ajustá la ruta según tu proyecto
+import 'package:frontend_mayoral/core/theme/theme.dart';
 
 /// Título y descripción reutilizable para las subsecciones de la app.
 class AppSubsectionTitleAndDescription extends StatelessWidget {
+  /// Creates a subsection heading with an optional description.
+  const AppSubsectionTitleAndDescription({
+    required this.title,
+    super.key,
+    this.description,
+  });
+
   /// El título principal de la subsección.
   final String title;
 
   /// Descripción opcional que se muestra debajo del título.
   final String? description;
-
-  const AppSubsectionTitleAndDescription({
-    super.key,
-    required this.title,
-    this.description,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +30,6 @@ class AppSubsectionTitleAndDescription extends StatelessWidget {
                 title,
                 style: AppTypography.pageTitle,
               ),
-              // Si hay descripción, dibuja el espacio y el texto.
               if (description != null) ...[
                 const SizedBox(height: AppSpacing.xs),
                 Text(
@@ -40,7 +40,6 @@ class AppSubsectionTitleAndDescription extends StatelessWidget {
             ],
           ),
         ),
-        // Espaciado estándar hacia el siguiente elemento
         const SizedBox(height: AppSpacing.lg),
       ],
     );

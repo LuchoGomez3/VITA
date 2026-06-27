@@ -1,74 +1,145 @@
+/// Centralized UI strings for the SENASA report feature.
 class SenasaStrings {
-  // --- Menú ---
+  /// Menu page title.
   static const String menuPageTitle = 'Reporte de SENASA';
+
+  /// Recent documents section title.
   static const String menuPageSubtitle = 'Documentación Reciente';
+
+  /// Recent documents section description.
   static const String menuPageDescription = 'Historial de archivos oficiales exportados para SENASA.';
 
-  // --- Títulos Generales ---
+  /// Report wizard title.
   static const String pageTitle = 'Exportar a SENASA';
+
+  /// First step title.
   static const String step1Title = 'Selección de registros';
+
+  /// Second step title.
   static const String step2Title = 'Validación de registros';
+
+  /// Third step title.
   static const String step3Title = 'Formato de salida';
 
-  // --- Historial ---
-
-  // --- Botones ---
+  /// Continue button label.
   static const String btnContinue = 'Continuar y Validar';
+
+  /// Next button label.
   static const String btnNext = 'Siguiente';
+
+  /// Generate button label.
   static const String btnGenerate = 'Generar Archivo';
+
+  /// Error shown when establishments cannot be loaded.
   static const String establishmentsLoadError = 'No se pudieron cargar los establecimientos.';
+
+  /// Retry button label.
   static const String retry = 'Reintentar';
+
+  /// Success message shown when the report is ready.
   static const String reportReady = 'Reporte generado correctamente.';
 
-  // --- Paso 1: Filtros ---
+  /// Event data section title.
   static const String step1SectionEvent = 'Datos del Evento';
+
+  /// Event data section description.
   static const String step1SectionEventDesc =
       'Establezca el tipo de evento y el rango temporal para generar la documentación.';
+
+  /// Establishment data section title.
   static const String step1SectionEst = 'Datos del Establecimiento';
 
-  // --- Paso 2: Validación ---
-  static const String step2Description = "Validacion de datos";
+  /// Validation step description.
+  static const String step2Description = 'Validacion de datos';
+
+  /// Validation success banner text.
   static const String step2SuccessBanner =
       'La validación definitiva se realizará en el servidor al generar el archivo.';
+
+  /// Validation summary title.
   static const String step2SummaryTitle = 'Datos recopilados';
+
+  /// Event label in the summary.
   static const String step2EventLabel = 'Evento:';
+
+  /// Period label in the summary.
   static const String step2PeriodLabel = 'Período:';
 
-  // --- Paso 3: Formatos ---
+  /// Export format selector title.
   static const String step3FormatTitle = 'Formato de exportación requerido';
+
+  /// PDF format label.
   static const String step3pdf = 'PDF';
+
+  /// PDF format description.
   static const String formatPdfDesc = 'Ideal para impresión y soporte físico con firma';
+
+  /// CSV format label.
   static const String step3csv = 'CSV';
+
+  /// CSV format description.
   static const String formatCsvDesc = 'Estructura delimitada optimizada para existencias';
+
+  /// Responsible person name validation hint.
   static const String formName = 'Ingrese su nombre y apellido.';
+
+  /// Responsible person DNI validation hint.
   static const String formDNI = 'Ingrese su DNI.';
+
+  /// Responsible person name field label.
   static const String responsableName = 'Nombre del Responsable';
+
+  /// Responsible person DNI field label.
   static const String responsableDNI = 'DNI';
+
+  /// Responsible person name required message.
   static const String responsibleNameRequired = 'Ingrese el nombre del responsable.';
+
+  /// Responsible person DNI required message.
   static const String responsibleDniRequired = 'Ingrese el DNI.';
 
-  // --- Generacion del reporte ---
+  /// Report generation page title.
   static const String generationTitle = 'Generando reporte...';
+
+  /// Report generation page description.
   static const String generationDescription =
       'Compilando 142 movimientos con CUIG,\n'
       'RENSPA y firma digital del responsable.';
+
+  /// Generation progress item for data validation.
   static const String validatingData = 'Validando integridad de datos';
+
+  /// Generation progress item for event sorting.
   static const String sortingEvents = 'Ordenando por fecha y tipo de evento';
+
+  /// Generation progress item for PDF compilation.
   static const String compilingPdf = 'Compilando PDF con firma digital';
+
+  /// Generation progress item for download preparation.
   static const String preparingDownload = 'Preparando archivo para descarga';
+
+  /// In-progress status label.
   static const String inProgress = 'en curso';
 
-  // --- Widgets ---
-
-  // Selector fechas
+  /// Date range selector title.
   static const String dateSelectorTitle = 'Rango de fechas';
+
+  /// Today shortcut label.
   static const String dateSelectorToday = 'Hoy';
+
+  /// Last seven days shortcut label.
   static const String dateSelectorLast7Days = 'Últimos 7 días';
+
+  /// Last thirty days shortcut label.
   static const String dateSelectorLast30Days = 'Últimos 30 días';
+
+  /// Current month shortcut label.
   static const String dateSelectorCurrentMonth = 'Mes actual';
 
-  // Selector tipo de evento
+  /// Event type selector title.
   static const String eventSelectorTitle = 'Tipo de evento';
+
+  /// Event type labels available in the UI.
   static const List<String> eventTypes = [
     'Vacunación',
     'Tratamiento',
@@ -80,6 +151,7 @@ class SenasaStrings {
     'Movimiento',
   ];
 
+  /// API values mapped by event type label.
   static const Map<String, String> eventTypeApiValues = {
     'Vacunación': 'vacunacion',
     'Tratamiento': 'tratamiento',
@@ -91,8 +163,12 @@ class SenasaStrings {
     'Movimiento': 'movimiento',
   };
 
-  // Selector establecimiento
+  /// Establishment selector field label.
   static const String establishmentSelectorLabel = 'Seleccione el Establecimiento';
+
+  /// Establishment section title.
   static const String establishmentSectionTitle = 'Datos del Establecimiento';
+
+  /// Establishment required validation message.
   static const String establishmentRequired = 'Seleccione un establecimiento.';
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:brick_rest/brick_rest.dart' show RestProvider;
 import 'package:flutter/foundation.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
