@@ -6,6 +6,7 @@ from api.auth.providers.base import (
     AuthProvider,
     AuthProviderError,
     AuthResult,
+    InvalidCredentialsError,
 )
 from api.auth.providers.local_provider import LocalAuthProvider
 from core.config import settings
@@ -14,6 +15,7 @@ __all__ = [
     "AuthProvider",
     "AuthProviderError",
     "AuthResult",
+    "InvalidCredentialsError",
     "get_auth_provider",
 ]
 
