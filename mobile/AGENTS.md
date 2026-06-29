@@ -5,8 +5,8 @@ You are an expert in Flutter and Dart development. Your goal is to build beautif
 ## 1. Core Project Principles (Mandatory)
 
 * **Architectural Adherence:** You must act as a developer who rigorously follows the Clean Architecture and monorepo structure defined in these rules. Do not deviate.
-* **Language:** All executable code, including variable names, methods, classes, comments, and documentation, must be written exclusively in **English**.  
-  * The only exception is **Pull Request descriptions and PR templates**, which may be written in **Spanish** if the team prefers.
+* **Language:** Executable code identifiers, including variable names, methods, classes, files, and folders, must be written in **English**.
+  * Comments, dartdoc documentation, TODOs, README files, Pull Request descriptions, and PR templates may be written in **Spanish** so the team can understand the implementation and architectural decisions clearly.
 * **Commit Messages:** All commit messages must follow the **Conventional Commits** standard (e.g., `feat:`, `fix:`, `refactor:`, `docs:`).
 * **Dependency Versions:** All dependencies in `pubspec.yaml` must have **fixed versions**, without the caret (`^`) prefix.
   * **Correct:** `flutter_bloc: 8.1.3`
@@ -35,6 +35,27 @@ UI strings must have a clear and centralized source of truth.
 * **Use hardcoded strings only when they are truly local and one-off** to a tiny piece of UI. If a text starts to repeat or becomes part of the product language, extract it.
 * **Compliance severity:** this is a **Blocker/Critical** architecture-compliance rule in reviews.
 
+## 1.3. Documentation Comments
+
+Use comments and dartdoc to help the team understand the code, especially when
+the implementation involves architecture, state management, offline-first sync,
+or temporary decisions.
+
+Document:
+
+* Public APIs, such as public classes, contracts, methods, typedefs, use cases, repositories, stores, and infrastructure entry points.
+* Architectural decisions, boundaries between layers, and reasons why a file exists.
+* Pure logic that may not be obvious to developers with less Flutter experience, such as what a BLoC coordinates or how a mapper transforms data.
+* Difficult flows, especially Brick, SQLite, offline queues, backend sync, auth tokens, and conflict/rejection handling.
+* Temporary TODOs, mocks, technical debt, and what should replace them later.
+
+Do not document:
+
+* Obvious comments such as "assigns the value" or "returns the variable".
+* Every line of code.
+* Explanations that are already clear from the method, class, or variable name.
+* Comments that only describe syntax instead of explaining intent.
+
 ## 2. Application Architecture (Mayoral Specific)
 
 ### 2.1. Project Structure
@@ -60,6 +81,35 @@ Not every feature must have exactly the same subfolders. When a feature uses Bri
 * `repositories/`
 
 The structure must stay aligned with the real needs of the feature and should not be artificially inflated with unused layers or folders.
+
+### 2.1.1. Brick Offline-First Structure
+
+`lib/brick/` is shared offline-first infrastructure. Before changing this area,
+read `lib/brick/README.md`.
+
+The agreed structure is:
+
+* `lib/brick/auth/`: backend authentication support for Brick REST requests, such as the authenticated HTTP client and access token provider.
+* `lib/brick/core/`: shared Brick infrastructure, especially the global repository that wires SQLite, REST provider, offline queue, migrations, and generic helpers.
+* `lib/brick/sync/`: generic sync result/event types that are not specific to any feature.
+* `lib/brick/models/`: Brick persistence/sync models written by the team.
+* `lib/brick/stores/`: per-entity Brick stores, such as animal, lot, weighing, or movement stores.
+* `lib/brick/adapters/` and `lib/brick/db/`: generated Brick adapters, schema, and migrations.
+
+`core/repository.dart` must stay generic. Do not add animal, lot, weighing, or
+feature-specific business logic there. Entity-specific sync behavior belongs in
+`stores/`.
+
+Features must not access Brick from `presentation` or `domain`. The expected
+dependency path is:
+
+```txt
+feature/presentation -> feature/domain -> feature/data -> lib/brick
+```
+
+Generated Brick files (`*.g.dart`, generated schema, generated migrations) must
+not be edited by hand. Regenerate them with build runner when Brick models
+change.
 
 ### 2.2. Internal Package Architecture (Clean Architecture)
 

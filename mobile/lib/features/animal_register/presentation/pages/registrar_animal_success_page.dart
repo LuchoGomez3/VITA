@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/registered_animal_summary_card.dart';
 import 'package:go_router/go_router.dart';
@@ -9,10 +10,18 @@ import 'package:go_router/go_router.dart';
 /// Pantalla final de confirmacion del alta de animal.
 class RegistrarAnimalSuccessPage extends StatelessWidget {
   /// Crea la pantalla de exito del flujo de alta.
-  const RegistrarAnimalSuccessPage({super.key});
+  const RegistrarAnimalSuccessPage({
+    required this.registeredAnimal,
+    super.key,
+  });
+
+  /// Animal persisted locally through Brick.
+  final RegisteredAnimal registeredAnimal;
 
   @override
   Widget build(BuildContext context) {
+    final registration = registeredAnimal.registration;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -28,17 +37,17 @@ class RegistrarAnimalSuccessPage extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.xs),
-              const Text(
-                AnimalRegisterStrings.successSubtitle,
+              Text(
+                'La caravana ${registration.visualTag} quedó guardada en este dispositivo y espera sincronización.',
                 style: AppTypography.successSubtitle,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.lg),
-              const RegisteredAnimalSummaryCard(
-                visualTag: AnimalRegisterStrings.successMockVisualTag,
-                title: AnimalRegisterStrings.successMockAnimalTitle,
-                rfid: AnimalRegisterStrings.successMockRfid,
-                destination: AnimalRegisterStrings.successMockDestination,
+              RegisteredAnimalSummaryCard(
+                visualTag: registration.visualTag,
+                title: '${registration.breed} · ${registeredAnimal.displayCategory}',
+                rfid: registration.rfidTagNumber,
+                destination: registeredAnimal.displayDestination,
               ),
               const Spacer(flex: 2),
               AppFilledButton(
@@ -48,7 +57,7 @@ class RegistrarAnimalSuccessPage extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               AppOutlinedButton(
-                label: AnimalRegisterStrings.successViewDetailsButton,
+                label: 'Ver ficha de ${registration.visualTag}',
                 icon: const Icon(Icons.visibility_outlined),
                 // TODO(agus): navegar a la ficha del animal cuando exista.
                 onPressed: () {},
@@ -76,7 +85,6 @@ class RegistrarAnimalSuccessPage extends StatelessWidget {
 }
 
 /// Asset de exito placeholder.
-///
 class _SuccessAssetPlaceholder extends StatelessWidget {
   const _SuccessAssetPlaceholder();
 

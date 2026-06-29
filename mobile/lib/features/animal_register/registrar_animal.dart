@@ -1,1 +1,1 @@
-export 'presentation/pages/registrar_animal_page.dart';
+export 'presentation/pages/register_animal_page.dart';

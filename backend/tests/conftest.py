@@ -22,6 +22,8 @@ from sqlmodel import SQLModel  # noqa: E402
 
 import api.modules  # noqa: F401, E402  -- registra todas las tablas en SQLModel.metadata
 from api.auth.dependencies import get_current_user  # noqa: E402
+from api.auth.providers import get_auth_provider  # noqa: E402
+from api.auth.providers.local_provider import LocalAuthProvider  # noqa: E402
 from api.modules.usuarios.models import Usuario  # noqa: E402
 from api.shared.exceptions import DomainException  # noqa: E402
 from core.middlewares import custom_exception_handler, domain_exception_handler  # noqa: E402
@@ -76,6 +78,9 @@ def app(session_maker) -> FastAPI:
                 raise
 
     test_app.dependency_overrides[get_session] = _override_get_session
+    # Provider local: los tests no deben depender del AUTH_PROVIDER del .env ni
+    # tocar Supabase real (alta de credenciales offline, sin red).
+    test_app.dependency_overrides[get_auth_provider] = lambda: LocalAuthProvider()
     return test_app
 
 
