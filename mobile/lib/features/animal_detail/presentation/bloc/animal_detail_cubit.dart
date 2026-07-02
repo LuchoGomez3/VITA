@@ -1,30 +1,29 @@
-// Archivo: features/animal_detail/presentation/cubit/animal_detail_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'animal_detail_state.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/bloc/animal_detail_state.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 
+/// Coordinates loading state for the animal detail screen.
 class AnimalDetailCubit extends Cubit<AnimalDetailState> {
-  
-  // Arranca en estado inicial
+  /// Creates the cubit in its initial state.
   AnimalDetailCubit() : super(AnimalDetailInitial());
 
-  // Función pública que la vista llama para pedir los datos
+  /// Loads animal detail data for [animalId].
   Future<void> loadAnimalData(String animalId) async {
     emit(AnimalDetailLoading());
 
     try {
-      // Aquí irá la petición a tu base de datos/API
-      await Future.delayed(const Duration(seconds: 2)); // Simulación
+      await Future<void>.delayed(const Duration(seconds: 2));
 
-      // Emitimos el estado con los datos cargados
-      emit(AnimalDetailLoaded(
-        raza: 'Brahman',
-        sexo: 'Macho',
-        categoria: 'Novillo',
-        pesoActual: 410,
-      ));
-
-    } catch (e) {
-      emit(AnimalDetailError("Error al cargar la información del animal."));
+      emit(
+        AnimalDetailLoaded(
+          raza: AnimalDetailStrings.breedValue,
+          sexo: AnimalDetailStrings.sexValue,
+          categoria: AnimalDetailStrings.categoryValue,
+          pesoActual: 410,
+        ),
+      );
+    } on Exception {
+      emit(AnimalDetailError(AnimalDetailStrings.loadError));
     }
   }
 }
