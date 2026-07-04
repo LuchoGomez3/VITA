@@ -72,7 +72,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     required String sqlitePath,
     required String offlineQueuePath,
     String? backendBaseUrl,
-    BackendAccessTokenProvider tokenProvider = const DartDefineBackendAccessTokenProvider(),
+    BackendAccessTokenProvider? tokenProvider,
     http.Client? client,
   }) async {
     if (_instance != null) {
@@ -90,7 +90,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     // genericos. La logica de cada entidad queda en su store correspondiente.
     final syncResults = StreamController<BackendSyncResult>();
     final restClient = AuthenticatedBackendClient(
-      tokenProvider: tokenProvider,
+      tokenProvider: tokenProvider ?? SessionBackendAccessTokenProvider.instance,
       inner: client,
       onSyncResult: (result) {
         syncResults.add(result);

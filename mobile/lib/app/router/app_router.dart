@@ -5,6 +5,8 @@ import 'package:frontend_mayoral/features/animal_register/domain/entities/animal
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/register_animal_page.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_success_page.dart';
+import 'package:frontend_mayoral/features/auth/auth_composition.dart';
+import 'package:frontend_mayoral/features/auth/presentation/pages/login_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,14 +15,24 @@ class AppRouter {
   /// Router de la app.
   static final GoRouter router = GoRouter(
     /// Ruta inicial de la app.
-    initialLocation: AppRoutes.home,
+    initialLocation: AppRoutes.login,
 
     /// Rutas de la app.
     routes: [
+      GoRoute(
+        path: AppRoutes.login,
+        builder: (context, state) => const LoginPage(
+          createCubit: createLoginCubit,
+        ),
+      ),
+
       /// Ruta de la pantalla de inicio.
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => const HomePage(
+          signOut: signOutAuthenticatedUser,
+          verifyAuthentication: verifyAuthenticatedUser,
+        ),
       ),
       GoRoute(
         path: AppRoutes.animalRegisterStep1,

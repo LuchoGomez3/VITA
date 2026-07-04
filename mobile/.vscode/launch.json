@@ -6,7 +6,7 @@
       "name": "Mobile: debug local backend",
       "request": "launch",
       "type": "dart",
-      "cwd": "mobile",
+      "cwd": ".",
       "program": "lib/main.dart",
       "toolArgs": [
         "--dart-define=VITA_BACKEND_BASE_URL=http://10.0.2.2:8000",
@@ -17,7 +17,7 @@
       "name": "Mobile: debug physical device backend",
       "request": "launch",
       "type": "dart",
-      "cwd": "mobile",
+      "cwd": ".",
       "program": "lib/main.dart",
       "toolArgs": [
         "--dart-define=VITA_BACKEND_BASE_URL=http://192.168.0.222:8000",
@@ -28,7 +28,7 @@
       "name": "Mobile: debug custom backend",
       "request": "launch",
       "type": "dart",
-      "cwd": "mobile",
+      "cwd": ".",
       "program": "lib/main.dart",
       "toolArgs": [
         "--dart-define=VITA_BACKEND_BASE_URL=${input:vitaBackendBaseUrl}",
@@ -39,7 +39,7 @@
       "name": "Mobile: debug offline only",
       "request": "launch",
       "type": "dart",
-      "cwd": "mobile",
+      "cwd": ".",
       "program": "lib/main.dart",
       "toolArgs": [
         "--dart-define=VITA_BACKEND_BASE_URL=http://10.0.2.2:8000"

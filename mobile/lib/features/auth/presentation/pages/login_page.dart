@@ -1,0 +1,131 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
+import 'package:frontend_mayoral/features/auth/presentation/bloc/login_cubit.dart';
+import 'package:frontend_mayoral/features/auth/presentation/widgets/login_form.dart';
+import 'package:frontend_mayoral/features/auth/presentation/widgets/login_header.dart';
+import 'package:go_router/go_router.dart';
+
+/// Factory usada por el router para construir el cubit de login.
+typedef LoginCubitFactory = LoginCubit Function();
+
+/// Pantalla inicial de autenticacion.
+class LoginPage extends StatelessWidget {
+  /// Crea la pantalla de login.
+  const LoginPage({
+    required this.createCubit,
+    super.key,
+  });
+
+  /// Crea el cubit con dependencias resueltas fuera de presentation.
+  final LoginCubitFactory createCubit;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => createCubit(),
+      child: const _LoginView(),
+    );
+  }
+}
+
+class _LoginView extends StatefulWidget {
+  const _LoginView();
+
+  @override
+  State<_LoginView> createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<_LoginView> {
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<LoginCubit, LoginState>(
+      listenWhen: (previous, current) => previous.signInResult != current.signInResult,
+      listener: (context, state) {
+        switch (state.signInResult) {
+          case Data<AuthSession>():
+            context.go(AppRoutes.home);
+          case ResultError<AuthSession>(:final error):
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text(error.message)),
+              );
+          default:
+            break;
+        }
+      },
+      child: BlocBuilder<LoginCubit, LoginState>(
+        buildWhen: (previous, current) => previous.signInResult != current.signInResult,
+        builder: (context, state) {
+          final isSubmitting = state.signInResult is Loading<AuthSession>;
+
+          return Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const LoginHeader(),
+                        const SizedBox(height: AppSpacing.lg),
+                        AppSurfaceCard(
+                          child: LoginForm(
+                            formKey: _formKey,
+                            usernameController: _usernameController,
+                            passwordController: _passwordController,
+                            obscurePassword: _obscurePassword,
+                            isSubmitting: isSubmitting,
+                            onPasswordVisibilityPressed: _togglePasswordVisibility,
+                            onSubmit: () => _submit(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
+  }
+
+  void _submit(BuildContext context) {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    context.read<LoginCubit>().signIn(
+      username: _usernameController.text,
+      password: _passwordController.text,
+    );
+  }
+}

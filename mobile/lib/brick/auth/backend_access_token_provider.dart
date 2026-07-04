@@ -19,9 +19,8 @@ abstract class BackendAccessTokenProvider {
 /// login. En VS Code se carga desde `.vscode/launch.json` con:
 /// `--dart-define=VITA_BACKEND_ACCESS_TOKEN=<jwt>`.
 ///
-/// TODO(agustin): Reemplazar por un provider conectado a Supabase Auth cuando
-/// exista el flujo real de autenticacion mobile. Ese provider deberia obtener
-/// el token de la sesion actual y refrescarlo cuando expire.
+/// Pendiente: reemplazar por un provider conectado a Supabase Auth cuando
+/// exista refresco de sesion en mobile.
 class DartDefineBackendAccessTokenProvider implements BackendAccessTokenProvider {
   /// Crea un provider basado en `VITA_BACKEND_ACCESS_TOKEN`.
   const DartDefineBackendAccessTokenProvider();
@@ -40,4 +39,34 @@ class DartDefineBackendAccessTokenProvider implements BackendAccessTokenProvider
 
     return _token;
   }
+}
+
+/// Provider de token compartido por el flujo de login y Brick.
+///
+/// Mantiene el JWT solo en memoria del proceso. Cuando la app incorpore
+/// almacenamiento seguro, esta clase puede hidratarse desde esa fuente sin que
+/// Brick ni las features cambien su contrato.
+class SessionBackendAccessTokenProvider implements BackendAccessTokenProvider {
+  SessionBackendAccessTokenProvider._();
+
+  /// Instancia compartida durante el ciclo de vida de la app.
+  static final instance = SessionBackendAccessTokenProvider._();
+
+  String? _accessToken;
+
+  /// Token actual en memoria.
+  String? get accessToken => _accessToken;
+
+  /// Token vigente de la sesion.
+  set accessToken(String accessToken) {
+    _accessToken = accessToken;
+  }
+
+  /// Elimina el token de la sesion local.
+  void clearAccessToken() {
+    _accessToken = null;
+  }
+
+  @override
+  Future<String?> getAccessToken() async => _accessToken;
 }
