@@ -13,31 +13,32 @@ abstract class BackendAccessTokenProvider {
   Future<String?> getAccessToken();
 }
 
-/// Implementacion temporal que lee el JWT desde `--dart-define`.
+/// Provider de token compartido por el flujo de login y Brick.
 ///
-/// Sirve para desarrollo mientras la app no tenga pantallas/sesion real de
-/// login. En VS Code se carga desde `.vscode/launch.json` con:
-/// `--dart-define=VITA_BACKEND_ACCESS_TOKEN=<jwt>`.
-///
-/// TODO(agustin): Reemplazar por un provider conectado a Supabase Auth cuando
-/// exista el flujo real de autenticacion mobile. Ese provider deberia obtener
-/// el token de la sesion actual y refrescarlo cuando expire.
-class DartDefineBackendAccessTokenProvider implements BackendAccessTokenProvider {
-  /// Crea un provider basado en `VITA_BACKEND_ACCESS_TOKEN`.
-  const DartDefineBackendAccessTokenProvider();
+/// Mantiene el JWT solo en memoria del proceso. Auth lo hidrata despues de un
+/// login exitoso o al restaurar una sesion desde secure storage. Brick no conoce
+/// esa persistencia: solo pide el token vigente mediante este contrato.
+class SessionBackendAccessTokenProvider implements BackendAccessTokenProvider {
+  SessionBackendAccessTokenProvider._();
 
-  /// Valor inyectado en tiempo de build/run.
-  ///
-  /// `String.fromEnvironment` solo lee valores pasados como `--dart-define`;
-  /// no lee automaticamente archivos `.env`.
-  static const _token = String.fromEnvironment('VITA_BACKEND_ACCESS_TOKEN');
+  /// Instancia compartida durante el ciclo de vida de la app.
+  static final instance = SessionBackendAccessTokenProvider._();
+
+  String? _accessToken;
+
+  /// Token actual en memoria.
+  String? get accessToken => _accessToken;
+
+  /// Token vigente de la sesion.
+  set accessToken(String accessToken) {
+    _accessToken = accessToken;
+  }
+
+  /// Elimina el token de la sesion local.
+  void clearAccessToken() {
+    _accessToken = null;
+  }
 
   @override
-  Future<String?> getAccessToken() async {
-    if (_token.trim().isEmpty) {
-      return null;
-    }
-
-    return _token;
-  }
+  Future<String?> getAccessToken() async => _accessToken;
 }

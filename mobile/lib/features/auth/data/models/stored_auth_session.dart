@@ -1,0 +1,142 @@
+import 'dart:convert';
+
+import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/user_role.dart';
+
+/// Version serializable de la sesion que vive en secure storage.
+///
+/// No usamos la entidad de dominio como JSON directo para mantener una frontera
+/// clara: dominio modela negocio, data decide como persistirlo. Este modelo es
+/// deliberadamente chico: token y datos minimos del usuario necesarios para
+/// reabrir la app offline sin consultar `/api/auth/me`.
+class StoredAuthSession {
+  /// Crea una sesion persistible.
+  const StoredAuthSession({
+    required this.accessToken,
+    required this.userId,
+    required this.email,
+    required this.firstName,
+    required this.lastName,
+    this.cuit,
+    this.role = UserRole.unknown,
+  });
+
+  /// Construye el modelo local desde la entidad usada por el resto de la app.
+  factory StoredAuthSession.fromDomain(AuthSession session) {
+    return StoredAuthSession(
+      accessToken: session.accessToken,
+      userId: session.user.id,
+      email: session.user.email,
+      firstName: session.user.firstName,
+      lastName: session.user.lastName,
+      cuit: session.user.cuit,
+      role: session.user.role,
+    );
+  }
+
+  /// Decodifica el JSON guardado en secure storage.
+  factory StoredAuthSession.fromJson(Map<String, dynamic> json) {
+    return StoredAuthSession(
+      accessToken: _readString(json, 'access_token'),
+      userId: _readString(json, 'user_id'),
+      email: _readString(json, 'email'),
+      firstName: _readString(json, 'first_name'),
+      lastName: _readString(json, 'last_name'),
+      cuit: _readNullableString(json, 'cuit'),
+      role: _readRole(json['role']),
+    );
+  }
+
+  /// Decodifica un string JSON completo.
+  factory StoredAuthSession.fromEncodedJson(String encoded) {
+    final decoded = jsonDecode(encoded);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('Stored auth session is not a JSON object.');
+    }
+
+    return StoredAuthSession.fromJson(decoded);
+  }
+
+  /// JWT usado por backend y por Brick para requests autenticadas.
+  final String accessToken;
+
+  /// ID backend/Supabase del usuario.
+  final String userId;
+
+  /// Email del usuario autenticado.
+  final String email;
+
+  /// Nombre visible del usuario.
+  final String firstName;
+
+  /// Apellido visible del usuario.
+  final String lastName;
+
+  /// CUIT del productor cuando el backend lo provee.
+  final String? cuit;
+
+  /// Rol conocido por mobile. Si backend no lo envia, queda `unknown`.
+  final UserRole role;
+
+  /// Convierte el modelo persistido a la entidad de dominio.
+  AuthSession toDomain() {
+    return AuthSession(
+      accessToken: accessToken,
+      user: AppUser(
+        id: userId,
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        cuit: cuit,
+        role: role,
+      ),
+    );
+  }
+
+  /// Codifica el modelo como JSON plano para secure storage.
+  Map<String, dynamic> toJson() {
+    return {
+      'access_token': accessToken,
+      'user_id': userId,
+      'email': email,
+      'first_name': firstName,
+      'last_name': lastName,
+      'cuit': cuit,
+      'role': role.name,
+    };
+  }
+
+  /// Codifica el objeto completo como string para el storage seguro.
+  String toEncodedJson() {
+    return jsonEncode(toJson());
+  }
+
+  static String _readString(Map<String, dynamic> json, String key) {
+    final value = json[key];
+    if (value is String) {
+      return value;
+    }
+
+    return '';
+  }
+
+  static String? _readNullableString(Map<String, dynamic> json, String key) {
+    final value = json[key];
+    return value is String && value.isNotEmpty ? value : null;
+  }
+
+  static UserRole _readRole(Object? value) {
+    if (value is! String) {
+      return UserRole.unknown;
+    }
+
+    for (final role in UserRole.values) {
+      if (role.name == value) {
+        return role;
+      }
+    }
+
+    return UserRole.unknown;
+  }
+}
