@@ -1,0 +1,73 @@
+name: VITA Backend CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # -------------------------
+  # LINT / FORMAT
+  # -------------------------
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: uv sync
+
+      - name: Ruff check
+        working-directory: ./backend
+        run: uv run ruff check . --output-format=github
+
+      - name: Ruff format check
+        working-directory: ./backend
+        run: uv run ruff format . --check
+
+  # -------------------------
+  # TESTS
+  # -------------------------
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: uv sync
+
+      - name: Run tests with coverage
+        working-directory: ./backend
+        run: uv run pytest tests --cov --cov-report=term-missing

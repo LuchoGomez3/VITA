@@ -1,21 +1,38 @@
 import pytest
-from httpx import AsyncClient, ASGITransport
-from api.main import app
 
-@pytest.mark.anyio("asyncio")
-async def test_login_and_me():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        resp = await ac.post("/v1/auth/login", data={"username": "admin", "password": "admin"})
-        assert resp.status_code == 200
-        token = resp.json()["data"]["access_token"]
-        resp2 = await ac.get("/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
-        assert resp2.status_code == 200
-        assert resp2.json()["data"]["username"] == "admin"
+from api.auth.providers.local_provider import LocalAuthProvider
 
-@pytest.mark.anyio("asyncio")
-async def test_login_fail():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        resp = await ac.post("/v1/auth/login", data={"username": "admin", "password": "wrong"})
-        assert resp.status_code == 401 
+
+@pytest.mark.anyio
+async def test_me_sin_token_devuelve_401(client):
+    resp = await client.get("/api/auth/me")
+    assert resp.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_me_con_token_valido(client, usuario_actual):
+    # Token local con sub = id del usuario sembrado; get_current_user lo resuelve.
+    token = LocalAuthProvider().create_token_for(usuario_actual.id)
+    resp = await client.get(
+        "/api/auth/me", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert data["id"] == str(usuario_actual.id)
+    assert data["email"] == usuario_actual.email
+
+
+@pytest.mark.anyio
+async def test_me_con_token_invalido_devuelve_401(client):
+    resp = await client.get(
+        "/api/auth/me", headers={"Authorization": "Bearer no-es-un-token"}
+    )
+    assert resp.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_login_fail(client):
+    resp = await client.post(
+        "/api/auth/login", data={"username": "admin", "password": "wrong"}
+    )
+    assert resp.status_code == 401
