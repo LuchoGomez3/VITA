@@ -14,7 +14,24 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AnimalRegistration {
 
- String get rfidTagNumber; String get visualTag; AnimalSex get sex; String get breed; DateTime get birthDate; String get lotId; String get lotName; String get establishmentId; String get categoryId; String get categoryName; double get initialWeight; String? get motherId; String? get fatherId; String? get coat; String? get observations; AnimalWeighingMethod get weighingMethod; DateTime? get weighingDate;
+/// Numero de caravana RFID individual.
+ String get rfidTagNumber;/// Numero visual de caravana mostrado al usuario.
+ String get visualTag;/// Sexo del animal.
+ AnimalSex get sex;/// Raza declarada al momento del alta.
+ String get breed;/// Fecha de nacimiento del animal.
+ DateTime get birthDate;/// ID del lote/potrero donde queda ubicado el animal.
+ String get lotId;/// Nombre visible del lote usado para resumenes de UI.
+ String get lotName;/// ID del establecimiento al que pertenece el animal.
+ String get establishmentId;/// ID de la categoria productiva del animal.
+ String get categoryId;/// Nombre visible de la categoria usado para resumenes de UI.
+ String get categoryName;/// Peso inicial registrado junto con el alta.
+ double get initialWeight;/// ID de la madre, cuando se selecciona genealogia.
+ String? get motherId;/// ID del padre, cuando se selecciona genealogia.
+ String? get fatherId;/// Pelaje declarado, si el formulario lo captura.
+ String? get coat;/// Observaciones libres del registro.
+ String? get observations;/// Metodo con el que se obtuvo el peso inicial.
+ AnimalWeighingMethod get weighingMethod;/// Fecha/hora del pesaje inicial. Si no viene, data puede completar una.
+ DateTime? get weighingDate;
 /// Create a copy of AnimalRegistration
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -219,22 +236,39 @@ class _AnimalRegistration implements AnimalRegistration {
   const _AnimalRegistration({required this.rfidTagNumber, required this.visualTag, required this.sex, required this.breed, required this.birthDate, required this.lotId, required this.lotName, required this.establishmentId, required this.categoryId, required this.categoryName, required this.initialWeight, this.motherId, this.fatherId, this.coat, this.observations, this.weighingMethod = AnimalWeighingMethod.manual, this.weighingDate});
   
 
+/// Numero de caravana RFID individual.
 @override final  String rfidTagNumber;
+/// Numero visual de caravana mostrado al usuario.
 @override final  String visualTag;
+/// Sexo del animal.
 @override final  AnimalSex sex;
+/// Raza declarada al momento del alta.
 @override final  String breed;
+/// Fecha de nacimiento del animal.
 @override final  DateTime birthDate;
+/// ID del lote/potrero donde queda ubicado el animal.
 @override final  String lotId;
+/// Nombre visible del lote usado para resumenes de UI.
 @override final  String lotName;
+/// ID del establecimiento al que pertenece el animal.
 @override final  String establishmentId;
+/// ID de la categoria productiva del animal.
 @override final  String categoryId;
+/// Nombre visible de la categoria usado para resumenes de UI.
 @override final  String categoryName;
+/// Peso inicial registrado junto con el alta.
 @override final  double initialWeight;
+/// ID de la madre, cuando se selecciona genealogia.
 @override final  String? motherId;
+/// ID del padre, cuando se selecciona genealogia.
 @override final  String? fatherId;
+/// Pelaje declarado, si el formulario lo captura.
 @override final  String? coat;
+/// Observaciones libres del registro.
 @override final  String? observations;
+/// Metodo con el que se obtuvo el peso inicial.
 @override@JsonKey() final  AnimalWeighingMethod weighingMethod;
+/// Fecha/hora del pesaje inicial. Si no viene, data puede completar una.
 @override final  DateTime? weighingDate;
 
 /// Create a copy of AnimalRegistration
@@ -313,7 +347,15 @@ as DateTime?,
 /// @nodoc
 mixin _$RegisteredAnimal {
 
- String get id; AnimalRegistration get registration; AnimalSyncStatus get syncStatus; DateTime get createdAt; DateTime get updatedAt; String get displayDestination; String get displayCategory; String? get syncErrorCode;
+/// UUID generado en mobile y usado tambien como ID de backend.
+ String get id;/// Datos de negocio registrados.
+ AnimalRegistration get registration;/// Estado local de sincronizacion con backend.
+ AnimalSyncStatus get syncStatus;/// Fecha/hora de creacion local del registro.
+ DateTime get createdAt;/// Fecha/hora de ultima modificacion de negocio.
+ DateTime get updatedAt;/// Destino visible para pantallas de exito o resumen.
+ String get displayDestination;/// Categoria visible para pantallas de exito o resumen.
+ String get displayCategory;/// Codigo de error devuelto por backend cuando el sync queda rechazado.
+ String? get syncErrorCode;
 /// Create a copy of RegisteredAnimal
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -518,13 +560,21 @@ class _RegisteredAnimal implements RegisteredAnimal {
   const _RegisteredAnimal({required this.id, required this.registration, required this.syncStatus, required this.createdAt, required this.updatedAt, required this.displayDestination, required this.displayCategory, this.syncErrorCode});
   
 
+/// UUID generado en mobile y usado tambien como ID de backend.
 @override final  String id;
+/// Datos de negocio registrados.
 @override final  AnimalRegistration registration;
+/// Estado local de sincronizacion con backend.
 @override final  AnimalSyncStatus syncStatus;
+/// Fecha/hora de creacion local del registro.
 @override final  DateTime createdAt;
+/// Fecha/hora de ultima modificacion de negocio.
 @override final  DateTime updatedAt;
+/// Destino visible para pantallas de exito o resumen.
 @override final  String displayDestination;
+/// Categoria visible para pantallas de exito o resumen.
 @override final  String displayCategory;
+/// Codigo de error devuelto por backend cuando el sync queda rechazado.
 @override final  String? syncErrorCode;
 
 /// Create a copy of RegisteredAnimal

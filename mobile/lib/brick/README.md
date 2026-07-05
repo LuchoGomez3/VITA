@@ -69,9 +69,13 @@ Si una regla pertenece a una entidad concreta, va en `stores/`.
 Contiene lo necesario para que Brick haga requests autenticadas.
 
 `backend_access_token_provider.dart` define de donde sale el JWT. Hoy existe
-una implementacion temporal que lee `VITA_BACKEND_ACCESS_TOKEN` desde
-`--dart-define`. Cuando exista login real, deberia reemplazarse por un provider
-conectado a Supabase Auth.
+una implementacion de sesion en memoria
+(`SessionBackendAccessTokenProvider`).
+
+Con login real, auth persiste la sesion en secure storage y, al iniciar sesion o
+restaurar la app offline, hidrata `SessionBackendAccessTokenProvider`. Brick no
+lee secure storage ni guarda JWT en SQLite: solo pide el token actual a este
+contrato antes de enviar requests REST.
 
 `authenticated_backend_client.dart` envuelve el cliente HTTP usado por Brick:
 
@@ -201,7 +205,7 @@ Archivos generados habituales:
 - No meter logica de feature en `core/repository.dart`.
 - No usar Brick desde `presentation` ni desde `domain`.
 - No guardar secretos en esta carpeta.
-- El token actual se inyecta por `--dart-define` solo mientras no exista auth
-  real en mobile.
+- No guardar JWT en SQLite/Brick. Auth lo guarda en secure storage y alimenta
+  `SessionBackendAccessTokenProvider` en memoria.
 - Cada entidad sync-able debe usar UUID generado por el cliente y timestamps
   `created_at`, `updated_at`, `deleted_at` cuando aplique.
