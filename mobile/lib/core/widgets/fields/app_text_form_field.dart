@@ -23,6 +23,7 @@ class AppTextFormField extends StatelessWidget {
     this.inputFormatters,
     this.textInputAction,
     this.maxLines = 1,
+    this.obscureText = false,
     this.enabled = true,
     this.readOnly = false,
     this.onChanged,
@@ -58,6 +59,9 @@ class AppTextFormField extends StatelessWidget {
 
   /// El numero de lineas maximas para el campo.
   final int maxLines;
+
+  /// Indica si el campo debe ocultar el texto ingresado.
+  final bool obscureText;
 
   /// Indica si el campo esta habilitado.
   final bool enabled;
@@ -102,6 +106,7 @@ class AppTextFormField extends StatelessWidget {
           inputFormatters: inputFormatters,
           textInputAction: textInputAction,
           maxLines: maxLines,
+          obscureText: obscureText,
           enabled: enabled,
           readOnly: readOnly,
           onChanged: onChanged,
