@@ -1,32 +1,35 @@
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+"""Lógica de autenticación de sesión.
 
-from jose import jwt
+Delega la validación de credenciales en el proveedor configurado
+(``get_auth_provider``) y carga el perfil desde la tabla ``usuarios``. No emite
+ni valida JWT por su cuenta: el token lo devuelve el proveedor (Supabase en
+entornos reales), de modo que sea válido para ``get_current_user``.
+"""
 
-from core.config import settings
+from sqlalchemy.ext.asyncio import AsyncSession
 
-FAKE_USERS_DB = {
-    "admin": {"username": "admin", "password": "admin"},
-}
+from api.auth.providers import AuthProvider, InvalidCredentialsError
+from api.modules.usuarios.models import Usuario
+from api.modules.usuarios.repository import UsuarioRepository
 
 
 class AuthService:
-    def authenticate_user(
-        self, username: str, password: str
-    ) -> Optional[dict[str, str]]:
-        user = FAKE_USERS_DB.get(username)
-        if not user or user["password"] != password:
-            return None
-        return {"username": user["username"]}
+    def __init__(self, session: AsyncSession, auth_provider: AuthProvider) -> None:
+        self.repository = UsuarioRepository(session)
+        self.auth_provider = auth_provider
 
-    def create_access_token(
-        self, data: dict, expires_delta: Optional[timedelta] = None
-    ) -> str:
-        to_encode = data.copy()
-        expire = datetime.now(timezone.utc) + (
-            expires_delta or timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-        )
-        to_encode.update({"exp": expire})
-        return jwt.encode(
-            to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
-        )
+    async def login(self, email: str, password: str) -> tuple[Usuario, str]:
+        """Valida credenciales contra el proveedor y devuelve perfil + token.
+
+        Lanza ``InvalidCredentialsError`` si las credenciales son inválidas o si
+        no existe un perfil en ``usuarios`` para el usuario autenticado.
+        """
+        auth_result = await self.auth_provider.sign_in(email, password)
+
+        usuario = await self.repository.get_by_id(auth_result.user_id)
+        if usuario is None:
+            raise InvalidCredentialsError(
+                "Perfil no encontrado para estas credenciales"
+            )
+
+        return usuario, auth_result.access_token
