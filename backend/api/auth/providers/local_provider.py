@@ -10,7 +10,12 @@ from uuid import UUID, uuid4
 
 from jose import JWTError, jwt
 
-from api.auth.providers.base import AuthProvider, AuthProviderError, AuthResult
+from api.auth.providers.base import (
+    AuthProvider,
+    AuthProviderError,
+    AuthResult,
+    InvalidCredentialsError,
+)
 from core.config import settings
 
 
@@ -19,6 +24,15 @@ class LocalAuthProvider(AuthProvider):
         user_id = uuid4()
         token = self._create_token(str(user_id))
         return AuthResult(user_id=user_id, access_token=token)
+
+    async def sign_in(self, email: str, password: str) -> AuthResult:
+        # El proveedor local no guarda contraseñas ni puede recuperar el UUID del
+        # perfil a partir del email (el alta genera un UUID aleatorio). Para
+        # desarrollo/test, obtené un token con ``/registro`` o ``create_token_for``.
+        raise InvalidCredentialsError(
+            "El login por contraseña no está disponible con AUTH_PROVIDER=local; "
+            "usá /api/v1/usuarios/registro para obtener un token de sesión."
+        )
 
     def verify_token(self, token: str) -> dict:
         try:

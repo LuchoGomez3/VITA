@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:path/path.dart' as path;
@@ -16,6 +17,10 @@ class BrickBootstrap {
 
   /// Configura el repositorio Brick compartido y sus bases locales.
   static Future<void> initialize() async {
+    if (kIsWeb) {
+      return;
+    }
+
     final directory = await getApplicationDocumentsDirectory();
 
     // Base principal de datos offline-first: tablas de modelos Brick.

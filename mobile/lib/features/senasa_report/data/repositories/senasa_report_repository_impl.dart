@@ -35,7 +35,7 @@ class SenasaReportRepositoryImpl implements SenasaReportRepository {
 
   @override
   Future<List<SenasaEstablishment>> getEstablishments() async {
-    final response = await _get(Uri.parse('$_baseUrl/v1/establecimientos'));
+    final response = await _get(Uri.parse('$_baseUrl/api/v1/establecimientos'));
     final payload = _decodeJson(response);
     final data = payload['data'];
     if (data is! List<Object?>) {
@@ -48,7 +48,7 @@ class SenasaReportRepositoryImpl implements SenasaReportRepository {
   Future<GeneratedSenasaReport> generateReport(
     SenasaReportRequest request,
   ) async {
-    final uri = Uri.parse('$_baseUrl/v1/reportes/senasa').replace(
+    final uri = Uri.parse('$_baseUrl/api/v1/reportes/senasa').replace(
       queryParameters: {
         'establecimiento_id': request.establishmentId,
         'formato': request.format,

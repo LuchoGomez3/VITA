@@ -1,33 +1,42 @@
-from datetime import timedelta
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth.dependencies import get_current_user
+from api.auth.providers import AuthProvider, get_auth_provider
 from api.auth.service import AuthService
 from api.modules.usuarios.models import Usuario
 from api.shared.schemas import StandardResponse
-from core.config import settings
+from database.database import get_session
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-auth_service = AuthService()
-
 
 @router.post("/login", response_model=StandardResponse)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = auth_service.authenticate_user(form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-        )
-    access_token_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-    token = auth_service.create_access_token(
-        {"sub": user["username"]}, expires_delta=access_token_expires
-    )
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: AsyncSession = Depends(get_session),
+    auth_provider: AuthProvider = Depends(get_auth_provider),
+):
+    """Inicia sesión contra el proveedor configurado y devuelve un token válido.
+
+    ``username`` se interpreta como el email del usuario. El token devuelto sirve
+    para autenticar el resto de los endpoints (incluido el botón *Authorize*).
+    """
+    service = AuthService(session, auth_provider)
+    usuario, access_token = await service.login(form_data.username, form_data.password)
     return StandardResponse(
-        success=True, data={"access_token": token, "token_type": "bearer"}
+        success=True,
+        data={
+            "access_token": access_token,
+            "token_type": "bearer",
+            "usuario": {
+                "id": str(usuario.id),
+                "nombre": usuario.nombre,
+                "apellido": usuario.apellido,
+                "email": usuario.email,
+            },
+        },
     )
 
 

@@ -106,6 +106,48 @@ class SenasaStrings {
       'Compilando 142 movimientos con CUIG,\n'
       'RENSPA y firma digital del responsable.';
 
+  /// Title shown after a successful report generation.
+  static const String successTitle = 'Reporte generado';
+
+  /// Description shown after a successful report generation.
+  static const String successDescription = 'Archivo listo para descargar o compartir.';
+
+  /// Title shown when report generation fails.
+  static const String errorTitle = 'No se pudo generar';
+
+  /// Fallback description shown when report generation fails.
+  static const String errorDescription = 'Revisá los datos y volvé a intentar.';
+
+  /// Preview action label.
+  static const String preview = 'Vista previa';
+
+  /// Download action label.
+  static const String download = 'Descargar';
+
+  /// Share action label.
+  static const String share = 'Compartir';
+
+  /// Marks the generated report as sent.
+  static const String markAsSent = 'Marcar como enviado a SENASA';
+
+  /// Return action label for the SENASA menu.
+  static const String backToCompliance = 'Volver a cumplimiento';
+
+  /// Retry generation action label.
+  static const String retryGeneration = 'Volver a intentar';
+
+  /// File timestamp label for generated reports.
+  static const String generatedNow = 'Generado ahora';
+
+  /// Generic file label used when the filename has no extension.
+  static const String reportFileLabel = 'ARCHIVO';
+
+  /// Message shown when the report is marked as sent locally.
+  static const String markedAsSentMessage = 'Reporte marcado como enviado a SENASA.';
+
+  /// Message shown when preview is not available for a generated format.
+  static const String previewUnavailable = 'La vista previa está disponible para archivos PDF.';
+
   /// Generation progress item for data validation.
   static const String validatingData = 'Validando integridad de datos';
 

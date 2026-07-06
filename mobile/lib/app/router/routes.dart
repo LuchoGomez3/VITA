@@ -5,6 +5,12 @@ class AppRoutes {
   /// Ruta de la pantalla de inicio.
   static const home = '/';
 
+  /// Ruta liviana que espera la restauracion de sesion al arrancar.
+  static const authCheck = '/auth-check';
+
+  /// Ruta de la pantalla de login.
+  static const login = '/login';
+
   /// Ruta de la pantalla de registro de animal paso 1.
   static const animalRegisterStep1 = '/registrar-animal/paso-1';
 
@@ -31,6 +37,12 @@ class AppRoutes {
 
   /// Ruta de generacion del reporte SENASA.
   static const senasaReportGeneration = '/senasa-report/generando';
+
+  /// Ruta de exito del reporte SENASA.
+  static const senasaReportSuccess = '/senasa-report/exito';
+
+  /// Ruta de error del reporte SENASA.
+  static const senasaReportError = '/senasa-report/error';
 
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {

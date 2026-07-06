@@ -1,13 +1,13 @@
 import 'package:frontend_mayoral/features/auth/domain/repositories/auth_repository.dart';
 
-/// Signs out the current user.
+/// Caso de uso para cerrar la sesion mobile.
 class SignOutUseCase {
-  /// Creates the use case with its auth repository dependency.
+  /// Crea el caso de uso con el repositorio de auth.
   const SignOutUseCase(this._repository);
 
   final AuthRepository _repository;
 
-  /// Executes the sign-out request.
+  /// Elimina la sesion local actual.
   Future<void> call() {
     return _repository.signOut();
   }

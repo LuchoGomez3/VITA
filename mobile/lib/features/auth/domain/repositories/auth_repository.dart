@@ -1,17 +1,24 @@
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 
-/// Contract for authentication operations used by the domain layer.
+/// Contrato de autenticacion consumido por los casos de uso.
 abstract class AuthRepository {
-  /// Signs in with username and password.
-  Future<Result<AppUser>> signIn({
-    required String username,
+  /// Inicia sesion contra el backend y devuelve la sesion mobile.
+  Future<Result<AuthSession>> signIn({
+    required String email,
     required String password,
   });
 
-  /// Returns the currently authenticated user when available.
+  /// Restaura una sesion guardada localmente sin consultar al backend.
+  Future<Result<AuthSession>> restoreSession();
+
+  /// Devuelve la sesion actual disponible localmente.
+  Future<Result<AuthSession>> getCurrentSession();
+
+  /// Devuelve el usuario de la sesion actual disponible localmente.
   Future<Result<AppUser>> getCurrentUser();
 
-  /// Ends the current authenticated session.
+  /// Cierra la sesion local.
   Future<void> signOut();
 }

@@ -1,14 +1,14 @@
-/// Application roles currently recognized by the auth domain.
+/// Roles de usuario disponibles para la sesion mobile.
 enum UserRole {
-  /// Administrator role.
+  /// Administrador de plataforma.
   admin,
 
-  /// Establishment manager role.
+  /// Encargado del establecimiento.
   encargado,
 
-  /// Field operator role.
+  /// Operario de campo.
   operario,
 
-  /// Fallback role when the backend value is not recognized.
+  /// Rol no reconocido por la version actual de la app.
   unknown,
 }

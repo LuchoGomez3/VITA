@@ -1,7 +1,6 @@
 {
   "version": "0.2.0",
   "configurations": [
-    
     {
       "name": "Mobile: debug local backend",
       "request": "launch",
@@ -9,8 +8,27 @@
       "cwd": "mobile",
       "program": "lib/main.dart",
       "toolArgs": [
-        "--dart-define=VITA_BACKEND_BASE_URL=http://10.0.2.2:8000",
-        "--dart-define=VITA_BACKEND_ACCESS_TOKEN=${input:vitaBackendAccessToken}"
+        "--dart-define=VITA_BACKEND_BASE_URL=http://10.0.2.2:8000"
+      ]
+    },
+    {
+      "name": "Mobile: debug physical device backend",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "mobile",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=VITA_BACKEND_BASE_URL=http://192.168.0.222:8000"
+      ]
+    },
+    {
+      "name": "Mobile: debug custom backend",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "mobile",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=VITA_BACKEND_BASE_URL=${input:vitaBackendBaseUrl}"
       ]
     },
     {
@@ -26,10 +44,10 @@
   ],
   "inputs": [
     {
-      "id": "vitaBackendAccessToken",
+      "id": "vitaBackendBaseUrl",
       "type": "promptString",
-      "description": "Supabase JWT para Authorization: Bearer <token>",
-      "password": true
+      "description": "URL base del backend VITA",
+      "default": "http://192.168.0.222:8000"
     }
   ]
 }
