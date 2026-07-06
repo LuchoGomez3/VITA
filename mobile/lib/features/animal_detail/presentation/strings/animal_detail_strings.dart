@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 
-/// Textos y datos mock de la pantalla de detalle de animal.
+/// Textos de la pantalla de detalle de animal.
 class AnimalDetailStrings {
   const AnimalDetailStrings._();
 
@@ -11,53 +10,56 @@ class AnimalDetailStrings {
   /// Etiqueta del identificador principal.
   static const animalIdLabel = 'Caravana / ID';
 
-  /// Potrero mock actual.
-  static const currentLot = 'Potrero 3';
-
   /// Etiqueta de ubicacion actual.
   static const currentLocationLabel = 'Ubicación actual';
 
   /// Etiqueta de raza.
   static const breedLabel = 'Raza';
 
-  /// Raza mock.
-  static const breedValue = 'Brahman';
-
   /// Etiqueta de sexo.
   static const sexLabel = 'Sexo';
 
-  /// Sexo mock.
-  static const sexValue = 'Macho';
+  /// Sexo macho.
+  static const sexMale = 'Macho';
+
+  /// Sexo hembra.
+  static const sexFemale = 'Hembra';
 
   /// Etiqueta de categoria.
   static const categoryLabel = 'Categoría';
 
-  /// Categoria mock.
-  static const categoryValue = 'Novillo';
+  ///Etiqueta de Pelaje
+  static const coatLabel = 'Pelaje';
 
   /// Etiqueta de fecha de nacimiento.
   static const birthDateLabel = 'Fecha de Nacimiento';
 
-  /// Fecha de nacimiento mock.
-  static const birthDateValue = '12/11/2024';
-
   /// Etiqueta de edad.
   static const ageLabel = 'Edad';
 
-  /// Edad mock.
-  static const ageValue = '19 meses';
+  /// Sufijo de meses.
+  static const monthsSuffix = 'meses';
+
+  /// Sufijo de años.
+  static const yearsSuffix = 'años';
 
   /// Etiqueta de ultimo peso.
   static const lastWeightLabel = 'Último peso';
 
-  /// Ultimo peso mock.
-  static const lastWeightValue = '410 kg';
-
   /// Etiqueta de fuente del ultimo peso.
   static const lastWeightSourceLabel = 'Fuente último peso';
 
-  /// Fuente mock del ultimo peso.
-  static const lastWeightSourceValue = 'Estimación por IA';
+  /// Etiqueta de observaciones.
+  static const observationsLabel = 'Observaciones';
+
+  /// Metodo de pesaje manual.
+  static const manualWeighingMethod = 'Manual';
+
+  /// Metodo de pesaje por balanza bluetooth.
+  static const bluetoothWeighingMethod = 'Balanza Bluetooth';
+
+  /// Metodo de pesaje por IA.
+  static const aiWeighingMethod = 'Estimación por IA';
 
   /// Titulo del grafico de peso.
   static const weightChartTitle = 'Evolución de Peso';
@@ -65,17 +67,29 @@ class AnimalDetailStrings {
   /// Titulo del historial.
   static const eventHistoryTitle = 'Historial de Eventos';
 
-  /// Texto de eventos pendientes de sincronizacion.
-  static const pendingSyncEvents = '2 eventos pendientes de\nsincronización';
+  /// Titulo del evento de nacimiento.
+  static const birthEventTitle = 'Nacimiento';
+
+  /// Descripcion del evento de nacimiento.
+  static const birthEventDescription = 'Fecha de nacimiento registrada.';
+
+  /// Estado pendiente de sincronizacion.
+  static const pendingSyncStatus = 'Pendiente de sincronización';
+
+  /// Estado sincronizado.
+  static const synchronizedSyncStatus = 'Sincronizado con backend';
+
+  /// Estado rechazado por backend.
+  static const rejectedSyncStatus = 'Rechazado por backend';
 
   /// Etiqueta de ultima lectura.
   static const lastReadingLabel = 'Última lectura:';
 
-  /// Fecha mock de ultima lectura.
-  static const lastReadingDate = '10/06/2026';
-
   /// Mensaje de error de carga.
   static const loadError = 'Error al cargar la información del animal.';
+
+  /// Valor mostrado cuando el backend/cache aun no tiene un dato.
+  static const noDataValue = 'Sin dato';
 
   /// Etiquetas de meses del grafico de peso.
   static const weightChartMonthLabels = <int, String>{
@@ -95,37 +109,5 @@ class AnimalDetailStrings {
     AppLineChartPoint(x: 4, y: 340),
     AppLineChartPoint(x: 5, y: 390),
     AppLineChartPoint(x: 6, y: 410),
-  ];
-
-  /// Eventos mock del historial de trazabilidad.
-  static const eventHistoryItems = <AppTimelineItem>[
-    AppTimelineItem(
-      date: '10/06/2026',
-      title: 'Pesaje registrado',
-      description: 'Peso: 410 kg (Estimación por IA).',
-      icon: Icons.monitor_weight_outlined,
-      iconColor: Colors.blue,
-    ),
-    AppTimelineItem(
-      date: '15/03/2026',
-      title: 'Vacunación SENASA',
-      description: 'Campaña Antiaftosa y Antibrucélica.',
-      icon: Icons.vaccines_outlined,
-      iconColor: Colors.red,
-    ),
-    AppTimelineItem(
-      date: '01/02/2026',
-      title: 'Movimiento interno',
-      description: 'Traslado desde Potrero 1 a Potrero 3.',
-      icon: Icons.sync_alt_outlined,
-      iconColor: Colors.orange,
-    ),
-    AppTimelineItem(
-      date: '12/11/2024',
-      title: 'Alta de animal',
-      description: 'Registro inicial en el sistema. Nacimiento.',
-      icon: Icons.add_circle_outline,
-      iconColor: Colors.green,
-    ),
   ];
 }

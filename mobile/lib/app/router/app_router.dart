@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
@@ -81,7 +82,10 @@ class AppRouter {
         path: AppRoutes.animalDetail,
         builder: (context, state) {
           final animalId = state.pathParameters['animalId']!;
-          return AnimalDetailPage(animalId: animalId);
+          return AnimalDetailPage(
+            animalId: animalId,
+            createCubit: createAnimalDetailCubit,
+          );
         },
       ),
     ],

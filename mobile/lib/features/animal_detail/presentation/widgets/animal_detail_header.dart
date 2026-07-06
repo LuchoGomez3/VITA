@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 
 /// Header with the animal identifier and current location.
 class AnimalDetailHeader extends StatelessWidget {
   /// Creates the animal detail header.
   const AnimalDetailHeader({
-    required this.animalId,
+    required this.animalDetail,
     super.key,
   });
 
-  /// Animal identifier shown as the main title.
-  final String animalId;
+  /// Animal data shown in the header.
+  final AnimalDetail animalDetail;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +30,7 @@ class AnimalDetailHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(animalId, style: AppTypography.appBarTitle),
+              Text(animalDetail.displayIdentifier, style: AppTypography.appBarTitle),
               Text(
                 AnimalDetailStrings.animalIdLabel,
                 style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),
@@ -37,22 +38,26 @@ class AnimalDetailHeader extends StatelessWidget {
             ],
           ),
         ),
-        const _CurrentLocation(),
+        _CurrentLocation(animalDetail: animalDetail),
       ],
     );
   }
 }
 
 class _CurrentLocation extends StatelessWidget {
-  const _CurrentLocation();
+  const _CurrentLocation({
+    required this.animalDetail,
+  });
+
+  final AnimalDetail animalDetail;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        const Text(
-          AnimalDetailStrings.currentLot,
+        Text(
+          animalDetail.lotName.isEmpty ? 'N/A' : animalDetail.lotName,
           style: AppTypography.mediumEmphasis,
         ),
         Text(
@@ -61,5 +66,19 @@ class _CurrentLocation extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+extension on AnimalDetail {
+  String get displayIdentifier {
+    if (visualTag.isNotEmpty) {
+      return visualTag;
+    }
+
+    if (rfidTagNumber.isNotEmpty) {
+      return rfidTagNumber;
+    }
+
+    return id;
   }
 }

@@ -125,7 +125,7 @@ class _HomePageState extends State<HomePage> {
                     AppFilledButton(
                       label: HomeStrings.animalDetailButton,
                       onPressed: () => context.go(
-                        AppRoutes.animalDetailById('A-001'),
+                        AppRoutes.animalDetailById('550e8400-e29b-41d4-a716-446655440059'),
                       ),
                     ),
                   ],

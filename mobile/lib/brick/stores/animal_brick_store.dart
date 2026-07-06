@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
-import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
+import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
 
 /// Contrato usado por features para persistir animales con Brick.
 ///
@@ -11,6 +11,12 @@ import 'package:frontend_mayoral/brick/core/repository.dart';
 abstract class AnimalBrickStore {
   /// Guarda [animal] localmente y lo deja listo para sincronizacion remota.
   Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal);
+
+  /// Guarda datos remotos en SQLite sin generar una request de sincronizacion.
+  Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal);
+
+  /// Busca un animal en SQLite por el UUID generado en mobile/backend.
+  Future<BrickAnimalModel?> getAnimalById(String animalId);
 }
 
 /// Store Brick especifico para operaciones de animales.
@@ -57,6 +63,24 @@ class BrickAnimalStore implements AnimalBrickStore {
     unawaited(_repository.enqueueRemoteUpsert<BrickAnimalModel>(savedAnimal));
 
     return savedAnimal;
+  }
+
+  @override
+  Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) {
+    return _repository.upsertLocal<BrickAnimalModel>(animal);
+  }
+
+  @override
+  Future<BrickAnimalModel?> getAnimalById(String animalId) async {
+    final storedAnimals = await _repository.getLocal<BrickAnimalModel>();
+
+    for (final animal in storedAnimals) {
+      if (animal.localId == animalId) {
+        return animal;
+      }
+    }
+
+    return null;
   }
 
   /// Aplica la respuesta del backend al registro local.

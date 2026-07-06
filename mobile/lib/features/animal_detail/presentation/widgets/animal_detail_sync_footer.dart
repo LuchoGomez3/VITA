@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 
 /// Footer with offline sync and last reading metadata.
 class AnimalDetailSyncFooter extends StatelessWidget {
   /// Creates the animal detail sync footer.
-  const AnimalDetailSyncFooter({super.key});
+  const AnimalDetailSyncFooter({
+    required this.animalDetail,
+    super.key,
+  });
+
+  /// Animal sync metadata.
+  final AnimalDetail animalDetail;
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +24,7 @@ class AnimalDetailSyncFooter extends StatelessWidget {
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Text(
-            AnimalDetailStrings.pendingSyncEvents,
+            animalDetail.syncStatus.label,
             style: AppTypography.smallEmphasis.copyWith(color: AppColors.primary),
           ),
         ),
@@ -27,13 +35,29 @@ class AnimalDetailSyncFooter extends StatelessWidget {
               AnimalDetailStrings.lastReadingLabel,
               style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),
             ),
-            const Text(
-              AnimalDetailStrings.lastReadingDate,
+            Text(
+              animalDetail.updatedAt.displayDate,
               style: AppTypography.smallEmphasis,
             ),
           ],
         ),
       ],
     );
+  }
+}
+
+extension on AnimalSyncStatus {
+  String get label => switch (this) {
+    AnimalSyncStatus.pending => AnimalDetailStrings.pendingSyncStatus,
+    AnimalSyncStatus.synchronized => AnimalDetailStrings.synchronizedSyncStatus,
+    AnimalSyncStatus.rejected => AnimalDetailStrings.rejectedSyncStatus,
+  };
+}
+
+extension on DateTime {
+  String get displayDate {
+    final day = this.day.toString().padLeft(2, '0');
+    final month = this.month.toString().padLeft(2, '0');
+    return '$day/$month/$year';
   }
 }
