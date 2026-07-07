@@ -9,7 +9,7 @@ class LoginForm extends StatelessWidget {
   /// Crea el formulario con controladores y callbacks provistos por la pagina.
   const LoginForm({
     required this.formKey,
-    required this.usernameController,
+    required this.emailController,
     required this.passwordController,
     required this.obscurePassword,
     required this.isSubmitting,
@@ -21,19 +21,19 @@ class LoginForm extends StatelessWidget {
   /// Clave del formulario para validar desde la pagina.
   final GlobalKey<FormState> formKey;
 
-  /// Controlador del campo usuario.
-  final TextEditingController usernameController;
+  /// Controlador del campo email.
+  final TextEditingController emailController;
 
-  /// Controlador del campo contraseña.
+  /// Controlador del campo contrasena.
   final TextEditingController passwordController;
 
-  /// Indica si la contraseña debe mostrarse oculta.
+  /// Indica si la contrasena debe mostrarse oculta.
   final bool obscurePassword;
 
   /// Indica si el submit esta en curso.
   final bool isSubmitting;
 
-  /// Alterna la visibilidad del campo contraseña.
+  /// Alterna la visibilidad del campo contrasena.
   final VoidCallback onPasswordVisibilityPressed;
 
   /// Ejecuta el submit del formulario.
@@ -45,17 +45,22 @@ class LoginForm extends StatelessWidget {
       key: formKey,
       child: Column(
         children: [
+          const Text(
+            LoginStrings.loginTitle,
+            style: AppTypography.formFieldLabel,
+          ),
+          const SizedBox(height: AppSpacing.lg),
           AppTextFormField(
-            controller: usernameController,
-            title: LoginStrings.usernameLabel,
-            hintText: LoginStrings.usernameHint,
+            controller: emailController,
+            title: LoginStrings.emailLabel,
+            hintText: LoginStrings.emailHint,
             enabled: !isSubmitting,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
             prefixIcon: const Icon(Icons.person_outline),
             validator: (value) => FormValidators.requiredField(
               value,
-              message: LoginStrings.usernameRequired,
+              message: LoginStrings.emailRequired,
             ),
           ),
           const SizedBox(height: AppSpacing.md),

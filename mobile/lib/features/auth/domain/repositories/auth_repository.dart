@@ -6,11 +6,17 @@ import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart
 abstract class AuthRepository {
   /// Inicia sesion contra el backend y devuelve la sesion mobile.
   Future<Result<AuthSession>> signIn({
-    required String username,
+    required String email,
     required String password,
   });
 
-  /// Devuelve el usuario de la sesion actual.
+  /// Restaura una sesion guardada localmente sin consultar al backend.
+  Future<Result<AuthSession>> restoreSession();
+
+  /// Devuelve la sesion actual disponible localmente.
+  Future<Result<AuthSession>> getCurrentSession();
+
+  /// Devuelve el usuario de la sesion actual disponible localmente.
   Future<Result<AppUser>> getCurrentUser();
 
   /// Cierra la sesion local.

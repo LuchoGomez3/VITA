@@ -2,25 +2,41 @@ import 'package:frontend_mayoral/app/config/config.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/storage/storage.dart';
+import 'package:frontend_mayoral/features/auth/data/datasources/auth_local_data_source.dart';
 import 'package:frontend_mayoral/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:frontend_mayoral/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/get_current_user_use_case.dart';
+import 'package:frontend_mayoral/features/auth/domain/use_cases/restore_session_use_case.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/sign_in_use_case.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/sign_out_use_case.dart';
+import 'package:frontend_mayoral/features/auth/presentation/bloc/auth_session_cubit.dart';
 import 'package:frontend_mayoral/features/auth/presentation/bloc/login_cubit.dart';
 import 'package:http/http.dart' as http;
 
 /// Composition root de la feature de autenticacion.
+///
+/// Todavia usamos wiring manual para no introducir un contenedor de DI. La
+/// regla practica es que presentation recibe use cases/cubits ya armados, y
+/// solo este archivo conoce data sources, storage seguro y cliente HTTP.
+
+/// Crea el cubit global que restaura y cierra sesiones.
+AuthSessionCubit createAuthSessionCubit() {
+  final client = http.Client();
+  final repository = _createAuthRepository(client);
+
+  return AuthSessionCubit(
+    restoreSessionUseCase: RestoreSessionUseCase(repository),
+    signOutUseCase: SignOutUseCase(repository),
+    onClose: client.close,
+  );
+}
+
+/// Crea el cubit local de la pantalla de login.
 LoginCubit createLoginCubit() {
   final client = http.Client();
-  final repository = AuthRepositoryImpl(
-    remoteDataSource: AuthRemoteDataSource(
-      backendBaseUrl: AppConfig.current.backendBaseUrl,
-      client: client,
-    ),
-    tokenProvider: SessionBackendAccessTokenProvider.instance,
-  );
+  final repository = _createAuthRepository(client);
 
   return LoginCubit(
     signInUseCase: SignInUseCase(repository),
@@ -28,16 +44,13 @@ LoginCubit createLoginCubit() {
   );
 }
 
-/// Verifica la sesion actual contra `/api/auth/me`.
+/// Lee el usuario autenticado desde la sesion local.
+///
+/// Este helper sigue existiendo para la Home mock. No llama al backend, por lo
+/// que sirve para probar que la app puede abrir offline con sesion restaurada.
 Future<Result<String>> verifyAuthenticatedUser() async {
   final client = http.Client();
-  final repository = AuthRepositoryImpl(
-    remoteDataSource: AuthRemoteDataSource(
-      backendBaseUrl: AppConfig.current.backendBaseUrl,
-      client: client,
-    ),
-    tokenProvider: SessionBackendAccessTokenProvider.instance,
-  );
+  final repository = _createAuthRepository(client);
 
   try {
     final result = await GetCurrentUserUseCase(repository)();
@@ -56,20 +69,27 @@ Future<Result<String>> verifyAuthenticatedUser() async {
   }
 }
 
-/// Cierra la sesion actual en memoria.
+/// Cierra la sesion actual en storage seguro y memoria.
 Future<void> signOutAuthenticatedUser() async {
   final client = http.Client();
-  final repository = AuthRepositoryImpl(
-    remoteDataSource: AuthRemoteDataSource(
-      backendBaseUrl: AppConfig.current.backendBaseUrl,
-      client: client,
-    ),
-    tokenProvider: SessionBackendAccessTokenProvider.instance,
-  );
+  final repository = _createAuthRepository(client);
 
   try {
     await SignOutUseCase(repository)();
   } finally {
     client.close();
   }
+}
+
+AuthRepositoryImpl _createAuthRepository(http.Client client) {
+  return AuthRepositoryImpl(
+    localDataSource: const AuthLocalDataSource(
+      secureStorage: FlutterSecureStorageService(),
+    ),
+    remoteDataSource: AuthRemoteDataSource(
+      backendBaseUrl: AppConfig.current.backendBaseUrl,
+      client: client,
+    ),
+    tokenProvider: SessionBackendAccessTokenProvider.instance,
+  );
 }

@@ -5,6 +5,7 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
+import 'package:frontend_mayoral/features/auth/presentation/bloc/auth_session_cubit.dart';
 import 'package:frontend_mayoral/features/auth/presentation/bloc/login_cubit.dart';
 import 'package:frontend_mayoral/features/auth/presentation/widgets/login_form.dart';
 import 'package:frontend_mayoral/features/auth/presentation/widgets/login_header.dart';
@@ -42,14 +43,14 @@ class _LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<_LoginView> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -60,7 +61,8 @@ class _LoginViewState extends State<_LoginView> {
       listenWhen: (previous, current) => previous.signInResult != current.signInResult,
       listener: (context, state) {
         switch (state.signInResult) {
-          case Data<AuthSession>():
+          case Data<AuthSession>(:final data):
+            context.read<AuthSessionCubit>().setAuthenticated(data);
             context.go(AppRoutes.home);
           case ResultError<AuthSession>(:final error):
             ScaffoldMessenger.of(context)
@@ -92,7 +94,7 @@ class _LoginViewState extends State<_LoginView> {
                         AppSurfaceCard(
                           child: LoginForm(
                             formKey: _formKey,
-                            usernameController: _usernameController,
+                            emailController: _emailController,
                             passwordController: _passwordController,
                             obscurePassword: _obscurePassword,
                             isSubmitting: isSubmitting,
@@ -124,7 +126,7 @@ class _LoginViewState extends State<_LoginView> {
     }
 
     context.read<LoginCubit>().signIn(
-      username: _usernameController.text,
+      email: _emailController.text,
       password: _passwordController.text,
     );
   }

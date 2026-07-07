@@ -20,7 +20,7 @@ class HomeStrings {
   static const authCheckTitle = 'Autenticacion';
 
   /// Descripcion de la accion para validar la sesion.
-  static const authCheckDescription = 'Verifica la sesion actual consultando /api/auth/me.';
+  static const authCheckDescription = 'Verifica la sesion restaurada en este dispositivo.';
 
   /// Boton para verificar autenticacion.
   static const authCheckButton = 'Verificar sesion';

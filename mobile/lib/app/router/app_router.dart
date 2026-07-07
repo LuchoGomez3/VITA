@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
@@ -6,6 +8,8 @@ import 'package:frontend_mayoral/features/animal_register/presentation/bloc/regi
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/register_animal_page.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_success_page.dart';
 import 'package:frontend_mayoral/features/auth/auth_composition.dart';
+import 'package:frontend_mayoral/features/auth/presentation/bloc/auth_session_cubit.dart';
+import 'package:frontend_mayoral/features/auth/presentation/pages/auth_check_page.dart';
 import 'package:frontend_mayoral/features/auth/presentation/pages/login_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:go_router/go_router.dart';
@@ -14,24 +18,32 @@ import 'package:go_router/go_router.dart';
 class AppRouter {
   /// Router de la app.
   static final GoRouter router = GoRouter(
-    /// Ruta inicial de la app.
-    initialLocation: AppRoutes.login,
+    /// La app arranca restaurando sesion local antes de decidir login/home.
+    initialLocation: AppRoutes.authCheck,
 
     /// Rutas de la app.
     routes: [
       GoRoute(
+        path: AppRoutes.authCheck,
+        builder: (context, state) => const AuthCheckPage(),
+      ),
+      GoRoute(
         path: AppRoutes.login,
-        builder: (context, state) => const LoginPage(
-          createCubit: createLoginCubit,
+        pageBuilder: (context, state) => _buildBackwardPage(
+          state: state,
+          child: const LoginPage(
+            createCubit: createLoginCubit,
+          ),
         ),
       ),
-
-      /// Ruta de la pantalla de inicio.
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const HomePage(
-          signOut: signOutAuthenticatedUser,
-          verifyAuthentication: verifyAuthenticatedUser,
+        pageBuilder: (context, state) => _buildFadePage(
+          state: state,
+          child: HomePage(
+            signOut: context.read<AuthSessionCubit>().signOut,
+            verifyAuthentication: verifyAuthenticatedUser,
+          ),
         ),
       ),
       GoRoute(
@@ -79,4 +91,43 @@ class AppRouter {
       ),
     ],
   );
+
+  static CustomTransitionPage<void> _buildBackwardPage({
+    required GoRouterState state,
+    required Widget child,
+  }) {
+    return CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final position = animation.drive(
+          Tween<Offset>(
+            begin: const Offset(-1, 0),
+            end: Offset.zero,
+          ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        );
+
+        return SlideTransition(
+          position: position,
+          child: child,
+        );
+      },
+    );
+  }
+
+  static CustomTransitionPage<void> _buildFadePage({
+    required GoRouterState state,
+    required Widget child,
+  }) {
+    return CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: animation.drive(CurveTween(curve: Curves.easeOut)),
+          child: child,
+        );
+      },
+    );
+  }
 }

@@ -9,13 +9,13 @@ class SignInUseCase {
 
   final AuthRepository _repository;
 
-  /// Ejecuta el login con credenciales de usuario.
+  /// Ejecuta el login con email y contrasena.
   Future<Result<AuthSession>> call({
-    required String username,
+    required String email,
     required String password,
   }) {
     return _repository.signIn(
-      username: username,
+      email: email,
       password: password,
     );
   }

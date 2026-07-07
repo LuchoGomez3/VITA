@@ -11,6 +11,13 @@ class AppTypography {
   // en assets/fonts y declarada en pubspec.yaml.
   static const _baseFontFamily = 'sans-serif';
 
+  static const appTitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
   /// Titulo principal del app bar.
   static const appBarTitle = TextStyle(
     fontFamily: _baseFontFamily,

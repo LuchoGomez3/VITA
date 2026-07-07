@@ -1,7 +1,6 @@
 {
   "version": "0.2.0",
   "configurations": [
-    
     {
       "name": "Mobile: debug local backend",
       "request": "launch",
@@ -9,8 +8,7 @@
       "cwd": ".",
       "program": "lib/main.dart",
       "toolArgs": [
-        "--dart-define=VITA_BACKEND_BASE_URL=http://10.0.2.2:8000",
-        "--dart-define=VITA_BACKEND_ACCESS_TOKEN=${input:vitaBackendAccessToken}"
+        "--dart-define=VITA_BACKEND_BASE_URL=http://10.0.2.2:8000"
       ]
     },
     {
@@ -20,8 +18,7 @@
       "cwd": ".",
       "program": "lib/main.dart",
       "toolArgs": [
-        "--dart-define=VITA_BACKEND_BASE_URL=http://192.168.0.222:8000",
-        "--dart-define=VITA_BACKEND_ACCESS_TOKEN=${input:vitaBackendAccessToken}"
+        "--dart-define=VITA_BACKEND_BASE_URL=http://192.168.0.222:8000"
       ]
     },
     {
@@ -31,8 +28,7 @@
       "cwd": ".",
       "program": "lib/main.dart",
       "toolArgs": [
-        "--dart-define=VITA_BACKEND_BASE_URL=${input:vitaBackendBaseUrl}",
-        "--dart-define=VITA_BACKEND_ACCESS_TOKEN=${input:vitaBackendAccessToken}"
+        "--dart-define=VITA_BACKEND_BASE_URL=${input:vitaBackendBaseUrl}"
       ]
     },
     {
@@ -52,12 +48,6 @@
       "type": "promptString",
       "description": "URL base del backend VITA",
       "default": "http://192.168.0.222:8000"
-    },
-    {
-      "id": "vitaBackendAccessToken",
-      "type": "promptString",
-      "description": "Supabase JWT para Authorization: Bearer <token>",
-      "password": true
     }
   ]
 }

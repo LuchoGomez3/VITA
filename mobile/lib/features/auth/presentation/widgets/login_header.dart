@@ -10,7 +10,7 @@ class LoginHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      //crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 56,
@@ -25,14 +25,14 @@ class LoginHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        Text(
+        const Text(
           LoginStrings.title,
-          style: Theme.of(context).textTheme.headlineMedium,
+          style: AppTypography.appTitle,
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
+        const Text(
           LoginStrings.subtitle,
-          style: Theme.of(context).textTheme.bodyLarge,
+          style: AppTypography.pageBodyTitle,
         ),
       ],
     );

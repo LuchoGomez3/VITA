@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
+import 'package:frontend_mayoral/features/auth/data/models/auth_remote_session.dart';
 import 'package:http/http.dart' as http;
 
 /// Cliente remoto de autenticacion contra el backend.
@@ -9,32 +10,42 @@ class AuthRemoteDataSource {
   const AuthRemoteDataSource({
     required String backendBaseUrl,
     required http.Client client,
+    Duration requestTimeout = const Duration(seconds: 10),
   }) : _backendBaseUrl = backendBaseUrl,
-       _client = client;
+       _client = client,
+       _requestTimeout = requestTimeout;
 
   final String _backendBaseUrl;
   final http.Client _client;
+  final Duration _requestTimeout;
 
-  /// Ejecuta el login OAuth2 password form y devuelve el token.
-  Future<String> signIn({
-    required String username,
+  /// Ejecuta el login OAuth2 password form y devuelve token + usuario.
+  ///
+  /// El backend usa el nombre `username` por el estandar OAuth2, pero para VITA
+  /// ese campo es el email del usuario. Mantener esa traduccion aca evita que
+  /// la UI y el dominio tengan que hablar de "usuario" cuando realmente es
+  /// correo electronico.
+  Future<AuthRemoteSession> signIn({
+    required String email,
     required String password,
   }) async {
-    final response = await _client.post(
-      _uri('/api/auth/login'),
-      headers: const {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: {
-        'username': username,
-        'password': password,
-      },
-    );
+    final response = await _client
+        .post(
+          _uri('/api/auth/login'),
+          headers: const {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: {
+            'username': email,
+            'password': password,
+          },
+        )
+        .timeout(_requestTimeout);
 
     final body = _decodeResponse(response);
     if (response.statusCode == 401) {
       throw const DomainException(
-        message: 'Usuario o contraseña incorrectos.',
+        message: 'Email o contrasena incorrectos.',
         code: DomainErrorCode.unauthorized,
       );
     }
@@ -43,24 +54,33 @@ class AuthRemoteDataSource {
     final data = body['data'];
     if (data is Map<String, dynamic>) {
       final accessToken = data['access_token'];
-      if (accessToken is String && accessToken.isNotEmpty) {
-        return accessToken;
+      final userJson = data['usuario'];
+      if (accessToken is String && accessToken.isNotEmpty && userJson is Map<String, dynamic>) {
+        return AuthRemoteSession(
+          accessToken: accessToken,
+          userJson: userJson,
+        );
       }
     }
 
     throw const DomainException(
-      message: 'El backend no devolvió un token válido.',
+      message: 'El backend no devolvio una sesion valida.',
     );
   }
 
   /// Lee el perfil asociado al token Bearer.
+  ///
+  /// Este metodo queda disponible para validaciones online puntuales. No se usa
+  /// durante `restoreSession`, porque restaurar debe poder hacerse sin internet.
   Future<Map<String, dynamic>> getCurrentUser(String accessToken) async {
-    final response = await _client.get(
-      _uri('/api/auth/me'),
-      headers: {
-        'Authorization': 'Bearer $accessToken',
-      },
-    );
+    final response = await _client
+        .get(
+          _uri('/api/auth/me'),
+          headers: {
+            'Authorization': 'Bearer $accessToken',
+          },
+        )
+        .timeout(_requestTimeout);
 
     final body = _decodeResponse(response);
     _throwIfUnsuccessful(response, body);
@@ -70,7 +90,7 @@ class AuthRemoteDataSource {
     }
 
     throw const DomainException(
-      message: 'El backend no devolvió el usuario autenticado.',
+      message: 'El backend no devolvio el usuario autenticado.',
     );
   }
 
@@ -91,7 +111,7 @@ class AuthRemoteDataSource {
     }
 
     throw const DomainException(
-      message: 'El backend devolvió una respuesta inesperada.',
+      message: 'El backend devolvio una respuesta inesperada.',
     );
   }
 
@@ -109,7 +129,7 @@ class AuthRemoteDataSource {
     }
 
     throw const DomainException(
-      message: 'No se pudo iniciar sesión. Intentá nuevamente.',
+      message: 'No se pudo iniciar sesion. Intenta nuevamente.',
     );
   }
 }

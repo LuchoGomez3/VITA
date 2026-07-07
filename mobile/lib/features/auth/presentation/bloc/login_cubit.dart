@@ -23,7 +23,7 @@ class LoginCubit extends Cubit<LoginState> {
 
   /// Intenta iniciar sesion con las credenciales del formulario.
   Future<void> signIn({
-    required String username,
+    required String email,
     required String password,
   }) async {
     emit(
@@ -33,7 +33,7 @@ class LoginCubit extends Cubit<LoginState> {
     );
 
     final result = await _signInUseCase(
-      username: username.trim(),
+      email: email.trim(),
       password: password,
     );
 

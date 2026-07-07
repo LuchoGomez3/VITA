@@ -5,6 +5,9 @@ class AppRoutes {
   /// Ruta de la pantalla de inicio.
   static const home = '/';
 
+  /// Ruta liviana que espera la restauracion de sesion al arrancar.
+  static const authCheck = '/auth-check';
+
   /// Ruta de la pantalla de login.
   static const login = '/login';
 
