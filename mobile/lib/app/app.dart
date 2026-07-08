@@ -1,32 +1,36 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/config/config.dart';
 import 'package:frontend_mayoral/app/router/app_router.dart';
 import 'package:frontend_mayoral/app/theme/app_theme.dart';
-import 'package:frontend_mayoral/features/auth/data/session_manager.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:frontend_mayoral/features/auth/auth_composition.dart' as auth_composition;
+import 'package:frontend_mayoral/features/auth/presentation/bloc/auth_session_cubit.dart';
 
-class FrontendMayoralApp extends StatefulWidget {
-  const FrontendMayoralApp({required this.sessionManager, super.key});
+/// Factory usada para construir el cubit global de sesion.
+typedef AuthSessionCubitFactory = AuthSessionCubit Function();
 
-  /// Sesión compartida; alimenta el guard de autenticación del router.
-  final SessionManager sessionManager;
+/// Widget raiz de la aplicacion mobile.
+class FrontendMayoralApp extends StatelessWidget {
+  /// Crea la app y configura el estado global de sesion.
+  const FrontendMayoralApp({
+    super.key,
+    AuthSessionCubitFactory? createAuthSessionCubit,
+  }) : _createAuthSessionCubit = createAuthSessionCubit;
 
-  @override
-  State<FrontendMayoralApp> createState() => _FrontendMayoralAppState();
-}
-
-class _FrontendMayoralAppState extends State<FrontendMayoralApp> {
-  // El router se construye una sola vez: escucha al SessionManager para
-  // reevaluar el guard, así que no debe recrearse en cada rebuild.
-  late final GoRouter _router = AppRouter.build(widget.sessionManager);
+  final AuthSessionCubitFactory? _createAuthSessionCubit;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: AppConfig.current.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      routerConfig: _router,
+    final createCubit = _createAuthSessionCubit ?? auth_composition.createAuthSessionCubit;
+
+    return BlocProvider<AuthSessionCubit>(
+      create: (_) => createCubit()..restoreSession(),
+      child: MaterialApp.router(
+        title: AppConfig.current.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light(),
+        routerConfig: AppRouter.router,
+      ),
     );
   }
 }

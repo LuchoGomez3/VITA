@@ -39,8 +39,6 @@ class AuthenticatedBackendClient extends http.BaseClient {
     // el token vigente y lo agrega como Bearer.
     final token = await _tokenProvider.getAccessToken();
     if (token == null) {
-      // Sin sesión disponible: lanzamos para que Brick retenga la request en la
-      // cola hasta que exista sesión, en vez de perderla.
       throw StateError('Backend access token is not available.');
     }
 
@@ -50,35 +48,17 @@ class AuthenticatedBackendClient extends http.BaseClient {
     // Si la request contiene un `id` cliente, la tratamos como sync-able. El
     // resultado se publica despues de recibir la response del backend.
     final syncRequest = _syncRequestFrom(request);
-    var bufferedResponse = await _sendBuffered(request);
+    final response = await _inner.send(request);
 
-    // 401/403 al drenar la cola: lo más probable es que el access token venció
-    // mientras el dispositivo estuvo offline. Intentamos renovar una vez y
-    // reintentar con el token nuevo antes de dar la request por fallida.
-    if (_isUnauthorized(bufferedResponse.statusCode) && request is http.Request) {
-      final refreshedToken = await _tokenProvider.refreshAccessToken();
-      if (refreshedToken != null) {
-        bufferedResponse = await _sendBuffered(
-          _cloneWithToken(request, refreshedToken),
-        );
-      }
-    }
-
+    // Convertimos a Response para poder leer el body una vez, loguearlo y
+    // parsear errores. Luego reconstruimos StreamedResponse porque BaseClient
+    // debe devolver ese tipo.
+    final bufferedResponse = await http.Response.fromStream(response);
     _logResponse(bufferedResponse);
 
-    if (_isUnauthorized(bufferedResponse.statusCode)) {
-      // No se pudo autorizar (refresh muerto o sin red). Lanzamos para que Brick
-      // RETENGA la request en la cola y la reintente tras el próximo login.
-      // Nunca la marcamos como rechazada: perder una operación hecha en el campo
-      // por un token vencido es justo lo que el offline-first debe evitar.
-      throw StateError(
-        'Sesión no autorizada al sincronizar; request retenida para reintentar.',
-      );
-    }
-
     // Los errores 5xx son transitorios: Brick debe conservar la request en cola
-    // y reintentar. Los 2xx/4xx funcionales (validación, conflicto) se informan
-    // al store para marcar synchronized o rejected en SQLite.
+    // y reintentar. Los 2xx/4xx se informan al store para marcar synchronized o
+    // rejected en SQLite.
     if (syncRequest != null && bufferedResponse.statusCode < 500) {
       await _onSyncResult(
         BackendSyncResult(
@@ -100,30 +80,6 @@ class AuthenticatedBackendClient extends http.BaseClient {
       persistentConnection: bufferedResponse.persistentConnection,
       reasonPhrase: bufferedResponse.reasonPhrase,
     );
-  }
-
-  bool _isUnauthorized(int statusCode) =>
-      statusCode == 401 || statusCode == 403;
-
-  /// Envía la request y buffea la response para poder leer el body una vez,
-  /// loguearlo y, si hace falta, reintentar tras renovar el token.
-  Future<http.Response> _sendBuffered(http.BaseRequest request) async {
-    final response = await _inner.send(request);
-    return http.Response.fromStream(response);
-  }
-
-  /// Copia una request ya enviada para reintentarla con un token nuevo.
-  ///
-  /// Una `http.Request` no se puede reenviar tras finalizarse, por eso se clona
-  /// método, url, headers (con el Authorization renovado) y bytes del body.
-  http.Request _cloneWithToken(http.Request original, String token) {
-    return http.Request(original.method, original.url)
-      ..headers.addAll(original.headers)
-      ..headers['Authorization'] = 'Bearer $token'
-      ..followRedirects = original.followRedirects
-      ..maxRedirects = original.maxRedirects
-      ..persistentConnection = original.persistentConnection
-      ..bodyBytes = original.bodyBytes;
   }
 
   /// Imprime la request solo en debug.

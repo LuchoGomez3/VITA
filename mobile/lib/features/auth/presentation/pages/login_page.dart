@@ -1,24 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend_mayoral/features/auth/presentation/cubit/auth_cubit.dart';
-import 'package:frontend_mayoral/features/auth/presentation/cubit/auth_state.dart';
+import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
+import 'package:frontend_mayoral/features/auth/presentation/bloc/auth_session_cubit.dart';
+import 'package:frontend_mayoral/features/auth/presentation/bloc/login_cubit.dart';
+import 'package:frontend_mayoral/features/auth/presentation/widgets/login_form.dart';
+import 'package:frontend_mayoral/features/auth/presentation/widgets/login_header.dart';
+import 'package:go_router/go_router.dart';
 
-/// Factory del [AuthCubit], resuelta fuera de presentation (router).
-typedef AuthCubitFactory = AuthCubit Function();
+/// Factory usada por el router para construir el cubit de login.
+typedef LoginCubitFactory = LoginCubit Function();
 
-/// Pantalla de inicio de sesión.
-///
-/// El primer login requiere conexión (valida contra el backend). Tras un login
-/// exitoso, la sesión queda cacheada y el guard del router redirige a la app;
-/// en próximos arranques la app entra directo, incluso sin internet.
+/// Pantalla inicial de autenticacion.
 class LoginPage extends StatelessWidget {
-  const LoginPage({required this.createCubit, super.key});
+  /// Crea la pantalla de login.
+  const LoginPage({
+    required this.createCubit,
+    super.key,
+  });
 
-  final AuthCubitFactory createCubit;
+  /// Crea el cubit con dependencias resueltas fuera de presentation.
+  final LoginCubitFactory createCubit;
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<AuthCubit>(
+    return BlocProvider(
       create: (_) => createCubit(),
       child: const _LoginView(),
     );
@@ -37,6 +46,8 @@ class _LoginViewState extends State<_LoginView> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  bool _obscurePassword = true;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -44,99 +55,79 @@ class _LoginViewState extends State<_LoginView> {
     super.dispose();
   }
 
-  void _submit() {
-    if (!(_formKey.currentState?.validate() ?? false)) {
-      return;
-    }
-    context.read<AuthCubit>().signIn(
-      username: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Iniciar sesión')),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) =>
-                          (value == null || value.trim().isEmpty)
-                          ? 'Ingresá tu email'
-                          : null,
+    return BlocListener<LoginCubit, LoginState>(
+      listenWhen: (previous, current) => previous.signInResult != current.signInResult,
+      listener: (context, state) {
+        switch (state.signInResult) {
+          case Data<AuthSession>(:final data):
+            context.read<AuthSessionCubit>().setAuthenticated(data);
+            context.go(AppRoutes.home);
+          case ResultError<AuthSession>(:final error):
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text(error.message)),
+              );
+          default:
+            break;
+        }
+      },
+      child: BlocBuilder<LoginCubit, LoginState>(
+        buildWhen: (previous, current) => previous.signInResult != current.signInResult,
+        builder: (context, state) {
+          final isSubmitting = state.signInResult is Loading<AuthSession>;
+
+          return Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const LoginHeader(),
+                        const SizedBox(height: AppSpacing.lg),
+                        AppSurfaceCard(
+                          child: LoginForm(
+                            formKey: _formKey,
+                            emailController: _emailController,
+                            passwordController: _passwordController,
+                            obscurePassword: _obscurePassword,
+                            isSubmitting: isSubmitting,
+                            onPasswordVisibilityPressed: _togglePasswordVisibility,
+                            onSubmit: () => _submit(context),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      autofillHints: const [AutofillHints.password],
-                      decoration: const InputDecoration(
-                        labelText: 'Contraseña',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) => (value == null || value.isEmpty)
-                          ? 'Ingresá tu contraseña'
-                          : null,
-                      onFieldSubmitted: (_) => _submit(),
-                    ),
-                    const SizedBox(height: 24),
-                    BlocConsumer<AuthCubit, AuthState>(
-                      listenWhen: (previous, current) =>
-                          previous.status != current.status,
-                      listener: (context, state) {
-                        if (state.status == AuthStatus.failure) {
-                          ScaffoldMessenger.of(context)
-                            ..hideCurrentSnackBar()
-                            ..showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  state.errorMessage ??
-                                      'No se pudo iniciar sesión.',
-                                ),
-                              ),
-                            );
-                        }
-                      },
-                      builder: (context, state) {
-                        return FilledButton(
-                          onPressed: state.isSubmitting ? null : _submit,
-                          child: state.isSubmitting
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text('Ingresar'),
-                        );
-                      },
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
+    );
+  }
+
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
+  }
+
+  void _submit(BuildContext context) {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    context.read<LoginCubit>().signIn(
+      email: _emailController.text,
+      password: _passwordController.text,
     );
   }
 }

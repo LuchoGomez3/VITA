@@ -1,96 +1,135 @@
-import 'dart:async';
 import 'dart:convert';
 
-import 'package:frontend_mayoral/app/config/config.dart';
-import 'package:frontend_mayoral/features/auth/data/models/session.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
+import 'package:frontend_mayoral/features/auth/data/models/auth_remote_session.dart';
 import 'package:http/http.dart' as http;
 
-/// Credenciales inválidas o refresh vencido/revocado (HTTP 401 del backend).
-///
-/// El repositorio la traduce a un error de dominio "unauthorized"; en el flujo
-/// de sync implica que el usuario debe volver a loguearse.
-class AuthUnauthorizedException implements Exception {
-  const AuthUnauthorizedException([this.message = 'No autorizado']);
-
-  final String message;
-}
-
-/// No se pudo contactar al backend (sin conexión o error transitorio).
-///
-/// Es esperable en el campo: el llamador decide si reintentar o seguir con la
-/// sesión cacheada.
-class AuthNetworkException implements Exception {
-  const AuthNetworkException([this.message = 'Sin conexión con el servidor']);
-
-  final String message;
-}
-
-/// Cliente HTTP contra los endpoints de autenticación del backend FastAPI.
-///
-/// No conoce almacenamiento ni estado: solo traduce request/response. La
-/// persistencia y el manejo de sesión viven en el SessionManager.
+/// Cliente remoto de autenticacion contra el backend.
 class AuthRemoteDataSource {
-  AuthRemoteDataSource({http.Client? client, String? baseUrl})
-    : _client = client ?? http.Client(),
-      _baseUrl = baseUrl ?? AppConfig.current.backendBaseUrl;
+  /// Crea el cliente con la URL base del backend.
+  const AuthRemoteDataSource({
+    required String backendBaseUrl,
+    required http.Client client,
+    Duration requestTimeout = const Duration(seconds: 10),
+  }) : _backendBaseUrl = backendBaseUrl,
+       _client = client,
+       _requestTimeout = requestTimeout;
 
+  final String _backendBaseUrl;
   final http.Client _client;
-  final String _baseUrl;
+  final Duration _requestTimeout;
 
-  /// Inicia sesión con email + contraseña. Devuelve la sesión completa.
+  /// Ejecuta el login OAuth2 password form y devuelve token + usuario.
   ///
-  /// `/auth/login` usa `OAuth2PasswordRequestForm`, por eso el body va como
-  /// `application/x-www-form-urlencoded` con `username`/`password`.
-  Future<Session> login({
-    required String username,
+  /// El backend usa el nombre `username` por el estandar OAuth2, pero para VITA
+  /// ese campo es el email del usuario. Mantener esa traduccion aca evita que
+  /// la UI y el dominio tengan que hablar de "usuario" cuando realmente es
+  /// correo electronico.
+  Future<AuthRemoteSession> signIn({
+    required String email,
     required String password,
   }) async {
-    final response = await _post(
-      Uri.parse('$_baseUrl/api/auth/login'),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: {'username': username, 'password': password},
+    final response = await _client
+        .post(
+          _uri('/api/auth/login'),
+          headers: const {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: {
+            'username': email,
+            'password': password,
+          },
+        )
+        .timeout(_requestTimeout);
+
+    final body = _decodeResponse(response);
+    if (response.statusCode == 401) {
+      throw const DomainException(
+        message: 'Email o contrasena incorrectos.',
+        code: DomainErrorCode.unauthorized,
+      );
+    }
+
+    _throwIfUnsuccessful(response, body);
+    final data = body['data'];
+    if (data is Map<String, dynamic>) {
+      final accessToken = data['access_token'];
+      final userJson = data['usuario'];
+      if (accessToken is String && accessToken.isNotEmpty && userJson is Map<String, dynamic>) {
+        return AuthRemoteSession(
+          accessToken: accessToken,
+          userJson: userJson,
+        );
+      }
+    }
+
+    throw const DomainException(
+      message: 'El backend no devolvio una sesion valida.',
     );
-    return _sessionFromResponse(response);
   }
 
-  /// Renueva la sesión con el `refresh_token`. 401 => refresh muerto.
-  Future<Session> refresh(String refreshToken) async {
-    final response = await _post(
-      Uri.parse('$_baseUrl/api/auth/refresh'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'refresh_token': refreshToken}),
+  /// Lee el perfil asociado al token Bearer.
+  ///
+  /// Este metodo queda disponible para validaciones online puntuales. No se usa
+  /// durante `restoreSession`, porque restaurar debe poder hacerse sin internet.
+  Future<Map<String, dynamic>> getCurrentUser(String accessToken) async {
+    final response = await _client
+        .get(
+          _uri('/api/auth/me'),
+          headers: {
+            'Authorization': 'Bearer $accessToken',
+          },
+        )
+        .timeout(_requestTimeout);
+
+    final body = _decodeResponse(response);
+    _throwIfUnsuccessful(response, body);
+    final data = body['data'];
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+
+    throw const DomainException(
+      message: 'El backend no devolvio el usuario autenticado.',
     );
-    return _sessionFromResponse(response);
   }
 
-  Future<http.Response> _post(
-    Uri url, {
-    required Map<String, String> headers,
-    required Object body,
-  }) async {
+  Uri _uri(String path) {
+    return Uri.parse('$_backendBaseUrl$path');
+  }
+
+  Map<String, dynamic> _decodeResponse(http.Response response) {
     try {
-      return await _client.post(url, headers: headers, body: body);
-    } on Object catch (error) {
-      // SocketException / timeouts / DNS: todo lo tratamos como falta de red.
-      throw AuthNetworkException('No se pudo conectar: $error');
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+    } on FormatException {
+      throw const DomainException(
+        message: 'No se pudo interpretar la respuesta del backend.',
+      );
     }
+
+    throw const DomainException(
+      message: 'El backend devolvio una respuesta inesperada.',
+    );
   }
 
-  Session _sessionFromResponse(http.Response response) {
-    if (response.statusCode == 401 || response.statusCode == 403) {
-      throw const AuthUnauthorizedException('Credenciales inválidas');
-    }
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw AuthNetworkException('Error del servidor (${response.statusCode})');
+  void _throwIfUnsuccessful(
+    http.Response response,
+    Map<String, dynamic> body,
+  ) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return;
     }
 
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    final data = decoded['data'] as Map<String, dynamic>?;
-    if (data == null) {
-      throw const AuthNetworkException('Respuesta de sesión inválida');
+    final detail = body['detail'];
+    if (detail is String && detail.isNotEmpty) {
+      throw DomainException(message: detail);
     }
-    return Session.fromBackendJson(data);
+
+    throw const DomainException(
+      message: 'No se pudo iniciar sesion. Intenta nuevamente.',
+    );
   }
-
-  void close() => _client.close();
 }

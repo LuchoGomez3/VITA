@@ -1,3 +1,4 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
@@ -6,49 +7,39 @@ import 'package:frontend_mayoral/features/animal_register/presentation/bloc/regi
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/register_animal_page.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_success_page.dart';
 import 'package:frontend_mayoral/features/auth/auth_composition.dart';
-import 'package:frontend_mayoral/features/auth/data/session_manager.dart';
+import 'package:frontend_mayoral/features/auth/presentation/bloc/auth_session_cubit.dart';
+import 'package:frontend_mayoral/features/auth/presentation/pages/auth_check_page.dart';
 import 'package:frontend_mayoral/features/auth/presentation/pages/login_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion del router de la app.
 class AppRouter {
-  const AppRouter._();
-
-  /// Construye el router con el guard de autenticación.
-  ///
-  /// El [sessionManager] es el `refreshListenable`: cuando la sesión cambia
-  /// (login/logout/refresh muerto) GoRouter reevalúa la redirección. Si no hay
-  /// sesión cacheada se fuerza `/login`; si hay, se permite operar (incluso
-  /// offline, porque la sesión se rehidrató desde almacenamiento seguro).
-  static GoRouter build(SessionManager sessionManager) => GoRouter(
-    initialLocation: AppRoutes.home,
-    refreshListenable: sessionManager,
-    redirect: (context, state) {
-      final goingToLogin = state.matchedLocation == AppRoutes.login;
-      if (!sessionManager.isAuthenticated) {
-        return goingToLogin ? null : AppRoutes.login;
-      }
-      if (goingToLogin) {
-        return AppRoutes.home;
-      }
-      return null;
-    },
+  /// Router de la app.
+  static final GoRouter router = GoRouter(
+    /// La app arranca restaurando sesion local antes de decidir login/home.
+    initialLocation: AppRoutes.authCheck,
 
     /// Rutas de la app.
     routes: [
-      /// Ruta de la pantalla de login.
+      GoRoute(
+        path: AppRoutes.authCheck,
+        builder: (context, state) => const AuthCheckPage(),
+      ),
       GoRoute(
         path: AppRoutes.login,
-        builder: (context, state) => LoginPage(
-          createCubit: () => createAuthCubit(sessionManager),
+        builder: (context, state) => const LoginPage(
+          createCubit: createLoginCubit,
         ),
       ),
 
       /// Ruta de la pantalla de inicio.
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => HomePage(
+          signOut: context.read<AuthSessionCubit>().signOut,
+          verifyAuthentication: verifyAuthenticatedUser,
+        ),
       ),
       GoRoute(
         path: AppRoutes.animalRegisterStep1,

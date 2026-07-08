@@ -17,17 +17,25 @@ class AppFilledButton extends StatelessWidget {
     super.key,
     this.icon,
     this.isLoading = false,
+    this.loadingLabel = 'Guardando...',
     this.textStyle,
   });
-  
+
   /// El texto del boton.
   final String label;
+
   /// El icono del boton.
   final Widget? icon;
+
   /// La funcion que se ejecuta cuando se presiona el boton.
   final VoidCallback? onPressed;
+
   /// Indica si el boton esta en estado de carga.
   final bool isLoading;
+
+  /// Texto mostrado cuando el boton esta en estado de carga.
+  final String loadingLabel;
+
   /// El estilo del texto del boton.
   final TextStyle? textStyle;
 
@@ -41,25 +49,25 @@ class AppFilledButton extends StatelessWidget {
     // loading, solo texto, o icono + texto.
     final child = isLoading
         ? Text(
-            'Guardando...',
+            loadingLabel,
             style: buttonTextStyle,
           )
         : icon == null
-            ? Text(
+        ? Text(
+            label,
+            style: buttonTextStyle,
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              icon!,
+              const SizedBox(width: AppSpacing.sm),
+              Text(
                 label,
                 style: buttonTextStyle,
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  icon!,
-                  const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    label,
-                    style: buttonTextStyle,
-                  ),
-                ],
-              );
+              ),
+            ],
+          );
 
     return SizedBox(
       // Los botones principales ocupan todo el ancho disponible por defecto.

@@ -2,11 +2,14 @@
 class AppRoutes {
   const AppRoutes._();
 
-  /// Ruta de la pantalla de login.
-  static const login = '/login';
-
   /// Ruta de la pantalla de inicio.
   static const home = '/';
+
+  /// Ruta liviana que espera la restauracion de sesion al arrancar.
+  static const authCheck = '/auth-check';
+
+  /// Ruta de la pantalla de login.
+  static const login = '/login';
 
   /// Ruta de la pantalla de registro de animal paso 1.
   static const animalRegisterStep1 = '/registrar-animal/paso-1';
