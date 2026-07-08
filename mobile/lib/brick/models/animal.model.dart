@@ -119,7 +119,10 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   final String rfidTagNumber;
 
   /// Caravana visual opcional mostrada al usuario.
-  @Rest(name: 'caravana_visual')
+  @Rest(
+    name: 'caravana_visual',
+    fromGenerator: 'brickStringFromBackend(%DATA_PROPERTY%)',
+  )
   final String visualTag;
 
   /// Sexo del animal, traducido a/desde el enum textual del backend.
@@ -131,7 +134,10 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   final BrickAnimalSex sex;
 
   /// Raza declarada al registrar el animal.
-  @Rest(name: 'raza')
+  @Rest(
+    name: 'raza',
+    fromGenerator: 'brickStringFromBackend(%DATA_PROPERTY%)',
+  )
   final String breed;
 
   /// Fecha de nacimiento. Para backend se serializa como fecha sin hora.
@@ -168,7 +174,10 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   final String establishmentId;
 
   /// Peso inicial del animal.
-  @Rest(name: 'peso_inicial')
+  @Rest(
+    name: 'peso_inicial',
+    fromGenerator: 'brickDoubleFromBackend(%DATA_PROPERTY%)',
+  )
   final double initialWeight;
 
   /// Metodo usado para obtener el peso inicial.
@@ -180,7 +189,10 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   final BrickAnimalWeighingMethod weighingMethod;
 
   /// Fecha/hora del pesaje inicial.
-  @Rest(name: 'fecha_pesaje')
+  @Rest(
+    name: 'fecha_pesaje',
+    fromGenerator: 'brickDateTimeFromBackend(%DATA_PROPERTY%)',
+  )
   final DateTime weighingDate;
 
   /// ID backend de la madre, si se selecciono genealogia.
@@ -306,4 +318,31 @@ String brickAnimalWeighingMethodToBackend(BrickAnimalWeighingMethod value) {
 /// Formatea un [DateTime] como fecha simple para `fecha_nacimiento`.
 String brickDateToBackend(DateTime value) {
   return value.toIso8601String().split('T').first;
+}
+
+/// Convierte numeros del backend a double, tolerando campos ausentes.
+double brickDoubleFromBackend(Object? value) {
+  if (value is num) {
+    return value.toDouble();
+  }
+
+  return 0;
+}
+
+/// Convierte strings opcionales del backend a strings locales seguros.
+String brickStringFromBackend(Object? value) {
+  if (value is String) {
+    return value;
+  }
+
+  return '';
+}
+
+/// Convierte fechas opcionales del backend a DateTime.
+DateTime brickDateTimeFromBackend(Object? value) {
+  if (value is String && value.isNotEmpty) {
+    return DateTime.parse(value);
+  }
+
+  return DateTime.fromMillisecondsSinceEpoch(0);
 }

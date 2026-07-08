@@ -29,6 +29,9 @@ class LoginStrings {
   /// Accion principal durante carga.
   static const submittingButton = 'Ingresando...';
 
+  /// Accion principal mientras se preparan datos offline.
+  static const preparingOfflineDataButton = 'Preparando datos...';
+
   /// Mensaje requerido para email.
   static const emailRequired = 'Ingresa tu email.';
 

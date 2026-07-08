@@ -1,8 +1,10 @@
 import 'dart:async';
 
-import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
-import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:brick_offline_first/brick_offline_first.dart';
+import 'package:brick_rest/brick_rest.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
+import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
 
 /// Contrato usado por features para persistir animales con Brick.
 ///
@@ -11,6 +13,9 @@ import 'package:frontend_mayoral/brick/core/repository.dart';
 abstract class AnimalBrickStore {
   /// Guarda [animal] localmente y lo deja listo para sincronizacion remota.
   Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal);
+
+  /// Descarga animales remotos de [establishmentId] y los guarda en SQLite.
+  Future<void> pullRemoteAnimals(String establishmentId);
 }
 
 /// Store Brick especifico para operaciones de animales.
@@ -57,6 +62,44 @@ class BrickAnimalStore implements AnimalBrickStore {
     unawaited(_repository.enqueueRemoteUpsert<BrickAnimalModel>(savedAnimal));
 
     return savedAnimal;
+  }
+
+  @override
+  Future<void> pullRemoteAnimals(String establishmentId) async {
+    final remoteAnimals = await _repository.remoteProvider.get<BrickAnimalModel>(
+      repository: _repository,
+      query: Query(
+        forProviders: [
+          RestProviderQuery(
+            request: RestRequest(
+              url: '/api/v1/animales?establecimiento_id=${Uri.encodeQueryComponent(establishmentId)}',
+              topLevelKey: 'data',
+            ),
+          ),
+        ],
+      ),
+    );
+    final localAnimals = await _repository.getLocal<BrickAnimalModel>();
+    final protectedLocalIds = localAnimals
+        .where(
+          (animal) =>
+              animal.syncStatus == BrickAnimalSyncStatus.pending || animal.syncStatus == BrickAnimalSyncStatus.rejected,
+        )
+        .map((animal) => animal.localId)
+        .toSet();
+
+    for (final animal in remoteAnimals) {
+      if (protectedLocalIds.contains(animal.localId)) {
+        continue;
+      }
+
+      await _repository.upsertLocal<BrickAnimalModel>(
+        animal.copyWith(
+          syncStatus: BrickAnimalSyncStatus.synchronized,
+          syncErrorCode: null,
+        ),
+      );
+    }
   }
 
   /// Aplica la respuesta del backend al registro local.
