@@ -6,7 +6,7 @@ part 'app_user.freezed.dart';
 @freezed
 abstract class AppUser with _$AppUser {
   const factory AppUser({
-    required int id,
+    required String id,
     required String username,
     required String email,
     required String nombre,

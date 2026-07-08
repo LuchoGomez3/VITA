@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AppUser {
 
- int get id; String get username; String get email; String get nombre; String get apellido; String get cuilCuit; UserRole get role; DateTime get createdAt;
+ String get id; String get username; String get email; String get nombre; String get apellido; String get cuilCuit; UserRole get role; DateTime get createdAt;
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -45,7 +45,7 @@ abstract mixin class $AppUserCopyWith<$Res>  {
   factory $AppUserCopyWith(AppUser value, $Res Function(AppUser) _then) = _$AppUserCopyWithImpl;
 @useResult
 $Res call({
- int id, String username, String email, String nombre, String apellido, String cuilCuit, UserRole role, DateTime createdAt
+ String id, String username, String email, String nombre, String apellido, String cuilCuit, UserRole role, DateTime createdAt
 });
 
 
@@ -65,7 +65,7 @@ class _$AppUserCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? username = null,Object? email = null,Object? nombre = null,Object? apellido = null,Object? cuilCuit = null,Object? role = null,Object? createdAt = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as int,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,nombre: null == nombre ? _self.nombre : nombre // ignore: cast_nullable_to_non_nullable
 as String,apellido: null == apellido ? _self.apellido : apellido // ignore: cast_nullable_to_non_nullable
@@ -157,7 +157,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String username,  String email,  String nombre,  String apellido,  String cuilCuit,  UserRole role,  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String username,  String email,  String nombre,  String apellido,  String cuilCuit,  UserRole role,  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppUser() when $default != null:
 return $default(_that.id,_that.username,_that.email,_that.nombre,_that.apellido,_that.cuilCuit,_that.role,_that.createdAt);case _:
@@ -178,7 +178,7 @@ return $default(_that.id,_that.username,_that.email,_that.nombre,_that.apellido,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String username,  String email,  String nombre,  String apellido,  String cuilCuit,  UserRole role,  DateTime createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String username,  String email,  String nombre,  String apellido,  String cuilCuit,  UserRole role,  DateTime createdAt)  $default,) {final _that = this;
 switch (_that) {
 case _AppUser():
 return $default(_that.id,_that.username,_that.email,_that.nombre,_that.apellido,_that.cuilCuit,_that.role,_that.createdAt);case _:
@@ -198,7 +198,7 @@ return $default(_that.id,_that.username,_that.email,_that.nombre,_that.apellido,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String username,  String email,  String nombre,  String apellido,  String cuilCuit,  UserRole role,  DateTime createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String username,  String email,  String nombre,  String apellido,  String cuilCuit,  UserRole role,  DateTime createdAt)?  $default,) {final _that = this;
 switch (_that) {
 case _AppUser() when $default != null:
 return $default(_that.id,_that.username,_that.email,_that.nombre,_that.apellido,_that.cuilCuit,_that.role,_that.createdAt);case _:
@@ -216,7 +216,7 @@ class _AppUser implements AppUser {
   const _AppUser({required this.id, required this.username, required this.email, required this.nombre, required this.apellido, required this.cuilCuit, required this.role, required this.createdAt});
   
 
-@override final  int id;
+@override final  String id;
 @override final  String username;
 @override final  String email;
 @override final  String nombre;
@@ -255,7 +255,7 @@ abstract mixin class _$AppUserCopyWith<$Res> implements $AppUserCopyWith<$Res> {
   factory _$AppUserCopyWith(_AppUser value, $Res Function(_AppUser) _then) = __$AppUserCopyWithImpl;
 @override @useResult
 $Res call({
- int id, String username, String email, String nombre, String apellido, String cuilCuit, UserRole role, DateTime createdAt
+ String id, String username, String email, String nombre, String apellido, String cuilCuit, UserRole role, DateTime createdAt
 });
 
 
@@ -275,7 +275,7 @@ class __$AppUserCopyWithImpl<$Res>
 @override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? username = null,Object? email = null,Object? nombre = null,Object? apellido = null,Object? cuilCuit = null,Object? role = null,Object? createdAt = null,}) {
   return _then(_AppUser(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as int,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+as String,username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,nombre: null == nombre ? _self.nombre : nombre // ignore: cast_nullable_to_non_nullable
 as String,apellido: null == apellido ? _self.apellido : apellido // ignore: cast_nullable_to_non_nullable

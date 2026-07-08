@@ -11,6 +11,14 @@ abstract class BackendAccessTokenProvider {
   /// cliente autenticado no puede enviar la request y Brick la deja como fallo
   /// de sync/reintento segun corresponda.
   Future<String?> getAccessToken();
+
+  /// Fuerza una renovacion del token y devuelve el nuevo access token.
+  ///
+  /// El cliente de sync la invoca cuando el backend responde 401 al drenar la
+  /// cola offline (el access cacheado venció mientras no había conexión).
+  /// Retorna `null` si no se pudo renovar (sin red o refresh muerto), en cuyo
+  /// caso la request debe quedar retenida en la cola para reintentar luego.
+  Future<String?> refreshAccessToken();
 }
 
 /// Implementacion temporal que lee el JWT desde `--dart-define`.
@@ -39,5 +47,11 @@ class DartDefineBackendAccessTokenProvider implements BackendAccessTokenProvider
     }
 
     return _token;
+  }
+
+  @override
+  Future<String?> refreshAccessToken() async {
+    // Un token estático de `--dart-define` no se puede renovar.
+    return null;
   }
 }

@@ -2,6 +2,9 @@
 class AppRoutes {
   const AppRoutes._();
 
+  /// Ruta de la pantalla de login.
+  static const login = '/login';
+
   /// Ruta de la pantalla de inicio.
   static const home = '/';
 

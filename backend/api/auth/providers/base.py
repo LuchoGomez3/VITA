@@ -30,10 +30,18 @@ class InvalidCredentialsError(DomainException):
 
 @dataclass(frozen=True)
 class AuthResult:
-    """Resultado del alta de credenciales."""
+    """Resultado de una operación de sesión (alta, login o refresh).
+
+    ``refresh_token`` y ``expires_in`` son la clave del offline-first: el cliente
+    los guarda para renovar el ``access_token`` (que vive poco) sin pedir la
+    contraseña de nuevo cuando recupera conexión. Son opcionales para no romper
+    proveedores que no los expongan.
+    """
 
     user_id: UUID
     access_token: str
+    refresh_token: str | None = None
+    expires_in: int | None = None
 
 
 class AuthProvider(ABC):
@@ -50,6 +58,16 @@ class AuthProvider(ABC):
         """Valida credenciales y devuelve el id del usuario y un token de sesión.
 
         Lanza ``InvalidCredentialsError`` si email/contraseña son incorrectos y
+        ``AuthProviderError`` ante fallos de red o del proveedor.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    async def refresh(self, refresh_token: str) -> AuthResult:
+        """Renueva la sesión a partir de un ``refresh_token``.
+
+        Devuelve un nuevo ``AuthResult`` (access + refresh rotado + expiración).
+        Lanza ``InvalidCredentialsError`` si el refresh venció o fue revocado y
         ``AuthProviderError`` ante fallos de red o del proveedor.
         """
         raise NotImplementedError
