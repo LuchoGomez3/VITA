@@ -3,10 +3,13 @@ class LoginStrings {
   const LoginStrings._();
 
   /// Titulo principal.
-  static const title = 'Trazabilidad ganadera';
+  static const title = 'VITA';
 
   /// Subtitulo de apoyo.
-  static const subtitle = 'Ingresa para sincronizar tus datos con VITA.';
+  static const subtitle = 'Visibilidad Integral de Trazabilidad Animal';
+
+  /// Inicio de sesion
+  static const loginTitle = 'Inicia sesión para continuar';
 
   /// Etiqueta del campo email.
   static const emailLabel = 'Email';
@@ -15,16 +18,19 @@ class LoginStrings {
   static const emailHint = 'tu@email.com';
 
   /// Etiqueta del campo contrasena.
-  static const passwordLabel = 'Contrasena';
+  static const passwordLabel = 'Contraseña';
 
   /// Placeholder del campo contrasena.
-  static const passwordHint = 'tu contrasena';
+  static const passwordHint = 'tu contraseña';
 
   /// Accion principal.
   static const submitButton = 'Ingresar';
 
   /// Accion principal durante carga.
   static const submittingButton = 'Ingresando...';
+
+  /// Accion principal mientras se preparan datos offline.
+  static const preparingOfflineDataButton = 'Preparando datos...';
 
   /// Mensaje requerido para email.
   static const emailRequired = 'Ingresa tu email.';
