@@ -26,7 +26,7 @@ class AppTheme {
         filled: true,
         fillColor: AppColors.surface,
         hintStyle: AppTypography.formFieldHint,
-        labelStyle: AppTypography.formFieldLabel,
+        labelStyle: AppTypography.secondaryEmphasis,
         helperStyle: AppTypography.formFieldSuccess,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,

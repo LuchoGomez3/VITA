@@ -12,7 +12,6 @@ import 'package:frontend_mayoral/features/auth/presentation/pages/auth_check_pag
 import 'package:frontend_mayoral/features/auth/presentation/pages/login_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/sign_up/presentation/pages/sign_up_page.dart';
-import 'package:frontend_mayoral/features/sign_up/presentation/pages/sign_up_welcome_first_time.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion del router de la app.
@@ -33,6 +32,10 @@ class AppRouter {
         builder: (context, state) => const LoginPage(
           createCubit: createLoginCubit,
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.signUp,
+        builder: (context, state) => const SignUpPage(),
       ),
 
       /// Ruta de la pantalla de inicio.

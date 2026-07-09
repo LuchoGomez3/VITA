@@ -4,12 +4,14 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/sign_up/presentation/strings/sign_up_strings.dart';
 import 'package:go_router/go_router.dart';
 
+/// Encabezado del registro con navegacion y estado visual de conectividad.
 class SignUpHeader extends StatelessWidget {
   const SignUpHeader({
     super.key,
     this.isOffline = false,
   });
 
+  /// Cambia el icono de conectividad mientras se muestra el modal offline.
   final bool isOffline;
 
   @override
@@ -29,13 +31,13 @@ class SignUpHeader extends StatelessWidget {
             ),
           ),
           style: IconButton.styleFrom(
-            backgroundColor: Colors.black.withValues(alpha: 0.05),
+            backgroundColor: AppColors.iconButtonBackground,
             padding: const EdgeInsets.all(AppSpacing.sm),
           ),
         ),
-        Text(
+        const Text(
           SignUpStrings.pageTitle,
-          style: AppTypography.flowHeaderTitle,
+          style: AppTypography.outlinedButton,
         ),
         Container(
           padding: const EdgeInsets.all(AppSpacing.sm),

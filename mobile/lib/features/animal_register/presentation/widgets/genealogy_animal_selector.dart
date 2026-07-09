@@ -77,7 +77,7 @@ class GenealogyAnimalSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: AppTypography.formFieldLabel),
+        Text(title, style: AppTypography.secondaryEmphasis),
         const SizedBox(height: AppSpacing.xs),
         if (selectedAnimal != null)
           _SelectedGenealogyAnimal(
@@ -141,7 +141,7 @@ class _SelectedGenealogyAnimal extends StatelessWidget {
               children: [
                 Text(
                   animal.breed.isEmpty ? animal.name : '${animal.name} · ${animal.breed}',
-                  style: AppTypography.formFieldLabel.copyWith(
+                  style: AppTypography.secondaryEmphasis.copyWith(
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -236,7 +236,7 @@ class _GenealogyResultTile extends StatelessWidget {
             Expanded(
               child: Text(
                 '${animal.name} · ${animal.breed}',
-                style: AppTypography.formFieldLabel.copyWith(
+                style: AppTypography.secondaryEmphasis.copyWith(
                   color: AppColors.textPrimary,
                 ),
               ),

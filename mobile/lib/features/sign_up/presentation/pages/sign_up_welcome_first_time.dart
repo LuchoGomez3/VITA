@@ -5,6 +5,7 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/sign_up/presentation/strings/sign_up_strings.dart';
 import 'package:go_router/go_router.dart';
 
+/// Pantalla inicial para usuarios que aun no tienen cuenta.
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
 
@@ -62,21 +63,17 @@ class _HeaderTexts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       children: [
         Text(
           WelcomeStrings.title,
-          style: AppTypography.successTitle.copyWith(
-            fontSize: 32,
-          ),
+          style: AppTypography.welcomeTitle,
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: AppSpacing.sm),
         Text(
           WelcomeStrings.subtitle,
-          style: AppTypography.pageBodyTitle.copyWith(
-            height: 1.4,
-          ),
+          style: AppTypography.pageBodyTitle,
           textAlign: TextAlign.center,
         ),
       ],
@@ -103,7 +100,7 @@ class _ActionButtons extends StatelessWidget {
         AppOutlinedButton(
           label: WelcomeStrings.loginButton,
           onPressed: () {
-            // TODO: Implement navigation to login page
+            // TODO: Reemplazar por navegacion real cuando se defina el flujo.
           },
         ),
       ],

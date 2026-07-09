@@ -4,6 +4,7 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/sign_up/presentation/strings/sign_up_strings.dart';
 
+/// Formulario visual del alta de usuario.
 class SignUpForm extends StatelessWidget {
   const SignUpForm({
     required this.hasPasswordError,
@@ -12,8 +13,13 @@ class SignUpForm extends StatelessWidget {
     super.key,
   });
 
+  /// Indica si se debe mostrar la ayuda de requisitos de contrasena.
   final bool hasPasswordError;
+
+  /// Estado visual de validacion del CUIT/CUIL ingresado.
   final bool isCuitValid;
+
+  /// Estado visual para alertar que el correo ya existe.
   final bool isEmailAlreadyRegistered;
 
   @override
@@ -61,7 +67,7 @@ class _SignUpEmailField extends StatelessWidget {
     return _SignUpValidatedInput(
       title: const Text(
         SignUpStrings.emailLabel,
-        style: AppTypography.formFieldLabel,
+        style: AppTypography.secondaryEmphasis,
       ),
       initialValue: SignUpStrings.emailMockValue,
       statusText: alreadyRegistered
@@ -84,12 +90,12 @@ class _SignUpCuitField extends StatelessWidget {
     return _SignUpValidatedInput(
       title: RichText(
         text: const TextSpan(
-          style: AppTypography.formFieldLabel,
+          style: AppTypography.secondaryEmphasis,
           children: [
             TextSpan(text: SignUpStrings.cuitLabel),
             TextSpan(
               text: SignUpStrings.cuitRenspaSuffix,
-              style: AppTypography.formFieldLabelSuffix,
+              style: AppTypography.pageBodyTitle,
             ),
           ],
         ),
@@ -130,7 +136,7 @@ class _SignUpPasswordFieldState extends State<_SignUpPasswordField> {
       children: [
         const Text(
           SignUpStrings.passwordLabel,
-          style: AppTypography.formFieldLabel,
+          style: AppTypography.secondaryEmphasis,
         ),
         const SizedBox(height: AppSpacing.xs),
         TextFormField(
@@ -157,7 +163,7 @@ class _SignUpPasswordFieldState extends State<_SignUpPasswordField> {
         ),
         if (widget.hasPasswordError) ...[
           const SizedBox(height: AppSpacing.xs),
-          Text(
+          const Text(
             SignUpStrings.passwordRequirements,
             style: AppTypography.formFieldHelper,
           ),
@@ -182,6 +188,7 @@ class _SignUpValidatedInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Reutiliza el mismo patron visual para validaciones inmediatas de CUIT y correo.
     final statusColor = isError ? AppColors.error : AppColors.primary;
 
     return Column(

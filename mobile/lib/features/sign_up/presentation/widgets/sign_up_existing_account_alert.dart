@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/buttons/buttons.dart';
 import 'package:frontend_mayoral/features/sign_up/presentation/strings/sign_up_strings.dart';
 
+/// Alerta mostrada cuando el CUIT o correo ya pertenece a una cuenta activa.
 class SignUpExistingAccountAlert extends StatelessWidget {
   const SignUpExistingAccountAlert({super.key});
 
@@ -28,48 +30,32 @@ class SignUpExistingAccountAlert extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   SignUpStrings.existingAccountTitle,
                   style: AppTypography.errorTitle,
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(
+                const Text(
                   SignUpStrings.existingAccountMessage,
                   style: AppTypography.errorBody,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
-                    SizedBox(
-                      height: 44,
-                      child: FilledButton(
-                        onPressed: () {
-                          // TODO: Navegar a iniciar sesión.
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.error,
-                          foregroundColor: AppColors.onPrimary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                          ),
-                        ),
-                        child: const Text(
-                          SignUpStrings.loginButton,
-                          style: AppTypography.errorButton,
-                        ),
-                      ),
+                    AppErrorFilledButton(
+                      label: SignUpStrings.loginButton,
+                      onPressed: () {
+                        // TODO: Navegar al login conservando el contexto del formulario.
+                      },
                     ),
                     const SizedBox(width: AppSpacing.md),
                     TextButton(
                       onPressed: () {
-                        // TODO: Permitir cambiar correo.
+                        // TODO: Limpiar el correo y volver al estado editable del formulario.
                       },
                       child: const Text(
                         SignUpStrings.useAnotherEmailButton,
-                        style: AppTypography.errorTextButton,
+                        style: AppTypography.errorTitle,
                       ),
                     ),
                   ],

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/sign_up/presentation/strings/sign_up_strings.dart';
-import 'package:frontend_mayoral/features/sign_up/presentation/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/sign_up/presentation/widgets/sign_up_widgets.dart';
 
 /// Pantalla de creación de cuenta (Registro de usuario).
 class SignUpPage extends StatefulWidget {
@@ -12,6 +12,7 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
+  /// Refleja el estado del modal para que el header muestre conectividad offline.
   bool _isOfflineModalOpen = false;
 
   Future<void> _showOfflineModal() async {
@@ -21,7 +22,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
     await showDialog<void>(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.08),
+      barrierColor: AppColors.modalBarrier,
       builder: (context) => const SignUpOfflineModal(),
     );
 
@@ -36,6 +37,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Estados mockeados hasta conectar el formulario con validacion real.
     const showExistingAccountAlert = true;
     const hasPasswordError = false;
     const isCuitValid = true;

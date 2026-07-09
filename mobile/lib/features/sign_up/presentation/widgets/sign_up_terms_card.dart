@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/sign_up/presentation/strings/sign_up_strings.dart';
 
+/// Tarjeta de aceptacion de terminos del flujo de registro.
 class SignUpTermsCard extends StatefulWidget {
   const SignUpTermsCard({super.key});
 
@@ -10,6 +11,7 @@ class SignUpTermsCard extends StatefulWidget {
 }
 
 class _SignUpTermsCardState extends State<SignUpTermsCard> {
+  /// Estado local hasta que el formulario conecte su validacion real.
   bool _isAccepted = false;
 
   void _toggleAccepted() {
@@ -21,12 +23,13 @@ class _SignUpTermsCardState extends State<SignUpTermsCard> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      // Permite alternar el checkbox tocando cualquier punto de la tarjeta.
       behavior: HitTestBehavior.opaque,
       onTap: _toggleAccepted,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: const Color(0xFFF3EFE9),
+          color: AppColors.termsBackground,
           borderRadius: BorderRadius.circular(AppRadius.sm),
         ),
         child: Row(
@@ -45,7 +48,10 @@ class _SignUpTermsCardState extends State<SignUpTermsCard> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),
-                side: const BorderSide(color: Colors.black26, width: 1.5),
+                side: const BorderSide(
+                  color: AppColors.checkboxBorder,
+                  width: 1.5,
+                ),
                 activeColor: AppColors.primary,
               ),
             ),

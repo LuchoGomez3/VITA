@@ -82,7 +82,7 @@ class DestinationSelectionCard extends StatelessWidget {
                 children: [
                   Text(
                     destination.name,
-                    style: AppTypography.formFieldLabel.copyWith(
+                    style: AppTypography.secondaryEmphasis.copyWith(
                       color: AppColors.textPrimary,
                     ),
                   ),

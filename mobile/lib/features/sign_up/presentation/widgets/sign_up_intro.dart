@@ -7,14 +7,14 @@ class SignUpIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           SignUpStrings.introTitle,
           style: AppTypography.signUpIntroTitle,
         ),
-        const SizedBox(height: AppSpacing.xs),
+        SizedBox(height: AppSpacing.xs),
         Text(
           SignUpStrings.introSubtitle,
           style: AppTypography.signUpIntroSubtitle,

@@ -61,7 +61,7 @@ class RegisteredAnimalSummaryCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: AppTypography.formFieldLabel.copyWith(
+                  style: AppTypography.secondaryEmphasis.copyWith(
                     color: AppColors.textPrimary,
                   ),
                 ),

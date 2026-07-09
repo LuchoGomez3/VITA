@@ -19,22 +19,6 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  /// Titulo compacto centrado para headers de flujo.
-  static const flowHeaderTitle = TextStyle(
-    fontFamily: _baseFontFamily,
-    fontSize: 16,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-  );
-
-  /// Subtitulo complementario del app bar.
-  static const appBarSubtitle = TextStyle(
-    fontFamily: _baseFontFamily,
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textSecondary,
-  );
-
   /// Titulo corto de pagina o encabezado de seccion.
   static const pageTitle = TextStyle(
     fontFamily: _baseFontFamily,
@@ -51,8 +35,8 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
-  /// Label visible de campos de formulario.
-  static const formFieldLabel = TextStyle(
+  /// Texto secundario destacado para labels, subtitulos y estados informativos.
+  static const secondaryEmphasis = TextStyle(
     fontFamily: _baseFontFamily,
     fontSize: 16,
     fontWeight: FontWeight.w600,
@@ -89,14 +73,6 @@ class AppTypography {
     fontSize: 12,
     fontWeight: FontWeight.w700,
     color: AppColors.error,
-  );
-
-  /// Sufijo aclaratorio de labels de formulario.
-  static const formFieldLabelSuffix = TextStyle(
-    fontFamily: _baseFontFamily,
-    fontSize: 16,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textSecondary,
   );
 
   /// Texto de ayuda neutro debajo de un campo de formulario.
@@ -156,18 +132,18 @@ class AppTypography {
     color: AppColors.onPrimary,
   );
 
-  /// Texto para acciones secundarias dentro de alertas de error.
-  static const errorTextButton = TextStyle(
-    fontFamily: _baseFontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.w700,
-    color: AppColors.error,
-  );
-
   /// Titulo grande para pantallas de resultado o confirmacion.
   static const successTitle = TextStyle(
     fontFamily: _baseFontFamily,
     fontSize: 28,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  /// Titulo principal de la pantalla de bienvenida al registro.
+  static const welcomeTitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 32,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
   );
@@ -177,7 +153,7 @@ class AppTypography {
     fontFamily: _baseFontFamily,
     fontSize: 28,
     fontWeight: FontWeight.w700,
-    color: Color(0xFF3E2723),
+    color: AppColors.textEmphasis,
   );
 
   /// Subtitulo de la pantalla de registro.
@@ -187,14 +163,6 @@ class AppTypography {
     fontWeight: FontWeight.w500,
     color: AppColors.textSecondary,
     height: 1.4,
-  );
-
-  /// Subtitulo destacado para pantallas de resultado o confirmacion.
-  static const successSubtitle = TextStyle(
-    fontFamily: _baseFontFamily,
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textSecondary,
   );
 
   /// Texto para acciones primarias en botones filled.
@@ -218,7 +186,7 @@ class AppTypography {
     fontFamily: _baseFontFamily,
     fontSize: 16,
     fontWeight: FontWeight.w500,
-    color: Color(0xFF3E2723),
+    color: AppColors.textEmphasis,
     height: 1.4,
   );
 
@@ -227,7 +195,7 @@ class AppTypography {
     fontFamily: _baseFontFamily,
     fontSize: 16,
     fontWeight: FontWeight.w700,
-    color: Color(0xFF3E2723),
+    color: AppColors.textEmphasis,
     height: 1.4,
   );
 
@@ -253,7 +221,7 @@ class AppTypography {
     fontFamily: _baseFontFamily,
     fontSize: 24,
     fontWeight: FontWeight.w700,
-    color: Color(0xFF3E2723),
+    color: AppColors.textEmphasis,
   );
 
   /// Texto descriptivo de modal de conectividad.
@@ -290,13 +258,13 @@ class AppTypography {
       headlineMedium: pageTitle,
       headlineSmall: pageTitle,
       titleLarge: pageBodyTitle,
-      titleMedium: formFieldLabel,
+      titleMedium: secondaryEmphasis,
       bodyLarge: formFieldValue,
       bodyMedium: pageBodyTitle,
       bodySmall: smallEmphasis,
       labelLarge: filledButton,
       labelMedium: outlinedButton,
-      labelSmall: appBarSubtitle,
+      labelSmall: secondaryEmphasis,
     );
   }
 }

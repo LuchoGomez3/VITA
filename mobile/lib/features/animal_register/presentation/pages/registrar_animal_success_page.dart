@@ -39,7 +39,7 @@ class RegistrarAnimalSuccessPage extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 'La caravana ${registration.visualTag} quedó guardada en este dispositivo y espera sincronización.',
-                style: AppTypography.successSubtitle,
+                style: AppTypography.secondaryEmphasis,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.lg),

@@ -25,6 +25,9 @@ class AppColors {
   /// Fondo alternativo neutro para tarjetas o bloques destacados.
   static const backgroundTertiary = Color(0xFFE8E2D2);
 
+  /// Fondo suave para tarjetas legales o de terminos.
+  static const termsBackground = Color(0xFFF3EFE9);
+
   /// Superficie principal para cards, inputs y componentes elevados.
   static const surface = Color(0xFFFFFFFF);
 
@@ -34,11 +37,17 @@ class AppColors {
   /// Texto secundario: subtitulos, headers de seccion y apoyo visual.
   static const textSecondary = Color(0xFF6D4C41);
 
+  /// Texto destacado para pantallas de registro y condiciones legales.
+  static const textEmphasis = Color(0xFF3E2723);
+
   /// Texto de ayuda o placeholder en campos de formulario.
   static const textHint = Color(0xFF9E8B84);
 
   /// Borde neutro para inputs, cards y divisores suaves.
   static const border = Color(0xFFE1D3CF);
+
+  /// Borde neutro para controles checkbox sin seleccionar.
+  static const checkboxBorder = Color(0x42000000);
 
   /// Color principal para estados de error.
   static const error = Color(0xFFD32F2F);
@@ -48,6 +57,12 @@ class AppColors {
 
   /// Borde para bloques o campos en estado de error.
   static const errorBorder = Color(0xFFE53935);
+
+  /// Scrim suave para modales livianos.
+  static const modalBarrier = Color(0x14000000);
+
+  /// Fondo suave para botones iconicos sobre superficies claras.
+  static const iconButtonBackground = Color(0x0D000000);
 
   /// Opciones disponibles para personalizacion de caravanas.
   /// Opcion amarilla

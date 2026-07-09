@@ -25,7 +25,7 @@ class RegisterAnimalAppBarTitle extends StatelessWidget {
         const SizedBox(height: AppSpacing.xxs),
         Text(
           stepSubtitle,
-          style: AppTypography.appBarSubtitle,
+          style: AppTypography.secondaryEmphasis,
         ),
       ],
     );

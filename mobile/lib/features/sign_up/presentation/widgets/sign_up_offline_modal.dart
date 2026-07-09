@@ -1,107 +1,77 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/sign_up/presentation/strings/sign_up_strings.dart';
 
+/// Modal que explica que el alta inicial requiere conectividad.
 class SignUpOfflineModal extends StatelessWidget {
   const SignUpOfflineModal({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-      child: Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+    return AppModal(
+      leading: Container(
+        width: 64,
+        height: 64,
+        decoration: const BoxDecoration(
+          color: AppColors.errorContainer,
+          shape: BoxShape.circle,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: const BoxDecoration(
-                    color: AppColors.errorContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: SvgPicture.asset(
-                      SignUpStrings.cloudOffIcon,
-                      width: 34,
-                      height: 34,
-                      colorFilter: const ColorFilter.mode(
-                        AppColors.error,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              const Text(
-                SignUpStrings.offlineModalTitle,
-                style: AppTypography.connectivityModalTitle,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              const Text(
-                SignUpStrings.offlineModalMessage,
-                style: AppTypography.connectivityModalBody,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundTertiary,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: const Column(
-                  children: [
-                    _ConnectivityRecommendation(
-                      title: SignUpStrings.offlineWifiTitle,
-                      subtitle: SignUpStrings.offlineWifiSubtitle,
-                    ),
-                    SizedBox(height: AppSpacing.sm),
-                    _ConnectivityRecommendation(
-                      title: SignUpStrings.offlineMobileDataTitle,
-                      subtitle: SignUpStrings.offlineMobileDataSubtitle,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              AppFilledButton(
-                label: SignUpStrings.retryButton,
-                icon: SvgPicture.asset(
-                  SignUpStrings.cachedIcon,
-                  width: 20,
-                  height: 20,
-                  colorFilter: const ColorFilter.mode(
-                    AppColors.onPrimary,
-                    BlendMode.srcIn,
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
+        child: Center(
+          child: SvgPicture.asset(
+            SignUpStrings.cloudOffIcon,
+            width: 34,
+            height: 34,
+            colorFilter: const ColorFilter.mode(
+              AppColors.error,
+              BlendMode.srcIn,
+            ),
           ),
         ),
+      ),
+      title: SignUpStrings.offlineModalTitle,
+      message: SignUpStrings.offlineModalMessage,
+      content: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.backgroundTertiary,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        child: const Column(
+          children: [
+            _ConnectivityRecommendation(
+              title: SignUpStrings.offlineWifiTitle,
+              subtitle: SignUpStrings.offlineWifiSubtitle,
+            ),
+            SizedBox(height: AppSpacing.sm),
+            _ConnectivityRecommendation(
+              title: SignUpStrings.offlineMobileDataTitle,
+              subtitle: SignUpStrings.offlineMobileDataSubtitle,
+            ),
+          ],
+        ),
+      ),
+      action: AppFilledButton(
+        label: SignUpStrings.retryButton,
+        icon: SvgPicture.asset(
+          SignUpStrings.cachedIcon,
+          width: 20,
+          height: 20,
+          colorFilter: const ColorFilter.mode(
+            AppColors.onPrimary,
+            BlendMode.srcIn,
+          ),
+        ),
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
       ),
     );
   }
 }
 
+/// Opcion breve que sugiere una fuente de conexion para completar el alta.
 class _ConnectivityRecommendation extends StatelessWidget {
   const _ConnectivityRecommendation({
     required this.title,
