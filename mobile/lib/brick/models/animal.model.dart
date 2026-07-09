@@ -306,6 +306,7 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   }
 }
 
+/// TODO (Agustín): Eliminar luego estas funciones si no son necesarias.
 /// Convierte el enum de sexo del backend al enum local persistido.
 BrickAnimalSex brickAnimalSexFromBackend(String value) {
   return switch (value) {
