@@ -52,19 +52,57 @@ class BrickAnimalRequestTransformer extends RestRequestTransformer {
   /// Crea el transformer de requests para animales.
   const BrickAnimalRequestTransformer(super.query, super.instance);
 
-  /// Request usado por Brick para hidratar animales desde backend.
-  @override
-  RestRequest get get => const RestRequest(
-    url: '/api/v1/animales',
+  /// Ruta base del recurso de animales en el backend.
+  ///
+  /// Se centraliza aca para que stores, adapters generados y cualquier flujo de
+  /// sync usen el mismo contrato HTTP. Si el endpoint cambia, el ajuste debe
+  /// hacerse en este unico lugar.
+  static const String animalsPath = '/api/v1/animales';
+
+  /// Request usado por Brick para listar animales desde backend.
+  ///
+  /// `topLevelKey` indica que el backend responde con un wrapper y que la lista
+  /// real de animales esta dentro de `data`.
+  static const RestRequest listRequest = RestRequest(
+    url: animalsPath,
     topLevelKey: 'data',
   );
 
+  /// Request usado por Brick para enviar altas/updates de animales al backend.
+  static const RestRequest upsertRequest = RestRequest(
+    method: 'POST',
+    url: animalsPath,
+  );
+
+  /// Crea el request de listado filtrado por establecimiento.
+  ///
+  /// El store necesita este filtro para hacer pull remoto sin duplicar la URL
+  /// base. El `establishmentId` se codifica como query param para evitar que un
+  /// caracter especial rompa la URL final.
+  static RestRequest listByEstablishmentRequest(String establishmentId) {
+    final encodedEstablishmentId = Uri.encodeQueryComponent(establishmentId);
+
+    return RestRequest(
+      url: '$animalsPath?establecimiento_id=$encodedEstablishmentId',
+      topLevelKey: 'data',
+    );
+  }
+
+  /// Indica si un resultado de sync corresponde al recurso de animales.
+  ///
+  /// Algunos clientes pueden reportar el path completo o con base URL incluida;
+  /// por eso se valida por sufijo contra la ruta centralizada.
+  static bool matchesAnimalResource(String resourcePath) {
+    return resourcePath.endsWith(animalsPath);
+  }
+
+  /// Request usado por Brick para hidratar animales desde backend.
+  @override
+  RestRequest get get => listRequest;
+
   /// Request usado por Brick para enviar altas/updates al backend.
   @override
-  RestRequest get upsert => const RestRequest(
-    method: 'POST',
-    url: '/api/v1/animales',
-  );
+  RestRequest get upsert => upsertRequest;
 }
 
 /// Modelo Brick offline-first para animales.
@@ -119,10 +157,7 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   final String rfidTagNumber;
 
   /// Caravana visual opcional mostrada al usuario.
-  @Rest(
-    name: 'caravana_visual',
-    fromGenerator: 'brickStringFromBackend(%DATA_PROPERTY%)',
-  )
+  @Rest(name: 'caravana_visual')
   final String visualTag;
 
   /// Sexo del animal, traducido a/desde el enum textual del backend.
@@ -134,17 +169,11 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   final BrickAnimalSex sex;
 
   /// Raza declarada al registrar el animal.
-  @Rest(
-    name: 'raza',
-    fromGenerator: 'brickStringFromBackend(%DATA_PROPERTY%)',
-  )
+  @Rest(name: 'raza')
   final String breed;
 
   /// Fecha de nacimiento. Para backend se serializa como fecha sin hora.
-  @Rest(
-    name: 'fecha_nacimiento',
-    toGenerator: 'brickDateToBackend(%INSTANCE_PROPERTY%)',
-  )
+  @Rest(name: 'fecha_nacimiento')
   final DateTime birthDate;
 
   /// ID backend de la categoria productiva.
@@ -174,11 +203,8 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   final String establishmentId;
 
   /// Peso inicial del animal.
-  @Rest(
-    name: 'peso_inicial',
-    fromGenerator: 'brickDoubleFromBackend(%DATA_PROPERTY%)',
-  )
-  final double initialWeight;
+  @Rest(name: 'peso_inicial')
+  final double? initialWeight;
 
   /// Metodo usado para obtener el peso inicial.
   @Rest(

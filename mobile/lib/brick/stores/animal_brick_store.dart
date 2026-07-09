@@ -71,9 +71,10 @@ class BrickAnimalStore implements AnimalBrickStore {
       query: Query(
         forProviders: [
           RestProviderQuery(
-            request: RestRequest(
-              url: '/api/v1/animales?establecimiento_id=${Uri.encodeQueryComponent(establishmentId)}',
-              topLevelKey: 'data',
+            // La ruta se arma en el transformer del modelo para que este store
+            // solo coordine el flujo offline-first y no duplique endpoints.
+            request: BrickAnimalRequestTransformer.listByEstablishmentRequest(
+              establishmentId,
             ),
           ),
         ],
@@ -107,7 +108,11 @@ class BrickAnimalStore implements AnimalBrickStore {
   /// `2xx` marca el animal como sincronizado. Errores funcionales del backend
   /// marcan el registro como rechazado y guardan el codigo para mostrarlo en UI.
   Future<void> applyAnimalSyncResult(BackendSyncResult result) async {
-    if (!result.resourcePath.endsWith('/api/v1/animales')) {
+    // El matcher vive junto a la ruta base para que el filtro de eventos de
+    // sync cambie automaticamente si cambia el endpoint de animales.
+    if (!BrickAnimalRequestTransformer.matchesAnimalResource(
+      result.resourcePath,
+    )) {
       return;
     }
 

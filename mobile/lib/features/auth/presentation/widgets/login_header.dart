@@ -27,7 +27,7 @@ class LoginHeader extends StatelessWidget {
         const SizedBox(height: AppSpacing.lg),
         const Text(
           LoginStrings.title,
-          style: AppTypography.appTitle,
+          style: AppTypography.bigTitle,
         ),
         const SizedBox(height: AppSpacing.xs),
         const Text(

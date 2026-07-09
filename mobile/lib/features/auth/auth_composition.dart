@@ -25,6 +25,11 @@ import 'package:http/http.dart' as http;
 /// regla practica es que presentation recibe use cases/cubits ya armados, y
 /// solo este archivo conoce data sources, storage seguro y cliente HTTP.
 
+// TODO(agustin): Reemplazar este wiring manual cuando definamos la estrategia
+// comun para crear BLoCs/repositories. Opciones probables: RepositoryProvider /
+// MultiBlocProvider, providers a nivel router, o un container tipo get_it +
+// injectable. En el flujo final, la page deberia conocer solo al BLoC.
+
 /// Crea el cubit global que restaura y cierra sesiones.
 AuthSessionCubit createAuthSessionCubit() {
   final client = http.Client();

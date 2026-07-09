@@ -2,7 +2,7 @@ part of 'login_cubit.dart';
 
 /// Estado de la pantalla de login.
 @freezed
-abstract class LoginState with _$LoginState {
+sealed class LoginState with _$LoginState {
   /// Crea el estado de login.
   const factory LoginState({
     required ResultState<AuthSession> signInResult,

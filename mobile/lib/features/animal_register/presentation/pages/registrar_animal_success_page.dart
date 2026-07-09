@@ -33,7 +33,7 @@ class RegistrarAnimalSuccessPage extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               const Text(
                 AnimalRegisterStrings.successTitle,
-                style: AppTypography.successTitle,
+                style: AppTypography.bigTitle,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.xs),

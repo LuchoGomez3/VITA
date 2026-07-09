@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/navigation/backward_page.dart';
+import 'package:frontend_mayoral/core/navigation/fade_page.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
@@ -29,7 +30,7 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.login,
-        pageBuilder: (context, state) => _buildBackwardPage(
+        pageBuilder: (context, state) => BackwardPage(
           state: state,
           child: const LoginPage(
             createCubit: createLoginCubit,
@@ -38,7 +39,7 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.home,
-        pageBuilder: (context, state) => _buildFadePage(
+        pageBuilder: (context, state) => FadePage(
           state: state,
           child: HomePage(
             signOut: context.read<AuthSessionCubit>().signOut,
@@ -91,43 +92,4 @@ class AppRouter {
       ),
     ],
   );
-
-  static CustomTransitionPage<void> _buildBackwardPage({
-    required GoRouterState state,
-    required Widget child,
-  }) {
-    return CustomTransitionPage<void>(
-      key: state.pageKey,
-      child: child,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        final position = animation.drive(
-          Tween<Offset>(
-            begin: const Offset(-1, 0),
-            end: Offset.zero,
-          ).chain(CurveTween(curve: Curves.easeOutCubic)),
-        );
-
-        return SlideTransition(
-          position: position,
-          child: child,
-        );
-      },
-    );
-  }
-
-  static CustomTransitionPage<void> _buildFadePage({
-    required GoRouterState state,
-    required Widget child,
-  }) {
-    return CustomTransitionPage<void>(
-      key: state.pageKey,
-      child: child,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: animation.drive(CurveTween(curve: Curves.easeOut)),
-          child: child,
-        );
-      },
-    );
-  }
 }
