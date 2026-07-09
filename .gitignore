@@ -215,3 +215,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# FVM Version Cache
+.fvm/
+.fvmrc
+
+# Personal IP
+mobile/.vscode/settings.json
+.vscode/launch.json
