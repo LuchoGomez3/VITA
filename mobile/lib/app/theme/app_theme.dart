@@ -24,7 +24,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: AppColors.onPrimary,
         hintStyle: AppTypography.formFieldHint,
         labelStyle: AppTypography.secondaryEmphasis,
         helperStyle: AppTypography.formFieldSuccess,
@@ -46,7 +46,7 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.surface,
+        color: AppColors.onPrimary,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),

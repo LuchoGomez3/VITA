@@ -33,8 +33,14 @@ class SignUpStrings {
   /// Label del campo de nombre del usuario.
   static const firstNameLabel = 'Nombre';
 
+  /// Nombre de ejemplo precargado mientras el alta permanece mockeada.
+  static const firstNameMockValue = 'Juan';
+
   /// Label del campo de apellido del usuario.
   static const lastNameLabel = 'Apellido';
+
+  /// Apellido de ejemplo precargado mientras el alta permanece mockeada.
+  static const lastNameMockValue = 'Pérez';
 
   /// Label del campo de CUIT o CUIL.
   static const cuitLabel = 'CUIT / CUIL ';
@@ -121,6 +127,58 @@ class SignUpStrings {
   /// Texto del boton principal que envia el formulario de registro.
   static const registerButton = 'Registrar cuenta';
 
+  /// Titulo principal de la pantalla de progreso de registro.
+  static const creatingAccountTitle = 'Creando tu cuenta...';
+
+  /// Subtitulo de la pantalla de progreso de registro.
+  static const creatingAccountSubtitle =
+      'Estamos guardando tus datos y preparando el dispositivo para que después funcione sin señal.';
+
+  /// Etiqueta de estado para la validacion que esta corriendo.
+  static const creatingAccountInProgress = 'en curso';
+
+  /// Validacion de CUIT dentro del alta de cuenta.
+  static const creatingAccountValidateCuit = 'Validando CUIT';
+
+  /// Validacion de correo dentro del alta de cuenta.
+  static const creatingAccountVerifyEmail = 'Verificando correo';
+
+  /// Validacion de credenciales dentro del alta de cuenta.
+  static const creatingAccountGenerateCredentials = 'Generando credenciales';
+
+  /// Validacion de configuracion inicial dentro del alta de cuenta.
+  static const creatingAccountDownloadInitialConfig =
+      'Descargando configuración inicial';
+
+  /// Prefijo del saludo mostrado al completar el registro.
+  static const successWelcomePrefix = '¡Bienvenido ';
+
+  /// Sufijo del saludo mostrado al completar el registro.
+  static const successWelcomeSuffix = '!';
+
+  /// Confirmacion que aparece debajo del saludo final.
+  static const successSubtitle =
+      'Tu cuenta fue creada con éxito. Ya iniciaste sesión.';
+
+  /// Rol inicial asignado al productor registrado.
+  static const ownerRole = 'Owner';
+
+  /// Etiqueta que acompaña al identificador fiscal.
+  static const successCuitLabel = 'CUIT';
+
+  /// Titulo de la recomendacion posterior al registro.
+  static const nextStepTitle = 'Próximo paso';
+
+  /// Descripcion de la configuracion que sigue al alta.
+  static const nextStepDescription =
+      'Configurá tu primer establecimiento (RENSPA, ubicación y superficie).';
+
+  /// Accion para comenzar la configuracion del establecimiento.
+  static const configureEstablishmentButton = 'Configurar mi establecimiento';
+
+  /// Accion temporal para volver a la pantalla principal.
+  static const temporaryBackHomeButton = 'Volver a la pantalla principal';
+
   /// Texto previo al link de inicio de sesion para usuarios existentes.
   static const alreadyHaveAccountPrefix = '¿Ya tenés cuenta? ';
 
@@ -139,16 +197,22 @@ class SignUpStrings {
   /// Texto enlazable de terminos y politica de privacidad.
   static const termsPrivacy = 'términos y la política de privacidad.';
 
+
+  /// TODO: (FRANCO) Migrar luego a archivo de assets general para que pueda ser usado en otras pantallas.
+
+
   /// Ruta del icono de flecha para volver.
   static const arrowBackIcon = 'assets/icons/arrow_back_ios.svg';
 
-  /// TODO: (FRANCO) Migrar luego a archivo de assets general para que pueda ser usado en otras pantallas.
 
   /// Ruta del icono de flecha para avanzar.
   static const arrowForwardIcon = 'assets/icons/arrow_forward.svg';
 
   /// Ruta del icono de reintento o sincronizacion.
   static const cachedIcon = 'assets/icons/cached.svg';
+
+  /// Ruta del icono de check de confirmacion.
+  static const checkIcon = 'assets/icons/check.svg';
 
   /// Ruta del icono de nube conectada.
   static const cloudIcon = 'assets/icons/cloud.svg';

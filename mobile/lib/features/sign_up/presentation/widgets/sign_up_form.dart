@@ -7,11 +7,20 @@ import 'package:frontend_mayoral/features/sign_up/presentation/strings/sign_up_s
 /// Formulario visual del alta de usuario.
 class SignUpForm extends StatelessWidget {
   const SignUpForm({
+    required this.cuitController,
+    required this.emailController,
+    required this.firstNameController,
     required this.hasPasswordError,
     required this.isCuitValid,
     required this.isEmailAlreadyRegistered,
+    required this.lastNameController,
     super.key,
   });
+
+  final TextEditingController cuitController;
+  final TextEditingController emailController;
+  final TextEditingController firstNameController;
+  final TextEditingController lastNameController;
 
   /// Indica si se debe mostrar la ayuda de requisitos de contrasena.
   final bool hasPasswordError;
@@ -27,10 +36,11 @@ class SignUpForm extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
             Expanded(
               child: AppTextFormField(
+                controller: firstNameController,
                 title: SignUpStrings.firstNameLabel,
                 hintText: SignUpStrings.emptyInputHint,
               ),
@@ -38,6 +48,7 @@ class SignUpForm extends StatelessWidget {
             SizedBox(width: AppSpacing.md),
             Expanded(
               child: AppTextFormField(
+                controller: lastNameController,
                 title: SignUpStrings.lastNameLabel,
                 hintText: SignUpStrings.emptyInputHint,
               ),
@@ -45,9 +56,15 @@ class SignUpForm extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.md),
-        _SignUpCuitField(isValid: isCuitValid),
+        _SignUpCuitField(
+          controller: cuitController,
+          isValid: isCuitValid,
+        ),
         const SizedBox(height: AppSpacing.md),
-        _SignUpEmailField(alreadyRegistered: isEmailAlreadyRegistered),
+        _SignUpEmailField(
+          alreadyRegistered: isEmailAlreadyRegistered,
+          controller: emailController,
+        ),
         const SizedBox(height: AppSpacing.md),
         _SignUpPasswordField(hasPasswordError: hasPasswordError),
       ],
@@ -58,9 +75,11 @@ class SignUpForm extends StatelessWidget {
 class _SignUpEmailField extends StatelessWidget {
   const _SignUpEmailField({
     required this.alreadyRegistered,
+    required this.controller,
   });
 
   final bool alreadyRegistered;
+  final TextEditingController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +88,7 @@ class _SignUpEmailField extends StatelessWidget {
         SignUpStrings.emailLabel,
         style: AppTypography.secondaryEmphasis,
       ),
-      initialValue: SignUpStrings.emailMockValue,
+      controller: controller,
       statusText: alreadyRegistered
           ? SignUpStrings.emailAlreadyRegisteredMessage
           : SignUpStrings.emailAvailableMessage,
@@ -80,9 +99,11 @@ class _SignUpEmailField extends StatelessWidget {
 
 class _SignUpCuitField extends StatelessWidget {
   const _SignUpCuitField({
+    required this.controller,
     required this.isValid,
   });
 
+  final TextEditingController controller;
   final bool isValid;
 
   @override
@@ -100,7 +121,7 @@ class _SignUpCuitField extends StatelessWidget {
           ],
         ),
       ),
-      initialValue: SignUpStrings.cuitMockValue,
+      controller: controller,
       statusText: isValid
           ? SignUpStrings.cuitValidMessage
           : SignUpStrings.cuitInvalidMessage,
@@ -154,7 +175,7 @@ class _SignUpPasswordFieldState extends State<_SignUpPasswordField> {
                 height: 24,
                 fit: BoxFit.contain,
                 colorFilter: const ColorFilter.mode(
-                  Colors.black38,
+                  AppColors.iconMuted,
                   BlendMode.srcIn,
                 ),
               ),
@@ -175,14 +196,14 @@ class _SignUpPasswordFieldState extends State<_SignUpPasswordField> {
 
 class _SignUpValidatedInput extends StatelessWidget {
   const _SignUpValidatedInput({
+    required this.controller,
     required this.title,
-    required this.initialValue,
     required this.statusText,
     required this.isError,
   });
 
+  final TextEditingController controller;
   final Widget title;
-  final String initialValue;
   final String statusText;
   final bool isError;
 
@@ -197,7 +218,7 @@ class _SignUpValidatedInput extends StatelessWidget {
         title,
         const SizedBox(height: AppSpacing.xs),
         TextFormField(
-          initialValue: initialValue,
+          controller: controller,
           style: AppTypography.formFieldValueEmphasis,
           decoration: InputDecoration(
             suffixIcon: Icon(

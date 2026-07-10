@@ -5,8 +5,17 @@ class AppRoutes {
   /// Ruta de la pantalla de bienvenida de inicio de sesion.
   static const welcome = '/welcome';
 
-  /// Nueva ruta para el formulario de creación de cuenta
+  /// Ruta de bienvenida al registro de cuenta.
   static const signUp = '/sign-up';
+
+  /// Ruta del formulario de creacion de cuenta.
+  static const signUpForm = '/sign-up/form';
+
+  /// Ruta de la pantalla de confirmacion de creacion de cuenta.
+  static const signUpCreatingAccount = '/sign-up/creating-account';
+
+  /// Ruta de confirmacion del registro de cuenta.
+  static const signUpSuccess = '/sign-up/success';
 
   /// Ruta de la pantalla de inicio.
   static const home = '/';

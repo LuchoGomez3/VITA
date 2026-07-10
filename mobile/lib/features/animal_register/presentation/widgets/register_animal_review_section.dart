@@ -54,7 +54,7 @@ class RegisterAnimalReviewSection extends StatelessWidget {
         AppSpacing.md,
       ),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.onPrimary,
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),

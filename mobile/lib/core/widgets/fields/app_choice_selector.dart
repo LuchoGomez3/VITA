@@ -28,7 +28,7 @@ class AppChoiceSelector<T> extends StatelessWidget {
     this.titleStyle,
     this.selectedColor = AppColors.primary,
     this.selectedTextColor = AppColors.onPrimary,
-    this.unSelectedColor = AppColors.surface,
+    this.unSelectedColor = AppColors.onPrimary,
     this.unSelectedTextColor = AppColors.textPrimary,
   });
 

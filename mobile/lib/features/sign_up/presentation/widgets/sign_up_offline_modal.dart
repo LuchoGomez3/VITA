@@ -89,7 +89,7 @@ class _ConnectivityRecommendation extends StatelessWidget {
           width: 22,
           height: 22,
           decoration: const BoxDecoration(
-            color: AppColors.surface,
+            color: AppColors.onPrimary,
             shape: BoxShape.circle,
           ),
           child: Center(

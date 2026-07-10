@@ -124,7 +124,7 @@ class _SelectedGenealogyAnimal extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.onPrimary,
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
@@ -185,7 +185,7 @@ class _GenealogyResults extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.onPrimary,
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(AppRadius.sm),
         boxShadow: const [

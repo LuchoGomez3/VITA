@@ -48,7 +48,7 @@ class DestinationSelectionCard extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.backgroundSecondary : AppColors.surface,
+          color: isSelected ? AppColors.backgroundSecondary : AppColors.onPrimary,
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
           ),
@@ -61,7 +61,7 @@ class DestinationSelectionCard extends StatelessWidget {
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : AppColors.surface,
+                color: isSelected ? AppColors.primary : AppColors.onPrimary,
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: isSelected ? AppColors.primary : AppColors.border,

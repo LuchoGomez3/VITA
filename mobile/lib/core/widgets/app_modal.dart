@@ -44,7 +44,7 @@ class AppModal extends StatelessWidget {
       filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
       child: Dialog(
         insetPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.onPrimary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.sm),
         ),

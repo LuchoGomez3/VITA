@@ -107,6 +107,30 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
+  /// Iniciales mostradas sobre avatares con fondo primario.
+  static const avatarInitials = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.onPrimary,
+  );
+
+  /// Texto de un paso de progreso que se encuentra activo.
+  static const progressStepActive = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
+
+  /// Texto de un paso de progreso completado o pendiente.
+  static const progressStepInactive = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textEmphasis,
+  );
+
   /// Titulo de alerta de error.
   static const errorTitle = TextStyle(
     fontFamily: _baseFontFamily,

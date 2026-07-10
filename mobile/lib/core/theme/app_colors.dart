@@ -28,9 +28,6 @@ class AppColors {
   /// Fondo suave para tarjetas legales o de terminos.
   static const termsBackground = Color(0xFFF3EFE9);
 
-  /// Superficie principal para cards, inputs y componentes elevados.
-  static const surface = Color(0xFFFFFFFF);
-
   /// Texto principal: titulos de app bar, botones de texto y contenido clave.
   static const textPrimary = Color(0xFF1D1B1A);
 
@@ -64,12 +61,18 @@ class AppColors {
   /// Fondo suave para botones iconicos sobre superficies claras.
   static const iconButtonBackground = Color(0x0D000000);
 
+  /// Color atenuado para iconos secundarios sobre superficies claras.
+  static const iconMuted = Color(0x61000000);
+
+  /// Sombra suave utilizada por tarjetas elevadas.
+  static const cardShadow = Color(0x12000000);
+
+  /// Fondo verde tenue para bloques informativos de siguiente paso.
+  static const nextStepBackground = Color(0x61C3F2CB);
+
   /// Opciones disponibles para personalizacion de caravanas.
   /// Opcion amarilla
   static const earTagYellow = Color(0xFFF4CF3D);
-
-  /// Opcion beige
-  static const earTagBeige = Color(0xFFE8E2D2);
 
   /// Opcion lilac
   static const earTagLilac = Color(0xFFE5D1E3);
@@ -92,14 +95,14 @@ class AppColors {
     onSecondary: onPrimary,
     error: error,
     onError: onPrimary,
-    surface: surface,
+    surface: onPrimary,
     onSurface: textPrimary,
     outline: border,
     outlineVariant: border,
     shadow: Color(0x1A1D1B1A),
     scrim: Color(0x521D1B1A),
     inverseSurface: textPrimary,
-    onInverseSurface: surface,
+    onInverseSurface: onPrimary,
     inversePrimary: Color(0xFFA5D6A7),
     surfaceTint: primary,
   );

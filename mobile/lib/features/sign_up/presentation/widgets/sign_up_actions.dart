@@ -6,7 +6,17 @@ import 'package:frontend_mayoral/features/sign_up/presentation/strings/sign_up_s
 
 /// Acciones finales del formulario de registro de usuario.
 class SignUpActions extends StatelessWidget {
-  const SignUpActions({super.key});
+  const SignUpActions({
+    required this.onLoginPressed,
+    required this.onRegisterPressed,
+    super.key,
+  });
+
+  /// Accion ejecutada al seleccionar el enlace de inicio de sesion.
+  final VoidCallback onLoginPressed;
+
+  /// Accion ejecutada al enviar el formulario de registro.
+  final VoidCallback onRegisterPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -23,20 +33,30 @@ class SignUpActions extends StatelessWidget {
               BlendMode.srcIn,
             ),
           ),
-          onPressed: () {
-            // TODO: Conectar con el caso de uso de registro cuando exista.
-          },
+          onPressed: onRegisterPressed,
         ),
         const SizedBox(height: AppSpacing.lg),
         Center(
           child: RichText(
-            text: const TextSpan(
+            text: TextSpan(
               style: AppTypography.pageBodyTitle,
               children: [
-                TextSpan(text: SignUpStrings.alreadyHaveAccountPrefix),
-                TextSpan(
-                  text: SignUpStrings.loginLink,
-                  style: AppTypography.inlinePrimaryLink,
+                const TextSpan(
+                  text: SignUpStrings.alreadyHaveAccountPrefix,
+                ),
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.baseline,
+                  baseline: TextBaseline.alphabetic,
+                  child: Semantics(
+                    link: true,
+                    child: GestureDetector(
+                      onTap: onLoginPressed,
+                      child: const Text(
+                        SignUpStrings.loginLink,
+                        style: AppTypography.inlinePrimaryLink,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),

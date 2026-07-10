@@ -93,14 +93,14 @@ class _ActionButtons extends StatelessWidget {
           label: WelcomeStrings.createAccountButton,
           icon: const Icon(Icons.add),
           onPressed: () {
-            context.push(AppRoutes.signUp);
+            context.push(AppRoutes.signUpForm);
           },
         ),
         const SizedBox(height: AppSpacing.md),
         AppOutlinedButton(
           label: WelcomeStrings.loginButton,
           onPressed: () {
-            // TODO: Reemplazar por navegacion real cuando se defina el flujo.
+            context.push(AppRoutes.login);
           },
         ),
       ],

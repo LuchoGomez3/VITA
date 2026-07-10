@@ -5,7 +5,13 @@ import 'package:frontend_mayoral/features/sign_up/presentation/strings/sign_up_s
 
 /// Alerta mostrada cuando el CUIT o correo ya pertenece a una cuenta activa.
 class SignUpExistingAccountAlert extends StatelessWidget {
-  const SignUpExistingAccountAlert({super.key});
+  const SignUpExistingAccountAlert({
+    required this.onLoginPressed,
+    super.key,
+  });
+
+  /// Accion ejecutada al elegir iniciar sesion con la cuenta existente.
+  final VoidCallback onLoginPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -44,9 +50,7 @@ class SignUpExistingAccountAlert extends StatelessWidget {
                   children: [
                     AppErrorFilledButton(
                       label: SignUpStrings.loginButton,
-                      onPressed: () {
-                        // TODO: Navegar al login conservando el contexto del formulario.
-                      },
+                      onPressed: onLoginPressed,
                     ),
                     const SizedBox(width: AppSpacing.md),
                     TextButton(
