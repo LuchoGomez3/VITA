@@ -7,6 +7,7 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/presentation/bloc/auth_session_cubit.dart';
 import 'package:frontend_mayoral/features/auth/presentation/bloc/login_cubit.dart';
+import 'package:frontend_mayoral/features/auth/presentation/strings/login_strings.dart';
 import 'package:frontend_mayoral/features/auth/presentation/widgets/login_form.dart';
 import 'package:frontend_mayoral/features/auth/presentation/widgets/login_header.dart';
 import 'package:go_router/go_router.dart';
@@ -63,6 +64,14 @@ class _LoginViewState extends State<_LoginView> {
         switch (state.signInResult) {
           case Data<AuthSession>(:final data):
             context.read<AuthSessionCubit>().setAuthenticated(data);
+            final initialDataSyncError = state.initialDataSyncError;
+            if (initialDataSyncError != null) {
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(content: Text(initialDataSyncError.message)),
+                );
+            }
             context.go(AppRoutes.home);
           case ResultError<AuthSession>(:final error):
             ScaffoldMessenger.of(context)
@@ -78,6 +87,9 @@ class _LoginViewState extends State<_LoginView> {
         buildWhen: (previous, current) => previous.signInResult != current.signInResult,
         builder: (context, state) {
           final isSubmitting = state.signInResult is Loading<AuthSession>;
+          final loadingLabel = state.isPreparingOfflineData
+              ? LoginStrings.preparingOfflineDataButton
+              : LoginStrings.submittingButton;
 
           return Scaffold(
             body: SafeArea(
@@ -98,6 +110,7 @@ class _LoginViewState extends State<_LoginView> {
                             passwordController: _passwordController,
                             obscurePassword: _obscurePassword,
                             isSubmitting: isSubmitting,
+                            loadingLabel: loadingLabel,
                             onPasswordVisibilityPressed: _togglePasswordVisibility,
                             onSubmit: () => _submit(context),
                           ),

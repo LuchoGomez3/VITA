@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/navigation/backward_page.dart';
+import 'package:frontend_mayoral/core/navigation/fade_page.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
@@ -33,8 +35,11 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.login,
-        builder: (context, state) => const LoginPage(
-          createCubit: createLoginCubit,
+        pageBuilder: (context, state) => BackwardPage(
+          state: state,
+          child: const LoginPage(
+            createCubit: createLoginCubit,
+          ),
         ),
       ),
       GoRoute(
@@ -57,12 +62,16 @@ class AppRouter {
           userData: state.extra! as SignUpUserData,
         ),
       ),
+
       /// Ruta de la pantalla de inicio.
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => HomePage(
-          signOut: context.read<AuthSessionCubit>().signOut,
-          verifyAuthentication: verifyAuthenticatedUser,
+        pageBuilder: (context, state) => FadePage(
+          state: state,
+          child: HomePage(
+            signOut: context.read<AuthSessionCubit>().signOut,
+            verifyAuthentication: verifyAuthenticatedUser,
+          ),
         ),
       ),
       GoRoute(

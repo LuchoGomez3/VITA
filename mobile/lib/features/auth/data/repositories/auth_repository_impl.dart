@@ -87,8 +87,6 @@ class AuthRepositoryImpl implements AuthRepository {
       _tokenProvider.accessToken = session.accessToken;
       return Result.success(session);
     } on FormatException {
-      // Si el JSON local quedo corrupto, lo descartamos para no dejar al router
-      // atrapado en un estado ambiguo. El usuario debera iniciar sesion online.
       await _localDataSource.clearSession();
       _tokenProvider.clearAccessToken();
       return const Result.failure(

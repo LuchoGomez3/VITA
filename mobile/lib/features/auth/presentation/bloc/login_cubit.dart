@@ -1,8 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
+import 'package:frontend_mayoral/features/auth/domain/use_cases/prepare_initial_data_sync_use_case.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/sign_in_use_case.dart';
 
 part 'login_cubit.freezed.dart';
@@ -13,12 +15,15 @@ class LoginCubit extends Cubit<LoginState> {
   /// Crea el cubit con sus casos de uso de autenticacion.
   LoginCubit({
     required SignInUseCase signInUseCase,
+    required PrepareInitialDataSyncUseCase prepareInitialDataSyncUseCase,
     void Function()? onClose,
   }) : _signInUseCase = signInUseCase,
+       _prepareInitialDataSyncUseCase = prepareInitialDataSyncUseCase,
        _onClose = onClose,
        super(LoginState.initial());
 
   final SignInUseCase _signInUseCase;
+  final PrepareInitialDataSyncUseCase _prepareInitialDataSyncUseCase;
   final void Function()? _onClose;
 
   /// Intenta iniciar sesion con las credenciales del formulario.
@@ -29,6 +34,8 @@ class LoginCubit extends Cubit<LoginState> {
     emit(
       state.copyWith(
         signInResult: const ResultState<AuthSession>.loading(),
+        isPreparingOfflineData: false,
+        initialDataSyncError: null,
       ),
     );
 
@@ -41,13 +48,29 @@ class LoginCubit extends Cubit<LoginState> {
       case Success<AuthSession>(:final data):
         emit(
           state.copyWith(
+            isPreparingOfflineData: true,
+          ),
+        );
+
+        final syncResult = await _prepareInitialDataSyncUseCase(data.user.id);
+        final syncError = switch (syncResult) {
+          Failure<void>(:final error) => error,
+          Success<void>() => null,
+          _ => null,
+        };
+
+        emit(
+          state.copyWith(
             signInResult: ResultState<AuthSession>.data(data),
+            isPreparingOfflineData: false,
+            initialDataSyncError: syncError,
           ),
         );
       case Failure<AuthSession>(:final error):
         emit(
           state.copyWith(
             signInResult: ResultState<AuthSession>.error(error),
+            isPreparingOfflineData: false,
           ),
         );
     }
