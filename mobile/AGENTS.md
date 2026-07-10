@@ -191,7 +191,6 @@ Barrel files are allowed in this project, but they must be used in a simple and 
 * **Explanations:** When generating code, provide explanations for Dart-specific features like null safety, futures, and streams.
 * **Clarification:** If a request is ambiguous, ask for clarification.
 * **Dependencies:** When suggesting new dependencies from `pub.dev`, explain their benefits.
-* **Formatting:** Use `fvm dart format <specific_file_path>` to ensure consistent code formatting. **CRITICAL:** **NEVER** run `fvm dart format .` (formatting the entire project/directory at once). Only format the specific files you have modified.
 * **IMPORTANT:** When using `flutter pub add` or `dart pub add`, always manually check the `pubspec.yaml` and remove any caret (`^`) prefixes from the version numbers to comply with the fixed version rule.
 
 ### 5.2. Flutter Style Guide
