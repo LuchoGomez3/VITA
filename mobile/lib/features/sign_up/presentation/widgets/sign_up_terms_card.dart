@@ -60,7 +60,7 @@ class _SignUpTermsCardState extends State<SignUpTermsCard> {
               child: RichText(
                 text: const TextSpan(
                   style: AppTypography.termsBody,
-                  children: const [
+                  children: [
                     TextSpan(text: SignUpStrings.termsPrefix),
                     TextSpan(
                       text: SignUpStrings.termsOwner,
