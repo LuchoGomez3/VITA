@@ -51,21 +51,39 @@ class AuthRemoteDataSource {
     }
 
     _throwIfUnsuccessful(response, body);
-    final data = body['data'];
-    if (data is Map<String, dynamic>) {
-      final accessToken = data['access_token'];
-      final userJson = data['usuario'];
-      if (accessToken is String && accessToken.isNotEmpty && userJson is Map<String, dynamic>) {
-        return AuthRemoteSession(
-          accessToken: accessToken,
-          userJson: userJson,
-        );
-      }
+    return _sessionFromBody(body);
+  }
+
+  /// Renueva la sesion usando el refresh token persistido.
+  Future<AuthRemoteSession> refreshSession({
+    required String refreshToken,
+  }) async {
+    final response = await _client
+        .post(
+          _uri('/api/auth/refresh'),
+          headers: const {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'refresh_token': refreshToken,
+          }),
+        )
+        .timeout(_requestTimeout);
+
+    final body = _decodeResponse(response);
+    if (response.statusCode == 401) {
+      throw const DomainException(
+        message: 'La sesion expiro. Inicia sesion nuevamente.',
+        code: DomainErrorCode.unauthorized,
+      );
     }
 
-    throw const DomainException(
-      message: 'El backend no devolvio una sesion valida.',
+    _throwIfUnsuccessful(
+      response,
+      body,
+      fallbackMessage: 'No se pudo renovar la sesion.',
     );
+    return _sessionFromBody(body);
   }
 
   /// Lee el perfil asociado al token Bearer.
@@ -115,10 +133,39 @@ class AuthRemoteDataSource {
     );
   }
 
+  AuthRemoteSession _sessionFromBody(Map<String, dynamic> body) {
+    final data = body['data'];
+    if (data is Map<String, dynamic>) {
+      final accessToken = data['access_token'];
+      final refreshToken = data['refresh_token'];
+      final expiresIn = data['expires_in'];
+      final userJson = data['usuario'];
+      if (accessToken is String &&
+          accessToken.isNotEmpty &&
+          refreshToken is String &&
+          refreshToken.isNotEmpty &&
+          expiresIn is num &&
+          expiresIn > 0 &&
+          userJson is Map<String, dynamic>) {
+        return AuthRemoteSession(
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+          expiresIn: expiresIn.toInt(),
+          userJson: userJson,
+        );
+      }
+    }
+
+    throw const DomainException(
+      message: 'El backend no devolvio una sesion valida.',
+    );
+  }
+
   void _throwIfUnsuccessful(
     http.Response response,
-    Map<String, dynamic> body,
-  ) {
+    Map<String, dynamic> body, {
+    String fallbackMessage = 'No se pudo iniciar sesion. Intenta nuevamente.',
+  }) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return;
     }
@@ -128,8 +175,6 @@ class AuthRemoteDataSource {
       throw DomainException(message: detail);
     }
 
-    throw const DomainException(
-      message: 'No se pudo iniciar sesion. Intenta nuevamente.',
-    );
+    throw DomainException(message: fallbackMessage);
   }
 }
