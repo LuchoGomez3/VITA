@@ -10,6 +10,7 @@ import 'package:frontend_mayoral/features/auth/data/datasources/establishment_re
 import 'package:frontend_mayoral/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:frontend_mayoral/features/auth/data/repositories/initial_data_sync_repository_impl.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/get_current_user_use_case.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/prepare_initial_data_sync_use_case.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/restore_session_use_case.dart';
@@ -29,6 +30,8 @@ import 'package:http/http.dart' as http;
 // comun para crear BLoCs/repositories. Opciones probables: RepositoryProvider /
 // MultiBlocProvider, providers a nivel router, o un container tipo get_it +
 // injectable. En el flujo final, la page deberia conocer solo al BLoC.
+
+bool _tokenRefreshConfigured = false;
 
 /// Crea el cubit global que restaura y cierra sesiones.
 AuthSessionCubit createAuthSessionCubit() {
@@ -103,6 +106,7 @@ Future<void> signOutAuthenticatedUser() async {
 }
 
 AuthRepositoryImpl _createAuthRepository(http.Client client) {
+  _ensureTokenRefreshConfigured();
   return AuthRepositoryImpl(
     localDataSource: const AuthLocalDataSource(
       secureStorage: FlutterSecureStorageService(),
@@ -113,4 +117,36 @@ AuthRepositoryImpl _createAuthRepository(http.Client client) {
     ),
     tokenProvider: SessionBackendAccessTokenProvider.instance,
   );
+}
+
+void _ensureTokenRefreshConfigured() {
+  if (_tokenRefreshConfigured) {
+    return;
+  }
+
+  _tokenRefreshConfigured = true;
+  SessionBackendAccessTokenProvider.instance.refreshCallback = (refreshToken) async {
+    final client = http.Client();
+    final repository = _createAuthRepository(client);
+
+    try {
+      final result = await repository.refreshSession(
+        refreshTokenOverride: refreshToken,
+      );
+      return switch (result) {
+        Success<AuthSession>(:final data) => BackendTokenSession(
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          accessTokenExpiresAt: data.accessTokenExpiresAt,
+        ),
+        Failure<AuthSession>(:final error) => switch (error.code) {
+          DomainErrorCode.unauthorized => throw error,
+          _ => null,
+        },
+        _ => null,
+      };
+    } finally {
+      client.close();
+    }
+  };
 }

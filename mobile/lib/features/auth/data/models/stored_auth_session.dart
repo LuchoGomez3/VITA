@@ -14,6 +14,8 @@ class StoredAuthSession {
   /// Crea una sesion persistible.
   const StoredAuthSession({
     required this.accessToken,
+    required this.refreshToken,
+    required this.accessTokenExpiresAt,
     required this.userId,
     required this.email,
     required this.firstName,
@@ -26,6 +28,8 @@ class StoredAuthSession {
   factory StoredAuthSession.fromDomain(AuthSession session) {
     return StoredAuthSession(
       accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+      accessTokenExpiresAt: session.accessTokenExpiresAt,
       userId: session.user.id,
       email: session.user.email,
       firstName: session.user.firstName,
@@ -39,6 +43,8 @@ class StoredAuthSession {
   factory StoredAuthSession.fromJson(Map<String, dynamic> json) {
     return StoredAuthSession(
       accessToken: _readString(json, 'access_token'),
+      refreshToken: _readString(json, 'refresh_token'),
+      accessTokenExpiresAt: _readDateTime(json, 'access_token_expires_at'),
       userId: _readString(json, 'user_id'),
       email: _readString(json, 'email'),
       firstName: _readString(json, 'first_name'),
@@ -60,6 +66,12 @@ class StoredAuthSession {
 
   /// JWT usado por backend y por Brick para requests autenticadas.
   final String accessToken;
+
+  /// Token persistido para renovar la sesion cuando vuelva la conexion.
+  final String refreshToken;
+
+  /// Fecha de expiracion del access token.
+  final DateTime accessTokenExpiresAt;
 
   /// ID backend/Supabase del usuario.
   final String userId;
@@ -83,6 +95,8 @@ class StoredAuthSession {
   AuthSession toDomain() {
     return AuthSession(
       accessToken: accessToken,
+      refreshToken: refreshToken,
+      accessTokenExpiresAt: accessTokenExpiresAt,
       user: AppUser(
         id: userId,
         email: email,
@@ -98,6 +112,8 @@ class StoredAuthSession {
   Map<String, dynamic> toJson() {
     return {
       'access_token': accessToken,
+      'refresh_token': refreshToken,
+      'access_token_expires_at': accessTokenExpiresAt.toUtc().toIso8601String(),
       'user_id': userId,
       'email': email,
       'first_name': firstName,
@@ -124,6 +140,18 @@ class StoredAuthSession {
   static String? _readNullableString(Map<String, dynamic> json, String key) {
     final value = json[key];
     return value is String && value.isNotEmpty ? value : null;
+  }
+
+  static DateTime _readDateTime(Map<String, dynamic> json, String key) {
+    final value = json[key];
+    if (value is String) {
+      final parsed = DateTime.tryParse(value);
+      if (parsed != null) {
+        return parsed.toUtc();
+      }
+    }
+
+    return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
   }
 
   static UserRole _readRole(Object? value) {

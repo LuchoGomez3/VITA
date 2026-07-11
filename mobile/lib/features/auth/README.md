@@ -15,6 +15,8 @@ El principio base es:
 Esta fase introduce el primer flujo real de sesion:
 
 - login contra `/api/auth/login`;
+- refresh contra `/api/auth/refresh` cuando una llamada online necesita token
+  vigente;
 - persistencia local de una sesion minima en secure storage;
 - restauracion offline al abrir la app;
 - estado global de autenticacion con `AuthSessionCubit`;
@@ -22,13 +24,14 @@ Esta fase introduce el primer flujo real de sesion:
 - logout local;
 - pantalla tecnica inicial para decidir si mostrar login o entrar a la app.
 
-No implementa refresh token, guards completos por ruta ni borrado de bases Brick
-al cerrar sesion. Esas decisiones quedan documentadas en [Fases futuras](#fases-futuras).
+No implementa guards completos por ruta ni borrado de bases Brick al cerrar
+sesion. Esas decisiones quedan documentadas en [Fases futuras](#fases-futuras).
 
 ## Capas
 
 - **Backend**: `/api/auth/login` recibe `email + password` y devuelve
-  `access_token + usuario`. Esta accion requiere internet.
+  `access_token + refresh_token + expires_in + usuario`. Esta accion requiere
+  internet. `/api/auth/refresh` renueva tokens cuando vuelve la conexion.
 - **Secure storage**: guarda una copia minima de la sesion para reabrir la app
   offline. No guarda datos de negocio ni colas de sync.
 - **Memoria**: `SessionBackendAccessTokenProvider` mantiene el JWT vigente para
@@ -61,6 +64,8 @@ mobile y dominio se habla de `email`. La traduccion queda encapsulada en
 La clave `SecureStorageKeys.authSession` contiene un JSON versionado con:
 
 - `access_token`
+- `refresh_token`
+- `access_token_expires_at`
 - `user_id`
 - `email`
 - `first_name`
@@ -95,9 +100,14 @@ Brick no conoce `features/auth`. Su cliente HTTP usa el contrato
 `BackendAccessTokenProvider`.
 
 Cuando auth hace login o restore, el repositorio hidrata
-`SessionBackendAccessTokenProvider.instance` con el `access_token`. Desde ahi,
-`AuthenticatedBackendClient` puede agregar `Authorization: Bearer <token>` a los
+`SessionBackendAccessTokenProvider.instance` con `access_token`,
+`refresh_token` y expiracion. Desde ahi, `AuthenticatedBackendClient` puede
+pedir un token vigente antes de agregar `Authorization: Bearer <token>` a los
 requests de sync.
+
+Restaurar la app offline no refresca tokens. Si el access token vencio, la app
+sigue entrando offline con la sesion local; el refresh ocurre recien cuando una
+llamada online o una sincronizacion necesita hablar con backend.
 
 ## Logout
 
@@ -131,12 +141,6 @@ CI usa `--fatal-infos`, esa limpieza debe abordarse como una tarea separada para
 no mezclarla con la integracion de sesion.
 
 ## Fases futuras
-
-### Refresh y expiracion de token
-
-La app restaura sesion offline aunque el access token pueda vencer. Falta definir
-como refrescar el token cuando vuelva la conexion y que hacer si el backend lo
-rechaza durante una sincronizacion.
 
 ### Guards reales de router
 

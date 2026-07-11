@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:http/http.dart' as http;
 
 /// Cliente HTTP usado por Brick para hablar con el backend autenticado.
@@ -35,11 +36,26 @@ class AuthenticatedBackendClient extends http.BaseClient {
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    final syncRequest = _syncRequestFrom(request);
+
     // Brick no sabe de sesiones. Antes de enviar al backend, este wrapper pide
     // el token vigente y lo agrega como Bearer.
-    final token = await _tokenProvider.getAccessToken();
+    String? token;
+    try {
+      token = await _resolveAccessToken(
+        request: request,
+        syncRequest: syncRequest,
+      );
+    } on _TransientBackendAuthException catch (error) {
+      return error.response;
+    }
     if (token == null) {
-      throw StateError('Backend access token is not available.');
+      return _syntheticResponse(
+        request: request,
+        syncRequest: syncRequest,
+        statusCode: 401,
+        body: const {'error': 'auth_error'},
+      );
     }
 
     request.headers['Authorization'] = 'Bearer $token';
@@ -47,7 +63,6 @@ class AuthenticatedBackendClient extends http.BaseClient {
 
     // Si la request contiene un `id` cliente, la tratamos como sync-able. El
     // resultado se publica despues de recibir la response del backend.
-    final syncRequest = _syncRequestFrom(request);
     final response = await _inner.send(request);
 
     // Convertimos a Response para poder leer el body una vez, loguearlo y
@@ -79,6 +94,68 @@ class AuthenticatedBackendClient extends http.BaseClient {
       isRedirect: bufferedResponse.isRedirect,
       persistentConnection: bufferedResponse.persistentConnection,
       reasonPhrase: bufferedResponse.reasonPhrase,
+    );
+  }
+
+  Future<String?> _resolveAccessToken({
+    required http.BaseRequest request,
+    required _ObservedSyncRequest? syncRequest,
+  }) async {
+    try {
+      return await _tokenProvider.getAccessToken();
+    } on DomainException catch (error) {
+      if (error.code == DomainErrorCode.unauthorized) {
+        return null;
+      }
+
+      throw _TransientBackendAuthException(
+        _syntheticResponse(
+          request: request,
+          syncRequest: syncRequest,
+          statusCode: 503,
+          body: const {'error': 'offline'},
+        ),
+      );
+    }
+  }
+
+  http.StreamedResponse _syntheticResponse({
+    required http.BaseRequest request,
+    required _ObservedSyncRequest? syncRequest,
+    required int statusCode,
+    required Map<String, Object?> body,
+  }) {
+    final encodedBody = jsonEncode(body);
+    final response = http.Response(
+      encodedBody,
+      statusCode,
+      request: request,
+      headers: const {'content-type': 'application/json'},
+    );
+    _logResponse(response);
+
+    if (syncRequest != null && statusCode < 500) {
+      unawaited(
+        _onSyncResult(
+          BackendSyncResult(
+            resourcePath: syncRequest.resourcePath,
+            localId: syncRequest.localId,
+            synchronized: false,
+            errorCode: _errorCodeFromResponse(response),
+          ),
+        ),
+      );
+    }
+
+    return http.StreamedResponse(
+      Stream<List<int>>.value(response.bodyBytes),
+      response.statusCode,
+      contentLength: response.contentLength,
+      request: response.request,
+      headers: response.headers,
+      isRedirect: response.isRedirect,
+      persistentConnection: response.persistentConnection,
+      reasonPhrase: response.reasonPhrase,
     );
   }
 
@@ -221,6 +298,12 @@ class AuthenticatedBackendClient extends http.BaseClient {
     _inner.close();
     super.close();
   }
+}
+
+class _TransientBackendAuthException implements Exception {
+  const _TransientBackendAuthException(this.response);
+
+  final http.StreamedResponse response;
 }
 
 /// Datos minimos de una request sync-able observada por el cliente HTTP.
