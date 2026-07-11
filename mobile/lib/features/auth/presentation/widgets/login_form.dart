@@ -13,6 +13,7 @@ class LoginForm extends StatelessWidget {
     required this.passwordController,
     required this.obscurePassword,
     required this.isSubmitting,
+    required this.loadingLabel,
     required this.onPasswordVisibilityPressed,
     required this.onSubmit,
     super.key,
@@ -33,6 +34,9 @@ class LoginForm extends StatelessWidget {
   /// Indica si el submit esta en curso.
   final bool isSubmitting;
 
+  /// Texto del boton mientras hay una operacion en curso.
+  final String loadingLabel;
+
   /// Alterna la visibilidad del campo contrasena.
   final VoidCallback onPasswordVisibilityPressed;
 
@@ -45,6 +49,11 @@ class LoginForm extends StatelessWidget {
       key: formKey,
       child: Column(
         children: [
+          const Text(
+            LoginStrings.loginTitle,
+            style: AppTypography.formFieldLabel,
+          ),
+          const SizedBox(height: AppSpacing.lg),
           AppTextFormField(
             controller: emailController,
             title: LoginStrings.emailLabel,
@@ -81,7 +90,7 @@ class LoginForm extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           AppFilledButton(
             label: LoginStrings.submitButton,
-            loadingLabel: LoginStrings.submittingButton,
+            loadingLabel: loadingLabel,
             isLoading: isSubmitting,
             icon: const Icon(Icons.login),
             onPressed: onSubmit,

@@ -8,4 +8,9 @@ class SecureStorageKeys {
 
   /// Sesion autenticada persistida para restaurar la app al abrir offline.
   static const authSession = 'auth_session_v1';
+
+  /// Marker local que evita repetir el bootstrap offline por usuario.
+  static String initialDataSyncCompleted(String userId) {
+    return 'initial_data_sync_completed_v1_$userId';
+  }
 }
