@@ -4,11 +4,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/authenticated_backend_client.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
   group('AuthenticatedBackendClient', () {
+    tearDown(() {
+      SessionBackendAccessTokenProvider.instance
+        ..refreshCallback = null
+        ..clearAccessToken();
+    });
+
     test('adds the bearer token to backend requests', () async {
       final client = AuthenticatedBackendClient(
         tokenProvider: const _FakeTokenProvider('jwt-token'),
@@ -90,6 +97,126 @@ void main() {
       );
 
       expect(results, isEmpty);
+    });
+
+    test('uses a fresh token from the session provider', () async {
+      SessionBackendAccessTokenProvider.instance.session = BackendTokenSession(
+        accessToken: 'fresh-token',
+        refreshToken: 'refresh-token',
+        accessTokenExpiresAt: DateTime.now().toUtc().add(
+          const Duration(hours: 1),
+        ),
+      );
+      final client = AuthenticatedBackendClient(
+        tokenProvider: SessionBackendAccessTokenProvider.instance,
+        onSyncResult: (_) async {},
+        inner: MockClient((request) async {
+          expect(request.headers['Authorization'], 'Bearer fresh-token');
+          return http.Response(_successBody, 201);
+        }),
+      );
+
+      await client.post(
+        Uri.parse('http://localhost:8000/api/v1/animales'),
+        body: jsonEncode(_requestBody),
+      );
+    });
+
+    test('refreshes an expired token before sending the request', () async {
+      SessionBackendAccessTokenProvider.instance
+        ..session = BackendTokenSession(
+          accessToken: 'expired-token',
+          refreshToken: 'refresh-token',
+          accessTokenExpiresAt: DateTime.now().toUtc().subtract(
+            const Duration(minutes: 1),
+          ),
+        )
+        ..refreshCallback = (refreshToken) async {
+          expect(refreshToken, 'refresh-token');
+          return BackendTokenSession(
+            accessToken: 'renewed-token',
+            refreshToken: 'renewed-refresh-token',
+            accessTokenExpiresAt: DateTime.now().toUtc().add(
+              const Duration(hours: 1),
+            ),
+          );
+        };
+      final client = AuthenticatedBackendClient(
+        tokenProvider: SessionBackendAccessTokenProvider.instance,
+        onSyncResult: (_) async {},
+        inner: MockClient((request) async {
+          expect(request.headers['Authorization'], 'Bearer renewed-token');
+          return http.Response(_successBody, 201);
+        }),
+      );
+
+      await client.post(
+        Uri.parse('http://localhost:8000/api/v1/animales'),
+        body: jsonEncode(_requestBody),
+      );
+    });
+
+    test('returns a transient response when refresh fails offline', () async {
+      SessionBackendAccessTokenProvider.instance
+        ..session = BackendTokenSession(
+          accessToken: 'expired-token',
+          refreshToken: 'refresh-token',
+          accessTokenExpiresAt: DateTime.now().toUtc().subtract(
+            const Duration(minutes: 1),
+          ),
+        )
+        ..refreshCallback = (_) async => null;
+      final client = AuthenticatedBackendClient(
+        tokenProvider: SessionBackendAccessTokenProvider.instance,
+        onSyncResult: (_) async {},
+        inner: MockClient((request) async {
+          fail('Request should not be sent with an expired token.');
+        }),
+      );
+
+      final response = await client.post(
+        Uri.parse('http://localhost:8000/api/v1/animales'),
+        body: jsonEncode(_requestBody),
+      );
+
+      expect(response.statusCode, 503);
+    });
+
+    test('returns 401 and reports auth rejection when refresh is unauthorized', () async {
+      final results = <BackendSyncResult>[];
+      SessionBackendAccessTokenProvider.instance
+        ..session = BackendTokenSession(
+          accessToken: 'expired-token',
+          refreshToken: 'refresh-token',
+          accessTokenExpiresAt: DateTime.now().toUtc().subtract(
+            const Duration(minutes: 1),
+          ),
+        )
+        ..refreshCallback = (_) async {
+          throw const DomainException(
+            message: 'La sesion expiro.',
+            code: DomainErrorCode.unauthorized,
+          );
+        };
+
+      final client = AuthenticatedBackendClient(
+        tokenProvider: SessionBackendAccessTokenProvider.instance,
+        onSyncResult: (result) async => results.add(result),
+        inner: MockClient((request) async {
+          fail('Request should not reach the backend when refresh is unauthorized.');
+        }),
+      );
+
+      final response = await client.post(
+        Uri.parse('http://localhost:8000/api/v1/animales'),
+        body: jsonEncode(_requestBody),
+      );
+
+      expect(response.statusCode, 401);
+      expect(results.single.localId, _requestBody['id']);
+      expect(results.single.synchronized, isFalse);
+      expect(results.single.errorCode, 'auth_error');
+      expect(SessionBackendAccessTokenProvider.instance.accessToken, isNull);
     });
   });
 }

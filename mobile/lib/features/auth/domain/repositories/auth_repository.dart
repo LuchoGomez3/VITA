@@ -13,6 +13,9 @@ abstract class AuthRepository {
   /// Restaura una sesion guardada localmente sin consultar al backend.
   Future<Result<AuthSession>> restoreSession();
 
+  /// Renueva la sesion local usando el refresh token persistido.
+  Future<Result<AuthSession>> refreshSession();
+
   /// Devuelve la sesion actual disponible localmente.
   Future<Result<AuthSession>> getCurrentSession();
 
