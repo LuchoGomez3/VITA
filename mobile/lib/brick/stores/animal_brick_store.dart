@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:brick_offline_first/brick_offline_first.dart';
+import 'package:brick_rest/brick_rest.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
@@ -17,6 +19,9 @@ abstract class AnimalBrickStore {
 
   /// Busca un animal en SQLite por el UUID generado en mobile/backend.
   Future<BrickAnimalModel?> getAnimalById(String animalId);
+
+  /// Descarga animales remotos de [establishmentId] y los guarda en SQLite.
+  Future<void> pullRemoteAnimals(String establishmentId);
 }
 
 /// Store Brick especifico para operaciones de animales.
@@ -83,12 +88,55 @@ class BrickAnimalStore implements AnimalBrickStore {
     return null;
   }
 
+  @override
+  Future<void> pullRemoteAnimals(String establishmentId) async {
+    final remoteAnimals = await _repository.remoteProvider.get<BrickAnimalModel>(
+      repository: _repository,
+      query: Query(
+        forProviders: [
+          RestProviderQuery(
+            // La ruta se arma en el transformer del modelo para que este store
+            // solo coordine el flujo offline-first y no duplique endpoints.
+            request: BrickAnimalRequestTransformer.listByEstablishmentRequest(
+              establishmentId,
+            ),
+          ),
+        ],
+      ),
+    );
+    final localAnimals = await _repository.getLocal<BrickAnimalModel>();
+    final protectedLocalIds = localAnimals
+        .where(
+          (animal) =>
+              animal.syncStatus == BrickAnimalSyncStatus.pending || animal.syncStatus == BrickAnimalSyncStatus.rejected,
+        )
+        .map((animal) => animal.localId)
+        .toSet();
+
+    for (final animal in remoteAnimals) {
+      if (protectedLocalIds.contains(animal.localId)) {
+        continue;
+      }
+
+      await _repository.upsertLocal<BrickAnimalModel>(
+        animal.copyWith(
+          syncStatus: BrickAnimalSyncStatus.synchronized,
+          syncErrorCode: null,
+        ),
+      );
+    }
+  }
+
   /// Aplica la respuesta del backend al registro local.
   ///
   /// `2xx` marca el animal como sincronizado. Errores funcionales del backend
   /// marcan el registro como rechazado y guardan el codigo para mostrarlo en UI.
   Future<void> applyAnimalSyncResult(BackendSyncResult result) async {
-    if (!result.resourcePath.endsWith('/api/v1/animales')) {
+    // El matcher vive junto a la ruta base para que el filtro de eventos de
+    // sync cambie automaticamente si cambia el endpoint de animales.
+    if (!BrickAnimalRequestTransformer.matchesAnimalResource(
+      result.resourcePath,
+    )) {
       return;
     }
 

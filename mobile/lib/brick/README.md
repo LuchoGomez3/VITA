@@ -70,12 +70,15 @@ Contiene lo necesario para que Brick haga requests autenticadas.
 
 `backend_access_token_provider.dart` define de donde sale el JWT. Hoy existe
 una implementacion de sesion en memoria
-(`SessionBackendAccessTokenProvider`).
+(`SessionBackendAccessTokenProvider`) que conoce access token, refresh token y
+expiracion.
 
 Con login real, auth persiste la sesion en secure storage y, al iniciar sesion o
 restaurar la app offline, hidrata `SessionBackendAccessTokenProvider`. Brick no
-lee secure storage ni guarda JWT en SQLite: solo pide el token actual a este
-contrato antes de enviar requests REST.
+lee secure storage ni guarda JWT en SQLite: solo pide un token vigente a este
+contrato antes de enviar requests REST. Si el access token vencio, el provider
+intenta renovarlo mediante un callback configurado por auth; si no puede,
+devuelve `null` y evita enviar un Bearer viejo.
 
 `authenticated_backend_client.dart` envuelve el cliente HTTP usado por Brick:
 

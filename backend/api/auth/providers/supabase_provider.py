@@ -69,6 +69,20 @@ def _get_signing_key(kid: str) -> dict:
     return keys[kid]
 
 
+def _result_from_session(user_id: UUID, session) -> AuthResult:
+    """Construye un ``AuthResult`` a partir de la sesión de Supabase (gotrue).
+
+    Incluye ``refresh_token`` y ``expires_in`` para que el cliente pueda renovar
+    la sesión offline-first sin volver a pedir la contraseña.
+    """
+    return AuthResult(
+        user_id=user_id,
+        access_token=session.access_token,
+        refresh_token=getattr(session, "refresh_token", None),
+        expires_in=getattr(session, "expires_in", None),
+    )
+
+
 @lru_cache(maxsize=1)
 def _get_admin_client():
     """Cliente Supabase con la service-role key (operaciones admin)."""
@@ -98,7 +112,6 @@ class SupabaseAuthProvider(AuthProvider):
             session = client.auth.sign_in_with_password(
                 {"email": email, "password": password}
             )
-            access_token = session.session.access_token
         except AuthProviderError:
             raise
         except Exception as exc:  # red / API de Supabase
@@ -107,7 +120,7 @@ class SupabaseAuthProvider(AuthProvider):
                 "No se pudo crear el usuario en el proveedor de identidad"
             ) from exc
 
-        return AuthResult(user_id=user_id, access_token=access_token)
+        return _result_from_session(user_id, session.session)
 
     async def sign_in(self, email: str, password: str) -> AuthResult:
         return await anyio.to_thread.run_sync(self._sign_in_sync, email, password)
@@ -127,9 +140,55 @@ class SupabaseAuthProvider(AuthProvider):
         if session is None or session.session is None or session.user is None:
             raise InvalidCredentialsError("Email o contraseña incorrectos")
 
+        return _result_from_session(UUID(str(session.user.id)), session.session)
+
+    async def refresh(self, refresh_token: str) -> AuthResult:
+        return await anyio.to_thread.run_sync(self._refresh_sync, refresh_token)
+
+    def _refresh_sync(self, refresh_token: str) -> AuthResult:
+        # El refresh no necesita service-role: se hace contra el endpoint público
+        # de GoTrue con la anon key. Devuelve un access nuevo y un refresh rotado.
+        if not settings.SUPABASE_URL or not settings.SUPABASE_ANON_KEY:
+            raise AuthProviderError(
+                "Supabase no está configurado (SUPABASE_URL / SUPABASE_ANON_KEY)"
+            )
+        url = f"{settings.SUPABASE_URL.rstrip('/')}/auth/v1/token?grant_type=refresh_token"
+        try:
+            resp = httpx.post(
+                url,
+                headers={
+                    "apikey": settings.SUPABASE_ANON_KEY,
+                    "Content-Type": "application/json",
+                },
+                json={"refresh_token": refresh_token},
+                timeout=10,
+            )
+        except Exception as exc:  # red / proyecto mal configurado
+            logger.error("[AUTH] Supabase refresh falló (red): %s", exc)
+            raise AuthProviderError(
+                "No se pudo renovar la sesión con Supabase"
+            ) from exc
+
+        # 400/401 => refresh vencido o revocado: el cliente debe re-loguearse.
+        if resp.status_code in (400, 401, 403):
+            raise InvalidCredentialsError("Refresh token inválido o expirado")
+        if resp.status_code >= 400:
+            logger.error(
+                "[AUTH] Supabase refresh respondió %s: %s", resp.status_code, resp.text
+            )
+            raise AuthProviderError("No se pudo renovar la sesión con Supabase")
+
+        body = resp.json()
+        user = body.get("user") or {}
+        user_id = user.get("id")
+        if not user_id:
+            raise AuthProviderError("Respuesta de refresh sin usuario")
+
         return AuthResult(
-            user_id=UUID(str(session.user.id)),
-            access_token=session.session.access_token,
+            user_id=UUID(str(user_id)),
+            access_token=body["access_token"],
+            refresh_token=body.get("refresh_token"),
+            expires_in=body.get("expires_in"),
         )
 
     def verify_token(self, token: str) -> dict:

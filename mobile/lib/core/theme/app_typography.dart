@@ -91,8 +91,8 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
-  /// Titulo grande para pantallas de resultado o confirmacion.
-  static const successTitle = TextStyle(
+  /// Titulo grande para pantalla principal, de resultado o confirmacion.
+  static const bigTitle = TextStyle(
     fontFamily: _baseFontFamily,
     fontSize: 28,
     fontWeight: FontWeight.w700,

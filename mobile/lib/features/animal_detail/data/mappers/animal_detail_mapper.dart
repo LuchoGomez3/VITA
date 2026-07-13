@@ -21,7 +21,8 @@ class AnimalDetailMapper {
       lotId: model.lotId,
       lotName: model.lotName,
       establishmentId: model.establishmentId,
-      currentWeight: model.initialWeight,
+      // Los animales descargados pueden no incluir todavía un pesaje inicial.
+      currentWeight: model.initialWeight ?? 0,
       weighingMethod: model.weighingMethod.toDomain(),
       weighingDate: model.weighingDate,
       syncStatus: model.syncStatus.toDomain(),

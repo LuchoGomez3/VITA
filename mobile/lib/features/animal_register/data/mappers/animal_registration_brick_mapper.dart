@@ -67,7 +67,7 @@ class AnimalRegistrationBrickMapper {
       establishmentId: model.establishmentId,
       categoryId: model.categoryId,
       categoryName: model.categoryName,
-      initialWeight: model.initialWeight,
+      initialWeight: model.initialWeight ?? 0.0,
       motherId: model.motherId,
       fatherId: model.fatherId,
       coat: model.coat,
@@ -112,7 +112,7 @@ class AnimalRegistrationBrickMapper {
       'caravana_visual': model.visualTag,
       'pelaje': model.coat,
       'observaciones': model.observations,
-      'peso_inicial': model.initialWeight,
+      'peso_inicial': model.initialWeight ?? 0.0,
       'metodo_pesaje': model.weighingMethod.toDomain().backendValue,
       'fecha_pesaje': model.weighingDate.toIso8601String(),
     };

@@ -19,7 +19,7 @@ typedef AnimalDetailCubitFactory = AnimalDetailCubit Function();
 
 /// Page that shows the traceability detail for an animal.
 class AnimalDetailPage extends StatelessWidget {
-  /// Creates the animal detail page for [animalId].
+  /// Crea la página de detalle para [animalId].
   const AnimalDetailPage({
     required this.animalId,
     required this.createCubit,
@@ -27,6 +27,7 @@ class AnimalDetailPage extends StatelessWidget {
   });
 
   /// Animal identifier used by the detail flow.
+  /// Identificador usado para cargar el animal.
   final String animalId;
 
   /// Crea el Cubit con dependencias resueltas fuera de presentation.

@@ -7,6 +7,7 @@ import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/auth/data/datasources/auth_local_data_source.dart';
 import 'package:frontend_mayoral/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:frontend_mayoral/features/auth/data/mappers/app_user_mapper.dart';
+import 'package:frontend_mayoral/features/auth/data/models/auth_remote_session.dart';
 import 'package:frontend_mayoral/features/auth/data/models/stored_auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
@@ -43,10 +44,7 @@ class AuthRepositoryImpl implements AuthRepository {
         email: email,
         password: password,
       );
-      final session = AuthSession(
-        user: AppUserMapper.fromJson(remoteSession.userJson),
-        accessToken: remoteSession.accessToken,
-      );
+      final session = _sessionFromRemote(remoteSession);
 
       await _persistAndHydrate(session);
       return Result.success(session);
@@ -84,17 +82,58 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       final session = storedSession.toDomain();
-      _tokenProvider.accessToken = session.accessToken;
+      _hydrateTokenProvider(session);
       return Result.success(session);
     } on FormatException {
-      // Si el JSON local quedo corrupto, lo descartamos para no dejar al router
-      // atrapado en un estado ambiguo. El usuario debera iniciar sesion online.
       await _localDataSource.clearSession();
       _tokenProvider.clearAccessToken();
       return const Result.failure(
         DomainException(
           message: 'La sesion local no se pudo restaurar.',
           code: DomainErrorCode.unauthorized,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<AuthSession>> refreshSession({
+    String? refreshTokenOverride,
+  }) async {
+    try {
+      final storedSession = await _localDataSource.readSession();
+      if (storedSession == null) {
+        _tokenProvider.clearAccessToken();
+        return const Result.failure(
+          DomainException(
+            message: 'No hay una sesion guardada en este dispositivo.',
+            code: DomainErrorCode.unauthorized,
+          ),
+        );
+      }
+
+      final refreshToken = refreshTokenOverride ?? storedSession.refreshToken;
+      final remoteSession = await _remoteDataSource.refreshSession(
+        refreshToken: refreshToken,
+      );
+      final session = _sessionFromRemote(remoteSession);
+
+      await _persistAndHydrate(session);
+      return Result.success(session);
+    } on DomainException catch (error) {
+      return Result.failure(error);
+    } on SocketException {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudo conectar con el backend.',
+          code: DomainErrorCode.offline,
+        ),
+      );
+    } on TimeoutException {
+      return const Result.failure(
+        DomainException(
+          message: 'El backend tardo demasiado en responder.',
+          code: DomainErrorCode.offline,
         ),
       );
     }
@@ -130,6 +169,25 @@ class AuthRepositoryImpl implements AuthRepository {
     await _localDataSource.saveSession(
       StoredAuthSession.fromDomain(session),
     );
-    _tokenProvider.accessToken = session.accessToken;
+    _hydrateTokenProvider(session);
+  }
+
+  AuthSession _sessionFromRemote(AuthRemoteSession remoteSession) {
+    return AuthSession(
+      user: AppUserMapper.fromJson(remoteSession.userJson),
+      accessToken: remoteSession.accessToken,
+      refreshToken: remoteSession.refreshToken,
+      accessTokenExpiresAt: DateTime.now().toUtc().add(
+        Duration(seconds: remoteSession.expiresIn),
+      ),
+    );
+  }
+
+  void _hydrateTokenProvider(AuthSession session) {
+    _tokenProvider.session = BackendTokenSession(
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+      accessTokenExpiresAt: session.accessTokenExpiresAt,
+    );
   }
 }

@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AuthSession {
 
- AppUser get user; String get accessToken;
+ AppUser get user; String get accessToken; String get refreshToken; DateTime get accessTokenExpiresAt;
 /// Create a copy of AuthSession
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $AuthSessionCopyWith<AuthSession> get copyWith => _$AuthSessionCopyWithImpl<Auth
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthSession&&(identical(other.user, user) || other.user == user)&&(identical(other.accessToken, accessToken) || other.accessToken == accessToken));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthSession&&(identical(other.user, user) || other.user == user)&&(identical(other.accessToken, accessToken) || other.accessToken == accessToken)&&(identical(other.refreshToken, refreshToken) || other.refreshToken == refreshToken)&&(identical(other.accessTokenExpiresAt, accessTokenExpiresAt) || other.accessTokenExpiresAt == accessTokenExpiresAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,user,accessToken);
+int get hashCode => Object.hash(runtimeType,user,accessToken,refreshToken,accessTokenExpiresAt);
 
 @override
 String toString() {
-  return 'AuthSession(user: $user, accessToken: $accessToken)';
+  return 'AuthSession(user: $user, accessToken: $accessToken, refreshToken: $refreshToken, accessTokenExpiresAt: $accessTokenExpiresAt)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $AuthSessionCopyWith<$Res>  {
   factory $AuthSessionCopyWith(AuthSession value, $Res Function(AuthSession) _then) = _$AuthSessionCopyWithImpl;
 @useResult
 $Res call({
- AppUser user, String accessToken
+ AppUser user, String accessToken, String refreshToken, DateTime accessTokenExpiresAt
 });
 
 
@@ -62,11 +62,13 @@ class _$AuthSessionCopyWithImpl<$Res>
 
 /// Create a copy of AuthSession
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? user = null,Object? accessToken = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? user = null,Object? accessToken = null,Object? refreshToken = null,Object? accessTokenExpiresAt = null,}) {
   return _then(_self.copyWith(
 user: null == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as AppUser,accessToken: null == accessToken ? _self.accessToken : accessToken // ignore: cast_nullable_to_non_nullable
-as String,
+as String,refreshToken: null == refreshToken ? _self.refreshToken : refreshToken // ignore: cast_nullable_to_non_nullable
+as String,accessTokenExpiresAt: null == accessTokenExpiresAt ? _self.accessTokenExpiresAt : accessTokenExpiresAt // ignore: cast_nullable_to_non_nullable
+as DateTime,
   ));
 }
 /// Create a copy of AuthSession
@@ -160,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AppUser user,  String accessToken)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AppUser user,  String accessToken,  String refreshToken,  DateTime accessTokenExpiresAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AuthSession() when $default != null:
-return $default(_that.user,_that.accessToken);case _:
+return $default(_that.user,_that.accessToken,_that.refreshToken,_that.accessTokenExpiresAt);case _:
   return orElse();
 
 }
@@ -181,10 +183,10 @@ return $default(_that.user,_that.accessToken);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AppUser user,  String accessToken)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AppUser user,  String accessToken,  String refreshToken,  DateTime accessTokenExpiresAt)  $default,) {final _that = this;
 switch (_that) {
 case _AuthSession():
-return $default(_that.user,_that.accessToken);case _:
+return $default(_that.user,_that.accessToken,_that.refreshToken,_that.accessTokenExpiresAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -201,10 +203,10 @@ return $default(_that.user,_that.accessToken);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AppUser user,  String accessToken)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AppUser user,  String accessToken,  String refreshToken,  DateTime accessTokenExpiresAt)?  $default,) {final _that = this;
 switch (_that) {
 case _AuthSession() when $default != null:
-return $default(_that.user,_that.accessToken);case _:
+return $default(_that.user,_that.accessToken,_that.refreshToken,_that.accessTokenExpiresAt);case _:
   return null;
 
 }
@@ -216,11 +218,13 @@ return $default(_that.user,_that.accessToken);case _:
 
 
 class _AuthSession implements AuthSession {
-  const _AuthSession({required this.user, required this.accessToken});
+  const _AuthSession({required this.user, required this.accessToken, required this.refreshToken, required this.accessTokenExpiresAt});
   
 
 @override final  AppUser user;
 @override final  String accessToken;
+@override final  String refreshToken;
+@override final  DateTime accessTokenExpiresAt;
 
 /// Create a copy of AuthSession
 /// with the given fields replaced by the non-null parameter values.
@@ -232,16 +236,16 @@ _$AuthSessionCopyWith<_AuthSession> get copyWith => __$AuthSessionCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AuthSession&&(identical(other.user, user) || other.user == user)&&(identical(other.accessToken, accessToken) || other.accessToken == accessToken));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AuthSession&&(identical(other.user, user) || other.user == user)&&(identical(other.accessToken, accessToken) || other.accessToken == accessToken)&&(identical(other.refreshToken, refreshToken) || other.refreshToken == refreshToken)&&(identical(other.accessTokenExpiresAt, accessTokenExpiresAt) || other.accessTokenExpiresAt == accessTokenExpiresAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,user,accessToken);
+int get hashCode => Object.hash(runtimeType,user,accessToken,refreshToken,accessTokenExpiresAt);
 
 @override
 String toString() {
-  return 'AuthSession(user: $user, accessToken: $accessToken)';
+  return 'AuthSession(user: $user, accessToken: $accessToken, refreshToken: $refreshToken, accessTokenExpiresAt: $accessTokenExpiresAt)';
 }
 
 
@@ -252,7 +256,7 @@ abstract mixin class _$AuthSessionCopyWith<$Res> implements $AuthSessionCopyWith
   factory _$AuthSessionCopyWith(_AuthSession value, $Res Function(_AuthSession) _then) = __$AuthSessionCopyWithImpl;
 @override @useResult
 $Res call({
- AppUser user, String accessToken
+ AppUser user, String accessToken, String refreshToken, DateTime accessTokenExpiresAt
 });
 
 
@@ -269,11 +273,13 @@ class __$AuthSessionCopyWithImpl<$Res>
 
 /// Create a copy of AuthSession
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? user = null,Object? accessToken = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? user = null,Object? accessToken = null,Object? refreshToken = null,Object? accessTokenExpiresAt = null,}) {
   return _then(_AuthSession(
 user: null == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as AppUser,accessToken: null == accessToken ? _self.accessToken : accessToken // ignore: cast_nullable_to_non_nullable
-as String,
+as String,refreshToken: null == refreshToken ? _self.refreshToken : refreshToken // ignore: cast_nullable_to_non_nullable
+as String,accessTokenExpiresAt: null == accessTokenExpiresAt ? _self.accessTokenExpiresAt : accessTokenExpiresAt // ignore: cast_nullable_to_non_nullable
+as DateTime,
   ));
 }
 

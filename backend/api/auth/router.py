@@ -3,7 +3,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth.dependencies import get_current_user
-from api.auth.providers import AuthProvider, get_auth_provider
+from api.auth.providers import AuthProvider, AuthResult, get_auth_provider
+from api.auth.schemas import RefreshRequest, TokenResponse, UsuarioSesion
 from api.auth.service import AuthService
 from api.modules.usuarios.models import Usuario
 from api.shared.schemas import StandardResponse
@@ -12,31 +13,58 @@ from database.database import get_session
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def _token_response(usuario: Usuario, auth_result: AuthResult) -> TokenResponse:
+    return TokenResponse(
+        access_token=auth_result.access_token,
+        refresh_token=auth_result.refresh_token,
+        expires_in=auth_result.expires_in,
+        usuario=UsuarioSesion(
+            id=usuario.id,
+            nombre=usuario.nombre,
+            apellido=usuario.apellido,
+            email=usuario.email,
+        ),
+    )
+
+
 @router.post("/login", response_model=StandardResponse)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_session),
     auth_provider: AuthProvider = Depends(get_auth_provider),
 ):
-    """Inicia sesión contra el proveedor configurado y devuelve un token válido.
+    """Inicia sesión contra el proveedor configurado y devuelve la sesión.
 
-    ``username`` se interpreta como el email del usuario. El token devuelto sirve
-    para autenticar el resto de los endpoints (incluido el botón *Authorize*).
+    ``username`` se interpreta como el email del usuario. Devuelve
+    ``access_token`` (para autenticar el resto de los endpoints) y
+    ``refresh_token`` + ``expires_in``, que el cliente cachea para renovar la
+    sesión offline-first sin volver a pedir la contraseña.
     """
     service = AuthService(session, auth_provider)
-    usuario, access_token = await service.login(form_data.username, form_data.password)
+    usuario, auth_result = await service.login(form_data.username, form_data.password)
     return StandardResponse(
         success=True,
-        data={
-            "access_token": access_token,
-            "token_type": "bearer",
-            "usuario": {
-                "id": str(usuario.id),
-                "nombre": usuario.nombre,
-                "apellido": usuario.apellido,
-                "email": usuario.email,
-            },
-        },
+        data=_token_response(usuario, auth_result).model_dump(mode="json"),
+    )
+
+
+@router.post("/refresh", response_model=StandardResponse)
+async def refresh(
+    body: RefreshRequest,
+    session: AsyncSession = Depends(get_session),
+    auth_provider: AuthProvider = Depends(get_auth_provider),
+):
+    """Renueva la sesión a partir de un ``refresh_token``.
+
+    El cliente lo llama al recuperar conexión (antes de drenar la cola offline)
+    para obtener un ``access_token`` fresco. Un refresh vencido/revocado devuelve
+    401 y el cliente debe pedir re-login.
+    """
+    service = AuthService(session, auth_provider)
+    usuario, auth_result = await service.refresh(body.refresh_token)
+    return StandardResponse(
+        success=True,
+        data=_token_response(usuario, auth_result).model_dump(mode="json"),
     )
 
 
