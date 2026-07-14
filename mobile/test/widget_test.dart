@@ -37,6 +37,15 @@ class _PendingRestoreAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<Result<AuthSession>> refreshSession() {
+    return Future.value(
+      const Result.failure(
+        DomainException(message: 'Refresh no usado en este test.'),
+      ),
+    );
+  }
+
+  @override
   Future<Result<AuthSession>> getCurrentSession() {
     return restoreSession();
   }

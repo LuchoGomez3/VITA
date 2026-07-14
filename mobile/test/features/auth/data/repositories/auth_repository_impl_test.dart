@@ -19,7 +19,11 @@ void main() {
       secureStorage = _MemorySecureStorage();
     });
 
-    tearDown(SessionBackendAccessTokenProvider.instance.clearAccessToken);
+    tearDown(() {
+      SessionBackendAccessTokenProvider.instance
+        ..refreshCallback = null
+        ..clearAccessToken();
+    });
 
     test('signIn persists session and hydrates the Brick token provider', () async {
       final repository = _createRepository(
@@ -31,11 +35,10 @@ void main() {
           return http.Response(
             jsonEncode({
               'success': true,
-              'data': {
-                'access_token': 'jwt-token',
-                'token_type': 'bearer',
-                'usuario': _userJson,
-              },
+              'data': _sessionJson(
+                accessToken: 'jwt-token',
+                refreshToken: 'refresh-token',
+              ),
             }),
             200,
           );
@@ -50,6 +53,8 @@ void main() {
       switch (result) {
         case Success(:final data):
           expect(data.accessToken, 'jwt-token');
+          expect(data.refreshToken, 'refresh-token');
+          expect(data.accessTokenExpiresAt.isAfter(DateTime.now().toUtc()), isTrue);
           expect(data.user.firstName, 'Ernesto');
         case Failure(:final error):
           fail(error.message);
@@ -61,15 +66,17 @@ void main() {
       );
       expect(
         await secureStorage.read(SecureStorageKeys.authSession),
-        isNotNull,
+        contains('"refresh_token":"refresh-token"'),
       );
     });
 
-    test('restoreSession rebuilds session from secure storage without backend', () async {
+    test('restoreSession rebuilds expired local session without backend', () async {
       await secureStorage.write(
         key: SecureStorageKeys.authSession,
         value: jsonEncode({
           'access_token': 'stored-token',
+          'refresh_token': 'stored-refresh-token',
+          'access_token_expires_at': '2020-01-01T00:00:00.000Z',
           'user_id': _userJson['id'],
           'email': _userJson['email'],
           'first_name': _userJson['nombre'],
@@ -89,12 +96,13 @@ void main() {
       switch (result) {
         case Success(:final data):
           expect(data.accessToken, 'stored-token');
+          expect(data.refreshToken, 'stored-refresh-token');
           expect(data.user.email, 'ernesto@example.com');
         case Failure(:final error):
           fail(error.message);
       }
       expect(
-        await SessionBackendAccessTokenProvider.instance.getAccessToken(),
+        SessionBackendAccessTokenProvider.instance.accessToken,
         'stored-token',
       );
     });
@@ -104,7 +112,13 @@ void main() {
         key: SecureStorageKeys.authSession,
         value: 'stored-session',
       );
-      SessionBackendAccessTokenProvider.instance.accessToken = 'jwt-token';
+      SessionBackendAccessTokenProvider.instance.session = BackendTokenSession(
+        accessToken: 'jwt-token',
+        refreshToken: 'refresh-token',
+        accessTokenExpiresAt: DateTime.now().toUtc().add(
+          const Duration(hours: 1),
+        ),
+      );
       final repository = _createRepository(
         secureStorage: secureStorage,
         client: MockClient((request) async {
@@ -174,6 +188,176 @@ void main() {
           expect(error.message, 'El backend tardo demasiado en responder.');
       }
     });
+
+    test('refreshSession replaces stored session and memory token', () async {
+      await secureStorage.write(
+        key: SecureStorageKeys.authSession,
+        value: jsonEncode({
+          'access_token': 'old-token',
+          'refresh_token': 'old-refresh-token',
+          'access_token_expires_at': '2020-01-01T00:00:00.000Z',
+          'user_id': _userJson['id'],
+          'email': _userJson['email'],
+          'first_name': _userJson['nombre'],
+          'last_name': _userJson['apellido'],
+          'role': 'unknown',
+        }),
+      );
+      final repository = _createRepository(
+        secureStorage: secureStorage,
+        client: MockClient((request) async {
+          expect(request.url.path, '/api/auth/refresh');
+          expect(jsonDecode(request.body), {
+            'refresh_token': 'old-refresh-token',
+          });
+
+          return http.Response(
+            jsonEncode({
+              'success': true,
+              'data': _sessionJson(
+                accessToken: 'new-token',
+                refreshToken: 'new-refresh-token',
+              ),
+            }),
+            200,
+          );
+        }),
+      );
+
+      final result = await repository.refreshSession();
+
+      switch (result) {
+        case Success(:final data):
+          expect(data.accessToken, 'new-token');
+          expect(data.refreshToken, 'new-refresh-token');
+        case Failure(:final error):
+          fail(error.message);
+      }
+      expect(
+        await SessionBackendAccessTokenProvider.instance.getAccessToken(),
+        'new-token',
+      );
+      expect(
+        await secureStorage.read(SecureStorageKeys.authSession),
+        contains('"refresh_token":"new-refresh-token"'),
+      );
+    });
+
+    test('refreshSession uses the in-memory refresh token when provided', () async {
+      await secureStorage.write(
+        key: SecureStorageKeys.authSession,
+        value: jsonEncode({
+          'access_token': 'old-token',
+          'refresh_token': 'stale-refresh-token',
+          'access_token_expires_at': '2020-01-01T00:00:00.000Z',
+          'user_id': _userJson['id'],
+          'email': _userJson['email'],
+          'first_name': _userJson['nombre'],
+          'last_name': _userJson['apellido'],
+          'role': 'unknown',
+        }),
+      );
+      final repository = _createRepository(
+        secureStorage: secureStorage,
+        client: MockClient((request) async {
+          expect(request.url.path, '/api/auth/refresh');
+          expect(jsonDecode(request.body), {
+            'refresh_token': 'fresh-memory-refresh-token',
+          });
+
+          return http.Response(
+            jsonEncode({
+              'success': true,
+              'data': _sessionJson(
+                accessToken: 'new-token',
+                refreshToken: 'new-refresh-token',
+              ),
+            }),
+            200,
+          );
+        }),
+      );
+
+      final result = await repository.refreshSession(
+        refreshTokenOverride: 'fresh-memory-refresh-token',
+      );
+
+      switch (result) {
+        case Success(:final data):
+          expect(data.accessToken, 'new-token');
+          expect(data.refreshToken, 'new-refresh-token');
+        case Failure(:final error):
+          fail(error.message);
+      }
+    });
+
+    test('refreshSession maps unauthorized without clearing local session', () async {
+      await secureStorage.write(
+        key: SecureStorageKeys.authSession,
+        value: jsonEncode({
+          'access_token': 'old-token',
+          'refresh_token': 'old-refresh-token',
+          'access_token_expires_at': '2020-01-01T00:00:00.000Z',
+          'user_id': _userJson['id'],
+          'email': _userJson['email'],
+          'first_name': _userJson['nombre'],
+          'last_name': _userJson['apellido'],
+          'role': 'unknown',
+        }),
+      );
+      final repository = _createRepository(
+        secureStorage: secureStorage,
+        client: MockClient((request) async {
+          return http.Response(jsonEncode({'detail': 'invalid refresh'}), 401);
+        }),
+      );
+
+      final result = await repository.refreshSession();
+
+      switch (result) {
+        case Success():
+          fail('Expected unauthorized failure.');
+        case Failure(:final error):
+          expect(error.code, DomainErrorCode.unauthorized);
+      }
+      expect(
+        await secureStorage.read(SecureStorageKeys.authSession),
+        isNotNull,
+      );
+    });
+
+    test('refreshSession maps backend timeouts as offline failures', () async {
+      await secureStorage.write(
+        key: SecureStorageKeys.authSession,
+        value: jsonEncode({
+          'access_token': 'old-token',
+          'refresh_token': 'old-refresh-token',
+          'access_token_expires_at': '2020-01-01T00:00:00.000Z',
+          'user_id': _userJson['id'],
+          'email': _userJson['email'],
+          'first_name': _userJson['nombre'],
+          'last_name': _userJson['apellido'],
+          'role': 'unknown',
+        }),
+      );
+      final repository = _createRepository(
+        secureStorage: secureStorage,
+        requestTimeout: const Duration(milliseconds: 1),
+        client: MockClient((request) async {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          return http.Response('{}', 200);
+        }),
+      );
+
+      final result = await repository.refreshSession();
+
+      switch (result) {
+        case Success():
+          fail('Expected offline failure.');
+        case Failure(:final error):
+          expect(error.code, DomainErrorCode.offline);
+      }
+    });
   });
 }
 
@@ -201,6 +385,20 @@ const _userJson = <String, Object?>{
   'apellido': 'Diaz',
   'email': 'ernesto@example.com',
 };
+
+Map<String, Object?> _sessionJson({
+  required String accessToken,
+  required String refreshToken,
+  int expiresIn = 3600,
+}) {
+  return {
+    'access_token': accessToken,
+    'refresh_token': refreshToken,
+    'expires_in': expiresIn,
+    'token_type': 'bearer',
+    'usuario': _userJson,
+  };
+}
 
 class _MemorySecureStorage implements SecureStorageService {
   final _values = <String, String>{};
