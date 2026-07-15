@@ -2,10 +2,10 @@ from uuid import UUID
 
 from sqlmodel import Field
 
-from database.models import Base
+from database.models import Base, SoftDeleteMixin
 
 
-class Categoria(Base, table=True):
+class Categoria(Base, SoftDeleteMixin, table=True):
     __tablename__ = "categorias"
 
     # null = catálogo global; con valor = categoría propia del establecimiento.

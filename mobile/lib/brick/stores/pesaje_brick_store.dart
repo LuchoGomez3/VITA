@@ -1,0 +1,172 @@
+import 'dart:async';
+
+import 'package:brick_offline_first/brick_offline_first.dart';
+import 'package:brick_rest/brick_rest.dart';
+import 'package:frontend_mayoral/brick/core/repository.dart';
+import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
+import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
+
+/// Contrato usado por features para persistir pesajes con Brick.
+///
+/// Las features dependen de este contrato para no conocer los detalles internos
+/// de [AppBrickRepository], SQLite, REST provider ni cola offline.
+abstract class PesajeBrickStore {
+  /// Guarda [pesaje] localmente y lo deja listo para sincronizacion remota.
+  Future<BrickPesajeModel> upsertPesaje(BrickPesajeModel pesaje);
+
+  /// Descarga pesajes remotos de [establishmentId] y los guarda en SQLite.
+  ///
+  /// Si se pasa [animalId], baja solo el historial de ese animal (evolucion/GPD).
+  Future<void> pullRemotePesajes(
+    String establishmentId, {
+    String? animalId,
+  });
+
+  /// Lee desde SQLite el historial de pesajes de un animal, ordenado por fecha.
+  Future<List<BrickPesajeModel>> getLocalPesajesByAnimal(String animalId);
+}
+
+/// Store Brick especifico para operaciones de pesajes.
+///
+/// El pesaje es transaccional, igual que el animal: guarda primero en SQLite,
+/// encola el POST remoto y aplica los resultados de sync que llegan desde el
+/// cliente HTTP autenticado.
+class BrickPesajeStore implements PesajeBrickStore {
+  BrickPesajeStore._(this._repository) {
+    _syncSubscription = _repository.syncResults.listen(
+      applyPesajeSyncResult,
+    );
+  }
+
+  static BrickPesajeStore? _instance;
+
+  final AppBrickRepository _repository;
+  late final StreamSubscription<BackendSyncResult> _syncSubscription;
+
+  /// Instancia compartida configurada durante el bootstrap de Brick.
+  static BrickPesajeStore get instance {
+    final store = _instance;
+    if (store == null) {
+      throw StateError('BrickPesajeStore has not been initialized yet.');
+    }
+    return store;
+  }
+
+  /// Configura el store de pesajes una sola vez.
+  static void configure(AppBrickRepository repository) {
+    if (_instance != null) {
+      return;
+    }
+
+    _instance = BrickPesajeStore._(repository);
+  }
+
+  @override
+  Future<BrickPesajeModel> upsertPesaje(BrickPesajeModel pesaje) async {
+    final savedPesaje = await _repository.upsertLocal<BrickPesajeModel>(pesaje);
+
+    // La pesada ya quedo guardada localmente. El request remoto corre en segundo
+    // plano para que la UX siga siendo offline-first y no espere al backend.
+    unawaited(_repository.enqueueRemoteUpsert<BrickPesajeModel>(savedPesaje));
+
+    return savedPesaje;
+  }
+
+  @override
+  Future<void> pullRemotePesajes(
+    String establishmentId, {
+    String? animalId,
+  }) async {
+    final request = animalId == null
+        ? BrickPesajeRequestTransformer.listByEstablishmentRequest(
+            establishmentId,
+          )
+        : BrickPesajeRequestTransformer.listByAnimalRequest(
+            establishmentId,
+            animalId,
+          );
+
+    final remotePesajes = await _repository.remoteProvider.get<BrickPesajeModel>(
+      repository: _repository,
+      query: Query(
+        forProviders: [RestProviderQuery(request: request)],
+      ),
+    );
+
+    // Las pesadas cargadas offline y todavia no confirmadas no deben ser
+    // pisadas por el pull.
+    final localPesajes = await _repository.getLocal<BrickPesajeModel>();
+    final protectedLocalIds = localPesajes
+        .where(
+          (pesaje) =>
+              pesaje.syncStatus == BrickPesajeSyncStatus.pending ||
+              pesaje.syncStatus == BrickPesajeSyncStatus.rejected,
+        )
+        .map((pesaje) => pesaje.localId)
+        .toSet();
+
+    for (final pesaje in remotePesajes) {
+      if (protectedLocalIds.contains(pesaje.localId)) {
+        continue;
+      }
+
+      await _repository.upsertLocal<BrickPesajeModel>(
+        pesaje.copyWith(
+          syncStatus: BrickPesajeSyncStatus.synchronized,
+          syncErrorCode: null,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<List<BrickPesajeModel>> getLocalPesajesByAnimal(
+    String animalId,
+  ) async {
+    final pesajes = await _repository.getLocal<BrickPesajeModel>();
+
+    final historial = pesajes
+        .where(
+          (pesaje) =>
+              pesaje.animalId == animalId && pesaje.deletedAt == null,
+        )
+        .toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    return historial;
+  }
+
+  /// Aplica la respuesta del backend al pesaje local.
+  ///
+  /// `2xx` marca la pesada como sincronizada. Errores funcionales del backend la
+  /// marcan como rechazada y guardan el codigo para mostrarlo en UI.
+  Future<void> applyPesajeSyncResult(BackendSyncResult result) async {
+    if (!BrickPesajeRequestTransformer.matchesPesajeResource(
+      result.resourcePath,
+    )) {
+      return;
+    }
+
+    final storedPesajes = await _repository.getLocal<BrickPesajeModel>();
+
+    for (final pesaje in storedPesajes) {
+      if (pesaje.localId != result.localId) {
+        continue;
+      }
+
+      final updatedPesaje = pesaje.copyWith(
+        syncStatus: result.synchronized
+            ? BrickPesajeSyncStatus.synchronized
+            : BrickPesajeSyncStatus.rejected,
+        syncErrorCode: result.errorCode,
+      );
+      await _repository.upsertLocal<BrickPesajeModel>(updatedPesaje);
+      return;
+    }
+  }
+
+  /// Libera la subscription interna del store.
+  Future<void> dispose() async {
+    await _syncSubscription.cancel();
+  }
+}
