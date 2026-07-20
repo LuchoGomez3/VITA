@@ -120,7 +120,7 @@ class _AnimalDetailContent extends StatelessWidget {
               ],
             ),
           ),
-          const WeightGainChart(),
+          WeightGainChart(weightHistory: animalDetail.weightHistory),
           AppSurfaceCard(
             child: AnimalEventHistory(animalDetail: animalDetail),
           ),

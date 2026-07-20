@@ -88,7 +88,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
 
     // El cliente HTTP observa responses de backend y publica resultados de sync
     // genericos. La logica de cada entidad queda en su store correspondiente.
-    final syncResults = StreamController<BackendSyncResult>();
+    final syncResults = StreamController<BackendSyncResult>.broadcast();
     final restClient = AuthenticatedBackendClient(
       tokenProvider: tokenProvider ?? SessionBackendAccessTokenProvider.instance,
       inner: client,

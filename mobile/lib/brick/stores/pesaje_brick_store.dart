@@ -22,6 +22,12 @@ abstract class PesajeBrickStore {
     String? animalId,
   });
 
+  /// Garantiza una carga inicial y luego devuelve la copia guardada en SQLite.
+  Future<List<BrickPesajeModel>> loadPesajesByAnimal(
+    String establishmentId,
+    String animalId,
+  );
+
   /// Lee desde SQLite el historial de pesajes de un animal, ordenado por fecha.
   Future<List<BrickPesajeModel>> getLocalPesajesByAnimal(String animalId);
 }
@@ -42,6 +48,7 @@ class BrickPesajeStore implements PesajeBrickStore {
 
   final AppBrickRepository _repository;
   late final StreamSubscription<BackendSyncResult> _syncSubscription;
+  final Set<String> _hydratedAnimalIds = {};
 
   /// Instancia compartida configurada durante el bootstrap de Brick.
   static BrickPesajeStore get instance {
@@ -96,11 +103,13 @@ class BrickPesajeStore implements PesajeBrickStore {
     // Las pesadas cargadas offline y todavia no confirmadas no deben ser
     // pisadas por el pull.
     final localPesajes = await _repository.getLocal<BrickPesajeModel>();
+    final localPesajesById = {
+      for (final pesaje in localPesajes) pesaje.localId: pesaje,
+    };
     final protectedLocalIds = localPesajes
         .where(
           (pesaje) =>
-              pesaje.syncStatus == BrickPesajeSyncStatus.pending ||
-              pesaje.syncStatus == BrickPesajeSyncStatus.rejected,
+              pesaje.syncStatus == BrickPesajeSyncStatus.pending || pesaje.syncStatus == BrickPesajeSyncStatus.rejected,
         )
         .map((pesaje) => pesaje.localId)
         .toSet();
@@ -110,13 +119,27 @@ class BrickPesajeStore implements PesajeBrickStore {
         continue;
       }
 
-      await _repository.upsertLocal<BrickPesajeModel>(
-        pesaje.copyWith(
-          syncStatus: BrickPesajeSyncStatus.synchronized,
-          syncErrorCode: null,
-        ),
-      );
+      final synchronizedPesaje = pesaje.copyWith(
+        syncStatus: BrickPesajeSyncStatus.synchronized,
+        syncErrorCode: null,
+      )..primaryKey = localPesajesById[pesaje.localId]?.primaryKey;
+      await _repository.upsertLocal<BrickPesajeModel>(synchronizedPesaje);
     }
+  }
+
+  @override
+  Future<List<BrickPesajeModel>> loadPesajesByAnimal(
+    String establishmentId,
+    String animalId,
+  ) async {
+    final localPesajes = await getLocalPesajesByAnimal(animalId);
+    if (localPesajes.isNotEmpty || _hydratedAnimalIds.contains(animalId)) {
+      return localPesajes;
+    }
+
+    await pullRemotePesajes(establishmentId, animalId: animalId);
+    _hydratedAnimalIds.add(animalId);
+    return getLocalPesajesByAnimal(animalId);
   }
 
   @override
@@ -125,13 +148,14 @@ class BrickPesajeStore implements PesajeBrickStore {
   ) async {
     final pesajes = await _repository.getLocal<BrickPesajeModel>();
 
-    final historial = pesajes
-        .where(
-          (pesaje) =>
-              pesaje.animalId == animalId && pesaje.deletedAt == null,
-        )
-        .toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
+    final pesajesById = <String, BrickPesajeModel>{};
+    for (final pesaje in pesajes) {
+      if (pesaje.animalId == animalId && pesaje.deletedAt == null) {
+        pesajesById[pesaje.localId] = pesaje;
+      }
+    }
+
+    final historial = pesajesById.values.toList()..sort((a, b) => a.date.compareTo(b.date));
 
     return historial;
   }
@@ -155,9 +179,7 @@ class BrickPesajeStore implements PesajeBrickStore {
       }
 
       final updatedPesaje = pesaje.copyWith(
-        syncStatus: result.synchronized
-            ? BrickPesajeSyncStatus.synchronized
-            : BrickPesajeSyncStatus.rejected,
+        syncStatus: result.synchronized ? BrickPesajeSyncStatus.synchronized : BrickPesajeSyncStatus.rejected,
         syncErrorCode: result.errorCode,
       );
       await _repository.upsertLocal<BrickPesajeModel>(updatedPesaje);

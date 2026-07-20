@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 
-/// Weight evolution chart for the animal detail page.
+/// Grafico de evolucion de peso usado en la ficha del animal.
 class WeightGainChart extends StatelessWidget {
-  /// Creates the animal weight gain chart.
-  const WeightGainChart({super.key});
+  /// Crea el grafico a partir del historial real de pesajes.
+  const WeightGainChart({
+    required this.weightHistory,
+    super.key,
+  });
+
+  /// Pesajes reales ordenados cronologicamente.
+  final List<AnimalWeightRecord> weightHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -19,17 +26,49 @@ class WeightGainChart extends StatelessWidget {
             style: AppTypography.pageTitle,
           ),
           const SizedBox(height: AppSpacing.md),
-          AppLineChart(
-            points: AnimalDetailStrings.weightChartPoints,
-            minX: 1,
-            maxX: 6,
-            minY: 200,
-            maxY: 450,
-            xLabels: AnimalDetailStrings.weightChartMonthLabels,
-            yLabelBuilder: (value) => '${value.toInt()}kg',
-          ),
+          if (weightHistory.isEmpty)
+            const Text(AnimalDetailStrings.noWeightHistory)
+          else
+            _WeightHistoryLineChart(weightHistory: weightHistory),
         ],
       ),
     );
+  }
+}
+
+class _WeightHistoryLineChart extends StatelessWidget {
+  const _WeightHistoryLineChart({required this.weightHistory});
+
+  final List<AnimalWeightRecord> weightHistory;
+
+  @override
+  Widget build(BuildContext context) {
+    final weights = weightHistory.map((record) => record.weightKg);
+    final lowestWeight = weights.reduce((a, b) => a < b ? a : b);
+    final highestWeight = weights.reduce((a, b) => a > b ? a : b);
+    final minY = (lowestWeight / 50).floorToDouble() * 50;
+    final calculatedMaxY = (highestWeight / 50).ceilToDouble() * 50;
+    final maxY = calculatedMaxY <= minY ? minY + 50 : calculatedMaxY;
+    final maxX = weightHistory.length == 1 ? 2.0 : weightHistory.length.toDouble();
+
+    return AppLineChart(
+      points: [
+        for (final (index, record) in weightHistory.indexed) AppLineChartPoint(x: index + 1, y: record.weightKg),
+      ],
+      minX: 1,
+      maxX: maxX,
+      minY: minY,
+      maxY: maxY,
+      xLabels: {
+        for (final (index, record) in weightHistory.indexed) index + 1: _formatDate(record.date),
+      },
+      yLabelBuilder: (value) => '${value.toInt()} kg',
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month';
   }
 }

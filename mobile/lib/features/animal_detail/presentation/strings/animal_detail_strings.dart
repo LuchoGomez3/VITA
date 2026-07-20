@@ -1,5 +1,3 @@
-import 'package:frontend_mayoral/core/widgets/widgets.dart';
-
 /// Textos de la pantalla de detalle de animal.
 class AnimalDetailStrings {
   const AnimalDetailStrings._();
@@ -64,6 +62,9 @@ class AnimalDetailStrings {
   /// Titulo del grafico de peso.
   static const weightChartTitle = 'Evolución de Peso';
 
+  /// Mensaje mostrado cuando el animal todavia no tiene pesajes registrados.
+  static const noWeightHistory = 'Todavía no hay pesajes registrados.';
+
   /// Titulo del historial.
   static const eventHistoryTitle = 'Historial de Eventos';
 
@@ -72,6 +73,15 @@ class AnimalDetailStrings {
 
   /// Descripcion del evento de nacimiento.
   static const birthEventDescription = 'Fecha de nacimiento registrada.';
+
+  /// Titulo usado para cada pesaje dentro del historial de eventos.
+  static const weighingEventTitle = 'Pesaje';
+
+  /// Construye el detalle visible de un pesaje con su peso y metodo de captura.
+  static String weighingEventDescription({
+    required String weight,
+    required String method,
+  }) => 'Peso registrado: $weight kg · Método: $method.';
 
   /// Estado pendiente de sincronizacion.
   static const pendingSyncStatus = 'Pendiente de sincronización';
@@ -90,24 +100,4 @@ class AnimalDetailStrings {
 
   /// Valor mostrado cuando el backend/cache aun no tiene un dato.
   static const noDataValue = 'Sin dato';
-
-  /// Etiquetas de meses del grafico de peso.
-  static const weightChartMonthLabels = <int, String>{
-    1: 'Ene',
-    2: 'Feb',
-    3: 'Mar',
-    4: 'Abr',
-    5: 'May',
-    6: 'Jun',
-  };
-
-  /// Puntos mock del grafico de peso.
-  static const weightChartPoints = <AppLineChartPoint>[
-    AppLineChartPoint(x: 1, y: 250),
-    AppLineChartPoint(x: 2, y: 280),
-    AppLineChartPoint(x: 3, y: 310),
-    AppLineChartPoint(x: 4, y: 340),
-    AppLineChartPoint(x: 5, y: 390),
-    AppLineChartPoint(x: 6, y: 410),
-  ];
 }

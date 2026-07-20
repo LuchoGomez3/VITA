@@ -1,7 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/models/categoria.model.dart';
+import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_detail_repository_impl.dart';
@@ -15,6 +19,8 @@ void main() {
       final remoteDataSource = _FakeAnimalDetailRemoteDataSource();
       final repository = AnimalDetailRepositoryImpl(
         brickStore: brickStore,
+        categoriaBrickStore: _FakeCategoriaBrickStore(),
+        pesajeBrickStore: _FakePesajeBrickStore(),
         remoteDataSource: remoteDataSource,
       );
 
@@ -32,6 +38,8 @@ void main() {
       final remoteDataSource = _FakeAnimalDetailRemoteDataSource();
       final repository = AnimalDetailRepositoryImpl(
         brickStore: brickStore,
+        categoriaBrickStore: _FakeCategoriaBrickStore(),
+        pesajeBrickStore: _FakePesajeBrickStore(),
         remoteDataSource: remoteDataSource,
       );
 
@@ -43,6 +51,51 @@ void main() {
       final detail = (result as Success<AnimalDetail>).data;
       expect(detail.id, _animalId);
       expect(detail.syncStatus, AnimalSyncStatus.synchronized);
+    });
+
+    test('loads real weights and resolves the category name', () async {
+      final pesajeStore = _FakePesajeBrickStore(pesajes: [_firstPesaje, _latestPesaje]);
+      final categoriaStore = _FakeCategoriaBrickStore(
+        categorias: [_categoria],
+      );
+      final repository = AnimalDetailRepositoryImpl(
+        brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
+        categoriaBrickStore: categoriaStore,
+        pesajeBrickStore: pesajeStore,
+        remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
+      );
+
+      final result = await repository.getById(_animalId);
+
+      final detail = (result as Success<AnimalDetail>).data;
+      expect(pesajeStore.pulledAnimalId, _animalId);
+      expect(categoriaStore.pullCalls, 1);
+      expect(detail.categoryName, 'Novillito');
+      expect(detail.weightHistory.map((record) => record.weightKg), [210, 245]);
+      expect(detail.currentWeight, 245);
+      expect(detail.weighingDate, _latestPesaje.date);
+      expect(detail.weighingMethod, AnimalWeighingMethod.bluetoothScale);
+    });
+
+    test('uses cached related data when remote pulls fail', () async {
+      final repository = AnimalDetailRepositoryImpl(
+        brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
+        categoriaBrickStore: _FakeCategoriaBrickStore(
+          categorias: [_categoria],
+          failPull: true,
+        ),
+        pesajeBrickStore: _FakePesajeBrickStore(
+          pesajes: [_firstPesaje],
+          failPull: true,
+        ),
+        remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
+      );
+
+      final result = await repository.getById(_animalId);
+
+      final detail = (result as Success<AnimalDetail>).data;
+      expect(detail.categoryName, 'Novillito');
+      expect(detail.weightHistory.single.weightKg, 210);
     });
   });
 }
@@ -66,6 +119,35 @@ final _brickAnimal = BrickAnimalModel(
   weighingDate: DateTime(2025, 3, 14),
   createdAt: DateTime(2025, 3, 14),
   updatedAt: DateTime(2025, 3, 14),
+);
+
+final _categoria = BrickCategoriaModel(
+  localId: 'category-id',
+  establishmentId: 'establishment-id',
+  name: 'Novillito',
+  createdAt: DateTime(2025),
+  updatedAt: DateTime(2025),
+);
+
+final _firstPesaje = BrickPesajeModel(
+  localId: 'weighing-1',
+  establishmentId: 'establishment-id',
+  animalId: _animalId,
+  weightKg: 210,
+  date: DateTime(2025, 5),
+  createdAt: DateTime(2025, 5),
+  updatedAt: DateTime(2025, 5),
+);
+
+final _latestPesaje = BrickPesajeModel(
+  localId: 'weighing-2',
+  establishmentId: 'establishment-id',
+  animalId: _animalId,
+  weightKg: 245,
+  date: DateTime(2025, 6),
+  method: BrickPesajeMethod.bluetoothScale,
+  createdAt: DateTime(2025, 6),
+  updatedAt: DateTime(2025, 6),
 );
 
 class _FakeAnimalBrickStore implements AnimalBrickStore {
@@ -129,6 +211,77 @@ class _FakeAnimalDetailRemoteDataSource extends AnimalDetailRemoteDataSource {
       updatedAt: DateTime(2025, 3, 14),
     );
   }
+}
+
+class _FakeCategoriaBrickStore implements CategoriaBrickStore {
+  _FakeCategoriaBrickStore({
+    this.categorias = const [],
+    this.failPull = false,
+  });
+
+  final List<BrickCategoriaModel> categorias;
+  final bool failPull;
+  int pullCalls = 0;
+
+  @override
+  Future<List<BrickCategoriaModel>> getLocalCategorias(
+    String establishmentId,
+  ) async => categorias;
+
+  @override
+  Future<void> pullRemoteCategorias(String establishmentId) async {
+    pullCalls += 1;
+    if (failPull) {
+      throw Exception('offline');
+    }
+  }
+
+  @override
+  Future<BrickCategoriaModel> upsertCategoria(
+    BrickCategoriaModel categoria,
+  ) async => categoria;
+}
+
+class _FakePesajeBrickStore implements PesajeBrickStore {
+  _FakePesajeBrickStore({
+    this.pesajes = const [],
+    this.failPull = false,
+  });
+
+  final List<BrickPesajeModel> pesajes;
+  final bool failPull;
+  String? pulledAnimalId;
+
+  @override
+  Future<List<BrickPesajeModel>> loadPesajesByAnimal(
+    String establishmentId,
+    String animalId,
+  ) async {
+    pulledAnimalId = animalId;
+    if (failPull) {
+      throw Exception('offline');
+    }
+    return pesajes;
+  }
+
+  @override
+  Future<List<BrickPesajeModel>> getLocalPesajesByAnimal(
+    String animalId,
+  ) async => pesajes;
+
+  @override
+  Future<void> pullRemotePesajes(
+    String establishmentId, {
+    String? animalId,
+  }) async {
+    pulledAnimalId = animalId;
+    if (failPull) {
+      throw Exception('offline');
+    }
+  }
+
+  @override
+  Future<BrickPesajeModel> upsertPesaje(BrickPesajeModel pesaje) async => pesaje;
 }
 
 class _FakeTokenProvider implements BackendAccessTokenProvider {

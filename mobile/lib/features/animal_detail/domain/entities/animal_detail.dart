@@ -3,6 +3,25 @@ import 'package:frontend_mayoral/features/animal_register/domain/entities/animal
 
 part 'animal_detail.freezed.dart';
 
+/// Pesaje historico que alimenta la evolucion de peso del animal.
+@freezed
+sealed class AnimalWeightRecord with _$AnimalWeightRecord {
+  /// Crea un punto de peso independiente de la infraestructura Brick.
+  const factory AnimalWeightRecord({
+    /// UUID del pesaje.
+    required String id,
+
+    /// Peso registrado en kilogramos.
+    required double weightKg,
+
+    /// Fecha y hora en que se realizo el pesaje.
+    required DateTime date,
+
+    /// Metodo usado para obtener el peso.
+    required AnimalWeighingMethod method,
+  }) = _AnimalWeightRecord;
+}
+
 /// Informacion de negocio que necesita la ficha de un animal.
 ///
 /// Se mantiene independiente de Brick y del shape REST para que presentation no
@@ -58,6 +77,9 @@ sealed class AnimalDetail with _$AnimalDetail {
 
     /// Ultima actualizacion conocida.
     required DateTime updatedAt,
+
+    /// Historial real de pesajes ordenado desde el mas antiguo al mas reciente.
+    required List<AnimalWeightRecord> weightHistory,
 
     /// ID backend de la madre, si existe.
     String? motherId,

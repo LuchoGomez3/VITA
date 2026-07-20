@@ -1,4 +1,5 @@
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
@@ -28,6 +29,7 @@ class AnimalDetailMapper {
       syncStatus: model.syncStatus.toDomain(),
       syncErrorCode: model.syncErrorCode,
       updatedAt: model.updatedAt,
+      weightHistory: const [],
       motherId: model.motherId,
       fatherId: model.fatherId,
       coat: model.coat,
@@ -64,6 +66,22 @@ class AnimalDetailMapper {
       syncStatus: BrickAnimalSyncStatus.synchronized,
     );
   }
+
+  /// Convierte los pesajes Brick en registros de dominio para la grafica.
+  static List<AnimalWeightRecord> weightHistoryFromBrick(
+    List<BrickPesajeModel> models,
+  ) {
+    return models
+        .map(
+          (model) => AnimalWeightRecord(
+            id: model.localId,
+            weightKg: model.weightKg,
+            date: model.date,
+            method: model.method.toDomain(),
+          ),
+        )
+        .toList(growable: false);
+  }
 }
 
 extension on BrickAnimalSex {
@@ -78,6 +96,14 @@ extension on BrickAnimalWeighingMethod {
     BrickAnimalWeighingMethod.manual => AnimalWeighingMethod.manual,
     BrickAnimalWeighingMethod.bluetoothScale => AnimalWeighingMethod.bluetoothScale,
     BrickAnimalWeighingMethod.artificialIntelligence => AnimalWeighingMethod.artificialIntelligence,
+  };
+}
+
+extension on BrickPesajeMethod {
+  AnimalWeighingMethod toDomain() => switch (this) {
+    BrickPesajeMethod.manual => AnimalWeighingMethod.manual,
+    BrickPesajeMethod.bluetoothScale => AnimalWeighingMethod.bluetoothScale,
+    BrickPesajeMethod.artificialIntelligence => AnimalWeighingMethod.artificialIntelligence,
   };
 }
 
