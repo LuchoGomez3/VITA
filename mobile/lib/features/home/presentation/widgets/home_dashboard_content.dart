@@ -8,6 +8,7 @@ import 'package:frontend_mayoral/features/home/presentation/widgets/home_categor
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_daily_gain_card.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_kpi_summary_grid.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_lot_metrics_card.dart';
+import 'package:frontend_mayoral/features/home/presentation/widgets/home_operating_balance_card.dart';
 
 /// Organiza las secciones visibles cuando los KPIs terminaron de calcularse.
 class HomeDashboardContent extends StatelessWidget {
@@ -22,8 +23,10 @@ class HomeDashboardContent extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: context.read<HomeDashboardCubit>().load,
       child: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.sm),
         children: [
+          const HomeOperatingBalanceCard(),
+          const SizedBox(height: AppSpacing.lg),
           Text(HomeStrings.title, style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: AppSpacing.xs),
           Text(HomeStrings.subtitle, style: Theme.of(context).textTheme.bodyLarge),

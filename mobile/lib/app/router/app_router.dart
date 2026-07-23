@@ -17,6 +17,7 @@ import 'package:frontend_mayoral/features/auth/presentation/pages/auth_check_pag
 import 'package:frontend_mayoral/features/auth/presentation/pages/login_page.dart';
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
+import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
@@ -160,6 +161,24 @@ class AppRouter {
             animalId: animalId,
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.expenseRecords,
+        builder: (context, state) => const ShellPlaceholderPage(
+          title: HomeStrings.movements,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.expenseRegister,
+        builder: (context, state) => const ShellPlaceholderPage(
+          title: HomeStrings.registerExpense,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.incomeRegister,
+        builder: (context, state) => const ShellPlaceholderPage(
+          title: HomeStrings.registerIncome,
+        ),
       ),
     ],
   );

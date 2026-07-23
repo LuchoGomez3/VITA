@@ -99,6 +99,14 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
+  /// Estilo de Texto para Balance en la pantalla de Inicio, con color primario.
+  static const balanceValue = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 40,
+    fontWeight: FontWeight.w700,
+    color: AppColors.primary,
+  );
+
   /// Subtitulo destacado para pantallas de resultado o confirmacion.
   static const successSubtitle = TextStyle(
     fontFamily: _baseFontFamily,

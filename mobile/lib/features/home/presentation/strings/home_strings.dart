@@ -24,6 +24,36 @@ abstract final class HomeStrings {
   /// Tooltip para actualizar los valores.
   static const refreshTooltip = 'Actualizar indicadores';
 
+  /// Titulo del resumen economico operativo.
+  static const operatingBalance = 'Balance operativo';
+
+  /// Etiqueta del valor estimado del stock.
+  static const estimatedStock = 'Stock estimado';
+
+  /// Etiqueta de los gastos operativos.
+  static const operatingExpenses = 'Gastos';
+
+  /// Etiqueta del saldo disponible.
+  static const availableBalance = 'Balance';
+
+  /// Valor simulado del stock mientras no existe la integracion real.
+  static const mockStockValue = r'$ 8.450.000';
+
+  /// Valor simulado de gastos mientras no existe la integracion real.
+  static const mockExpensesValue = r'$ 1.230.000';
+
+  /// Valor simulado del balance mientras no existe la integracion real.
+  static const mockBalanceValue = r'$ 7.220.000';
+
+  /// Accion para iniciar el registro de un egreso.
+  static const registerExpense = 'Registrar egreso';
+
+  /// Accion para iniciar el registro de un ingreso.
+  static const registerIncome = 'Registrar ingreso';
+
+  /// Accion para consultar ingresos y egresos.
+  static const movements = 'Movimientos';
+
   /// Etiqueta del stock vigente.
   static const activeStock = 'Stock activo';
 

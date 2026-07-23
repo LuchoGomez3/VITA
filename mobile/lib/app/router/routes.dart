@@ -38,6 +38,15 @@ class AppRoutes {
   /// Ruta de la pantalla de detalle de animal.
   static const animalDetail = '/animals/:animalId';
 
+  /// Ruta de la seccion de registros de gastos.
+  static const expenseRecords = '/registros-de-gastos';
+
+  /// Ruta temporal para registrar un egreso operativo.
+  static const expenseRegister = '/registros-de-gastos/registrar-egreso';
+
+  /// Ruta temporal para registrar un ingreso operativo.
+  static const incomeRegister = '/registros-de-gastos/registrar-ingreso';
+
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {
     return '/animals/$animalId';
