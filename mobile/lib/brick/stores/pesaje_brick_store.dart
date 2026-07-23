@@ -30,6 +30,9 @@ abstract class PesajeBrickStore {
 
   /// Lee desde SQLite el historial de pesajes de un animal, ordenado por fecha.
   Future<List<BrickPesajeModel>> getLocalPesajesByAnimal(String animalId);
+
+  /// Lee todos los pesajes locales vigentes.
+  Future<List<BrickPesajeModel>> getLocalPesajes();
 }
 
 /// Store Brick especifico para operaciones de pesajes.
@@ -146,7 +149,7 @@ class BrickPesajeStore implements PesajeBrickStore {
   Future<List<BrickPesajeModel>> getLocalPesajesByAnimal(
     String animalId,
   ) async {
-    final pesajes = await _repository.getLocal<BrickPesajeModel>();
+    final pesajes = await getLocalPesajes();
 
     final pesajesById = <String, BrickPesajeModel>{};
     for (final pesaje in pesajes) {
@@ -158,6 +161,12 @@ class BrickPesajeStore implements PesajeBrickStore {
     final historial = pesajesById.values.toList()..sort((a, b) => a.date.compareTo(b.date));
 
     return historial;
+  }
+
+  @override
+  Future<List<BrickPesajeModel>> getLocalPesajes() async {
+    final pesajes = await _repository.getLocal<BrickPesajeModel>();
+    return pesajes.where((pesaje) => pesaje.deletedAt == null).toList();
   }
 
   /// Aplica la respuesta del backend al pesaje local.

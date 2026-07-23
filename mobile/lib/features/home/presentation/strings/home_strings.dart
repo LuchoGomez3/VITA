@@ -1,54 +1,68 @@
-/// Textos centralizados de la pantalla de inicio.
-class HomeStrings {
-  const HomeStrings._();
+/// Textos centralizados del tablero de Inicio.
+abstract final class HomeStrings {
+  /// Titulo del app bar.
+  static const appTitle = 'Resumen productivo';
 
-  /// Titulo de la app en home.
-  static const appTitle = 'Trazabilidad ganadera';
+  /// Saludo utilizado durante la mañana.
+  static const goodMorning = 'Buenos días';
 
-  /// Tooltip del boton para cerrar sesion.
-  static const signOutTooltip = 'Cerrar sesion';
+  /// Saludo utilizado durante la tarde.
+  static const goodAfternoon = 'Buenas tardes';
 
-  /// Titulo principal del mock de home.
-  static const title = 'Base inicial del front';
+  /// Saludo utilizado durante la noche.
+  static const goodEvening = 'Buenas noches';
 
-  /// Texto introductorio del mock de home.
-  static const subtitle =
-      'La app queda lista para crecer por modulos, con navegacion y una '
-      'feature real como referencia.';
+  /// Nombre de respaldo mientras la sesion termina de restaurarse.
+  static const defaultUserName = 'Productor';
 
-  /// Titulo de la accion para validar la sesion.
-  static const authCheckTitle = 'Autenticacion';
+  /// Titulo principal del tablero.
+  static const title = 'Estado de la hacienda';
 
-  /// Descripcion de la accion para validar la sesion.
-  static const authCheckDescription = 'Verifica la sesion restaurada en este dispositivo.';
+  /// Descripcion de la fuente de los indicadores.
+  static const subtitle = 'Indicadores calculados con la información disponible sin conexión.';
 
-  /// Boton para verificar autenticacion.
-  static const authCheckButton = 'Verificar sesion';
+  /// Tooltip para actualizar los valores.
+  static const refreshTooltip = 'Actualizar indicadores';
 
-  /// Boton durante la verificacion.
-  static const authCheckingButton = 'Verificando...';
+  /// Etiqueta del stock vigente.
+  static const activeStock = 'Stock activo';
 
-  /// Prefijo de exito al verificar autenticacion.
-  static const authCheckSuccessPrefix = 'Sesion activa:';
+  /// Etiqueta del peso vivo acumulado.
+  static const knownLiveWeight = 'Peso conocido';
 
-  /// Mensaje fallback de verificacion.
-  static const authCheckUnknownError = 'No se pudo verificar la sesion.';
+  /// Etiqueta de incorporaciones mensuales.
+  static const monthlyAdditions = 'Altas del mes';
 
-  /// Titulo del modulo de registro.
-  static const animalRegisterTitle = 'Registrar animal';
+  /// Etiqueta de bajas mensuales.
+  static const monthlyRemovals = 'Bajas del mes';
 
-  /// Descripcion del modulo de registro.
-  static const animalRegisterDescription = 'Primer modulo con capas presentation, domain y data.';
+  /// Referencia temporal de altas y bajas.
+  static const currentMonth = 'Mes actual';
 
-  /// Boton para abrir registro.
-  static const animalRegisterButton = 'Abrir modulo';
+  /// Unidad textual para cantidades de animales.
+  static const animalsUnit = 'animales';
 
-  /// Titulo del detalle de animal.
-  static const animalDetailTitle = 'Detalle de animal';
+  /// Texto para indicar cobertura de pesos.
+  static const withWeight = 'con peso';
 
-  /// Descripcion del detalle de animal.
-  static const animalDetailDescription = 'Ejemplo de navegacion a una feature separada usando un id en la ruta.';
+  /// Titulo de ganancia de peso.
+  static const averageDailyGain = 'Ganancia diaria promedio';
 
-  /// Boton para abrir el detalle de animal demo.
-  static const animalDetailButton = 'Ver animal 012';
+  /// Texto de cobertura del calculo de GPD.
+  static const animalsWithHistory = 'animales con historial suficiente';
+
+  /// Titulo de pesos agrupados por lote.
+  static const weightByLot = 'Peso promedio y variabilidad por lote';
+
+  /// Titulo de inventario por categoria.
+  static const categoryDistribution = 'Distribución por categoría';
+
+  /// Mensaje para listas sin animales.
+  static const noAnimals = 'Todavía no hay animales disponibles.';
+
+  /// Valor visible cuando falta información suficiente.
+  static const noData = 'Sin datos';
+
+  /// Acción para reintentar una carga fallida.
+  static const retry = 'Reintentar';
 }

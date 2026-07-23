@@ -5,6 +5,15 @@ class AppRoutes {
   /// Ruta de la pantalla de inicio.
   static const home = '/';
 
+  /// Ruta raiz de la pestaña de hacienda.
+  static const livestock = '/hacienda';
+
+  /// Ruta raiz de la pestaña de tramites SENASA.
+  static const procedures = '/tramites';
+
+  /// Ruta raiz de la pestaña de perfil y ajustes.
+  static const profile = '/perfil';
+
   /// Ruta liviana que espera la restauracion de sesion al arrancar.
   static const authCheck = '/auth-check';
 

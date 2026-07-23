@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>VITA necesita usar la cámara para registrar información visual de la hacienda.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>VITA necesita acceder a la foto capturada para incorporarla al registro correspondiente.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

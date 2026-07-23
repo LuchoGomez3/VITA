@@ -19,4 +19,7 @@ class AppSpacing {
 
   /// Espaciado grande para elementos espaciados.
   static const lg = 24.0;
+
+  /// Espaciado extra grande para elementos que van al fondo de la pantalla.
+  static const xl = 32.0;
 }

@@ -20,6 +20,9 @@ abstract class AnimalBrickStore {
   /// Busca un animal en SQLite por el UUID generado en mobile/backend.
   Future<BrickAnimalModel?> getAnimalById(String animalId);
 
+  /// Lee todos los animales locales, incluidas las bajas logicas.
+  Future<List<BrickAnimalModel>> getLocalAnimals();
+
   /// Descarga animales remotos de [establishmentId] y los guarda en SQLite.
   Future<void> pullRemoteAnimals(String establishmentId);
 }
@@ -77,7 +80,7 @@ class BrickAnimalStore implements AnimalBrickStore {
 
   @override
   Future<BrickAnimalModel?> getAnimalById(String animalId) async {
-    final storedAnimals = await _repository.getLocal<BrickAnimalModel>();
+    final storedAnimals = await getLocalAnimals();
 
     for (final animal in storedAnimals) {
       if (animal.localId == animalId) {
@@ -86,6 +89,11 @@ class BrickAnimalStore implements AnimalBrickStore {
     }
 
     return null;
+  }
+
+  @override
+  Future<List<BrickAnimalModel>> getLocalAnimals() {
+    return _repository.getLocal<BrickAnimalModel>();
   }
 
   @override
