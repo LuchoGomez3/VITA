@@ -9,14 +9,16 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromRest(
   return BrickAnimalModel(
     localId: data['id'] as String,
     rfidTagNumber: data['nro_caravana_rfid'] as String,
-    visualTag: brickStringFromBackend(data['caravana_visual']),
+    visualTag: data['caravana_visual'] as String,
     sex: brickAnimalSexFromBackend(data['sexo'] as String),
-    breed: brickStringFromBackend(data['raza']),
+    breed: data['raza'] as String,
     birthDate: DateTime.parse(data['fecha_nacimiento'] as String),
     categoryId: data['categoria_id'] as String,
     lotId: data['lote_id'] as String,
     establishmentId: data['establecimiento_id'] as String,
-    initialWeight: brickDoubleFromBackend(data['peso_inicial']),
+    initialWeight: data['peso_inicial'] == null
+        ? null
+        : data['peso_inicial'] as double?,
     weighingMethod: brickAnimalWeighingMethodFromBackend(
       data['metodo_pesaje'] as String?,
     ),
@@ -48,7 +50,7 @@ Future<Map<String, dynamic>> _$BrickAnimalModelToRest(
     'caravana_visual': instance.visualTag,
     'sexo': brickAnimalSexToBackend(instance.sex),
     'raza': instance.breed,
-    'fecha_nacimiento': brickDateToBackend(instance.birthDate),
+    'fecha_nacimiento': instance.birthDate.toIso8601String(),
     'categoria_id': instance.categoryId,
     'lote_id': instance.lotId,
     'establecimiento_id': instance.establishmentId,
@@ -84,7 +86,9 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromSqlite(
     lotId: data['lot_id'] as String,
     lotName: data['lot_name'] as String,
     establishmentId: data['establishment_id'] as String,
-    initialWeight: data['initial_weight'] as double,
+    initialWeight: data['initial_weight'] == null
+        ? null
+        : data['initial_weight'] as double?,
     weighingMethod:
         BrickAnimalWeighingMethod.values[data['weighing_method'] as int],
     weighingDate: DateTime.parse(data['weighing_date'] as String),

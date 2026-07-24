@@ -11,6 +11,7 @@ import 'package:frontend_mayoral/features/auth/data/models/auth_remote_session.d
 import 'package:frontend_mayoral/features/auth/data/models/stored_auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/registration_request.dart';
 import 'package:frontend_mayoral/features/auth/domain/repositories/auth_repository.dart';
 
 /// Implementacion de autenticacion que combina backend, secure storage y Brick.
@@ -33,6 +34,38 @@ class AuthRepositoryImpl implements AuthRepository {
   final AuthLocalDataSource _localDataSource;
   final AuthRemoteDataSource _remoteDataSource;
   final SessionBackendAccessTokenProvider _tokenProvider;
+
+  @override
+  Future<Result<AppUser>> register({
+    required RegistrationRequest request,
+  }) async {
+    try {
+      final userJson = await _remoteDataSource.register(
+        firstName: request.firstName,
+        lastName: request.lastName,
+        email: request.email,
+        cuit: request.cuit,
+        password: request.password,
+      );
+      return Result.success(AppUserMapper.fromJson(userJson));
+    } on DomainException catch (error) {
+      return Result.failure(error);
+    } on SocketException {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudo conectar con el backend.',
+          code: DomainErrorCode.offline,
+        ),
+      );
+    } on TimeoutException {
+      return const Result.failure(
+        DomainException(
+          message: 'El backend tardo demasiado en responder.',
+          code: DomainErrorCode.offline,
+        ),
+      );
+    }
+  }
 
   @override
   Future<Result<AuthSession>> signIn({

@@ -51,7 +51,7 @@ class LoginForm extends StatelessWidget {
         children: [
           const Text(
             LoginStrings.loginTitle,
-            style: AppTypography.formFieldLabel,
+            style: AppTypography.secondaryEmphasis,
           ),
           const SizedBox(height: AppSpacing.lg),
           AppTextFormField(

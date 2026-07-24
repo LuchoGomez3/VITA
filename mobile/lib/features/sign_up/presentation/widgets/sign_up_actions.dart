@@ -6,17 +6,22 @@ import 'package:frontend_mayoral/features/sign_up/presentation/strings/sign_up_s
 
 /// Acciones finales del formulario de registro de usuario.
 class SignUpActions extends StatelessWidget {
+  /// Crea las acciones de registro e inicio de sesion.
   const SignUpActions({
+    required this.isSubmitting,
     required this.onLoginPressed,
     required this.onRegisterPressed,
     super.key,
   });
 
+  /// Indica si el registro esta siendo procesado.
+  final bool isSubmitting;
+
   /// Accion ejecutada al seleccionar el enlace de inicio de sesion.
   final VoidCallback onLoginPressed;
 
   /// Accion ejecutada al enviar el formulario de registro.
-  final VoidCallback onRegisterPressed;
+  final VoidCallback? onRegisterPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +39,8 @@ class SignUpActions extends StatelessWidget {
             ),
           ),
           onPressed: onRegisterPressed,
+          isLoading: isSubmitting,
+          loadingLabel: SignUpStrings.registeringButton,
         ),
         const SizedBox(height: AppSpacing.lg),
         Center(

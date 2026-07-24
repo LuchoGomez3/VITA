@@ -11,11 +11,20 @@ class AppUserMapper {
       email: _readString(json, 'email'),
       firstName: _readString(json, 'nombre'),
       lastName: _readString(json, 'apellido'),
+      cuit: _readNullableString(json, 'cuit'),
     );
   }
 
   static String _readString(Map<String, dynamic> json, String key) {
     final value = json[key];
     return value is String ? value : '';
+  }
+
+  static String? _readNullableString(
+    Map<String, dynamic> json,
+    String key,
+  ) {
+    final value = json[key];
+    return value is String ? value : null;
   }
 }
