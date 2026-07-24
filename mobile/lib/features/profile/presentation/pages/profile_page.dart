@@ -1,34 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/profile/domain/entities/establishment_details.dart';
+import 'package:frontend_mayoral/features/profile/presentation/bloc/profile_cubit.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
+import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_establishments_section.dart';
+import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_user_card.dart';
 import 'package:go_router/go_router.dart';
 
-/// Callback que cierra la sesion actual.
+/// Callback que cierra la sesión actual.
 typedef SignOut = Future<void> Function();
 
-/// Pantalla que muestra las credenciales del usuario y las acciones de cuenta.
+/// Factory que crea el Cubit responsable de los establecimientos de Perfil.
+typedef ProfileCubitFactory = ProfileCubit Function();
+
+/// Pantalla que muestra el usuario y sus establecimientos.
 class ProfilePage extends StatefulWidget {
-  /// Crea la pantalla con los datos de la sesion autenticada.
+  /// Crea la pantalla con los datos de la sesión autenticada.
   const ProfilePage({
-    required this.username,
+    required this.userId,
+    required this.email,
     required this.firstName,
     required this.lastName,
+    required this.cuit,
+    required this.role,
+    required this.createCubit,
     required this.signOut,
     super.key,
   });
 
-  /// Identificador utilizado por el usuario para iniciar sesion.
-  final String username;
+  /// ID interno del usuario.
+  final String userId;
 
-  /// Nombre del usuario autenticado.
+  /// Correo usado para iniciar sesión.
+  final String email;
+
+  /// Nombre del usuario.
   final String firstName;
 
-  /// Apellido del usuario autenticado.
+  /// Apellido del usuario.
   final String lastName;
 
-  /// Cierra la sesion autenticada.
+  /// CUIT opcional del usuario.
+  final String? cuit;
+
+  /// Rol persistido en la sesión.
+  final String role;
+
+  /// Crea el Cubit perteneciente a esta página.
+  final ProfileCubitFactory createCubit;
+
+  /// Cierra la sesión actual.
   final SignOut signOut;
 
   @override
@@ -40,63 +65,36 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const AppHeader(title: ProfileStrings.title),
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.lg,
-                0,
+    return BlocProvider<ProfileCubit>(
+      create: (_) => widget.createCubit()..load(),
+      child: Scaffold(
+        appBar: const AppHeader(title: ProfileStrings.title),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            children: [
+              ProfileUserCard(
+                userId: widget.userId,
+                email: widget.email,
+                firstName: widget.firstName,
+                lastName: widget.lastName,
+                cuit: widget.cuit,
+                role: widget.role,
               ),
-              sliver: SliverToBoxAdapter(
-                child: AppSurfaceCard(
-                  child: Column(
-                    children: [
-                      _CredentialRow(
-                        label: ProfileStrings.usernameLabel,
-                        value: widget.username,
-                        icon: Icons.person_outline,
-                      ),
-                      const Divider(),
-                      _CredentialRow(
-                        label: ProfileStrings.firstNameLabel,
-                        value: widget.firstName,
-                        icon: Icons.badge_outlined,
-                      ),
-                      const Divider(),
-                      _CredentialRow(
-                        label: ProfileStrings.lastNameLabel,
-                        value: widget.lastName,
-                        icon: Icons.badge_outlined,
-                      ),
-                    ],
-                  ),
-                ),
+              const SizedBox(height: AppSpacing.xl),
+              const _EstablishmentsContent(),
+              const SizedBox(height: AppSpacing.lg),
+              AppFilledButton(
+                label: ProfileStrings.signOutButton,
+                loadingLabel: ProfileStrings.signingOutButton,
+                isLoading: _isSigningOut,
+                icon: const Icon(Icons.logout),
+                backgroundColor: AppColors.error,
+                foregroundColor: AppColors.onError,
+                onPressed: _signOut,
               ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              sliver: SliverFillRemaining(
-                hasScrollBody: false,
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: AppFilledButton(
-                    label: ProfileStrings.signOutButton,
-                    loadingLabel: ProfileStrings.signingOutButton,
-                    isLoading: _isSigningOut,
-                    icon: const Icon(Icons.logout),
-                    backgroundColor: AppColors.error,
-                    foregroundColor: AppColors.onError,
-                    onPressed: _signOut,
-                  ),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -112,34 +110,27 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
-class _CredentialRow extends StatelessWidget {
-  const _CredentialRow({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
+class _EstablishmentsContent extends StatelessWidget {
+  const _EstablishmentsContent();
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: AppColors.primary),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: AppTypography.smallEmphasis),
-              const SizedBox(height: AppSpacing.xs),
-              Text(value, style: AppTypography.formFieldValue),
-            ],
-          ),
+    return BlocBuilder<ProfileCubit, ResultState<List<EstablishmentDetails>>>(
+      builder: (context, state) => switch (state) {
+        Data<List<EstablishmentDetails>>(:final data) =>
+          ProfileEstablishmentsSection(establishments: data),
+        ResultError<List<EstablishmentDetails>>(:final error) => Column(
+          children: [
+            Text(error.message),
+            const SizedBox(height: AppSpacing.sm),
+            AppOutlinedButton(
+              label: ProfileStrings.retry,
+              onPressed: context.read<ProfileCubit>().load,
+            ),
+          ],
         ),
-      ],
+        _ => const Center(child: CircularProgressIndicator()),
+      },
     );
   }
 }

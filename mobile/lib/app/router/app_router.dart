@@ -19,6 +19,7 @@ import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
+import 'package:frontend_mayoral/features/profile/profile_composition.dart';
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:go_router/go_router.dart';
@@ -99,15 +100,23 @@ class AppRouter {
 
                   return switch (sessionState) {
                     AuthSessionAuthenticated(:final session) => ProfilePage(
-                      username: session.user.email,
+                      userId: session.user.id,
+                      email: session.user.email,
                       firstName: session.user.firstName,
                       lastName: session.user.lastName,
+                      cuit: session.user.cuit,
+                      role: session.user.role.name,
+                      createCubit: createProfileCubit,
                       signOut: context.read<AuthSessionCubit>().signOut,
                     ),
                     _ => ProfilePage(
-                      username: ProfileStrings.emptyCredential,
+                      userId: ProfileStrings.emptyCredential,
+                      email: ProfileStrings.emptyCredential,
                       firstName: ProfileStrings.emptyCredential,
                       lastName: ProfileStrings.emptyCredential,
+                      cuit: null,
+                      role: 'unknown',
+                      createCubit: createProfileCubit,
                       signOut: context.read<AuthSessionCubit>().signOut,
                     ),
                   };
