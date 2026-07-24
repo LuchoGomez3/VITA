@@ -10,7 +10,9 @@ class GetHomeDashboardUseCase {
   final HomeDashboardRepository _repository;
 
   /// Solicita el calculo actualizado de los KPIs locales.
-  Future<Result<HomeDashboard>> call() {
-    return _repository.getDashboard();
+  Future<Result<HomeDashboard>> call({
+    Set<String>? establishmentIds,
+  }) {
+    return _repository.getDashboard(establishmentIds: establishmentIds);
   }
 }

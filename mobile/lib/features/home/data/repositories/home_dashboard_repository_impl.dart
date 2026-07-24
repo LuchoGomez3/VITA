@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
@@ -8,6 +9,7 @@ import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
 import 'package:frontend_mayoral/features/home/domain/repositories/home_dashboard_repository.dart';
 
@@ -18,21 +20,34 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     required AnimalBrickStore animalStore,
     required CategoriaBrickStore categoryStore,
     required PesajeBrickStore pesajeStore,
+    required SecureStorageService secureStorage,
     DateTime Function()? now,
   }) : _animalStore = animalStore,
        _categoryStore = categoryStore,
        _pesajeStore = pesajeStore,
+       _secureStorage = secureStorage,
        _now = now ?? DateTime.now;
 
   final AnimalBrickStore _animalStore;
   final CategoriaBrickStore _categoryStore;
   final PesajeBrickStore _pesajeStore;
+  final SecureStorageService _secureStorage;
   final DateTime Function() _now;
 
   @override
-  Future<Result<HomeDashboard>> getDashboard() async {
+  Future<Result<HomeDashboard>> getDashboard({
+    Set<String>? establishmentIds,
+  }) async {
     try {
-      final animals = await _animalStore.getLocalAnimals();
+      final storedAnimals = await _animalStore.getLocalAnimals();
+      final animals = establishmentIds == null
+          ? storedAnimals
+          : storedAnimals
+                .where(
+                  (animal) =>
+                      establishmentIds.contains(animal.establishmentId),
+                )
+                .toList();
       final weighings = await _pesajeStore.getLocalPesajes();
       final categories = await _getCategoriesForAnimals(animals);
       return Result.success(
@@ -42,6 +57,39 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
       return const Result.failure(
         DomainException(
           message: 'No se pudieron calcular los indicadores productivos.',
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Map<String, String>>> getEstablishments() async {
+    try {
+      final encoded = await _secureStorage.read(
+        SecureStorageKeys.establishmentCatalog,
+      );
+      if (encoded == null || encoded.isEmpty) {
+        return const Result.success({});
+      }
+
+      final decoded = jsonDecode(encoded);
+      if (decoded is! List) {
+        throw const FormatException('Invalid establishment catalog.');
+      }
+
+      final establishments = <String, String>{};
+      for (final item in decoded.whereType<Map<String, dynamic>>()) {
+        final id = item['id'];
+        final name = item['name'];
+        if (id is String && name is String) {
+          establishments[id] = name;
+        }
+      }
+      return Result.success(establishments);
+    } on Object {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudieron leer los establecimientos disponibles.',
         ),
       );
     }

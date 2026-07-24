@@ -33,7 +33,10 @@ class AuthLocalDataSource {
   }
 
   /// Elimina la sesion persistida durante logout o ante datos corruptos.
-  Future<void> clearSession() {
-    return _secureStorage.delete(SecureStorageKeys.authSession);
+  Future<void> clearSession() async {
+    await _secureStorage.delete(SecureStorageKeys.authSession);
+    // El catálogo pertenece a la sesión y no debe quedar visible para el
+    // siguiente usuario que inicie sesión en el mismo dispositivo.
+    await _secureStorage.delete(SecureStorageKeys.establishmentCatalog);
   }
 }

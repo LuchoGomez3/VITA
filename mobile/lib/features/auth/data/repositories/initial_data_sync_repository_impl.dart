@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -37,15 +38,22 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     final markerKey = SecureStorageKeys.initialDataSyncCompleted(userId);
 
     try {
+      final establishments =
+          await _establishmentRemoteDataSource.fetchEstablishments();
+      await _secureStorage.write(
+        key: SecureStorageKeys.establishmentCatalog,
+        value: jsonEncode(
+          establishments.map((establishment) => establishment.toJson()).toList(),
+        ),
+      );
       final completed = await _secureStorage.read(markerKey);
       if (completed == 'true') {
         return const Result.success(null);
       }
 
-      final establishmentIds =
-          await _establishmentRemoteDataSource.fetchEstablishmentIds();
-      _logInitialSyncStep('establishments=${establishmentIds.length}');
-      for (final establishmentId in establishmentIds) {
+      _logInitialSyncStep('establishments=${establishments.length}');
+      for (final establishment in establishments) {
+        final establishmentId = establishment.id;
         // El catalogo se cachea antes que los animales para que sus referencias
         // de categoria ya esten disponibles en los flujos offline.
         _logInitialSyncStep(

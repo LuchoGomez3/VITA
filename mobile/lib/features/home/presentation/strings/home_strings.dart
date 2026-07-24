@@ -3,6 +3,16 @@ abstract final class HomeStrings {
   /// Titulo del app bar.
   static const appTitle = 'Resumen productivo';
 
+  /// Opción que agrega los datos de todos los establecimientos.
+  static const allEstablishments = 'Todos los establecimientos';
+
+  /// Texto mostrado antes del establecimiento elegido.
+  static const establishmentPrefix = 'Resumen productivo de';
+
+  /// Indicación mostrada al abrir el selector.
+  static const establishmentSelectionPrompt =
+      'Seleccioná un establecimiento';
+
   /// Saludo utilizado durante la mañana.
   static const goodMorning = 'Buenos días';
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
@@ -6,6 +8,7 @@ import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/home/data/repositories/home_dashboard_repository_impl.dart';
 import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
 
@@ -50,6 +53,11 @@ void main() {
         _category(id: 'category-novillos', name: 'Novillos'),
       ]),
       pesajeStore: _FakePesajeStore(weighings),
+      secureStorage: _MemorySecureStorage({
+        SecureStorageKeys.establishmentCatalog: jsonEncode([
+          {'id': 'establishment-1', 'name': 'Campo Norte'},
+        ]),
+      }),
       now: () => DateTime(2026, 7, 22),
     );
 
@@ -68,6 +76,22 @@ void main() {
     expect(dashboard.categories.map((category) => category.name), ['Novillos', 'Terneros']);
     expect(dashboard.lots.single.averageWeightKg, 160.5);
     expect(dashboard.lots.single.weightStandardDeviationKg, 39.5);
+
+    final establishmentsResult = await repository.getEstablishments();
+    expect(establishmentsResult, isA<Success<Map<String, String>>>());
+    expect(
+      (establishmentsResult as Success<Map<String, String>>).data,
+      {'establishment-1': 'Campo Norte'},
+    );
+
+    final filteredResult = await repository.getDashboard(
+      establishmentIds: {'establishment-without-animals'},
+    );
+    expect(filteredResult, isA<Success<HomeDashboard>>());
+    expect(
+      (filteredResult as Success<HomeDashboard>).data.activeAnimals,
+      0,
+    );
   });
 }
 
@@ -193,5 +217,27 @@ class _FakeCategoryStore implements CategoriaBrickStore {
     BrickCategoriaModel categoria,
   ) {
     throw UnimplementedError();
+  }
+}
+
+class _MemorySecureStorage implements SecureStorageService {
+  _MemorySecureStorage(this.values);
+
+  final Map<String, String> values;
+
+  @override
+  Future<void> delete(String key) async {
+    values.remove(key);
+  }
+
+  @override
+  Future<String?> read(String key) async => values[key];
+
+  @override
+  Future<void> write({
+    required String key,
+    required String value,
+  }) async {
+    values[key] = value;
   }
 }

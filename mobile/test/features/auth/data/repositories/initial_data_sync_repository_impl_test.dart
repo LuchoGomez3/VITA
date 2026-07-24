@@ -47,8 +47,14 @@ void main() {
               return http.Response(
                 jsonEncode({
                   'data': [
-                    {'id': 'establishment-1'},
-                    {'id': 'establishment-2'},
+                    _establishmentJson(
+                      id: 'establishment-1',
+                      name: 'Campo Norte',
+                    ),
+                    _establishmentJson(
+                      id: 'establishment-2',
+                      name: 'Campo Sur',
+                    ),
                   ],
                 }),
                 200,
@@ -77,9 +83,32 @@ void main() {
           ),
           'true',
         );
+        expect(
+          await storage.read(SecureStorageKeys.establishmentCatalog),
+          contains('Campo Norte'),
+        );
       },
     );
   });
+}
+
+Map<String, Object?> _establishmentJson({
+  required String id,
+  required String name,
+}) {
+  return {
+    'id': id,
+    'owner_id': 'owner-1',
+    'nombre': name,
+    'nro_renspa': 'RENSPA-$id',
+    'cuit': '20-12345678-9',
+    'superficie_ha': '125.5',
+    'provincia': 'Córdoba',
+    'departamento': 'Río Cuarto',
+    'localidad': 'Río Cuarto',
+    'created_at': '2026-01-01T00:00:00Z',
+    'updated_at': '2026-07-01T00:00:00Z',
+  };
 }
 
 class _FakeAnimalStore implements AnimalBrickStore {
