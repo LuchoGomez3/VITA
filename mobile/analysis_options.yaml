@@ -7,6 +7,7 @@ analyzer:
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
+    - "lib/brick/db/*.migration.dart"
     - "tool/"
     - "scripts/"
   
@@ -17,4 +18,3 @@ linter:
   rules:
     lines_longer_than_80_chars: false
     one_member_abstracts: false
-

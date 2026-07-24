@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
@@ -12,7 +13,6 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/rep
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step2_validation.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step3_format.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
 
 /// SENASA report flow connected to the backend.
 class SenasaReportPage extends StatelessWidget {
@@ -75,9 +75,7 @@ class _SenasaReportViewState extends State<_SenasaReportView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<SenasaReportCubit, SenasaReportState>(
-      listenWhen: (previous, current) => previous.generation != current.generation,
-      listener: _onStateChanged,
+    return BlocBuilder<SenasaReportCubit, SenasaReportState>(
       builder: (context, state) => Scaffold(
         appBar: AppHeader(
           title: SenasaStrings.pageTitle,
@@ -188,9 +186,7 @@ class _SenasaReportViewState extends State<_SenasaReportView> {
         child: AppFilledButton(
           label: label,
           icon: Icon(_currentStep == 3 ? Icons.download : Icons.arrow_forward),
-          onPressed:
-              state.generation is Loading<GeneratedSenasaReport> ||
-                  (_currentStep == 1 && state.establishments is! Data<List<SenasaEstablishment>>)
+          onPressed: _currentStep == 1 && state.establishments is! Data<List<SenasaEstablishment>>
               ? null
               : _handleBottomButtonPressed,
         ),
@@ -210,57 +206,19 @@ class _SenasaReportViewState extends State<_SenasaReportView> {
 
     final isValid = _stepThreeFormKey.currentState?.validate() ?? false;
     if (isValid && _selectedOrigin != null) {
-      context.read<SenasaReportCubit>().generate(
-        SenasaReportRequest(
+      context.push(
+        AppRoutes.senasaReportGeneration,
+        extra: SenasaReportRequest(
           establishmentId: _selectedOrigin!,
           format: _selectedFormat.toLowerCase(),
-          from: DateTime(
-            _startDate.year,
-            _startDate.month,
-            _startDate.day,
-          ),
-          to: DateTime(
-            _endDate.year,
-            _endDate.month,
-            _endDate.day,
-            23,
-            59,
-            59,
-          ),
+          from: DateTime(_startDate.year, _startDate.month, _startDate.day),
+          to: DateTime(_endDate.year, _endDate.month, _endDate.day, 23, 59, 59),
           eventType: SenasaStrings.eventTypeApiValues[_selectedMovement] ?? _selectedMovement.toLowerCase(),
           responsibleName: _responsibleNameController.text.trim(),
           responsibleDni: _responsibleDniController.text.trim(),
         ),
       );
     }
-  }
-
-  Future<void> _onStateChanged(
-    BuildContext context,
-    SenasaReportState state,
-  ) async {
-    await state.generation.whenOrNull(
-      data: (report) async {
-        await SharePlus.instance.share(
-          ShareParams(
-            files: [
-              XFile.fromData(
-                report.bytes,
-                mimeType: report.mediaType,
-                name: report.filename,
-              ),
-            ],
-            fileNameOverrides: [report.filename],
-          ),
-        );
-      },
-      error: (error) async {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message)),
-        );
-      },
-    );
   }
 }
 

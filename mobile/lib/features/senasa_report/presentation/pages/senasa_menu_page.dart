@@ -1,26 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
-
-//widgets
-//import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/step_progress_header.dart';
-//Pasos
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step1_filters.dart';
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step2_validation.dart';
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step3_format.dart';
-
-//Strings
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
+import 'package:go_router/go_router.dart';
 
 class _RecentDocument {
-  final String title;
-  final String date;
-  final String format;
-  final String status;
-  final IconData icon;
-
   const _RecentDocument({
     required this.title,
     required this.date,
@@ -28,15 +13,21 @@ class _RecentDocument {
     required this.status,
     required this.icon,
   });
+  final String title;
+  final String date;
+  final String format;
+  final String status;
+  final IconData icon;
 }
 
+/// Menu page for recent SENASA documents and report generation entry point.
 class SenasaMenuPage extends StatelessWidget {
+  /// Crea la pantalla de acceso a reportes SENASA.
   const SenasaMenuPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Mocks del historial
-    final List<_RecentDocument> recentDocuments = [
+    final recentDocuments = <_RecentDocument>[
       const _RecentDocument(
         title: 'TRI - Ingreso de Animales',
         date: 'Hoy, 14:32',
@@ -54,7 +45,7 @@ class SenasaMenuPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppHeader(
+      appBar: const AppHeader(
         title: SenasaStrings.menuPageTitle,
       ),
       body: SafeArea(
@@ -109,7 +100,6 @@ class SenasaMenuPage extends StatelessWidget {
                 },
               ),
             ),
-            // --- BOTÓN DIRECTO ---
             Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: SizedBox(
@@ -117,10 +107,7 @@ class SenasaMenuPage extends StatelessWidget {
                 child: AppFilledButton(
                   label: 'Generar nuevo archivo',
                   icon: const Icon(Icons.add_circle_outline),
-                  onPressed: () {
-                    // Navegamos directo a la configuración de parámetros sin parámetros extra
-                    context.push(AppRoutes.senasaReport);
-                  },
+                  onPressed: () => context.push(AppRoutes.senasaReport),
                 ),
               ),
             ),

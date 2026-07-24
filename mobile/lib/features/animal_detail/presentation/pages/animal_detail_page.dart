@@ -1,13 +1,16 @@
+import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
-import 'package:flutter/material.dart';
 
+/// Page that shows the detail for a registered animal.
 class AnimalDetailPage extends StatelessWidget {
+  /// Creates the animal detail page for [animalId].
   const AnimalDetailPage({
     required this.animalId,
     super.key,
   });
 
+  /// Animal identifier used by the detail page.
   final String animalId;
 
   @override

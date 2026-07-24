@@ -37,17 +37,19 @@ class AppColors {
   /// Texto de ayuda o placeholder en campos de formulario.
   static const textHint = Color(0xFF9E8B84);
 
+  /// Color usado para estados de error.
+  static const error = Color(0xFFB3261E);
+
   /// Borde neutro para inputs, cards y divisores suaves.
   static const border = Color(0xFFE1D3CF);
 
-  /// Borde de chips
+  /// Borde de chips.
   static const chipBorder = Color(0xFFE0E0E0);
 
-
-  /// Validacion de datos
-  /// Positivo
-  /// Fondo contenedor de validacion positiva
+  /// Borde para contenedores de validacion positiva.
   static const borderPositiveContainer = Color(0xFF80CBC4);
+
+  /// Fondo para contenedores de validacion positiva.
   static const backgroundPositiveContainer = Color(0xFFE0F2F1);
 
   /// Color icono check
@@ -82,7 +84,7 @@ class AppColors {
     onPrimary: onPrimary,
     secondary: textSecondary,
     onSecondary: onPrimary,
-    error: Color(0xFFB3261E),
+    error: error,
     onError: onPrimary,
     surface: surface,
     onSurface: textPrimary,

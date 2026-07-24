@@ -1,3 +1,4 @@
+/// Border width tokens shared by reusable UI components.
 class AppBorders {
   const AppBorders._();
 

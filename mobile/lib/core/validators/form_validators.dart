@@ -1,4 +1,9 @@
+/// Shared validators for form fields.
 class FormValidators {
+  /// Prevents creating validator instances.
+  const FormValidators._();
+
+  /// Validates that the field has a non-empty value.
   static String? requiredField(
     String? value, {
     String message = 'Este campo es obligatorio.',
@@ -10,6 +15,7 @@ class FormValidators {
     return null;
   }
 
+  /// Validates numeric input while allowing empty optional values.
   static String? numeric(
     String? value, {
     String message = 'Debe ser un valor numérico.',
@@ -20,6 +26,4 @@ class FormValidators {
 
     return num.tryParse(value.trim()) == null ? message : null;
   }
-
-  const FormValidators._();
 }

@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
-import 'package:frontend_mayoral/core/widgets/widgets.dart'; // Acá debería estar exportado AppDateFormField
-
-//Strings
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 
+/// Selector de rango temporal usado para parametrizar reportes SENASA.
 class DateRangeSelector extends StatelessWidget {
-  final DateTime startDate;
-  final DateTime endDate;
-  final Function(DateTime newStart, DateTime newEnd) onDatesChanged;
-
+  /// Crea el selector con fechas iniciales y callback de cambio.
   const DateRangeSelector({
-    super.key,
     required this.startDate,
     required this.endDate,
     required this.onDatesChanged,
+    super.key,
   });
 
-  // --- Atajos visuales de diseño ---
+  /// Fecha inicial seleccionada.
+  final DateTime startDate;
+
+  /// Fecha final seleccionada.
+  final DateTime endDate;
+
+  /// Notifica el nuevo rango cuando cambia cualquiera de las fechas.
+  final void Function(DateTime newStart, DateTime newEnd) onDatesChanged;
+
   Widget _buildDateShortcutChip(BuildContext context, String label, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
@@ -25,8 +29,8 @@ class DateRangeSelector extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.06),
-          border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+          color: AppColors.primary.withValues(alpha: 0.06),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         child: Text(
@@ -51,11 +55,10 @@ class DateRangeSelector extends StatelessWidget {
         ),
         AppSurfaceCard(
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xxxs), // Ajustado según tu diseño
+            padding: const EdgeInsets.all(AppSpacing.xxxs),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Atajos temporales
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
@@ -75,7 +78,7 @@ class DateRangeSelector extends StatelessWidget {
                       const SizedBox(width: 8),
                       _buildDateShortcutChip(context, SenasaStrings.dateSelectorCurrentMonth, () {
                         final now = DateTime.now();
-                        onDatesChanged(DateTime(now.year, now.month, 1), now);
+                        onDatesChanged(DateTime(now.year, now.month), now);
                       }),
                     ],
                   ),
@@ -88,12 +91,11 @@ class DateRangeSelector extends StatelessWidget {
                   children: [
                     Expanded(
                       child: AppDateFormField(
-                        title: 'Desde', // O reemplazalo por un string de SenasaStrings
+                        title: 'Desde',
                         hintText: 'Fecha',
                         value: startDate,
                         onChanged: (newStart) {
-                          DateTime finalEnd = endDate;
-                          // Validación cruzada: Si "Desde" es mayor que "Hasta", igualamos "Hasta"
+                          var finalEnd = endDate;
                           if (newStart.isAfter(finalEnd)) finalEnd = newStart;
                           onDatesChanged(newStart, finalEnd);
                         },
@@ -102,12 +104,11 @@ class DateRangeSelector extends StatelessWidget {
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: AppDateFormField(
-                        title: 'Hasta', // O reemplazalo por un string de SenasaStrings
+                        title: 'Hasta',
                         hintText: 'Fecha',
                         value: endDate,
                         onChanged: (newEnd) {
-                          DateTime finalStart = startDate;
-                          // Validación cruzada: Si "Hasta" es menor que "Desde", igualamos "Desde"
+                          var finalStart = startDate;
                           if (newEnd.isBefore(finalStart)) finalStart = newEnd;
                           onDatesChanged(finalStart, newEnd);
                         },

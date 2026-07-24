@@ -50,7 +50,7 @@ class AnimalRegistrationMockContext implements AnimalRegistrationContext {
   String resolveLotId(String destinationSelectionId) {
     final lotId = _destinationLotIdsBySelection[destinationSelectionId];
     if (lotId == null) {
-      throw DomainException(
+      throw const DomainException(
         message: 'Seleccioná un destino válido antes de guardar.',
         code: DomainErrorCode.validation,
       );
@@ -67,7 +67,7 @@ class AnimalRegistrationMockContext implements AnimalRegistrationContext {
       return _defaultLotName;
     }
 
-    throw DomainException(
+    throw const DomainException(
       message: 'No se pudo resolver el nombre del destino seleccionado.',
       code: DomainErrorCode.validation,
     );
@@ -78,7 +78,7 @@ class AnimalRegistrationMockContext implements AnimalRegistrationContext {
   String resolveCategoryId(String categoryName) {
     final categoryId = _categoryIdsByName[categoryName];
     if (categoryId == null) {
-      throw DomainException(
+      throw const DomainException(
         message: 'La categoría seleccionada no está disponible.',
         code: DomainErrorCode.validation,
       );

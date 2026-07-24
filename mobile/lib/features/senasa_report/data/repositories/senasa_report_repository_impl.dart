@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/exceptions/senasa_report_exception.dart';
@@ -11,29 +12,30 @@ class SenasaReportRepositoryImpl implements SenasaReportRepository {
   /// Creates the repository.
   SenasaReportRepositoryImpl({
     required String baseUrl,
-    required String accessToken,
+    required BackendAccessTokenProvider tokenProvider,
     http.Client? client,
   }) : _baseUrl = baseUrl.replaceFirst(RegExp(r'/$'), ''),
-       _accessToken = accessToken,
+       _tokenProvider = tokenProvider,
        _client = client ?? http.Client();
 
   final String _baseUrl;
-  final String _accessToken;
+  final BackendAccessTokenProvider _tokenProvider;
   final http.Client _client;
 
-  Map<String, String> get _headers {
-    if (_accessToken.isEmpty) {
+  Future<Map<String, String>> _headers() async {
+    final accessToken = await _tokenProvider.getAccessToken();
+    if (accessToken == null || accessToken.isEmpty) {
       throw const SenasaReportException(
         message: 'No hay una sesión autenticada para consultar SENASA.',
         code: DomainErrorCode.unauthorized,
       );
     }
-    return {'Authorization': 'Bearer $_accessToken'};
+    return {'Authorization': 'Bearer $accessToken'};
   }
 
   @override
   Future<List<SenasaEstablishment>> getEstablishments() async {
-    final response = await _get(Uri.parse('$_baseUrl/v1/establecimientos'));
+    final response = await _get(Uri.parse('$_baseUrl/api/v1/establecimientos'));
     final payload = _decodeJson(response);
     final data = payload['data'];
     if (data is! List<Object?>) {
@@ -46,7 +48,7 @@ class SenasaReportRepositoryImpl implements SenasaReportRepository {
   Future<GeneratedSenasaReport> generateReport(
     SenasaReportRequest request,
   ) async {
-    final uri = Uri.parse('$_baseUrl/v1/reportes/senasa').replace(
+    final uri = Uri.parse('$_baseUrl/api/v1/reportes/senasa').replace(
       queryParameters: {
         'establecimiento_id': request.establishmentId,
         'formato': request.format,
@@ -69,7 +71,7 @@ class SenasaReportRepositoryImpl implements SenasaReportRepository {
 
   Future<http.Response> _get(Uri uri) async {
     try {
-      final response = await _client.get(uri, headers: _headers);
+      final response = await _client.get(uri, headers: await _headers());
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return response;
       }

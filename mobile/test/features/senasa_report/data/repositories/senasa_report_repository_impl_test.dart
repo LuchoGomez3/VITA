@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/features/senasa_report/data/repositories/senasa_report_repository_impl.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/exceptions/senasa_report_exception.dart';
@@ -116,7 +117,16 @@ void main() {
 SenasaReportRepositoryImpl _repository(http.Client client) {
   return SenasaReportRepositoryImpl(
     baseUrl: 'http://localhost:8000/api',
-    accessToken: 'test-token',
+    tokenProvider: const _FakeTokenProvider('test-token'),
     client: client,
   );
+}
+
+class _FakeTokenProvider implements BackendAccessTokenProvider {
+  const _FakeTokenProvider(this.token);
+
+  final String token;
+
+  @override
+  Future<String?> getAccessToken() async => token;
 }
