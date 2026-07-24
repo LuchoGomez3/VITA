@@ -43,6 +43,7 @@ class HomeCategoryMetricsCard extends StatelessWidget {
                 value: category.percentage,
                 minHeight: AppSpacing.xxs,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
+                backgroundColor: AppColors.background,
               ),
               const SizedBox(height: AppSpacing.md),
             ],

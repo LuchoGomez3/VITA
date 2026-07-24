@@ -92,8 +92,21 @@ class BrickAnimalStore implements AnimalBrickStore {
   }
 
   @override
-  Future<List<BrickAnimalModel>> getLocalAnimals() {
-    return _repository.getLocal<BrickAnimalModel>();
+  Future<List<BrickAnimalModel>> getLocalAnimals() async {
+    final storedAnimals = await _repository.getLocal<BrickAnimalModel>();
+    final animalsById = <String, BrickAnimalModel>{};
+
+    // Las versiones antiguas del pull podian insertar varias filas con el mismo
+    // UUID. Se expone una sola version por animal para reparar esas instalaciones
+    // sin borrar altas offline que todavia esten pendientes.
+    for (final animal in storedAnimals) {
+      final current = animalsById[animal.localId];
+      animalsById[animal.localId] = current == null
+          ? animal
+          : _preferredAnimal(current, animal);
+    }
+
+    return animalsById.values.toList();
   }
 
   @override
@@ -113,10 +126,14 @@ class BrickAnimalStore implements AnimalBrickStore {
       ),
     );
     final localAnimals = await _repository.getLocal<BrickAnimalModel>();
+    final localAnimalsById = {
+      for (final animal in localAnimals) animal.localId: animal,
+    };
     final protectedLocalIds = localAnimals
         .where(
           (animal) =>
-              animal.syncStatus == BrickAnimalSyncStatus.pending || animal.syncStatus == BrickAnimalSyncStatus.rejected,
+              animal.syncStatus == BrickAnimalSyncStatus.pending ||
+              animal.syncStatus == BrickAnimalSyncStatus.rejected,
         )
         .map((animal) => animal.localId)
         .toSet();
@@ -126,13 +143,26 @@ class BrickAnimalStore implements AnimalBrickStore {
         continue;
       }
 
-      await _repository.upsertLocal<BrickAnimalModel>(
-        animal.copyWith(
-          syncStatus: BrickAnimalSyncStatus.synchronized,
-          syncErrorCode: null,
-        ),
-      );
+      final synchronizedAnimal = animal.copyWith(
+        syncStatus: BrickAnimalSyncStatus.synchronized,
+        syncErrorCode: null,
+      )..primaryKey = localAnimalsById[animal.localId]?.primaryKey;
+      await _repository.upsertLocal<BrickAnimalModel>(synchronizedAnimal);
     }
+  }
+
+  BrickAnimalModel _preferredAnimal(
+    BrickAnimalModel current,
+    BrickAnimalModel candidate,
+  ) {
+    if (current.syncStatus != BrickAnimalSyncStatus.synchronized) {
+      return current;
+    }
+    if (candidate.syncStatus != BrickAnimalSyncStatus.synchronized) {
+      return candidate;
+    }
+
+    return candidate.updatedAt.isAfter(current.updatedAt) ? candidate : current;
   }
 
   /// Aplica la respuesta del backend al registro local.

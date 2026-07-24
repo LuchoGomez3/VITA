@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -16,13 +18,19 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     required SecureStorageService secureStorage,
     required EstablishmentRemoteDataSource establishmentRemoteDataSource,
     required AnimalBrickStore animalStore,
+    required CategoriaBrickStore categoryStore,
+    required PesajeBrickStore weighingStore,
   }) : _secureStorage = secureStorage,
        _establishmentRemoteDataSource = establishmentRemoteDataSource,
-       _animalStore = animalStore;
+       _animalStore = animalStore,
+       _categoryStore = categoryStore,
+       _weighingStore = weighingStore;
 
   final SecureStorageService _secureStorage;
   final EstablishmentRemoteDataSource _establishmentRemoteDataSource;
   final AnimalBrickStore _animalStore;
+  final CategoriaBrickStore _categoryStore;
+  final PesajeBrickStore _weighingStore;
 
   @override
   Future<Result<void>> syncForUser(String userId) async {
@@ -34,11 +42,24 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
         return const Result.success(null);
       }
 
-      final establishmentIds = await _establishmentRemoteDataSource.fetchEstablishmentIds();
+      final establishmentIds =
+          await _establishmentRemoteDataSource.fetchEstablishmentIds();
       _logInitialSyncStep('establishments=${establishmentIds.length}');
       for (final establishmentId in establishmentIds) {
-        _logInitialSyncStep('pulling animals for establishment=$establishmentId');
+        // El catalogo se cachea antes que los animales para que sus referencias
+        // de categoria ya esten disponibles en los flujos offline.
+        _logInitialSyncStep(
+          'pulling categories for establishment=$establishmentId',
+        );
+        await _categoryStore.pullRemoteCategorias(establishmentId);
+        _logInitialSyncStep(
+          'pulling animals for establishment=$establishmentId',
+        );
         await _animalStore.pullRemoteAnimals(establishmentId);
+        _logInitialSyncStep(
+          'pulling weighings for establishment=$establishmentId',
+        );
+        await _weighingStore.pullRemotePesajes(establishmentId);
       }
       await _secureStorage.write(key: markerKey, value: 'true');
 
@@ -46,7 +67,8 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     } on SocketException {
       return const Result.failure(
         DomainException(
-          message: 'No se pudieron preparar los datos offline por falta de conexion.',
+          message:
+              'No se pudieron preparar los datos offline por falta de conexion.',
           code: DomainErrorCode.offline,
         ),
       );

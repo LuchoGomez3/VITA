@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/models/categoria.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -14,13 +16,16 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
   /// Crea el repositorio con los stores offline-first necesarios.
   HomeDashboardRepositoryImpl({
     required AnimalBrickStore animalStore,
+    required CategoriaBrickStore categoryStore,
     required PesajeBrickStore pesajeStore,
     DateTime Function()? now,
   }) : _animalStore = animalStore,
+       _categoryStore = categoryStore,
        _pesajeStore = pesajeStore,
        _now = now ?? DateTime.now;
 
   final AnimalBrickStore _animalStore;
+  final CategoriaBrickStore _categoryStore;
   final PesajeBrickStore _pesajeStore;
   final DateTime Function() _now;
 
@@ -29,7 +34,10 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     try {
       final animals = await _animalStore.getLocalAnimals();
       final weighings = await _pesajeStore.getLocalPesajes();
-      return Result.success(_calculateDashboard(animals, weighings));
+      final categories = await _getCategoriesForAnimals(animals);
+      return Result.success(
+        _calculateDashboard(animals, weighings, categories),
+      );
     } on Object {
       return const Result.failure(
         DomainException(
@@ -42,6 +50,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
   HomeDashboard _calculateDashboard(
     List<BrickAnimalModel> animals,
     List<BrickPesajeModel> weighings,
+    List<BrickCategoriaModel> categories,
   ) {
     // El tablero trabaja únicamente con animales vigentes. Las altas y bajas
     // mensuales sí se calculan sobre el historial completo para no perder los
@@ -74,7 +83,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
       animalsWithCurrentWeight: currentWeights.length,
       averageDailyGainKg: dailyGains.isEmpty ? null : dailyGains.reduce((a, b) => a + b) / dailyGains.length,
       animalsWithDailyGain: dailyGains.length,
-      categories: _categoryMetrics(activeAnimals),
+      categories: _categoryMetrics(activeAnimals, categories),
       lots: _lotMetrics(activeAnimals, currentWeights),
     );
   }
@@ -138,10 +147,14 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
 
   List<CategoryInventoryMetric> _categoryMetrics(
     List<BrickAnimalModel> animals,
+    List<BrickCategoriaModel> categories,
   ) {
+    final categoryNamesById = {
+      for (final category in categories) category.localId: category.name,
+    };
     final counts = <String, int>{};
     for (final animal in animals) {
-      final name = animal.categoryName.trim().isEmpty ? 'Sin categoría' : animal.categoryName.trim();
+      final name = _categoryName(animal, categoryNamesById);
       counts.update(name, (count) => count + 1, ifAbsent: () => 1);
     }
 
@@ -160,6 +173,32 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
             return countComparison != 0 ? countComparison : a.name.compareTo(b.name);
           });
     return metrics;
+  }
+
+  Future<List<BrickCategoriaModel>> _getCategoriesForAnimals(
+    List<BrickAnimalModel> animals,
+  ) async {
+    final establishmentIds = animals
+        .map((animal) => animal.establishmentId)
+        .toSet();
+    final categoriesByEstablishment = await Future.wait(
+      establishmentIds.map(_categoryStore.getLocalCategorias),
+    );
+
+    return categoriesByEstablishment.expand((categories) => categories).toList();
+  }
+
+  String _categoryName(
+    BrickAnimalModel animal,
+    Map<String, String> categoryNamesById,
+  ) {
+    final storedName = categoryNamesById[animal.categoryId]?.trim();
+    if (storedName != null && storedName.isNotEmpty) {
+      return storedName;
+    }
+
+    final localName = animal.categoryName.trim();
+    return localName.isEmpty ? 'Sin categoría' : localName;
   }
 
   List<LotWeightMetric> _lotMetrics(

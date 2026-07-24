@@ -11,6 +11,8 @@ class SecureStorageKeys {
 
   /// Marker local que evita repetir el bootstrap offline por usuario.
   static String initialDataSyncCompleted(String userId) {
-    return 'initial_data_sync_completed_v1_$userId';
+    // La version 3 incorpora categorias y pesajes. Cambiar la version obliga a
+    // ejecutar una vez el nuevo bootstrap en instalaciones existentes.
+    return 'initial_data_sync_completed_v3_$userId';
   }
 }

@@ -112,7 +112,8 @@ class BrickPesajeStore implements PesajeBrickStore {
     final protectedLocalIds = localPesajes
         .where(
           (pesaje) =>
-              pesaje.syncStatus == BrickPesajeSyncStatus.pending || pesaje.syncStatus == BrickPesajeSyncStatus.rejected,
+              pesaje.syncStatus == BrickPesajeSyncStatus.pending ||
+              pesaje.syncStatus == BrickPesajeSyncStatus.rejected,
         )
         .map((pesaje) => pesaje.localId)
         .toSet();
@@ -166,7 +167,15 @@ class BrickPesajeStore implements PesajeBrickStore {
   @override
   Future<List<BrickPesajeModel>> getLocalPesajes() async {
     final pesajes = await _repository.getLocal<BrickPesajeModel>();
-    return pesajes.where((pesaje) => pesaje.deletedAt == null).toList();
+    final pesajesById = <String, BrickPesajeModel>{};
+
+    // Se deduplica por UUID para sanear filas creadas por pulls anteriores que
+    // no reconciliaban contra la clave primaria local.
+    for (final pesaje in pesajes.where((item) => item.deletedAt == null)) {
+      pesajesById[pesaje.localId] = pesaje;
+    }
+
+    return pesajesById.values.toList();
   }
 
   /// Aplica la respuesta del backend al pesaje local.

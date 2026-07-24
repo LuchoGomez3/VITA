@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/models/categoria.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/home/data/repositories/home_dashboard_repository_impl.dart';
@@ -16,21 +18,21 @@ void main() {
         initialWeight: 100,
         weighingDate: DateTime(2026, 7),
         createdAt: DateTime(2026, 7, 2),
-        categoryName: 'Terneros',
+        categoryId: 'category-terneros',
       ),
       _animal(
         id: 'animal-2',
         initialWeight: 200,
         weighingDate: DateTime(2026, 6),
         createdAt: DateTime(2026, 6),
-        categoryName: 'Novillos',
+        categoryId: 'category-novillos',
       ),
       _animal(
         id: 'animal-3',
         initialWeight: 180,
         weighingDate: DateTime(2026, 5),
         createdAt: DateTime(2026, 5),
-        categoryName: 'Novillos',
+        categoryId: 'category-novillos',
         deletedAt: DateTime(2026, 7, 10),
       ),
     ];
@@ -43,6 +45,10 @@ void main() {
     ];
     final repository = HomeDashboardRepositoryImpl(
       animalStore: _FakeAnimalStore(animals),
+      categoryStore: _FakeCategoryStore([
+        _category(id: 'category-terneros', name: 'Terneros'),
+        _category(id: 'category-novillos', name: 'Novillos'),
+      ]),
       pesajeStore: _FakePesajeStore(weighings),
       now: () => DateTime(2026, 7, 22),
     );
@@ -70,7 +76,7 @@ BrickAnimalModel _animal({
   required double initialWeight,
   required DateTime weighingDate,
   required DateTime createdAt,
-  required String categoryName,
+  required String categoryId,
   DateTime? deletedAt,
 }) {
   return BrickAnimalModel(
@@ -80,8 +86,7 @@ BrickAnimalModel _animal({
     sex: BrickAnimalSex.male,
     breed: 'Angus',
     birthDate: DateTime(2025),
-    categoryId: 'category-$categoryName',
-    categoryName: categoryName,
+    categoryId: categoryId,
     lotId: 'lot-1',
     lotName: 'Norte',
     establishmentId: 'establishment-1',
@@ -91,6 +96,19 @@ BrickAnimalModel _animal({
     createdAt: createdAt,
     updatedAt: createdAt,
     deletedAt: deletedAt,
+  );
+}
+
+BrickCategoriaModel _category({
+  required String id,
+  required String name,
+}) {
+  return BrickCategoriaModel(
+    localId: id,
+    name: name,
+    createdAt: DateTime(2026),
+    updatedAt: DateTime(2026),
+    syncStatus: BrickCategoriaSyncStatus.synchronized,
   );
 }
 
@@ -151,4 +169,29 @@ class _FakePesajeStore implements PesajeBrickStore {
 
   @override
   Future<BrickPesajeModel> upsertPesaje(BrickPesajeModel pesaje) => throw UnimplementedError();
+}
+
+class _FakeCategoryStore implements CategoriaBrickStore {
+  const _FakeCategoryStore(this.categories);
+
+  final List<BrickCategoriaModel> categories;
+
+  @override
+  Future<List<BrickCategoriaModel>> getLocalCategorias(
+    String establishmentId,
+  ) async {
+    return categories;
+  }
+
+  @override
+  Future<void> pullRemoteCategorias(String establishmentId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<BrickCategoriaModel> upsertCategoria(
+    BrickCategoriaModel categoria,
+  ) {
+    throw UnimplementedError();
+  }
 }
