@@ -18,7 +18,7 @@
       "cwd": ".",
       "program": "lib/main.dart",
       "toolArgs": [
-        "--dart-define=VITA_BACKEND_BASE_URL=http://192.168.0.222:8000"
+        "--dart-define=VITA_BACKEND_BASE_URL=http://192.168.0.53:8000"
       ]
     },
     {
@@ -47,7 +47,7 @@
       "id": "vitaBackendBaseUrl",
       "type": "promptString",
       "description": "URL base del backend VITA",
-      "default": "http://192.168.0.222:8000"
+      "default": "http://192.168.0.53:8000"
     }
   ]
 }
