@@ -6,8 +6,7 @@ class WelcomeStrings {
   static const title = 'Mayoral';
 
   /// Subtitulo de la pantalla de bienvenida.
-  static const subtitle =
-      'Trazabilidad ganadera para productores de Córdoba. Funciona también sin señal en el campo.';
+  static const subtitle = 'Trazabilidad ganadera para productores de Córdoba. Funciona también sin señal en el campo.';
 
   /// Texto del boton que inicia el proceso de alta manual.
   static const createAccountButton = 'Crear cuenta';
@@ -27,20 +26,13 @@ class SignUpStrings {
   static const introTitle = 'Bienvenido al campo';
 
   /// Texto introductorio que resume los datos necesarios para registrarse.
-  static const introSubtitle =
-      'Sólo necesitás tu CUIT y un correo. Después configurás tu primer establecimiento.';
+  static const introSubtitle = 'Sólo necesitás tu CUIT y un correo. Después configurás tu primer establecimiento.';
 
   /// Label del campo de nombre del usuario.
   static const firstNameLabel = 'Nombre';
 
-  /// Nombre de ejemplo precargado mientras el alta permanece mockeada.
-  static const firstNameMockValue = 'Juan';
-
   /// Label del campo de apellido del usuario.
   static const lastNameLabel = 'Apellido';
-
-  /// Apellido de ejemplo precargado mientras el alta permanece mockeada.
-  static const lastNameMockValue = 'Pérez';
 
   /// Label del campo de CUIT o CUIL.
   static const cuitLabel = 'CUIT / CUIL ';
@@ -57,9 +49,29 @@ class SignUpStrings {
   /// Hint corto que indica la longitud minima de la contrasena.
   static const passwordHint = 'Mínimo 8 caracteres';
 
-  /// Texto de ayuda con los requisitos completos de la contrasena.
-  static const passwordRequirements =
-      'Te pedimos al menos 8 caracteres, con un número o una mayúscula.';
+  /// Requisito de longitud minima de la contrasena.
+  static const passwordLengthRequirement = 'Al menos 8 caracteres';
+
+  /// Requisito de mayuscula de la contrasena.
+  static const passwordUppercaseRequirement = 'Al menos una mayúscula';
+
+  /// Requisito numerico de la contrasena.
+  static const passwordNumberRequirement = 'Al menos un número';
+
+  /// Etiqueta que acompana el nivel calculado de la contrasena.
+  static const passwordStrengthLabel = 'Fortaleza';
+
+  /// Nivel debil de fortaleza de contrasena.
+  static const passwordStrengthWeak = 'Débil';
+
+  /// Nivel normal de fortaleza de contrasena.
+  static const passwordStrengthNormal = 'Normal';
+
+  /// Nivel fuerte de fortaleza de contrasena.
+  static const passwordStrengthStrong = 'Fuerte';
+
+  /// Nivel maximo de fortaleza de contrasena.
+  static const passwordStrengthVeryStrong = 'Muy fuerte';
 
   /// Hint del campo de correo electronico.
   static const emailHint = 'tu@correo.com';
@@ -67,40 +79,20 @@ class SignUpStrings {
   /// Hint vacio usado cuando un campo no debe mostrar placeholder.
   static const emptyInputHint = '';
 
-  /// Valor de ejemplo para el campo de CUIT en la maqueta.
-  static const cuitMockValue = '20-34567890-2';
+  /// Mensaje mostrado cuando el CUIT/CUIL tiene sus 11 digitos.
+  static const cuitValidFormatMessage = 'Formato de CUIT/CUIL válido.';
 
-  /// Valor de ejemplo para el campo de correo en la maqueta.
-  static const emailMockValue = 'juan@campo.com';
+  /// Mensaje mostrado mientras faltan digitos del CUIT/CUIL.
+  static const cuitIncompleteMessage = 'Ingresá los 11 dígitos del CUIT/CUIL.';
 
-  /// Mensaje de validacion positiva del digito verificador del CUIT.
-  static const cuitValidMessage = 'Dígito verificador correcto.';
+  /// Mensaje mostrado cuando el digito verificador no coincide.
+  static const cuitInvalidCheckDigitMessage = 'CUIT/CUIL invalido';
 
-  /// Mensaje de validacion negativa del digito verificador del CUIT.
-  static const cuitInvalidMessage = 'Revisá el dígito verificador.';
+  /// Mensaje mostrado cuando el correo cumple el formato esperado.
+  static const emailValidFormatMessage = 'Formato de correo válido.';
 
-  /// Mensaje mostrado cuando el correo ya esta registrado.
-  static const emailAlreadyRegisteredMessage =
-      'Ya existe una cuenta con este correo.';
-
-  /// Mensaje mostrado cuando el correo esta disponible.
-  static const emailAvailableMessage = 'Correo disponible.';
-
-  /// Titulo del aviso de cuenta ya existente.
-  static const existingAccountTitle = 'Cuenta ya existente';
-
-  /// Mensaje que explica que el CUIT o correo ya estan asociados.
-  static const existingAccountMessage =
-      'El CUIT o Correo ingresado ya se encuentran asociados a una cuenta activa. Por favor, iniciá sesión.';
-
-  /// Texto del boton que lleva al inicio de sesion.
-  static const loginButton = 'Iniciar sesión';
-
-  /// Texto del boton que permite probar con otro correo.
-  static const useAnotherEmailButton = 'Usar otro correo';
-
-  /// Texto del boton para previsualizar el modal sin conexion.
-  static const offlinePreviewButton = 'Ver modal sin conexión';
+  /// Mensaje mostrado cuando el correo no cumple el formato esperado.
+  static const emailInvalidFormatMessage = 'Ingresá un correo con formato nombre@dominio.com.';
 
   /// Titulo del modal que informa que se necesita conexion.
   static const offlineModalTitle = 'Necesitás conexión a internet';
@@ -127,28 +119,8 @@ class SignUpStrings {
   /// Texto del boton principal que envia el formulario de registro.
   static const registerButton = 'Registrar cuenta';
 
-  /// Titulo principal de la pantalla de progreso de registro.
-  static const creatingAccountTitle = 'Creando tu cuenta...';
-
-  /// Subtitulo de la pantalla de progreso de registro.
-  static const creatingAccountSubtitle =
-      'Estamos guardando tus datos y preparando el dispositivo para que después funcione sin señal.';
-
-  /// Etiqueta de estado para la validacion que esta corriendo.
-  static const creatingAccountInProgress = 'en curso';
-
-  /// Validacion de CUIT dentro del alta de cuenta.
-  static const creatingAccountValidateCuit = 'Validando CUIT';
-
-  /// Validacion de correo dentro del alta de cuenta.
-  static const creatingAccountVerifyEmail = 'Verificando correo';
-
-  /// Validacion de credenciales dentro del alta de cuenta.
-  static const creatingAccountGenerateCredentials = 'Generando credenciales';
-
-  /// Validacion de configuracion inicial dentro del alta de cuenta.
-  static const creatingAccountDownloadInitialConfig =
-      'Descargando configuración inicial';
+  /// Texto del boton mientras el backend procesa el registro.
+  static const registeringButton = 'Registrando cuenta...';
 
   /// Prefijo del saludo mostrado al completar el registro.
   static const successWelcomePrefix = '¡Bienvenido ';
@@ -157,8 +129,7 @@ class SignUpStrings {
   static const successWelcomeSuffix = '!';
 
   /// Confirmacion que aparece debajo del saludo final.
-  static const successSubtitle =
-      'Tu cuenta fue creada con éxito. Ya iniciaste sesión.';
+  static const successSubtitle = 'Tu cuenta fue creada con éxito.';
 
   /// Rol inicial asignado al productor registrado.
   static const ownerRole = 'Owner';
@@ -170,8 +141,7 @@ class SignUpStrings {
   static const nextStepTitle = 'Próximo paso';
 
   /// Descripcion de la configuracion que sigue al alta.
-  static const nextStepDescription =
-      'Configurá tu primer establecimiento (RENSPA, ubicación y superficie).';
+  static const nextStepDescription = 'Configurá tu primer establecimiento (RENSPA, ubicación y superficie).';
 
   /// Accion para comenzar la configuracion del establecimiento.
   static const configureEstablishmentButton = 'Configurar mi establecimiento';
@@ -197,13 +167,10 @@ class SignUpStrings {
   /// Texto enlazable de terminos y politica de privacidad.
   static const termsPrivacy = 'términos y la política de privacidad.';
 
-
-  /// TODO: (FRANCO) Migrar luego a archivo de assets general para que pueda ser usado en otras pantallas.
-
+  // TODO(franco): Migrar los iconos a una fuente compartida de assets.
 
   /// Ruta del icono de flecha para volver.
   static const arrowBackIcon = 'assets/icons/arrow_back_ios.svg';
-
 
   /// Ruta del icono de flecha para avanzar.
   static const arrowForwardIcon = 'assets/icons/arrow_forward.svg';
@@ -213,6 +180,12 @@ class SignUpStrings {
 
   /// Ruta del icono de check de confirmacion.
   static const checkIcon = 'assets/icons/check.svg';
+
+  /// Ruta del icono usado para un requisito de contrasena cumplido.
+  static const passwordRequirementValidIcon = 'assets/icons/check_small.svg';
+
+  /// Ruta del icono usado para un requisito de contrasena pendiente.
+  static const passwordRequirementInvalidIcon = 'assets/icons/close_small.svg';
 
   /// Ruta del icono de nube conectada.
   static const cloudIcon = 'assets/icons/cloud.svg';

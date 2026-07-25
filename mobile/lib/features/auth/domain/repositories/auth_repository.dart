@@ -1,9 +1,15 @@
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/registration_request.dart';
 
 /// Contrato de autenticacion consumido por los casos de uso.
 abstract class AuthRepository {
+  /// Registra un usuario nuevo y devuelve el perfil creado.
+  Future<Result<AppUser>> register({
+    required RegistrationRequest request,
+  });
+
   /// Inicia sesion contra el backend y devuelve la sesion mobile.
   Future<Result<AuthSession>> signIn({
     required String email,

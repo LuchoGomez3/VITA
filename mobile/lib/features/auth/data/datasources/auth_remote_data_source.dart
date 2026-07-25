@@ -19,6 +19,48 @@ class AuthRemoteDataSource {
   final http.Client _client;
   final Duration _requestTimeout;
 
+  /// Registra un usuario nuevo y devuelve el perfil creado por el backend.
+  Future<Map<String, dynamic>> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String cuit,
+    required String password,
+  }) async {
+    final response = await _client
+        .post(
+          _uri('/api/v1/usuarios/registro'),
+          headers: const {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'nombre': firstName,
+            'apellido': lastName,
+            'email': email,
+            'cuit': cuit,
+            'password': password,
+          }),
+        )
+        .timeout(_requestTimeout);
+
+    final body = _decodeResponse(response);
+    _throwIfUnsuccessful(
+      response,
+      body,
+      fallbackMessage: 'No se pudo crear la cuenta. Intenta nuevamente.',
+    );
+
+    final data = body['data'];
+    if (data is Map<String, dynamic>) {
+      final userJson = data['usuario'];
+      if (userJson is Map<String, dynamic>) {
+        return userJson;
+      }
+    }
+
+    throw const DomainException(
+      message: 'El backend no devolvio el usuario registrado.',
+    );
+  }
+
   /// Ejecuta el login OAuth2 password form y devuelve token + usuario.
   ///
   /// El backend usa el nombre `username` por el estandar OAuth2, pero para VITA
@@ -173,6 +215,20 @@ class AuthRemoteDataSource {
     final detail = body['detail'];
     if (detail is String && detail.isNotEmpty) {
       throw DomainException(message: detail);
+    }
+
+    final errors = body['errors'];
+    if (errors is List && errors.isNotEmpty) {
+      final firstError = errors.first;
+      if (firstError is Map<String, dynamic>) {
+        final message = firstError['message'];
+        if (message is String && message.isNotEmpty) {
+          throw DomainException(
+            message: message,
+            code: DomainErrorCode.validation,
+          );
+        }
+      }
     }
 
     throw DomainException(message: fallbackMessage);

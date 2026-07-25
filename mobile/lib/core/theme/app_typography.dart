@@ -19,14 +19,6 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  /// Subtitulo complementario del app bar.
-  static const appBarSubtitle = TextStyle(
-    fontFamily: _baseFontFamily,
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textSecondary,
-  );
-
   /// Titulo corto de pagina o encabezado de seccion.
   static const pageTitle = TextStyle(
     fontFamily: _baseFontFamily,
@@ -45,14 +37,6 @@ class AppTypography {
 
   /// Texto secundario destacado para labels, subtitulos y estados informativos.
   static const secondaryEmphasis = TextStyle(
-    fontFamily: _baseFontFamily,
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textSecondary,
-  );
-
-  /// Label visible de campos de formulario.
-  static const formFieldLabel = TextStyle(
     fontFamily: _baseFontFamily,
     fontSize: 16,
     fontWeight: FontWeight.w600,
@@ -182,14 +166,6 @@ class AppTypography {
 
   /// Titulo grande para pantallas de resultado o confirmacion.
   static const successTitle = bigTitle;
-
-  /// Subtitulo destacado para pantallas de resultado o confirmacion.
-  static const successSubtitle = TextStyle(
-    fontFamily: _baseFontFamily,
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textSecondary,
-  );
 
   /// Titulo principal de la pantalla de bienvenida al registro.
   static const welcomeTitle = TextStyle(

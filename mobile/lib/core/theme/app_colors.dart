@@ -55,6 +55,12 @@ class AppColors {
   /// Borde para bloques o campos en estado de error.
   static const errorBorder = Color(0xFFE53935);
 
+  /// Amarillo usado para indicar una contraseña de fuerza normal.
+  static const passwordStrengthNormal = Color(0xFFF9A825);
+
+  /// Verde intenso usado para indicar una contraseña muy fuerte.
+  static const passwordStrengthVeryStrong = Color(0xFF1B5E20);
+
   /// Scrim suave para modales livianos.
   static const modalBarrier = Color(0x14000000);
 

@@ -11,9 +11,6 @@ class AppRoutes {
   /// Ruta del formulario de creacion de cuenta.
   static const signUpForm = '/sign-up/form';
 
-  /// Ruta de la pantalla de confirmacion de creacion de cuenta.
-  static const signUpCreatingAccount = '/sign-up/creating-account';
-
   /// Ruta de confirmacion del registro de cuenta.
   static const signUpSuccess = '/sign-up/success';
 
