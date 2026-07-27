@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 
-/// Point used by [AppLineChart].
+/// Punto usado por [AppLineChart].
 class AppLineChartPoint {
-  /// Creates a line chart point.
+  /// Crea un punto para graficos de linea.
   const AppLineChartPoint({
     required this.x,
     required this.y,
   });
 
-  /// Horizontal axis value.
+  /// Valor del eje horizontal.
   final double x;
 
-  /// Vertical axis value.
+  /// Valor del eje vertical.
   final double y;
 }
 
-/// Lightweight line chart for simple read-only metric trends.
+/// Grafico de linea liviano para metricas de solo lectura.
 class AppLineChart extends StatelessWidget {
-  /// Creates a read-only line chart.
+  /// Crea un grafico de linea de solo lectura.
   const AppLineChart({
     required this.points,
     required this.minX,
@@ -32,31 +32,31 @@ class AppLineChart extends StatelessWidget {
     this.yInterval = 50,
   });
 
-  /// Data points rendered in order.
+  /// Puntos renderizados en orden.
   final List<AppLineChartPoint> points;
 
-  /// Minimum horizontal value.
+  /// Valor minimo del eje horizontal.
   final double minX;
 
-  /// Maximum horizontal value.
+  /// Valor maximo del eje horizontal.
   final double maxX;
 
-  /// Minimum vertical value.
+  /// Valor minimo del eje vertical.
   final double minY;
 
-  /// Maximum vertical value.
+  /// Valor maximo del eje vertical.
   final double maxY;
 
-  /// Labels mapped by integer x-axis value.
+  /// Etiquetas mapeadas por valor entero del eje X.
   final Map<int, String> xLabels;
 
-  /// Builds the visible y-axis label.
+  /// Construye la etiqueta visible del eje Y.
   final String Function(double value) yLabelBuilder;
 
-  /// Chart height.
+  /// Alto del grafico.
   final double height;
 
-  /// Grid interval for the y-axis.
+  /// Intervalo de la grilla del eje Y.
   final double yInterval;
 
   @override
@@ -188,7 +188,7 @@ class _AppLineChartPainter extends CustomPainter {
           ..strokeJoin = StrokeJoin.round,
       );
 
-    final dotPaint = Paint()..color = AppColors.surface;
+    final dotPaint = Paint()..color = AppColors.onPrimary;
     final dotBorderPaint = Paint()
       ..color = AppColors.primary
       ..strokeWidth = 2

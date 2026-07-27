@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/formatters/formatters.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
-import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 
-/// Read-only grid with the main animal attributes.
+/// Grilla de solo lectura con los principales atributos del animal.
 class AnimalDetailDataGrid extends StatelessWidget {
-  /// Creates the animal detail data grid.
+  /// Crea la grilla de datos del detalle de animal.
   const AnimalDetailDataGrid({
     required this.animalDetail,
     super.key,
   });
 
-  /// Animal data to display.
+  /// Datos del animal a mostrar.
   final AnimalDetail animalDetail;
 
   @override
@@ -37,13 +38,13 @@ class AnimalDetailDataGrid extends StatelessWidget {
             Expanded(
               child: AppInfoCell(
                 label: AnimalDetailStrings.categoryLabel,
-                value: animalDetail.categoryName.isEmpty ? 'N/A' : animalDetail.categoryName,
+                value: animalDetail.categoryName.isEmpty ? AnimalDetailStrings.noDataValue : animalDetail.categoryName,
               ),
             ),
             Expanded(
               child: AppInfoCell(
                 label: AnimalDetailStrings.coatLabel,
-                value: (animalDetail.coat?.isEmpty ?? true) ? 'N/A' : animalDetail.coat!,
+                value: (animalDetail.coat?.isEmpty ?? true) ? AnimalDetailStrings.noDataValue : animalDetail.coat!,
               ),
             ),
           ],
@@ -54,7 +55,7 @@ class AnimalDetailDataGrid extends StatelessWidget {
             Expanded(
               child: AppInfoCell(
                 label: AnimalDetailStrings.birthDateLabel,
-                value: animalDetail.birthDate.displayDate,
+                value: DateDisplayFormatter.shortDate(animalDetail.birthDate),
               ),
             ),
             Expanded(
@@ -104,12 +105,6 @@ extension on AnimalWeighingMethod {
 }
 
 extension on DateTime {
-  String get displayDate {
-    final day = this.day.toString().padLeft(2, '0');
-    final month = this.month.toString().padLeft(2, '0');
-    return '$day/$month/$year';
-  }
-
   String get ageLabel {
     final now = DateTime.now();
     var months = (now.year - year) * 12 + now.month - month;

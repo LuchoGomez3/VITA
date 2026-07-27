@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/formatters/formatters.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
@@ -60,15 +61,9 @@ class _WeightHistoryLineChart extends StatelessWidget {
       minY: minY,
       maxY: maxY,
       xLabels: {
-        for (final (index, record) in weightHistory.indexed) index + 1: _formatDate(record.date),
+        for (final (index, record) in weightHistory.indexed) index + 1: DateDisplayFormatter.dayAndMonth(record.date),
       },
       yLabelBuilder: (value) => '${value.toInt()} kg',
     );
-  }
-
-  String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    return '$day/$month';
   }
 }

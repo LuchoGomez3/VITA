@@ -4,9 +4,9 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_detail_use_case.dart';
 
-/// Coordinates loading state for the animal detail screen.
+/// Coordina el estado de carga de la pantalla de detalle de animal.
 class AnimalDetailCubit extends Cubit<ResultState<AnimalDetail>> {
-  /// Creates the cubit with the use case that loads animal details.
+  /// Crea el cubit con el caso de uso que obtiene la ficha del animal.
   AnimalDetailCubit({
     required GetAnimalDetailUseCase getAnimalDetailUseCase,
   }) : _getAnimalDetailUseCase = getAnimalDetailUseCase,
@@ -14,7 +14,7 @@ class AnimalDetailCubit extends Cubit<ResultState<AnimalDetail>> {
 
   final GetAnimalDetailUseCase _getAnimalDetailUseCase;
 
-  /// Loads animal detail data for [animalId].
+  /// Carga los datos del animal identificado por [animalId].
   Future<void> loadAnimalData(String animalId) async {
     emit(const ResultState.loading());
 

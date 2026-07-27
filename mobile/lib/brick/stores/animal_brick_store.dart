@@ -80,7 +80,7 @@ class BrickAnimalStore implements AnimalBrickStore {
     final storedAnimals = await _repository.getLocal<BrickAnimalModel>();
 
     for (final animal in storedAnimals) {
-      if (animal.localId == animalId) {
+      if (animal.localId == animalId && animal.deletedAt == null) {
         return animal;
       }
     }

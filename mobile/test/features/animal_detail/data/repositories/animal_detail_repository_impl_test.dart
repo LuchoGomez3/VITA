@@ -10,7 +10,7 @@ import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_detail_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
-import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 
 void main() {
   group('AnimalDetailRepositoryImpl', () {

@@ -35,6 +35,9 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
         return Result.success(await _enrichDetail(AnimalDetailMapper.fromBrick(localAnimal)));
       }
 
+      // TODO(equipo): Analizar si este fallback remoto debe quedar en la feature.
+      // El flujo objetivo es offline-first; esta consulta solo cubre animales
+      // que todavia no fueron hidratados en SQLite.
       final remoteAnimal = await _remoteDataSource.getAnimalById(animalId);
       await _brickStore.cacheAnimal(
         AnimalDetailMapper.toBrickCache(remoteAnimal),
@@ -44,11 +47,16 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
       );
     } on DomainException catch (error) {
       return Result.failure(error);
+    } on FormatException {
+      return const Result.failure(
+        DomainException(
+          message: 'El detalle del animal tiene datos invalidos.',
+        ),
+      );
     } on Object {
       return const Result.failure(
         DomainException(
           message: 'No se pudo cargar la información del animal.',
-          code: DomainErrorCode.offline,
         ),
       );
     }

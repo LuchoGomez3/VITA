@@ -3,15 +3,15 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 
-/// Header with the animal identifier and current location.
+/// Encabezado con el identificador del animal y su ubicacion actual.
 class AnimalDetailHeader extends StatelessWidget {
-  /// Creates the animal detail header.
+  /// Crea el encabezado del detalle de animal.
   const AnimalDetailHeader({
     required this.animalDetail,
     super.key,
   });
 
-  /// Animal data shown in the header.
+  /// Datos del animal mostrados en el encabezado.
   final AnimalDetail animalDetail;
 
   @override
@@ -57,7 +57,7 @@ class _CurrentLocation extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
-          animalDetail.lotName.isEmpty ? 'N/A' : animalDetail.lotName,
+          animalDetail.lotName.isEmpty ? AnimalDetailStrings.noDataValue : animalDetail.lotName,
           style: AppTypography.mediumEmphasis,
         ),
         Text(

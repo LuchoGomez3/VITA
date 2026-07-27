@@ -5,7 +5,7 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
-import 'package:frontend_mayoral/features/animal_detail/presentation/bloc/animal_detail_cubit.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_data_grid.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_header.dart';
@@ -17,7 +17,7 @@ import 'package:go_router/go_router.dart';
 /// Factory usada por composition root/router para construir el Cubit.
 typedef AnimalDetailCubitFactory = AnimalDetailCubit Function();
 
-/// Page that shows the traceability detail for an animal.
+/// Pagina que muestra la ficha de trazabilidad de un animal.
 class AnimalDetailPage extends StatelessWidget {
   /// Crea la página de detalle para [animalId].
   const AnimalDetailPage({
@@ -26,7 +26,6 @@ class AnimalDetailPage extends StatelessWidget {
     super.key,
   });
 
-  /// Animal identifier used by the detail flow.
   /// Identificador usado para cargar el animal.
   final String animalId;
 
@@ -116,7 +115,10 @@ class _AnimalDetailContent extends StatelessWidget {
                   style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Text(animalDetail.observations ?? '-', style: AppTypography.mediumEmphasis),
+                Text(
+                  animalDetail.observations ?? AnimalDetailStrings.noDataValue,
+                  style: AppTypography.mediumEmphasis,
+                ),
               ],
             ),
           ),

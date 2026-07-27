@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/formatters/formatters.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
-import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 
 /// Muestra cronologicamente los eventos de trazabilidad del animal.
 class AnimalEventHistory extends StatelessWidget {
@@ -38,7 +39,7 @@ class AnimalEventHistory extends StatelessWidget {
       _AnimalTimelineEvent(
         date: animalDetail.birthDate,
         item: AppTimelineItem(
-          date: animalDetail.birthDate.displayDate,
+          date: DateDisplayFormatter.shortDate(animalDetail.birthDate),
           title: AnimalDetailStrings.birthEventTitle,
           description: AnimalDetailStrings.birthEventDescription,
           icon: Icons.add_circle_outline,
@@ -49,7 +50,7 @@ class AnimalEventHistory extends StatelessWidget {
         _AnimalTimelineEvent(
           date: weightRecord.date,
           item: AppTimelineItem(
-            date: weightRecord.date.displayDate,
+            date: DateDisplayFormatter.shortDate(weightRecord.date),
             title: AnimalDetailStrings.weighingEventTitle,
             description: AnimalDetailStrings.weighingEventDescription(
               weight: weightRecord.weightKg.displayWeight,
@@ -74,14 +75,6 @@ class _AnimalTimelineEvent {
 
   final DateTime date;
   final AppTimelineItem item;
-}
-
-extension on DateTime {
-  String get displayDate {
-    final day = this.day.toString().padLeft(2, '0');
-    final month = this.month.toString().padLeft(2, '0');
-    return '$day/$month/$year';
-  }
 }
 
 extension on double {

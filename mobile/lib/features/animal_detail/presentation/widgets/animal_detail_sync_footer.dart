@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/formatters/formatters.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
-import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 
-/// Footer with offline sync and last reading metadata.
+/// Pie con el estado de sincronizacion offline y la ultima lectura.
 class AnimalDetailSyncFooter extends StatelessWidget {
-  /// Creates the animal detail sync footer.
+  /// Crea el pie de sincronizacion del detalle de animal.
   const AnimalDetailSyncFooter({
     required this.animalDetail,
     super.key,
   });
 
-  /// Animal sync metadata.
+  /// Metadatos de sincronizacion del animal.
   final AnimalDetail animalDetail;
 
   @override
@@ -36,7 +37,7 @@ class AnimalDetailSyncFooter extends StatelessWidget {
               style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),
             ),
             Text(
-              animalDetail.updatedAt.displayDate,
+              DateDisplayFormatter.shortDate(animalDetail.updatedAt),
               style: AppTypography.smallEmphasis,
             ),
           ],
@@ -52,12 +53,4 @@ extension on AnimalSyncStatus {
     AnimalSyncStatus.synchronized => AnimalDetailStrings.synchronizedSyncStatus,
     AnimalSyncStatus.rejected => AnimalDetailStrings.rejectedSyncStatus,
   };
-}
-
-extension on DateTime {
-  String get displayDate {
-    final day = this.day.toString().padLeft(2, '0');
-    final month = this.month.toString().padLeft(2, '0');
-    return '$day/$month/$year';
-  }
 }

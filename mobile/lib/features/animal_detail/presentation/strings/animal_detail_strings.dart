@@ -26,7 +26,7 @@ class AnimalDetailStrings {
   /// Etiqueta de categoria.
   static const categoryLabel = 'Categoría';
 
-  ///Etiqueta de Pelaje
+  /// Etiqueta de pelaje.
   static const coatLabel = 'Pelaje';
 
   /// Etiqueta de fecha de nacimiento.

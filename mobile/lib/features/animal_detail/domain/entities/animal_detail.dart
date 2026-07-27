@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 
 part 'animal_detail.freezed.dart';
 

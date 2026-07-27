@@ -2,7 +2,7 @@ import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
-import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 
 /// Mapper entre Brick/backend y el modelo de dominio del detalle.
 class AnimalDetailMapper {
@@ -43,6 +43,10 @@ class AnimalDetailMapper {
   }
 
   /// Convierte el DTO remoto en un modelo Brick cacheable sin re-sync.
+  ///
+  /// Este camino surge solo si la ficha no encontro el animal en SQLite y se
+  /// uso el fallback remoto del repository. Se guarda como `synchronized` para
+  /// que Brick lo trate como dato ya confirmado por backend.
   static BrickAnimalModel toBrickCache(AnimalDetailBackendDto dto) {
     return BrickAnimalModel(
       localId: dto.id,
