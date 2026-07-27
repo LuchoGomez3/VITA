@@ -59,5 +59,5 @@ class HomeStrings {
   static const animalDetailDescription = 'Ejemplo de navegacion a una feature separada usando un id en la ruta.';
 
   /// Boton para abrir el detalle de animal demo.
-  static const animalDetailButton = 'Ver animal A-001';
+  static const animalDetailButton = 'Ver animal 012';
 }

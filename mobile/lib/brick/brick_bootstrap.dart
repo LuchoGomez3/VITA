@@ -1,5 +1,7 @@
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -30,7 +32,9 @@ class BrickBootstrap {
     );
 
     // Stores por entidad. A medida que sumemos modelos Brick, aca se registran
-    // stores como BrickPesajeStore, BrickMovimientoStore, etc.
+    // stores como BrickMovimientoStore, BrickEventoSanitarioStore, etc.
     BrickAnimalStore.configure(AppBrickRepository.instance);
+    BrickCategoriaStore.configure(AppBrickRepository.instance);
+    BrickPesajeStore.configure(AppBrickRepository.instance);
   }
 }

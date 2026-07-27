@@ -14,6 +14,12 @@ abstract class AnimalBrickStore {
   /// Guarda [animal] localmente y lo deja listo para sincronizacion remota.
   Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal);
 
+  /// Guarda datos remotos en SQLite sin generar una request de sincronizacion.
+  Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal);
+
+  /// Busca un animal en SQLite por el UUID generado en mobile/backend.
+  Future<BrickAnimalModel?> getAnimalById(String animalId);
+
   /// Descarga animales remotos de [establishmentId] y los guarda en SQLite.
   Future<void> pullRemoteAnimals(String establishmentId);
 }
@@ -62,6 +68,24 @@ class BrickAnimalStore implements AnimalBrickStore {
     unawaited(_repository.enqueueRemoteUpsert<BrickAnimalModel>(savedAnimal));
 
     return savedAnimal;
+  }
+
+  @override
+  Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) {
+    return _repository.upsertLocal<BrickAnimalModel>(animal);
+  }
+
+  @override
+  Future<BrickAnimalModel?> getAnimalById(String animalId) async {
+    final storedAnimals = await _repository.getLocal<BrickAnimalModel>();
+
+    for (final animal in storedAnimals) {
+      if (animal.localId == animalId && animal.deletedAt == null) {
+        return animal;
+      }
+    }
+
+    return null;
   }
 
   @override

@@ -56,6 +56,16 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   final List<BrickAnimalModel> savedAnimals = [];
 
   @override
+  Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) async {
+    return animal;
+  }
+
+  @override
+  Future<BrickAnimalModel?> getAnimalById(String animalId) async {
+    return null;
+  }
+
+  @override
   Future<void> pullRemoteAnimals(String establishmentId) async {}
 
   @override
