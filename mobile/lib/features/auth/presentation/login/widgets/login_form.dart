@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/validators/validators.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
-import 'package:frontend_mayoral/features/auth/presentation/strings/login_strings.dart';
+import 'package:frontend_mayoral/features/auth/presentation/login/strings/login_strings.dart';
 
 /// Formulario de credenciales de la pantalla de login.
 class LoginForm extends StatelessWidget {
@@ -51,7 +51,7 @@ class LoginForm extends StatelessWidget {
         children: [
           const Text(
             LoginStrings.loginTitle,
-            style: AppTypography.formFieldLabel,
+            style: AppTypography.secondaryEmphasis,
           ),
           const SizedBox(height: AppSpacing.lg),
           AppTextFormField(

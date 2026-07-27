@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
-import 'package:frontend_mayoral/features/auth/presentation/strings/login_strings.dart';
+import 'package:frontend_mayoral/features/auth/presentation/login/strings/login_strings.dart';
 
 /// Encabezado visual de la pantalla de login.
 class LoginHeader extends StatelessWidget {

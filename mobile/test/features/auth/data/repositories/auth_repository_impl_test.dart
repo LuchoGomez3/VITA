@@ -8,6 +8,7 @@ import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/auth/data/datasources/auth_local_data_source.dart';
 import 'package:frontend_mayoral/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:frontend_mayoral/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/registration_request.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -23,6 +24,47 @@ void main() {
       SessionBackendAccessTokenProvider.instance
         ..refreshCallback = null
         ..clearAccessToken();
+    });
+
+    test('register returns the created user without persisting a session', () async {
+      final repository = _createRepository(
+        secureStorage: secureStorage,
+        client: MockClient((request) async {
+          return http.Response(
+            jsonEncode({
+              'success': true,
+              'data': {
+                'usuario': _userJson,
+                'access_token': 'registration-token',
+                'token_type': 'bearer',
+              },
+            }),
+            201,
+          );
+        }),
+      );
+
+      final result = await repository.register(
+        request: const RegistrationRequest(
+          firstName: 'Ernesto',
+          lastName: 'Diaz',
+          email: 'ernesto@example.com',
+          cuit: '20-12345678-6',
+          password: 'Password1',
+        ),
+      );
+
+      switch (result) {
+        case Success(:final data):
+          expect(data.email, 'ernesto@example.com');
+          expect(data.cuit, '20123456786');
+        case Failure(:final error):
+          fail(error.message);
+      }
+      expect(
+        await secureStorage.read(SecureStorageKeys.authSession),
+        isNull,
+      );
     });
 
     test('signIn persists session and hydrates the Brick token provider', () async {
@@ -384,6 +426,7 @@ const _userJson = <String, Object?>{
   'nombre': 'Ernesto',
   'apellido': 'Diaz',
   'email': 'ernesto@example.com',
+  'cuit': '20123456786',
 };
 
 Map<String, Object?> _sessionJson({

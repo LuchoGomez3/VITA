@@ -19,14 +19,6 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  /// Subtitulo complementario del app bar.
-  static const appBarSubtitle = TextStyle(
-    fontFamily: _baseFontFamily,
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textSecondary,
-  );
-
   /// Titulo corto de pagina o encabezado de seccion.
   static const pageTitle = TextStyle(
     fontFamily: _baseFontFamily,
@@ -43,8 +35,8 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
-  /// Label visible de campos de formulario.
-  static const formFieldLabel = TextStyle(
+  /// Texto secundario destacado para labels, subtitulos y estados informativos.
+  static const secondaryEmphasis = TextStyle(
     fontFamily: _baseFontFamily,
     fontSize: 16,
     fontWeight: FontWeight.w600,
@@ -75,6 +67,30 @@ class AppTypography {
     color: AppColors.primary,
   );
 
+  /// Texto de ayuda o validacion negativa debajo de un input.
+  static const formFieldError = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w700,
+    color: AppColors.error,
+  );
+
+  /// Texto de ayuda neutro debajo de un campo de formulario.
+  static const formFieldHelper = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textSecondary,
+  );
+
+  /// Valor destacado dentro de un input.
+  static const formFieldValueEmphasis = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
+
   /// Texto pequeno con enfasis, util para microcopys o metadata.
   static const smallEmphasis = TextStyle(
     fontFamily: _baseFontFamily,
@@ -91,6 +107,55 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
+  /// Iniciales mostradas sobre avatares con fondo primario.
+  static const avatarInitials = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.onPrimary,
+  );
+
+  /// Texto de un paso de progreso que se encuentra activo.
+  static const progressStepActive = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
+
+  /// Texto de un paso de progreso completado o pendiente.
+  static const progressStepInactive = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textEmphasis,
+  );
+
+  /// Titulo de alerta de error.
+  static const errorTitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    color: AppColors.error,
+  );
+
+  /// Texto descriptivo de alerta de error.
+  static const errorBody = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    color: AppColors.error,
+    height: 1.35,
+  );
+
+  /// Texto para botones pequenos dentro de alertas de error.
+  static const errorButton = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    color: AppColors.onPrimary,
+  );
+
   /// Titulo grande para pantalla principal, de resultado o confirmacion.
   static const bigTitle = TextStyle(
     fontFamily: _baseFontFamily,
@@ -99,12 +164,32 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  /// Subtitulo destacado para pantallas de resultado o confirmacion.
-  static const successSubtitle = TextStyle(
+  /// Titulo grande para pantallas de resultado o confirmacion.
+  static const successTitle = bigTitle;
+
+  /// Titulo principal de la pantalla de bienvenida al registro.
+  static const welcomeTitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 32,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  /// Titulo principal de la pantalla de registro.
+  static const signUpIntroTitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textEmphasis,
+  );
+
+  /// Subtitulo de la pantalla de registro.
+  static const signUpIntroSubtitle = TextStyle(
     fontFamily: _baseFontFamily,
     fontSize: 16,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w500,
     color: AppColors.textSecondary,
+    height: 1.4,
   );
 
   /// Texto para acciones primarias en botones filled.
@@ -123,6 +208,74 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
+  /// Texto base de la tarjeta de terminos del registro.
+  static const termsBody = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textEmphasis,
+    height: 1.4,
+  );
+
+  /// Texto destacado de la tarjeta de terminos del registro.
+  static const termsEmphasis = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textEmphasis,
+    height: 1.4,
+  );
+
+  /// Link destacado de la tarjeta de terminos del registro.
+  static const termsLink = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    color: AppColors.primary,
+    height: 1.4,
+  );
+
+  /// Link primario inline.
+  static const inlinePrimaryLink = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    color: AppColors.primary,
+  );
+
+  /// Titulo principal de modal de conectividad.
+  static const connectivityModalTitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textEmphasis,
+  );
+
+  /// Texto descriptivo de modal de conectividad.
+  static const connectivityModalBody = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textSecondary,
+    height: 1.35,
+  );
+
+  /// Titulo de recomendacion dentro del modal de conectividad.
+  static const connectivityRecommendationTitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  /// Subtitulo de recomendacion dentro del modal de conectividad.
+  static const connectivityRecommendationSubtitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textSecondary,
+  );
+
   /// Adaptacion de los estilos oficiales al `TextTheme` de Flutter.
   ///
   /// Esto permite que widgets Material reutilicen la tipografia base sin que
@@ -132,13 +285,13 @@ class AppTypography {
       headlineMedium: pageTitle,
       headlineSmall: pageTitle,
       titleLarge: pageBodyTitle,
-      titleMedium: formFieldLabel,
+      titleMedium: secondaryEmphasis,
       bodyLarge: formFieldValue,
       bodyMedium: pageBodyTitle,
       bodySmall: smallEmphasis,
       labelLarge: filledButton,
       labelMedium: outlinedButton,
-      labelSmall: appBarSubtitle,
+      labelSmall: secondaryEmphasis,
     );
   }
 }

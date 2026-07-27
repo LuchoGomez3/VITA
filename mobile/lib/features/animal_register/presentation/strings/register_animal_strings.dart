@@ -54,7 +54,7 @@ class AnimalRegisterStrings {
     ),
     EarTagColorOption(
       name: 'Beige',
-      color: AppColors.earTagBeige,
+      color: AppColors.backgroundTertiary,
     ),
     EarTagColorOption(
       name: 'Lila',

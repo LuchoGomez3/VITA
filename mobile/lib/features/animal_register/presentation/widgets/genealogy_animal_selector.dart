@@ -77,7 +77,7 @@ class GenealogyAnimalSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: AppTypography.formFieldLabel),
+        Text(title, style: AppTypography.secondaryEmphasis),
         const SizedBox(height: AppSpacing.xs),
         if (selectedAnimal != null)
           _SelectedGenealogyAnimal(
@@ -124,7 +124,7 @@ class _SelectedGenealogyAnimal extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.onPrimary,
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
@@ -141,7 +141,7 @@ class _SelectedGenealogyAnimal extends StatelessWidget {
               children: [
                 Text(
                   animal.breed.isEmpty ? animal.name : '${animal.name} · ${animal.breed}',
-                  style: AppTypography.formFieldLabel.copyWith(
+                  style: AppTypography.secondaryEmphasis.copyWith(
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -185,7 +185,7 @@ class _GenealogyResults extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.onPrimary,
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(AppRadius.sm),
         boxShadow: const [
@@ -236,7 +236,7 @@ class _GenealogyResultTile extends StatelessWidget {
             Expanded(
               child: Text(
                 '${animal.name} · ${animal.breed}',
-                style: AppTypography.formFieldLabel.copyWith(
+                style: AppTypography.secondaryEmphasis.copyWith(
                   color: AppColors.textPrimary,
                 ),
               ),

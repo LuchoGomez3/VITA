@@ -25,8 +25,8 @@ class AppColors {
   /// Fondo alternativo neutro para tarjetas o bloques destacados.
   static const backgroundTertiary = Color(0xFFE8E2D2);
 
-  /// Superficie principal para cards, inputs y componentes elevados.
-  static const surface = Color(0xFFFFFFFF);
+  /// Fondo suave para tarjetas legales o de terminos.
+  static const termsBackground = Color(0xFFF3EFE9);
 
   /// Texto principal: titulos de app bar, botones de texto y contenido clave.
   static const textPrimary = Color(0xFF1D1B1A);
@@ -34,18 +34,51 @@ class AppColors {
   /// Texto secundario: subtitulos, headers de seccion y apoyo visual.
   static const textSecondary = Color(0xFF6D4C41);
 
+  /// Texto destacado para pantallas de registro y condiciones legales.
+  static const textEmphasis = Color(0xFF3E2723);
+
   /// Texto de ayuda o placeholder en campos de formulario.
   static const textHint = Color(0xFF9E8B84);
 
   /// Borde neutro para inputs, cards y divisores suaves.
   static const border = Color(0xFFE1D3CF);
 
+  /// Borde neutro para controles checkbox sin seleccionar.
+  static const checkboxBorder = Color(0x42000000);
+
+  /// Color principal para estados de error.
+  static const error = Color(0xFFD32F2F);
+
+  /// Fondo suave para bloques de error.
+  static const errorContainer = Color(0xFFFFEBEE);
+
+  /// Borde para bloques o campos en estado de error.
+  static const errorBorder = Color(0xFFE53935);
+
+  /// Amarillo usado para indicar una contraseña de fuerza normal.
+  static const passwordStrengthNormal = Color(0xFFF9A825);
+
+  /// Verde intenso usado para indicar una contraseña muy fuerte.
+  static const passwordStrengthVeryStrong = Color(0xFF1B5E20);
+
+  /// Scrim suave para modales livianos.
+  static const modalBarrier = Color(0x14000000);
+
+  /// Fondo suave para botones iconicos sobre superficies claras.
+  static const iconButtonBackground = Color(0x0D000000);
+
+  /// Color atenuado para iconos secundarios sobre superficies claras.
+  static const iconMuted = Color(0x61000000);
+
+  /// Sombra suave utilizada por tarjetas elevadas.
+  static const cardShadow = Color(0x12000000);
+
+  /// Fondo verde tenue para bloques informativos de siguiente paso.
+  static const nextStepBackground = Color(0x61C3F2CB);
+
   /// Opciones disponibles para personalizacion de caravanas.
   /// Opcion amarilla
   static const earTagYellow = Color(0xFFF4CF3D);
-
-  /// Opcion beige
-  static const earTagBeige = Color(0xFFE8E2D2);
 
   /// Opcion lilac
   static const earTagLilac = Color(0xFFE5D1E3);
@@ -66,16 +99,16 @@ class AppColors {
     onPrimary: onPrimary,
     secondary: textSecondary,
     onSecondary: onPrimary,
-    error: Color(0xFFB3261E),
+    error: error,
     onError: onPrimary,
-    surface: surface,
+    surface: onPrimary,
     onSurface: textPrimary,
     outline: border,
     outlineVariant: border,
     shadow: Color(0x1A1D1B1A),
     scrim: Color(0x521D1B1A),
     inverseSurface: textPrimary,
-    onInverseSurface: surface,
+    onInverseSurface: onPrimary,
     inversePrimary: Color(0xFFA5D6A7),
     surfaceTint: primary,
   );

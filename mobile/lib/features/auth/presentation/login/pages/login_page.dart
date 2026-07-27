@@ -5,31 +5,31 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
-import 'package:frontend_mayoral/features/auth/presentation/bloc/auth_session_cubit.dart';
-import 'package:frontend_mayoral/features/auth/presentation/bloc/login_cubit.dart';
-import 'package:frontend_mayoral/features/auth/presentation/strings/login_strings.dart';
-import 'package:frontend_mayoral/features/auth/presentation/widgets/login_form.dart';
-import 'package:frontend_mayoral/features/auth/presentation/widgets/login_header.dart';
+import 'package:frontend_mayoral/features/auth/presentation/login/bloc/login_bloc.dart';
+import 'package:frontend_mayoral/features/auth/presentation/login/strings/login_strings.dart';
+import 'package:frontend_mayoral/features/auth/presentation/login/widgets/login_form.dart';
+import 'package:frontend_mayoral/features/auth/presentation/login/widgets/login_header.dart';
+import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
 import 'package:go_router/go_router.dart';
 
-/// Factory usada por el router para construir el cubit de login.
-typedef LoginCubitFactory = LoginCubit Function();
+/// Factory usada por el router para construir el bloc de login.
+typedef LoginBlocFactory = LoginBloc Function();
 
 /// Pantalla inicial de autenticacion.
 class LoginPage extends StatelessWidget {
   /// Crea la pantalla de login.
   const LoginPage({
-    required this.createCubit,
+    required this.createBloc,
     super.key,
   });
 
-  /// Crea el cubit con dependencias resueltas fuera de presentation.
-  final LoginCubitFactory createCubit;
+  /// Crea el bloc con dependencias resueltas fuera de presentation.
+  final LoginBlocFactory createBloc;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => createCubit(),
+      create: (_) => createBloc(),
       child: const _LoginView(),
     );
   }
@@ -58,7 +58,7 @@ class _LoginViewState extends State<_LoginView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<LoginCubit, LoginState>(
+    return BlocListener<LoginBloc, LoginState>(
       listenWhen: (previous, current) => previous.signInResult != current.signInResult,
       listener: (context, state) {
         switch (state.signInResult) {
@@ -83,7 +83,7 @@ class _LoginViewState extends State<_LoginView> {
             break;
         }
       },
-      child: BlocBuilder<LoginCubit, LoginState>(
+      child: BlocBuilder<LoginBloc, LoginState>(
         buildWhen: (previous, current) => previous.signInResult != current.signInResult,
         builder: (context, state) {
           final isSubmitting = state.signInResult is Loading<AuthSession>;
@@ -138,9 +138,11 @@ class _LoginViewState extends State<_LoginView> {
       return;
     }
 
-    context.read<LoginCubit>().signIn(
-      email: _emailController.text,
-      password: _passwordController.text,
+    context.read<LoginBloc>().add(
+      LoginSubmitted(
+        email: _emailController.text,
+        password: _passwordController.text,
+      ),
     );
   }
 }

@@ -9,9 +9,13 @@ import 'package:frontend_mayoral/features/animal_register/presentation/bloc/regi
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/register_animal_page.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_success_page.dart';
 import 'package:frontend_mayoral/features/auth/auth_composition.dart';
-import 'package:frontend_mayoral/features/auth/presentation/bloc/auth_session_cubit.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
+import 'package:frontend_mayoral/features/auth/presentation/login/pages/login_page.dart';
 import 'package:frontend_mayoral/features/auth/presentation/pages/auth_check_page.dart';
-import 'package:frontend_mayoral/features/auth/presentation/pages/login_page.dart';
+import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
+import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_page.dart';
+import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_success_page.dart';
+import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_welcome_first_time.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:go_router/go_router.dart';
 
@@ -33,10 +37,28 @@ class AppRouter {
         pageBuilder: (context, state) => BackwardPage(
           state: state,
           child: const LoginPage(
-            createCubit: createLoginCubit,
+            createBloc: createLoginBloc,
           ),
         ),
       ),
+      GoRoute(
+        path: AppRoutes.signUp,
+        builder: (context, state) => const WelcomePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.signUpForm,
+        builder: (context, state) => const SignUpPage(
+          createBloc: createSignUpBloc,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.signUpSuccess,
+        builder: (context, state) => SignUpSuccessPage(
+          userData: state.extra! as AppUser,
+        ),
+      ),
+
+      /// Ruta de la pantalla de inicio.
       GoRoute(
         path: AppRoutes.home,
         pageBuilder: (context, state) => FadePage(

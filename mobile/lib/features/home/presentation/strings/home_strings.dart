@@ -28,6 +28,15 @@ class HomeStrings {
   /// Boton durante la verificacion.
   static const authCheckingButton = 'Verificando...';
 
+  /// Titulo del modulo de registro de dueño.
+  static const ownerRegisterTitle = 'Registrar dueño';
+
+  /// Descripcion del modulo de registro de dueño.
+  static const ownerRegisterDescription = 'Alta inicial del productor responsable del establecimiento.';
+
+  /// Boton para abrir registro de dueño.
+  static const ownerRegisterButton = 'Abrir registro';
+
   /// Prefijo de exito al verificar autenticacion.
   static const authCheckSuccessPrefix = 'Sesion activa:';
 

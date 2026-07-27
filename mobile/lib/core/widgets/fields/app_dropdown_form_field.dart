@@ -75,7 +75,7 @@ class AppDropdownFormField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveTitleStyle = titleStyle ?? AppTypography.formFieldLabel;
+    final effectiveTitleStyle = titleStyle ?? AppTypography.secondaryEmphasis;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

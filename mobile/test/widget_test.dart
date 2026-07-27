@@ -7,10 +7,11 @@ import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/registration_request.dart';
 import 'package:frontend_mayoral/features/auth/domain/repositories/auth_repository.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/restore_session_use_case.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/sign_out_use_case.dart';
-import 'package:frontend_mayoral/features/auth/presentation/bloc/auth_session_cubit.dart';
+import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
 
 void main() {
   testWidgets('renders auth restore shell on startup', (WidgetTester tester) async {
@@ -31,6 +32,17 @@ void main() {
 }
 
 class _PendingRestoreAuthRepository implements AuthRepository {
+  @override
+  Future<Result<AppUser>> register({
+    required RegistrationRequest request,
+  }) {
+    return Future.value(
+      const Result.failure(
+        DomainException(message: 'Registro no usado en este test.'),
+      ),
+    );
+  }
+
   @override
   Future<Result<AuthSession>> restoreSession() {
     return Completer<Result<AuthSession>>().future;

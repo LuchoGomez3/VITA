@@ -28,7 +28,7 @@ class AppChoiceSelector<T> extends StatelessWidget {
     this.titleStyle,
     this.selectedColor = AppColors.primary,
     this.selectedTextColor = AppColors.onPrimary,
-    this.unSelectedColor = AppColors.surface,
+    this.unSelectedColor = AppColors.onPrimary,
     this.unSelectedTextColor = AppColors.textPrimary,
   });
 
@@ -61,7 +61,7 @@ class AppChoiceSelector<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveTitleStyle = titleStyle ?? AppTypography.formFieldLabel;
+    final effectiveTitleStyle = titleStyle ?? AppTypography.secondaryEmphasis;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

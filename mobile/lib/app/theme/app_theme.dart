@@ -24,9 +24,9 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: AppColors.onPrimary,
         hintStyle: AppTypography.formFieldHint,
-        labelStyle: AppTypography.formFieldLabel,
+        labelStyle: AppTypography.secondaryEmphasis,
         helperStyle: AppTypography.formFieldSuccess,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
@@ -46,7 +46,7 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.surface,
+        color: AppColors.onPrimary,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),

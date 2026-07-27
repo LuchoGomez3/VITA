@@ -7,11 +7,18 @@ import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/auth/data/datasources/establishment_remote_data_source.dart';
-import 'package:frontend_mayoral/features/auth/domain/repositories/initial_data_sync_repository.dart';
+import 'package:frontend_mayoral/features/sync/domain/repositories/initial_data_sync_repository.dart';
 
 /// Implementacion que descarga datos iniciales a SQLite para uso offline.
+///
+/// Esta clase es infraestructura de sync: puede usar secure storage, data
+/// sources HTTP y stores Brick. El dominio solo conoce el contrato
+/// [InitialDataSyncRepository].
 class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
   /// Crea el repositorio con storage local y stores Brick por entidad.
+  ///
+  /// [establishmentRemoteDataSource] obtiene el alcance del usuario autenticado.
+  /// [animalStore] descarga animales de cada establecimiento hacia SQLite.
   const InitialDataSyncRepositoryImpl({
     required SecureStorageService secureStorage,
     required EstablishmentRemoteDataSource establishmentRemoteDataSource,
@@ -29,11 +36,18 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     final markerKey = SecureStorageKeys.initialDataSyncCompleted(userId);
 
     try {
+      // El marcador evita repetir la descarga inicial en cada login del mismo
+      // usuario. Si en el futuro se agregan catalogos globales con versionado,
+      // este criterio probablemente necesite evolucionar.
       final completed = await _secureStorage.read(markerKey);
       if (completed == 'true') {
         return const Result.success(null);
       }
 
+      // TODO(sync): reemplazar este datasource HTTP por EstablishmentBrickStore
+      // cuando el store de establecimientos este consolidado. El bootstrap
+      // deberia delegar la descarga de cada tabla offline-first a Brick, que es
+      // quien conoce el schema local/remoto y la estrategia de persistencia.
       final establishmentIds = await _establishmentRemoteDataSource.fetchEstablishmentIds();
       _logInitialSyncStep('establishments=${establishmentIds.length}');
       for (final establishmentId in establishmentIds) {
