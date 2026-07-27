@@ -53,9 +53,8 @@ class SignUpSuccessPage extends StatelessWidget {
                 },
               ),
               const SizedBox(height: AppSpacing.sm),
-              // TODO(FRANCO): retirar cuando el flujo de establecimientos este completo.
               AppOutlinedButton(
-                label: SignUpStrings.temporaryBackHomeButton,
+                label: SignUpStrings.signInAfterRegistrationButton,
                 onPressed: () => context.go(AppRoutes.login),
               ),
             ],

@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 ///
 /// No valida contra backend. Solo espera el resultado de secure storage:
 /// - si hay sesion, entra a la app aunque no haya internet;
-/// - si no hay sesion, deriva al login, que si requiere conectividad.
+/// - si no hay sesion, deriva a la welcome publica.
 class AuthCheckPage extends StatelessWidget {
   /// Crea la pantalla de restauracion.
   const AuthCheckPage({super.key});

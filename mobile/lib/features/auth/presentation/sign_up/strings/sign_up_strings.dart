@@ -146,8 +146,8 @@ class SignUpStrings {
   /// Accion para comenzar la configuracion del establecimiento.
   static const configureEstablishmentButton = 'Configurar mi establecimiento';
 
-  /// Accion temporal para volver a la pantalla principal.
-  static const temporaryBackHomeButton = 'Ir a iniciar sesion';
+  /// Accion para iniciar sesion luego de crear la cuenta.
+  static const signInAfterRegistrationButton = 'Ir a iniciar sesion';
 
   /// Texto previo al link de inicio de sesion para usuarios existentes.
   static const alreadyHaveAccountPrefix = '¿Ya tenés cuenta? ';

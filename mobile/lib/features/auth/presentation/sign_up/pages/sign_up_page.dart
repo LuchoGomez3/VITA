@@ -19,7 +19,7 @@ typedef SignUpBlocFactory = SignUpBloc Function();
 
 /// Pantalla de creacion de cuenta.
 class SignUpPage extends StatelessWidget {
-  /// Crea la pantalla con la fabrica de su Cubit.
+  /// Crea la pantalla con la fabrica de su Bloc.
   const SignUpPage({
     required this.createBloc,
     super.key,
