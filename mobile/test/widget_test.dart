@@ -11,7 +11,7 @@ import 'package:frontend_mayoral/features/auth/domain/entities/registration_requ
 import 'package:frontend_mayoral/features/auth/domain/repositories/auth_repository.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/restore_session_use_case.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/sign_out_use_case.dart';
-import 'package:frontend_mayoral/features/auth/presentation/bloc/auth_session_cubit.dart';
+import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
 
 void main() {
   testWidgets('renders auth restore shell on startup', (WidgetTester tester) async {

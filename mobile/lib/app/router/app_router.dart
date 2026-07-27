@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend_mayoral/app/composition/sign_up_composition.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
@@ -10,14 +9,14 @@ import 'package:frontend_mayoral/features/animal_register/presentation/bloc/regi
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/register_animal_page.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/pages/registrar_animal_success_page.dart';
 import 'package:frontend_mayoral/features/auth/auth_composition.dart';
-import 'package:frontend_mayoral/features/auth/presentation/bloc/auth_session_cubit.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
+import 'package:frontend_mayoral/features/auth/presentation/login/pages/login_page.dart';
 import 'package:frontend_mayoral/features/auth/presentation/pages/auth_check_page.dart';
-import 'package:frontend_mayoral/features/auth/presentation/pages/login_page.dart';
+import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
+import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_page.dart';
+import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_success_page.dart';
+import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_welcome_first_time.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
-import 'package:frontend_mayoral/features/sign_up/presentation/models/sign_up_user_data.dart';
-import 'package:frontend_mayoral/features/sign_up/presentation/pages/sign_up_page.dart';
-import 'package:frontend_mayoral/features/sign_up/presentation/pages/sign_up_success_page.dart';
-import 'package:frontend_mayoral/features/sign_up/presentation/pages/sign_up_welcome_first_time.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion del router de la app.
@@ -38,7 +37,7 @@ class AppRouter {
         pageBuilder: (context, state) => BackwardPage(
           state: state,
           child: const LoginPage(
-            createCubit: createLoginCubit,
+            createBloc: createLoginBloc,
           ),
         ),
       ),
@@ -49,13 +48,13 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.signUpForm,
         builder: (context, state) => const SignUpPage(
-          createCubit: createSignUpCubit,
+          createBloc: createSignUpBloc,
         ),
       ),
       GoRoute(
         path: AppRoutes.signUpSuccess,
         builder: (context, state) => SignUpSuccessPage(
-          userData: state.extra! as SignUpUserData,
+          userData: state.extra! as AppUser,
         ),
       ),
 

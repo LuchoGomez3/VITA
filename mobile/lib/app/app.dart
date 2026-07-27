@@ -4,7 +4,7 @@ import 'package:frontend_mayoral/app/config/config.dart';
 import 'package:frontend_mayoral/app/router/app_router.dart';
 import 'package:frontend_mayoral/app/theme/app_theme.dart';
 import 'package:frontend_mayoral/features/auth/auth_composition.dart' as auth_composition;
-import 'package:frontend_mayoral/features/auth/presentation/bloc/auth_session_cubit.dart';
+import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
 
 /// Factory usada para construir el cubit global de sesion.
 typedef AuthSessionCubitFactory = AuthSessionCubit Function();
