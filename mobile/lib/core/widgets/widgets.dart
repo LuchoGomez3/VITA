@@ -1,3 +1,4 @@
+export 'app_modal.dart';
 export 'app_info_cell.dart';
 export 'app_line_chart.dart';
 export 'app_section_header.dart';

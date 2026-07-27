@@ -8,6 +8,82 @@ import 'package:http/testing.dart';
 
 void main() {
   group('AuthRemoteDataSource', () {
+    test('register posts user data and returns the created profile', () async {
+      final dataSource = AuthRemoteDataSource(
+        backendBaseUrl: _backendBaseUrl,
+        client: MockClient((request) async {
+          expect(request.url.path, '/api/v1/usuarios/registro');
+          expect(request.headers['Content-Type'], 'application/json');
+          expect(jsonDecode(request.body), {
+            'nombre': 'Ernesto',
+            'apellido': 'Diaz',
+            'email': 'ernesto@example.com',
+            'cuit': '20-12345678-6',
+            'password': 'Password1',
+          });
+
+          return http.Response(
+            jsonEncode({
+              'success': true,
+              'data': {
+                'usuario': _userJson,
+                'access_token': 'registration-token',
+                'token_type': 'bearer',
+              },
+            }),
+            201,
+          );
+        }),
+      );
+
+      final userJson = await dataSource.register(
+        firstName: 'Ernesto',
+        lastName: 'Diaz',
+        email: 'ernesto@example.com',
+        cuit: '20-12345678-6',
+        password: 'Password1',
+      );
+
+      expect(userJson, _userJson);
+    });
+
+    test('register exposes backend domain errors', () async {
+      final dataSource = AuthRemoteDataSource(
+        backendBaseUrl: _backendBaseUrl,
+        client: MockClient((request) async {
+          return http.Response(
+            jsonEncode({
+              'success': false,
+              'errors': [
+                {
+                  'code': 'email_ya_registrado',
+                  'message': 'El email ya esta registrado',
+                },
+              ],
+            }),
+            409,
+          );
+        }),
+      );
+
+      expect(
+        dataSource.register(
+          firstName: 'Ernesto',
+          lastName: 'Diaz',
+          email: 'ernesto@example.com',
+          cuit: '20-12345678-6',
+          password: 'Password1',
+        ),
+        throwsA(
+          isA<DomainException>().having(
+            (error) => error.message,
+            'message',
+            'El email ya esta registrado',
+          ),
+        ),
+      );
+    });
+
     test('signIn parses the backend session contract', () async {
       final dataSource = AuthRemoteDataSource(
         backendBaseUrl: _backendBaseUrl,
@@ -98,6 +174,7 @@ const _userJson = <String, Object?>{
   'nombre': 'Ernesto',
   'apellido': 'Diaz',
   'email': 'ernesto@example.com',
+  'cuit': '20123456786',
 };
 
 const _sessionJson = <String, Object?>{

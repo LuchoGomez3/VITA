@@ -29,7 +29,7 @@ class RegisteredAnimalSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.onPrimary,
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
@@ -61,7 +61,7 @@ class RegisteredAnimalSummaryCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: AppTypography.formFieldLabel.copyWith(
+                  style: AppTypography.secondaryEmphasis.copyWith(
                     color: AppColors.textPrimary,
                   ),
                 ),

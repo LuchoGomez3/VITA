@@ -93,6 +93,28 @@ class _HomePageState extends State<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
+                      HomeStrings.ownerRegisterTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    const Text(
+                      HomeStrings.ownerRegisterDescription,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppFilledButton(
+                      label: HomeStrings.ownerRegisterButton,
+                      icon: const Icon(Icons.person_add_alt_1_outlined),
+                      onPressed: () => context.push(AppRoutes.signUp),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppSurfaceCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
                       HomeStrings.animalRegisterTitle,
                       style: Theme.of(context).textTheme.titleLarge,
                     ),

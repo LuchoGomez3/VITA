@@ -15,6 +15,7 @@ El principio base es:
 Esta fase introduce el primer flujo real de sesion:
 
 - login contra `/api/auth/login`;
+- registro online contra `/api/v1/usuarios/registro`;
 - refresh contra `/api/auth/refresh` cuando una llamada online necesita token
   vigente;
 - persistencia local de una sesion minima en secure storage;
@@ -22,10 +23,14 @@ Esta fase introduce el primer flujo real de sesion:
 - estado global de autenticacion con `AuthSessionCubit`;
 - hidratacion del token provider que usa Brick;
 - logout local;
-- pantalla tecnica inicial para decidir si mostrar login o entrar a la app.
+- pantalla tecnica inicial para decidir si mostrar welcome publica o entrar a
+  la app;
+- pantallas de login y registro bajo `presentation`.
 
 No implementa guards completos por ruta ni borrado de bases Brick al cerrar
 sesion. Esas decisiones quedan documentadas en [Fases futuras](#fases-futuras).
+La preparacion masiva de tablas offline vive en `features/sync`; auth solo la
+coordina despues de un login exitoso.
 
 ## Capas
 
@@ -41,14 +46,36 @@ sesion. Esas decisiones quedan documentadas en [Fases futuras](#fases-futuras).
 
 ```txt
 LoginPage
-  -> LoginCubit
+  -> LoginBloc
   -> SignInUseCase
   -> AuthRepositoryImpl
   -> AuthRemoteDataSource
   -> Backend /api/auth/login
 ```
 
-Si el backend responde con una sesion valida, `AuthRepositoryImpl`:
+Despues del login exitoso, `LoginBloc` invoca `PrepareInitialDataSyncUseCase`
+desde `features/sync` para descargar los datos necesarios para operar offline.
+Ese paso no pertenece al dominio de auth: auth obtiene y persiste sesion; sync
+prepara datos de negocio locales.
+
+## Flujo de registro
+
+```txt
+SignUpPage
+  -> SignUpBloc
+  -> RegisterUserUseCase
+  -> AuthRepositoryImpl
+  -> AuthRemoteDataSource
+  -> Backend /api/v1/usuarios/registro
+```
+
+El registro es online-only. Si el backend confirma el alta, la UI navega a la
+pantalla de exito con el `AppUser` devuelto por el repositorio. No se guarda la
+password, no se persiste sesion y no se crean datos offline desde este flujo.
+El usuario debe iniciar sesion luego del registro para que mobile guarde la
+sesion y ejecute la preparacion offline.
+
+Si el backend responde al login con una sesion valida, `AuthRepositoryImpl`:
 
 1. construye un `AuthSession` de dominio;
 2. guarda una version minima en secure storage;
@@ -90,9 +117,11 @@ Al abrir la app, `AuthSessionCubit.restoreSession()` lee secure storage mediante
 `RestoreSessionUseCase`. Si hay sesion local, emite `authenticated` sin llamar al
 backend. Esto permite entrar a la app sin internet y trabajar contra SQLite.
 
-Si no hay sesion local, emite `unauthenticated` y la app muestra login. Login y
-registro son las excepciones al offline-first: necesitan internet para obtener
-una sesion inicial valida.
+Si no hay sesion local, emite `unauthenticated` y la app muestra la welcome
+publica con acciones para iniciar sesion o registrar una cuenta. Login y
+registro son las excepciones al offline-first porque ambos requieren internet:
+registro para crear la cuenta en backend, login para obtener una sesion inicial
+valida.
 
 ## Como Brick obtiene el token
 
@@ -158,11 +187,6 @@ otro usuario iniciando sesion en el mismo dispositivo.
 Los mappers actuales son suficientes para la primera integracion, pero pueden
 endurecerse para detectar respuestas invalidas del backend con errores mas
 claros.
-
-### Registro de usuario
-
-Esta fase cubre login, restore y logout. El alta de usuario debe integrarse como
-flujo separado y tambien requiere internet.
 
 ### Observabilidad y errores UX
 

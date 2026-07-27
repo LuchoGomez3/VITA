@@ -53,7 +53,7 @@ class AppSegmentedFormField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveTitleStyle = titleStyle ?? AppTypography.formFieldLabel;
+    final effectiveTitleStyle = titleStyle ?? AppTypography.secondaryEmphasis;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,7 +106,7 @@ class AppSegmentedFormField<T> extends StatelessWidget {
                             states.contains(WidgetState.selected) ? AppColors.onPrimary : AppColors.textSecondary,
                       ),
                       textStyle: WidgetStateProperty.all(
-                        AppTypography.formFieldLabel,
+                        AppTypography.secondaryEmphasis,
                       ),
                       side: WidgetStateProperty.all(
                         const BorderSide(color: AppColors.border),

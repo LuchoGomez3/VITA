@@ -111,7 +111,7 @@ class _RegisterAnimalIdentificationStepState extends State<RegisterAnimalIdentif
             const SizedBox(height: AppSpacing.lg),
             const Text(
               AnimalRegisterStrings.earTagColorTitle,
-              style: AppTypography.formFieldLabel,
+              style: AppTypography.secondaryEmphasis,
             ),
             const SizedBox(height: AppSpacing.sm),
             EarTagColorSelector(
