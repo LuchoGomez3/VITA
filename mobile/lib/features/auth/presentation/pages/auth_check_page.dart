@@ -40,7 +40,7 @@ class AuthCheckPage extends StatelessWidget {
       case AuthSessionAuthenticated():
         context.go(AppRoutes.home);
       case AuthSessionUnauthenticated():
-        context.go(AppRoutes.login);
+        context.go(AppRoutes.signUp);
       case AuthSessionChecking():
         break;
     }

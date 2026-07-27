@@ -23,7 +23,8 @@ Esta fase introduce el primer flujo real de sesion:
 - estado global de autenticacion con `AuthSessionCubit`;
 - hidratacion del token provider que usa Brick;
 - logout local;
-- pantalla tecnica inicial para decidir si mostrar login o entrar a la app;
+- pantalla tecnica inicial para decidir si mostrar welcome publica o entrar a
+  la app;
 - pantallas de login y registro bajo `presentation`.
 
 No implementa guards completos por ruta ni borrado de bases Brick al cerrar
@@ -116,7 +117,8 @@ Al abrir la app, `AuthSessionCubit.restoreSession()` lee secure storage mediante
 `RestoreSessionUseCase`. Si hay sesion local, emite `authenticated` sin llamar al
 backend. Esto permite entrar a la app sin internet y trabajar contra SQLite.
 
-Si no hay sesion local, emite `unauthenticated` y la app muestra login. Login y
+Si no hay sesion local, emite `unauthenticated` y la app muestra la welcome
+publica con acciones para iniciar sesion o registrar una cuenta. Login y
 registro son las excepciones al offline-first porque ambos requieren internet:
 registro para crear la cuenta en backend, login para obtener una sesion inicial
 valida.
