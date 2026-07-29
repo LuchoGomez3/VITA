@@ -297,4 +297,46 @@ class EstablishmentRegisterStrings {
   static const reviewOwnerNoteMessage =
       'Vas a quedar como Owner del establecimiento. Después podés invitar '
       'capataces, veterinarios y consignatarios.';
+
+  /// Titulo de la pantalla de éxito.
+  static const successTitle = '¡Listo!';
+
+  /// Sufijo del subtitulo de la pantalla de éxito (el nombre va antes).
+  static const successSubtitleSuffix = ' ya está registrada. Quedaste como Owner.';
+
+  /// Etiqueta del chip de rol en la tarjeta de éxito.
+  static const successOwnerChipLabel = 'Owner';
+
+  /// Etiqueta del mini-stat de superficie.
+  static const successSurfaceStatLabel = 'Superficie';
+
+  /// Etiqueta del mini-stat de cabezas.
+  static const successAnimalsStatLabel = 'Cabezas';
+
+  /// Etiqueta del mini-stat de unidades productivas.
+  static const successProductionUnitsStatLabel = 'UP';
+
+  /// Titulo de la sección de próximos pasos.
+  static const successNextStepsTitle = 'Próximos pasos sugeridos';
+
+  /// Titulo de la sugerencia de dividir en potreros.
+  static const successNextStepDivideLabel = 'Dividir el campo en potreros';
+
+  /// Subtitulo de la sugerencia de dividir en potreros.
+  static const successNextStepDivideSub = 'Subdividí la superficie en potreros';
+
+  /// Titulo de la sugerencia de invitar al capataz.
+  static const successNextStepInviteLabel = 'Invitar al capataz';
+
+  /// Subtitulo de la sugerencia de invitar al capataz.
+  static const successNextStepInviteSub = 'Para que pueda cargar pesajes y sanidad';
+
+  /// Titulo de la sugerencia de dar de alta el primer animal.
+  static const successNextStepAnimalLabel = 'Dar de alta el primer animal';
+
+  /// Subtitulo de la sugerencia de dar de alta el primer animal.
+  static const successNextStepAnimalSub = 'Empezá a cargar tu rodeo';
+
+  /// Boton para volver al inicio desde la pantalla de éxito.
+  static const successGoHomeButton = 'Ir al inicio';
 }

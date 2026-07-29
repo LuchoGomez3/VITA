@@ -55,6 +55,27 @@ Puntos de entrada al flujo: botón "Configurar mi establecimiento" en
 - `cantidadUnidadesProductivas` se mantiene en 1: "agregar otra unidad
   productiva" (otro RENSPA) está deliberadamente fuera de alcance.
 
+## Estado de la Etapa 1 (maquetado)
+
+Las 7 pantallas están maquetadas con datos ficticios y el flujo es navegable
+de punta a punta (repositorio mock, siempre exitoso). Widgets compartidos que
+surgieron durante el maquetado, reusables entre pasos:
+
+- `EstablishmentReviewSection` — tarjeta numerada de revisión con filas
+  label/valor (soporta `isMono`/`isMuted` por fila) y botón "Editar" que
+  dispara `stepRequested`.
+- `FieldBoundaryPreview` — mapa decorativo con el polígono mock superpuesto;
+  con vértices numerados en el paso 4, sin ellos (miniatura) en la revisión.
+- `RenspaBreakdownPanel`, `EstablishmentInfoCallout`, `StaticMapPreview` —
+  reusados entre el paso 2/3/4 y la revisión.
+
+Cambios aditivos a widgets compartidos de `core/` (no rompen usos existentes):
+`AppChoiceSelector` ganó un `isSelected` opcional para soportar selección
+múltiple; `AppTextFormField` ganó un `style` opcional para poder mostrar
+CUIT/RENSPA/coordenadas en tipografía mono; `AppTypography` sumó
+`monoValue`/`monoValueEmphasis` (placeholder `monospace` hasta agregar
+Source Code Pro).
+
 ## Explícitamente fuera de alcance de esta iniciativa
 
 - "Sumarme a uno existente con código" (botón en el estado vacío).
