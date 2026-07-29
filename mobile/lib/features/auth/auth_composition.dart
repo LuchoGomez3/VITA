@@ -1,6 +1,8 @@
 import 'package:frontend_mayoral/app/config/config.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -77,6 +79,8 @@ LoginBloc createLoginBloc() {
           client: client,
         ),
         animalStore: BrickAnimalStore.instance,
+        categoryStore: BrickCategoriaStore.instance,
+        weighingStore: BrickPesajeStore.instance,
       ),
     ),
     onClose: client.close,

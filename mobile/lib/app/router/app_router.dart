@@ -1,4 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
+import 'package:frontend_mayoral/app/layout/main_layout_strings.dart';
+import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
@@ -17,7 +20,13 @@ import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_s
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_page.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_success_page.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_welcome_first_time.dart';
+import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
+import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
+import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
+import 'package:frontend_mayoral/features/profile/profile_composition.dart';
+import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
+import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion del router de la app.
@@ -58,17 +67,85 @@ class AppRouter {
           userData: state.extra! as AppUser,
         ),
       ),
-
-      /// Ruta de la pantalla de inicio.
-      GoRoute(
-        path: AppRoutes.home,
-        pageBuilder: (context, state) => FadePage(
-          state: state,
-          child: HomePage(
-            signOut: context.read<AuthSessionCubit>().signOut,
-            verifyAuthentication: verifyAuthenticatedUser,
-          ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => MainLayoutPage(
+          navigationShell: navigationShell,
         ),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.home,
+                pageBuilder: (context, state) {
+                  final sessionState = context.watch<AuthSessionCubit>().state;
+                  final userName = switch (sessionState) {
+                    AuthSessionAuthenticated(:final session) => session.user.firstName,
+                    _ => '',
+                  };
+
+                  return FadePage(
+                    state: state,
+                    child: HomePage(
+                      createCubit: createHomeDashboardCubit,
+                      userName: userName,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.livestock,
+                builder: (context, state) => const LivestockPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.procedures,
+                builder: (context, state) => const ShellPlaceholderPage(
+                  title: MainLayoutStrings.proceduresPlaceholder,
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.profile,
+                builder: (context, state) {
+                  final sessionState = context.watch<AuthSessionCubit>().state;
+
+                  return switch (sessionState) {
+                    AuthSessionAuthenticated(:final session) => ProfilePage(
+                      userId: session.user.id,
+                      email: session.user.email,
+                      firstName: session.user.firstName,
+                      lastName: session.user.lastName,
+                      cuit: session.user.cuit,
+                      role: session.user.role.name,
+                      createCubit: createProfileCubit,
+                      signOut: context.read<AuthSessionCubit>().signOut,
+                    ),
+                    _ => ProfilePage(
+                      userId: ProfileStrings.emptyCredential,
+                      email: ProfileStrings.emptyCredential,
+                      firstName: ProfileStrings.emptyCredential,
+                      lastName: ProfileStrings.emptyCredential,
+                      cuit: null,
+                      role: 'unknown',
+                      createCubit: createProfileCubit,
+                      signOut: context.read<AuthSessionCubit>().signOut,
+                    ),
+                  };
+                },
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.animalRegisterStep1,
@@ -115,6 +192,24 @@ class AppRouter {
             createCubit: createAnimalDetailCubit,
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.expenseRecords,
+        builder: (context, state) => const ShellPlaceholderPage(
+          title: HomeStrings.movements,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.expenseRegister,
+        builder: (context, state) => const ShellPlaceholderPage(
+          title: HomeStrings.registerExpense,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.incomeRegister,
+        builder: (context, state) => const ShellPlaceholderPage(
+          title: HomeStrings.registerIncome,
+        ),
       ),
     ],
   );

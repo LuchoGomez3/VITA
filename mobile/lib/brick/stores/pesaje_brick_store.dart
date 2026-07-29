@@ -30,6 +30,9 @@ abstract class PesajeBrickStore {
 
   /// Lee desde SQLite el historial de pesajes de un animal, ordenado por fecha.
   Future<List<BrickPesajeModel>> getLocalPesajesByAnimal(String animalId);
+
+  /// Lee todos los pesajes locales vigentes.
+  Future<List<BrickPesajeModel>> getLocalPesajes();
 }
 
 /// Store Brick especifico para operaciones de pesajes.
@@ -109,7 +112,8 @@ class BrickPesajeStore implements PesajeBrickStore {
     final protectedLocalIds = localPesajes
         .where(
           (pesaje) =>
-              pesaje.syncStatus == BrickPesajeSyncStatus.pending || pesaje.syncStatus == BrickPesajeSyncStatus.rejected,
+              pesaje.syncStatus == BrickPesajeSyncStatus.pending ||
+              pesaje.syncStatus == BrickPesajeSyncStatus.rejected,
         )
         .map((pesaje) => pesaje.localId)
         .toSet();
@@ -146,7 +150,7 @@ class BrickPesajeStore implements PesajeBrickStore {
   Future<List<BrickPesajeModel>> getLocalPesajesByAnimal(
     String animalId,
   ) async {
-    final pesajes = await _repository.getLocal<BrickPesajeModel>();
+    final pesajes = await getLocalPesajes();
 
     final pesajesById = <String, BrickPesajeModel>{};
     for (final pesaje in pesajes) {
@@ -158,6 +162,20 @@ class BrickPesajeStore implements PesajeBrickStore {
     final historial = pesajesById.values.toList()..sort((a, b) => a.date.compareTo(b.date));
 
     return historial;
+  }
+
+  @override
+  Future<List<BrickPesajeModel>> getLocalPesajes() async {
+    final pesajes = await _repository.getLocal<BrickPesajeModel>();
+    final pesajesById = <String, BrickPesajeModel>{};
+
+    // Se deduplica por UUID para sanear filas creadas por pulls anteriores que
+    // no reconciliaban contra la clave primaria local.
+    for (final pesaje in pesajes.where((item) => item.deletedAt == null)) {
+      pesajesById[pesaje.localId] = pesaje;
+    }
+
+    return pesajesById.values.toList();
   }
 
   /// Aplica la respuesta del backend al pesaje local.

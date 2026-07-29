@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -23,36 +26,55 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     required SecureStorageService secureStorage,
     required EstablishmentRemoteDataSource establishmentRemoteDataSource,
     required AnimalBrickStore animalStore,
+    required CategoriaBrickStore categoryStore,
+    required PesajeBrickStore weighingStore,
   }) : _secureStorage = secureStorage,
        _establishmentRemoteDataSource = establishmentRemoteDataSource,
-       _animalStore = animalStore;
+       _animalStore = animalStore,
+       _categoryStore = categoryStore,
+       _weighingStore = weighingStore;
 
   final SecureStorageService _secureStorage;
   final EstablishmentRemoteDataSource _establishmentRemoteDataSource;
   final AnimalBrickStore _animalStore;
+  final CategoriaBrickStore _categoryStore;
+  final PesajeBrickStore _weighingStore;
 
   @override
   Future<Result<void>> syncForUser(String userId) async {
     final markerKey = SecureStorageKeys.initialDataSyncCompleted(userId);
 
     try {
-      // El marcador evita repetir la descarga inicial en cada login del mismo
-      // usuario. Si en el futuro se agregan catalogos globales con versionado,
-      // este criterio probablemente necesite evolucionar.
+      final establishments =
+          await _establishmentRemoteDataSource.fetchEstablishments();
+      await _secureStorage.write(
+        key: SecureStorageKeys.establishmentCatalog,
+        value: jsonEncode(
+          establishments.map((establishment) => establishment.toJson()).toList(),
+        ),
+      );
       final completed = await _secureStorage.read(markerKey);
       if (completed == 'true') {
         return const Result.success(null);
       }
 
-      // TODO(sync): reemplazar este datasource HTTP por EstablishmentBrickStore
-      // cuando el store de establecimientos este consolidado. El bootstrap
-      // deberia delegar la descarga de cada tabla offline-first a Brick, que es
-      // quien conoce el schema local/remoto y la estrategia de persistencia.
-      final establishmentIds = await _establishmentRemoteDataSource.fetchEstablishmentIds();
-      _logInitialSyncStep('establishments=${establishmentIds.length}');
-      for (final establishmentId in establishmentIds) {
-        _logInitialSyncStep('pulling animals for establishment=$establishmentId');
+      _logInitialSyncStep('establishments=${establishments.length}');
+      for (final establishment in establishments) {
+        final establishmentId = establishment.id;
+        // El catalogo se cachea antes que los animales para que sus referencias
+        // de categoria ya esten disponibles en los flujos offline.
+        _logInitialSyncStep(
+          'pulling categories for establishment=$establishmentId',
+        );
+        await _categoryStore.pullRemoteCategorias(establishmentId);
+        _logInitialSyncStep(
+          'pulling animals for establishment=$establishmentId',
+        );
         await _animalStore.pullRemoteAnimals(establishmentId);
+        _logInitialSyncStep(
+          'pulling weighings for establishment=$establishmentId',
+        );
+        await _weighingStore.pullRemotePesajes(establishmentId);
       }
       await _secureStorage.write(key: markerKey, value: 'true');
 
@@ -60,7 +82,8 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     } on SocketException {
       return const Result.failure(
         DomainException(
-          message: 'No se pudieron preparar los datos offline por falta de conexion.',
+          message:
+              'No se pudieron preparar los datos offline por falta de conexion.',
           code: DomainErrorCode.offline,
         ),
       );
