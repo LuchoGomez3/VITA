@@ -9,6 +9,7 @@ from api.modules.establecimientos.models import (
     Establecimiento,
     UsuarioEstablecimiento,
 )
+from api.modules.establecimientos.repository import EstablecimientoRepository
 from api.modules.usuarios.models import Usuario
 from api.shared.enums import RolUsuario
 
@@ -55,6 +56,37 @@ async def test_renspa_duplicado_rechazado(auth_client):
         "/api/v1/establecimientos",
         json=_payload(nombre="Otra estancia"),
     )
+    assert resp.status_code == 409
+    assert resp.json()["errors"][0]["code"] == "renspa_duplicado"
+
+
+@pytest.mark.anyio
+async def test_renspa_duplicado_por_carrera_lo_atrapa_la_constraint(
+    auth_client, session, usuario_actual, monkeypatch
+):
+    """Si el pre-chequeo no ve el duplicado (carrera concurrente), la
+    UniqueConstraint de la DB debe atrapar el INSERT y traducirse a 409.
+
+    Se simula la ventana de carrera sembrando el RENSPA y forzando a
+    ``get_by_renspa`` a devolver ``None`` (como si el otro alta aún no se viera).
+    """
+    # Ya existe un establecimiento con ese RENSPA.
+    session.add(
+        Establecimiento(
+            owner_id=usuario_actual.id,
+            nombre="Estancia previa",
+            nro_renspa="12.345.6.78901",
+        )
+    )
+    await session.commit()
+
+    # El pre-chequeo no lo ve: sólo queda la constraint como garantía final.
+    async def _no_ve_duplicado(self, nro_renspa):
+        return None
+
+    monkeypatch.setattr(EstablecimientoRepository, "get_by_renspa", _no_ve_duplicado)
+
+    resp = await auth_client.post("/api/v1/establecimientos", json=_payload())
     assert resp.status_code == 409
     assert resp.json()["errors"][0]["code"] == "renspa_duplicado"
 
