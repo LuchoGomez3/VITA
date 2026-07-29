@@ -122,4 +122,58 @@ class EstablishmentRegisterStrings {
     'Ciclo completo',
     'Tambo',
   ];
+
+  /// Titulo de seccion del paso 2.
+  static const stepTwoSectionTitle = 'RENSPA y titular';
+
+  /// Descripcion del paso 2.
+  static const stepTwoSectionDescription =
+      'El RENSPA es el código que SENASA asigna a cada unidad productiva '
+      'oficial. Lo encontrás en el certificado del establecimiento.';
+
+  /// Titulo del campo CUIT del titular.
+  static const stepTwoCuitFieldTitle = 'CUIT del titular';
+
+  /// Placeholder del campo CUIT del titular.
+  static const stepTwoCuitFieldHint = 'Ej. 20-21456789-3';
+
+  /// Mensaje de validacion mock del campo CUIT.
+  static const stepTwoCuitValidatedCaption = 'Cecilia Lazarte · validado en AFIP';
+
+  /// Titulo del campo numero de RENSPA.
+  static const stepTwoRenspaFieldTitle = 'Número de RENSPA';
+
+  /// Placeholder del campo numero de RENSPA.
+  static const stepTwoRenspaFieldHint = 'Ej. 07.123.0.00456/01';
+
+  /// Etiqueta del segmento provincia del desglose de RENSPA.
+  static const renspaProvinciaLabel = 'Provincia';
+
+  /// Etiqueta del segmento departamento del desglose de RENSPA.
+  static const renspaDepartamentoLabel = 'Depto.';
+
+  /// Etiqueta del segmento actividad del desglose de RENSPA.
+  static const renspaActividadLabel = 'Activ.';
+
+  /// Etiqueta del segmento titular del desglose de RENSPA.
+  static const renspaTitularLabel = 'Titular';
+
+  /// Etiqueta del segmento unidad productiva del desglose de RENSPA.
+  static const renspaUnidadProductivaLabel = 'U. Prod.';
+
+  /// Explicación del desglose de RENSPA.
+  static const stepTwoRenspaCaption =
+      '07 = Córdoba · 123 = Río Cuarto · 0 = ganadería bovina · '
+      '00456 = titular · 01 = primera unidad productiva.';
+
+  /// Titulo de la nota de validación SENASA.
+  static const stepTwoSenasaCalloutTitle = 'Validación SENASA';
+
+  /// Mensaje de la nota de validación SENASA.
+  static const stepTwoSenasaCalloutMessage =
+      'Cuando vuelva la conexión vamos a verificar el RENSPA contra el '
+      'padrón oficial. Si no coincide te avisamos.';
+
+  /// Boton para agregar otra unidad productiva.
+  static const stepTwoAddProductionUnitButton = 'Agregar otra unidad productiva (otro RENSPA)';
 }
