@@ -60,4 +60,13 @@ class HomeStrings {
 
   /// Boton para abrir el detalle de animal demo.
   static const animalDetailButton = 'Ver animal 012';
+
+  /// Titulo del modulo de registro de establecimiento.
+  static const establishmentRegisterTitle = 'Registrar establecimiento';
+
+  /// Descripcion del modulo de registro de establecimiento.
+  static const establishmentRegisterDescription = 'Alta del campo: identificacion, RENSPA, ubicacion y superficie.';
+
+  /// Boton para abrir el registro de establecimiento.
+  static const establishmentRegisterButton = 'Abrir modulo';
 }

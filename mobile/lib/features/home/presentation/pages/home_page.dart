@@ -153,6 +153,27 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
+              const SizedBox(height: AppSpacing.md),
+              AppSurfaceCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      HomeStrings.establishmentRegisterTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    const Text(
+                      HomeStrings.establishmentRegisterDescription,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppFilledButton(
+                      label: HomeStrings.establishmentRegisterButton,
+                      onPressed: () => context.push(AppRoutes.establishmentRegisterEmpty),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

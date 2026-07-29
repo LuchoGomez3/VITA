@@ -45,4 +45,25 @@ class AppRoutes {
   static String animalDetailById(String animalId) {
     return '/animals/$animalId';
   }
+
+  /// Ruta de la pantalla de estado vacio de establecimiento.
+  static const establishmentRegisterEmpty = '/registrar-establecimiento';
+
+  /// Ruta de la pantalla de registro de establecimiento paso 1.
+  static const establishmentRegisterStep1 = '/registrar-establecimiento/paso-1';
+
+  /// Ruta de la pantalla de registro de establecimiento paso 2.
+  static const establishmentRegisterStep2 = '/registrar-establecimiento/paso-2';
+
+  /// Ruta de la pantalla de registro de establecimiento paso 3.
+  static const establishmentRegisterStep3 = '/registrar-establecimiento/paso-3';
+
+  /// Ruta de la pantalla de registro de establecimiento paso 4.
+  static const establishmentRegisterStep4 = '/registrar-establecimiento/paso-4';
+
+  /// Ruta de la pantalla de revision de establecimiento.
+  static const establishmentRegisterReview = '/registrar-establecimiento/revisar';
+
+  /// Ruta de la pantalla de exito de registro de establecimiento.
+  static const establishmentRegisterSuccess = '/registrar-establecimiento/exito';
 }
