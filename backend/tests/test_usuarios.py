@@ -171,6 +171,63 @@ async def test_registro_password_debil(client):
     assert resp.status_code == 422
 
 
+@pytest.mark.anyio
+async def test_registro_password_solo_numero_sin_mayuscula(client):
+    """Un número sin mayúscula ya no alcanza: se exigen ambos."""
+    resp = await client.post(
+        "/api/v1/usuarios/registro",
+        json=_payload(password="segura123"),
+    )
+    assert resp.status_code == 422
+
+
+@pytest.mark.anyio
+async def test_registro_password_solo_mayuscula_sin_numero(client):
+    """Una mayúscula sin número ya no alcanza: se exigen ambos."""
+    resp = await client.post(
+        "/api/v1/usuarios/registro",
+        json=_payload(password="SeguraSinNumero"),
+    )
+    assert resp.status_code == 422
+
+
+@pytest.mark.anyio
+async def test_registro_password_excede_longitud_maxima(client):
+    resp = await client.post(
+        "/api/v1/usuarios/registro",
+        json=_payload(password="Segura123" + "a" * 42),  # 51 caracteres
+    )
+    assert resp.status_code == 422
+
+
+@pytest.mark.anyio
+async def test_registro_password_longitud_maxima_permitida(client):
+    """Exactamente 50 caracteres es el límite permitido (no se rechaza)."""
+    resp = await client.post(
+        "/api/v1/usuarios/registro",
+        json=_payload(password="Segura123" + "a" * 41),  # 50 caracteres
+    )
+    assert resp.status_code == 201
+
+
+@pytest.mark.anyio
+async def test_registro_nombre_excede_longitud_maxima(client):
+    resp = await client.post(
+        "/api/v1/usuarios/registro",
+        json=_payload(nombre="a" * 51),
+    )
+    assert resp.status_code == 422
+
+
+@pytest.mark.anyio
+async def test_registro_apellido_excede_longitud_maxima(client):
+    resp = await client.post(
+        "/api/v1/usuarios/registro",
+        json=_payload(apellido="a" * 51),
+    )
+    assert resp.status_code == 422
+
+
 # --- Algoritmo de control del CUIT/CUIL (mod-11) — validaciones generales ---
 
 
