@@ -24,6 +24,7 @@ class AppChoiceSelector<T> extends StatelessWidget {
     required this.onChanged,
     super.key,
     this.value,
+    this.isSelected,
     this.title,
     this.titleStyle,
     this.selectedColor = AppColors.primary,
@@ -35,8 +36,15 @@ class AppChoiceSelector<T> extends StatelessWidget {
   /// Opciones disponibles para seleccionar.
   final List<AppChoiceOption<T>> options;
 
-  /// Valor seleccionado actualmente.
+  /// Valor seleccionado actualmente. Se ignora si se provee [isSelected].
   final T? value;
+
+  /// Callback opcional para determinar seleccion multiple.
+  ///
+  /// Si se provee, cada opcion se marca como seleccionada segun este callback
+  /// en vez de compararse contra [value]. Permite reusar el mismo selector
+  /// para casos de seleccion unica (default) o multiple.
+  final bool Function(T value)? isSelected;
 
   /// Titulo opcional que se muestra sobre las opciones.
   final String? title;
@@ -78,7 +86,7 @@ class AppChoiceSelector<T> extends StatelessWidget {
               .map(
                 (option) => _AppChoiceChip(
                   label: option.label,
-                  isSelected: option.value == value,
+                  isSelected: isSelected != null ? isSelected!(option.value) : option.value == value,
                   selectedColor: selectedColor,
                   selectedTextColor: selectedTextColor,
                   unSelectedColor: unSelectedColor,

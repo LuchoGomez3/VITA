@@ -81,4 +81,45 @@ class EstablishmentRegisterStrings {
 
   /// Boton secundario para sumarse a un establecimiento existente.
   static const emptyStateJoinExistingButton = 'Sumarme a uno existente con código';
+
+  /// Titulo de seccion del paso 1.
+  static const stepOneSectionTitle = 'Identificación del campo';
+
+  /// Descripcion del paso 1.
+  static const stepOneSectionDescription =
+      'Este es el nombre con el que vas a ver el establecimiento en la app. '
+      'No tiene que coincidir con el catastro.';
+
+  /// Titulo del campo nombre.
+  static const stepOneNameFieldTitle = 'Nombre del establecimiento';
+
+  /// Placeholder del campo nombre.
+  static const stepOneNameFieldHint = 'Ej. La Sirena';
+
+  /// Texto de ayuda del campo nombre.
+  static const stepOneNameFieldHelper = 'Hasta 60 caracteres · visible para tu equipo.';
+
+  /// Titulo del campo descripción.
+  static const stepOneDescriptionFieldTitle = 'Descripción';
+
+  /// Sufijo que marca la descripción como opcional.
+  static const stepOneDescriptionFieldOptionalSuffix = ' · opcional';
+
+  /// Placeholder del campo descripción.
+  static const stepOneDescriptionFieldHint = 'Ej. Cría y recría de Aberdeen Angus.';
+
+  /// Titulo del selector de tipo de producción.
+  static const stepOneProductionTypeTitle = 'Tipo de producción';
+
+  /// Texto de ayuda del selector de tipo de producción.
+  static const stepOneProductionTypeHelper = 'Podés elegir más de uno. Esto sólo es para reportes internos.';
+
+  /// Opciones disponibles de tipo de producción.
+  static const stepOneProductionTypeOptions = [
+    'Cría',
+    'Recría',
+    'Invernada',
+    'Ciclo completo',
+    'Tambo',
+  ];
 }
