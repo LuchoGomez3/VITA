@@ -137,14 +137,26 @@ class EstablishmentRegisterStrings {
   /// Placeholder del campo CUIT del titular.
   static const stepTwoCuitFieldHint = 'Ej. 20-21456789-3';
 
-  /// Mensaje de validacion mock del campo CUIT.
+  /// Mensaje de validacion mock del campo CUIT cuando el formato es valido.
   static const stepTwoCuitValidatedCaption = 'Cecilia Lazarte · validado en AFIP';
+
+  /// Mensaje cuando el digito verificador del CUIT no coincide.
+  static const stepTwoCuitInvalidCheckDigitMessage = 'El CUIT ingresado no es válido.';
+
+  /// Mensaje cuando el CUIT todavia no tiene los once digitos.
+  static const stepTwoCuitIncompleteMessage = 'Ingresá un CUIT completo (11 dígitos).';
 
   /// Titulo del campo numero de RENSPA.
   static const stepTwoRenspaFieldTitle = 'Número de RENSPA';
 
   /// Placeholder del campo numero de RENSPA.
   static const stepTwoRenspaFieldHint = 'Ej. 07.123.0.00456/01';
+
+  /// Mensaje cuando el RENSPA cumple el formato `NN.NNN.N.NNNNN/NN`.
+  static const stepTwoRenspaValidFormatMessage = 'Formato válido.';
+
+  /// Mensaje cuando el RENSPA todavia no tiene el formato completo.
+  static const stepTwoRenspaIncompleteMessage = 'Ingresá el RENSPA completo (formato NN.NNN.N.NNNNN/NN).';
 
   /// Etiqueta del segmento provincia del desglose de RENSPA.
   static const renspaProvinciaLabel = 'Provincia';
@@ -211,6 +223,9 @@ class EstablishmentRegisterStrings {
 
   /// Confirmación de toma de coordenadas por GPS.
   static const stepThreeGpsConfirmedCaption = 'Tomada del GPS · precisión 4 m';
+
+  /// Placeholder de coordenadas mientras no se confirmó la ubicación.
+  static const stepThreeCoordinateUnconfirmedPlaceholder = '—';
 
   /// Boton para tomar la ubicación actual (mock).
   static const stepThreeUseCurrentLocationButton = 'Usar mi ubicación actual';

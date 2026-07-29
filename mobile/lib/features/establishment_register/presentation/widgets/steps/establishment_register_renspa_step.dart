@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/formatters/formatters.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
@@ -20,12 +21,17 @@ class _EstablishmentRegisterRenspaStepState extends State<EstablishmentRegisterR
   final _cuitController = TextEditingController();
   final _renspaController = TextEditingController();
 
+  late CuitValidationError? _cuitError;
+  late RenspaValidationError? _renspaError;
+
   @override
   void initState() {
     super.initState();
     final draft = context.read<RegisterEstablishmentBloc>().state.draft;
     _cuitController.text = draft.cuitTitular;
     _renspaController.text = draft.nroRenspa;
+    _cuitError = CuitInputFormatter.validationError(draft.cuitTitular);
+    _renspaError = RenspaInputFormatter.validationError(draft.nroRenspa);
   }
 
   @override
@@ -67,8 +73,14 @@ class _EstablishmentRegisterRenspaStepState extends State<EstablishmentRegisterR
               title: EstablishmentRegisterStrings.stepTwoCuitFieldTitle,
               hintText: EstablishmentRegisterStrings.stepTwoCuitFieldHint,
               style: AppTypography.monoValue,
-              validation: AppFieldValidation.valid,
-              validationMessage: EstablishmentRegisterStrings.stepTwoCuitValidatedCaption,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                CuitInputFormatter(
+                  onValidationChanged: (error) => setState(() => _cuitError = error),
+                ),
+              ],
+              validation: _cuitError == null ? AppFieldValidation.valid : AppFieldValidation.invalid,
+              validationMessage: _cuitValidationMessage,
               onChanged: (value) {
                 _updateDraft(draft.copyWith(cuitTitular: value));
               },
@@ -79,7 +91,14 @@ class _EstablishmentRegisterRenspaStepState extends State<EstablishmentRegisterR
               title: EstablishmentRegisterStrings.stepTwoRenspaFieldTitle,
               hintText: EstablishmentRegisterStrings.stepTwoRenspaFieldHint,
               style: AppTypography.monoValue,
-              validation: AppFieldValidation.valid,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                RenspaInputFormatter(
+                  onValidationChanged: (error) => setState(() => _renspaError = error),
+                ),
+              ],
+              validation: _renspaError == null ? AppFieldValidation.valid : AppFieldValidation.invalid,
+              validationMessage: _renspaValidationMessage,
               onChanged: (value) {
                 _updateDraft(draft.copyWith(nroRenspa: value));
               },
@@ -103,6 +122,17 @@ class _EstablishmentRegisterRenspaStepState extends State<EstablishmentRegisterR
       ),
     );
   }
+
+  String get _cuitValidationMessage => switch (_cuitError) {
+    null => EstablishmentRegisterStrings.stepTwoCuitValidatedCaption,
+    CuitValidationError.invalidCheckDigit => EstablishmentRegisterStrings.stepTwoCuitInvalidCheckDigitMessage,
+    _ => EstablishmentRegisterStrings.stepTwoCuitIncompleteMessage,
+  };
+
+  String get _renspaValidationMessage => switch (_renspaError) {
+    null => EstablishmentRegisterStrings.stepTwoRenspaValidFormatMessage,
+    _ => EstablishmentRegisterStrings.stepTwoRenspaIncompleteMessage,
+  };
 
   void _updateDraft(RegisterEstablishmentDraft draft) {
     context.read<RegisterEstablishmentBloc>().add(

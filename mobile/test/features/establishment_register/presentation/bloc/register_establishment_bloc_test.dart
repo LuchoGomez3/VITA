@@ -78,7 +78,10 @@ void main() {
       expect(bloc.state.currentStep, RegisterEstablishmentStep.surface);
     });
 
-    test('submits the draft and emits loading then data', () async {
+    test('submits a valid draft and emits loading then data', () async {
+      bloc.add(RegisterEstablishmentEvent.draftChanged(_validDraft(bloc.state.draft)));
+      await Future<void>.delayed(Duration.zero);
+
       final expectation = expectLater(
         bloc.stream,
         emitsThrough(
@@ -96,10 +99,21 @@ void main() {
       expect(repository.registerCalls, 1);
     });
 
+    test('does not submit when a step is incomplete', () async {
+      bloc.add(const RegisterEstablishmentEvent.submitRequested());
+
+      await Future<void>.delayed(Duration.zero);
+      expect(bloc.state.submitResult, isA<ResultError<RegisteredEstablishment>>());
+      expect(repository.registerCalls, 0);
+    });
+
     test('emits repository failures', () async {
       repository.result = const Result.failure(
         DomainException(message: 'sin conexion', code: DomainErrorCode.offline),
       );
+
+      bloc.add(RegisterEstablishmentEvent.draftChanged(_validDraft(bloc.state.draft)));
+      await Future<void>.delayed(Duration.zero);
 
       bloc.add(const RegisterEstablishmentEvent.submitRequested());
 
@@ -108,6 +122,21 @@ void main() {
       expect(repository.registerCalls, 1);
     });
   });
+}
+
+RegisterEstablishmentDraft _validDraft(RegisterEstablishmentDraft draft) {
+  return draft.copyWith(
+    nombre: 'Estancia La Sirena',
+    tiposProduccion: {'Cría', 'Recría'},
+    cuitTitular: '20-12345678-6',
+    nroRenspa: '07.123.0.00456/01',
+    provincia: 'Córdoba',
+    departamento: 'Río Cuarto',
+    localidad: 'Coronel Moldes',
+    latitud: -33.7242,
+    longitud: -64.5891,
+    ubicacionConfirmadaPorGps: true,
+  );
 }
 
 class _FakeEstablishmentRegistrationRepository implements EstablishmentRegistrationRepository {

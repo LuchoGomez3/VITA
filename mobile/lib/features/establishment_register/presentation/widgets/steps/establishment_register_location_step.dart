@@ -53,7 +53,7 @@ class EstablishmentRegisterLocationStep extends StatelessWidget {
                   child: AppDropdownFormField<String>(
                     title: EstablishmentRegisterStrings.stepThreeProvinciaFieldTitle,
                     hintText: EstablishmentRegisterStrings.stepThreeProvinciaFieldTitle,
-                    initialValue: draft.provincia,
+                    initialValue: draft.provincia.isEmpty ? null : draft.provincia,
                     options: EstablishmentRegisterStrings.stepThreeProvinciaOptions
                         .map((provincia) => AppDropdownOption(value: provincia, label: provincia))
                         .toList(),
@@ -70,7 +70,7 @@ class EstablishmentRegisterLocationStep extends StatelessWidget {
                   child: AppDropdownFormField<String>(
                     title: EstablishmentRegisterStrings.stepThreeDepartamentoFieldTitle,
                     hintText: EstablishmentRegisterStrings.stepThreeDepartamentoFieldTitle,
-                    initialValue: draft.departamento,
+                    initialValue: draft.departamento.isEmpty ? null : draft.departamento,
                     options: EstablishmentRegisterStrings.stepThreeDepartamentoOptions
                         .map((departamento) => AppDropdownOption(value: departamento, label: departamento))
                         .toList(),
@@ -89,7 +89,7 @@ class EstablishmentRegisterLocationStep extends StatelessWidget {
               title: EstablishmentRegisterStrings.stepThreeLocalidadFieldTitle,
               hintText: EstablishmentRegisterStrings.stepThreeLocalidadFieldTitle,
               helperText: EstablishmentRegisterStrings.stepThreeLocalidadFieldHelper,
-              initialValue: draft.localidad,
+              initialValue: draft.localidad.isEmpty ? null : draft.localidad,
               options: EstablishmentRegisterStrings.stepThreeLocalidadOptions
                   .map((localidad) => AppDropdownOption(value: localidad, label: localidad))
                   .toList(),
@@ -108,9 +108,9 @@ class EstablishmentRegisterLocationStep extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Row(
               children: [
-                Expanded(child: _ReadOnlyMonoValue(value: _formatCoordinate(draft.latitud))),
+                Expanded(child: _ReadOnlyMonoValue(value: _formatCoordinate(draft, draft.latitud))),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(child: _ReadOnlyMonoValue(value: _formatCoordinate(draft.longitud))),
+                Expanded(child: _ReadOnlyMonoValue(value: _formatCoordinate(draft, draft.longitud))),
               ],
             ),
             if (draft.ubicacionConfirmadaPorGps) ...[
@@ -158,7 +158,10 @@ class EstablishmentRegisterLocationStep extends StatelessWidget {
     );
   }
 
-  String _formatCoordinate(double value) {
+  String _formatCoordinate(RegisterEstablishmentDraft draft, double value) {
+    if (!draft.ubicacionConfirmadaPorGps) {
+      return EstablishmentRegisterStrings.stepThreeCoordinateUnconfirmedPlaceholder;
+    }
     return '${value.toStringAsFixed(4)}°';
   }
 

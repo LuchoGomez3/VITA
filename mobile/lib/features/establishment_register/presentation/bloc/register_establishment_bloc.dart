@@ -1,9 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/use_cases/register_establishment_use_case.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_draft_validation.dart';
 
 part 'register_establishment_bloc.freezed.dart';
 part 'register_establishment_event.dart';
@@ -82,11 +84,11 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
     emit(state.copyWith(currentStep: event.step));
   }
 
-  /// Construye el request de dominio a partir del draft y lo envia.
+  /// Valida el borrador, construye el request de dominio y lo envia.
   ///
-  // TODO(lucho): Etapa 2 agrega validacion real antes de armar el request
-  // (ver .claude/specs/registrar-establecimiento.md). Por ahora el draft
-  // siempre se considera valido.
+  /// La UI ya deshabilita "Crear establecimiento" mientras algun paso es
+  /// invalido; esta revalidacion es defensiva (mismo criterio que
+  /// `RegisterAnimalBloc`), para no depender unicamente del estado del boton.
   Future<void> _onSubmitRequested(
     _SubmitRequested event,
     Emitter<RegisterEstablishmentState> emit,
@@ -95,9 +97,17 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
       return;
     }
 
+    final registration = _buildRegistration();
+    if (registration case Failure<EstablishmentRegistration>(:final error)) {
+      emit(state.copyWith(submitResult: ResultState.error(error)));
+      return;
+    }
+
     emit(state.copyWith(submitResult: const ResultState.loading()));
 
-    final result = await _registerEstablishmentUseCase(_buildRegistration());
+    final result = await _registerEstablishmentUseCase(
+      (registration as Success<EstablishmentRegistration>).data,
+    );
 
     switch (result) {
       case Success<RegisteredEstablishment>(:final data):
@@ -107,21 +117,32 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
     }
   }
 
-  EstablishmentRegistration _buildRegistration() {
+  Result<EstablishmentRegistration> _buildRegistration() {
     final draft = state.draft;
-    return EstablishmentRegistration(
-      nombre: draft.nombre,
-      descripcion: draft.descripcion,
-      tiposProduccion: draft.tiposProduccion.toList(),
-      cuitTitular: draft.cuitTitular,
-      nroRenspa: draft.nroRenspa,
-      provincia: draft.provincia,
-      departamento: draft.departamento,
-      localidad: draft.localidad,
-      latitud: draft.latitud,
-      longitud: draft.longitud,
-      superficieHectareas: draft.superficieHectareas,
-      cantidadVertices: draft.cantidadVertices,
+    if (!draft.isValidForStep(RegisterEstablishmentStep.review)) {
+      return const Result.failure(
+        DomainException(
+          message: 'Revisá los datos cargados: hay pasos incompletos.',
+          code: DomainErrorCode.validation,
+        ),
+      );
+    }
+
+    return Result.success(
+      EstablishmentRegistration(
+        nombre: draft.nombre,
+        descripcion: draft.descripcion,
+        tiposProduccion: draft.tiposProduccion.toList(),
+        cuitTitular: draft.cuitTitular,
+        nroRenspa: draft.nroRenspa,
+        provincia: draft.provincia,
+        departamento: draft.departamento,
+        localidad: draft.localidad,
+        latitud: draft.latitud,
+        longitud: draft.longitud,
+        superficieHectareas: draft.superficieHectareas,
+        cantidadVertices: draft.cantidadVertices,
+      ),
     );
   }
 }

@@ -86,14 +86,42 @@ Source Code Pro).
 
 ## Reglas de validación (Etapa 2)
 
-_Pendiente — se documenta acá a medida que se implementa cada regla:_
+Implementadas como funciones puras en
+`RegisterEstablishmentDraftValidation` (extension sobre
+`RegisterEstablishmentDraft`, en
+`presentation/bloc/register_establishment_draft_validation.dart`). El mismo
+criterio se usa en dos lugares: para habilitar/deshabilitar
+"Siguiente"/"Crear establecimiento" en `establishment_register_page.dart`
+(recalculado en cada cambio de `draft`, no sólo de `currentStep`), y como
+revalidación defensiva en `RegisterEstablishmentBloc._buildRegistration()`
+antes de armar el request — la UI nunca es la única barrera.
 
-- Paso 1: `nombre` requerido, máx 60 caracteres; al menos un tipo de
-  producción seleccionado.
-- Paso 2: CUIT vía `CuitInputFormatter` (dígito verificador mod-11); RENSPA
-  vía un nuevo `RenspaInputFormatter` contra `^\d{2}\.\d{3}\.\d\.\d{5}/\d{2}$`.
-- Paso 3: selects requeridos; avanzar exige `ubicacionConfirmadaPorGps == true`.
-- Paso 4: `superficieHectareas > 0`, `cantidadVertices >= 3`.
+- **Paso 1 — Identificación**: `nombre` requerido (no vacío tras `trim`), máx
+  60 caracteres (reforzado además por `maxCharacters` en el campo); al menos
+  un tipo de producción seleccionado. Sin resaltado de error en rojo (mismo
+  criterio que los campos de nombre/apellido en `sign_up`): sólo gatea el
+  botón.
+- **Paso 2 — RENSPA y titular**: CUIT vía `CuitInputFormatter.validationError`
+  (dígito verificador mod-11, mismo validador que `sign_up`); RENSPA vía el
+  nuevo `RenspaInputFormatter` (`core/formatters/renspa_input_formatter.dart`,
+  mismo patrón de mascara+validación que `CuitInputFormatter`) contra
+  `^\d{2}\.\d{3}\.\d\.\d{5}/\d{2}$` (13 dígitos, sin dígito verificador).
+  Ambos campos muestran borde y mensaje de error en tiempo real.
+- **Paso 3 — Ubicación geográfica**: `provincia`/`departamento`/`localidad`
+  no vacíos; avanzar exige además `ubicacionConfirmadaPorGps == true` (o sea,
+  tocó "Usar mi ubicación actual" al menos una vez). Mientras no está
+  confirmada, las coordenadas muestran un placeholder (`—`) en vez de `0.0000°`.
+- **Paso 4 — Delimitar superficie**: `superficieHectareas > 0`,
+  `cantidadVertices >= 3`. Trivialmente cierto hoy (valores mock fijos, sin
+  mapa real editable), pero ya con la forma correcta para cuando el mapa real
+  reemplace el mock.
+- **Revisar**: válido sólo si los 4 pasos anteriores lo son. `.initial()` deja
+  de sembrar datos ficticios (Etapa 1) y arranca vacío en todos los campos
+  excepto la superficie/vértices del paso 4 (siguen fijos, ver arriba).
+
+Tests: `test/core/formatters/renspa_input_formatter_test.dart`,
+`test/features/establishment_register/presentation/bloc/register_establishment_draft_validation_test.dart`
+y los casos de gating agregados a `register_establishment_bloc_test.dart`.
 
 ## Contrato de backend (Etapa 3)
 

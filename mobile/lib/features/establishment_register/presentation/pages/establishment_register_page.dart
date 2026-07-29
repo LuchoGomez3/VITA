@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_draft_validation.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/strings/establishment_register_strings.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/establishment_register_app_bar_title.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/establishment_register_progress_indicator.dart';
@@ -72,10 +73,13 @@ class _EstablishmentRegisterView extends StatelessWidget {
       },
       child: BlocBuilder<RegisterEstablishmentBloc, RegisterEstablishmentState>(
         buildWhen: (previous, current) {
-          return previous.currentStep != current.currentStep || previous.submitResult != current.submitResult;
+          return previous.currentStep != current.currentStep ||
+              previous.submitResult != current.submitResult ||
+              previous.draft != current.draft;
         },
         builder: (context, state) {
           final isReview = state.currentStep == RegisterEstablishmentStep.review;
+          final isStepValid = state.draft.isValidForStep(state.currentStep);
 
           return Scaffold(
             appBar: AppBar(
@@ -127,6 +131,7 @@ class _EstablishmentRegisterView extends StatelessWidget {
             bottomNavigationBar: _EstablishmentRegisterNavigation(
               currentStep: state.currentStep,
               isSubmitting: state.submitResult is Loading<RegisteredEstablishment>,
+              isStepValid: isStepValid,
               onBack: () => _goBack(context, state.currentStep),
               onNext: () => _goNext(context, state.currentStep),
             ),
@@ -184,12 +189,14 @@ class _EstablishmentRegisterNavigation extends StatelessWidget {
   const _EstablishmentRegisterNavigation({
     required this.currentStep,
     required this.isSubmitting,
+    required this.isStepValid,
     required this.onBack,
     required this.onNext,
   });
 
   final RegisterEstablishmentStep currentStep;
   final bool isSubmitting;
+  final bool isStepValid;
   final VoidCallback onBack;
   final VoidCallback onNext;
 
@@ -206,14 +213,14 @@ class _EstablishmentRegisterNavigation extends StatelessWidget {
         RegisterEstablishmentStep.identification => AppFilledButton(
           label: EstablishmentRegisterStrings.nextButtonLabel,
           icon: const Icon(Icons.arrow_forward),
-          onPressed: onNext,
+          onPressed: isStepValid ? onNext : null,
         ),
         RegisterEstablishmentStep.review => AppFilledButton(
           label: isSubmitting
               ? EstablishmentRegisterStrings.savingButtonLabel
               : EstablishmentRegisterStrings.createButtonLabel,
           icon: isSubmitting ? const Icon(Icons.sync) : const Icon(Icons.check),
-          onPressed: isSubmitting ? null : onNext,
+          onPressed: isSubmitting || !isStepValid ? null : onNext,
         ),
         _ => Row(
           children: [
@@ -233,7 +240,7 @@ class _EstablishmentRegisterNavigation extends StatelessWidget {
                 icon: Icon(
                   currentStep == RegisterEstablishmentStep.surface ? Icons.checklist : Icons.arrow_forward,
                 ),
-                onPressed: onNext,
+                onPressed: isStepValid ? onNext : null,
               ),
             ),
           ],

@@ -39,22 +39,21 @@ sealed class RegisterEstablishmentDraft with _$RegisterEstablishmentDraft {
     required int cantidadUnidadesProductivas,
   }) = _RegisterEstablishmentDraft;
 
-  /// Crea los valores iniciales mostrados actualmente por el flujo.
-  ///
-  // TODO(lucho): Son datos ficticios para la Etapa 1 (maquetado). La Etapa 2
-  // los reemplaza por valores vacios una vez que exista validacion real.
+  /// Crea los valores iniciales del formulario, vacios salvo la superficie
+  /// delimitada (paso 4, replica visual estatica sin mapa real editable: ver
+  /// `.claude/specs/registrar-establecimiento.md`).
   factory RegisterEstablishmentDraft.initial() => const RegisterEstablishmentDraft(
-    nombre: 'La Sirena',
-    descripcion: 'Cría y recría de Aberdeen Angus. 2.847 cab. en producción.',
-    tiposProduccion: {'Cría', 'Recría'},
-    cuitTitular: '20-21456789-3',
-    nroRenspa: '07.123.0.00456/01',
-    provincia: 'Córdoba',
-    departamento: 'Río Cuarto',
-    localidad: 'Coronel Moldes',
-    latitud: -33.7242,
-    longitud: -64.5891,
-    ubicacionConfirmadaPorGps: true,
+    nombre: '',
+    descripcion: '',
+    tiposProduccion: {},
+    cuitTitular: '',
+    nroRenspa: '',
+    provincia: '',
+    departamento: '',
+    localidad: '',
+    latitud: 0,
+    longitud: 0,
+    ubicacionConfirmadaPorGps: false,
     superficieHectareas: 847,
     cantidadVertices: 7,
     cantidadUnidadesProductivas: 1,
