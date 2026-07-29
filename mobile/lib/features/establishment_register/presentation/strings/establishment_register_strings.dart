@@ -238,4 +238,63 @@ class EstablishmentRegisterStrings {
 
   /// Texto del hint inferior del paso 4.
   static const stepFourHintText = 'Tocá cualquier vértice para arrastrarlo';
+
+  /// Boton para editar una seccion desde la revision.
+  static const reviewEditButton = 'Editar';
+
+  /// Titulo de la seccion 1 de revision.
+  static const reviewSectionOneTitle = 'Identificación';
+
+  /// Titulo de la seccion 2 de revision.
+  static const reviewSectionTwoTitle = 'RENSPA y titular';
+
+  /// Titulo de la seccion 3 de revision.
+  static const reviewSectionThreeTitle = 'Ubicación';
+
+  /// Titulo de la seccion 4 de revision.
+  static const reviewSectionFourTitle = 'Superficie delimitada';
+
+  /// Etiqueta de nombre en la revision.
+  static const reviewNombreLabel = 'Nombre';
+
+  /// Etiqueta de produccion en la revision.
+  static const reviewProduccionLabel = 'Producción';
+
+  /// Etiqueta de descripcion en la revision.
+  static const reviewDescripcionLabel = 'Descripción';
+
+  /// Etiqueta de titular en la revision.
+  static const reviewTitularLabel = 'Titular';
+
+  /// Nombre mock del titular, consistente con la validación mock de CUIT.
+  static const reviewOwnerNameMock = 'Cecilia Lazarte';
+
+  /// Etiqueta de CUIT en la revision.
+  static const reviewCuitLabel = 'CUIT';
+
+  /// Etiqueta de RENSPA en la revision.
+  static const reviewRenspaLabel = 'RENSPA';
+
+  /// Etiqueta de provincia en la revision.
+  static const reviewProvinciaLabel = 'Provincia';
+
+  /// Etiqueta de departamento en la revision.
+  static const reviewDepartamentoLabel = 'Departamento';
+
+  /// Etiqueta de localidad en la revision.
+  static const reviewLocalidadLabel = 'Localidad';
+
+  /// Etiqueta de coordenadas en la revision.
+  static const reviewCoordenadasLabel = 'Coordenadas';
+
+  /// Chip de unidad productiva en la revision.
+  static const reviewUnidadProductivaChipLabel = '1 unidad productiva';
+
+  /// Titulo de la nota de rol en la revision.
+  static const reviewOwnerNoteTitle = 'Tu rol';
+
+  /// Mensaje de la nota de rol en la revision.
+  static const reviewOwnerNoteMessage =
+      'Vas a quedar como Owner del establecimiento. Después podés invitar '
+      'capataces, veterinarios y consignatarios.';
 }
