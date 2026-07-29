@@ -217,4 +217,25 @@ class EstablishmentRegisterStrings {
 
   /// Titulo de la vista previa del mapa.
   static const stepThreePreviewLabel = 'Vista previa';
+
+  /// Texto del banner de instrucciones del paso 4.
+  static const stepFourBannerText = 'Tocá los vértices del campo. Vas a poder dividir en potreros más adelante.';
+
+  /// Etiqueta de superficie en el chip flotante del paso 4.
+  static const stepFourSurfaceLabel = 'Superficie';
+
+  /// Etiqueta de vértices en el chip flotante del paso 4.
+  static const stepFourVerticesLabel = 'Vértices';
+
+  /// Tooltip del boton deshacer.
+  static const stepFourUndoTooltip = 'Deshacer';
+
+  /// Tooltip del boton borrar.
+  static const stepFourClearTooltip = 'Borrar';
+
+  /// Tooltip del boton de capa.
+  static const stepFourLayerTooltip = 'Capa';
+
+  /// Texto del hint inferior del paso 4.
+  static const stepFourHintText = 'Tocá cualquier vértice para arrastrarlo';
 }
