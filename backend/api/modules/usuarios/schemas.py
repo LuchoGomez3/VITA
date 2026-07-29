@@ -21,6 +21,8 @@ class UsuarioRegistroCreate(BaseModel):
         v = v.strip()
         if not v:
             raise ValueError("Campo obligatorio")
+        if len(v) > 50:
+            raise ValueError("Debe tener como máximo 50 caracteres")
         return v
 
     @field_validator("cuit")
@@ -37,9 +39,11 @@ class UsuarioRegistroCreate(BaseModel):
     def _password_segura(cls, v: str) -> str:
         if len(v) < 8:
             raise ValueError("La contraseña debe tener al menos 8 caracteres")
-        if not any(c.isdigit() or c.isupper() for c in v):
+        if len(v) > 50:
+            raise ValueError("La contraseña debe tener como máximo 50 caracteres")
+        if not any(c.isdigit() for c in v) or not any(c.isupper() for c in v):
             raise ValueError(
-                "La contraseña debe incluir al menos un número o una mayúscula"
+                "La contraseña debe incluir al menos un número y una mayúscula"
             )
         return v
 
