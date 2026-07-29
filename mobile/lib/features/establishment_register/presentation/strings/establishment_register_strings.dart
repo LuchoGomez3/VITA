@@ -176,4 +176,45 @@ class EstablishmentRegisterStrings {
 
   /// Boton para agregar otra unidad productiva.
   static const stepTwoAddProductionUnitButton = 'Agregar otra unidad productiva (otro RENSPA)';
+
+  /// Titulo de seccion del paso 3.
+  static const stepThreeSectionTitle = 'Ubicación geográfica';
+
+  /// Descripcion del paso 3.
+  static const stepThreeSectionDescription =
+      'Marcá un punto de referencia del campo (el casco, la tranquera o el '
+      'centro). Después vas a poder dibujar el perímetro completo.';
+
+  /// Titulo del campo provincia.
+  static const stepThreeProvinciaFieldTitle = 'Provincia';
+
+  /// Opciones mock de provincia.
+  static const stepThreeProvinciaOptions = ['Córdoba', 'Buenos Aires', 'Santa Fe', 'Mendoza'];
+
+  /// Titulo del campo departamento.
+  static const stepThreeDepartamentoFieldTitle = 'Departamento';
+
+  /// Opciones mock de departamento.
+  static const stepThreeDepartamentoOptions = ['Río Cuarto', 'Capital', 'Juárez Celman'];
+
+  /// Titulo del campo localidad.
+  static const stepThreeLocalidadFieldTitle = 'Localidad más cercana';
+
+  /// Texto de ayuda del campo localidad.
+  static const stepThreeLocalidadFieldHelper = 'Autocompleta con el padrón del INDEC.';
+
+  /// Opciones mock de localidad.
+  static const stepThreeLocalidadOptions = ['Coronel Moldes', 'Río Cuarto', 'Vicuña Mackenna'];
+
+  /// Titulo del bloque de coordenadas.
+  static const stepThreeCoordinatesFieldTitle = 'Coordenadas del punto de referencia';
+
+  /// Confirmación de toma de coordenadas por GPS.
+  static const stepThreeGpsConfirmedCaption = 'Tomada del GPS · precisión 4 m';
+
+  /// Boton para tomar la ubicación actual (mock).
+  static const stepThreeUseCurrentLocationButton = 'Usar mi ubicación actual';
+
+  /// Titulo de la vista previa del mapa.
+  static const stepThreePreviewLabel = 'Vista previa';
 }
