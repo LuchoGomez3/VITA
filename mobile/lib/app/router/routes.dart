@@ -59,6 +59,21 @@ class AppRoutes {
   /// Ruta temporal para registrar un ingreso operativo.
   static const incomeRegister = '/registros-de-gastos/registrar-ingreso';
 
+  /// Ruta del menu principal de reportes SENASA.
+  static const senasaMenu = procedures;
+
+  /// Route for the SENASA report filters.
+  static const senasaReport = '/senasa-report';
+
+  /// Ruta de generacion del reporte SENASA.
+  static const senasaReportGeneration = '/senasa-report/generando';
+
+  /// Ruta de exito del reporte SENASA.
+  static const senasaReportSuccess = '/senasa-report/exito';
+
+  /// Ruta de error del reporte SENASA.
+  static const senasaReportError = '/senasa-report/error';
+
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {
     return '/animals/$animalId';

@@ -27,6 +27,13 @@ import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
+import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_menu_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_error_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_generation_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion del router de la app.
@@ -106,9 +113,7 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: AppRoutes.procedures,
-                builder: (context, state) => const ShellPlaceholderPage(
-                  title: MainLayoutStrings.proceduresPlaceholder,
-                ),
+                builder: (context, state) => const SenasaMenuPage(),
               ),
             ],
           ),
@@ -211,6 +216,38 @@ class AppRouter {
           title: HomeStrings.registerIncome,
         ),
       ),
+      GoRoute(
+        path: AppRoutes.senasaReport,
+        builder: (context, state) => SenasaReportPage(
+          getEstablishments: createGetSenasaEstablishmentsUseCase(),
+          generateReport: createGenerateSenasaReportUseCase(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.senasaReportGeneration,
+        builder: (context, state) {
+          final request = state.extra! as SenasaReportRequest;
+          return SenasaReportGenerationPage(
+            request: request,
+            generateReport: createGenerateSenasaReportUseCase(),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.senasaReportSuccess,
+        builder: (context, state) {
+          final report = state.extra! as GeneratedSenasaReport;
+          return SenasaReportSuccessPage(report: report);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.senasaReportError,
+        builder: (context, state) {
+          final args = state.extra! as SenasaReportErrorArgs;
+          return SenasaReportErrorPage(args: args);
+        },
+      ),
     ],
   );
 }
+

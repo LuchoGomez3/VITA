@@ -58,6 +58,14 @@ class AppTypography {
     fontWeight: FontWeight.w400,
     color: AppColors.textHint,
   );
+  
+  /// Texto para botones de seleccion de fecha predeterminada hoy, mes, 30 dias, ultimos 7 dias.
+  static const datePickerChip = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: AppColors.primary,
+  );
 
   /// Texto de ayuda o validacion positiva debajo de un input.
   static const formFieldSuccess = TextStyle(
@@ -103,6 +111,25 @@ class AppTypography {
   static const mediumEmphasis = TextStyle(
     fontFamily: _baseFontFamily,
     fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textSecondary,
+  );
+
+    /// Texto Validacion Positiva
+  static const positiveText = TextStyle(color: AppColors.positiveText, fontWeight: FontWeight.w500, fontSize: 13);
+
+  /// Titulo grande para pantallas de resultado o confirmacion.
+  static const successTitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  /// Subtitulo destacado para pantallas de resultado o confirmacion.
+  static const successSubtitle = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 16,
     fontWeight: FontWeight.w600,
     color: AppColors.textSecondary,
   );
