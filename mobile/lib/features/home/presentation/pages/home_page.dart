@@ -1,204 +1,129 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:frontend_mayoral/app/router/routes.dart';
-import 'package:frontend_mayoral/core/result/result.dart';
-import 'package:frontend_mayoral/core/theme/theme.dart';
-import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
+import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_cubit.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
-import 'package:go_router/go_router.dart';
+import 'package:frontend_mayoral/features/home/presentation/widgets/home_dashboard_content.dart';
+import 'package:frontend_mayoral/features/home/presentation/widgets/home_dashboard_error.dart';
+import 'package:frontend_mayoral/features/home/presentation/widgets/home_expandable_header.dart';
 
-/// Callback que valida la sesion actual contra el backend.
-typedef VerifyAuthentication = Future<Result<String>> Function();
+/// Factory que crea el cubit responsable de los indicadores de Inicio.
+typedef HomeDashboardCubitFactory = HomeDashboardCubit Function();
 
-/// Callback que cierra la sesion actual.
-typedef SignOut = Future<void> Function();
-
-/// Pagina de inicio de la app. (TODO:Agus: Esto no va, es solo un mock para la demo.)
-class HomePage extends StatefulWidget {
-  /// Crea una nueva pagina de inicio.
+/// Pantalla principal con el resumen productivo del establecimiento.
+class HomePage extends StatelessWidget {
+  /// Crea Inicio e inyecta el estado de sus KPIs.
   const HomePage({
-    required this.signOut,
-    required this.verifyAuthentication,
+    required this.createCubit,
+    required this.userName,
     super.key,
   });
 
-  /// Cierra la sesion actual.
-  final SignOut signOut;
+  /// Construye una instancia de cubit cuyo ciclo de vida pertenece a la página.
+  final HomeDashboardCubitFactory createCubit;
 
-  /// Verifica si el token vigente corresponde a un usuario autenticado.
-  final VerifyAuthentication verifyAuthentication;
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  bool _isCheckingAuthentication = false;
-  bool _isSigningOut = false;
+  /// Nombre visible de la persona autenticada.
+  final String userName;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(HomeStrings.appTitle),
-        actions: [
-          IconButton(
-            tooltip: HomeStrings.signOutTooltip,
-            onPressed: _isSigningOut ? null : _signOut,
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                HomeStrings.title,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                HomeStrings.subtitle,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              AppSurfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      HomeStrings.authCheckTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    const Text(
-                      HomeStrings.authCheckDescription,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppFilledButton(
-                      label: HomeStrings.authCheckButton,
-                      loadingLabel: HomeStrings.authCheckingButton,
-                      isLoading: _isCheckingAuthentication,
-                      icon: const Icon(Icons.verified_user_outlined),
-                      onPressed: _verifyAuthentication,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppSurfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      HomeStrings.ownerRegisterTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    const Text(
-                      HomeStrings.ownerRegisterDescription,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppFilledButton(
-                      label: HomeStrings.ownerRegisterButton,
-                      icon: const Icon(Icons.person_add_alt_1_outlined),
-                      onPressed: () => context.push(AppRoutes.signUp),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppSurfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      HomeStrings.animalRegisterTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    const Text(
-                      HomeStrings.animalRegisterDescription,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppFilledButton(
-                      label: HomeStrings.animalRegisterButton,
-                      onPressed: () => context.push(AppRoutes.animalRegisterStep1),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppSurfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      HomeStrings.animalDetailTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    const Text(
-                      HomeStrings.animalDetailDescription,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppFilledButton(
-                      label: HomeStrings.animalDetailButton,
-                      onPressed: () => context.go(
-                        AppRoutes.animalDetailById('550e8400-e29b-41d4-a716-446655440059'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+    return BlocProvider<HomeDashboardCubit>(
+      create: (_) => createCubit()..load(),
+      child: _HomeDashboardView(
+        userName: _displayUserName,
       ),
     );
   }
 
-  Future<void> _verifyAuthentication() async {
-    setState(() {
-      _isCheckingAuthentication = true;
-    });
+  String get _displayUserName {
+    final trimmedUserName = userName.trim();
+    return trimmedUserName.isEmpty ? HomeStrings.defaultUserName : trimmedUserName;
+  }
+}
 
-    final result = await widget.verifyAuthentication();
+class _HomeDashboardView extends StatefulWidget {
+  const _HomeDashboardView({required this.userName});
 
-    if (!mounted) {
-      return;
-    }
+  final String userName;
 
-    setState(() {
-      _isCheckingAuthentication = false;
-    });
+  @override
+  State<_HomeDashboardView> createState() => _HomeDashboardViewState();
+}
 
-    final message = switch (result) {
-      Success<String>(:final data) => '${HomeStrings.authCheckSuccessPrefix} $data',
-      Failure<String>(:final error) => error.message,
-      _ => HomeStrings.authCheckUnknownError,
-    };
+class _HomeDashboardViewState extends State<_HomeDashboardView> {
+  bool _isSelectorExpanded = false;
+  String? _highlightedEstablishmentId;
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          HomeExpandableHeader(
+            greeting: _greeting(DateTime.now(), widget.userName),
+            isExpanded: _isSelectorExpanded,
+            highlightedEstablishmentId: _highlightedEstablishmentId,
+            onToggle: _toggleSelector,
+            onSelected: _selectEstablishment,
+          ),
+          const Expanded(child: _HomeDashboardBody()),
+        ],
+      ),
+    );
   }
 
-  Future<void> _signOut() async {
+  void _toggleSelector() {
     setState(() {
-      _isSigningOut = true;
+      _isSelectorExpanded = !_isSelectorExpanded;
+      if (_isSelectorExpanded) {
+        final cubit = context.read<HomeDashboardCubit>();
+        _highlightedEstablishmentId = cubit.state.selectedEstablishmentId;
+      }
     });
+  }
 
-    await widget.signOut();
+  void _selectEstablishment(String? establishmentId) {
+    setState(() {
+      _highlightedEstablishmentId = establishmentId;
+      _isSelectorExpanded = false;
+    });
+    unawaited(
+      context.read<HomeDashboardCubit>().selectEstablishment(establishmentId),
+    );
+  }
 
-    if (!mounted) {
-      return;
-    }
+  String _greeting(DateTime dateTime, String name) {
+    // Las franjas mantienen una regla determinista: mañana 05-11,
+    // tarde 12-19 y noche 20-04.
+    final greeting = switch (dateTime.hour) {
+      >= 5 && < 12 => HomeStrings.goodMorning,
+      >= 12 && < 20 => HomeStrings.goodAfternoon,
+      _ => HomeStrings.goodEvening,
+    };
+    return '$greeting, $name';
+  }
+}
 
-    context.go(AppRoutes.login);
+class _HomeDashboardBody extends StatelessWidget {
+  const _HomeDashboardBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
+        builder: (context, state) {
+          final dashboardState = state.dashboardState;
+          return switch (dashboardState) {
+            Data<HomeDashboard>(:final data) => HomeDashboardContent(dashboard: data),
+            ResultError<HomeDashboard>(:final error) => HomeDashboardError(message: error.message),
+            _ => const Center(child: CircularProgressIndicator()),
+          };
+        },
+      ),
+    );
   }
 }

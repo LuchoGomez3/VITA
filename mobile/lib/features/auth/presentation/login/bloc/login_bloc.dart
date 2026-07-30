@@ -5,10 +5,12 @@ import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/sign_in_use_case.dart';
-import 'package:frontend_mayoral/features/sync/domain/use_cases/prepare_initial_data_sync_use_case.dart';
 
 part 'login_bloc.freezed.dart';
 part 'login_state.dart';
+
+/// Callback que prepara datos offline luego de autenticar la sesion.
+typedef PrepareOfflineData = Future<Result<void>> Function(String userId);
 
 /// Bloc que coordina el inicio de sesion mobile.
 ///
@@ -17,25 +19,25 @@ part 'login_state.dart';
 /// widgets: la page escucha el estado exitoso para actualizar
 /// AuthSessionCubit y navegar.
 ///
-/// A diferencia del registro, login si prepara la experiencia offline-first:
-/// despues de autenticar, ejecuta [PrepareInitialDataSyncUseCase]. Si esa sync
-/// falla, el login no se revierte; el error queda en [LoginState] para que la UI
-/// lo informe sin bloquear el ingreso.
+/// A diferencia del registro, login si inicia la preparacion offline-first
+/// mediante un callback inyectado. Si esa sync falla, el login no se revierte;
+/// el error queda en [LoginState] para que la UI lo informe sin bloquear el
+/// ingreso.
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
   /// Crea el bloc con sus casos de uso de autenticacion.
   LoginBloc({
     required SignInUseCase signInUseCase,
-    required PrepareInitialDataSyncUseCase prepareInitialDataSyncUseCase,
+    required PrepareOfflineData prepareOfflineData,
     void Function()? onClose,
   }) : _signInUseCase = signInUseCase,
-       _prepareInitialDataSyncUseCase = prepareInitialDataSyncUseCase,
+       _prepareOfflineData = prepareOfflineData,
        _onClose = onClose,
        super(LoginState.initial()) {
     on<LoginSubmitted>(_onSubmitted);
   }
 
   final SignInUseCase _signInUseCase;
-  final PrepareInitialDataSyncUseCase _prepareInitialDataSyncUseCase;
+  final PrepareOfflineData _prepareOfflineData;
   final void Function()? _onClose;
 
   /// Maneja el submit del formulario de login.
@@ -72,7 +74,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
         // La sync inicial usa el token que AuthRepositoryImpl acaba de hidratar
         // en SessionBackendAccessTokenProvider durante el signIn exitoso.
-        final syncResult = await _prepareInitialDataSyncUseCase(data.user.id);
+        final syncResult = await _prepareOfflineData(data.user.id);
         final syncError = switch (syncResult) {
           Failure<void>(:final error) => error,
           Success<void>() => null,

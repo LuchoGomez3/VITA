@@ -164,9 +164,15 @@ class AppTypography {
     color: AppColors.textPrimary,
   );
 
-  /// Titulo grande para pantallas de resultado o confirmacion.
-  static const successTitle = bigTitle;
+  /// Estilo de Texto para Balance en la pantalla de Inicio, con color primario.
+  static const balanceValue = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 40,
+    fontWeight: FontWeight.w700,
+    color: AppColors.primary,
+  );
 
+  
   /// Titulo principal de la pantalla de bienvenida al registro.
   static const welcomeTitle = TextStyle(
     fontFamily: _baseFontFamily,

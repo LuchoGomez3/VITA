@@ -17,6 +17,15 @@ class AppRoutes {
   /// Ruta de la pantalla de inicio.
   static const home = '/';
 
+  /// Ruta raiz de la pestaña de hacienda.
+  static const livestock = '/hacienda';
+
+  /// Ruta raiz de la pestaña de tramites SENASA.
+  static const procedures = '/tramites';
+
+  /// Ruta raiz de la pestaña de perfil y ajustes.
+  static const profile = '/perfil';
+
   /// Ruta liviana que espera la restauracion de sesion al arrancar.
   static const authCheck = '/auth-check';
 
@@ -40,6 +49,15 @@ class AppRoutes {
 
   /// Ruta de la pantalla de detalle de animal.
   static const animalDetail = '/animals/:animalId';
+
+  /// Ruta de la seccion de registros de gastos.
+  static const expenseRecords = '/registros-de-gastos';
+
+  /// Ruta temporal para registrar un egreso operativo.
+  static const expenseRegister = '/registros-de-gastos/registrar-egreso';
+
+  /// Ruta temporal para registrar un ingreso operativo.
+  static const incomeRegister = '/registros-de-gastos/registrar-ingreso';
 
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {

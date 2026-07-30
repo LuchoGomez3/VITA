@@ -19,6 +19,8 @@ class AppFilledButton extends StatelessWidget {
     this.isLoading = false,
     this.loadingLabel = 'Guardando...',
     this.textStyle,
+    this.backgroundColor,
+    this.foregroundColor,
   });
 
   /// El texto del boton.
@@ -38,6 +40,12 @@ class AppFilledButton extends StatelessWidget {
 
   /// El estilo del texto del boton.
   final TextStyle? textStyle;
+
+  /// Color de fondo opcional para una variante semantica del boton.
+  final Color? backgroundColor;
+
+  /// Color del contenido opcional para una variante semantica del boton.
+  final Color? foregroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +83,8 @@ class AppFilledButton extends StatelessWidget {
       child: FilledButton(
         onPressed: isLoading ? null : onPressed,
         style: FilledButton.styleFrom(
+          backgroundColor: backgroundColor,
+          foregroundColor: foregroundColor,
           // El look principal del boton vive en el tema; aca solo reforzamos
           // medidas estructurales propias del componente.
           padding: const EdgeInsets.symmetric(

@@ -174,6 +174,11 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   }
 
   @override
+  Future<List<BrickAnimalModel>> getLocalAnimals() async {
+    return localAnimal == null ? const [] : [localAnimal!];
+  }
+
+  @override
   Future<void> pullRemoteAnimals(String establishmentId) async {}
 
   @override
@@ -268,6 +273,9 @@ class _FakePesajeBrickStore implements PesajeBrickStore {
   Future<List<BrickPesajeModel>> getLocalPesajesByAnimal(
     String animalId,
   ) async => pesajes;
+
+  @override
+  Future<List<BrickPesajeModel>> getLocalPesajes() async => pesajes;
 
   @override
   Future<void> pullRemotePesajes(

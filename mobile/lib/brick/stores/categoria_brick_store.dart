@@ -98,6 +98,9 @@ class BrickCategoriaStore implements CategoriaBrickStore {
     // Las categorias propias creadas offline y todavia no confirmadas no deben
     // ser pisadas por el pull (podrian no existir aun en el backend).
     final localCategorias = await _repository.getLocal<BrickCategoriaModel>();
+    final localCategoriasById = {
+      for (final categoria in localCategorias) categoria.localId: categoria,
+    };
     final protectedLocalIds = localCategorias
         .where(
           (categoria) =>
@@ -112,11 +115,12 @@ class BrickCategoriaStore implements CategoriaBrickStore {
         continue;
       }
 
+      final synchronizedCategoria = categoria.copyWith(
+        syncStatus: BrickCategoriaSyncStatus.synchronized,
+        syncErrorCode: null,
+      )..primaryKey = localCategoriasById[categoria.localId]?.primaryKey;
       await _repository.upsertLocal<BrickCategoriaModel>(
-        categoria.copyWith(
-          syncStatus: BrickCategoriaSyncStatus.synchronized,
-          syncErrorCode: null,
-        ),
+        synchronizedCategoria,
       );
     }
   }
@@ -126,8 +130,15 @@ class BrickCategoriaStore implements CategoriaBrickStore {
     String establishmentId,
   ) async {
     final categorias = await _repository.getLocal<BrickCategoriaModel>();
+    final categoriasById = <String, BrickCategoriaModel>{};
 
-    return categorias
+    // Las versiones previas podian duplicar el catalogo en cada pull. Se toma
+    // una sola fila por UUID para que los consumidores vean una fuente estable.
+    for (final categoria in categorias) {
+      categoriasById[categoria.localId] = categoria;
+    }
+
+    return categoriasById.values
         .where(
           (categoria) =>
               categoria.deletedAt == null &&

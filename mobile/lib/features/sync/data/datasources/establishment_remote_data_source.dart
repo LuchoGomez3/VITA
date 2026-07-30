@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
+import 'package:frontend_mayoral/features/sync/data/models/establishment_remote_summary.dart';
 import 'package:http/http.dart' as http;
 
 /// Fuente remota liviana para obtener establecimientos antes del bootstrap.
@@ -23,8 +24,8 @@ class EstablishmentRemoteDataSource {
   final http.Client _client;
   final Duration _requestTimeout;
 
-  /// Obtiene los IDs de establecimientos disponibles para el usuario actual.
-  Future<List<String>> fetchEstablishmentIds() async {
+  /// Obtiene todos los establecimientos disponibles para el usuario actual.
+  Future<List<EstablishmentRemoteSummary>> fetchEstablishments() async {
     final token = await _tokenProvider.getAccessToken();
     if (token == null) {
       throw const DomainException(
@@ -59,9 +60,7 @@ class EstablishmentRemoteDataSource {
 
     return data
         .whereType<Map<String, dynamic>>()
-        .map((establishment) => establishment['id'])
-        .whereType<String>()
-        .where((id) => id.isNotEmpty)
+        .map(EstablishmentRemoteSummary.fromJson)
         .toList();
   }
 }

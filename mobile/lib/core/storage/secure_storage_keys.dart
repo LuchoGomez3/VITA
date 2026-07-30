@@ -9,8 +9,13 @@ class SecureStorageKeys {
   /// Sesion autenticada persistida para restaurar la app al abrir offline.
   static const authSession = 'auth_session_v1';
 
+  /// Datos completos de los establecimientos disponibles para la sesión.
+  static const establishmentCatalog = 'establishment_catalog_v1';
+
   /// Marker local que evita repetir el bootstrap offline por usuario.
   static String initialDataSyncCompleted(String userId) {
-    return 'initial_data_sync_completed_v1_$userId';
+    // La versión 4 incorpora el catálogo completo de establecimientos. Cambiar
+    // la versión ejecuta una vez el nuevo bootstrap en instalaciones existentes.
+    return 'initial_data_sync_completed_v4_$userId';
   }
 }
