@@ -53,10 +53,11 @@ LoginPage
   -> Backend /api/auth/login
 ```
 
-Despues del login exitoso, `LoginBloc` invoca `PrepareInitialDataSyncUseCase`
-desde `features/sync` para descargar los datos necesarios para operar offline.
-Ese paso no pertenece al dominio de auth: auth obtiene y persiste sesion; sync
-prepara datos de negocio locales.
+Despues del login exitoso, `LoginBloc` invoca un callback de preparacion offline
+inyectado desde la composicion. Ese callback delega en `features/sync` para
+descargar los datos necesarios para operar offline. Ese paso no pertenece al
+dominio de auth: auth obtiene y persiste sesion; sync prepara datos de negocio
+locales.
 
 ## Flujo de registro
 

@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
-import 'package:frontend_mayoral/features/auth/data/models/establishment_remote_summary.dart';
+import 'package:frontend_mayoral/features/sync/data/models/establishment_remote_summary.dart';
 import 'package:http/http.dart' as http;
 
 /// Fuente remota liviana para obtener establecimientos antes del bootstrap.

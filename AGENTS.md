@@ -16,7 +16,6 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 These are settled team/product decisions. Do not reintroduce them even if they seem like reasonable improvements:
 
 - **Do not** propose or implement blockchain for traceability.
-- **Do not** add, mention, or scaffold any economic/pricing module (Rosgan/Liniers scraping, herd valuation, sale simulator) in shared code, docs, or commits.
 - **Do not** weaken offline-first to simplify an implementation.
 
 ## Monorepo Structure

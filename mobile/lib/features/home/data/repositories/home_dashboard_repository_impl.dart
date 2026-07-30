@@ -44,8 +44,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
           ? storedAnimals
           : storedAnimals
                 .where(
-                  (animal) =>
-                      establishmentIds.contains(animal.establishmentId),
+                  (animal) => establishmentIds.contains(animal.establishmentId),
                 )
                 .toList();
       final weighings = await _pesajeStore.getLocalPesajes();
@@ -200,7 +199,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     final categoryNamesById = {
       for (final category in categories) category.localId: category.name,
     };
-    final counts = <String, int>{};
+    final counts = <String?, int>{};
     for (final animal in animals) {
       final name = _categoryName(animal, categoryNamesById);
       counts.update(name, (count) => count + 1, ifAbsent: () => 1);
@@ -218,7 +217,10 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
             .toList()
           ..sort((a, b) {
             final countComparison = b.animals.compareTo(a.animals);
-            return countComparison != 0 ? countComparison : a.name.compareTo(b.name);
+            if (countComparison != 0) {
+              return countComparison;
+            }
+            return _sortNullableNames(a.name, b.name);
           });
     return metrics;
   }
@@ -226,9 +228,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
   Future<List<BrickCategoriaModel>> _getCategoriesForAnimals(
     List<BrickAnimalModel> animals,
   ) async {
-    final establishmentIds = animals
-        .map((animal) => animal.establishmentId)
-        .toSet();
+    final establishmentIds = animals.map((animal) => animal.establishmentId).toSet();
     final categoriesByEstablishment = await Future.wait(
       establishmentIds.map(_categoryStore.getLocalCategorias),
     );
@@ -236,7 +236,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     return categoriesByEstablishment.expand((categories) => categories).toList();
   }
 
-  String _categoryName(
+  String? _categoryName(
     BrickAnimalModel animal,
     Map<String, String> categoryNamesById,
   ) {
@@ -246,16 +246,17 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     }
 
     final localName = animal.categoryName.trim();
-    return localName.isEmpty ? 'Sin categoría' : localName;
+    return localName.isEmpty ? null : localName;
   }
 
   List<LotWeightMetric> _lotMetrics(
     List<BrickAnimalModel> animals,
     Map<String, double> currentWeights,
   ) {
-    final animalsByLot = <String, List<BrickAnimalModel>>{};
+    final animalsByLot = <String?, List<BrickAnimalModel>>{};
     for (final animal in animals) {
-      final name = animal.lotName.trim().isEmpty ? 'Sin lote' : animal.lotName.trim();
+      final trimmedLotName = animal.lotName.trim();
+      final name = trimmedLotName.isEmpty ? null : trimmedLotName;
       animalsByLot.putIfAbsent(name, () => []).add(animal);
     }
 
@@ -275,12 +276,16 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
         averageWeightKg: average,
         weightStandardDeviationKg: math.sqrt(variance),
       );
-    }).toList()..sort((a, b) => a.name.compareTo(b.name));
+    }).toList()..sort((a, b) => _sortNullableNames(a.name, b.name));
     return metrics;
   }
 
   bool _isSameMonth(DateTime? value, DateTime reference) {
     return value != null && value.year == reference.year && value.month == reference.month;
+  }
+
+  int _sortNullableNames(String? left, String? right) {
+    return (left ?? '').compareTo(right ?? '');
   }
 }
 

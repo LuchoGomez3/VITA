@@ -31,7 +31,7 @@ class HomeCategoryMetricsCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      category.name,
+                      category.name ?? HomeStrings.noCategory,
                       style: AppTypography.mediumEmphasis,
                     ),
                   ),

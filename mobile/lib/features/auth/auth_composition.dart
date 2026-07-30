@@ -1,14 +1,10 @@
 import 'package:frontend_mayoral/app/config/config.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
-import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
-import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
-import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/auth/data/datasources/auth_local_data_source.dart';
 import 'package:frontend_mayoral/features/auth/data/datasources/auth_remote_data_source.dart';
-import 'package:frontend_mayoral/features/auth/data/datasources/establishment_remote_data_source.dart';
 import 'package:frontend_mayoral/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
@@ -20,8 +16,7 @@ import 'package:frontend_mayoral/features/auth/domain/use_cases/sign_out_use_cas
 import 'package:frontend_mayoral/features/auth/presentation/login/bloc/login_bloc.dart';
 import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_bloc.dart';
-import 'package:frontend_mayoral/features/sync/data/repositories/initial_data_sync_repository_impl.dart';
-import 'package:frontend_mayoral/features/sync/domain/use_cases/prepare_initial_data_sync_use_case.dart';
+import 'package:frontend_mayoral/features/sync/sync_composition.dart';
 import 'package:http/http.dart' as http;
 
 /// Composition root de la feature de autenticacion.
@@ -66,23 +61,12 @@ AuthSessionCubit createAuthSessionCubit() {
 LoginBloc createLoginBloc() {
   final client = http.Client();
   final repository = _createAuthRepository(client);
-  const secureStorage = FlutterSecureStorageService();
 
   return LoginBloc(
     signInUseCase: SignInUseCase(repository),
-    prepareInitialDataSyncUseCase: PrepareInitialDataSyncUseCase(
-      InitialDataSyncRepositoryImpl(
-        secureStorage: secureStorage,
-        establishmentRemoteDataSource: EstablishmentRemoteDataSource(
-          backendBaseUrl: AppConfig.current.backendBaseUrl,
-          tokenProvider: SessionBackendAccessTokenProvider.instance,
-          client: client,
-        ),
-        animalStore: BrickAnimalStore.instance,
-        categoryStore: BrickCategoriaStore.instance,
-        weighingStore: BrickPesajeStore.instance,
-      ),
-    ),
+    prepareOfflineData: createPrepareInitialDataSyncUseCase(
+      client: client,
+    ).call,
     onClose: client.close,
   );
 }

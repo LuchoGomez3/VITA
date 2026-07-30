@@ -53,7 +53,10 @@ class _LotMetricRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(lot.name, style: AppTypography.mediumEmphasis),
+                Text(
+                  lot.name ?? HomeStrings.noLot,
+                  style: AppTypography.mediumEmphasis,
+                ),
                 Text(
                   '${lot.animals} animales · '
                   '${lot.animalsWithWeight} ${HomeStrings.withWeight}',

@@ -41,13 +41,13 @@ class EstablishmentRemoteSummary {
   /// Nombre visible para selectores de establecimiento.
   final String name;
 
-  /// Número RENSPA informado por el backend.
+  /// Numero RENSPA informado por el backend.
   final String? renspaNumber;
 
   /// CUIT asociado al establecimiento.
   final String? cuit;
 
-  /// Superficie productiva expresada en hectáreas.
+  /// Superficie productiva expresada en hectareas.
   final double? areaHectares;
 
   /// Provincia del establecimiento.
@@ -59,10 +59,10 @@ class EstablishmentRemoteSummary {
   /// Localidad del establecimiento.
   final String? locality;
 
-  /// Fecha de creación informada por el backend.
+  /// Fecha de creacion informada por el backend.
   final DateTime createdAt;
 
-  /// Fecha de última actualización informada por el backend.
+  /// Fecha de ultima actualizacion informada por el backend.
   final DateTime updatedAt;
 
   /// Convierte todos los datos al formato persistido para Perfil y Home.

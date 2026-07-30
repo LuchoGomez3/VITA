@@ -301,7 +301,7 @@ as double?,
 /// @nodoc
 mixin _$CategoryInventoryMetric {
 
- String get name; int get animals; double get percentage;
+ String? get name; int get animals; double get percentage;
 /// Create a copy of CategoryInventoryMetric
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -332,7 +332,7 @@ abstract mixin class $CategoryInventoryMetricCopyWith<$Res>  {
   factory $CategoryInventoryMetricCopyWith(CategoryInventoryMetric value, $Res Function(CategoryInventoryMetric) _then) = _$CategoryInventoryMetricCopyWithImpl;
 @useResult
 $Res call({
- String name, int animals, double percentage
+ String? name, int animals, double percentage
 });
 
 
@@ -349,10 +349,10 @@ class _$CategoryInventoryMetricCopyWithImpl<$Res>
 
 /// Create a copy of CategoryInventoryMetric
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? animals = null,Object? percentage = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? animals = null,Object? percentage = null,}) {
   return _then(_self.copyWith(
-name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
+name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String?,animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
 as int,percentage: null == percentage ? _self.percentage : percentage // ignore: cast_nullable_to_non_nullable
 as double,
   ));
@@ -436,7 +436,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  int animals,  double percentage)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? name,  int animals,  double percentage)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CategoryInventoryMetric() when $default != null:
 return $default(_that.name,_that.animals,_that.percentage);case _:
@@ -457,7 +457,7 @@ return $default(_that.name,_that.animals,_that.percentage);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  int animals,  double percentage)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? name,  int animals,  double percentage)  $default,) {final _that = this;
 switch (_that) {
 case _CategoryInventoryMetric():
 return $default(_that.name,_that.animals,_that.percentage);}
@@ -474,7 +474,7 @@ return $default(_that.name,_that.animals,_that.percentage);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  int animals,  double percentage)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? name,  int animals,  double percentage)?  $default,) {final _that = this;
 switch (_that) {
 case _CategoryInventoryMetric() when $default != null:
 return $default(_that.name,_that.animals,_that.percentage);case _:
@@ -492,7 +492,7 @@ class _CategoryInventoryMetric implements CategoryInventoryMetric {
   const _CategoryInventoryMetric({required this.name, required this.animals, required this.percentage});
   
 
-@override final  String name;
+@override final  String? name;
 @override final  int animals;
 @override final  double percentage;
 
@@ -526,7 +526,7 @@ abstract mixin class _$CategoryInventoryMetricCopyWith<$Res> implements $Categor
   factory _$CategoryInventoryMetricCopyWith(_CategoryInventoryMetric value, $Res Function(_CategoryInventoryMetric) _then) = __$CategoryInventoryMetricCopyWithImpl;
 @override @useResult
 $Res call({
- String name, int animals, double percentage
+ String? name, int animals, double percentage
 });
 
 
@@ -543,10 +543,10 @@ class __$CategoryInventoryMetricCopyWithImpl<$Res>
 
 /// Create a copy of CategoryInventoryMetric
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? animals = null,Object? percentage = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = freezed,Object? animals = null,Object? percentage = null,}) {
   return _then(_CategoryInventoryMetric(
-name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
+name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String?,animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
 as int,percentage: null == percentage ? _self.percentage : percentage // ignore: cast_nullable_to_non_nullable
 as double,
   ));
@@ -558,7 +558,7 @@ as double,
 /// @nodoc
 mixin _$LotWeightMetric {
 
- String get name; int get animals; int get animalsWithWeight; double get averageWeightKg; double get weightStandardDeviationKg;
+ String? get name; int get animals; int get animalsWithWeight; double get averageWeightKg; double get weightStandardDeviationKg;
 /// Create a copy of LotWeightMetric
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -589,7 +589,7 @@ abstract mixin class $LotWeightMetricCopyWith<$Res>  {
   factory $LotWeightMetricCopyWith(LotWeightMetric value, $Res Function(LotWeightMetric) _then) = _$LotWeightMetricCopyWithImpl;
 @useResult
 $Res call({
- String name, int animals, int animalsWithWeight, double averageWeightKg, double weightStandardDeviationKg
+ String? name, int animals, int animalsWithWeight, double averageWeightKg, double weightStandardDeviationKg
 });
 
 
@@ -606,10 +606,10 @@ class _$LotWeightMetricCopyWithImpl<$Res>
 
 /// Create a copy of LotWeightMetric
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? animals = null,Object? animalsWithWeight = null,Object? averageWeightKg = null,Object? weightStandardDeviationKg = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? animals = null,Object? animalsWithWeight = null,Object? averageWeightKg = null,Object? weightStandardDeviationKg = null,}) {
   return _then(_self.copyWith(
-name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
+name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String?,animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
 as int,animalsWithWeight: null == animalsWithWeight ? _self.animalsWithWeight : animalsWithWeight // ignore: cast_nullable_to_non_nullable
 as int,averageWeightKg: null == averageWeightKg ? _self.averageWeightKg : averageWeightKg // ignore: cast_nullable_to_non_nullable
 as double,weightStandardDeviationKg: null == weightStandardDeviationKg ? _self.weightStandardDeviationKg : weightStandardDeviationKg // ignore: cast_nullable_to_non_nullable
@@ -695,7 +695,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  int animals,  int animalsWithWeight,  double averageWeightKg,  double weightStandardDeviationKg)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? name,  int animals,  int animalsWithWeight,  double averageWeightKg,  double weightStandardDeviationKg)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LotWeightMetric() when $default != null:
 return $default(_that.name,_that.animals,_that.animalsWithWeight,_that.averageWeightKg,_that.weightStandardDeviationKg);case _:
@@ -716,7 +716,7 @@ return $default(_that.name,_that.animals,_that.animalsWithWeight,_that.averageWe
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  int animals,  int animalsWithWeight,  double averageWeightKg,  double weightStandardDeviationKg)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? name,  int animals,  int animalsWithWeight,  double averageWeightKg,  double weightStandardDeviationKg)  $default,) {final _that = this;
 switch (_that) {
 case _LotWeightMetric():
 return $default(_that.name,_that.animals,_that.animalsWithWeight,_that.averageWeightKg,_that.weightStandardDeviationKg);}
@@ -733,7 +733,7 @@ return $default(_that.name,_that.animals,_that.animalsWithWeight,_that.averageWe
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  int animals,  int animalsWithWeight,  double averageWeightKg,  double weightStandardDeviationKg)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? name,  int animals,  int animalsWithWeight,  double averageWeightKg,  double weightStandardDeviationKg)?  $default,) {final _that = this;
 switch (_that) {
 case _LotWeightMetric() when $default != null:
 return $default(_that.name,_that.animals,_that.animalsWithWeight,_that.averageWeightKg,_that.weightStandardDeviationKg);case _:
@@ -751,7 +751,7 @@ class _LotWeightMetric implements LotWeightMetric {
   const _LotWeightMetric({required this.name, required this.animals, required this.animalsWithWeight, required this.averageWeightKg, required this.weightStandardDeviationKg});
   
 
-@override final  String name;
+@override final  String? name;
 @override final  int animals;
 @override final  int animalsWithWeight;
 @override final  double averageWeightKg;
@@ -787,7 +787,7 @@ abstract mixin class _$LotWeightMetricCopyWith<$Res> implements $LotWeightMetric
   factory _$LotWeightMetricCopyWith(_LotWeightMetric value, $Res Function(_LotWeightMetric) _then) = __$LotWeightMetricCopyWithImpl;
 @override @useResult
 $Res call({
- String name, int animals, int animalsWithWeight, double averageWeightKg, double weightStandardDeviationKg
+ String? name, int animals, int animalsWithWeight, double averageWeightKg, double weightStandardDeviationKg
 });
 
 
@@ -804,10 +804,10 @@ class __$LotWeightMetricCopyWithImpl<$Res>
 
 /// Create a copy of LotWeightMetric
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? animals = null,Object? animalsWithWeight = null,Object? averageWeightKg = null,Object? weightStandardDeviationKg = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = freezed,Object? animals = null,Object? animalsWithWeight = null,Object? averageWeightKg = null,Object? weightStandardDeviationKg = null,}) {
   return _then(_LotWeightMetric(
-name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
+name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String?,animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
 as int,animalsWithWeight: null == animalsWithWeight ? _self.animalsWithWeight : animalsWithWeight // ignore: cast_nullable_to_non_nullable
 as int,averageWeightKg: null == averageWeightKg ? _self.averageWeightKg : averageWeightKg // ignore: cast_nullable_to_non_nullable
 as double,weightStandardDeviationKg: null == weightStandardDeviationKg ? _self.weightStandardDeviationKg : weightStandardDeviationKg // ignore: cast_nullable_to_non_nullable

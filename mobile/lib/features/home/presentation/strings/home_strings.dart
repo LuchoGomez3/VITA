@@ -10,8 +10,7 @@ abstract final class HomeStrings {
   static const establishmentPrefix = 'Resumen productivo de';
 
   /// Indicación mostrada al abrir el selector.
-  static const establishmentSelectionPrompt =
-      'Seleccioná un establecimiento';
+  static const establishmentSelectionPrompt = 'Seleccioná un establecimiento';
 
   /// Saludo utilizado durante la mañana.
   static const goodMorning = 'Buenos días';
@@ -96,6 +95,12 @@ abstract final class HomeStrings {
 
   /// Titulo de inventario por categoria.
   static const categoryDistribution = 'Distribución por categoría';
+
+  /// Nombre visible cuando un animal no tiene categoria cargada.
+  static const noCategory = 'Sin categoría';
+
+  /// Nombre visible cuando un animal no tiene lote cargado.
+  static const noLot = 'Sin lote';
 
   /// Mensaje para listas sin animales.
   static const noAnimals = 'Todavía no hay animales disponibles.';

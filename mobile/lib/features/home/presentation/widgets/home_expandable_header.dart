@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
-import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
 import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_cubit.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_asset_icon.dart';
@@ -36,13 +34,10 @@ class HomeExpandableHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<HomeDashboardCubit, ResultState<HomeDashboard>>(
-      builder: (context, _) {
-        final cubit = context.read<HomeDashboardCubit>();
-        final selectedName = highlightedEstablishmentId == null
-            ? HomeStrings.allEstablishments
-            : cubit.establishments[highlightedEstablishmentId] ??
-                  HomeStrings.allEstablishments;
+    return BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
+      builder: (context, state) {
+        final selectedEstablishmentName = state.establishments[highlightedEstablishmentId];
+        final selectedName = selectedEstablishmentName ?? HomeStrings.allEstablishments;
 
         return Material(
           color: AppColors.backgroundTertiary,
@@ -66,13 +61,12 @@ class HomeExpandableHeader extends StatelessWidget {
                     selectedName: selectedName,
                     isExpanded: isExpanded,
                     onToggle: onToggle,
-                    onRefresh: cubit.load,
+                    onRefresh: context.read<HomeDashboardCubit>().load,
                   ),
                   if (isExpanded)
                     _EstablishmentOptions(
-                      establishments: cubit.establishments,
-                      highlightedEstablishmentId:
-                          highlightedEstablishmentId,
+                      establishments: state.establishments,
+                      highlightedEstablishmentId: highlightedEstablishmentId,
                       onSelected: onSelected,
                     ),
                 ],

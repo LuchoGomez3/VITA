@@ -7,8 +7,7 @@ import 'package:frontend_mayoral/features/profile/domain/use_cases/get_profile_e
 /// Coordina la carga de establecimientos para Perfil.
 class ProfileCubit extends Cubit<ResultState<List<EstablishmentDetails>>> {
   /// Crea el Cubit con el caso de uso correspondiente.
-  ProfileCubit(this._getEstablishmentsUseCase)
-    : super(const ResultState.initial());
+  ProfileCubit(this._getEstablishmentsUseCase) : super(const ResultState.initial());
 
   final GetProfileEstablishmentsUseCase _getEstablishmentsUseCase;
 

@@ -33,11 +33,14 @@ class HomePage extends StatelessWidget {
     return BlocProvider<HomeDashboardCubit>(
       create: (_) => createCubit()..load(),
       child: _HomeDashboardView(
-        userName: userName.trim().isEmpty
-            ? HomeStrings.defaultUserName
-            : userName.trim(),
+        userName: _displayUserName,
       ),
     );
+  }
+
+  String get _displayUserName {
+    final trimmedUserName = userName.trim();
+    return trimmedUserName.isEmpty ? HomeStrings.defaultUserName : trimmedUserName;
   }
 }
 
@@ -76,9 +79,8 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
     setState(() {
       _isSelectorExpanded = !_isSelectorExpanded;
       if (_isSelectorExpanded) {
-        _highlightedEstablishmentId = context
-            .read<HomeDashboardCubit>()
-            .selectedEstablishmentId;
+        final cubit = context.read<HomeDashboardCubit>();
+        _highlightedEstablishmentId = cubit.state.selectedEstablishmentId;
       }
     });
   }
@@ -89,9 +91,7 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
       _isSelectorExpanded = false;
     });
     unawaited(
-      context
-          .read<HomeDashboardCubit>()
-          .selectEstablishment(establishmentId),
+      context.read<HomeDashboardCubit>().selectEstablishment(establishmentId),
     );
   }
 
@@ -114,13 +114,14 @@ class _HomeDashboardBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
-      child: BlocBuilder<HomeDashboardCubit, ResultState<HomeDashboard>>(
-        builder: (context, state) => switch (state) {
-          Data<HomeDashboard>(:final data) =>
-            HomeDashboardContent(dashboard: data),
-          ResultError<HomeDashboard>(:final error) =>
-            HomeDashboardError(message: error.message),
-          _ => const Center(child: CircularProgressIndicator()),
+      child: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
+        builder: (context, state) {
+          final dashboardState = state.dashboardState;
+          return switch (dashboardState) {
+            Data<HomeDashboard>(:final data) => HomeDashboardContent(dashboard: data),
+            ResultError<HomeDashboard>(:final error) => HomeDashboardError(message: error.message),
+            _ => const Center(child: CircularProgressIndicator()),
+          };
         },
       ),
     );

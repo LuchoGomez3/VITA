@@ -208,7 +208,7 @@ return $default(_that.id,_that.weightKg,_that.date,_that.method);case _:
 
 class _AnimalWeightRecord implements AnimalWeightRecord {
   const _AnimalWeightRecord({required this.id, required this.weightKg, required this.date, required this.method});
-
+  
 
 /// UUID del pesaje.
 @override final  String id;

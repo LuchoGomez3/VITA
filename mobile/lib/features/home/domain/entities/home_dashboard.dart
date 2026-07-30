@@ -24,7 +24,7 @@ sealed class HomeDashboard with _$HomeDashboard {
 sealed class CategoryInventoryMetric with _$CategoryInventoryMetric {
   /// Crea la participacion de una categoria dentro del stock.
   const factory CategoryInventoryMetric({
-    required String name,
+    required String? name,
     required int animals,
     required double percentage,
   }) = _CategoryInventoryMetric;
@@ -35,7 +35,7 @@ sealed class CategoryInventoryMetric with _$CategoryInventoryMetric {
 sealed class LotWeightMetric with _$LotWeightMetric {
   /// Crea los indicadores de peso calculados para un lote.
   const factory LotWeightMetric({
-    required String name,
+    required String? name,
     required int animals,
     required int animalsWithWeight,
     required double averageWeightKg,

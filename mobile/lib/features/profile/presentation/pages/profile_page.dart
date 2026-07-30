@@ -5,7 +5,7 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/profile/domain/entities/establishment_details.dart';
-import 'package:frontend_mayoral/features/profile/presentation/bloc/profile_cubit.dart';
+import 'package:frontend_mayoral/features/profile/presentation/cubit/profile_cubit.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_establishments_section.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_user_card.dart';
@@ -117,8 +117,7 @@ class _EstablishmentsContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileCubit, ResultState<List<EstablishmentDetails>>>(
       builder: (context, state) => switch (state) {
-        Data<List<EstablishmentDetails>>(:final data) =>
-          ProfileEstablishmentsSection(establishments: data),
+        Data<List<EstablishmentDetails>>(:final data) => ProfileEstablishmentsSection(establishments: data),
         ResultError<List<EstablishmentDetails>>(:final error) => Column(
           children: [
             Text(error.message),

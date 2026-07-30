@@ -9,7 +9,7 @@ import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
-import 'package:frontend_mayoral/features/auth/data/datasources/establishment_remote_data_source.dart';
+import 'package:frontend_mayoral/features/sync/data/datasources/establishment_remote_data_source.dart';
 import 'package:frontend_mayoral/features/sync/domain/repositories/initial_data_sync_repository.dart';
 
 /// Implementacion que descarga datos iniciales a SQLite para uso offline.
