@@ -2,16 +2,15 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.auth.providers import AuthProvider
+from api.auth.providers import AuthProvider, AuthResult
 from api.modules.usuarios.exceptions import (
-    CuitInvalidoError,
     CuitYaRegistradoError,
     EmailYaRegistradoError,
 )
 from api.modules.usuarios.models import Usuario
 from api.modules.usuarios.repository import UsuarioRepository
 from api.modules.usuarios.schemas import UsuarioRead, UsuarioRegistroCreate
-from api.modules.usuarios.utils import validar_cuit
+from api.shared.cuit import CuitInvalidoError, validar_cuit
 
 
 class UsuarioService:

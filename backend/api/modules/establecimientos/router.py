@@ -6,7 +6,10 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth.dependencies import get_current_user
-from api.modules.establecimientos.schemas import EstablecimientoCreate
+from api.modules.establecimientos.schemas import (
+    EstablecimientoCreate,
+    EstablecimientoUpdate,
+)
 from api.modules.establecimientos.service import EstablecimientoService
 from api.modules.usuarios.models import Usuario
 from api.shared.schemas import StandardResponse
@@ -54,4 +57,17 @@ async def detalle_establecimiento(
     """Detalle de un establecimiento (incluye auditoría owner_id + created_at)."""
     service = EstablecimientoService(session)
     establecimiento = await service.detalle(current_user, establecimiento_id)
+    return StandardResponse(success=True, data=establecimiento.model_dump())
+
+
+@router.put("/{establecimiento_id}", response_model=StandardResponse)
+async def actualizar_establecimiento(
+    establecimiento_id: UUID,
+    data: EstablecimientoUpdate,
+    session: AsyncSession = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Actualiza campos del establecimiento (parcial, sólo lo enviado)."""
+    service = EstablecimientoService(session)
+    establecimiento = await service.actualizar(current_user, establecimiento_id, data)
     return StandardResponse(success=True, data=establecimiento.model_dump())

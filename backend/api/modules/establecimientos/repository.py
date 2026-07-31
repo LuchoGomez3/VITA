@@ -26,11 +26,23 @@ class EstablecimientoRepository:
             return None
         return est
 
-    async def get_by_renspa(self, nro_renspa: str) -> Establecimiento | None:
-        result = await self.session.execute(
-            select(Establecimiento).where(Establecimiento.nro_renspa == nro_renspa)
+    async def get_by_renspa(
+        self, nro_renspa: str, *, exclude_id: UUID | None = None
+    ) -> Establecimiento | None:
+        query = select(Establecimiento).where(
+            Establecimiento.nro_renspa == nro_renspa
         )
+        if exclude_id is not None:
+            query = query.where(Establecimiento.id != exclude_id)
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
+
+    async def update(self, establecimiento: Establecimiento) -> Establecimiento:
+        await self.session.flush()
+        # `updated_at` es server-computed (onupdate=func.now()): refrescar para
+        # no serializar un valor expirado/no cargado (MissingGreenlet).
+        await self.session.refresh(establecimiento)
+        return establecimiento
 
     async def list_by_usuario(self, usuario_id: UUID) -> list[Establecimiento]:
         """Establecimientos a los que el usuario tiene acceso (membresía activa)."""
