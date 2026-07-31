@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
@@ -8,6 +9,7 @@ import 'package:frontend_mayoral/features/establishment_register/domain/entities
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_draft_validation.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/strings/establishment_register_strings.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/establishment_offline_modal.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/establishment_register_app_bar_title.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/establishment_register_progress_indicator.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/steps/establishment_register_identification_step.dart';
@@ -62,11 +64,7 @@ class _EstablishmentRegisterView extends StatelessWidget {
               extra: data,
             );
           case ResultError<RegisteredEstablishment>(:final error):
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(content: Text(error.message)),
-              );
+            _handleError(context, error);
           default:
             break;
         }
@@ -182,6 +180,34 @@ class _EstablishmentRegisterView extends StatelessWidget {
     }
 
     context.go(AppRoutes.home);
+  }
+
+  void _handleError(BuildContext context, DomainException error) {
+    switch (error.code) {
+      case DomainErrorCode.offline:
+        showDialog<void>(
+          context: context,
+          builder: (_) => const EstablishmentOfflineModal(),
+        );
+      case DomainErrorCode.conflict:
+        // El RENSPA ya existe: el paso 2 muestra el mensaje inline junto al
+        // campo (lee `submitResult` directamente), acá sólo navegamos.
+        context.read<RegisterEstablishmentBloc>().add(
+          const RegisterEstablishmentEvent.stepRequested(
+            RegisterEstablishmentStep.renspa,
+          ),
+        );
+      case DomainErrorCode.unknown ||
+          DomainErrorCode.validation ||
+          DomainErrorCode.notFound ||
+          DomainErrorCode.unauthorized ||
+          DomainErrorCode.syncFailed:
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(error.message)),
+          );
+    }
   }
 }
 

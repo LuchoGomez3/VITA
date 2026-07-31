@@ -354,4 +354,40 @@ class EstablishmentRegisterStrings {
 
   /// Boton para volver al inicio desde la pantalla de éxito.
   static const successGoHomeButton = 'Ir al inicio';
+
+  /// Titulo del modal de falta de conexión (creación online-only).
+  static const offlineModalTitle = 'Necesitás conexión a internet';
+
+  /// Mensaje del modal de falta de conexión.
+  static const offlineModalMessage =
+      'Para crear el establecimiento necesitamos validar el RENSPA y el CUIT '
+      'contra el backend. Probá de nuevo cuando tengas conexión.';
+
+  /// Titulo de la recomendación de Wi-Fi del modal offline.
+  static const offlineWifiTitle = 'Wi-Fi de la casa o galpón';
+
+  /// Subtitulo de la recomendación de Wi-Fi del modal offline.
+  static const offlineWifiSubtitle = 'Recomendado';
+
+  /// Titulo de la recomendación de datos móviles del modal offline.
+  static const offlineMobileDataTitle = 'Datos móviles';
+
+  /// Subtitulo de la recomendación de datos móviles del modal offline.
+  static const offlineMobileDataSubtitle = 'Probá cerca de la ruta';
+
+  /// Boton para reintentar desde el modal offline.
+  static const offlineRetryButton = 'Reintentar';
+
+  /// Icono de nube tachada (sin conexión).
+  static const cloudOffIcon = 'assets/icons/cloud_off.svg';
+
+  /// Icono de reintentar.
+  static const cachedIcon = 'assets/icons/cached.svg';
+
+  /// Icono de nube (conectividad disponible).
+  static const cloudIcon = 'assets/icons/cloud.svg';
+
+  /// Mensaje inline cuando el backend rechaza el RENSPA por estar duplicado.
+  static const renspaConflictMessage =
+      'Este RENSPA ya está registrado. Revisalo antes de continuar.';
 }

@@ -1,4 +1,5 @@
-/// Datos de sesion devueltos por `/api/auth/login`.
+/// Datos de sesion devueltos por `/api/auth/login`, `/api/auth/refresh` y
+/// `/api/v1/usuarios/registro` (mismo contrato de sesion en los tres).
 ///
 /// Es un DTO de la capa data: representa el contrato HTTP del backend antes de
 /// convertirse en entidades de dominio.

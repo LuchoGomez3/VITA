@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/formatters/formatters.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/strings/establishment_register_strings.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/establishment_info_callout.dart';
@@ -45,6 +48,12 @@ class _EstablishmentRegisterRenspaStepState extends State<EstablishmentRegisterR
   Widget build(BuildContext context) {
     final draft = context.select(
       (RegisterEstablishmentBloc bloc) => bloc.state.draft,
+    );
+    final renspaConflict = context.select(
+      (RegisterEstablishmentBloc bloc) => switch (bloc.state.submitResult) {
+        ResultError<RegisteredEstablishment>(:final error) => error.code == DomainErrorCode.conflict,
+        _ => false,
+      },
     );
 
     return SafeArea(
@@ -103,6 +112,29 @@ class _EstablishmentRegisterRenspaStepState extends State<EstablishmentRegisterR
                 _updateDraft(draft.copyWith(nroRenspa: value));
               },
             ),
+            if (renspaConflict) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.errorContainer,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.error_outline, size: 18, color: AppColors.error),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        EstablishmentRegisterStrings.renspaConflictMessage,
+                        style: AppTypography.smallEmphasis.copyWith(color: AppColors.error),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.sm),
             RenspaBreakdownPanel(nroRenspa: draft.nroRenspa),
             const SizedBox(height: AppSpacing.sm),

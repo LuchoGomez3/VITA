@@ -20,7 +20,9 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
   RegisterEstablishmentBloc({
     required RegisterEstablishmentUseCase registerEstablishmentUseCase,
     RegisterEstablishmentStep initialStep = RegisterEstablishmentStep.identification,
+    void Function()? onClose,
   }) : _registerEstablishmentUseCase = registerEstablishmentUseCase,
+       _onClose = onClose,
        super(
          RegisterEstablishmentState(
            currentStep: initialStep,
@@ -35,6 +37,7 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
   }
 
   final RegisterEstablishmentUseCase _registerEstablishmentUseCase;
+  final void Function()? _onClose;
 
   /// Reemplaza el borrador completo cuando un campo del formulario cambia.
   void _onDraftChanged(
@@ -144,5 +147,11 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
         cantidadVertices: draft.cantidadVertices,
       ),
     );
+  }
+
+  @override
+  Future<void> close() async {
+    _onClose?.call();
+    return super.close();
   }
 }

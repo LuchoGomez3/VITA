@@ -40,14 +40,28 @@ class AuthRepositoryImpl implements AuthRepository {
     required RegistrationRequest request,
   }) async {
     try {
-      final userJson = await _remoteDataSource.register(
+      final remoteSession = await _remoteDataSource.register(
         firstName: request.firstName,
         lastName: request.lastName,
         email: request.email,
         cuit: request.cuit,
         password: request.password,
       );
-      return Result.success(AppUserMapper.fromJson(userJson));
+
+      // Hidrata solo el token en memoria (Bearer para el resto de la sesion
+      // de la app, p. ej. registrar el establecimiento a continuacion). A
+      // diferencia de signIn, no persiste sesion local ni corre sync inicial:
+      // el registro sigue sin ser un login real, ver
+      // `.claude/specs/registrar-establecimiento.md`.
+      _tokenProvider.session = BackendTokenSession(
+        accessToken: remoteSession.accessToken,
+        refreshToken: remoteSession.refreshToken,
+        accessTokenExpiresAt: DateTime.now().toUtc().add(
+          Duration(seconds: remoteSession.expiresIn),
+        ),
+      );
+
+      return Result.success(AppUserMapper.fromJson(remoteSession.userJson));
     } on DomainException catch (error) {
       return Result.failure(error);
     } on SocketException {
