@@ -30,9 +30,9 @@ import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
-import 'package:frontend_mayoral/features/profile/profile_composition.dart';
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
+import 'package:frontend_mayoral/features/profile/profile_composition.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion del router de la app.
