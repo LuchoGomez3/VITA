@@ -14,7 +14,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LoginState {
 
- ResultState<AuthSession> get signInResult; bool get isPreparingOfflineData; DomainException? get initialDataSyncError;
+/// Resultado principal del intento de login.
+ ResultState<AuthSession> get signInResult;/// Indica que el login ya fue aceptado y se estan preparando datos locales.
+ bool get isPreparingOfflineData;/// Error no bloqueante de la sync inicial posterior al login.
+ DomainException? get initialDataSyncError;
 /// Create a copy of LoginState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -226,8 +229,11 @@ class _LoginState implements LoginState {
   const _LoginState({required this.signInResult, required this.isPreparingOfflineData, this.initialDataSyncError});
   
 
+/// Resultado principal del intento de login.
 @override final  ResultState<AuthSession> signInResult;
+/// Indica que el login ya fue aceptado y se estan preparando datos locales.
 @override final  bool isPreparingOfflineData;
+/// Error no bloqueante de la sync inicial posterior al login.
 @override final  DomainException? initialDataSyncError;
 
 /// Create a copy of LoginState

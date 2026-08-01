@@ -16,11 +16,19 @@ class AppColors {
   /// Color de contenido sobre superficies `primary`.
   static const onPrimary = Color(0xFFFFFFFF);
 
+  static const surface = Color(0xFFFFFFFF);
+
+  /// Color de contenido sobre superficies `error`.
+  static const onError = Color(0xFFFFFFFF);
+
   /// Fondo base de la aplicacion.
   static const background = Color(0xFFF8F5F0);
 
   /// Fondo alternativo para secciones con mayor enfasis visual.
   static const backgroundSecondary = Color(0xFFC3F2CB);
+
+  /// Fondo alternativo para secciones con mayor enfasis visual.
+  static const backgroundSecondaryLight = Color.fromARGB(255, 221, 255, 227);
 
   /// Fondo alternativo neutro para tarjetas o bloques destacados.
   static const backgroundTertiary = Color(0xFFE8E2D2);

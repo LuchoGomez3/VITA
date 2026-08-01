@@ -12,7 +12,7 @@ abstract class AppConfig with _$AppConfig {
   }) = _AppConfig;
 
   static const current = AppConfig(
-    appName: 'Trazabilidad Ganadera',
+    appName: 'VITA',
     environment: 'dev',
     backendBaseUrl: String.fromEnvironment(
       'VITA_BACKEND_BASE_URL',
