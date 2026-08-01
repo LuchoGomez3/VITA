@@ -29,9 +29,7 @@ class EstablecimientoRepository:
     async def get_by_renspa(
         self, nro_renspa: str, *, exclude_id: UUID | None = None
     ) -> Establecimiento | None:
-        query = select(Establecimiento).where(
-            Establecimiento.nro_renspa == nro_renspa
-        )
+        query = select(Establecimiento).where(Establecimiento.nro_renspa == nro_renspa)
         if exclude_id is not None:
             query = query.where(Establecimiento.id != exclude_id)
         result = await self.session.execute(query)

@@ -18,7 +18,9 @@ class UsuarioService:
         self.repository = UsuarioRepository(session)
         self.auth_provider = auth_provider
 
-    async def registrar(self, data: UsuarioRegistroCreate) -> tuple[UsuarioRead, AuthResult]:
+    async def registrar(
+        self, data: UsuarioRegistroCreate
+    ) -> tuple[UsuarioRead, AuthResult]:
         """Registra un dueño de campo: credenciales en el proveedor + perfil.
 
         Devuelve el perfil creado y la sesión completa (access + refresh +

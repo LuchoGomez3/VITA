@@ -29,8 +29,7 @@ class RenspaFormatoInvalidoError(ValidationError):
 
     def __init__(self, nro_renspa: str) -> None:
         super().__init__(
-            f"El RENSPA '{nro_renspa}' no tiene el formato esperado "
-            "(NN.NNN.N.NNNNN/NN)"
+            f"El RENSPA '{nro_renspa}' no tiene el formato esperado (NN.NNN.N.NNNNN/NN)"
         )
 
 
