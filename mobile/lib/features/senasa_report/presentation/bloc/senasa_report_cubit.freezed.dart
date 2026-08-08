@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SenasaReportState {
 
- ResultState<List<SenasaEstablishment>> get establishments; ResultState<GeneratedSenasaReport> get generation;
+ ResultState<List<SenasaEstablishment>> get establishments; ResultState<GeneratedSenasaReport> get generation; ResultState<SenasaValidationResult> get validation;
 /// Create a copy of SenasaReportState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $SenasaReportStateCopyWith<SenasaReportState> get copyWith => _$SenasaReportStat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SenasaReportState&&(identical(other.establishments, establishments) || other.establishments == establishments)&&(identical(other.generation, generation) || other.generation == generation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SenasaReportState&&(identical(other.establishments, establishments) || other.establishments == establishments)&&(identical(other.generation, generation) || other.generation == generation)&&(identical(other.validation, validation) || other.validation == validation));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,establishments,generation);
+int get hashCode => Object.hash(runtimeType,establishments,generation,validation);
 
 @override
 String toString() {
-  return 'SenasaReportState(establishments: $establishments, generation: $generation)';
+  return 'SenasaReportState(establishments: $establishments, generation: $generation, validation: $validation)';
 }
 
 
@@ -45,11 +45,11 @@ abstract mixin class $SenasaReportStateCopyWith<$Res>  {
   factory $SenasaReportStateCopyWith(SenasaReportState value, $Res Function(SenasaReportState) _then) = _$SenasaReportStateCopyWithImpl;
 @useResult
 $Res call({
- ResultState<List<SenasaEstablishment>> establishments, ResultState<GeneratedSenasaReport> generation
+ ResultState<List<SenasaEstablishment>> establishments, ResultState<GeneratedSenasaReport> generation, ResultState<SenasaValidationResult> validation
 });
 
 
-$ResultStateCopyWith<List<SenasaEstablishment>, $Res> get establishments;$ResultStateCopyWith<GeneratedSenasaReport, $Res> get generation;
+$ResultStateCopyWith<List<SenasaEstablishment>, $Res> get establishments;$ResultStateCopyWith<GeneratedSenasaReport, $Res> get generation;$ResultStateCopyWith<SenasaValidationResult, $Res> get validation;
 
 }
 /// @nodoc
@@ -62,11 +62,12 @@ class _$SenasaReportStateCopyWithImpl<$Res>
 
 /// Create a copy of SenasaReportState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? establishments = null,Object? generation = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? establishments = null,Object? generation = null,Object? validation = null,}) {
   return _then(_self.copyWith(
 establishments: null == establishments ? _self.establishments : establishments // ignore: cast_nullable_to_non_nullable
 as ResultState<List<SenasaEstablishment>>,generation: null == generation ? _self.generation : generation // ignore: cast_nullable_to_non_nullable
-as ResultState<GeneratedSenasaReport>,
+as ResultState<GeneratedSenasaReport>,validation: null == validation ? _self.validation : validation // ignore: cast_nullable_to_non_nullable
+as ResultState<SenasaValidationResult>,
   ));
 }
 /// Create a copy of SenasaReportState
@@ -86,6 +87,15 @@ $ResultStateCopyWith<GeneratedSenasaReport, $Res> get generation {
   
   return $ResultStateCopyWith<GeneratedSenasaReport, $Res>(_self.generation, (value) {
     return _then(_self.copyWith(generation: value));
+  });
+}/// Create a copy of SenasaReportState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<SenasaValidationResult, $Res> get validation {
+  
+  return $ResultStateCopyWith<SenasaValidationResult, $Res>(_self.validation, (value) {
+    return _then(_self.copyWith(validation: value));
   });
 }
 }
@@ -166,10 +176,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<List<SenasaEstablishment>> establishments,  ResultState<GeneratedSenasaReport> generation)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<List<SenasaEstablishment>> establishments,  ResultState<GeneratedSenasaReport> generation,  ResultState<SenasaValidationResult> validation)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SenasaReportState() when $default != null:
-return $default(_that.establishments,_that.generation);case _:
+return $default(_that.establishments,_that.generation,_that.validation);case _:
   return orElse();
 
 }
@@ -187,10 +197,10 @@ return $default(_that.establishments,_that.generation);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<List<SenasaEstablishment>> establishments,  ResultState<GeneratedSenasaReport> generation)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<List<SenasaEstablishment>> establishments,  ResultState<GeneratedSenasaReport> generation,  ResultState<SenasaValidationResult> validation)  $default,) {final _that = this;
 switch (_that) {
 case _SenasaReportState():
-return $default(_that.establishments,_that.generation);}
+return $default(_that.establishments,_that.generation,_that.validation);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -204,10 +214,10 @@ return $default(_that.establishments,_that.generation);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<List<SenasaEstablishment>> establishments,  ResultState<GeneratedSenasaReport> generation)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<List<SenasaEstablishment>> establishments,  ResultState<GeneratedSenasaReport> generation,  ResultState<SenasaValidationResult> validation)?  $default,) {final _that = this;
 switch (_that) {
 case _SenasaReportState() when $default != null:
-return $default(_that.establishments,_that.generation);case _:
+return $default(_that.establishments,_that.generation,_that.validation);case _:
   return null;
 
 }
@@ -219,11 +229,12 @@ return $default(_that.establishments,_that.generation);case _:
 
 
 class _SenasaReportState implements SenasaReportState {
-  const _SenasaReportState({this.establishments = const ResultState<List<SenasaEstablishment>>.initial(), this.generation = const ResultState<GeneratedSenasaReport>.initial()});
+  const _SenasaReportState({this.establishments = const ResultState<List<SenasaEstablishment>>.initial(), this.generation = const ResultState<GeneratedSenasaReport>.initial(), this.validation = const ResultState<SenasaValidationResult>.initial()});
   
 
 @override@JsonKey() final  ResultState<List<SenasaEstablishment>> establishments;
 @override@JsonKey() final  ResultState<GeneratedSenasaReport> generation;
+@override@JsonKey() final  ResultState<SenasaValidationResult> validation;
 
 /// Create a copy of SenasaReportState
 /// with the given fields replaced by the non-null parameter values.
@@ -235,16 +246,16 @@ _$SenasaReportStateCopyWith<_SenasaReportState> get copyWith => __$SenasaReportS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SenasaReportState&&(identical(other.establishments, establishments) || other.establishments == establishments)&&(identical(other.generation, generation) || other.generation == generation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SenasaReportState&&(identical(other.establishments, establishments) || other.establishments == establishments)&&(identical(other.generation, generation) || other.generation == generation)&&(identical(other.validation, validation) || other.validation == validation));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,establishments,generation);
+int get hashCode => Object.hash(runtimeType,establishments,generation,validation);
 
 @override
 String toString() {
-  return 'SenasaReportState(establishments: $establishments, generation: $generation)';
+  return 'SenasaReportState(establishments: $establishments, generation: $generation, validation: $validation)';
 }
 
 
@@ -255,11 +266,11 @@ abstract mixin class _$SenasaReportStateCopyWith<$Res> implements $SenasaReportS
   factory _$SenasaReportStateCopyWith(_SenasaReportState value, $Res Function(_SenasaReportState) _then) = __$SenasaReportStateCopyWithImpl;
 @override @useResult
 $Res call({
- ResultState<List<SenasaEstablishment>> establishments, ResultState<GeneratedSenasaReport> generation
+ ResultState<List<SenasaEstablishment>> establishments, ResultState<GeneratedSenasaReport> generation, ResultState<SenasaValidationResult> validation
 });
 
 
-@override $ResultStateCopyWith<List<SenasaEstablishment>, $Res> get establishments;@override $ResultStateCopyWith<GeneratedSenasaReport, $Res> get generation;
+@override $ResultStateCopyWith<List<SenasaEstablishment>, $Res> get establishments;@override $ResultStateCopyWith<GeneratedSenasaReport, $Res> get generation;@override $ResultStateCopyWith<SenasaValidationResult, $Res> get validation;
 
 }
 /// @nodoc
@@ -272,11 +283,12 @@ class __$SenasaReportStateCopyWithImpl<$Res>
 
 /// Create a copy of SenasaReportState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? establishments = null,Object? generation = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? establishments = null,Object? generation = null,Object? validation = null,}) {
   return _then(_SenasaReportState(
 establishments: null == establishments ? _self.establishments : establishments // ignore: cast_nullable_to_non_nullable
 as ResultState<List<SenasaEstablishment>>,generation: null == generation ? _self.generation : generation // ignore: cast_nullable_to_non_nullable
-as ResultState<GeneratedSenasaReport>,
+as ResultState<GeneratedSenasaReport>,validation: null == validation ? _self.validation : validation // ignore: cast_nullable_to_non_nullable
+as ResultState<SenasaValidationResult>,
   ));
 }
 
@@ -297,6 +309,15 @@ $ResultStateCopyWith<GeneratedSenasaReport, $Res> get generation {
   
   return $ResultStateCopyWith<GeneratedSenasaReport, $Res>(_self.generation, (value) {
     return _then(_self.copyWith(generation: value));
+  });
+}/// Create a copy of SenasaReportState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<SenasaValidationResult, $Res> get validation {
+  
+  return $ResultStateCopyWith<SenasaValidationResult, $Res>(_self.validation, (value) {
+    return _then(_self.copyWith(validation: value));
   });
 }
 }

@@ -5,7 +5,6 @@ import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_r
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/date_range_selector.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/establishment_data_form.dart';
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/event_type_selector.dart';
 
 /// Displays the filters used to select records for a SENASA report.
 class ReportStep1Filters extends StatelessWidget {
@@ -13,13 +12,12 @@ class ReportStep1Filters extends StatelessWidget {
   const ReportStep1Filters({
     required this.formKey,
     required this.establishments,
-    required this.selectedMovement,
-    required this.onMovementChanged,
     required this.startDate,
     required this.endDate,
     required this.onDatesChanged,
     required this.selectedOrigin,
     required this.onOriginChanged,
+    required this.fileNameController,
     super.key,
   });
 
@@ -28,12 +26,6 @@ class ReportStep1Filters extends StatelessWidget {
 
   /// Key used to validate the first-step fields.
   final GlobalKey<FormState> formKey;
-
-  /// Currently selected movement type.
-  final String selectedMovement;
-
-  /// Called when the movement type changes.
-  final ValueChanged<String> onMovementChanged;
 
   /// Start date of the report period.
   final DateTime startDate;
@@ -49,6 +41,9 @@ class ReportStep1Filters extends StatelessWidget {
 
   /// Called when the establishment changes.
   final ValueChanged<String?> onOriginChanged;
+
+  /// Controla el nombre opcional enviado tanto al validar como al generar.
+  final TextEditingController fileNameController;
 
   @override
   Widget build(BuildContext context) {
@@ -73,17 +68,22 @@ class ReportStep1Filters extends StatelessWidget {
               onDatesChanged: onDatesChanged,
             ),
             const SizedBox(height: AppSpacing.xs),
-            EventTypeSelector(
-              selectedMovement: selectedMovement,
-              onChanged: onMovementChanged,
-            ),
-            const SizedBox(height: AppSpacing.xs),
             EstablishmentSelector(
               establishments: establishments,
               selectedOrigin: selectedOrigin,
               onOriginChanged: onOriginChanged,
             ),
-            const SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: AppSpacing.md),
+            AppTextFormField(
+              controller: fileNameController,
+              title: SenasaStrings.fileName,
+              hintText: SenasaStrings.fileNameHint,
+              textInputAction: TextInputAction.done,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            const AppSurfaceCard(
+              child: Text(SenasaStrings.sigsaExplanation),
+            ),
           ],
         ),
       ),

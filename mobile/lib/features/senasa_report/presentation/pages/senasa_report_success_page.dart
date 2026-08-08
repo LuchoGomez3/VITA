@@ -3,13 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
-import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/generated_report_file_card.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_status_indicator.dart';
 import 'package:go_router/go_router.dart';
-import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Result page shown when a SENASA report is generated successfully.
@@ -56,17 +54,19 @@ class SenasaReportSuccessPage extends StatelessWidget {
                         ),
                         const SizedBox(height: AppSpacing.lg),
                         GeneratedReportFileCard(report: report),
-                        const SizedBox(height: AppSpacing.md),
-                        _ReportActions(report: report),
-                        const SizedBox(height: AppSpacing.lg),
-                        AppOutlinedButton(
-                          label: SenasaStrings.markAsSent,
-                          icon: const Icon(Icons.check, size: 18),
-                          onPressed: () => _markAsSent(context),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          '${report.animalCount} animales incluidos',
+                          style: AppTypography.mediumEmphasis,
                         ),
                         const SizedBox(height: AppSpacing.md),
+                        _ReportActions(report: report),
+                        const SizedBox(height: AppSpacing.md),
                         TextButton(
-                          onPressed: () => context.go(AppRoutes.senasaMenu),
+                          onPressed: () => context.go(
+                            AppRoutes.senasaMenu,
+                            extra: report.generatedAt.microsecondsSinceEpoch,
+                          ),
                           child: const Text(SenasaStrings.backToCompliance),
                         ),
                       ],
@@ -80,14 +80,6 @@ class SenasaReportSuccessPage extends StatelessWidget {
       ),
     );
   }
-
-  void _markAsSent(BuildContext context) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(content: Text(SenasaStrings.markedAsSentMessage)),
-      );
-  }
 }
 
 class _ReportActions extends StatelessWidget {
@@ -99,14 +91,6 @@ class _ReportActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(
-          child: _CompactActionButton(
-            label: SenasaStrings.preview,
-            icon: Icons.visibility_outlined,
-            onPressed: () => unawaited(_preview(context)),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: _CompactActionButton(
             label: SenasaStrings.download,
@@ -124,22 +108,6 @@ class _ReportActions extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Future<void> _preview(BuildContext context) async {
-    if (report.mediaType != 'application/pdf') {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text(SenasaStrings.previewUnavailable)),
-        );
-      return;
-    }
-
-    await Printing.layoutPdf(
-      name: report.filename,
-      onLayout: (_) async => report.bytes,
     );
   }
 

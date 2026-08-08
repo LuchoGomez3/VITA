@@ -8,11 +8,15 @@ class GeneratedReportFileCard extends StatelessWidget {
   /// Creates the generated file summary.
   const GeneratedReportFileCard({
     required this.report,
+    this.onShare,
     super.key,
   });
 
   /// Backend file returned by the generation endpoint.
   final GeneratedSenasaReport report;
+
+  /// Acción opcional para compartir el archivo desde el historial.
+  final VoidCallback? onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -20,8 +24,14 @@ class GeneratedReportFileCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.cardShadow,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -41,12 +51,20 @@ class GeneratedReportFileCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xxs),
                 Text(
-                  '$_fileSize • ${SenasaStrings.generatedNow}',
+                  '$_fileSize • $_generatedDate',
                   style: AppTypography.smallEmphasis,
                 ),
               ],
             ),
           ),
+          if (onShare != null) ...[
+            const SizedBox(width: AppSpacing.xs),
+            IconButton(
+              tooltip: SenasaStrings.share,
+              onPressed: onShare,
+              icon: const Icon(Icons.share_outlined),
+            ),
+          ],
         ],
       ),
     );
@@ -66,6 +84,15 @@ class GeneratedReportFileCard extends StatelessWidget {
       return '${kilobytes.toStringAsFixed(1)} KB';
     }
     return '${(kilobytes / 1024).toStringAsFixed(1)} MB';
+  }
+
+  String get _generatedDate {
+    final date = report.generatedAt.toLocal();
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$day/$month/${date.year} $hour:$minute';
   }
 }
 

@@ -1,16 +1,26 @@
 /// Centralized UI strings for the SENASA report feature.
 class SenasaStrings {
   /// Menu page title.
-  static const String menuPageTitle = 'Reporte de SENASA';
+  static const String menuPageTitle = 'Declaración de dispositivos electrónicos';
 
   /// Recent documents section title.
   static const String menuPageSubtitle = 'Documentación Reciente';
 
   /// Recent documents section description.
-  static const String menuPageDescription = 'Historial de archivos oficiales exportados para SENASA.';
+  static const String menuPageDescription = 'Historial remoto de archivos preparados para importar en SIGSA.';
+
+  /// Acción que inicia un nuevo reporte.
+  static const String generateNewFile = 'Generar nuevo archivo';
+
+  /// Mensaje mostrado cuando todavía no se generaron reportes.
+  static const String emptyGeneratedReports = 'Todavía no hay archivos para este establecimiento.';
+
+  /// Error mostrado cuando no se puede leer el historial local.
+  static const String generatedReportsLoadError =
+      'No se pudo consultar el historial. Verificá tu conexión sin perder los datos cargados.';
 
   /// Report wizard title.
-  static const String pageTitle = 'Exportar a SENASA';
+  static const String pageTitle = 'Declaración de dispositivos electrónicos';
 
   /// First step title.
   static const String step1Title = 'Selección de registros';
@@ -19,14 +29,10 @@ class SenasaStrings {
   static const String step2Title = 'Validación de registros';
 
   /// Third step title.
-  static const String step3Title = 'Formato de salida';
-
   /// Continue button label.
   static const String btnContinue = 'Continuar y Validar';
 
   /// Next button label.
-  static const String btnNext = 'Siguiente';
-
   /// Generate button label.
   static const String btnGenerate = 'Generar Archivo';
 
@@ -37,14 +43,16 @@ class SenasaStrings {
   static const String retry = 'Reintentar';
 
   /// Success message shown when the report is ready.
-  static const String reportReady = 'Reporte generado correctamente.';
-
   /// Event data section title.
-  static const String step1SectionEvent = 'Datos del Evento';
+  static const String step1SectionEvent = 'Datos de la declaración';
 
   /// Event data section description.
   static const String step1SectionEventDesc =
-      'Establezca el tipo de evento y el rango temporal para generar la documentación.';
+      'Seleccioná el establecimiento y el período de registro o caravaneo de los animales.';
+
+  /// Aclara el alcance del archivo antes de iniciar cualquier operación remota.
+  static const String sigsaExplanation =
+      'VITA prepara un TXT compatible con la importación de SIGSA. Generarlo no significa que SENASA lo haya recibido o aceptado: el trámite oficial debe completarse en SIGSA.';
 
   /// Establishment data section title.
   static const String step1SectionEst = 'Datos del Establecimiento';
@@ -54,63 +62,63 @@ class SenasaStrings {
 
   /// Validation success banner text.
   static const String step2SuccessBanner =
-      'La validación definitiva se realizará en el servidor al generar el archivo.';
+      'Todos los registros tienen los campos necesarios para generar el documento.';
+
+  /// Mensaje mostrado mientras el servidor controla cada registro.
+  static const String recordsValidationLoading = 'Verificando los campos obligatorios de los registros...';
+
+  /// Error genérico de la validación previa.
+  static const String recordsValidationError = 'No se pudieron validar los registros seleccionados.';
+
+  /// Etiqueta de la cantidad incluida en el resumen del paso dos.
+  static const String step2AnimalsLabel = 'Animales a exportar:';
+
+  /// Construye el encabezado de los animales que necesitan correcciones.
+  static String incompleteAnimals(int count) {
+    return count == 1 ? 'Animal con datos incompletos: 1' : 'Animales con datos incompletos: $count';
+  }
+
+  /// Etiqueta de la caravana mostrada en un error de validación.
+  static const String tagLabel = 'Caravana';
+
+  /// Texto usado cuando el registro no posee una caravana utilizable.
+  static const String animalWithoutTag = 'Sin caravana';
+
+  /// Etiqueta de los datos que deben completarse.
+  static const String missingFieldsLabel = 'Falta completar';
+
+  /// Traduce los nombres técnicos del backend para presentarlos al usuario.
+  static String validationFieldLabel(String field) => switch (field) {
+    'nro_caravana_rfid' => 'caravana RFID válida',
+    'raza' => 'raza con código SENASA',
+    'fecha_nacimiento' => 'fecha de nacimiento',
+    _ => field,
+  };
 
   /// Validation summary title.
   static const String step2SummaryTitle = 'Datos recopilados';
 
-  /// Event label in the summary.
-  static const String step2EventLabel = 'Evento:';
-
   /// Period label in the summary.
   static const String step2PeriodLabel = 'Período:';
 
-  /// Export format selector title.
-  static const String step3FormatTitle = 'Formato de exportación requerido';
+  /// Etiqueta del nombre opcional del archivo de salida.
+  static const String fileName = 'Nombre del archivo (opcional)';
 
-  /// PDF format label.
-  static const String step3pdf = 'PDF';
-
-  /// PDF format description.
-  static const String formatPdfDesc = 'Ideal para impresión y soporte físico con firma';
-
-  /// CSV format label.
-  static const String step3csv = 'CSV';
-
-  /// CSV format description.
-  static const String formatCsvDesc = 'Estructura delimitada optimizada para existencias';
-
-  /// Responsible person name validation hint.
-  static const String formName = 'Ingrese su nombre y apellido.';
-
-  /// Responsible person DNI validation hint.
-  static const String formDNI = 'Ingrese su DNI.';
-
-  /// Responsible person name field label.
-  static const String responsableName = 'Nombre del Responsable';
-
-  /// Responsible person DNI field label.
-  static const String responsableDNI = 'DNI';
-
-  /// Responsible person name required message.
-  static const String responsibleNameRequired = 'Ingrese el nombre del responsable.';
-
-  /// Responsible person DNI required message.
-  static const String responsibleDniRequired = 'Ingrese el DNI.';
+  /// Ejemplo para el nombre opcional del archivo de salida.
+  static const String fileNameHint = 'Ejemplo: declaracion_agosto';
 
   /// Report generation page title.
   static const String generationTitle = 'Generando reporte...';
 
   /// Report generation page description.
-  static const String generationDescription =
-      'Compilando 142 movimientos con CUIG,\n'
-      'RENSPA y firma digital del responsable.';
+  static const String generationDescription = 'Solicitando al backend el TXT compatible con SIGSA.';
 
   /// Title shown after a successful report generation.
-  static const String successTitle = 'Reporte generado';
+  static const String successTitle = 'Archivo TXT generado';
 
   /// Description shown after a successful report generation.
-  static const String successDescription = 'Archivo listo para descargar o compartir.';
+  static const String successDescription =
+      'Guardalo o compartilo y completá el trámite oficial importándolo en SIGSA. Esto no confirma recepción ni aceptación de SENASA.';
 
   /// Title shown when report generation fails.
   static const String errorTitle = 'No se pudo generar';
@@ -127,9 +135,6 @@ class SenasaStrings {
   /// Share action label.
   static const String share = 'Compartir';
 
-  /// Marks the generated report as sent.
-  static const String markAsSent = 'Marcar como enviado a SENASA';
-
   /// Return action label for the SENASA menu.
   static const String backToCompliance = 'Volver a cumplimiento';
 
@@ -142,20 +147,14 @@ class SenasaStrings {
   /// Generic file label used when the filename has no extension.
   static const String reportFileLabel = 'ARCHIVO';
 
-  /// Message shown when the report is marked as sent locally.
-  static const String markedAsSentMessage = 'Reporte marcado como enviado a SENASA.';
-
-  /// Message shown when preview is not available for a generated format.
-  static const String previewUnavailable = 'La vista previa está disponible para archivos PDF.';
-
   /// Generation progress item for data validation.
   static const String validatingData = 'Validando integridad de datos';
 
   /// Generation progress item for event sorting.
-  static const String sortingEvents = 'Ordenando por fecha y tipo de evento';
+  static const String sortingEvents = 'Filtrando por fecha de registro o caravaneo';
 
   /// Generation progress item for PDF compilation.
-  static const String compilingPdf = 'Compilando PDF con firma digital';
+  static const String compilingPdf = 'Preparando el TXT compatible con SIGSA';
 
   /// Generation progress item for download preparation.
   static const String preparingDownload = 'Preparando archivo para descarga';
@@ -178,38 +177,14 @@ class SenasaStrings {
   /// Current month shortcut label.
   static const String dateSelectorCurrentMonth = 'Mes actual';
 
-  /// Event type selector title.
-  static const String eventSelectorTitle = 'Tipo de evento';
-
-  /// Event type labels available in the UI.
-  static const List<String> eventTypes = [
-    'Vacunación',
-    'Tratamiento',
-    'Desparasitación',
-    'Diagnóstico',
-    'Análisis',
-    'Ingreso',
-    'Egreso',
-    'Movimiento',
-  ];
-
-  /// API values mapped by event type label.
-  static const Map<String, String> eventTypeApiValues = {
-    'Vacunación': 'vacunacion',
-    'Tratamiento': 'tratamiento',
-    'Desparasitación': 'desparasitacion',
-    'Diagnóstico': 'diagnostico',
-    'Análisis': 'analisis',
-    'Ingreso': 'ingreso',
-    'Egreso': 'egreso',
-    'Movimiento': 'movimiento',
-  };
+  // TODO(equipo): definir el flujo de reidentificación cuando exista un
+  // contrato funcional aprobado. No pertenece a la declaración inicial.
 
   /// Establishment selector field label.
   static const String establishmentSelectorLabel = 'Seleccione el Establecimiento';
 
   /// Establishment section title.
-  static const String establishmentSectionTitle = 'Datos del Establecimiento';
+  static const String establishmentSectionTitle = 'Establecimiento';
 
   /// Establishment required validation message.
   static const String establishmentRequired = 'Seleccione un establecimiento.';

@@ -6,6 +6,8 @@ import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_r
 import 'package:frontend_mayoral/features/senasa_report/domain/exceptions/senasa_report_exception.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/generate_senasa_report_use_case.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/get_senasa_establishments_use_case.dart';
+import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/validate_senasa_records_use_case.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 
 part 'senasa_report_cubit.freezed.dart';
 
@@ -16,6 +18,7 @@ sealed class SenasaReportState with _$SenasaReportState {
   const factory SenasaReportState({
     @Default(ResultState<List<SenasaEstablishment>>.initial()) ResultState<List<SenasaEstablishment>> establishments,
     @Default(ResultState<GeneratedSenasaReport>.initial()) ResultState<GeneratedSenasaReport> generation,
+    @Default(ResultState<SenasaValidationResult>.initial()) ResultState<SenasaValidationResult> validation,
   }) = _SenasaReportState;
 }
 
@@ -25,12 +28,46 @@ class SenasaReportCubit extends Cubit<SenasaReportState> {
   SenasaReportCubit({
     required GetSenasaEstablishmentsUseCase getEstablishments,
     required GenerateSenasaReportUseCase generateReport,
+    required ValidateSenasaRecordsUseCase validateRecords,
   }) : _getEstablishments = getEstablishments,
        _generateReport = generateReport,
+       _validateRecords = validateRecords,
        super(const SenasaReportState());
 
   final GetSenasaEstablishmentsUseCase _getEstablishments;
   final GenerateSenasaReportUseCase _generateReport;
+  final ValidateSenasaRecordsUseCase _validateRecords;
+
+  /// Verifica en el servidor todos los campos de los registros seleccionados.
+  Future<void> validateRecords(SenasaReportValidationRequest request) async {
+    emit(state.copyWith(validation: const ResultState.loading()));
+    try {
+      final result = await _validateRecords(request);
+      if (!isClosed) {
+        emit(state.copyWith(validation: ResultState.data(result)));
+      }
+    } on SenasaReportException catch (error) {
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            validation: ResultState.error(
+              DomainException(message: error.message, code: error.code),
+            ),
+          ),
+        );
+      }
+    } on Object {
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            validation: const ResultState.error(
+              DomainException(message: SenasaStrings.recordsValidationError),
+            ),
+          ),
+        );
+      }
+    }
+  }
 
   /// Loads establishments from the backend.
   Future<void> loadEstablishments() async {

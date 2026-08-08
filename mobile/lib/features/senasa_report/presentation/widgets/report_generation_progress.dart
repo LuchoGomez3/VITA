@@ -64,9 +64,7 @@ class _GenerationTask extends StatelessWidget {
             child: Text(
               label,
               style: AppTypography.smallEmphasis.copyWith(
-                color: status == _GenerationTaskStatus.pending
-                    ? AppColors.textSecondary
-                    : AppColors.textPrimary,
+                color: status == _GenerationTaskStatus.pending ? AppColors.textSecondary : AppColors.textPrimary,
               ),
             ),
           ),

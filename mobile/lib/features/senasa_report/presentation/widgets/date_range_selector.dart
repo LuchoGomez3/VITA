@@ -46,78 +46,76 @@ class DateRangeSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: AppSpacing.xxs, bottom: AppSpacing.xxs),
-          child: Text(
-            SenasaStrings.dateSelectorTitle,
-            style: AppTypography.pageTitle,
-          ),
-        ),
         AppSurfaceCard(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xxxs),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  child: Row(
-                    children: [
-                      _buildDateShortcutChip(context, SenasaStrings.dateSelectorToday, () {
-                        onDatesChanged(DateTime.now(), DateTime.now());
-                      }),
-                      const SizedBox(width: 8),
-                      _buildDateShortcutChip(context, SenasaStrings.dateSelectorLast7Days, () {
-                        onDatesChanged(DateTime.now().subtract(const Duration(days: 7)), DateTime.now());
-                      }),
-                      const SizedBox(width: 8),
-                      _buildDateShortcutChip(context, SenasaStrings.dateSelectorLast30Days, () {
-                        onDatesChanged(DateTime.now().subtract(const Duration(days: 30)), DateTime.now());
-                      }),
-                      const SizedBox(width: 8),
-                      _buildDateShortcutChip(context, SenasaStrings.dateSelectorCurrentMonth, () {
-                        final now = DateTime.now();
-                        onDatesChanged(DateTime(now.year, now.month), now);
-                      }),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Selectores Desde / Hasta usando el componente del Core
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.all(AppSpacing.md),
+          elevation: 6,
+          shadowColor: const Color(0x33000000),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                SenasaStrings.dateSelectorTitle,
+                style: AppTypography.pageTitle,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
                   children: [
-                    Expanded(
-                      child: AppDateFormField(
-                        title: 'Desde',
-                        hintText: 'Fecha',
-                        value: startDate,
-                        onChanged: (newStart) {
-                          var finalEnd = endDate;
-                          if (newStart.isAfter(finalEnd)) finalEnd = newStart;
-                          onDatesChanged(newStart, finalEnd);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: AppDateFormField(
-                        title: 'Hasta',
-                        hintText: 'Fecha',
-                        value: endDate,
-                        onChanged: (newEnd) {
-                          var finalStart = startDate;
-                          if (newEnd.isBefore(finalStart)) finalStart = newEnd;
-                          onDatesChanged(finalStart, newEnd);
-                        },
-                      ),
-                    ),
+                    _buildDateShortcutChip(context, SenasaStrings.dateSelectorToday, () {
+                      onDatesChanged(DateTime.now(), DateTime.now());
+                    }),
+                    const SizedBox(width: 8),
+                    _buildDateShortcutChip(context, SenasaStrings.dateSelectorLast7Days, () {
+                      onDatesChanged(DateTime.now().subtract(const Duration(days: 7)), DateTime.now());
+                    }),
+                    const SizedBox(width: 8),
+                    _buildDateShortcutChip(context, SenasaStrings.dateSelectorLast30Days, () {
+                      onDatesChanged(DateTime.now().subtract(const Duration(days: 30)), DateTime.now());
+                    }),
+                    const SizedBox(width: 8),
+                    _buildDateShortcutChip(context, SenasaStrings.dateSelectorCurrentMonth, () {
+                      final now = DateTime.now();
+                      onDatesChanged(DateTime(now.year, now.month), now);
+                    }),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Selectores Desde / Hasta usando el componente del Core
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: AppDateFormField(
+                      title: 'Desde',
+                      hintText: 'Fecha',
+                      value: startDate,
+                      onChanged: (newStart) {
+                        var finalEnd = endDate;
+                        if (newStart.isAfter(finalEnd)) finalEnd = newStart;
+                        onDatesChanged(newStart, finalEnd);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: AppDateFormField(
+                      title: 'Hasta',
+                      hintText: 'Fecha',
+                      value: endDate,
+                      onChanged: (newEnd) {
+                        var finalStart = startDate;
+                        if (newEnd.isBefore(finalStart)) finalStart = newEnd;
+                        onDatesChanged(finalStart, newEnd);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ],

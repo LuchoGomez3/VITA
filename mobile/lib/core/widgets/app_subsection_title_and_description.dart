@@ -34,13 +34,13 @@ class AppSubsectionTitleAndDescription extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   description!,
-                  style: AppTypography.mediumEmphasis.copyWith(color: AppColors.textHint),
+                  style: AppTypography.mediumEmphasis,
                 ),
               ],
             ],
           ),
         ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.md),
       ],
     );
   }

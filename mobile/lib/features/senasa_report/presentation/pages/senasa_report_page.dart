@@ -7,11 +7,11 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/generate_senasa_report_use_case.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/get_senasa_establishments_use_case.dart';
+import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/validate_senasa_records_use_case.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/bloc/senasa_report_cubit.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step1_filters.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step2_validation.dart';
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step3_format.dart';
 import 'package:go_router/go_router.dart';
 
 /// SENASA report flow connected to the backend.
@@ -20,6 +20,7 @@ class SenasaReportPage extends StatelessWidget {
   const SenasaReportPage({
     required this.getEstablishments,
     required this.generateReport,
+    required this.validateRecords,
     super.key,
   });
 
@@ -29,12 +30,16 @@ class SenasaReportPage extends StatelessWidget {
   /// Generates the selected report file.
   final GenerateSenasaReportUseCase generateReport;
 
+  /// Valida los registros seleccionados con las reglas del documento oficial.
+  final ValidateSenasaRecordsUseCase validateRecords;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => SenasaReportCubit(
         getEstablishments: getEstablishments,
         generateReport: generateReport,
+        validateRecords: validateRecords,
       )..loadEstablishments(),
       child: const _SenasaReportView(),
     );
@@ -50,26 +55,19 @@ class _SenasaReportView extends StatefulWidget {
 
 class _SenasaReportViewState extends State<_SenasaReportView> {
   final _stepOneFormKey = GlobalKey<FormState>();
-  final _stepThreeFormKey = GlobalKey<FormState>();
-  final _responsibleNameController = TextEditingController();
-  final _responsibleDniController = TextEditingController();
+  final _fileNameController = TextEditingController();
 
-  // GESTIÓN DEL FLUJO ÚNICO
-  int _currentStep = 1; // 1: Parámetros, 2: Validación y Formato
+  // El formulario permanece montado mientras una operación remota falla, por
+  // lo que un corte de conexión no borra el establecimiento, período o nombre.
+  int _currentStep = 1;
 
-  // ESTADOS DEL PASO 1 (Datos)
-  String _selectedMovement = 'Ingreso';
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 7));
   DateTime _endDate = DateTime.now();
   String? _selectedOrigin;
 
-  // ESTADOS DEL PASO 2 (Exportación)
-  String _selectedFormat = 'PDF';
-
   @override
   void dispose() {
-    _responsibleNameController.dispose();
-    _responsibleDniController.dispose();
+    _fileNameController.dispose();
     super.dispose();
   }
 
@@ -92,7 +90,7 @@ class _SenasaReportViewState extends State<_SenasaReportView> {
             children: [
               StepProgressBar(
                 currentStep: _currentStep,
-                totalSteps: 3,
+                totalSteps: 2,
                 stepTitle: _getStepTitle(),
               ),
               Expanded(
@@ -113,7 +111,7 @@ class _SenasaReportViewState extends State<_SenasaReportView> {
   String _getStepTitle() {
     if (_currentStep == 1) return SenasaStrings.step1Title;
     if (_currentStep == 2) return SenasaStrings.step2Title;
-    return SenasaStrings.step3Title;
+    return SenasaStrings.step2Title;
   }
 
   // Selecciona el widget modular del cuerpo
@@ -131,8 +129,6 @@ class _SenasaReportViewState extends State<_SenasaReportView> {
             key: const ValueKey('Step1'),
             establishments: establishments,
             formKey: _stepOneFormKey,
-            selectedMovement: _selectedMovement,
-            onMovementChanged: (val) => setState(() => _selectedMovement = val),
             startDate: _startDate,
             endDate: _endDate,
             onDatesChanged: (start, end) => setState(() {
@@ -141,23 +137,16 @@ class _SenasaReportViewState extends State<_SenasaReportView> {
             }),
             selectedOrigin: _selectedOrigin,
             onOriginChanged: (value) => setState(() => _selectedOrigin = value),
+            fileNameController: _fileNameController,
           ),
         );
       case 2:
         return ReportStep2Validation(
           key: const ValueKey('Step2'),
-          selectedMovement: _selectedMovement,
           startDate: _startDate,
           endDate: _endDate,
-        );
-      case 3:
-        return ReportStep3Format(
-          key: const ValueKey('Step3'),
-          formKey: _stepThreeFormKey,
-          selectedFormat: _selectedFormat,
-          onFormatChanged: (val) => setState(() => _selectedFormat = val),
-          responsibleNameController: _responsibleNameController,
-          responsibleDniController: _responsibleDniController,
+          validation: state.validation,
+          onRetry: _validateSelectedRecords,
         );
       default:
         return const SizedBox.shrink();
@@ -166,8 +155,7 @@ class _SenasaReportViewState extends State<_SenasaReportView> {
 
   Widget _buildBottomButton(SenasaReportState state) {
     var label = SenasaStrings.btnContinue;
-    if (_currentStep == 2) label = SenasaStrings.btnNext;
-    if (_currentStep == 3) label = SenasaStrings.btnGenerate;
+    if (_currentStep == 2) label = SenasaStrings.btnGenerate;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -185,10 +173,8 @@ class _SenasaReportViewState extends State<_SenasaReportView> {
         width: double.infinity,
         child: AppFilledButton(
           label: label,
-          icon: Icon(_currentStep == 3 ? Icons.download : Icons.arrow_forward),
-          onPressed: _currentStep == 1 && state.establishments is! Data<List<SenasaEstablishment>>
-              ? null
-              : _handleBottomButtonPressed,
+          icon: Icon(_currentStep == 2 ? Icons.download : Icons.arrow_forward),
+          onPressed: _canContinue(state) ? _handleBottomButtonPressed : null,
         ),
       ),
     );
@@ -199,26 +185,51 @@ class _SenasaReportViewState extends State<_SenasaReportView> {
       return;
     }
 
-    if (_currentStep < 3) {
+    if (_currentStep == 1) {
       setState(() => _currentStep++);
+      _validateSelectedRecords();
       return;
     }
 
-    final isValid = _stepThreeFormKey.currentState?.validate() ?? false;
-    if (isValid && _selectedOrigin != null) {
+    final validation = context.read<SenasaReportCubit>().state.validation;
+    if (_selectedOrigin != null && validation is Data<SenasaValidationResult>) {
       context.push(
         AppRoutes.senasaReportGeneration,
         extra: SenasaReportRequest(
           establishmentId: _selectedOrigin!,
-          format: _selectedFormat.toLowerCase(),
           from: DateTime(_startDate.year, _startDate.month, _startDate.day),
           to: DateTime(_endDate.year, _endDate.month, _endDate.day, 23, 59, 59),
-          eventType: SenasaStrings.eventTypeApiValues[_selectedMovement] ?? _selectedMovement.toLowerCase(),
-          responsibleName: _responsibleNameController.text.trim(),
-          responsibleDni: _responsibleDniController.text.trim(),
+          fileName: _fileNameController.text.trim(),
+          animalCount: validation.data.exportableAnimals,
         ),
       );
     }
+  }
+
+  bool _canContinue(SenasaReportState state) {
+    if (_currentStep == 1) {
+      return state.establishments is Data<List<SenasaEstablishment>>;
+    }
+    if (_currentStep == 2) {
+      final validation = state.validation;
+      return validation is Data<SenasaValidationResult> && validation.data.issues.isEmpty;
+    }
+    return true;
+  }
+
+  void _validateSelectedRecords() {
+    final establishmentId = _selectedOrigin;
+    if (establishmentId == null) {
+      return;
+    }
+    context.read<SenasaReportCubit>().validateRecords(
+      SenasaReportValidationRequest(
+        establishmentId: establishmentId,
+        from: DateTime(_startDate.year, _startDate.month, _startDate.day),
+        to: DateTime(_endDate.year, _endDate.month, _endDate.day, 23, 59, 59),
+        fileName: _fileNameController.text.trim(),
+      ),
+    );
   }
 }
 

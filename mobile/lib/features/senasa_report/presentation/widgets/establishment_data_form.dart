@@ -40,29 +40,30 @@ class EstablishmentSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(
-            left: AppSpacing.xxs,
-            bottom: AppSpacing.xxs,
-          ),
-          child: Text(
-            SenasaStrings.establishmentSectionTitle,
-            style: AppTypography.pageTitle,
-          ),
-        ),
         AppSurfaceCard(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xxxs),
-            child: AppDropdownFormField<String>(
-              hintText: SenasaStrings.establishmentSelectorLabel,
-              initialValue: selectedOrigin,
-              options: dropdownOptions,
-              validator: (value) => FormValidators.requiredField(
-                value,
-                message: SenasaStrings.establishmentRequired,
+          padding: const EdgeInsets.all(AppSpacing.md),
+          elevation: 6,
+          shadowColor: const Color(0x33000000),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                SenasaStrings.establishmentSectionTitle,
+                style: AppTypography.pageTitle,
               ),
-              onChanged: onOriginChanged,
-            ),
+              const SizedBox(height: AppSpacing.sm),
+              AppDropdownFormField<String>(
+                hintText: SenasaStrings.establishmentSelectorLabel,
+                //titleStyle: AppTypography.mediumEmphasis,
+                initialValue: selectedOrigin,
+                options: dropdownOptions,
+                validator: (value) => FormValidators.requiredField(
+                  value,
+                  message: SenasaStrings.establishmentRequired,
+                ),
+                onChanged: onOriginChanged,
+              ),
+            ],
           ),
         ),
       ],

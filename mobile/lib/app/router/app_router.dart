@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
-import 'package:frontend_mayoral/app/layout/main_layout_strings.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
@@ -24,9 +24,9 @@ import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
-import 'package:frontend_mayoral/features/profile/profile_composition.dart';
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
+import 'package:frontend_mayoral/features/profile/profile_composition.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_menu_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_error_page.dart';
@@ -113,7 +113,12 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: AppRoutes.procedures,
-                builder: (context, state) => const SenasaMenuPage(),
+                builder: (context, state) => SenasaMenuPage(
+                  key: ValueKey(state.extra),
+                  getGeneratedReports: createGetGeneratedSenasaReportsUseCase(),
+                  getEstablishments: createGetSenasaEstablishmentsUseCase(),
+                  downloadGeneratedReport: createDownloadGeneratedSenasaReportUseCase(),
+                ),
               ),
             ],
           ),
@@ -221,6 +226,7 @@ class AppRouter {
         builder: (context, state) => SenasaReportPage(
           getEstablishments: createGetSenasaEstablishmentsUseCase(),
           generateReport: createGenerateSenasaReportUseCase(),
+          validateRecords: createValidateSenasaRecordsUseCase(),
         ),
       ),
       GoRoute(
@@ -250,4 +256,3 @@ class AppRouter {
     ],
   );
 }
-

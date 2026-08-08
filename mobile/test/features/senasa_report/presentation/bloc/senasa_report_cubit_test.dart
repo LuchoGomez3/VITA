@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_r
 import 'package:frontend_mayoral/features/senasa_report/domain/repositories/senasa_report_repository.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/generate_senasa_report_use_case.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/get_senasa_establishments_use_case.dart';
+import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/validate_senasa_records_use_case.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/bloc/senasa_report_cubit.dart';
 
 void main() {
@@ -26,12 +27,10 @@ void main() {
       final cubit = _createCubit(repository);
       final request = SenasaReportRequest(
         establishmentId: 'establishment-id',
-        format: 'pdf',
         from: DateTime.utc(2026),
         to: DateTime.utc(2026, 1, 2),
-        eventType: 'movement',
-        responsibleName: 'Test User',
-        responsibleDni: '12345678',
+        fileName: '',
+        animalCount: 2,
       );
 
       final generation = cubit.generate(request);
@@ -39,8 +38,10 @@ void main() {
       repository.report.complete(
         GeneratedSenasaReport(
           bytes: Uint8List(0),
-          filename: 'report.pdf',
-          mediaType: 'application/pdf',
+          filename: 'report.txt',
+          mediaType: 'text/plain',
+          generatedAt: DateTime(2026),
+          animalCount: 2,
         ),
       );
 
@@ -53,12 +54,23 @@ SenasaReportCubit _createCubit(SenasaReportRepository repository) {
   return SenasaReportCubit(
     getEstablishments: GetSenasaEstablishmentsUseCase(repository),
     generateReport: GenerateSenasaReportUseCase(repository),
+    validateRecords: ValidateSenasaRecordsUseCase(repository),
   );
 }
 
 class _PendingSenasaReportRepository implements SenasaReportRepository {
   final establishments = Completer<List<SenasaEstablishment>>();
   final report = Completer<GeneratedSenasaReport>();
+
+  @override
+  Future<List<SenasaExportHistoryItem>> getGeneratedReports(
+    String establishmentId,
+  ) async => const [];
+
+  @override
+  Future<GeneratedSenasaReport> downloadGeneratedReport(String exportId) {
+    return report.future;
+  }
 
   @override
   Future<List<SenasaEstablishment>> getEstablishments() {
@@ -70,5 +82,10 @@ class _PendingSenasaReportRepository implements SenasaReportRepository {
     SenasaReportRequest request,
   ) {
     return report.future;
+  }
+
+  @override
+  Future<SenasaValidationResult> validateRecords(SenasaReportValidationRequest request) async {
+    return const SenasaValidationResult(exportableAnimals: 0);
   }
 }
