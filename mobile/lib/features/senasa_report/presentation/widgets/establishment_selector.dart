@@ -32,7 +32,10 @@ class EstablishmentSelector extends StatelessWidget {
             value: establishment.id,
             label: establishment.renspa == null
                 ? establishment.name
-                : '${establishment.name} (RENSPA: ${establishment.renspa})',
+                : SenasaStrings.establishmentWithRenspa(
+                    establishment.name,
+                    establishment.renspa!,
+                  ),
           ),
         )
         .toList(growable: false);
@@ -43,7 +46,7 @@ class EstablishmentSelector extends StatelessWidget {
         AppSurfaceCard(
           padding: const EdgeInsets.all(AppSpacing.md),
           elevation: 6,
-          shadowColor: const Color(0x33000000),
+          shadowColor: AppColors.cardShadow,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -54,7 +57,6 @@ class EstablishmentSelector extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               AppDropdownFormField<String>(
                 hintText: SenasaStrings.establishmentSelectorLabel,
-                //titleStyle: AppTypography.mediumEmphasis,
                 initialValue: selectedOrigin,
                 options: dropdownOptions,
                 validator: (value) => FormValidators.requiredField(

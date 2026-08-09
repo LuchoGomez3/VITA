@@ -4,7 +4,7 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/date_range_selector.dart';
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/establishment_data_form.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/establishment_selector.dart';
 
 /// Displays the filters used to select records for a SENASA report.
 class ReportStep1Filters extends StatelessWidget {

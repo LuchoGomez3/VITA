@@ -49,7 +49,7 @@ class DateRangeSelector extends StatelessWidget {
         AppSurfaceCard(
           padding: const EdgeInsets.all(AppSpacing.md),
           elevation: 6,
-          shadowColor: const Color(0x33000000),
+          shadowColor: AppColors.cardShadow,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -66,15 +66,15 @@ class DateRangeSelector extends StatelessWidget {
                     _buildDateShortcutChip(context, SenasaStrings.dateSelectorToday, () {
                       onDatesChanged(DateTime.now(), DateTime.now());
                     }),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.xs),
                     _buildDateShortcutChip(context, SenasaStrings.dateSelectorLast7Days, () {
                       onDatesChanged(DateTime.now().subtract(const Duration(days: 7)), DateTime.now());
                     }),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.xs),
                     _buildDateShortcutChip(context, SenasaStrings.dateSelectorLast30Days, () {
                       onDatesChanged(DateTime.now().subtract(const Duration(days: 30)), DateTime.now());
                     }),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.xs),
                     _buildDateShortcutChip(context, SenasaStrings.dateSelectorCurrentMonth, () {
                       final now = DateTime.now();
                       onDatesChanged(DateTime(now.year, now.month), now);
@@ -83,15 +83,13 @@ class DateRangeSelector extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-
-              // Selectores Desde / Hasta usando el componente del Core
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: AppDateFormField(
-                      title: 'Desde',
-                      hintText: 'Fecha',
+                      title: SenasaStrings.dateSelectorFromTitle,
+                      hintText: SenasaStrings.dateSelectorFieldHint,
                       value: startDate,
                       onChanged: (newStart) {
                         var finalEnd = endDate;
@@ -103,8 +101,8 @@ class DateRangeSelector extends StatelessWidget {
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: AppDateFormField(
-                      title: 'Hasta',
-                      hintText: 'Fecha',
+                      title: SenasaStrings.dateSelectorToTitle,
+                      hintText: SenasaStrings.dateSelectorFieldHint,
                       value: endDate,
                       onChanged: (newEnd) {
                         var finalStart = startDate;

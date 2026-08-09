@@ -160,10 +160,10 @@ class _SenasaReportViewState extends State<_SenasaReportView> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: AppColors.iconButtonBackground,
             offset: const Offset(0, -4),
             blurRadius: 10,
           ),

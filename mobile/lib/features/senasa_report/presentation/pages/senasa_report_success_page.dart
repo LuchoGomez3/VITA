@@ -56,7 +56,7 @@ class SenasaReportSuccessPage extends StatelessWidget {
                         GeneratedReportFileCard(report: report),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          '${report.animalCount} animales incluidos',
+                          SenasaStrings.includedAnimals(report.animalCount),
                           style: AppTypography.mediumEmphasis,
                         ),
                         const SizedBox(height: AppSpacing.md),

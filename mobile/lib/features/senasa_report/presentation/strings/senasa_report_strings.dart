@@ -15,6 +15,11 @@ class SenasaStrings {
   /// Mensaje mostrado cuando todavía no se generaron reportes.
   static const String emptyGeneratedReports = 'Todavía no hay archivos para este establecimiento.';
 
+  /// Resume la cantidad de animales incluida en una exportación del historial.
+  static String historyAnimalCount(int count) {
+    return count == 1 ? '1 animal' : '$count animales';
+  }
+
   /// Error mostrado cuando no se puede leer el historial local.
   static const String generatedReportsLoadError =
       'No se pudo consultar el historial. Verificá tu conexión sin perder los datos cargados.';
@@ -72,6 +77,11 @@ class SenasaStrings {
 
   /// Etiqueta de la cantidad incluida en el resumen del paso dos.
   static const String step2AnimalsLabel = 'Animales a exportar:';
+
+  /// Resume la cantidad de animales incluida en el archivo generado.
+  static String includedAnimals(int count) {
+    return count == 1 ? '1 animal incluido' : '$count animales incluidos';
+  }
 
   /// Construye el encabezado de los animales que necesitan correcciones.
   static String incompleteAnimals(int count) {
@@ -147,6 +157,20 @@ class SenasaStrings {
   /// Generic file label used when the filename has no extension.
   static const String reportFileLabel = 'ARCHIVO';
 
+  /// Metadata visible del archivo generado.
+  static String reportFileMetadata({
+    required String fileSize,
+    required String generatedDate,
+  }) {
+    return '$fileSize • $generatedDate';
+  }
+
+  /// Tamaño visible para archivos menores a 1 MB.
+  static String fileSizeKilobytes(String value) => '$value KB';
+
+  /// Tamaño visible para archivos de 1 MB o más.
+  static String fileSizeMegabytes(String value) => '$value MB';
+
   /// Generation progress item for data validation.
   static const String validatingData = 'Validando integridad de datos';
 
@@ -165,6 +189,15 @@ class SenasaStrings {
   /// Date range selector title.
   static const String dateSelectorTitle = 'Rango de fechas';
 
+  /// Start date field title.
+  static const String dateSelectorFromTitle = 'Desde';
+
+  /// End date field title.
+  static const String dateSelectorToTitle = 'Hasta';
+
+  /// Date field hint.
+  static const String dateSelectorFieldHint = 'Fecha';
+
   /// Today shortcut label.
   static const String dateSelectorToday = 'Hoy';
 
@@ -182,6 +215,11 @@ class SenasaStrings {
 
   /// Establishment selector field label.
   static const String establishmentSelectorLabel = 'Seleccione el Establecimiento';
+
+  /// Nombre visible de un establecimiento con su identificador RENSPA.
+  static String establishmentWithRenspa(String name, String renspa) {
+    return '$name (RENSPA: $renspa)';
+  }
 
   /// Establishment section title.
   static const String establishmentSectionTitle = 'Establecimiento';

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
@@ -51,7 +52,10 @@ class GeneratedReportFileCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xxs),
                 Text(
-                  '$_fileSize • $_generatedDate',
+                  SenasaStrings.reportFileMetadata(
+                    fileSize: _fileSize,
+                    generatedDate: _generatedDate,
+                  ),
                   style: AppTypography.smallEmphasis,
                 ),
               ],
@@ -81,18 +85,16 @@ class GeneratedReportFileCard extends StatelessWidget {
   String get _fileSize {
     final kilobytes = report.bytes.lengthInBytes / 1024;
     if (kilobytes < 1024) {
-      return '${kilobytes.toStringAsFixed(1)} KB';
+      return SenasaStrings.fileSizeKilobytes(kilobytes.toStringAsFixed(1));
     }
-    return '${(kilobytes / 1024).toStringAsFixed(1)} MB';
+    return SenasaStrings.fileSizeMegabytes(
+      (kilobytes / 1024).toStringAsFixed(1),
+    );
   }
 
   String get _generatedDate {
     final date = report.generatedAt.toLocal();
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '$day/$month/${date.year} $hour:$minute';
+    return DateDisplayFormatter.shortDateTime(date);
   }
 }
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
@@ -112,7 +113,7 @@ class _RecentDocumentsHeader extends StatelessWidget {
     return const AppSurfaceCard(
       padding: EdgeInsets.all(AppSpacing.md),
       elevation: 5,
-      shadowColor: Color(0x33000000),
+      shadowColor: AppColors.cardShadow,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -223,18 +224,18 @@ class _HistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final date = item.generatedAt.toLocal();
-    final formattedDate =
-        '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/${date.year}';
+    final formattedDate = DateDisplayFormatter.shortDate(date);
     return AppSurfaceCard(
       padding: const EdgeInsets.all(AppSpacing.md),
       elevation: 5,
-      shadowColor: const Color(0x33000000),
+      shadowColor: AppColors.cardShadow,
       child: ListTile(
         contentPadding: EdgeInsets.zero,
         leading: const Icon(Icons.description_outlined, color: AppColors.primary),
         title: Text(item.filename),
-        subtitle: Text('$formattedDate · ${item.animalCount} animales'),
+        subtitle: Text(
+          '$formattedDate · ${SenasaStrings.historyAnimalCount(item.animalCount)}',
+        ),
         trailing: IconButton(
           tooltip: SenasaStrings.share,
           icon: const Icon(Icons.download_outlined),

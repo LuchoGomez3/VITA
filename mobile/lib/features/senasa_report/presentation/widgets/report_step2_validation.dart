@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
@@ -49,10 +50,8 @@ class ReportStep2Validation extends StatelessWidget {
       Data<SenasaValidationResult>(data: final result) when result.issues.isEmpty => result.exportableAnimals,
       _ => null,
     };
-    final formattedStart =
-        '${startDate.day.toString().padLeft(2, '0')}/${startDate.month.toString().padLeft(2, '0')}/${startDate.year}';
-    final formattedEnd =
-        '${endDate.day.toString().padLeft(2, '0')}/${endDate.month.toString().padLeft(2, '0')}/${endDate.year}';
+    final formattedStart = DateDisplayFormatter.shortDate(startDate);
+    final formattedEnd = DateDisplayFormatter.shortDate(endDate);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.md),
@@ -73,7 +72,7 @@ class ReportStep2Validation extends StatelessWidget {
           ),
           AppSurfaceCard(
             elevation: 4,
-            shadowColor: Colors.black26,
+            shadowColor: AppColors.cardShadow,
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.xxxs),
               child: Column(
@@ -127,7 +126,7 @@ class _ValidationResult extends StatelessWidget {
           child: Text(
             SenasaStrings.incompleteAnimals(result.issues.length),
             textAlign: TextAlign.center,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
+            style: AppTypography.errorBody,
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -153,7 +152,7 @@ class _AnimalIssueCard extends StatelessWidget {
         width: double.infinity,
         child: AppSurfaceCard(
           elevation: 4,
-          shadowColor: Colors.black26,
+          shadowColor: AppColors.cardShadow,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -202,7 +201,7 @@ class _ValidationError extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(message, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+        Text(message, style: AppTypography.errorBody),
         const SizedBox(height: AppSpacing.xs),
         AppOutlinedButton(label: SenasaStrings.retry, onPressed: onRetry),
       ],
