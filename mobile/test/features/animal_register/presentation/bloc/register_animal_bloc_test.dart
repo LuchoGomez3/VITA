@@ -34,6 +34,17 @@ void main() {
       await expectation;
     });
 
+    test('initializes the draft with an RFID received from identification', () {
+      final prefilledBloc = RegisterAnimalBloc(
+        initialRfid: '982000412991416',
+        registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        registrationContext: const AnimalRegistrationMockContext(),
+      );
+      addTearDown(prefilledBloc.close);
+
+      expect(prefilledBloc.state.draft.rfid, '982000412991416');
+    });
+
     test('moves forward and backward through the flow', () async {
       final forwardState = bloc.state.copyWith(
         currentStep: RegisterAnimalStep.basicData,

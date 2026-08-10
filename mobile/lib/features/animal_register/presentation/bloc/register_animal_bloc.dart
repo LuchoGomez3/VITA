@@ -27,12 +27,13 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     required RegisterAnimalUseCase registerAnimalUseCase,
     required AnimalRegistrationContext registrationContext,
     RegisterAnimalStep initialStep = RegisterAnimalStep.identification,
+    String initialRfid = '',
   }) : _registerAnimalUseCase = registerAnimalUseCase,
        _registrationContext = registrationContext,
        super(
          RegisterAnimalState(
            currentStep: initialStep,
-           draft: RegisterAnimalDraft.initial(),
+           draft: RegisterAnimalDraft.initial(rfid: initialRfid),
          ),
        ) {
     on<_DraftChanged>(_onDraftChanged);
