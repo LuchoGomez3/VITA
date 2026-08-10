@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/establishment_data_form.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/establishment_selector.dart';
 
 void main() {
   testWidgets('requires an establishment selection', (tester) async {
@@ -13,7 +14,7 @@ void main() {
           body: Form(
             key: formKey,
             child: EstablishmentSelector(
-              establishments: const [],
+              establishments: const <SenasaEstablishment>[],
               selectedOrigin: null,
               onOriginChanged: (_) {},
             ),

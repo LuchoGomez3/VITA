@@ -4,7 +4,6 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
-import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/generate_senasa_report_use_case.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/bloc/senasa_report_generation_cubit.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_error_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
@@ -12,27 +11,28 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/rep
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_status_indicator.dart';
 import 'package:go_router/go_router.dart';
 
+/// Factory que construye el Cubit de generación SENASA.
+typedef SenasaReportGenerationCubitFactory = SenasaReportGenerationCubit Function();
+
 /// Full-screen feedback shown while the SENASA report is being generated.
 class SenasaReportGenerationPage extends StatelessWidget {
   /// Creates the SENASA report generation page.
   const SenasaReportGenerationPage({
     required this.request,
-    required this.generateReport,
+    required this.createCubit,
     super.key,
   });
 
   /// Request selected in the report wizard.
   final SenasaReportRequest request;
 
-  /// Use case that sends the generation request to the backend.
-  final GenerateSenasaReportUseCase generateReport;
+  /// Construye el Cubit cuyo ciclo de vida pertenece a esta página.
+  final SenasaReportGenerationCubitFactory createCubit;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => SenasaReportGenerationCubit(
-        generateReport: generateReport,
-      )..generate(request),
+      create: (_) => createCubit()..generate(request),
       child: _SenasaReportGenerationView(request: request),
     );
   }

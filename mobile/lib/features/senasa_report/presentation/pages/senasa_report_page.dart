@@ -5,42 +5,30 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
-import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/generate_senasa_report_use_case.dart';
-import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/get_senasa_establishments_use_case.dart';
-import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/validate_senasa_records_use_case.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/bloc/senasa_report_cubit.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step1_filters.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_step2_validation.dart';
 import 'package:go_router/go_router.dart';
 
+/// Factory que construye el Cubit del formulario SENASA.
+typedef SenasaReportCubitFactory = SenasaReportCubit Function();
+
 /// SENASA report flow connected to the backend.
 class SenasaReportPage extends StatelessWidget {
-  /// Creates the report page with its domain use cases.
+  /// Creates the report page with its state factory.
   const SenasaReportPage({
-    required this.getEstablishments,
-    required this.generateReport,
-    required this.validateRecords,
+    required this.createCubit,
     super.key,
   });
 
-  /// Loads establishments available to the authenticated user.
-  final GetSenasaEstablishmentsUseCase getEstablishments;
-
-  /// Generates the selected report file.
-  final GenerateSenasaReportUseCase generateReport;
-
-  /// Valida los registros seleccionados con las reglas del documento oficial.
-  final ValidateSenasaRecordsUseCase validateRecords;
+  /// Construye el Cubit cuyo ciclo de vida pertenece a esta página.
+  final SenasaReportCubitFactory createCubit;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => SenasaReportCubit(
-        getEstablishments: getEstablishments,
-        generateReport: generateReport,
-        validateRecords: validateRecords,
-      )..loadEstablishments(),
+      create: (_) => createCubit()..loadEstablishments(),
       child: const _SenasaReportView(),
     );
   }

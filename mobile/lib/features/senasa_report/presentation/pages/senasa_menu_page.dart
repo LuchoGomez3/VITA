@@ -8,41 +8,29 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
-import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/download_generated_senasa_report_use_case.dart';
-import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/get_generated_senasa_reports_use_case.dart';
-import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/get_senasa_establishments_use_case.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/bloc/senasa_menu_cubit.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
+/// Factory que construye el Cubit del menú SENASA.
+typedef SenasaMenuCubitFactory = SenasaMenuCubit Function();
+
 /// Pantalla principal del historial remoto de declaraciones.
 class SenasaMenuPage extends StatelessWidget {
-  /// Crea la pantalla con sus casos de uso de consulta y descarga.
+  /// Crea la pantalla con la factory de su estado.
   const SenasaMenuPage({
-    required this.getEstablishments,
-    required this.getGeneratedReports,
-    required this.downloadGeneratedReport,
+    required this.createCubit,
     super.key,
   });
 
-  /// Obtiene los establecimientos disponibles para filtrar el historial.
-  final GetSenasaEstablishmentsUseCase getEstablishments;
-
-  /// Consulta los metadatos remotos del establecimiento seleccionado.
-  final GetGeneratedSenasaReportsUseCase getGeneratedReports;
-
-  /// Recupera el contenido original de una exportación histórica.
-  final DownloadGeneratedSenasaReportUseCase downloadGeneratedReport;
+  /// Construye el Cubit cuyo ciclo de vida pertenece a esta página.
+  final SenasaMenuCubitFactory createCubit;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => SenasaMenuCubit(
-        getEstablishments: getEstablishments,
-        getGeneratedReports: getGeneratedReports,
-        downloadGeneratedReport: downloadGeneratedReport,
-      )..loadEstablishments(),
+      create: (_) => createCubit()..loadEstablishments(),
       child: const _SenasaMenuView(),
     );
   }

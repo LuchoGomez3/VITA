@@ -115,9 +115,7 @@ class AppRouter {
                 path: AppRoutes.procedures,
                 builder: (context, state) => SenasaMenuPage(
                   key: ValueKey(state.extra),
-                  getGeneratedReports: createGetGeneratedSenasaReportsUseCase(),
-                  getEstablishments: createGetSenasaEstablishmentsUseCase(),
-                  downloadGeneratedReport: createDownloadGeneratedSenasaReportUseCase(),
+                  createCubit: createSenasaMenuCubit,
                 ),
               ),
             ],
@@ -223,10 +221,8 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.senasaReport,
-        builder: (context, state) => SenasaReportPage(
-          getEstablishments: createGetSenasaEstablishmentsUseCase(),
-          generateReport: createGenerateSenasaReportUseCase(),
-          validateRecords: createValidateSenasaRecordsUseCase(),
+        builder: (context, state) => const SenasaReportPage(
+          createCubit: createSenasaReportCubit,
         ),
       ),
       GoRoute(
@@ -235,7 +231,7 @@ class AppRouter {
           final request = state.extra! as SenasaReportRequest;
           return SenasaReportGenerationPage(
             request: request,
-            generateReport: createGenerateSenasaReportUseCase(),
+            createCubit: createSenasaReportGenerationCubit,
           );
         },
       ),

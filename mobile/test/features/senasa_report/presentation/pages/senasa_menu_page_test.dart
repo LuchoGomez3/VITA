@@ -8,6 +8,7 @@ import 'package:frontend_mayoral/features/senasa_report/domain/repositories/sena
 import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/download_generated_senasa_report_use_case.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/get_generated_senasa_reports_use_case.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/get_senasa_establishments_use_case.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/bloc/senasa_menu_cubit.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_menu_page.dart';
 
 void main() {
@@ -18,10 +19,12 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: SenasaMenuPage(
-          getEstablishments: GetSenasaEstablishmentsUseCase(repository),
-          getGeneratedReports: GetGeneratedSenasaReportsUseCase(repository),
-          downloadGeneratedReport: DownloadGeneratedSenasaReportUseCase(
-            repository,
+          createCubit: () => SenasaMenuCubit(
+            getEstablishments: GetSenasaEstablishmentsUseCase(repository),
+            getGeneratedReports: GetGeneratedSenasaReportsUseCase(repository),
+            downloadGeneratedReport: DownloadGeneratedSenasaReportUseCase(
+              repository,
+            ),
           ),
         ),
       ),

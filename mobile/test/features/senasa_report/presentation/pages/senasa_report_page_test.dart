@@ -5,6 +5,7 @@ import 'package:frontend_mayoral/features/senasa_report/domain/repositories/sena
 import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/generate_senasa_report_use_case.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/get_senasa_establishments_use_case.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/use_cases/validate_senasa_records_use_case.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/bloc/senasa_report_cubit.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 
@@ -13,9 +14,14 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: SenasaReportPage(
-          getEstablishments: GetSenasaEstablishmentsUseCase(_FakeRepository()),
-          generateReport: GenerateSenasaReportUseCase(_FakeRepository()),
-          validateRecords: ValidateSenasaRecordsUseCase(_FakeRepository()),
+          createCubit: () {
+            final repository = _FakeRepository();
+            return SenasaReportCubit(
+              getEstablishments: GetSenasaEstablishmentsUseCase(repository),
+              generateReport: GenerateSenasaReportUseCase(repository),
+              validateRecords: ValidateSenasaRecordsUseCase(repository),
+            );
+          },
         ),
       ),
     );

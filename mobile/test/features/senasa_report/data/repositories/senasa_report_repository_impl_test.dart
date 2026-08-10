@@ -3,7 +3,10 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
+import 'package:frontend_mayoral/features/senasa_report/data/datasources/senasa_establishment_local_data_source.dart';
+import 'package:frontend_mayoral/features/senasa_report/data/datasources/senasa_report_remote_data_source.dart';
 import 'package:frontend_mayoral/features/senasa_report/data/repositories/senasa_report_repository_impl.dart';
+import 'package:frontend_mayoral/features/senasa_report/data/services/senasa_report_api_service.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/exceptions/senasa_report_exception.dart';
 import 'package:http/http.dart' as http;
@@ -233,10 +236,16 @@ SenasaReportRepositoryImpl _repository(
   SecureStorageService? secureStorage,
 }) {
   return SenasaReportRepositoryImpl(
-    baseUrl: 'https://example.test',
-    tokenProvider: _TokenProvider(),
-    secureStorage: secureStorage ?? _MemoryStorage(),
-    client: client,
+    establishmentLocalDataSource: SenasaEstablishmentLocalDataSource(
+      secureStorage: secureStorage ?? _MemoryStorage(),
+    ),
+    remoteDataSource: SenasaReportRemoteDataSource(
+      service: SenasaReportApiService(
+        baseUrl: 'https://example.test',
+        tokenProvider: _TokenProvider(),
+        client: client,
+      ),
+    ),
   );
 }
 
