@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:brick_offline_first/brick_offline_first.dart';
 import 'package:brick_rest/brick_rest.dart';
+import 'package:meta/meta.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
@@ -19,6 +20,14 @@ abstract class AnimalBrickStore {
 
   /// Busca un animal en SQLite por el UUID generado en mobile/backend.
   Future<BrickAnimalModel?> getAnimalById(String animalId);
+
+  /// Busca en SQLite por RFID dentro de un establecimiento.
+  ///
+  /// Los animales con baja logica no participan de la identificacion.
+  Future<BrickAnimalModel?> getAnimalByRfidTagNumber({
+    required String rfidTagNumber,
+    required String establishmentId,
+  });
 
   /// Lee todos los animales locales, incluidas las bajas logicas.
   Future<List<BrickAnimalModel>> getLocalAnimals();
@@ -92,6 +101,46 @@ class BrickAnimalStore implements AnimalBrickStore {
   }
 
   @override
+  Future<BrickAnimalModel?> getAnimalByRfidTagNumber({
+    required String rfidTagNumber,
+    required String establishmentId,
+  }) async {
+    final storedAnimals = await getLocalAnimals();
+    return selectAnimalForRfidLookup(
+      animals: storedAnimals,
+      rfidTagNumber: rfidTagNumber,
+      establishmentId: establishmentId,
+    );
+  }
+
+  /// Selecciona el animal identificable mas reciente dentro de datos locales.
+  ///
+  /// Se expone para pruebas del criterio de seleccion sin inicializar SQLite;
+  /// la consulta real siempre obtiene primero [animals] desde Brick.
+  @visibleForTesting
+  static BrickAnimalModel? selectAnimalForRfidLookup({
+    required Iterable<BrickAnimalModel> animals,
+    required String rfidTagNumber,
+    required String establishmentId,
+  }) {
+    BrickAnimalModel? matchedAnimal;
+
+    for (final animal in animals) {
+      final matchesRfid = animal.rfidTagNumber == rfidTagNumber;
+      final belongsToEstablishment = animal.establishmentId == establishmentId;
+      if (!matchesRfid || !belongsToEstablishment || animal.deletedAt != null) {
+        continue;
+      }
+
+      if (matchedAnimal == null || animal.updatedAt.isAfter(matchedAnimal.updatedAt)) {
+        matchedAnimal = animal;
+      }
+    }
+
+    return matchedAnimal;
+  }
+
+  @override
   Future<List<BrickAnimalModel>> getLocalAnimals() async {
     final storedAnimals = await _repository.getLocal<BrickAnimalModel>();
     final animalsById = <String, BrickAnimalModel>{};
@@ -101,9 +150,7 @@ class BrickAnimalStore implements AnimalBrickStore {
     // sin borrar altas offline que todavia esten pendientes.
     for (final animal in storedAnimals) {
       final current = animalsById[animal.localId];
-      animalsById[animal.localId] = current == null
-          ? animal
-          : _preferredAnimal(current, animal);
+      animalsById[animal.localId] = current == null ? animal : _preferredAnimal(current, animal);
     }
 
     return animalsById.values.toList();
@@ -132,8 +179,7 @@ class BrickAnimalStore implements AnimalBrickStore {
     final protectedLocalIds = localAnimals
         .where(
           (animal) =>
-              animal.syncStatus == BrickAnimalSyncStatus.pending ||
-              animal.syncStatus == BrickAnimalSyncStatus.rejected,
+              animal.syncStatus == BrickAnimalSyncStatus.pending || animal.syncStatus == BrickAnimalSyncStatus.rejected,
         )
         .map((animal) => animal.localId)
         .toSet();

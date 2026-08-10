@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_cubit.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
-import 'package:frontend_mayoral/features/home/presentation/widgets/home_asset_icon.dart';
 
 /// Encabezado de Inicio que despliega el selector de establecimientos.
 class HomeExpandableHeader extends StatelessWidget {
@@ -14,6 +13,7 @@ class HomeExpandableHeader extends StatelessWidget {
     required this.highlightedEstablishmentId,
     required this.onToggle,
     required this.onSelected,
+    required this.onIdentifyAnimal,
     super.key,
   });
 
@@ -31,6 +31,9 @@ class HomeExpandableHeader extends StatelessWidget {
 
   /// Informa la opción tocada.
   final ValueChanged<String?> onSelected;
+
+  /// Abre el flujo de identificacion RFID para el establecimiento activo.
+  final VoidCallback onIdentifyAnimal;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +64,7 @@ class HomeExpandableHeader extends StatelessWidget {
                     selectedName: selectedName,
                     isExpanded: isExpanded,
                     onToggle: onToggle,
-                    onRefresh: context.read<HomeDashboardCubit>().load,
+                    onIdentifyAnimal: onIdentifyAnimal,
                   ),
                   if (isExpanded)
                     _EstablishmentOptions(
@@ -85,14 +88,14 @@ class _HeaderToolbar extends StatelessWidget {
     required this.selectedName,
     required this.isExpanded,
     required this.onToggle,
-    required this.onRefresh,
+    required this.onIdentifyAnimal,
   });
 
   final String greeting;
   final String selectedName;
   final bool isExpanded;
   final VoidCallback onToggle;
-  final VoidCallback onRefresh;
+  final VoidCallback onIdentifyAnimal;
 
   @override
   Widget build(BuildContext context) {
@@ -144,11 +147,9 @@ class _HeaderToolbar extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: HomeStrings.refreshTooltip,
-            onPressed: onRefresh,
-            icon: const HomeAssetIcon(
-              assetPath: 'assets/icons/cached.svg',
-            ),
+            tooltip: HomeStrings.identifyAnimalTooltip,
+            onPressed: onIdentifyAnimal,
+            icon: const Icon(Icons.bluetooth),
           ),
         ],
       ),
