@@ -13,6 +13,9 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/strings/sen
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
+const _historyButtonClearance = 80.0;
+const _historyHeaderClearance = 184.0;
+
 /// Factory que construye el Cubit del menú SENASA.
 typedef SenasaMenuCubitFactory = SenasaMenuCubit Function();
 
@@ -48,18 +51,30 @@ class _SenasaMenuView extends StatelessWidget {
         appBar: const AppHeader(title: SenasaStrings.menuPageTitle),
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.sm,
+              AppSpacing.sm,
+              AppSpacing.sm,
+              AppSpacing.xl,
+            ),
+            child: Stack(
               children: [
-                const _RecentDocumentsHeader(),
-                const SizedBox(height: AppSpacing.xs),
-                const Expanded(child: _HistoryContent()),
-                const SizedBox(height: AppSpacing.md),
-                AppFilledButton(
-                  label: SenasaStrings.generateNewFile,
-                  icon: const Icon(Icons.add_circle_outline),
-                  onPressed: () => context.push(AppRoutes.senasaReport),
+                const Positioned.fill(child: _HistoryContent()),
+                const Positioned(
+                  top: 0,
+                  right: 0,
+                  left: 0,
+                  child: _RecentDocumentsHeader(),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  left: 0,
+                  child: AppFilledButton(
+                    label: SenasaStrings.generateNewFile,
+                    icon: const Icon(Icons.add_circle_outline),
+                    onPressed: () => context.push(AppRoutes.senasaReport),
+                  ),
                 ),
               ],
             ),
@@ -171,34 +186,56 @@ class _HistoryContent extends StatelessWidget {
     return BlocBuilder<SenasaMenuCubit, SenasaMenuState>(
       builder: (context, state) => switch (state.history) {
         Data<List<SenasaExportHistoryItem>>(:final data) when data.isEmpty => const Center(
-          child: Text(SenasaStrings.emptyGeneratedReports),
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: _historyHeaderClearance,
+              bottom: _historyButtonClearance,
+            ),
+            child: Text(SenasaStrings.emptyGeneratedReports),
+          ),
         ),
         Data<List<SenasaExportHistoryItem>>(:final data) => ListView.separated(
+          padding: const EdgeInsets.only(
+            top: _historyHeaderClearance,
+            bottom: _historyButtonClearance,
+          ),
           itemCount: data.length,
           // Las tarjetas forman un único historial visual, por eso usamos una
           // separación breve sin perder la distinción entre archivos.
           separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
           itemBuilder: (context, index) => _HistoryCard(item: data[index]),
         ),
-        ResultError<List<SenasaExportHistoryItem>>(:final error) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(error.message, textAlign: TextAlign.center),
-              const SizedBox(height: AppSpacing.sm),
-              AppOutlinedButton(
-                label: SenasaStrings.retry,
-                onPressed: () {
-                  final id = state.selectedEstablishmentId;
-                  if (id != null) {
-                    unawaited(context.read<SenasaMenuCubit>().selectEstablishment(id));
-                  }
-                },
-              ),
-            ],
+        ResultError<List<SenasaExportHistoryItem>>(:final error) => Padding(
+          padding: const EdgeInsets.only(
+            top: _historyHeaderClearance,
+            bottom: _historyButtonClearance,
+          ),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(error.message, textAlign: TextAlign.center),
+                const SizedBox(height: AppSpacing.sm),
+                AppOutlinedButton(
+                  label: SenasaStrings.retry,
+                  onPressed: () {
+                    final id = state.selectedEstablishmentId;
+                    if (id != null) {
+                      unawaited(context.read<SenasaMenuCubit>().selectEstablishment(id));
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
         ),
-        _ => const Center(child: CircularProgressIndicator()),
+        _ => const Padding(
+          padding: EdgeInsets.only(
+            top: _historyHeaderClearance,
+            bottom: _historyButtonClearance,
+          ),
+          child: Center(child: CircularProgressIndicator()),
+        ),
       },
     );
   }
@@ -214,13 +251,22 @@ class _HistoryCard extends StatelessWidget {
     final date = item.generatedAt.toLocal();
     final formattedDate = DateDisplayFormatter.shortDate(date);
     return AppSurfaceCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
       elevation: 5,
       shadowColor: AppColors.cardShadow,
       child: ListTile(
         contentPadding: EdgeInsets.zero,
+        dense: true,
+        visualDensity: VisualDensity.compact,
         leading: const Icon(Icons.description_outlined, color: AppColors.primary),
-        title: Text(item.filename),
+        title: Text(
+          item.filename,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         subtitle: Text(
           '$formattedDate · ${SenasaStrings.historyAnimalCount(item.animalCount)}',
         ),

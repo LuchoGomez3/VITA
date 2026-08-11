@@ -53,11 +53,6 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
           establishments.map((establishment) => establishment.toJson()).toList(),
         ),
       );
-      final completed = await _secureStorage.read(markerKey);
-      if (completed == 'true') {
-        return const Result.success(null);
-      }
-
       _logInitialSyncStep('establishments=${establishments.length}');
       for (final establishment in establishments) {
         final establishmentId = establishment.id;
