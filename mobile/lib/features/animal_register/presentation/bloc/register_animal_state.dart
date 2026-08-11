@@ -35,8 +35,8 @@ sealed class RegisterAnimalDraft with _$RegisterAnimalDraft {
   }) = _RegisterAnimalDraft;
 
   /// Creates the initial values currently displayed by the flow.
-  factory RegisterAnimalDraft.initial() => RegisterAnimalDraft(
-    rfid: '',
+  factory RegisterAnimalDraft.initial({String rfid = ''}) => RegisterAnimalDraft(
+    rfid: rfid,
     visualTagSeries: '',
     visualTagNumber: '',
     earTagColorIndex: 0,

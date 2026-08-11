@@ -29,6 +29,7 @@ class HomeDashboardContent extends StatelessWidget {
           AppSpacing.sm,
           AppSpacing.xl,
         ),
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
           const HomeOperatingBalanceCard(),
           const SizedBox(height: AppSpacing.lg),

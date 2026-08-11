@@ -18,6 +18,7 @@ import 'package:frontend_mayoral/features/animal_register/presentation/bloc/regi
 // seleccionado y catalogos sincronizados.
 RegisterAnimalBloc createRegisterAnimalBloc({
   RegisterAnimalStep initialStep = RegisterAnimalStep.identification,
+  String initialRfid = '',
 }) {
   // TODO(agustin): Reemplazar este mock por un contexto real basado en sesion,
   // establecimiento seleccionado y catalogos sincronizados.
@@ -28,6 +29,7 @@ RegisterAnimalBloc createRegisterAnimalBloc({
 
   return RegisterAnimalBloc(
     initialStep: initialStep,
+    initialRfid: initialRfid,
     registerAnimalUseCase: RegisterAnimalUseCase(repository),
     registrationContext: registrationContext,
   );
