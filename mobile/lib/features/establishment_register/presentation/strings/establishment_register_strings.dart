@@ -311,7 +311,7 @@ class EstablishmentRegisterStrings {
   /// Mensaje de la nota de rol en la revision.
   static const reviewOwnerNoteMessage =
       'Vas a quedar como Owner del establecimiento. Después podés invitar '
-      'capataces, veterinarios y consignatarios.';
+      'capataces y veterinarios.';
 
   /// Titulo de la pantalla de éxito.
   static const successTitle = '¡Listo!';

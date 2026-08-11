@@ -6,14 +6,6 @@ import 'package:frontend_mayoral/features/establishment_register/presentation/bl
 import 'package:frontend_mayoral/features/establishment_register/presentation/strings/establishment_register_strings.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/static_map_preview.dart';
 
-/// Coordenadas mock devueltas por el botón "Usar mi ubicación actual".
-///
-/// No hay paquete de GPS en el proyecto todavía (ver
-/// .claude/specs/registrar-establecimiento.md), así que el botón siempre
-/// vuelve a fijar este mismo punto de referencia.
-const _mockLatitud = -33.7242;
-const _mockLongitud = -64.5891;
-
 /// Paso 3 · Provincia, departamento, localidad y coordenadas del establecimiento.
 class EstablishmentRegisterLocationStep extends StatelessWidget {
   /// Crea el paso de ubicación geográfica del establecimiento.
@@ -134,8 +126,8 @@ class EstablishmentRegisterLocationStep extends StatelessWidget {
                 _updateDraft(
                   context,
                   draft.copyWith(
-                    latitud: _mockLatitud,
-                    longitud: _mockLongitud,
+                    latitud: mockLocationLatitud,
+                    longitud: mockLocationLongitud,
                     ubicacionConfirmadaPorGps: true,
                   ),
                 );

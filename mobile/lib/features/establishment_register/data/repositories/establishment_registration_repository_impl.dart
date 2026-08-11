@@ -7,6 +7,7 @@ import 'package:frontend_mayoral/features/establishment_register/data/mappers/es
 import 'package:frontend_mayoral/features/establishment_register/data/sources/establishment_registration_remote_data_source.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/repositories/establishment_registration_repository.dart';
+import 'package:http/http.dart' as http;
 
 /// Implementacion online-only del alta de establecimiento (mismo criterio de
 /// manejo de errores que `AuthRepositoryImpl.register`).
@@ -42,6 +43,13 @@ class EstablishmentRegistrationRepositoryImpl implements EstablishmentRegistrati
       return const Result.failure(
         DomainException(
           message: 'El backend tardo demasiado en responder.',
+          code: DomainErrorCode.offline,
+        ),
+      );
+    } on http.ClientException {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudo conectar con el backend.',
           code: DomainErrorCode.offline,
         ),
       );

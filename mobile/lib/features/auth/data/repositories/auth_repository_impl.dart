@@ -13,6 +13,7 @@ import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/registration_request.dart';
 import 'package:frontend_mayoral/features/auth/domain/repositories/auth_repository.dart';
+import 'package:http/http.dart' as http;
 
 /// Implementacion de autenticacion que combina backend, secure storage y Brick.
 ///
@@ -78,6 +79,13 @@ class AuthRepositoryImpl implements AuthRepository {
           code: DomainErrorCode.offline,
         ),
       );
+    } on http.ClientException {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudo conectar con el backend.',
+          code: DomainErrorCode.offline,
+        ),
+      );
     }
   }
 
@@ -108,6 +116,13 @@ class AuthRepositoryImpl implements AuthRepository {
       return const Result.failure(
         DomainException(
           message: 'El backend tardo demasiado en responder.',
+          code: DomainErrorCode.offline,
+        ),
+      );
+    } on http.ClientException {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudo conectar con el backend.',
           code: DomainErrorCode.offline,
         ),
       );
@@ -180,6 +195,13 @@ class AuthRepositoryImpl implements AuthRepository {
       return const Result.failure(
         DomainException(
           message: 'El backend tardo demasiado en responder.',
+          code: DomainErrorCode.offline,
+        ),
+      );
+    } on http.ClientException {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudo conectar con el backend.',
           code: DomainErrorCode.offline,
         ),
       );

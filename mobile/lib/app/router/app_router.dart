@@ -201,7 +201,9 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.establishmentRegisterEmpty,
-        builder: (context, state) => const EstablishmentEmptyStatePage(),
+        builder: (context, state) => EstablishmentEmptyStatePage(
+          onSignOut: context.read<AuthSessionCubit>().signOut,
+        ),
       ),
       GoRoute(
         path: AppRoutes.establishmentRegisterStep1,
@@ -211,6 +213,10 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.establishmentRegisterStep2,
+        // Sin persistencia de borrador entre rutas, entrar directo acá
+        // siempre da un BLoC con estado inicial vacío: se redirige al paso 1
+        // hasta que exista hidratación real de deep-link.
+        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
         builder: (context, state) => const EstablishmentRegisterPage(
           createBloc: createRegisterEstablishmentBloc,
           initialStep: RegisterEstablishmentStep.renspa,
@@ -218,6 +224,7 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.establishmentRegisterStep3,
+        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
         builder: (context, state) => const EstablishmentRegisterPage(
           createBloc: createRegisterEstablishmentBloc,
           initialStep: RegisterEstablishmentStep.location,
@@ -225,6 +232,7 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.establishmentRegisterStep4,
+        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
         builder: (context, state) => const EstablishmentRegisterPage(
           createBloc: createRegisterEstablishmentBloc,
           initialStep: RegisterEstablishmentStep.surface,
@@ -232,6 +240,7 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.establishmentRegisterReview,
+        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
         builder: (context, state) => const EstablishmentRegisterPage(
           createBloc: createRegisterEstablishmentBloc,
           initialStep: RegisterEstablishmentStep.review,

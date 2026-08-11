@@ -54,9 +54,13 @@ class AppOutlinedButton extends StatelessWidget {
                 children: [
                   icon!,
                   const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    label,
-                    style: buttonTextStyle,
+                  // Flexible para que labels largos envuelvan en vez de
+                  // desbordar el boton en pantallas angostas.
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: buttonTextStyle,
+                    ),
                   ),
                 ],
               );

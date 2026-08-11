@@ -76,6 +76,32 @@ void main() {
       },
     );
 
+    test('register maps a client exception to an offline failure', () async {
+      final repository = _createRepository(
+        secureStorage: secureStorage,
+        client: MockClient((request) async {
+          throw http.ClientException('Connection reset by peer');
+        }),
+      );
+
+      final result = await repository.register(
+        request: const RegistrationRequest(
+          firstName: 'Ernesto',
+          lastName: 'Diaz',
+          email: 'ernesto@example.com',
+          cuit: '20-12345678-6',
+          password: 'Password1',
+        ),
+      );
+
+      switch (result) {
+        case Success():
+          fail('Expected offline failure.');
+        case Failure(:final error):
+          expect(error.code, DomainErrorCode.offline);
+      }
+    });
+
     test('signIn persists session and hydrates the Brick token provider', () async {
       final repository = _createRepository(
         secureStorage: secureStorage,
@@ -240,6 +266,27 @@ void main() {
       }
     });
 
+    test('signIn maps a client exception to an offline failure', () async {
+      final repository = _createRepository(
+        secureStorage: secureStorage,
+        client: MockClient((request) async {
+          throw http.ClientException('Connection reset by peer');
+        }),
+      );
+
+      final result = await repository.signIn(
+        email: 'ernesto@example.com',
+        password: 'Password1',
+      );
+
+      switch (result) {
+        case Success():
+          fail('Expected offline failure.');
+        case Failure(:final error):
+          expect(error.code, DomainErrorCode.offline);
+      }
+    });
+
     test('refreshSession replaces stored session and memory token', () async {
       await secureStorage.write(
         key: SecureStorageKeys.authSession,
@@ -397,6 +444,37 @@ void main() {
         client: MockClient((request) async {
           await Future<void>.delayed(const Duration(milliseconds: 50));
           return http.Response('{}', 200);
+        }),
+      );
+
+      final result = await repository.refreshSession();
+
+      switch (result) {
+        case Success():
+          fail('Expected offline failure.');
+        case Failure(:final error):
+          expect(error.code, DomainErrorCode.offline);
+      }
+    });
+
+    test('refreshSession maps a client exception to an offline failure', () async {
+      await secureStorage.write(
+        key: SecureStorageKeys.authSession,
+        value: jsonEncode({
+          'access_token': 'old-token',
+          'refresh_token': 'old-refresh-token',
+          'access_token_expires_at': '2020-01-01T00:00:00.000Z',
+          'user_id': _userJson['id'],
+          'email': _userJson['email'],
+          'first_name': _userJson['nombre'],
+          'last_name': _userJson['apellido'],
+          'role': 'unknown',
+        }),
+      );
+      final repository = _createRepository(
+        secureStorage: secureStorage,
+        client: MockClient((request) async {
+          throw http.ClientException('Connection reset by peer');
         }),
       );
 

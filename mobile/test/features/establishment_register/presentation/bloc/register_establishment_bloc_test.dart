@@ -107,6 +107,22 @@ void main() {
       expect(repository.registerCalls, 0);
     });
 
+    test('does not submit when the location is still the GPS mock value', () async {
+      final draft = _validDraft(bloc.state.draft).copyWith(
+        latitud: mockLocationLatitud,
+        longitud: mockLocationLongitud,
+        ubicacionConfirmadaPorGps: true,
+      );
+      bloc.add(RegisterEstablishmentEvent.draftChanged(draft));
+      await Future<void>.delayed(Duration.zero);
+
+      bloc.add(const RegisterEstablishmentEvent.submitRequested());
+
+      await Future<void>.delayed(Duration.zero);
+      expect(bloc.state.submitResult, isA<ResultError<RegisteredEstablishment>>());
+      expect(repository.registerCalls, 0);
+    });
+
     test('emits repository failures', () async {
       repository.result = const Result.failure(
         DomainException(message: 'sin conexion', code: DomainErrorCode.offline),
@@ -121,6 +137,55 @@ void main() {
       expect(bloc.state.submitResult, isA<ResultError<RegisteredEstablishment>>());
       expect(repository.registerCalls, 1);
     });
+
+    test('clears a RENSPA conflict when the RENSPA changes', () async {
+      repository.result = const Result.failure(
+        DomainException(message: 'El RENSPA ya esta registrado.', code: DomainErrorCode.conflict),
+      );
+
+      bloc.add(RegisterEstablishmentEvent.draftChanged(_validDraft(bloc.state.draft)));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const RegisterEstablishmentEvent.submitRequested());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        bloc.state.submitResult,
+        isA<ResultError<RegisteredEstablishment>>().having(
+          (result) => result.error.code,
+          'code',
+          DomainErrorCode.conflict,
+        ),
+      );
+
+      bloc.add(
+        RegisterEstablishmentEvent.draftChanged(
+          bloc.state.draft.copyWith(nroRenspa: '07.123.0.00456/02'),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.submitResult, isA<Initial<RegisteredEstablishment>>());
+    });
+
+    test('keeps a RENSPA conflict when an unrelated field changes', () async {
+      repository.result = const Result.failure(
+        DomainException(message: 'El RENSPA ya esta registrado.', code: DomainErrorCode.conflict),
+      );
+
+      bloc.add(RegisterEstablishmentEvent.draftChanged(_validDraft(bloc.state.draft)));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const RegisterEstablishmentEvent.submitRequested());
+      await Future<void>.delayed(Duration.zero);
+
+      bloc.add(
+        RegisterEstablishmentEvent.draftChanged(
+          bloc.state.draft.copyWith(nombre: 'Otro nombre'),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.submitResult, isA<ResultError<RegisteredEstablishment>>());
+    });
   });
 }
 
@@ -133,8 +198,8 @@ RegisterEstablishmentDraft _validDraft(RegisterEstablishmentDraft draft) {
     provincia: 'Córdoba',
     departamento: 'Río Cuarto',
     localidad: 'Coronel Moldes',
-    latitud: -33.7242,
-    longitud: -64.5891,
+    latitud: -31.4201,
+    longitud: -64.1888,
     ubicacionConfirmadaPorGps: true,
   );
 }

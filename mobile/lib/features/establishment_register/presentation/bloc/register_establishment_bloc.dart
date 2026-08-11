@@ -40,11 +40,29 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
   final void Function()? _onClose;
 
   /// Reemplaza el borrador completo cuando un campo del formulario cambia.
+  ///
+  /// Si el ultimo submit fallo por RENSPA duplicado y el usuario corrige el
+  /// CUIT o el RENSPA, limpia ese conflicto: ya no aplica al valor editado y
+  /// no deberia seguir mostrandose como si el nuevo valor tambien fallara.
   void _onDraftChanged(
     _DraftChanged event,
     Emitter<RegisterEstablishmentState> emit,
   ) {
-    emit(state.copyWith(draft: event.draft));
+    final currentDraft = state.draft;
+    final newDraft = event.draft;
+    final renspaFieldsChanged =
+        newDraft.cuitTitular != currentDraft.cuitTitular || newDraft.nroRenspa != currentDraft.nroRenspa;
+
+    final submitResult = state.submitResult;
+    final hasRenspaConflict =
+        submitResult is ResultError<RegisteredEstablishment> && submitResult.error.code == DomainErrorCode.conflict;
+
+    emit(
+      state.copyWith(
+        draft: newDraft,
+        submitResult: renspaFieldsChanged && hasRenspaConflict ? const ResultState.initial() : submitResult,
+      ),
+    );
   }
 
   /// Avanza el wizard un paso, sin pasar de la pantalla de revision.
@@ -126,6 +144,16 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
       return const Result.failure(
         DomainException(
           message: 'Revisá los datos cargados: hay pasos incompletos.',
+          code: DomainErrorCode.validation,
+        ),
+      );
+    }
+
+    if (draft.isLocationMocked) {
+      return const Result.failure(
+        DomainException(
+          message:
+              'La ubicación todavía es un valor de prueba: falta integrar GPS real antes de poder crear el establecimiento.',
           code: DomainErrorCode.validation,
         ),
       );

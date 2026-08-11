@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
-import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/strings/establishment_register_strings.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/establishment_checklist_item.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/establishment_empty_state_header.dart';
@@ -12,7 +10,14 @@ import 'package:go_router/go_router.dart';
 /// Pantalla mostrada a un Owner sin establecimientos registrados.
 class EstablishmentEmptyStatePage extends StatelessWidget {
   /// Crea la pantalla de estado vacío del registro de establecimiento.
-  const EstablishmentEmptyStatePage({super.key});
+  ///
+  /// No conoce `AuthSessionCubit`: recibe la acción de cerrar sesión ya
+  /// resuelta desde el router, para no acoplar esta feature con la
+  /// implementación interna de auth.
+  const EstablishmentEmptyStatePage({required this.onSignOut, super.key});
+
+  /// Accion de cerrar sesion, inyectada por el router.
+  final Future<void> Function() onSignOut;
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +105,7 @@ class EstablishmentEmptyStatePage extends StatelessWidget {
   }
 
   void _signOut(BuildContext context) {
-    context.read<AuthSessionCubit>().signOut();
+    onSignOut();
     context.go(AppRoutes.login);
   }
 }

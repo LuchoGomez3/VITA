@@ -82,6 +82,23 @@ void main() {
           expect(error.code, DomainErrorCode.offline);
       }
     });
+
+    test('maps a client exception to an offline failure', () async {
+      final repository = _createRepository(
+        client: MockClient((request) async {
+          throw http.ClientException('Connection reset by peer');
+        }),
+      );
+
+      final result = await repository.register(_registration);
+
+      switch (result) {
+        case Success():
+          fail('Expected an offline failure.');
+        case Failure(:final error):
+          expect(error.code, DomainErrorCode.offline);
+      }
+    });
   });
 }
 
