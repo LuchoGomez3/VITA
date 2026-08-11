@@ -59,8 +59,22 @@ class AppRoutes {
   /// Ruta temporal para registrar un ingreso operativo.
   static const incomeRegister = '/registros-de-gastos/registrar-ingreso';
 
+  /// Ruta del mapa de potreros.
+  static const field = '/campo';
+
+  /// Ruta de la lista de potreros.
+  static const fieldList = '/campo/lista';
+
+  /// Ruta del detalle de un potrero.
+  static const fieldDetail = '/campo/:potreroId';
+
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {
     return '/animals/$animalId';
+  }
+
+  /// Obtiene la ruta de detalle de un potrero por su id.
+  static String fieldDetailById(String potreroId) {
+    return '/campo/$potreroId';
   }
 }
