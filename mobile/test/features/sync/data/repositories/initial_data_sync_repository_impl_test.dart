@@ -32,18 +32,17 @@ void main() {
   });
 }
 
-class _FakeEstablishmentRemoteDataSource
-    implements EstablishmentRemoteDataSource {
+class _FakeEstablishmentRemoteDataSource implements EstablishmentRemoteDataSource {
   @override
   Future<List<EstablishmentRemoteSummary>> fetchEstablishments() async => [
-        EstablishmentRemoteSummary(
-          id: 'establishment-1',
-          ownerId: 'owner-1',
-          name: 'Establecimiento',
-          createdAt: _date,
-          updatedAt: _date,
-        ),
-      ];
+    EstablishmentRemoteSummary(
+      id: 'establishment-1',
+      ownerId: 'owner-1',
+      name: 'Establecimiento',
+      createdAt: _date,
+      updatedAt: _date,
+    ),
+  ];
 }
 
 final _date = DateTime.utc(2026);
@@ -76,6 +75,12 @@ class _FakeAnimalStore implements AnimalBrickStore {
 
   @override
   Future<BrickAnimalModel?> getAnimalById(String animalId) async => null;
+
+  @override
+  Future<BrickAnimalModel?> getAnimalByRfidTagNumber({
+    required String rfidTagNumber,
+    required String establishmentId,
+  }) async => null;
 
   @override
   Future<List<BrickAnimalModel>> getLocalAnimals() async => [];

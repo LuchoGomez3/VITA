@@ -7,37 +7,19 @@ import 'package:frontend_mayoral/features/auth/presentation/sign_up/strings/sign
 import 'package:go_router/go_router.dart';
 
 void main() {
-  testWidgets('disables establishment action while its flow is unavailable', (
+  testWidgets('continues to establishment registration after signup', (
     tester,
   ) async {
-    await _pumpSuccessPage(tester, hasEstablishments: false);
+    await _pumpSuccessPage(tester);
 
-    final button = tester.widget<FilledButton>(find.byType(FilledButton));
-    expect(button.onPressed, isNull);
-    expect(
-      find.text(SignUpStrings.configureEstablishmentButton),
-      findsOneWidget,
-    );
-    expect(find.byType(OutlinedButton), findsNothing);
-  });
-
-  testWidgets('allows an account with establishments to continue home', (
-    tester,
-  ) async {
-    await _pumpSuccessPage(tester, hasEstablishments: true);
-
-    expect(find.text(SignUpStrings.goToHomeButton), findsOneWidget);
-    await tester.tap(find.text(SignUpStrings.goToHomeButton));
+    await tester.tap(find.text(SignUpStrings.configureEstablishmentButton));
     await tester.pumpAndSettle();
 
-    expect(find.text('home'), findsOneWidget);
+    expect(find.text('establishment-register'), findsOneWidget);
   });
 }
 
-Future<void> _pumpSuccessPage(
-  WidgetTester tester, {
-  required bool hasEstablishments,
-}) async {
+Future<void> _pumpSuccessPage(WidgetTester tester) async {
   final router = GoRouter(
     initialLocation: '/success',
     routes: [
@@ -45,12 +27,13 @@ Future<void> _pumpSuccessPage(
         path: '/success',
         builder: (context, state) => SignUpSuccessPage(
           userData: _user,
-          hasEstablishments: hasEstablishments,
         ),
       ),
       GoRoute(
-        path: AppRoutes.home,
-        builder: (context, state) => const Scaffold(body: Text('home')),
+        path: AppRoutes.establishmentRegisterEmpty,
+        builder: (context, state) => const Scaffold(
+          body: Text('establishment-register'),
+        ),
       ),
     ],
   );

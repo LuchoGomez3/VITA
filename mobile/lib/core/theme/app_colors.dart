@@ -51,7 +51,6 @@ class AppColors {
   /// Borde neutro para inputs, cards y divisores suaves.
   static const border = Color(0xFFE1D3CF);
 
-  
   /// Borde de chips.
   static const chipBorder = Color(0xFFE0E0E0);
 

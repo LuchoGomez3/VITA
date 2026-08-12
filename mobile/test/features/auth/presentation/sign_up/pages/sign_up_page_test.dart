@@ -133,8 +133,7 @@ Future<void> _pumpPage(
         path: AppRoutes.signUpSuccess,
         builder: (context, state) {
           final userData = state.extra! as AppUser;
-          final hasEstablishments =
-              state.uri.queryParameters['hasEstablishments'] == 'true';
+          final hasEstablishments = state.uri.queryParameters['hasEstablishments'] == 'true';
           return Scaffold(
             body: Text('${userData.email}|$hasEstablishments'),
           );

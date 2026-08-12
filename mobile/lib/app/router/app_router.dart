@@ -104,8 +104,7 @@ class AppRouter {
                   pageBuilder: (context, state) {
                     final sessionState = context.watch<AuthSessionCubit>().state;
                     final userName = switch (sessionState) {
-                      AuthSessionAuthenticated(:final session) =>
-                        session.user.firstName,
+                      AuthSessionAuthenticated(:final session) => session.user.firstName,
                       _ => '',
                     };
 
@@ -266,8 +265,7 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.establishmentRegisterSuccess,
           builder: (context, state) {
-            final registeredEstablishment =
-                state.extra! as RegisteredEstablishment;
+            final registeredEstablishment = state.extra! as RegisteredEstablishment;
             return EstablishmentRegisterSuccessPage(
               registeredEstablishment: registeredEstablishment,
             );
@@ -276,8 +274,7 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.rfidScan,
           builder: (context, state) {
-            final establishmentId =
-                state.uri.queryParameters['establecimientoId'];
+            final establishmentId = state.uri.queryParameters['establecimientoId'];
             if (establishmentId == null || establishmentId.isEmpty) {
               return const ShellPlaceholderPage(
                 title: 'Seleccioná un establecimiento para identificar animales.',
@@ -292,10 +289,8 @@ class AppRouter {
                 establishmentId: establishmentId,
               ),
               onHidKeyEvent: readingSource.handleKeyEvent,
-              onAnimalDetailRequested: (animalId) =>
-                  context.push(AppRoutes.animalDetailById(animalId)),
-              onRegisterAnimalRequested: (rfid) =>
-                  context.push(AppRoutes.animalRegisterWithRfid(rfid)),
+              onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
+              onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
             );
           },
         ),
@@ -363,12 +358,10 @@ class AppRouter {
 
     final isAuthenticated = authState is AuthSessionAuthenticated;
     final isPublicAuthRoute = _publicAuthRoutes.contains(location);
-    final isValidSignUpSuccess =
-        location == AppRoutes.signUpSuccess && hasSignUpSuccessData;
+    final isValidSignUpSuccess = location == AppRoutes.signUpSuccess && hasSignUpSuccessData;
 
     if (!isAuthenticated) {
-      if (location == AppRoutes.authCheck ||
-          (!isPublicAuthRoute && !isValidSignUpSuccess)) {
+      if (location == AppRoutes.authCheck || (!isPublicAuthRoute && !isValidSignUpSuccess)) {
         return AppRoutes.signUp;
       }
       return null;
