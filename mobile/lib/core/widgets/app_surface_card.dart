@@ -10,6 +10,7 @@ class AppSurfaceCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(AppSpacing.lg),
     this.elevation,
     this.shadowColor,
+    this.color,
   });
 
   /// Contenido presentado dentro de la tarjeta.
@@ -24,11 +25,15 @@ class AppSurfaceCard extends StatelessWidget {
   /// Color opcional aplicado a la sombra proyectada por la tarjeta.
   final Color? shadowColor;
 
+  /// Color de fondo opcional de la superficie.
+  final Color? color;
+
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: elevation,
       shadowColor: shadowColor,
+      color: color,
       child: Padding(
         padding: padding,
         child: child,

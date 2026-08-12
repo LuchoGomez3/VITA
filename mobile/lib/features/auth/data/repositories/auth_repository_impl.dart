@@ -13,6 +13,7 @@ import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/registration_request.dart';
 import 'package:frontend_mayoral/features/auth/domain/repositories/auth_repository.dart';
+import 'package:http/http.dart' as http;
 
 /// Implementacion de autenticacion que combina backend, secure storage y Brick.
 ///
@@ -40,14 +41,28 @@ class AuthRepositoryImpl implements AuthRepository {
     required RegistrationRequest request,
   }) async {
     try {
-      final userJson = await _remoteDataSource.register(
+      final remoteSession = await _remoteDataSource.register(
         firstName: request.firstName,
         lastName: request.lastName,
         email: request.email,
         cuit: request.cuit,
         password: request.password,
       );
-      return Result.success(AppUserMapper.fromJson(userJson));
+
+      // Hidrata solo el token en memoria (Bearer para el resto de la sesion
+      // de la app, p. ej. registrar el establecimiento a continuacion). A
+      // diferencia de signIn, no persiste sesion local ni corre sync inicial:
+      // el registro sigue sin ser un login real, ver
+      // `.claude/specs/registrar-establecimiento.md`.
+      _tokenProvider.session = BackendTokenSession(
+        accessToken: remoteSession.accessToken,
+        refreshToken: remoteSession.refreshToken,
+        accessTokenExpiresAt: DateTime.now().toUtc().add(
+          Duration(seconds: remoteSession.expiresIn),
+        ),
+      );
+
+      return Result.success(AppUserMapper.fromJson(remoteSession.userJson));
     } on DomainException catch (error) {
       return Result.failure(error);
     } on SocketException {
@@ -61,6 +76,13 @@ class AuthRepositoryImpl implements AuthRepository {
       return const Result.failure(
         DomainException(
           message: 'El backend tardo demasiado en responder.',
+          code: DomainErrorCode.offline,
+        ),
+      );
+    } on http.ClientException {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudo conectar con el backend.',
           code: DomainErrorCode.offline,
         ),
       );
@@ -94,6 +116,13 @@ class AuthRepositoryImpl implements AuthRepository {
       return const Result.failure(
         DomainException(
           message: 'El backend tardo demasiado en responder.',
+          code: DomainErrorCode.offline,
+        ),
+      );
+    } on http.ClientException {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudo conectar con el backend.',
           code: DomainErrorCode.offline,
         ),
       );
@@ -166,6 +195,13 @@ class AuthRepositoryImpl implements AuthRepository {
       return const Result.failure(
         DomainException(
           message: 'El backend tardo demasiado en responder.',
+          code: DomainErrorCode.offline,
+        ),
+      );
+    } on http.ClientException {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudo conectar con el backend.',
           code: DomainErrorCode.offline,
         ),
       );

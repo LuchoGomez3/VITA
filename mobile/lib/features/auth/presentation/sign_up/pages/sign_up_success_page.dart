@@ -12,15 +12,11 @@ class SignUpSuccessPage extends StatelessWidget {
   /// Crea la pantalla de exito con el usuario registrado.
   const SignUpSuccessPage({
     required this.userData,
-    required this.hasEstablishments,
     super.key,
   });
 
   /// Usuario devuelto por el backend luego del registro.
   final AppUser userData;
-
-  /// Indica si la preparacion inicial encontro establecimientos asociados.
-  final bool hasEstablishments;
 
   @override
   Widget build(BuildContext context) {
@@ -53,15 +49,11 @@ class SignUpSuccessPage extends StatelessWidget {
               const SignUpNextStepCard(),
               const Spacer(flex: 3),
               AppFilledButton(
-                label: hasEstablishments
-                    ? SignUpStrings.goToHomeButton
-                    : SignUpStrings.configureEstablishmentButton,
+                label: SignUpStrings.configureEstablishmentButton,
                 icon: const Icon(Icons.arrow_forward),
-                // El alta de establecimiento todavia no tiene ruta ni pantalla.
-                // Solo puede continuar una cuenta que ya tenga uno descargado.
-                onPressed: hasEstablishments
-                    ? () => context.go(AppRoutes.home)
-                    : null,
+                onPressed: () => context.push(
+                  AppRoutes.establishmentRegisterEmpty,
+                ),
               ),
             ],
           ),

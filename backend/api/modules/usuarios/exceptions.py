@@ -1,6 +1,6 @@
 """Excepciones de dominio del módulo usuarios."""
 
-from api.shared.exceptions import ConflictError, ValidationError
+from api.shared.exceptions import ConflictError
 
 
 class EmailYaRegistradoError(ConflictError):
@@ -15,10 +15,3 @@ class CuitYaRegistradoError(ConflictError):
 
     def __init__(self, cuit: str) -> None:
         super().__init__(f"El CUIT/CUIL '{cuit}' ya está registrado")
-
-
-class CuitInvalidoError(ValidationError):
-    code = "cuit_invalido"
-
-    def __init__(self, cuit: str) -> None:
-        super().__init__(f"El CUIT/CUIL '{cuit}' no es válido")

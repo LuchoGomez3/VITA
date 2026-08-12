@@ -8,17 +8,17 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromRest(
 }) async {
   return BrickAnimalModel(
     localId: data['id'] as String,
-    rfidTagNumber: data['nro_caravana_rfid'] as String,
-    visualTag: data['caravana_visual'] as String,
+    rfidTagNumber: brickStringFromBackend(data['nro_caravana_rfid']),
+    visualTag: brickStringFromBackend(data['caravana_visual']),
     sex: brickAnimalSexFromBackend(data['sexo'] as String),
-    breed: data['raza'] as String,
-    birthDate: DateTime.parse(data['fecha_nacimiento'] as String),
-    categoryId: data['categoria_id'] as String,
-    lotId: data['lote_id'] as String,
+    breed: brickStringFromBackend(data['raza']),
+    birthDate: brickDateTimeFromBackend(data['fecha_nacimiento']),
+    categoryId: brickStringFromBackend(data['categoria_id']),
+    lotId: brickStringFromBackend(data['lote_id']),
     establishmentId: data['establecimiento_id'] as String,
     initialWeight: data['peso_inicial'] == null
         ? null
-        : data['peso_inicial'] as double?,
+        : brickNullableDoubleFromBackend(data['peso_inicial']),
     weighingMethod: brickAnimalWeighingMethodFromBackend(
       data['metodo_pesaje'] as String?,
     ),

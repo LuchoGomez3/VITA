@@ -21,6 +21,9 @@ enum DomainErrorCode {
 
   /// Error de sincronizacion offline-first.
   syncFailed,
+
+  /// Conflicto con un recurso existente (p. ej. RENSPA duplicado).
+  conflict,
 }
 
 /// Error funcional de dominio compartido por las capas de la app.

@@ -50,6 +50,7 @@ class AppTextFormField extends StatelessWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.titleWidget,
+    this.style,
   });
 
   /// El controlador del campo de texto.
@@ -124,6 +125,9 @@ class AppTextFormField extends StatelessWidget {
   /// Titulo personalizado usado cuando un texto simple no es suficiente.
   final Widget? titleWidget;
 
+  /// Estilo del texto ingresado. Por defecto usa `AppTypography.formFieldValue`.
+  final TextStyle? style;
+
   @override
   Widget build(BuildContext context) {
     final effectiveTitleStyle = titleStyle ?? AppTypography.secondaryEmphasis;
@@ -159,7 +163,7 @@ class AppTextFormField extends StatelessWidget {
           readOnly: readOnly,
           onChanged: onChanged,
           onTap: onTap,
-          style: AppTypography.formFieldValue,
+          style: style ?? AppTypography.formFieldValue,
           decoration: InputDecoration(
             hintText: hintText,
             helperText: helperText,

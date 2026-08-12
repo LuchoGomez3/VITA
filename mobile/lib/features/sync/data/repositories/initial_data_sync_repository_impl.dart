@@ -43,8 +43,6 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
 
   @override
   Future<Result<PostAuthenticationSummary>> syncForUser(String userId) async {
-    final syncedEstablishmentsKey = SecureStorageKeys.initialDataSyncedEstablishments(userId);
-
     try {
       final establishments = await _establishmentRemoteDataSource.fetchEstablishments();
       await _secureStorage.write(
@@ -53,16 +51,9 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
           establishments.map((establishment) => establishment.toJson()).toList(),
         ),
       );
-      final syncedEstablishmentIds = await _readSyncedEstablishmentIds(
-        syncedEstablishmentsKey,
-      );
-
       _logInitialSyncStep('establishments=${establishments.length}');
       for (final establishment in establishments) {
         final establishmentId = establishment.id;
-        if (syncedEstablishmentIds.contains(establishmentId)) {
-          continue;
-        }
 
         // El catalogo se cachea antes que los animales para que sus referencias
         // de categoria ya esten disponibles en los flujos offline.
@@ -78,11 +69,6 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
           'pulling weighings for establishment=$establishmentId',
         );
         await _weighingStore.pullRemotePesajes(establishmentId);
-        syncedEstablishmentIds.add(establishmentId);
-        await _secureStorage.write(
-          key: syncedEstablishmentsKey,
-          value: jsonEncode(syncedEstablishmentIds.toList()..sort()),
-        );
       }
 
       return Result.success(
@@ -113,20 +99,6 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
         ),
       );
     }
-  }
-
-  Future<Set<String>> _readSyncedEstablishmentIds(String key) async {
-    final encoded = await _secureStorage.read(key);
-    if (encoded == null || encoded.isEmpty) {
-      return <String>{};
-    }
-
-    final decoded = jsonDecode(encoded);
-    if (decoded is! List) {
-      return <String>{};
-    }
-
-    return decoded.whereType<String>().where((id) => id.isNotEmpty).toSet();
   }
 
   void _logInitialSyncError(Object error, StackTrace stackTrace) {

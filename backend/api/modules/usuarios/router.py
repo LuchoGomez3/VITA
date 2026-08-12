@@ -25,15 +25,19 @@ async def registrar_usuario(
     """Registra un dueño de campo (endpoint público; requiere conexión).
 
     Crea las credenciales en el proveedor de identidad y el perfil en
-    ``usuarios``; devuelve el perfil y un token de sesión.
+    ``usuarios``; devuelve el perfil y una sesión completa (access + refresh +
+    expiración), igual que ``/auth/login``, para que el cliente pueda seguir
+    operando (p. ej. registrar su establecimiento) sin pedir login aparte.
     """
     service = UsuarioService(session, auth_provider)
-    usuario, access_token = await service.registrar(data)
+    usuario, auth_result = await service.registrar(data)
     return StandardResponse(
         success=True,
         data={
             "usuario": usuario.model_dump(),
-            "access_token": access_token,
+            "access_token": auth_result.access_token,
+            "refresh_token": auth_result.refresh_token,
+            "expires_in": auth_result.expires_in,
             "token_type": "bearer",
         },
     )

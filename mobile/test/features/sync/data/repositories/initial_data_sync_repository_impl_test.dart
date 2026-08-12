@@ -1,236 +1,133 @@
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
-import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
-import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/sync/data/datasources/establishment_remote_data_source.dart';
+import 'package:frontend_mayoral/features/sync/data/models/establishment_remote_summary.dart';
 import 'package:frontend_mayoral/features/sync/data/repositories/initial_data_sync_repository_impl.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 
 void main() {
-  group('InitialDataSyncRepositoryImpl', () {
-    late _MemorySecureStorage storage;
-    late _RecordingAnimalStore animalStore;
-    late _RecordingCategoryStore categoryStore;
-    late _RecordingWeighingStore weighingStore;
-    late List<Map<String, Object?>> establishments;
+  test('refreshes offline data on every login', () async {
+    final animalStore = _FakeAnimalStore();
+    final categoryStore = _FakeCategoryStore();
+    final weighingStore = _FakeWeighingStore();
+    final repository = InitialDataSyncRepositoryImpl(
+      secureStorage: _MemoryStorage(),
+      establishmentRemoteDataSource: _FakeEstablishmentRemoteDataSource(),
+      animalStore: animalStore,
+      categoryStore: categoryStore,
+      weighingStore: weighingStore,
+    );
 
-    setUp(() {
-      storage = _MemorySecureStorage();
-      animalStore = _RecordingAnimalStore();
-      categoryStore = _RecordingCategoryStore();
-      weighingStore = _RecordingWeighingStore();
-      establishments = [];
-    });
+    await repository.syncForUser('user-1');
+    await repository.syncForUser('user-1');
 
-    InitialDataSyncRepositoryImpl createRepository() {
-      return InitialDataSyncRepositoryImpl(
-        secureStorage: storage,
-        establishmentRemoteDataSource: EstablishmentRemoteDataSource(
-          backendBaseUrl: 'http://localhost:8000',
-          tokenProvider: const _FixedTokenProvider(),
-          client: MockClient((request) async {
-            expect(request.url.path, '/api/v1/establecimientos');
-            return http.Response(
-              jsonEncode({'success': true, 'data': establishments}),
-              200,
-            );
-          }),
-        ),
-        animalStore: animalStore,
-        categoryStore: categoryStore,
-        weighingStore: weighingStore,
-      );
-    }
-
-    test('syncs a new establishment after an initially empty catalog', () async {
-      final repository = createRepository();
-
-      final emptyResult = await repository.syncForUser(_userId);
-      expect(emptyResult, isA<Success<PostAuthenticationSummary>>());
-      expect((emptyResult as Success<PostAuthenticationSummary>).data.hasEstablishments, isFalse);
-
-      establishments = [_establishmentJson(_firstEstablishmentId)];
-      final populatedResult = await repository.syncForUser(_userId);
-      expect(populatedResult, isA<Success<PostAuthenticationSummary>>());
-      expect(
-        (populatedResult as Success<PostAuthenticationSummary>).data.establishmentIds,
-        [_firstEstablishmentId],
-      );
-      expect(categoryStore.pulledIds, [_firstEstablishmentId]);
-      expect(animalStore.pulledIds, [_firstEstablishmentId]);
-      expect(weighingStore.pulledIds, [_firstEstablishmentId]);
-    });
-
-    test('downloads only establishments not initialized before', () async {
-      final repository = createRepository();
-      establishments = [_establishmentJson(_firstEstablishmentId)];
-      await repository.syncForUser(_userId);
-
-      establishments = [
-        _establishmentJson(_firstEstablishmentId),
-        _establishmentJson(_secondEstablishmentId),
-      ];
-      await repository.syncForUser(_userId);
-
-      expect(categoryStore.pulledIds, [
-        _firstEstablishmentId,
-        _secondEstablishmentId,
-      ]);
-      expect(animalStore.pulledIds, [
-        _firstEstablishmentId,
-        _secondEstablishmentId,
-      ]);
-      expect(weighingStore.pulledIds, [
-        _firstEstablishmentId,
-        _secondEstablishmentId,
-      ]);
-    });
-
-    test('resumes a partial failure without repeating completed data', () async {
-      final repository = createRepository();
-      establishments = [
-        _establishmentJson(_firstEstablishmentId),
-        _establishmentJson(_secondEstablishmentId),
-      ];
-      weighingStore.failingId = _secondEstablishmentId;
-
-      expect(
-        await repository.syncForUser(_userId),
-        isA<Failure<PostAuthenticationSummary>>(),
-      );
-
-      weighingStore.failingId = null;
-      await repository.syncForUser(_userId);
-
-      expect(categoryStore.pulledIds, [
-        _firstEstablishmentId,
-        _secondEstablishmentId,
-        _secondEstablishmentId,
-      ]);
-      expect(animalStore.pulledIds, [
-        _firstEstablishmentId,
-        _secondEstablishmentId,
-        _secondEstablishmentId,
-      ]);
-      expect(weighingStore.pulledIds, [
-        _firstEstablishmentId,
-        _secondEstablishmentId,
-        _secondEstablishmentId,
-      ]);
-    });
+    expect(animalStore.pulls, ['establishment-1', 'establishment-1']);
+    expect(categoryStore.pulls, ['establishment-1', 'establishment-1']);
+    expect(weighingStore.pulls, ['establishment-1', 'establishment-1']);
   });
 }
 
-const _userId = 'user-1';
-const _firstEstablishmentId = 'establishment-1';
-const _secondEstablishmentId = 'establishment-2';
-
-Map<String, Object?> _establishmentJson(String id) => {
-  'id': id,
-  'owner_id': _userId,
-  'nombre': 'Campo $id',
-  'nro_renspa': '01.001.0.00001/00',
-  'created_at': '2026-08-08T10:00:00Z',
-  'updated_at': '2026-08-08T10:00:00Z',
-};
-
-class _FixedTokenProvider implements BackendAccessTokenProvider {
-  const _FixedTokenProvider();
-
+class _FakeEstablishmentRemoteDataSource
+    implements EstablishmentRemoteDataSource {
   @override
-  Future<String?> getAccessToken() async => 'test-token';
+  Future<List<EstablishmentRemoteSummary>> fetchEstablishments() async => [
+        EstablishmentRemoteSummary(
+          id: 'establishment-1',
+          ownerId: 'owner-1',
+          name: 'Establecimiento',
+          createdAt: _date,
+          updatedAt: _date,
+        ),
+      ];
 }
 
-class _MemorySecureStorage implements SecureStorageService {
-  final _values = <String, String>{};
+final _date = DateTime.utc(2026);
+
+class _MemoryStorage implements SecureStorageService {
+  final Map<String, String> _values = {};
 
   @override
-  Future<void> write({required String key, required String value}) async {
-    _values[key] = value;
-  }
+  Future<void> delete(String key) async => _values.remove(key);
 
   @override
   Future<String?> read(String key) async => _values[key];
 
   @override
-  Future<void> delete(String key) async {
-    _values.remove(key);
+  Future<void> write({required String key, required String value}) async {
+    _values[key] = value;
   }
 }
 
-class _RecordingAnimalStore implements AnimalBrickStore {
-  final pulledIds = <String>[];
+class _FakeAnimalStore implements AnimalBrickStore {
+  final List<String> pulls = [];
 
   @override
   Future<void> pullRemoteAnimals(String establishmentId) async {
-    pulledIds.add(establishmentId);
+    pulls.add(establishmentId);
   }
 
   @override
-  Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) => throw UnimplementedError();
+  Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) async => animal;
 
   @override
-  Future<BrickAnimalModel?> getAnimalById(String animalId) => throw UnimplementedError();
+  Future<BrickAnimalModel?> getAnimalById(String animalId) async => null;
 
   @override
-  Future<List<BrickAnimalModel>> getLocalAnimals() => throw UnimplementedError();
+  Future<List<BrickAnimalModel>> getLocalAnimals() async => [];
 
   @override
-  Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) => throw UnimplementedError();
+  Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) async => animal;
 }
 
-class _RecordingCategoryStore implements CategoriaBrickStore {
-  final pulledIds = <String>[];
+class _FakeCategoryStore implements CategoriaBrickStore {
+  final List<String> pulls = [];
 
   @override
   Future<void> pullRemoteCategorias(String establishmentId) async {
-    pulledIds.add(establishmentId);
+    pulls.add(establishmentId);
   }
 
   @override
-  Future<List<BrickCategoriaModel>> getLocalCategorias(String establishmentId) => throw UnimplementedError();
+  Future<List<BrickCategoriaModel>> getLocalCategorias(
+    String establishmentId,
+  ) async => [];
 
   @override
-  Future<BrickCategoriaModel> upsertCategoria(BrickCategoriaModel categoria) => throw UnimplementedError();
+  Future<BrickCategoriaModel> upsertCategoria(
+    BrickCategoriaModel categoria,
+  ) async => categoria;
 }
 
-class _RecordingWeighingStore implements PesajeBrickStore {
-  final pulledIds = <String>[];
-  String? failingId;
+class _FakeWeighingStore implements PesajeBrickStore {
+  final List<String> pulls = [];
 
   @override
   Future<void> pullRemotePesajes(
     String establishmentId, {
     String? animalId,
   }) async {
-    pulledIds.add(establishmentId);
-    if (establishmentId == failingId) {
-      throw StateError('Simulated sync failure.');
-    }
+    pulls.add(establishmentId);
   }
 
   @override
-  Future<List<BrickPesajeModel>> getLocalPesajes() => throw UnimplementedError();
+  Future<List<BrickPesajeModel>> getLocalPesajes() async => [];
 
   @override
-  Future<List<BrickPesajeModel>> getLocalPesajesByAnimal(String animalId) => throw UnimplementedError();
+  Future<List<BrickPesajeModel>> getLocalPesajesByAnimal(
+    String animalId,
+  ) async => [];
 
   @override
   Future<List<BrickPesajeModel>> loadPesajesByAnimal(
     String establishmentId,
     String animalId,
-  ) => throw UnimplementedError();
+  ) async => [];
 
   @override
-  Future<BrickPesajeModel> upsertPesaje(BrickPesajeModel pesaje) => throw UnimplementedError();
+  Future<BrickPesajeModel> upsertPesaje(BrickPesajeModel pesaje) async => pesaje;
 }
