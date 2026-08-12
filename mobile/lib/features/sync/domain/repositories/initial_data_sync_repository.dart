@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 
 /// Contrato para preparar datos locales despues del primer login de un usuario.
@@ -10,5 +11,5 @@ abstract class InitialDataSyncRepository {
   ///
   /// Debe ser idempotente: si el bootstrap ya se completo para ese usuario,
   /// puede terminar sin volver a descargar las entidades.
-  Future<Result<void>> syncForUser(String userId);
+  Future<Result<PostAuthenticationSummary>> syncForUser(String userId);
 }

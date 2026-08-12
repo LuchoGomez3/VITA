@@ -54,17 +54,15 @@ AuthSessionCubit createAuthSessionCubit() {
 
 /// Crea el bloc local de la pantalla de login.
 ///
-/// El login es el punto donde se inicia la sesion offline-first: si las
-/// credenciales son validas, el repositorio persiste la sesion, hidrata el token
-/// provider de Brick y despues se ejecuta la sync inicial. Registro no hace esa
-/// preparacion mientras no exista auto-login post-registro.
+/// Si las credenciales son validas, el repositorio persiste la sesion, hidrata
+/// el token provider de Brick y despues ejecuta la preparacion compartida.
 LoginBloc createLoginBloc() {
   final client = http.Client();
   final repository = _createAuthRepository(client);
 
   return LoginBloc(
     signInUseCase: SignInUseCase(repository),
-    prepareOfflineData: createPrepareInitialDataSyncUseCase(
+    preparePostAuthentication: createPrepareInitialDataSyncUseCase(
       client: client,
     ).call,
     onClose: client.close,
@@ -73,15 +71,18 @@ LoginBloc createLoginBloc() {
 
 /// Crea el bloc local de la pantalla de registro.
 ///
-/// El registro actual solo crea el usuario en backend y devuelve el perfil
-/// confirmado. No persiste sesion ni corre sync inicial porque el contrato
-/// mobile vigente requiere iniciar sesion despues del alta.
+/// El registro crea la cuenta, inicia sesion y prepara los datos locales usando
+/// la misma operacion post-autenticacion que el login manual.
 SignUpBloc createSignUpBloc() {
   final client = http.Client();
   final repository = _createAuthRepository(client);
 
   return SignUpBloc(
     registerUserUseCase: RegisterUserUseCase(repository),
+    signInUseCase: SignInUseCase(repository),
+    preparePostAuthentication: createPrepareInitialDataSyncUseCase(
+      client: client,
+    ).call,
     onClose: client.close,
   );
 }

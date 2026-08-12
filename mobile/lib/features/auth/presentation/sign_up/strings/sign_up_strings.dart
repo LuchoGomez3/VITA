@@ -122,6 +122,12 @@ class SignUpStrings {
   /// Texto del boton mientras el backend procesa el registro.
   static const registeringButton = 'Registrando cuenta...';
 
+  /// Texto mostrado durante el inicio automatico de sesion.
+  static const signingInButton = 'Iniciando sesión...';
+
+  /// Texto mostrado mientras se preparan los datos locales.
+  static const preparingOfflineDataButton = 'Preparando datos offline...';
+
   /// Prefijo del saludo mostrado al completar el registro.
   static const successWelcomePrefix = '¡Bienvenido ';
 
@@ -146,8 +152,8 @@ class SignUpStrings {
   /// Accion para comenzar la configuracion del establecimiento.
   static const configureEstablishmentButton = 'Configurar mi establecimiento';
 
-  /// Accion para iniciar sesion luego de crear la cuenta.
-  static const signInAfterRegistrationButton = 'Ir a iniciar sesion';
+  /// Accion posterior al registro cuando ya existen establecimientos asociados.
+  static const goToHomeButton = 'Ir al inicio';
 
   /// Texto previo al link de inicio de sesion para usuarios existentes.
   static const alreadyHaveAccountPrefix = '¿Ya tenés cuenta? ';

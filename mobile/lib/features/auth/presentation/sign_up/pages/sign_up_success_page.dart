@@ -10,10 +10,17 @@ import 'package:go_router/go_router.dart';
 /// Pantalla final del alta de dueño.
 class SignUpSuccessPage extends StatelessWidget {
   /// Crea la pantalla de exito con el usuario registrado.
-  const SignUpSuccessPage({required this.userData, super.key});
+  const SignUpSuccessPage({
+    required this.userData,
+    required this.hasEstablishments,
+    super.key,
+  });
 
   /// Usuario devuelto por el backend luego del registro.
   final AppUser userData;
+
+  /// Indica si la preparacion inicial encontro establecimientos asociados.
+  final bool hasEstablishments;
 
   @override
   Widget build(BuildContext context) {
@@ -46,16 +53,15 @@ class SignUpSuccessPage extends StatelessWidget {
               const SignUpNextStepCard(),
               const Spacer(flex: 3),
               AppFilledButton(
-                label: SignUpStrings.configureEstablishmentButton,
+                label: hasEstablishments
+                    ? SignUpStrings.goToHomeButton
+                    : SignUpStrings.configureEstablishmentButton,
                 icon: const Icon(Icons.arrow_forward),
-                onPressed: () {
-                  // TODO(FRANCO): navegar a la configuracion del primer establecimiento.
-                },
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              AppOutlinedButton(
-                label: SignUpStrings.signInAfterRegistrationButton,
-                onPressed: () => context.go(AppRoutes.login),
+                // El alta de establecimiento todavia no tiene ruta ni pantalla.
+                // Solo puede continuar una cuenta que ya tenga uno descargado.
+                onPressed: hasEstablishments
+                    ? () => context.go(AppRoutes.home)
+                    : null,
               ),
             ],
           ),

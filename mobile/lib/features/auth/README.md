@@ -57,7 +57,9 @@ Despues del login exitoso, `LoginBloc` invoca un callback de preparacion offline
 inyectado desde la composicion. Ese callback delega en `features/sync` para
 descargar los datos necesarios para operar offline. Ese paso no pertenece al
 dominio de auth: auth obtiene y persiste sesion; sync prepara datos de negocio
-locales.
+locales. El callback devuelve los IDs de establecimientos disponibles. Login
+conserva ese resumen y registro podra reutilizarlo para decidir entre Home y el
+asistente del primer establecimiento sin duplicar la consulta.
 
 ## Flujo de registro
 
@@ -70,11 +72,10 @@ SignUpPage
   -> Backend /api/v1/usuarios/registro
 ```
 
-El registro es online-only. Si el backend confirma el alta, la UI navega a la
-pantalla de exito con el `AppUser` devuelto por el repositorio. No se guarda la
-password, no se persiste sesion y no se crean datos offline desde este flujo.
-El usuario debe iniciar sesion luego del registro para que mobile guarde la
-sesion y ejecute la preparacion offline.
+El registro es online-only. Si el backend confirma el alta, mobile inicia sesion
+automaticamente con las credenciales que siguen en memoria, persiste la sesion,
+hidrata el token provider de Brick y ejecuta la misma preparacion offline que el
+login manual. La password se limpia de la UI al terminar y nunca se persiste.
 
 Si el backend responde al login con una sesion valida, `AuthRepositoryImpl`:
 

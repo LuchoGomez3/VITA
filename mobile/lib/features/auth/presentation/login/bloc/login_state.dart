@@ -20,6 +20,7 @@ sealed class LoginState with _$LoginState {
 
     /// Error no bloqueante de la sync inicial posterior al login.
     DomainException? initialDataSyncError,
+
   }) = _LoginState;
 
   /// Estado inicial del formulario.

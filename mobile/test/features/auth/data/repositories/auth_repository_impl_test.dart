@@ -67,7 +67,7 @@ void main() {
       );
     });
 
-    test('signIn persists session and hydrates the Brick token provider', () async {
+    test('signIn persists session without password and hydrates Brick', () async {
       final repository = _createRepository(
         secureStorage: secureStorage,
         client: MockClient((request) async {
@@ -106,10 +106,11 @@ void main() {
         await SessionBackendAccessTokenProvider.instance.getAccessToken(),
         'jwt-token',
       );
-      expect(
-        await secureStorage.read(SecureStorageKeys.authSession),
-        contains('"refresh_token":"refresh-token"'),
+      final storedSession = await secureStorage.read(
+        SecureStorageKeys.authSession,
       );
+      expect(storedSession, contains('"refresh_token":"refresh-token"'));
+      expect(storedSession, isNot(contains('Password1')));
     });
 
     test('restoreSession rebuilds expired local session without backend', () async {

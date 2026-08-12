@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
+import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -41,26 +42,28 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
   final PesajeBrickStore _weighingStore;
 
   @override
-  Future<Result<void>> syncForUser(String userId) async {
-    final markerKey = SecureStorageKeys.initialDataSyncCompleted(userId);
+  Future<Result<PostAuthenticationSummary>> syncForUser(String userId) async {
+    final syncedEstablishmentsKey = SecureStorageKeys.initialDataSyncedEstablishments(userId);
 
     try {
-      final establishments =
-          await _establishmentRemoteDataSource.fetchEstablishments();
+      final establishments = await _establishmentRemoteDataSource.fetchEstablishments();
       await _secureStorage.write(
         key: SecureStorageKeys.establishmentCatalog,
         value: jsonEncode(
           establishments.map((establishment) => establishment.toJson()).toList(),
         ),
       );
-      final completed = await _secureStorage.read(markerKey);
-      if (completed == 'true') {
-        return const Result.success(null);
-      }
+      final syncedEstablishmentIds = await _readSyncedEstablishmentIds(
+        syncedEstablishmentsKey,
+      );
 
       _logInitialSyncStep('establishments=${establishments.length}');
       for (final establishment in establishments) {
         final establishmentId = establishment.id;
+        if (syncedEstablishmentIds.contains(establishmentId)) {
+          continue;
+        }
+
         // El catalogo se cachea antes que los animales para que sus referencias
         // de categoria ya esten disponibles en los flujos offline.
         _logInitialSyncStep(
@@ -75,15 +78,22 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
           'pulling weighings for establishment=$establishmentId',
         );
         await _weighingStore.pullRemotePesajes(establishmentId);
+        syncedEstablishmentIds.add(establishmentId);
+        await _secureStorage.write(
+          key: syncedEstablishmentsKey,
+          value: jsonEncode(syncedEstablishmentIds.toList()..sort()),
+        );
       }
-      await _secureStorage.write(key: markerKey, value: 'true');
 
-      return const Result.success(null);
+      return Result.success(
+        PostAuthenticationSummary(
+          establishmentIds: establishments.map((establishment) => establishment.id).toList(growable: false),
+        ),
+      );
     } on SocketException {
       return const Result.failure(
         DomainException(
-          message:
-              'No se pudieron preparar los datos offline por falta de conexion.',
+          message: 'No se pudieron preparar los datos offline por falta de conexion.',
           code: DomainErrorCode.offline,
         ),
       );
@@ -103,6 +113,20 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
         ),
       );
     }
+  }
+
+  Future<Set<String>> _readSyncedEstablishmentIds(String key) async {
+    final encoded = await _secureStorage.read(key);
+    if (encoded == null || encoded.isEmpty) {
+      return <String>{};
+    }
+
+    final decoded = jsonDecode(encoded);
+    if (decoded is! List) {
+      return <String>{};
+    }
+
+    return decoded.whereType<String>().where((id) => id.isNotEmpty).toSet();
   }
 
   void _logInitialSyncError(Object error, StackTrace stackTrace) {

@@ -1,27 +1,29 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
-import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/register_user_use_case.dart';
+import 'package:frontend_mayoral/features/auth/domain/use_cases/sign_in_use_case.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_event.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_state.dart';
 
-/// Bloc que coordina el alta online de una cuenta.
-///
-/// El registro es online-only y no inicia sesion por si mismo. En el contrato
-/// actual crea la cuenta en backend y emite el [AppUser] confirmado para la
-/// pantalla de exito. Login queda como el unico flujo que persiste sesion,
-/// hidrata el token provider de Brick y ejecuta sync inicial.
+/// Bloc que coordina registro, auto-login y preparacion offline inicial.
 class SignUpBloc extends Bloc<SignUpEvent, SignUpState> {
-  /// Crea el bloc con el caso de uso de registro.
+  /// Crea el bloc con las operaciones del flujo post-registro.
   SignUpBloc({
     required RegisterUserUseCase registerUserUseCase,
+    required SignInUseCase signInUseCase,
+    required PreparePostAuthentication preparePostAuthentication,
     void Function()? onClose,
   }) : _registerUserUseCase = registerUserUseCase,
+       _signInUseCase = signInUseCase,
+       _preparePostAuthentication = preparePostAuthentication,
        _onClose = onClose,
-       super(const ResultState<AppUser>.initial()) {
+       super(const SignUpState.initial()) {
     on<SignUpSubmitted>(
       _onSubmitted,
       transformer: _droppable(),
@@ -29,25 +31,96 @@ class SignUpBloc extends Bloc<SignUpEvent, SignUpState> {
   }
 
   final RegisterUserUseCase _registerUserUseCase;
+  final SignInUseCase _signInUseCase;
+  final PreparePostAuthentication _preparePostAuthentication;
   final void Function()? _onClose;
 
-  /// Ejecuta el registro remoto y transforma el resultado de dominio en estado.
-  ///
-  /// El resultado exitoso transporta [AppUser] para que la UI muestre datos
-  /// confirmados por backend en lugar de reconstruirlos desde controllers.
+  /// Crea la cuenta, inicia sesion y prepara el dispositivo para uso offline.
   Future<void> _onSubmitted(
     SignUpSubmitted event,
     Emitter<SignUpState> emit,
   ) async {
-    emit(const ResultState<AppUser>.loading());
+    emit(const SignUpState(stage: SignUpStage.registering));
 
-    final result = await _registerUserUseCase(request: event.request);
-    switch (result) {
-      case Success<AppUser>(:final data):
-        emit(ResultState<AppUser>.data(data));
+    final registrationResult = await _registerUserUseCase(
+      request: event.request,
+    );
+    switch (registrationResult) {
+      case Success<AppUser>():
+        emit(
+          const SignUpState(
+            stage: SignUpStage.signingIn,
+            accountCreated: true,
+          ),
+        );
       case Failure<AppUser>(:final error):
-        emit(ResultState<AppUser>.error(error));
+        emit(SignUpState(stage: SignUpStage.failure, error: error));
+        return;
+      default:
+        return;
     }
+
+    final signInResult = await _signInUseCase(
+      email: event.request.email.trim(),
+      password: event.request.password,
+    );
+    final session = switch (signInResult) {
+      Success<AuthSession>(:final data) => data,
+      Failure<AuthSession>(:final error) => _emitSignInFailure(emit, error),
+      _ => null,
+    };
+    if (session == null) {
+      return;
+    }
+
+    emit(
+      SignUpState(
+        stage: SignUpStage.preparingOfflineData,
+        session: session,
+        accountCreated: true,
+      ),
+    );
+    final preparationResult = await _preparePostAuthentication(
+      session.user.id,
+    );
+    switch (preparationResult) {
+      case Success<PostAuthenticationSummary>(:final data):
+        emit(
+          SignUpState(
+            stage: SignUpStage.success,
+            session: session,
+            preparationSummary: data,
+            accountCreated: true,
+          ),
+        );
+      case Failure<PostAuthenticationSummary>(:final error):
+        // La cuenta y la sesion ya son validas. La descarga puede reintentarse
+        // sin obligar al productor a autenticarse nuevamente.
+        emit(
+          SignUpState(
+            stage: SignUpStage.success,
+            session: session,
+            preparationError: error,
+            accountCreated: true,
+          ),
+        );
+      default:
+        break;
+    }
+  }
+
+  AuthSession? _emitSignInFailure(
+    Emitter<SignUpState> emit,
+    DomainException error,
+  ) {
+    emit(
+      SignUpState(
+        stage: SignUpStage.failure,
+        error: error,
+        accountCreated: true,
+      ),
+    );
+    return null;
   }
 
   @override
