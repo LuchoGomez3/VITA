@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
-import 'package:frontend_mayoral/app/layout/main_layout_strings.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
@@ -27,6 +27,13 @@ import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
+import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_menu_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_error_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_generation_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
 import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
@@ -109,8 +116,9 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: AppRoutes.procedures,
-                builder: (context, state) => const ShellPlaceholderPage(
-                  title: MainLayoutStrings.proceduresPlaceholder,
+                builder: (context, state) => SenasaMenuPage(
+                  key: ValueKey(state.extra),
+                  createCubit: createSenasaMenuCubit,
                 ),
               ),
             ],
@@ -235,6 +243,36 @@ class AppRouter {
         builder: (context, state) => const ShellPlaceholderPage(
           title: HomeStrings.registerIncome,
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.senasaReport,
+        builder: (context, state) => const SenasaReportPage(
+          createCubit: createSenasaReportCubit,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.senasaReportGeneration,
+        builder: (context, state) {
+          final request = state.extra! as SenasaReportRequest;
+          return SenasaReportGenerationPage(
+            request: request,
+            createCubit: createSenasaReportGenerationCubit,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.senasaReportSuccess,
+        builder: (context, state) {
+          final report = state.extra! as GeneratedSenasaReport;
+          return SenasaReportSuccessPage(report: report);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.senasaReportError,
+        builder: (context, state) {
+          final args = state.extra! as SenasaReportErrorArgs;
+          return SenasaReportErrorPage(args: args);
+        },
       ),
     ],
   );

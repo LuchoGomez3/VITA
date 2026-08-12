@@ -71,7 +71,12 @@ class _ProfilePageState extends State<ProfilePage> {
         appBar: const AppHeader(title: ProfileStrings.title),
         body: SafeArea(
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.sm),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.sm,
+              AppSpacing.sm,
+              AppSpacing.sm,
+              AppSpacing.xl,
+            ),
             children: [
               ProfileUserCard(
                 userId: widget.userId,

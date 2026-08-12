@@ -23,8 +23,13 @@ class HomeDashboardContent extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: context.read<HomeDashboardCubit>().load,
       child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.xl,
+        ),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(AppSpacing.sm),
         children: [
           const HomeOperatingBalanceCard(),
           const SizedBox(height: AppSpacing.lg),
