@@ -1,9 +1,10 @@
 """DTOs Pydantic del módulo usuarios."""
 
-import re
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+
+from api.shared.cuit import normalizar_cuit
 
 
 class UsuarioRegistroCreate(BaseModel):
@@ -28,11 +29,7 @@ class UsuarioRegistroCreate(BaseModel):
     @field_validator("cuit")
     @classmethod
     def _normalizar_cuit(cls, v: str) -> str:
-        # Acepta guiones/espacios y los normaliza a 11 dígitos.
-        digits = re.sub(r"[\s-]", "", v)
-        if not digits.isdigit() or len(digits) != 11:
-            raise ValueError("El CUIT/CUIL debe tener 11 dígitos")
-        return digits
+        return normalizar_cuit(v)
 
     @field_validator("password")
     @classmethod

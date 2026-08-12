@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
-import 'package:frontend_mayoral/features/animal_register/data/sources/animal_registration_mock_context.dart';
+import 'package:frontend_mayoral/features/animal_register/data/datasources/animal_registration_mock_context.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_repository.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';

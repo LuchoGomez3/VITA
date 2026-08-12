@@ -19,8 +19,13 @@ class AuthRemoteDataSource {
   final http.Client _client;
   final Duration _requestTimeout;
 
-  /// Registra un usuario nuevo y devuelve el perfil creado por el backend.
-  Future<Map<String, dynamic>> register({
+  /// Registra un usuario nuevo y devuelve la sesion que abre de inmediato.
+  ///
+  /// El registro es online-only y el backend ya devuelve una sesion completa
+  /// (igual contrato que `signIn`), para que el cliente pueda seguir operando
+  /// sin pedir credenciales de nuevo (p. ej. para registrar su
+  /// establecimiento a continuacion).
+  Future<AuthRemoteSession> register({
     required String firstName,
     required String lastName,
     required String email,
@@ -48,17 +53,7 @@ class AuthRemoteDataSource {
       fallbackMessage: 'No se pudo crear la cuenta. Intenta nuevamente.',
     );
 
-    final data = body['data'];
-    if (data is Map<String, dynamic>) {
-      final userJson = data['usuario'];
-      if (userJson is Map<String, dynamic>) {
-        return userJson;
-      }
-    }
-
-    throw const DomainException(
-      message: 'El backend no devolvio el usuario registrado.',
-    );
+    return _sessionFromBody(body);
   }
 
   /// Ejecuta el login OAuth2 password form y devuelve token + usuario.

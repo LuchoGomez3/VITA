@@ -91,6 +91,26 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
+  /// Valor monoespaciado para codigos como CUIT, RENSPA o coordenadas.
+  // TODO(lucho): cambiar a 'Source Code Pro' cuando la fuente este agregada
+  // en assets/fonts y declarada en pubspec.yaml.
+  static const monoValue = TextStyle(
+    fontFamily: 'monospace',
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textPrimary,
+    letterSpacing: 0.4,
+  );
+
+  /// Valor monoespaciado destacado, usado en paneles de detalle (ej. desglose de RENSPA).
+  static const monoValueEmphasis = TextStyle(
+    fontFamily: 'monospace',
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+    letterSpacing: 0.4,
+  );
+
   /// Valor destacado dentro de un input.
   static const formFieldValueEmphasis = TextStyle(
     fontFamily: _baseFontFamily,

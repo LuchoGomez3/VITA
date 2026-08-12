@@ -1,6 +1,6 @@
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/features/animal_register/data/repositories/animal_registration_repository_impl.dart';
-import 'package:frontend_mayoral/features/animal_register/data/sources/animal_registration_mock_context.dart';
+import 'package:frontend_mayoral/features/animal_register/data/datasources/animal_registration_mock_context.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 

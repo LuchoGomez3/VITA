@@ -20,6 +20,12 @@ import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_s
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_page.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_success_page.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_welcome_first_time.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
+import 'package:frontend_mayoral/features/establishment_register/establishment_register_composition.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_empty_state_page.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_page.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_success_page.dart';
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
@@ -202,6 +208,62 @@ class AppRouter {
           return AnimalDetailPage(
             animalId: animalId,
             createCubit: createAnimalDetailCubit,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.establishmentRegisterEmpty,
+        builder: (context, state) => EstablishmentEmptyStatePage(
+          onSignOut: context.read<AuthSessionCubit>().signOut,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.establishmentRegisterStep1,
+        builder: (context, state) => const EstablishmentRegisterPage(
+          createBloc: createRegisterEstablishmentBloc,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.establishmentRegisterStep2,
+        // Sin persistencia de borrador entre rutas, entrar directo acá
+        // siempre da un BLoC con estado inicial vacío: se redirige al paso 1
+        // hasta que exista hidratación real de deep-link.
+        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
+        builder: (context, state) => const EstablishmentRegisterPage(
+          createBloc: createRegisterEstablishmentBloc,
+          initialStep: RegisterEstablishmentStep.renspa,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.establishmentRegisterStep3,
+        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
+        builder: (context, state) => const EstablishmentRegisterPage(
+          createBloc: createRegisterEstablishmentBloc,
+          initialStep: RegisterEstablishmentStep.location,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.establishmentRegisterStep4,
+        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
+        builder: (context, state) => const EstablishmentRegisterPage(
+          createBloc: createRegisterEstablishmentBloc,
+          initialStep: RegisterEstablishmentStep.surface,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.establishmentRegisterReview,
+        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
+        builder: (context, state) => const EstablishmentRegisterPage(
+          createBloc: createRegisterEstablishmentBloc,
+          initialStep: RegisterEstablishmentStep.review,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.establishmentRegisterSuccess,
+        builder: (context, state) {
+          final registeredEstablishment = state.extra! as RegisteredEstablishment;
+          return EstablishmentRegisterSuccessPage(
+            registeredEstablishment: registeredEstablishment,
           );
         },
       ),

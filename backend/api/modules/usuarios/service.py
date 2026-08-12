@@ -2,16 +2,15 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.auth.providers import AuthProvider
+from api.auth.providers import AuthProvider, AuthResult
 from api.modules.usuarios.exceptions import (
-    CuitInvalidoError,
     CuitYaRegistradoError,
     EmailYaRegistradoError,
 )
 from api.modules.usuarios.models import Usuario
 from api.modules.usuarios.repository import UsuarioRepository
 from api.modules.usuarios.schemas import UsuarioRead, UsuarioRegistroCreate
-from api.modules.usuarios.utils import validar_cuit
+from api.shared.cuit import CuitInvalidoError, validar_cuit
 
 
 class UsuarioService:
@@ -19,10 +18,14 @@ class UsuarioService:
         self.repository = UsuarioRepository(session)
         self.auth_provider = auth_provider
 
-    async def registrar(self, data: UsuarioRegistroCreate) -> tuple[UsuarioRead, str]:
+    async def registrar(
+        self, data: UsuarioRegistroCreate
+    ) -> tuple[UsuarioRead, AuthResult]:
         """Registra un dueño de campo: credenciales en el proveedor + perfil.
 
-        Devuelve el perfil creado y un token de sesión.
+        Devuelve el perfil creado y la sesión completa (access + refresh +
+        expiración), igual que login: el registro abre sesión de inmediato, sin
+        pedir credenciales de nuevo.
         """
         # Validación de dígito verificador (el formato ya lo validó el schema).
         if not validar_cuit(data.cuit):
@@ -48,4 +51,4 @@ class UsuarioService:
         )
         await self.repository.create(usuario)
 
-        return UsuarioRead.model_validate(usuario), auth_result.access_token
+        return UsuarioRead.model_validate(usuario), auth_result
