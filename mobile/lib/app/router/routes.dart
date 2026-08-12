@@ -50,6 +50,9 @@ class AppRoutes {
   /// Ruta de la pantalla de detalle de animal.
   static const animalDetail = '/animals/:animalId';
 
+  /// Ruta de identificacion de animales mediante caravana RFID.
+  static const rfidScan = '/identificar-animal';
+
   /// Ruta de la seccion de registros de gastos.
   static const expenseRecords = '/registros-de-gastos';
 
@@ -84,4 +87,14 @@ class AppRoutes {
 
   /// Ruta de la pantalla de exito de registro de establecimiento.
   static const establishmentRegisterSuccess = '/registrar-establecimiento/exito';
+
+  /// Construye la ruta de identificacion para un establecimiento activo.
+  static String rfidScanForEstablishment(String establishmentId) {
+    return '$rfidScan?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
+  }
+
+  /// Construye la ruta de alta con una caravana RFID ya leida.
+  static String animalRegisterWithRfid(String rfidTagNumber) {
+    return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}';
+  }
 }

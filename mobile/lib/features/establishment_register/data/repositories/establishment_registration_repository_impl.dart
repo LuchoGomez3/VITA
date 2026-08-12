@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/establishment_register/data/mappers/establishment_registration_json_mapper.dart';
-import 'package:frontend_mayoral/features/establishment_register/data/sources/establishment_registration_remote_data_source.dart';
+import 'package:frontend_mayoral/features/establishment_register/data/datasources/establishment_registration_remote_data_source.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/repositories/establishment_registration_repository.dart';
 import 'package:http/http.dart' as http;

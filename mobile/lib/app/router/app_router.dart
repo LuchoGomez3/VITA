@@ -33,6 +33,9 @@ import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
+import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
+import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
+import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion del router de la app.
@@ -155,8 +158,9 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.animalRegisterStep1,
-        builder: (context, state) => const RegisterAnimalPage(
+        builder: (context, state) => RegisterAnimalPage(
           createBloc: createRegisterAnimalBloc,
+          initialRfid: state.uri.queryParameters['rfid'] ?? '',
         ),
       ),
       GoRoute(
@@ -252,6 +256,27 @@ class AppRouter {
           final registeredEstablishment = state.extra! as RegisteredEstablishment;
           return EstablishmentRegisterSuccessPage(
             registeredEstablishment: registeredEstablishment,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.rfidScan,
+        builder: (context, state) {
+          final establishmentId = state.uri.queryParameters['establecimientoId'];
+          if (establishmentId == null || establishmentId.isEmpty) {
+            return const ShellPlaceholderPage(title: 'Seleccioná un establecimiento para identificar animales.');
+          }
+
+          final readingSource = HidRfidReadingSource();
+          return RfidScanPage(
+            establishmentId: establishmentId,
+            createBloc: ({required establishmentId}) => createRfidScanBloc(
+              readingSource: readingSource,
+              establishmentId: establishmentId,
+            ),
+            onHidKeyEvent: readingSource.handleKeyEvent,
+            onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
+            onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
           );
         },
       ),

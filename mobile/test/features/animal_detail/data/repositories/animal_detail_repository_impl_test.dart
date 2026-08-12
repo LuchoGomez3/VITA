@@ -174,6 +174,19 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   }
 
   @override
+  Future<BrickAnimalModel?> getAnimalByRfidTagNumber({
+    required String rfidTagNumber,
+    required String establishmentId,
+  }) async {
+    final animal = localAnimal;
+    if (animal?.rfidTagNumber == rfidTagNumber && animal?.establishmentId == establishmentId) {
+      return animal;
+    }
+
+    return null;
+  }
+
+  @override
   Future<List<BrickAnimalModel>> getLocalAnimals() async {
     return localAnimal == null ? const [] : [localAnimal!];
   }

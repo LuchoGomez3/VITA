@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
 import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_cubit.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_dashboard_content.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_dashboard_error.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_expandable_header.dart';
+import 'package:go_router/go_router.dart';
 
 /// Factory que crea el cubit responsable de los indicadores de Inicio.
 typedef HomeDashboardCubitFactory = HomeDashboardCubit Function();
@@ -68,11 +70,24 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
             highlightedEstablishmentId: _highlightedEstablishmentId,
             onToggle: _toggleSelector,
             onSelected: _selectEstablishment,
+            onIdentifyAnimal: _identifyAnimal,
           ),
           const Expanded(child: _HomeDashboardBody()),
         ],
       ),
     );
+  }
+
+  void _identifyAnimal() {
+    final establishmentId = context.read<HomeDashboardCubit>().state.selectedEstablishmentId;
+    if (establishmentId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(HomeStrings.selectEstablishmentBeforeIdentification)),
+      );
+      return;
+    }
+
+    context.push(AppRoutes.rfidScanForEstablishment(establishmentId));
   }
 
   void _toggleSelector() {

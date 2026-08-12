@@ -19,6 +19,7 @@ import 'package:go_router/go_router.dart';
 typedef RegisterAnimalBlocFactory =
     RegisterAnimalBloc Function({
       RegisterAnimalStep initialStep,
+      String initialRfid,
     });
 
 /// Hosts the complete animal registration flow.
@@ -27,6 +28,7 @@ class RegisterAnimalPage extends StatelessWidget {
   const RegisterAnimalPage({
     required this.createBloc,
     this.initialStep = RegisterAnimalStep.identification,
+    this.initialRfid = '',
     super.key,
   });
 
@@ -36,10 +38,13 @@ class RegisterAnimalPage extends StatelessWidget {
   /// Step displayed when the flow is opened.
   final RegisterAnimalStep initialStep;
 
+  /// RFID opcional recibido desde una lectura de identificacion.
+  final String initialRfid;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => createBloc(initialStep: initialStep),
+      create: (_) => createBloc(initialStep: initialStep, initialRfid: initialRfid),
       child: const _RegisterAnimalView(),
     );
   }

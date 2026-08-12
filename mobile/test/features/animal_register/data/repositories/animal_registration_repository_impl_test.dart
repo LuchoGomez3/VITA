@@ -66,6 +66,14 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   }
 
   @override
+  Future<BrickAnimalModel?> getAnimalByRfidTagNumber({
+    required String rfidTagNumber,
+    required String establishmentId,
+  }) async {
+    return null;
+  }
+
+  @override
   Future<List<BrickAnimalModel>> getLocalAnimals() async => savedAnimals;
 
   @override

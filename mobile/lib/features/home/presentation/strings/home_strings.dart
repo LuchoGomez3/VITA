@@ -33,6 +33,13 @@ abstract final class HomeStrings {
   /// Tooltip para actualizar los valores.
   static const refreshTooltip = 'Actualizar indicadores';
 
+  /// Tooltip para abrir la identificacion mediante caravana RFID.
+  static const identifyAnimalTooltip = 'Identificar animal';
+
+  /// Mensaje cuando se intenta identificar sin elegir un establecimiento.
+  static const selectEstablishmentBeforeIdentification =
+      'Seleccioná un establecimiento antes de identificar un animal.';
+
   /// Titulo del resumen economico operativo.
   static const operatingBalance = 'Balance operativo';
 
