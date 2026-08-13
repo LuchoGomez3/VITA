@@ -26,6 +26,9 @@ import 'package:frontend_mayoral/features/establishment_register/presentation/bl
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_empty_state_page.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_page.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_success_page.dart';
+import 'package:frontend_mayoral/features/field/presentation/pages/field_detail_page.dart';
+import 'package:frontend_mayoral/features/field/presentation/pages/field_list_page.dart';
+import 'package:frontend_mayoral/features/field/presentation/pages/field_map_page.dart';
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
@@ -292,6 +295,21 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.weighing,
         builder: (context, state) => const WeighingPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.field,
+        builder: (context, state) => const FieldMapPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.fieldList,
+        builder: (context, state) => const FieldListPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.fieldDetail,
+        builder: (context, state) {
+          final potreroId = state.pathParameters['potreroId']!;
+          return FieldDetailPage(potreroId: potreroId);
+        },
       ),
       GoRoute(
         path: AppRoutes.expenseRecords,
