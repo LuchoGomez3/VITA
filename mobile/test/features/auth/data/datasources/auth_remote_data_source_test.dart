@@ -8,7 +8,7 @@ import 'package:http/testing.dart';
 
 void main() {
   group('AuthRemoteDataSource', () {
-    test('register posts user data and returns the created profile', () async {
+    test('register posts user data and returns the opened session', () async {
       final dataSource = AuthRemoteDataSource(
         backendBaseUrl: _backendBaseUrl,
         client: MockClient((request) async {
@@ -28,6 +28,8 @@ void main() {
               'data': {
                 'usuario': _userJson,
                 'access_token': 'registration-token',
+                'refresh_token': 'registration-refresh-token',
+                'expires_in': 3600,
                 'token_type': 'bearer',
               },
             }),
@@ -36,7 +38,7 @@ void main() {
         }),
       );
 
-      final userJson = await dataSource.register(
+      final session = await dataSource.register(
         firstName: 'Ernesto',
         lastName: 'Diaz',
         email: 'ernesto@example.com',
@@ -44,7 +46,10 @@ void main() {
         password: 'Password1',
       );
 
-      expect(userJson, _userJson);
+      expect(session.accessToken, 'registration-token');
+      expect(session.refreshToken, 'registration-refresh-token');
+      expect(session.expiresIn, 3600);
+      expect(session.userJson, _userJson);
     });
 
     test('register exposes backend domain errors', () async {

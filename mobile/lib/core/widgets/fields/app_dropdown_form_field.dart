@@ -100,7 +100,7 @@ class AppDropdownFormField<T> extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
           borderRadius: BorderRadius.circular(AppRadius.sm),
-          style: AppTypography.formFieldValue,
+          style: AppTypography.mediumEmphasis,
           hint: Text(
             hintText,
             style: AppTypography.formFieldHint,
@@ -114,7 +114,7 @@ class AppDropdownFormField<T> extends StatelessWidget {
                   value: option.value,
                   child: Text(
                     option.label,
-                    style: AppTypography.formFieldValue,
+                    style: AppTypography.mediumEmphasis,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),

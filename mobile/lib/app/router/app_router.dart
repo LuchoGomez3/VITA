@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
-import 'package:frontend_mayoral/app/layout/main_layout_strings.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
@@ -20,13 +20,29 @@ import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_s
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_page.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_success_page.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_welcome_first_time.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
+import 'package:frontend_mayoral/features/establishment_register/establishment_register_composition.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_empty_state_page.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_page.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_success_page.dart';
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
-import 'package:frontend_mayoral/features/profile/profile_composition.dart';
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
+import 'package:frontend_mayoral/features/profile/profile_composition.dart';
+import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_menu_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_error_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_generation_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
+import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
+import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
+import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
+import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion del router de la app.
@@ -106,8 +122,9 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: AppRoutes.procedures,
-                builder: (context, state) => const ShellPlaceholderPage(
-                  title: MainLayoutStrings.proceduresPlaceholder,
+                builder: (context, state) => SenasaMenuPage(
+                  key: ValueKey(state.extra),
+                  createCubit: createSenasaMenuCubit,
                 ),
               ),
             ],
@@ -149,8 +166,9 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.animalRegisterStep1,
-        builder: (context, state) => const RegisterAnimalPage(
+        builder: (context, state) => RegisterAnimalPage(
           createBloc: createRegisterAnimalBloc,
+          initialRfid: state.uri.queryParameters['rfid'] ?? '',
         ),
       ),
       GoRoute(
@@ -194,6 +212,83 @@ class AppRouter {
         },
       ),
       GoRoute(
+        path: AppRoutes.establishmentRegisterEmpty,
+        builder: (context, state) => EstablishmentEmptyStatePage(
+          onSignOut: context.read<AuthSessionCubit>().signOut,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.establishmentRegisterStep1,
+        builder: (context, state) => const EstablishmentRegisterPage(
+          createBloc: createRegisterEstablishmentBloc,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.establishmentRegisterStep2,
+        // Sin persistencia de borrador entre rutas, entrar directo acá
+        // siempre da un BLoC con estado inicial vacío: se redirige al paso 1
+        // hasta que exista hidratación real de deep-link.
+        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
+        builder: (context, state) => const EstablishmentRegisterPage(
+          createBloc: createRegisterEstablishmentBloc,
+          initialStep: RegisterEstablishmentStep.renspa,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.establishmentRegisterStep3,
+        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
+        builder: (context, state) => const EstablishmentRegisterPage(
+          createBloc: createRegisterEstablishmentBloc,
+          initialStep: RegisterEstablishmentStep.location,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.establishmentRegisterStep4,
+        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
+        builder: (context, state) => const EstablishmentRegisterPage(
+          createBloc: createRegisterEstablishmentBloc,
+          initialStep: RegisterEstablishmentStep.surface,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.establishmentRegisterReview,
+        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
+        builder: (context, state) => const EstablishmentRegisterPage(
+          createBloc: createRegisterEstablishmentBloc,
+          initialStep: RegisterEstablishmentStep.review,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.establishmentRegisterSuccess,
+        builder: (context, state) {
+          final registeredEstablishment = state.extra! as RegisteredEstablishment;
+          return EstablishmentRegisterSuccessPage(
+            registeredEstablishment: registeredEstablishment,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.rfidScan,
+        builder: (context, state) {
+          final establishmentId = state.uri.queryParameters['establecimientoId'];
+          if (establishmentId == null || establishmentId.isEmpty) {
+            return const ShellPlaceholderPage(title: 'Seleccioná un establecimiento para identificar animales.');
+          }
+
+          final readingSource = HidRfidReadingSource();
+          return RfidScanPage(
+            establishmentId: establishmentId,
+            createBloc: ({required establishmentId}) => createRfidScanBloc(
+              readingSource: readingSource,
+              establishmentId: establishmentId,
+            ),
+            onHidKeyEvent: readingSource.handleKeyEvent,
+            onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
+            onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
+          );
+        },
+      ),
+      GoRoute(
         path: AppRoutes.expenseRecords,
         builder: (context, state) => const ShellPlaceholderPage(
           title: HomeStrings.movements,
@@ -210,6 +305,36 @@ class AppRouter {
         builder: (context, state) => const ShellPlaceholderPage(
           title: HomeStrings.registerIncome,
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.senasaReport,
+        builder: (context, state) => const SenasaReportPage(
+          createCubit: createSenasaReportCubit,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.senasaReportGeneration,
+        builder: (context, state) {
+          final request = state.extra! as SenasaReportRequest;
+          return SenasaReportGenerationPage(
+            request: request,
+            createCubit: createSenasaReportGenerationCubit,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.senasaReportSuccess,
+        builder: (context, state) {
+          final report = state.extra! as GeneratedSenasaReport;
+          return SenasaReportSuccessPage(report: report);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.senasaReportError,
+        builder: (context, state) {
+          final args = state.extra! as SenasaReportErrorArgs;
+          return SenasaReportErrorPage(args: args);
+        },
       ),
     ],
   );

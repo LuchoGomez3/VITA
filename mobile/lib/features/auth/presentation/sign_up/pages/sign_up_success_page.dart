@@ -48,9 +48,7 @@ class SignUpSuccessPage extends StatelessWidget {
               AppFilledButton(
                 label: SignUpStrings.configureEstablishmentButton,
                 icon: const Icon(Icons.arrow_forward),
-                onPressed: () {
-                  // TODO(FRANCO): navegar a la configuracion del primer establecimiento.
-                },
+                onPressed: () => context.push(AppRoutes.establishmentRegisterEmpty),
               ),
               const SizedBox(height: AppSpacing.sm),
               AppOutlinedButton(

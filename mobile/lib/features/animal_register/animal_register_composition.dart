@@ -1,6 +1,6 @@
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/features/animal_register/data/repositories/animal_registration_repository_impl.dart';
-import 'package:frontend_mayoral/features/animal_register/data/sources/animal_registration_mock_context.dart';
+import 'package:frontend_mayoral/features/animal_register/data/datasources/animal_registration_mock_context.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 
@@ -18,6 +18,7 @@ import 'package:frontend_mayoral/features/animal_register/presentation/bloc/regi
 // seleccionado y catalogos sincronizados.
 RegisterAnimalBloc createRegisterAnimalBloc({
   RegisterAnimalStep initialStep = RegisterAnimalStep.identification,
+  String initialRfid = '',
 }) {
   // TODO(agustin): Reemplazar este mock por un contexto real basado en sesion,
   // establecimiento seleccionado y catalogos sincronizados.
@@ -28,6 +29,7 @@ RegisterAnimalBloc createRegisterAnimalBloc({
 
   return RegisterAnimalBloc(
     initialStep: initialStep,
+    initialRfid: initialRfid,
     registerAnimalUseCase: RegisterAnimalUseCase(repository),
     registrationContext: registrationContext,
   );

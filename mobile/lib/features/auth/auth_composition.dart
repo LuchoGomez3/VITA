@@ -73,9 +73,11 @@ LoginBloc createLoginBloc() {
 
 /// Crea el bloc local de la pantalla de registro.
 ///
-/// El registro actual solo crea el usuario en backend y devuelve el perfil
-/// confirmado. No persiste sesion ni corre sync inicial porque el contrato
-/// mobile vigente requiere iniciar sesion despues del alta.
+/// El registro crea el usuario en backend y devuelve el perfil confirmado.
+/// El repositorio hidrata el token de Brick en memoria con la sesion que el
+/// backend ya devuelve (para poder llamar a `/api/v1/establecimientos` a
+/// continuacion sin pedir login), pero no persiste sesion local ni corre sync
+/// inicial: eso sigue reservado a un login real.
 SignUpBloc createSignUpBloc() {
   final client = http.Client();
   final repository = _createAuthRepository(client);

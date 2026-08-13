@@ -1,13 +1,14 @@
-"""Generación de archivos del reporte SENASA (CSV y PDF)."""
+"""Generación de archivos del reporte SENASA (TXT y PDF)."""
 
-import csv
 import io
+from pathlib import Path
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import (
+    Image,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -15,71 +16,100 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from api.reportes.schemas import ReporteFila
+from api.reportes.schemas import ReporteDispositivo
 
-_COLUMNAS = ["renspa", "identificador_animal", "fecha_hora", "tipo_evento"]
-_ENCABEZADOS = ["RENSPA", "Identificador (RFID)", "Fecha/Hora", "Tipo de evento"]
+# El logo oficial se comparte con la aplicación móvil para mantener una única
+# identidad visual en los documentos y en la interfaz del producto.
+_RUTA_LOGO = (
+    Path(__file__).resolve().parents[3]
+    / "mobile"
+    / "assets"
+    / "images"
+    / "app_icon.png"
+)
 
 
-def _fecha(fila: ReporteFila) -> str:
-    return fila.fecha_hora.isoformat()
+def _contenido(filas: list[ReporteDispositivo]) -> str:
+    """Une dispositivos con el punto y coma exigido por el importador SIGSA."""
+    return ";".join(
+        f"{fila.dispositivo}-{fila.sexo}-{fila.raza}-{fila.fecha_nacimiento}"
+        for fila in filas
+    )
 
 
-def to_csv(filas: list[ReporteFila]) -> bytes:
-    buffer = io.StringIO()
-    writer = csv.writer(buffer)
-    writer.writerow(_ENCABEZADOS)
-    for fila in filas:
-        writer.writerow(
-            [
-                fila.renspa or "",
-                fila.identificador_animal or "",
-                _fecha(fila),
-                fila.tipo_evento,
-            ]
-        )
-    return buffer.getvalue().encode("utf-8")
+def to_txt(filas: list[ReporteDispositivo]) -> bytes:
+    """Genera el archivo delimitado sin encabezado requerido por SENASA."""
+    return _contenido(filas).encode("utf-8")
 
 
 def to_pdf(
-    filas: list[ReporteFila],
+    filas: list[ReporteDispositivo],
     *,
     responsable_nombre: str | None = None,
     responsable_dni: str | None = None,
 ) -> bytes:
+    """Genera un PDF tabular con la identidad visual principal de VITA."""
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, title="Reporte SENASA")
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        title="Reporte SENASA",
+        leftMargin=15 * mm,
+        rightMargin=15 * mm,
+    )
     styles = getSampleStyleSheet()
+    styles["Title"].textColor = colors.HexColor("#2E7D32")
+    logo = Image(str(_RUTA_LOGO), width=18 * mm, height=18 * mm)
+    encabezado = Table(
+        [[logo, Paragraph("Reporte SENASA — Trazabilidad", styles["Title"])]],
+        colWidths=[24 * mm, 141 * mm],
+    )
+    encabezado.setStyle(
+        TableStyle(
+            [
+                ("ALIGN", (0, 0), (0, 0), "LEFT"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
     elementos = [
-        Paragraph("Reporte SENASA — Trazabilidad", styles["Title"]),
+        encabezado,
         Spacer(1, 6 * mm),
     ]
 
-    data = [_ENCABEZADOS]
-    for fila in filas:
-        data.append(
-            [
-                fila.renspa or "",
-                fila.identificador_animal or "",
-                _fecha(fila),
-                fila.tipo_evento,
-            ]
-        )
-
-    tabla = Table(data, repeatRows=1)
+    datos = [["Dispositivo RFID", "Sexo", "Raza", "Fecha de nacimiento"]]
+    datos.extend(
+        [fila.dispositivo, fila.sexo, fila.raza, fila.fecha_nacimiento]
+        for fila in filas
+    )
+    tabla = Table(
+        datos,
+        colWidths=[65 * mm, 25 * mm, 30 * mm, 45 * mm],
+        repeatRows=1,
+    )
     tabla.setStyle(
         TableStyle(
             [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2e7d32")),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2E7D32")),
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#DDFFE3")),
+                ("TEXTCOLOR", (0, 1), (-1, -1), colors.HexColor("#1D1B1A")),
+                ("ALIGN", (1, 1), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#2E7D32")),
                 (
                     "ROWBACKGROUNDS",
                     (0, 1),
                     (-1, -1),
-                    [colors.white, colors.HexColor("#f0f0f0")],
+                    [colors.white, colors.HexColor("#DDFFE3")],
                 ),
+                ("TOPPADDING", (0, 0), (-1, -1), 7),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
             ]
         )
     )

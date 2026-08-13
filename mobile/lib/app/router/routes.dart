@@ -50,6 +50,9 @@ class AppRoutes {
   /// Ruta de la pantalla de detalle de animal.
   static const animalDetail = '/animals/:animalId';
 
+  /// Ruta de identificacion de animales mediante caravana RFID.
+  static const rfidScan = '/identificar-animal';
+
   /// Ruta de la seccion de registros de gastos.
   static const expenseRecords = '/registros-de-gastos';
 
@@ -59,8 +62,54 @@ class AppRoutes {
   /// Ruta temporal para registrar un ingreso operativo.
   static const incomeRegister = '/registros-de-gastos/registrar-ingreso';
 
+  /// Ruta del menu principal de reportes SENASA.
+  static const senasaMenu = procedures;
+
+  /// Route for the SENASA report filters.
+  static const senasaReport = '/senasa-report';
+
+  /// Ruta de generacion del reporte SENASA.
+  static const senasaReportGeneration = '/senasa-report/generando';
+
+  /// Ruta de exito del reporte SENASA.
+  static const senasaReportSuccess = '/senasa-report/exito';
+
+  /// Ruta de error del reporte SENASA.
+  static const senasaReportError = '/senasa-report/error';
+
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {
     return '/animals/$animalId';
+  }
+
+  /// Ruta de la pantalla de estado vacio de establecimiento.
+  static const establishmentRegisterEmpty = '/registrar-establecimiento';
+
+  /// Ruta de la pantalla de registro de establecimiento paso 1.
+  static const establishmentRegisterStep1 = '/registrar-establecimiento/paso-1';
+
+  /// Ruta de la pantalla de registro de establecimiento paso 2.
+  static const establishmentRegisterStep2 = '/registrar-establecimiento/paso-2';
+
+  /// Ruta de la pantalla de registro de establecimiento paso 3.
+  static const establishmentRegisterStep3 = '/registrar-establecimiento/paso-3';
+
+  /// Ruta de la pantalla de registro de establecimiento paso 4.
+  static const establishmentRegisterStep4 = '/registrar-establecimiento/paso-4';
+
+  /// Ruta de la pantalla de revision de establecimiento.
+  static const establishmentRegisterReview = '/registrar-establecimiento/revisar';
+
+  /// Ruta de la pantalla de exito de registro de establecimiento.
+  static const establishmentRegisterSuccess = '/registrar-establecimiento/exito';
+
+  /// Construye la ruta de identificacion para un establecimiento activo.
+  static String rfidScanForEstablishment(String establishmentId) {
+    return '$rfidScan?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
+  }
+
+  /// Construye la ruta de alta con una caravana RFID ya leida.
+  static String animalRegisterWithRfid(String rfidTagNumber) {
+    return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}';
   }
 }

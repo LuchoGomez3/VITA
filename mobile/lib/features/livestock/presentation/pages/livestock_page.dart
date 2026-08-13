@@ -16,7 +16,12 @@ class LivestockPage extends StatelessWidget {
       appBar: const AppHeader(title: LivestockStrings.title),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
           child: Column(
             children: [
               AppSurfaceCard(

@@ -22,3 +22,19 @@ class EstablecimientoNoEncontradoError(NotFoundError):
 
     def __init__(self) -> None:
         super().__init__("Establecimiento no encontrado o sin acceso")
+
+
+class RenspaFormatoInvalidoError(ValidationError):
+    code = "renspa_formato_invalido"
+
+    def __init__(self, nro_renspa: str) -> None:
+        super().__init__(
+            f"El RENSPA '{nro_renspa}' no tiene el formato esperado (NN.NNN.N.NNNNN/NN)"
+        )
+
+
+class SuperficieInvalidaError(ValidationError):
+    code = "superficie_invalida"
+
+    def __init__(self) -> None:
+        super().__init__("La superficie debe ser mayor a cero")

@@ -10,10 +10,11 @@ import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up
 
 /// Bloc que coordina el alta online de una cuenta.
 ///
-/// El registro es online-only y no inicia sesion por si mismo. En el contrato
-/// actual crea la cuenta en backend y emite el [AppUser] confirmado para la
-/// pantalla de exito. Login queda como el unico flujo que persiste sesion,
-/// hidrata el token provider de Brick y ejecuta sync inicial.
+/// El registro es online-only. En el contrato actual crea la cuenta en
+/// backend, hidrata el token de Brick en memoria (para que la pantalla de
+/// exito pueda encadenar el registro del establecimiento sin pedir login) y
+/// emite el [AppUser] confirmado para la pantalla de exito. Login sigue
+/// siendo el unico flujo que persiste sesion local y ejecuta sync inicial.
 class SignUpBloc extends Bloc<SignUpEvent, SignUpState> {
   /// Crea el bloc con el caso de uso de registro.
   SignUpBloc({

@@ -61,6 +61,20 @@ async def test_registro_flujo_feliz_token_autentica(client):
 
 
 @pytest.mark.anyio
+async def test_registro_devuelve_sesion_completa(client):
+    """El registro devuelve refresh_token + expires_in, igual que /auth/login.
+
+    Necesario para que el cliente pueda seguir operando (p. ej. registrar su
+    establecimiento) sin pedir un login aparte apenas creada la cuenta.
+    """
+    resp = await client.post("/api/v1/usuarios/registro", json=_payload())
+    assert resp.status_code == 201
+    data = resp.json()["data"]
+    assert data["refresh_token"]
+    assert data["expires_in"] and data["expires_in"] > 0
+
+
+@pytest.mark.anyio
 async def test_registro_normaliza_cuit_con_guiones(client, session):
     """Un CUIT con guiones/espacios se normaliza a 11 dígitos y se persiste así."""
     resp = await client.post(

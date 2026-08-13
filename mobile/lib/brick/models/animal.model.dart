@@ -153,11 +153,17 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   final String localId;
 
   /// Numero de caravana RFID. Backend lo espera como `nro_caravana_rfid`.
-  @Rest(name: 'nro_caravana_rfid')
+  @Rest(
+    name: 'nro_caravana_rfid',
+    fromGenerator: 'brickStringFromBackend(%DATA_PROPERTY%)',
+  )
   final String rfidTagNumber;
 
   /// Caravana visual opcional mostrada al usuario.
-  @Rest(name: 'caravana_visual')
+  @Rest(
+    name: 'caravana_visual',
+    fromGenerator: 'brickStringFromBackend(%DATA_PROPERTY%)',
+  )
   final String visualTag;
 
   /// Sexo del animal, traducido a/desde el enum textual del backend.
@@ -169,15 +175,24 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   final BrickAnimalSex sex;
 
   /// Raza declarada al registrar el animal.
-  @Rest(name: 'raza')
+  @Rest(
+    name: 'raza',
+    fromGenerator: 'brickStringFromBackend(%DATA_PROPERTY%)',
+  )
   final String breed;
 
   /// Fecha de nacimiento. Para backend se serializa como fecha sin hora.
-  @Rest(name: 'fecha_nacimiento')
+  @Rest(
+    name: 'fecha_nacimiento',
+    fromGenerator: 'brickDateTimeFromBackend(%DATA_PROPERTY%)',
+  )
   final DateTime birthDate;
 
   /// ID backend de la categoria productiva.
-  @Rest(name: 'categoria_id')
+  @Rest(
+    name: 'categoria_id',
+    fromGenerator: 'brickStringFromBackend(%DATA_PROPERTY%)',
+  )
   final String categoryId;
 
   /// Nombre local de la categoria para mostrar en UI.
@@ -188,7 +203,10 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   final String categoryName;
 
   /// ID backend del lote/potrero.
-  @Rest(name: 'lote_id')
+  @Rest(
+    name: 'lote_id',
+    fromGenerator: 'brickStringFromBackend(%DATA_PROPERTY%)',
+  )
   final String lotId;
 
   /// Nombre local del lote para mostrar en UI.
@@ -203,7 +221,10 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   final String establishmentId;
 
   /// Peso inicial del animal.
-  @Rest(name: 'peso_inicial')
+  @Rest(
+    name: 'peso_inicial',
+    fromGenerator: 'brickNullableDoubleFromBackend(%DATA_PROPERTY%)',
+  )
   final double? initialWeight;
 
   /// Metodo usado para obtener el peso inicial.
@@ -354,6 +375,21 @@ double brickDoubleFromBackend(Object? value) {
   }
 
   return 0;
+}
+
+/// Convierte numeros opcionales del backend preservando la ausencia del dato.
+double? brickNullableDoubleFromBackend(Object? value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is num) {
+    return value.toDouble();
+  }
+  if (value is String) {
+    return double.tryParse(value);
+  }
+
+  return null;
 }
 
 /// Convierte strings opcionales del backend a strings locales seguros.

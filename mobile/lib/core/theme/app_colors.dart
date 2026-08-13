@@ -51,6 +51,22 @@ class AppColors {
   /// Borde neutro para inputs, cards y divisores suaves.
   static const border = Color(0xFFE1D3CF);
 
+  
+  /// Borde de chips.
+  static const chipBorder = Color(0xFFE0E0E0);
+
+  /// Borde para contenedores de validacion positiva.
+  static const borderPositiveContainer = Color(0xFF80CBC4);
+
+  /// Fondo para contenedores de validacion positiva.
+  static const backgroundPositiveContainer = Color(0xFFE0F2F1);
+
+  /// Color icono check
+  static const checkIcon = Color(0xFF00897B);
+
+  /// Color texto
+  static const positiveText = Color(0xFF004D40);
+
   /// Borde neutro para controles checkbox sin seleccionar.
   static const checkboxBorder = Color(0x42000000);
 
