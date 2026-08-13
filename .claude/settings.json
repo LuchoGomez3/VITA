@@ -20,7 +20,7 @@
       "Bash(PYTHONPATH=.:.. AUTH_PROVIDER=local .venv/bin/python -c \"from core.server import create_fastapi_app; app=create_fastapi_app\\(\\); print\\('app ok, rutas:', len\\(app.routes\\)\\)\")",
       "Bash(PYTHONPATH=.:.. .venv/bin/python -m pytest tests/test_establecimientos.py -q)",
       "Bash(PYTHONPATH=.:.. .venv/bin/python -m pytest tests/test_animales.py -q)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
       "Bash(PYTHONPATH=.:.. .venv/bin/python -m pytest tests/test_reportes.py -q)",
       "Bash(PYTHONPATH=.:.. AUTH_PROVIDER=local .venv/bin/python -c ' *)",
       "mcp__claude_ai_Linear__list_issues"
