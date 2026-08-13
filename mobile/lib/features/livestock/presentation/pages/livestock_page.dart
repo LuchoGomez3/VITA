@@ -69,6 +69,25 @@ class LivestockPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
+                      LivestockStrings.weighingTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    const Text(LivestockStrings.weighingDescription),
+                    const SizedBox(height: AppSpacing.md),
+                    AppFilledButton(
+                      label: LivestockStrings.weighingButton,
+                      onPressed: () => context.push(AppRoutes.weighing),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppSurfaceCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
                       LivestockStrings.fieldTitle,
                       style: Theme.of(context).textTheme.titleLarge,
                     ),

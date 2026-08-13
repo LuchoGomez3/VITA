@@ -77,6 +77,9 @@ class AppRoutes {
   /// Ruta de error del reporte SENASA.
   static const senasaReportError = '/senasa-report/error';
 
+  /// Ruta de la pantalla de pesaje en manga.
+  static const weighing = '/pesaje';
+
   /// Ruta del mapa de potreros.
   static const field = '/campo';
 
