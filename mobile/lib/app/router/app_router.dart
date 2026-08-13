@@ -43,6 +43,7 @@ import 'package:frontend_mayoral/features/senasa_report/senasa_report_compositio
 import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
+import 'package:frontend_mayoral/features/weighing/presentation/pages/weighing_page.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion del router de la app.
@@ -287,6 +288,10 @@ class AppRouter {
             onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.weighing,
+        builder: (context, state) => const WeighingPage(),
       ),
       GoRoute(
         path: AppRoutes.expenseRecords,

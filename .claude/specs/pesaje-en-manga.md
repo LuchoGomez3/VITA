@@ -67,9 +67,21 @@ tercera deshabilitada, más un `SnackBar`/overlay para el estado "guardado".
 
 ## Estado de la Etapa 1 (maquetado)
 
-_A completar en `feature/pantalla-pesaje` cuando se maquete la página._
+🧱 Maquetado en `feature/pantalla-pesaje`: `lib/features/weighing/` implementa
+`WeighingPage` (`StatefulWidget`) con las dos tabs habilitadas, numpad manual,
+pill de conexión, chip de GPD y toast de confirmación que avanza al siguiente
+animal del lote mock (`weighing_mock.dart`). Acceso vía atajo de desarrollo
+desde `livestock_page.dart`, ruta `/pesaje`.
+
 Introduce el widget compartido `AppEarTagBadge` en `core/widgets/` (caravana
-con color de plástico + número mono), reusado luego por Sanidad.
+con color de plástico + número mono), pensado para reusarse luego por
+Sanidad.
+
+**Diverge del diseño en un detalle de implementación, no de contenido**: en
+vez de `TabBar`/`TabBarView` se usa un selector segmentado propio
+(`WeighingTabSelector`), porque `TabBar` no soporta bien una tercera tab
+deshabilitada sin controller dedicado. El resultado visual (3 tabs, 2
+habilitadas) es el mismo.
 
 ## Explícitamente fuera de alcance de esta iniciativa
 
