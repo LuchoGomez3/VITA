@@ -20,4 +20,13 @@ abstract final class LivestockStrings {
 
   /// Boton para abrir el detalle de animal demo.
   static const animalDetailButton = 'Ver animal 012';
+
+  /// Titulo del acceso al mapa de potreros.
+  static const fieldTitle = 'Campo y potreros';
+
+  /// Descripcion del acceso al mapa de potreros.
+  static const fieldDescription = 'Consultá el mapa de potreros y la carga animal de cada uno.';
+
+  /// Boton para abrir el mapa de potreros.
+  static const fieldButton = 'Ver campo';
 }
