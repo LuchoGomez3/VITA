@@ -180,6 +180,7 @@ class AuthenticatedBackendClient extends http.BaseClient {
       ..writeln('[Backend HTTP] headers: ${_redactedHeaders(request.headers)}');
 
     if (request is http.Request && request.body.isNotEmpty) {
+      // TODO(team): Redactar o resumir payloads antes de probar con datos reales.
       buffer.writeln('[Backend HTTP] body: ${request.body}');
     }
 

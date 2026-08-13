@@ -27,11 +27,13 @@ void main() {
     });
 
     test(
-      'register hydrates the token provider in memory without persisting a local session',
+      'register persists the backend session and hydrates the token provider',
       () async {
         final repository = _createRepository(
           secureStorage: secureStorage,
           client: MockClient((request) async {
+            expect(request.url.path, '/api/v1/usuarios/registro');
+            expect(jsonDecode(request.body), containsPair('password', 'Password1'));
             return http.Response(
               jsonEncode({
                 'success': true,
@@ -60,14 +62,14 @@ void main() {
 
         switch (result) {
           case Success(:final data):
-            expect(data.email, 'ernesto@example.com');
-            expect(data.cuit, '20123456786');
+            expect(data.user.email, 'ernesto@example.com');
+            expect(data.user.cuit, '20123456786');
           case Failure(:final error):
             fail(error.message);
         }
         expect(
           await secureStorage.read(SecureStorageKeys.authSession),
-          isNull,
+          isNotNull,
         );
         expect(
           await SessionBackendAccessTokenProvider.instance.getAccessToken(),
@@ -185,7 +187,7 @@ void main() {
       );
     });
 
-    test('signOut clears secure storage and memory token', () async {
+    test('signOut revokes remotely and clears local session', () async {
       await secureStorage.write(
         key: SecureStorageKeys.authSession,
         value: 'stored-session',
@@ -200,7 +202,15 @@ void main() {
       final repository = _createRepository(
         secureStorage: secureStorage,
         client: MockClient((request) async {
-          fail('signOut must not call the backend.');
+          expect(request.url.path, '/api/auth/logout');
+          expect(request.headers['authorization'], 'Bearer jwt-token');
+          return http.Response(
+            jsonEncode({
+              'success': true,
+              'data': <String, Object?>{},
+            }),
+            200,
+          );
         }),
       );
 
@@ -210,6 +220,106 @@ void main() {
         await secureStorage.read(SecureStorageKeys.authSession),
         isNull,
       );
+      expect(
+        await SessionBackendAccessTokenProvider.instance.getAccessToken(),
+        isNull,
+      );
+    });
+
+    test('signOut clears local session when remote logout fails', () async {
+      await secureStorage.write(
+        key: SecureStorageKeys.authSession,
+        value: 'stored-session',
+      );
+      SessionBackendAccessTokenProvider.instance.session = BackendTokenSession(
+        accessToken: 'jwt-token',
+        refreshToken: 'refresh-token',
+        accessTokenExpiresAt: DateTime.now().toUtc().add(
+          const Duration(hours: 1),
+        ),
+      );
+      final repository = _createRepository(
+        secureStorage: secureStorage,
+        client: MockClient((request) async {
+          throw http.ClientException('No connection');
+        }),
+      );
+
+      await repository.signOut();
+
+      expect(await secureStorage.read(SecureStorageKeys.authSession), isNull);
+      expect(
+        await SessionBackendAccessTokenProvider.instance.getAccessToken(),
+        isNull,
+      );
+    });
+
+    test('signOut refreshes an expired token before remote logout', () async {
+      await secureStorage.write(
+        key: SecureStorageKeys.authSession,
+        value: jsonEncode({
+          'access_token': 'expired-token',
+          'refresh_token': 'refresh-token',
+          'access_token_expires_at': '2020-01-01T00:00:00.000Z',
+          'user_id': _userJson['id'],
+          'email': _userJson['email'],
+          'first_name': _userJson['nombre'],
+          'last_name': _userJson['apellido'],
+          'role': 'unknown',
+        }),
+      );
+      SessionBackendAccessTokenProvider.instance.session = BackendTokenSession(
+        accessToken: 'expired-token',
+        refreshToken: 'refresh-token',
+        accessTokenExpiresAt: DateTime.utc(2020),
+      );
+      final requestedPaths = <String>[];
+      final repository = _createRepository(
+        secureStorage: secureStorage,
+        client: MockClient((request) async {
+          requestedPaths.add(request.url.path);
+          if (request.url.path == '/api/auth/refresh') {
+            return http.Response(
+              jsonEncode({
+                'success': true,
+                'data': _sessionJson(
+                  accessToken: 'renewed-token',
+                  refreshToken: 'renewed-refresh-token',
+                ),
+              }),
+              200,
+            );
+          }
+          expect(request.url.path, '/api/auth/logout');
+          expect(request.headers['authorization'], 'Bearer renewed-token');
+          return http.Response(
+            jsonEncode({
+              'success': true,
+              'data': <String, Object?>{},
+            }),
+            200,
+          );
+        }),
+      );
+      SessionBackendAccessTokenProvider.instance.refreshCallback = (refreshToken) async {
+        final result = await repository.refreshSession(
+          refreshTokenOverride: refreshToken,
+        );
+        return switch (result) {
+          Success(:final data) => BackendTokenSession(
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+            accessTokenExpiresAt: data.accessTokenExpiresAt,
+          ),
+          Failure() => null,
+          _ => null,
+        };
+      };
+
+      await repository.signOut();
+
+      expect(requestedPaths, ['/api/auth/refresh', '/api/auth/logout']);
+      expect(await secureStorage.read(SecureStorageKeys.authSession), isNull);
       expect(
         await SessionBackendAccessTokenProvider.instance.getAccessToken(),
         isNull,

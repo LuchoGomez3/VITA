@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
-import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
@@ -9,7 +8,6 @@ import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart
 import 'package:frontend_mayoral/features/auth/domain/entities/registration_request.dart';
 import 'package:frontend_mayoral/features/auth/domain/repositories/auth_repository.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/register_user_use_case.dart';
-import 'package:frontend_mayoral/features/auth/domain/use_cases/sign_in_use_case.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_bloc.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/pages/sign_up_page.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/strings/sign_up_strings.dart';
@@ -21,16 +19,7 @@ void main() {
   ) async {
     final completionEvents = <String>[];
     final repository = _PageAuthRepository(
-      registrationResult: const Result.success(
-        AppUser(
-          id: 'user-id',
-          email: 'ana@example.com',
-          firstName: 'Ana',
-          lastName: 'Perez',
-          cuit: '20123456786',
-        ),
-      ),
-      signInResult: Result.success(_pageSession),
+      registrationResult: Result.success(_pageSession),
     );
     await _pumpPage(
       tester,
@@ -42,7 +31,6 @@ void main() {
 
     expect(find.text('ana@example.com'), findsOneWidget);
     expect(repository.registrationCalls, 1);
-    expect(repository.signInCalls, 1);
     expect(completionEvents, ['authenticated', 'navigated']);
   });
 
@@ -56,7 +44,6 @@ void main() {
           code: DomainErrorCode.offline,
         ),
       ),
-      signInResult: Result.success(_pageSession),
     );
     await _pumpPage(tester, repository);
     await _completeAndSubmitForm(tester);
@@ -74,7 +61,6 @@ void main() {
           code: DomainErrorCode.validation,
         ),
       ),
-      signInResult: Result.success(_pageSession),
     );
     await _pumpPage(tester, repository);
     await _completeAndSubmitForm(tester);
@@ -99,10 +85,6 @@ Future<void> _pumpPage(
         builder: (context, state) => SignUpPage(
           createBloc: () => SignUpBloc(
             registerUserUseCase: RegisterUserUseCase(repository),
-            signInUseCase: SignInUseCase(repository),
-            preparePostAuthentication: (_) async => Result.success(
-              const PostAuthenticationSummary(establishmentIds: []),
-            ),
           ),
           onAuthenticated: (_) => completionEvents?.add('authenticated'),
         ),
@@ -147,16 +129,13 @@ Future<void> _completeAndSubmitForm(WidgetTester tester) async {
 class _PageAuthRepository implements AuthRepository {
   _PageAuthRepository({
     required this.registrationResult,
-    required this.signInResult,
   });
 
-  final Result<AppUser> registrationResult;
-  final Result<AuthSession> signInResult;
+  final Result<AuthSession> registrationResult;
   int registrationCalls = 0;
-  int signInCalls = 0;
 
   @override
-  Future<Result<AppUser>> register({
+  Future<Result<AuthSession>> register({
     required RegistrationRequest request,
   }) async {
     registrationCalls += 1;
@@ -168,8 +147,7 @@ class _PageAuthRepository implements AuthRepository {
     required String email,
     required String password,
   }) async {
-    signInCalls += 1;
-    return signInResult;
+    return _unusedSessionResult();
   }
 
   @override

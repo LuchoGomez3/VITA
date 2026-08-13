@@ -22,7 +22,7 @@ Esta fase introduce el primer flujo real de sesion:
 - restauracion offline al abrir la app;
 - estado global de autenticacion con `AuthSessionCubit`;
 - hidratacion del token provider que usa Brick;
-- logout local;
+- logout remoto con limpieza local garantizada, incluso sin conexion;
 - proteccion central de arranque y rutas segun el estado de sesion;
 - pantallas de login y registro bajo `presentation`.
 
@@ -71,30 +71,24 @@ SignUpPage
   -> Backend /api/v1/usuarios/registro
 ```
 
-El registro es online-only. Si el backend confirma el alta, mobile inicia sesion
-automaticamente con las credenciales que siguen en memoria, persiste la sesion,
-hidrata el token provider de Brick y ejecuta la misma preparacion offline que el
-login manual. La password se limpia de la UI al terminar y nunca se persiste.
+El registro es online-only. En la misma respuesta del alta, el backend devuelve
+la sesion completa creada para el usuario. Mobile la persiste e hidrata el token
+provider de Brick sin volver a enviar el correo ni la password en una segunda
+solicitud. La password se limpia de la UI al terminar y nunca se persiste.
 
-Durante el proceso, la UI diferencia tres etapas y bloquea nuevos envios para
-evitar solicitudes duplicadas:
-
-1. registro de la cuenta;
-2. inicio automatico de sesion;
-3. preparacion de datos offline.
-
-La preparacion consulta los establecimientos asociados y guarda el catalogo
-local. Para un dueño nuevo, lo normal es que el resultado inicial sea una lista
-vacia; todavia no existen categorias, animales ni pesajes asociados para bajar.
+Durante el proceso, la UI mantiene el estado de registro ocupado hasta que la
+sesion devuelta queda persistida. Mientras tanto bloquea nuevos envios para
+evitar solicitudes duplicadas.
 
 Al finalizar se muestra una pantalla de confirmacion con dos acciones:
 
 - `Configurar mi establecimiento` abre el asistente del primer establecimiento;
 - `Ir al inicio` permite posponer esa configuracion y entrar a Home.
 
-La actualizacion del catalogo y la descarga de datos despues de crear el primer
-establecimiento pertenecen a `features/establishment_register`, porque ese paso
-solo puede ejecutarse cuando el establecimiento ya existe y tiene un ID.
+La sincronizacion de datos operativos no se ejecuta durante el registro porque
+un dueño nuevo todavia no tiene establecimientos, animales ni pesajes. El login
+manual conserva su preparacion offline para dispositivos que deben recuperar
+informacion existente.
 
 Si el backend responde al login con una sesion valida, `AuthRepositoryImpl`:
 
@@ -184,7 +178,7 @@ Casos cubiertos por tests:
 - validaciones locales de nombre, CUIT/CUIL, email y password;
 - boton de registro deshabilitado mientras el formulario es invalido;
 - registro seguido de inicio automatico de sesion;
-- estados de carga de registro, login y preparacion offline;
+- estados de carga de registro, login y preparacion offline del login;
 - bloqueo de solicitudes duplicadas;
 - limpieza de la password al completar el flujo;
 - navegacion desde la confirmacion al asistente o a Home.
@@ -204,11 +198,12 @@ no mezclarla con la integracion de sesion.
 
 ## Fases futuras
 
-### Politica multiusuario y logout
+### Politica multiusuario
 
-La fase actual no borra SQLite/Brick al cerrar sesion. Antes de hacerlo hay que
-definir que pasa con datos locales pendientes de sincronizar y con el caso de
-otro usuario iniciando sesion en el mismo dispositivo.
+El logout revoca la sesion remota cuando hay conexion y siempre elimina tokens
+del almacenamiento seguro y de memoria. No borra SQLite/Brick: antes de hacerlo
+hay que definir que pasa con datos locales pendientes de sincronizar y con el
+caso de otro usuario iniciando sesion en el mismo dispositivo.
 
 ### Payloads mas estrictos
 

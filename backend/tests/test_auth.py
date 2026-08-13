@@ -1,6 +1,7 @@
 import pytest
 
 from api.auth.providers.local_provider import LocalAuthProvider
+from core.config import settings
 
 
 @pytest.mark.anyio
@@ -28,6 +29,27 @@ async def test_me_con_token_invalido_devuelve_401(client):
     resp = await client.get(
         "/api/auth/me", headers={"Authorization": "Bearer no-es-un-token"}
     )
+    assert resp.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_me_no_acepta_token_por_query(client, usuario_actual):
+    token = LocalAuthProvider().create_token_for(usuario_actual.id)
+
+    resp = await client.get(f"/api/auth/me?token={token}")
+
+    assert resp.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_me_no_acepta_refresh_token_como_bearer(client, usuario_actual):
+    refresh_token = LocalAuthProvider().create_refresh_token_for(usuario_actual.id)
+
+    resp = await client.get(
+        "/api/auth/me",
+        headers={"Authorization": f"Bearer {refresh_token}"},
+    )
+
     assert resp.status_code == 401
 
 
@@ -105,3 +127,40 @@ async def test_refresh_invalido_devuelve_401(client, usuario_actual):
         "/api/auth/refresh", json={"refresh_token": "no-es-un-token"}
     )
     assert resp2.status_code == 401
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("path", "payload", "setting_name"),
+    [
+        ("/api/v1/usuarios/registro", {}, "AUTH_REGISTRATION_RATE_LIMIT"),
+        ("/api/auth/login", {}, "AUTH_LOGIN_RATE_LIMIT"),
+        ("/api/auth/refresh", {}, "AUTH_REFRESH_RATE_LIMIT"),
+    ],
+)
+async def test_endpoints_auth_aplican_rate_limit(
+    client,
+    monkeypatch,
+    path,
+    payload,
+    setting_name,
+):
+    monkeypatch.setattr(settings, setting_name, 1)
+
+    await client.post(path, json=payload)
+    limited = await client.post(path, json=payload)
+
+    assert limited.status_code == 429
+
+
+@pytest.mark.anyio
+async def test_logout_requiere_sesion_y_acepta_token_valido(client, usuario_actual):
+    without_token = await client.post("/api/auth/logout")
+    token = LocalAuthProvider().create_token_for(usuario_actual.id)
+    with_token = await client.post(
+        "/api/auth/logout",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert without_token.status_code == 401
+    assert with_token.status_code == 200

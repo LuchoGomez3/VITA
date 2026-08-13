@@ -23,6 +23,7 @@ from api.auth.providers.base import (
     AuthProvider,
     AuthProviderError,
     AuthResult,
+    IdentityAlreadyExistsError,
     InvalidCredentialsError,
 )
 from core.config import settings
@@ -95,38 +96,117 @@ def _get_admin_client():
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
 
 
+def _create_public_client():
+    """Crea un cliente aislado para autenticar a un usuario final.
+
+    No se cachea porque ``supabase-py`` conserva la sesion dentro del cliente.
+    Compartirlo entre requests podria mezclar sesiones y nunca debe reemplazar
+    la identidad del cliente administrativo.
+    """
+    from supabase import create_client
+
+    if not settings.SUPABASE_URL or not settings.SUPABASE_ANON_KEY:
+        raise AuthProviderError(
+            "Supabase no está configurado (SUPABASE_URL / SUPABASE_ANON_KEY)"
+        )
+    return create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
+
+
 class SupabaseAuthProvider(AuthProvider):
     async def sign_up(self, email: str, password: str) -> AuthResult:
         return await anyio.to_thread.run_sync(self._sign_up_sync, email, password)
 
     def _sign_up_sync(self, email: str, password: str) -> AuthResult:
-        client = _get_admin_client()
+        admin_client = _get_admin_client()
+        user_id: UUID | None = None
         try:
-            created = client.auth.admin.create_user(
+            created = admin_client.auth.admin.create_user(
                 {"email": email, "password": password, "email_confirm": True}
             )
             user = getattr(created, "user", None) or created
             user_id = UUID(str(user.id))
 
             # Iniciar sesión para devolver un token de sesión al cliente.
-            session = client.auth.sign_in_with_password(
+            # Un cliente publico aislado evita reemplazar la service-role del
+            # cliente administrativo con la sesion del usuario recien creado.
+            session = _create_public_client().auth.sign_in_with_password(
                 {"email": email, "password": password}
             )
-        except AuthProviderError:
-            raise
+            return _result_from_session(user_id, session.session)
         except Exception as exc:  # red / API de Supabase
+            if user_id is not None:
+                try:
+                    admin_client.auth.admin.delete_user(str(user_id))
+                except Exception:
+                    logger.exception(
+                        "[AUTH] No se pudo compensar la credencial %s tras fallar sign_up",
+                        user_id,
+                    )
+            if isinstance(exc, AuthProviderError):
+                raise
+            if getattr(exc, "code", None) in {
+                "email_exists",
+                "identity_already_exists",
+                "user_already_exists",
+            }:
+                raise IdentityAlreadyExistsError() from exc
             logger.error("[AUTH] Supabase sign_up falló: %s", exc, exc_info=True)
             raise AuthProviderError(
                 "No se pudo crear el usuario en el proveedor de identidad"
             ) from exc
 
-        return _result_from_session(user_id, session.session)
-
     async def sign_in(self, email: str, password: str) -> AuthResult:
         return await anyio.to_thread.run_sync(self._sign_in_sync, email, password)
 
+    async def delete_user(self, user_id: UUID) -> None:
+        """Elimina credenciales mediante el cliente administrativo aislado."""
+        await anyio.to_thread.run_sync(self._delete_user_sync, user_id)
+
+    def _delete_user_sync(self, user_id: UUID) -> None:
+        try:
+            _get_admin_client().auth.admin.delete_user(str(user_id))
+        except Exception as exc:
+            logger.error(
+                "[AUTH] Supabase delete_user falló para %s: %s",
+                user_id,
+                exc,
+                exc_info=True,
+            )
+            raise AuthProviderError(
+                "No se pudo eliminar el usuario del proveedor de identidad"
+            ) from exc
+
+    async def sign_out(self, access_token: str) -> None:
+        """Revoca en Supabase todas las sesiones del usuario autenticado."""
+        await anyio.to_thread.run_sync(self._sign_out_sync, access_token)
+
+    def _sign_out_sync(self, access_token: str) -> None:
+        if not settings.SUPABASE_URL or not settings.SUPABASE_ANON_KEY:
+            raise AuthProviderError(
+                "Supabase no está configurado (SUPABASE_URL / SUPABASE_ANON_KEY)"
+            )
+        try:
+            response = httpx.post(
+                f"{settings.SUPABASE_URL.rstrip('/')}/auth/v1/logout?scope=global",
+                headers={
+                    "apikey": settings.SUPABASE_ANON_KEY,
+                    "Authorization": f"Bearer {access_token}",
+                },
+                timeout=10,
+            )
+        except Exception as exc:
+            logger.error("[AUTH] Supabase logout falló (red): %s", exc)
+            raise AuthProviderError("No se pudo cerrar la sesión en Supabase") from exc
+        if response.status_code >= 400:
+            logger.error(
+                "[AUTH] Supabase logout respondió %s: %s",
+                response.status_code,
+                response.text,
+            )
+            raise AuthProviderError("No se pudo cerrar la sesión en Supabase")
+
     def _sign_in_sync(self, email: str, password: str) -> AuthResult:
-        client = _get_admin_client()
+        client = _create_public_client()
         try:
             session = client.auth.sign_in_with_password(
                 {"email": email, "password": password}
@@ -219,6 +299,7 @@ class SupabaseAuthProvider(AuthProvider):
                 key,
                 algorithms=[alg],
                 audience="authenticated",
+                issuer=f"{settings.SUPABASE_URL.rstrip('/')}/auth/v1",
             )
         except JWTError as exc:
             raise AuthProviderError("Token inválido o expirado") from exc

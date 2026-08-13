@@ -73,18 +73,14 @@ LoginBloc createLoginBloc() {
 
 /// Crea el bloc local de la pantalla de registro.
 ///
-/// El registro crea la cuenta, inicia sesion y prepara los datos locales usando
-/// la misma operacion post-autenticacion que el login manual.
+/// El registro crea la cuenta e inicia una sesion persistida automaticamente.
+/// La preparacion de datos offline queda reservada para el login manual.
 SignUpBloc createSignUpBloc() {
   final client = http.Client();
   final repository = _createAuthRepository(client);
 
   return SignUpBloc(
     registerUserUseCase: RegisterUserUseCase(repository),
-    signInUseCase: SignInUseCase(repository),
-    preparePostAuthentication: createPrepareInitialDataSyncUseCase(
-      client: client,
-    ).call,
     onClose: client.close,
   );
 }

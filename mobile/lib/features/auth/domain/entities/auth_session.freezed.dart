@@ -32,10 +32,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,user,accessToken,refreshToken,accessTokenExpiresAt);
 
-@override
-String toString() {
-  return 'AuthSession(user: $user, accessToken: $accessToken, refreshToken: $refreshToken, accessTokenExpiresAt: $accessTokenExpiresAt)';
-}
 
 
 }
@@ -217,8 +213,8 @@ return $default(_that.user,_that.accessToken,_that.refreshToken,_that.accessToke
 /// @nodoc
 
 
-class _AuthSession implements AuthSession {
-  const _AuthSession({required this.user, required this.accessToken, required this.refreshToken, required this.accessTokenExpiresAt});
+class _AuthSession extends AuthSession {
+  const _AuthSession({required this.user, required this.accessToken, required this.refreshToken, required this.accessTokenExpiresAt}): super._();
   
 
 @override final  AppUser user;
@@ -243,10 +239,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,user,accessToken,refreshToken,accessTokenExpiresAt);
 
-@override
-String toString() {
-  return 'AuthSession(user: $user, accessToken: $accessToken, refreshToken: $refreshToken, accessTokenExpiresAt: $accessTokenExpiresAt)';
-}
 
 
 }

@@ -8,6 +8,7 @@ from api.modules.usuarios.schemas import UsuarioRegistroCreate
 from api.modules.usuarios.service import UsuarioService
 from api.shared.schemas import StandardResponse
 from database.database import get_session
+from core.auth_rate_limit import limit_registration
 
 router = APIRouter(prefix="/v1/usuarios", tags=["usuarios"])
 
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/v1/usuarios", tags=["usuarios"])
     "/registro",
     response_model=StandardResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(limit_registration)],
 )
 async def registrar_usuario(
     data: UsuarioRegistroCreate,

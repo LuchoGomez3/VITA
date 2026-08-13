@@ -174,12 +174,6 @@ class _SignUpViewState extends State<_SignUpView> {
         final session = state.session!;
         FocusManager.instance.primaryFocus?.unfocus();
         _passwordController.clear();
-        final preparationError = state.preparationError;
-        if (preparationError != null) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(preparationError.message)));
-        }
         final onAuthenticated = widget.onAuthenticated;
         if (onAuthenticated == null) {
           context.read<AuthSessionCubit>().setAuthenticated(session);
@@ -201,15 +195,13 @@ class _SignUpViewState extends State<_SignUpView> {
           ..showSnackBar(
             SnackBar(content: Text(error.message)),
           );
-      case SignUpStage.idle || SignUpStage.registering || SignUpStage.signingIn || SignUpStage.preparingOfflineData:
+      case SignUpStage.idle || SignUpStage.registering:
         break;
     }
   }
 
   String _loadingLabel(SignUpStage stage) {
     return switch (stage) {
-      SignUpStage.signingIn => SignUpStrings.signingInButton,
-      SignUpStage.preparingOfflineData => SignUpStrings.preparingOfflineDataButton,
       SignUpStage.idle ||
       SignUpStage.registering ||
       SignUpStage.success ||

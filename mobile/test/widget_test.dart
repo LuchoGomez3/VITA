@@ -33,7 +33,7 @@ void main() {
 
 class _PendingRestoreAuthRepository implements AuthRepository {
   @override
-  Future<Result<AppUser>> register({
+  Future<Result<AuthSession>> register({
     required RegistrationRequest request,
   }) {
     return Future.value(

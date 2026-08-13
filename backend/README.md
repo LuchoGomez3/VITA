@@ -65,3 +65,45 @@ Demo user: `admin` / `admin`.
 
 ## Tests
 - Todo: units (auth) and integration (httpx/pytest-asyncio).
+
+## Pendientes de despliegue
+
+- TODO(equipo): Ejecutar `scripts/agregar_unicidad_usuarios.sql` en Supabase
+  antes de desplegar los cambios de registro. El script normaliza los correos y
+  crea los indices unicos `uq_usuarios_email` y `uq_usuarios_cuit`.
+
+## Protección de autenticación
+
+Registro, login y refresh tienen límites independientes por IP dentro de una
+ventana configurable mediante `AUTH_*_RATE_LIMIT`. El almacenamiento de los
+contadores es local al proceso porque el despliegue actual utiliza un solo
+worker; antes de escalar horizontalmente debe reemplazarse por Redis.
+
+`POST /api/auth/logout` requiere un access token válido y revoca globalmente
+las sesiones del usuario en Supabase. Mobile intenta esa revocación y siempre
+elimina la sesión local, para que cerrar sesión siga funcionando sin conexión.
+
+## Configuración segura de staging y producción
+
+El backend no inicia fuera de local/test si faltan `DATABASE_URL`,
+`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, el proveedor
+de autenticación no es Supabase o CORS conserva un comodín/origen HTTP. Los
+orígenes web permitidos se declaran separados por comas, por ejemplo:
+
+```env
+CORS_ALLOW_ORIGINS=https://app.vita.example,https://admin.vita.example
+```
+
+En staging/production, las solicitudes HTTP se redirigen a HTTPS. El proxy de
+despliegue debe informar correctamente el esquema original mediante sus
+encabezados reenviados para evitar redirecciones repetidas. Sus IPs o CIDRs
+deben declararse explícitamente; el backend rechaza confiar en cualquier origen:
+
+```env
+FORWARDED_ALLOW_IPS=127.0.0.1,10.0.0.0/8
+```
+
+Los valores reales dependen de la red del proveedor de despliegue.
+
+`SessionMiddleware` fue eliminado porque VITA usa tokens Bearer y ningún
+endpoint utiliza sesiones basadas en cookies.

@@ -99,7 +99,7 @@ class _LoginAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<Result<AppUser>> register({required RegistrationRequest request}) => throw UnimplementedError();
+  Future<Result<AuthSession>> register({required RegistrationRequest request}) => throw UnimplementedError();
 
   @override
   Future<Result<AuthSession>> restoreSession() => throw UnimplementedError();

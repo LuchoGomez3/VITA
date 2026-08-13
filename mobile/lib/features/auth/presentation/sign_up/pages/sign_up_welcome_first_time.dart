@@ -41,16 +41,8 @@ class _AppLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Image.asset(
-          WelcomeStrings.logoAsset,
-          width: 96,
-          height: 96,
-          fit: BoxFit.cover,
-        ),
-      ),
+    return const Center(
+      child: AppLogo(),
     );
   }
 }

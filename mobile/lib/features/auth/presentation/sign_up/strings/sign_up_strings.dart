@@ -2,11 +2,8 @@
 class WelcomeStrings {
   const WelcomeStrings._();
 
-  /// Ruta del icono de la aplicacion mostrado en la bienvenida.
-  static const logoAsset = 'assets/images/app_icon.png';
-
   /// Titulo principal de la pantalla de bienvenida.
-  static const title = 'Mayoral';
+  static const title = 'VITA';
 
   /// Subtitulo de la pantalla de bienvenida.
   static const subtitle = 'Trazabilidad ganadera para productores de Córdoba. Funciona también sin señal en el campo.';
@@ -126,11 +123,7 @@ class SignUpStrings {
   static const registeringButton = 'Registrando cuenta...';
 
   /// Texto mostrado durante el inicio automatico de sesion.
-  static const signingInButton = 'Iniciando sesión...';
-
   /// Texto mostrado mientras se preparan los datos locales.
-  static const preparingOfflineDataButton = 'Preparando datos offline...';
-
   /// Prefijo del saludo mostrado al completar el registro.
   static const successWelcomePrefix = '¡Bienvenido ';
 
