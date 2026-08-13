@@ -77,7 +77,7 @@ sólo el resumen de estado.
 
 | Pantalla (diseño) | Estado | Offline | Dónde vive / notas |
 |---|---|---|---|
-| AnimalListScreen | 🎨 | — | No implementada. Hoy se llega a la ficha de un animal por un id hardcodeado desde el menú de desarrollo en `home_page.dart`, no hay listado real. |
+| AnimalListScreen | 🎨 | — | No implementada. Hoy se llega a la ficha de un animal por un id hardcodeado desde un atajo de desarrollo en `livestock_page.dart`, no hay listado real. |
 | AnimalFichaGeneral/Pesajes/Genealogía/Sanidad/Movimientos (5 tabs) | 🔌 (parcial, ver nota) | Lectura vía backend real (`animal_detail_remote_data_source.dart`) | Implementada como **una sola pantalla con scroll** (`animal_detail_page.dart`: header + grilla de datos + historial de eventos + gráfico de GPD), no como 5 tabs separados del diseño. Diverge del diseño en layout, no en contenido — evaluar si conviene migrar a tabs o dejarlo así. |
 | AnimalAltaLectura (Bluetooth) / AnimalAltaManual / AnimalAltaLecturaOK | ✅ (parcial, ver nota) | Offline-first (Brick) | Las variantes Bluetooth y manual están unificadas en un solo `register_animal_identification_step.dart`, no como pantallas separadas. **Falta lectura OCR de caravana visual** (CLAUDE.md la exige como método de lectura válido junto a Bluetooth/manual) — no está ni en este diseño ni en el código. |
 | AnimalAltaDatos (paso 2) | ✅ | Offline-first | `register_animal_basic_data_step.dart` |
@@ -85,21 +85,26 @@ sólo el resumen de estado.
 | AnimalAltaRevisar (paso 4) | ✅ | Offline-first | `register_animal_review_step.dart` |
 | AnimalAltaExito | 🔌 | Offline-first | Persiste vía `AnimalRegistrationRepositoryImpl` + `BrickAnimalStore` (guardado local, encolado para sync). El contexto de registro (establecimiento/lote/madre/padre) sigue resuelto por un mock (`AnimalRegistrationMockContext`) pendiente de sesión/catálogos reales. |
 
-## Pendientes sin ningún código todavía
+## En progreso — cubierto por PRs abiertos
 
-Estos flujos tienen diseño completo en Claude Design pero **ninguna carpeta
-en `lib/features/` todavía** (confirmado: sólo existen `animal_detail`,
-`animal_register`, `auth`, `establishment_register`, `home`, `sync`). Son los
-candidatos naturales para la próxima pantalla a construir.
-
-| Flujo | Archivo de diseño | Pantallas | Offline (a definir) |
+| Flujo | Archivo de diseño | Pantallas | Estado |
 |---|---|---|---|
-| Campo / potreros (mapa, lista, detalle) | `screens-campo.jsx` | 3 | Probablemente offline-first (dato productivo de campo) |
-| Dashboard (Capataz y Owner) | `screens-dashboard.jsx` | 2 | Offline-first (KPIs desde datos ya sincronizados). `home_page.dart` hoy es sólo un menú de atajos de desarrollo, marcado explícitamente por el equipo como no-definitivo (`// TODO:Agus: Esto no va, es solo un mock para la demo.`) |
-| Pesaje en manga (Bluetooth/Manual/Foto) | `screens-pesaje.jsx` | 3 + 1 shell | Offline-first (captura en el campo, sin conectividad) |
-| Sanidad (vacunaciones/tratamientos/alertas/aplicar) | `screens-sanidad.jsx` | 4 | Offline-first |
-| Reportes SENASA (wizard de generación) | `screens-senasa.jsx` | 6 | Requiere sincronización previa; wizard en sí probablemente online-only para la exportación final |
-| Gestión de archivos SENASA + Equipo + Sync + Ajustes | `screens-other.jsx` (menos `MercadoScreen`, ver abajo) | 6 | Mixto: Equipo/Ajustes probablemente online-only (afectan otros usuarios/roles); Sync es la UI que falta para el motor de sync que ya existe en `lib/features/sync` |
+| Reportes SENASA (wizard de generación) | `screens-senasa.jsx` | 6 | 🔌 Cubierto por el PR #32 (`feature/senasa-reporte-frontend`, abierto): `lib/features/senasa_report/` implementa el wizard de 3 pasos + loading + éxito/error, con generación real de CSV/PDF. También cubre el equivalente de `SenasaScreen`/`SenasaConfirm` de `screens-other.jsx` (`senasa_menu_page.dart`). No se vuelve a maquetar en ninguna otra iniciativa. |
+| Dashboard (Capataz y Owner) | `screens-dashboard.jsx` | 2 | 🔌 (parcial). `home_page.dart` ya es un dashboard real (`HomeDashboardCubit` + `home_page.dart`), no el menú de atajos de desarrollo que tenía antes (eso se movió a `livestock_page.dart`). Pendiente evaluar si el layout actual cubre las 2 variantes por rol del diseño. |
+
+## Pendientes sin ningún código todavía — cubiertos por esta iniciativa
+
+Detalle completo de campos, secciones y datos mock por flujo en su spec
+dedicado (mismo criterio que `registrar-establecimiento.md`).
+
+| Flujo | Spec | Archivo de diseño | Pantallas | Offline |
+|---|---|---|---|---|
+| Campo / potreros (mapa, lista, detalle) | [`campo-y-potreros.md`](./campo-y-potreros.md) | `screens-campo.jsx` | 3 | Probablemente offline-first (dato productivo de campo), a confirmar en Etapa 3 |
+| Pesaje en manga (Bluetooth/Manual/Foto) | [`pesaje-en-manga.md`](./pesaje-en-manga.md) | `screens-pesaje.jsx` | 3 (una sola página con tabs) | Offline-first (captura en el campo, sin conectividad) |
+| Sanidad (vacunaciones/tratamientos/alertas/aplicar) | [`sanidad.md`](./sanidad.md) | `screens-sanidad.jsx` | 4 | Offline-first |
+| Gestión de equipo | [`gestion-de-equipo.md`](./gestion-de-equipo.md) | `screens-other.jsx` | 2 | Probablemente online-only (afecta permisos de otro usuario), a confirmar |
+| Sincronización | [`sincronizacion.md`](./sincronizacion.md) | `screens-other.jsx` | 1 | Es la UI del motor de sync que ya existe en `lib/features/sync` |
+| Ajustes (secciones nuevas sobre `ProfilePage`) | [`ajustes.md`](./ajustes.md) | `screens-other.jsx` | Extiende 1 pantalla existente | No aplica (son datos de preferencias/dispositivos, sin sync) |
 
 ## Explícitamente fuera de alcance
 
