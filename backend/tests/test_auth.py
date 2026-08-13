@@ -20,6 +20,7 @@ async def test_me_con_token_valido(client, usuario_actual):
     data = resp.json()["data"]
     assert data["id"] == str(usuario_actual.id)
     assert data["email"] == usuario_actual.email
+    assert data["cuit"] == usuario_actual.cuit
 
 
 @pytest.mark.anyio
@@ -51,6 +52,7 @@ async def test_refresh_devuelve_sesion_nueva(client, usuario_actual):
     assert data["expires_in"] > 0
     assert data["token_type"] == "bearer"
     assert data["usuario"]["id"] == str(usuario_actual.id)
+    assert data["usuario"]["cuit"] == usuario_actual.cuit
 
     # El access token renovado debe autenticar /auth/me.
     me = await client.get(
@@ -89,6 +91,7 @@ async def test_login_incluye_refresh_token(app, usuario_actual):
     assert data["access_token"]
     assert data["refresh_token"]
     assert data["expires_in"] == 3600
+    assert data["usuario"]["cuit"] == usuario_actual.cuit
 
 
 @pytest.mark.anyio

@@ -172,6 +172,7 @@ class _SignUpViewState extends State<_SignUpView> {
     switch (state.stage) {
       case SignUpStage.success:
         final session = state.session!;
+        FocusManager.instance.primaryFocus?.unfocus();
         _passwordController.clear();
         final preparationError = state.preparationError;
         if (preparationError != null) {
@@ -179,18 +180,13 @@ class _SignUpViewState extends State<_SignUpView> {
             ..hideCurrentSnackBar()
             ..showSnackBar(SnackBar(content: Text(preparationError.message)));
         }
-        context.go(
-          AppRoutes.signUpSuccessFor(
-            hasEstablishments: state.preparationSummary?.hasEstablishments ?? false,
-          ),
-          extra: session.user,
-        );
         final onAuthenticated = widget.onAuthenticated;
         if (onAuthenticated == null) {
           context.read<AuthSessionCubit>().setAuthenticated(session);
         } else {
           onAuthenticated(session);
         }
+        context.go(AppRoutes.signUpSuccess, extra: session.user);
       case SignUpStage.failure:
         if (state.accountCreated) {
           _passwordController.clear();

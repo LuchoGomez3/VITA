@@ -16,33 +16,10 @@ import 'package:frontend_mayoral/features/auth/presentation/sign_up/strings/sign
 import 'package:go_router/go_router.dart';
 
 void main() {
-  testWidgets('navigates to success without establishments after registration', (
+  testWidgets('navigates to success after registration', (
     tester,
   ) async {
-    final repository = _PageAuthRepository(
-      registrationResult: const Result.success(
-        AppUser(
-          id: 'user-id',
-          email: 'ana@example.com',
-          firstName: 'Ana',
-          lastName: 'Perez',
-          cuit: '20123456786',
-        ),
-      ),
-      signInResult: Result.success(_pageSession),
-    );
-    await _pumpPage(tester, repository);
-    await _completeAndSubmitForm(tester);
-    await tester.pumpAndSettle();
-
-    expect(find.text('ana@example.com|false'), findsOneWidget);
-    expect(repository.registrationCalls, 1);
-    expect(repository.signInCalls, 1);
-  });
-
-  testWidgets('forwards existing establishments to the success destination', (
-    tester,
-  ) async {
+    final completionEvents = <String>[];
     final repository = _PageAuthRepository(
       registrationResult: const Result.success(
         AppUser(
@@ -58,12 +35,15 @@ void main() {
     await _pumpPage(
       tester,
       repository,
-      establishmentIds: const ['establishment-id'],
+      completionEvents: completionEvents,
     );
     await _completeAndSubmitForm(tester);
     await tester.pumpAndSettle();
 
-    expect(find.text('ana@example.com|true'), findsOneWidget);
+    expect(find.text('ana@example.com'), findsOneWidget);
+    expect(repository.registrationCalls, 1);
+    expect(repository.signInCalls, 1);
+    expect(completionEvents, ['authenticated', 'navigated']);
   });
 
   testWidgets('shows the offline modal when registration has no connection', (
@@ -108,7 +88,7 @@ void main() {
 Future<void> _pumpPage(
   WidgetTester tester,
   _PageAuthRepository repository, {
-  List<String> establishmentIds = const [],
+  List<String>? completionEvents,
 }) async {
   late final GoRouter router;
   router = GoRouter(
@@ -121,21 +101,19 @@ Future<void> _pumpPage(
             registerUserUseCase: RegisterUserUseCase(repository),
             signInUseCase: SignInUseCase(repository),
             preparePostAuthentication: (_) async => Result.success(
-              PostAuthenticationSummary(
-                establishmentIds: establishmentIds,
-              ),
+              const PostAuthenticationSummary(establishmentIds: []),
             ),
           ),
-          onAuthenticated: (_) {},
+          onAuthenticated: (_) => completionEvents?.add('authenticated'),
         ),
       ),
       GoRoute(
         path: AppRoutes.signUpSuccess,
         builder: (context, state) {
+          completionEvents?.add('navigated');
           final userData = state.extra! as AppUser;
-          final hasEstablishments = state.uri.queryParameters['hasEstablishments'] == 'true';
           return Scaffold(
-            body: Text('${userData.email}|$hasEstablishments'),
+            body: Text(userData.email),
           );
         },
       ),

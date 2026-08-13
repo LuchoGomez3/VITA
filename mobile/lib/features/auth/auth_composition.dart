@@ -1,5 +1,6 @@
 import 'package:frontend_mayoral/app/config/config.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
+import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -48,6 +49,7 @@ AuthSessionCubit createAuthSessionCubit() {
   return AuthSessionCubit(
     restoreSessionUseCase: RestoreSessionUseCase(repository),
     signOutUseCase: SignOutUseCase(repository),
+    authRejections: AppBrickRepository.instance.authRejections,
     onClose: client.close,
   );
 }

@@ -218,6 +218,40 @@ void main() {
       expect(results.single.errorCode, 'auth_error');
       expect(SessionBackendAccessTokenProvider.instance.accessToken, isNull);
     });
+
+    test('notifies auth rejection when backend returns 401', () async {
+      var rejectionCount = 0;
+      final client = AuthenticatedBackendClient(
+        tokenProvider: const _FakeTokenProvider('jwt-token'),
+        onSyncResult: (_) async {},
+        onUnauthorized: () async => rejectionCount++,
+        inner: MockClient((_) async => http.Response('unauthorized', 401)),
+      );
+
+      final response = await client.get(
+        Uri.parse('http://localhost:8000/api/v1/categorias'),
+      );
+
+      expect(response.statusCode, 401);
+      expect(rejectionCount, 1);
+    });
+
+    test('does not reject auth for non-401 backend errors', () async {
+      var rejectionCount = 0;
+      final client = AuthenticatedBackendClient(
+        tokenProvider: const _FakeTokenProvider('jwt-token'),
+        onSyncResult: (_) async {},
+        onUnauthorized: () async => rejectionCount++,
+        inner: MockClient((_) async => http.Response('server error', 503)),
+      );
+
+      final response = await client.get(
+        Uri.parse('http://localhost:8000/api/v1/categorias'),
+      );
+
+      expect(response.statusCode, 503);
+      expect(rejectionCount, 0);
+    });
   });
 }
 

@@ -23,14 +23,13 @@ Esta fase introduce el primer flujo real de sesion:
 - estado global de autenticacion con `AuthSessionCubit`;
 - hidratacion del token provider que usa Brick;
 - logout local;
-- pantalla tecnica inicial para decidir si mostrar welcome publica o entrar a
-  la app;
+- proteccion central de arranque y rutas segun el estado de sesion;
 - pantallas de login y registro bajo `presentation`.
 
-No implementa guards completos por ruta ni borrado de bases Brick al cerrar
-sesion. Esas decisiones quedan documentadas en [Fases futuras](#fases-futuras).
-La preparacion masiva de tablas offline vive en `features/sync`; auth solo la
-coordina despues de un login exitoso.
+No implementa el borrado de bases Brick al cerrar sesion. Esa decision queda
+documentada en [Fases futuras](#fases-futuras). La preparacion masiva de tablas
+offline vive en `features/sync`; auth solo la coordina despues de una
+autenticacion exitosa.
 
 ## Capas
 
@@ -58,8 +57,8 @@ inyectado desde la composicion. Ese callback delega en `features/sync` para
 descargar los datos necesarios para operar offline. Ese paso no pertenece al
 dominio de auth: auth obtiene y persiste sesion; sync prepara datos de negocio
 locales. El callback devuelve los IDs de establecimientos disponibles. Login
-conserva ese resumen y registro podra reutilizarlo para decidir entre Home y el
-asistente del primer establecimiento sin duplicar la consulta.
+conserva ese resumen para que otras partes de la aplicacion puedan conocer el
+alcance preparado para la sesion sin duplicar la consulta.
 
 ## Flujo de registro
 
@@ -76,6 +75,26 @@ El registro es online-only. Si el backend confirma el alta, mobile inicia sesion
 automaticamente con las credenciales que siguen en memoria, persiste la sesion,
 hidrata el token provider de Brick y ejecuta la misma preparacion offline que el
 login manual. La password se limpia de la UI al terminar y nunca se persiste.
+
+Durante el proceso, la UI diferencia tres etapas y bloquea nuevos envios para
+evitar solicitudes duplicadas:
+
+1. registro de la cuenta;
+2. inicio automatico de sesion;
+3. preparacion de datos offline.
+
+La preparacion consulta los establecimientos asociados y guarda el catalogo
+local. Para un dueño nuevo, lo normal es que el resultado inicial sea una lista
+vacia; todavia no existen categorias, animales ni pesajes asociados para bajar.
+
+Al finalizar se muestra una pantalla de confirmacion con dos acciones:
+
+- `Configurar mi establecimiento` abre el asistente del primer establecimiento;
+- `Ir al inicio` permite posponer esa configuracion y entrar a Home.
+
+La actualizacion del catalogo y la descarga de datos despues de crear el primer
+establecimiento pertenecen a `features/establishment_register`, porque ese paso
+solo puede ejecutarse cuando el establecimiento ya existe y tiene un ID.
 
 Si el backend responde al login con una sesion valida, `AuthRepositoryImpl`:
 
@@ -125,6 +144,11 @@ registro son las excepciones al offline-first porque ambos requieren internet:
 registro para crear la cuenta en backend, login para obtener una sesion inicial
 valida.
 
+Los redirects centrales impiden acceder a rutas privadas sin sesion. Mientras
+se restaura secure storage se muestra la ruta tecnica de chequeo; con una sesion
+valida se habilita la experiencia interna y sin sesion se vuelve al flujo
+publico de autenticacion.
+
 ## Como Brick obtiene el token
 
 Brick no conoce `features/auth`. Su cliente HTTP usa el contrato
@@ -156,7 +180,14 @@ Casos cubiertos por tests:
 - logout limpiando storage seguro y memoria;
 - credenciales invalidas;
 - timeout/backend no disponible;
-- pantalla inicial durante restauracion de sesion.
+- pantalla inicial durante restauracion de sesion;
+- validaciones locales de nombre, CUIT/CUIL, email y password;
+- boton de registro deshabilitado mientras el formulario es invalido;
+- registro seguido de inicio automatico de sesion;
+- estados de carga de registro, login y preparacion offline;
+- bloqueo de solicitudes duplicadas;
+- limpieza de la password al completar el flujo;
+- navegacion desde la confirmacion al asistente o a Home.
 
 Comando usado:
 
@@ -172,11 +203,6 @@ CI usa `--fatal-infos`, esa limpieza debe abordarse como una tarea separada para
 no mezclarla con la integracion de sesion.
 
 ## Fases futuras
-
-### Guards reales de router
-
-Hoy existe una pantalla inicial de restauracion. Mas adelante conviene sumar
-redirects/guards centrales para evitar acceder a rutas internas sin sesion.
 
 ### Politica multiusuario y logout
 
@@ -194,3 +220,8 @@ claros.
 
 Conviene diferenciar mejor backend caido, timeout, token expirado, credenciales
 invalidas y perfil inexistente para mostrar mensajes mas utiles.
+
+Los estados y entidades que contienen `AuthSession` no deben imprimirse ni
+enviarse completos a herramientas de observabilidad, porque incluyen access y
+refresh tokens. Antes de incorporar un `BlocObserver` o reporte automatico de
+estado se deben redactar esos campos sensibles.

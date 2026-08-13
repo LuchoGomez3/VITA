@@ -7,6 +7,22 @@ import 'package:frontend_mayoral/features/auth/presentation/sign_up/strings/sign
 import 'package:go_router/go_router.dart';
 
 void main() {
+  testWidgets('does not overflow on a short screen', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 520));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpSuccessPage(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(CustomScrollView), findsOneWidget);
+  });
+
+  testWidgets('shows the registered owner cuit', (tester) async {
+    await _pumpSuccessPage(tester);
+
+    expect(find.text('${SignUpStrings.successCuitLabel}  ${_user.cuit}'), findsOneWidget);
+  });
+
   testWidgets('continues to establishment registration after signup', (
     tester,
   ) async {
@@ -16,6 +32,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('establishment-register'), findsOneWidget);
+  });
+
+  testWidgets('allows postponing establishment registration and going home', (
+    tester,
+  ) async {
+    await _pumpSuccessPage(tester);
+
+    await tester.tap(find.text(SignUpStrings.goToHomeButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('home'), findsOneWidget);
   });
 }
 
@@ -34,6 +61,10 @@ Future<void> _pumpSuccessPage(WidgetTester tester) async {
         builder: (context, state) => const Scaffold(
           body: Text('establishment-register'),
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.home,
+        builder: (context, state) => const Scaffold(body: Text('home')),
       ),
     ],
   );

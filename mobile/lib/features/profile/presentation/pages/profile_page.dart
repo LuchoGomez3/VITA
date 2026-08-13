@@ -110,7 +110,7 @@ class _ProfilePageState extends State<ProfilePage> {
     await widget.signOut();
 
     if (mounted) {
-      context.go(AppRoutes.login);
+      context.go(AppRoutes.signUp);
     }
   }
 }

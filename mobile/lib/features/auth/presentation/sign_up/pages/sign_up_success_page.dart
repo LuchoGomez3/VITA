@@ -23,40 +23,52 @@ class SignUpSuccessPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            children: [
-              const Spacer(flex: 2),
-              const SignUpSuccessCheck(),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                '${SignUpStrings.successWelcomePrefix}'
-                '${userData.firstName}'
-                '${SignUpStrings.successWelcomeSuffix}',
-                style: AppTypography.signUpIntroTitle,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              const Text(
-                SignUpStrings.successSubtitle,
-                style: AppTypography.signUpIntroSubtitle,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              SignUpUserSummaryCard(userData: userData),
-              const SizedBox(height: AppSpacing.md),
-              const SignUpNextStepCard(),
-              const Spacer(flex: 3),
-              AppFilledButton(
-                label: SignUpStrings.configureEstablishmentButton,
-                icon: const Icon(Icons.arrow_forward),
-                onPressed: () => context.push(
-                  AppRoutes.establishmentRegisterEmpty,
+        child: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              sliver: SliverFillRemaining(
+                hasScrollBody: false,
+                child: Column(
+                  children: [
+                    const Spacer(flex: 2),
+                    const SignUpSuccessCheck(),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      '${SignUpStrings.successWelcomePrefix}'
+                      '${userData.firstName}'
+                      '${SignUpStrings.successWelcomeSuffix}',
+                      style: AppTypography.signUpIntroTitle,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    const Text(
+                      SignUpStrings.successSubtitle,
+                      style: AppTypography.signUpIntroSubtitle,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    SignUpUserSummaryCard(userData: userData),
+                    const SizedBox(height: AppSpacing.md),
+                    const SignUpNextStepCard(),
+                    const Spacer(flex: 3),
+                    AppFilledButton(
+                      label: SignUpStrings.configureEstablishmentButton,
+                      icon: const Icon(Icons.arrow_forward),
+                      onPressed: () => context.push(
+                        AppRoutes.establishmentRegisterEmpty,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    AppOutlinedButton(
+                      label: SignUpStrings.goToHomeButton,
+                      onPressed: () => context.go(AppRoutes.home),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

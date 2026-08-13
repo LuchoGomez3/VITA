@@ -23,6 +23,7 @@ def _token_response(usuario: Usuario, auth_result: AuthResult) -> TokenResponse:
             nombre=usuario.nombre,
             apellido=usuario.apellido,
             email=usuario.email,
+            cuit=usuario.cuit,
         ),
     )
 
@@ -77,5 +78,6 @@ async def me(current_user: Usuario = Depends(get_current_user)):
             "nombre": current_user.nombre,
             "apellido": current_user.apellido,
             "email": current_user.email,
+            "cuit": current_user.cuit,
         },
     )

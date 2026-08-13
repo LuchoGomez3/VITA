@@ -14,17 +14,6 @@ class AppRoutes {
   /// Ruta de confirmacion del registro de cuenta.
   static const signUpSuccess = '/sign-up/success';
 
-  /// Construye la confirmacion indicando si la cuenta ya tiene
-  /// establecimientos.
-  static String signUpSuccessFor({required bool hasEstablishments}) {
-    return Uri(
-      path: signUpSuccess,
-      queryParameters: {
-        'hasEstablishments': hasEstablishments.toString(),
-      },
-    ).toString();
-  }
-
   /// Ruta de la pantalla de inicio.
   static const home = '/';
 

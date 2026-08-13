@@ -2,6 +2,9 @@
 class WelcomeStrings {
   const WelcomeStrings._();
 
+  /// Ruta del icono de la aplicacion mostrado en la bienvenida.
+  static const logoAsset = 'assets/images/app_icon.png';
+
   /// Titulo principal de la pantalla de bienvenida.
   static const title = 'Mayoral';
 
@@ -152,7 +155,7 @@ class SignUpStrings {
   /// Accion para comenzar la configuracion del establecimiento.
   static const configureEstablishmentButton = 'Configurar mi establecimiento';
 
-  /// Accion posterior al registro cuando ya existen establecimientos asociados.
+  /// Accion que permite posponer el registro del primer establecimiento.
   static const goToHomeButton = 'Ir al inicio';
 
   /// Texto previo al link de inicio de sesion para usuarios existentes.
