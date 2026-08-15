@@ -29,4 +29,13 @@ abstract final class LivestockStrings {
 
   /// Boton para abrir el mapa de potreros.
   static const fieldButton = 'Ver campo';
+
+  /// Titulo del acceso a gestion de equipo.
+  static const teamTitle = 'Equipo';
+
+  /// Descripcion del acceso a gestion de equipo.
+  static const teamDescription = 'Consultá los usuarios del establecimiento e invitá uno nuevo.';
+
+  /// Boton para abrir la gestion de equipo.
+  static const teamButton = 'Ver equipo';
 }

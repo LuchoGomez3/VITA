@@ -70,7 +70,58 @@ diseño.
 
 ## Estado de la Etapa 1 (maquetado)
 
-_A completar en `feature/pantalla-equipo`._
+Implementado en `feature/pantalla-equipo` (rama desde `develop`, sin
+dependencia de otros PRs abiertos).
+
+- `mobile/lib/features/team/presentation/`:
+  - `mock/team_mock.dart`: `enum TeamRole` con **los 6 roles reales de
+    CLAUDE.md** (`owner`, `administrator`, `capataz`, `assetManager`,
+    `veterinarian`, `externalBuyer`), `TeamRoleOption` +
+    `teamRoleOptionsMock` (6, `capataz` preseleccionado —
+    `teamInviteDefaultRole`), `enum TeamMemberStatus { active, invited }`,
+    `TeamMemberMock` + `teamMembersMock` (los 4 usuarios de la tabla de
+    arriba). La descripción agregada para `assetManager` (no está en el
+    diseño): "Altas, bajas y movimientos de hacienda. No maneja sanidad ni
+    facturación."
+  - `strings/team_strings.dart`.
+  - `widgets/team_member_card.dart`: card con borde (mismo patrón que
+    `FieldPaddockCard`/`SyncQueueRow`), `CircleAvatar` con iniciales
+    (patrón de `SignUpUserSummaryCard`), chip de estado
+    (`AppStatusChipTone.success`/`.warn`) y chip de rol (`.neutral`).
+  - `pages/team_page.dart`: `AppHeader` sin badge de pendientes (ver nota
+    abajo), lista de `TeamMemberCard`, FAB "Invitar usuario".
+  - `pages/invite_team_member_page.dart`: header propio (cerrar + título),
+    `AppTextFormField` para el email mock, **`AppSelectableCard<TeamRole>`
+    reusado tal cual** para las 6 radio-cards de rol (ya soportaba
+    título+descripción+selección única, exactamente lo que pedía el
+    diseño), CTA fijo "Enviar invitación" → `SnackBar` + vuelta atrás.
+- **`AppStatusChip` gana un tono `warn`** (para "Invit. pend."), derivado de
+  `AppColors.warning.withValues(alpha: 0.15)` — mismo truco que
+  `app_timeline.dart` para no introducir un color nuevo.
+- **`AppColors.warning`** se agregó en esta rama (no existía en `develop`).
+  Es el mismo valor/color que se agregó independientemente en la rama de
+  Sanidad (PR #40, sin mergear) — conflicto textual esperado y trivial
+  (ambas ramas agregan la misma constante) cuando se mergeen ambas.
+- Ruta `/equipo` (`AppRoutes.team`) y `/equipo/invitar`
+  (`AppRoutes.teamInvite`) + atajo de desarrollo en `livestock_page.dart`.
+- **Badge de pendientes omitido a propósito**: el diseño pone
+  `pending={14}` en el header de `EquipoScreen`, pero en `develop` ese
+  badge sigue siendo un widget *feature-local* sin promover
+  (`FieldSyncBadge`); la promoción a `AppSyncBadge` compartido sólo existe
+  en la rama de Sanidad (sin mergear). Se usa `AppHeader(title: ...)` sin
+  `actions` para no duplicar un widget que se descarta apenas Sanidad
+  mergee.
+- Sin tests, mismo criterio que `weighing`/`field`/`health`/`sync`.
+
+### Hallazgo: el `UserRole` real tampoco coincide (documentar, no arreglar acá)
+
+`mobile/lib/features/auth/domain/entities/user_role.dart` (el rol que
+efectivamente usa hoy la sesión autenticada) tiene valores
+`admin`/`encargado`/`operario`/`unknown` — **no coincide ni con los 6 roles
+de CLAUDE.md ni con los 5 del diseño**. Reconciliar el dominio de roles
+(unificar `UserRole` con los 6 roles reales) es trabajo de Etapa 2/3 de este
+flujo y probablemente toque también sesión/auth — no es sólo cablear esta
+pantalla a algo que ya existe.
 
 ## Explícitamente fuera de alcance de esta iniciativa
 
