@@ -73,6 +73,9 @@ class AppColors {
   /// Color principal para estados de error.
   static const error = Color(0xFFD32F2F);
 
+  /// Color principal para estados de advertencia (severidad intermedia).
+  static const warning = Color(0xFFF9A825);
+
   /// Fondo suave para bloques de error.
   static const errorContainer = Color(0xFFFFEBEE);
 
@@ -112,6 +115,9 @@ class AppColors {
 
   /// Opcion azul usada por caravanas mock en genealogia.
   static const earTagBlue = Color(0xFF7CB6E8);
+
+  /// Opcion celeste usada por caravanas mock en Sanidad.
+  static const earTagCeleste = Color(0xFF5DB1E3);
 
   /// Mapeo de los colores oficiales al sistema de tema de Flutter.
   ///

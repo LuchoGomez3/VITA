@@ -80,6 +80,12 @@ class AppRoutes {
   /// Ruta de la pantalla de pesaje en manga.
   static const weighing = '/pesaje';
 
+  /// Ruta de la pantalla de sanidad.
+  static const health = '/sanidad';
+
+  /// Ruta de la pantalla de aplicar vacunación.
+  static const applyVaccination = '/sanidad/aplicar-vacunacion';
+
   /// Ruta del mapa de potreros.
   static const field = '/campo';
 

@@ -29,6 +29,8 @@ import 'package:frontend_mayoral/features/establishment_register/presentation/pa
 import 'package:frontend_mayoral/features/field/presentation/pages/field_detail_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/field_list_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/field_map_page.dart';
+import 'package:frontend_mayoral/features/health/presentation/pages/apply_vaccination_page.dart';
+import 'package:frontend_mayoral/features/health/presentation/pages/health_page.dart';
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
@@ -295,6 +297,14 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.weighing,
         builder: (context, state) => const WeighingPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.health,
+        builder: (context, state) => const HealthPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.applyVaccination,
+        builder: (context, state) => const ApplyVaccinationPage(),
       ),
       GoRoute(
         path: AppRoutes.field,

@@ -10,6 +10,7 @@ export 'app_status_chip.dart';
 export 'app_subsection_title_and_description.dart';
 export 'app_success_banner.dart';
 export 'app_surface_card.dart';
+export 'app_sync_badge.dart';
 export 'app_timeline.dart';
 export 'buttons/buttons.dart';
 export 'fields/fields.dart';

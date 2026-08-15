@@ -38,4 +38,13 @@ abstract final class LivestockStrings {
 
   /// Boton para abrir el mapa de potreros.
   static const fieldButton = 'Ver campo';
+
+  /// Titulo del acceso a sanidad.
+  static const healthTitle = 'Sanidad';
+
+  /// Descripcion del acceso a sanidad.
+  static const healthDescription = 'Consultá campañas de vacunación, tratamientos y alertas sanitarias.';
+
+  /// Boton para abrir sanidad.
+  static const healthButton = 'Ver sanidad';
 }

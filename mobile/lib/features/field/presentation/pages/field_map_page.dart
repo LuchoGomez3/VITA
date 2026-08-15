@@ -5,7 +5,6 @@ import 'package:frontend_mayoral/features/field/presentation/mock/paddock_mock.d
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/field_density_legend.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/field_paddock_mosaic.dart';
-import 'package:frontend_mayoral/features/field/presentation/widgets/field_sync_badge.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/field_view_toggle.dart';
 
 /// Vista de mapa del campo: potreros coloreados por densidad de carga.
@@ -22,7 +21,7 @@ class FieldMapPage extends StatelessWidget {
       appBar: AppHeader(
         title: FieldStrings.title,
         headline: FieldStrings.establishmentTitle,
-        actions: [FieldSyncBadge(pendingCount: FieldStrings.pendingSyncCount)],
+        actions: [AppSyncBadge(pendingCount: FieldStrings.pendingSyncCount)],
       ),
       body: SafeArea(
         child: Stack(
