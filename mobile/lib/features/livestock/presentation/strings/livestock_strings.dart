@@ -29,4 +29,13 @@ abstract final class LivestockStrings {
 
   /// Boton para abrir el mapa de potreros.
   static const fieldButton = 'Ver campo';
+
+  /// Titulo del acceso a sincronizacion.
+  static const syncStatusTitle = 'Sincronización';
+
+  /// Descripcion del acceso a sincronizacion.
+  static const syncStatusDescription = 'Revisá la cola de sincronización y resolvé conflictos pendientes.';
+
+  /// Boton para abrir la pantalla de sincronizacion.
+  static const syncStatusButton = 'Ver sincronización';
 }

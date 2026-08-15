@@ -46,6 +46,7 @@ import 'package:frontend_mayoral/features/senasa_report/senasa_report_compositio
 import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
+import 'package:frontend_mayoral/features/sync/presentation/pages/sync_status_page.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion del router de la app.
@@ -305,6 +306,10 @@ class AppRouter {
           final potreroId = state.pathParameters['potreroId']!;
           return FieldDetailPage(potreroId: potreroId);
         },
+      ),
+      GoRoute(
+        path: AppRoutes.syncStatus,
+        builder: (context, state) => const SyncStatusPage(),
       ),
       GoRoute(
         path: AppRoutes.expenseRecords,
