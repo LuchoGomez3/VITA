@@ -57,7 +57,48 @@ San José". Botones: "Mantener servidor" / "Aplicar el mío".
 
 ## Estado de la Etapa 1 (maquetado)
 
-_A completar en `feature/pantalla-sync`._
+Implementado en `feature/pantalla-sync` (rama desde `develop`, sin
+dependencia de otros PRs — no usa `AppEarTagBadge` ni `AppSyncBadge`).
+
+- `mobile/lib/features/sync/presentation/` — se agregó la capa
+  `presentation/` al feature `sync` ya existente (que sólo tenía
+  `data/`/`domain/` de la sincronización inicial post-login):
+  - `mock/sync_status_mock.dart`: banner (14 pendientes, 6/14, "Conexión 3G ·
+    velocidad lenta"), `enum SyncQueueState { syncing, pending, error, ok }` +
+    `SyncQueueEntryMock` (7 filas) y `SyncConflictMock` (1 conflicto), todo
+    con los mismos valores que la tabla de arriba.
+  - `strings/sync_status_strings.dart`.
+  - `widgets/sync_progress_banner.dart`, `widgets/sync_queue_row.dart`
+    (ícono/color por estado con pattern matching de records, igual que
+    `health_alert_tile.dart`), `widgets/sync_conflict_card.dart` (borde de
+    error, chip `AppStatusChipTone.danger`, bloques local/servidor y los 2
+    botones).
+  - `pages/sync_status_page.dart`: header propio (back + título/subtítulo +
+    botón de refresh), sin bottom nav, pushed desde `livestock_page.dart`.
+- **`AppStatusChip` ganó un tercer tono**, `AppStatusChipTone.danger`
+  (`errorContainer`/`error`), para la chip "Last-write-wins". Cambio
+  aditivo en `core/widgets/app_status_chip.dart`, no afecta a los
+  consumidores existentes (`neutral`/`success`).
+- Sin colores nuevos: toda la paleta necesaria ya existía en `AppColors`.
+- Ruta `/sincronizacion` (`AppRoutes.syncStatus`) + atajo de desarrollo en
+  `livestock_page.dart`.
+- Refresh manual, "Mantener servidor" y "Aplicar el mío" muestran un
+  `SnackBar` de fuera de alcance — no hay lógica real detrás (ver más abajo
+  por qué).
+- Sin tests, mismo criterio que `weighing`/`field`: ninguna maqueta de
+  Etapa 1 en este repo tiene `mobile/test/features/`.
+
+### Aclaración importante sobre "ya existe en código"
+
+La primera versión de este spec decía que Sincronización "es la pieza que sí
+conecta con código real existente". Es sólo parcialmente cierto:
+`mobile/lib/features/sync/` (`PrepareInitialDataSyncUseCase` +
+`InitialDataSyncRepositoryImpl`) es la **hidratación inicial de datos
+posterior al login** (trae animales/categorías/pesajes una sola vez), no una
+cola de operaciones pendientes ni una entidad de conflicto. No hay nada de
+eso implementado todavía. Conectar esta pantalla de verdad (Etapa 2/3)
+requiere primero diseñar y construir ese dominio — no es sólo cablear la UI
+a algo que ya existe.
 
 ## Explícitamente fuera de alcance de esta iniciativa
 
