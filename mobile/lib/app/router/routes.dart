@@ -86,6 +86,12 @@ class AppRoutes {
   /// Ruta del detalle de un potrero.
   static const fieldDetail = '/campo/:potreroId';
 
+  /// Ruta del listado de equipo.
+  static const team = '/equipo';
+
+  /// Ruta de invitar un nuevo miembro del equipo.
+  static const teamInvite = '/equipo/invitar';
+
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {
     return '/animals/$animalId';

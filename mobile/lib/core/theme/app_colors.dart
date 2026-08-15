@@ -79,6 +79,9 @@ class AppColors {
   /// Borde para bloques o campos en estado de error.
   static const errorBorder = Color(0xFFE53935);
 
+  /// Color principal para estados de advertencia (severidad intermedia).
+  static const warning = Color(0xFFF9A825);
+
   /// Amarillo usado para indicar una contraseña de fuerza normal.
   static const passwordStrengthNormal = Color(0xFFF9A825);
 
