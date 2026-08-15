@@ -29,6 +29,8 @@ import 'package:frontend_mayoral/features/establishment_register/presentation/pa
 import 'package:frontend_mayoral/features/field/presentation/pages/field_detail_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/field_list_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/field_map_page.dart';
+import 'package:frontend_mayoral/features/health/presentation/pages/apply_vaccination_page.dart';
+import 'package:frontend_mayoral/features/health/presentation/pages/health_page.dart';
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
@@ -46,6 +48,7 @@ import 'package:frontend_mayoral/features/senasa_report/senasa_report_compositio
 import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
+import 'package:frontend_mayoral/features/weighing/presentation/pages/weighing_page.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion del router de la app.
@@ -290,6 +293,18 @@ class AppRouter {
             onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.weighing,
+        builder: (context, state) => const WeighingPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.health,
+        builder: (context, state) => const HealthPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.applyVaccination,
+        builder: (context, state) => const ApplyVaccinationPage(),
       ),
       GoRoute(
         path: AppRoutes.field,

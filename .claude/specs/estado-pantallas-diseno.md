@@ -89,7 +89,7 @@ sólo el resumen de estado.
 
 | Flujo | Archivo de diseño | Pantallas | Estado |
 |---|---|---|---|
-| Reportes SENASA (wizard de generación) | `screens-senasa.jsx` | 6 | 🔌 Cubierto por el PR #32 (`feature/senasa-reporte-frontend`, abierto): `lib/features/senasa_report/` implementa el wizard de 3 pasos + loading + éxito/error, con generación real de CSV/PDF. También cubre el equivalente de `SenasaScreen`/`SenasaConfirm` de `screens-other.jsx` (`senasa_menu_page.dart`). No se vuelve a maquetar en ninguna otra iniciativa. |
+| Reportes SENASA (wizard de generación) | `screens-senasa.jsx` | 6 | 🔌 Mergeado a `develop` (PR #32): `lib/features/senasa_report/` implementa el wizard de 3 pasos + loading + éxito/error, con generación real de CSV/PDF. También cubre el equivalente de `SenasaScreen`/`SenasaConfirm` de `screens-other.jsx` (`senasa_menu_page.dart`). No se vuelve a maquetar en ninguna otra iniciativa. |
 | Dashboard (Capataz y Owner) | `screens-dashboard.jsx` | 2 | 🔌 (parcial). `home_page.dart` ya es un dashboard real (`HomeDashboardCubit` + `home_page.dart`), no el menú de atajos de desarrollo que tenía antes (eso se movió a `livestock_page.dart`). Pendiente evaluar si el layout actual cubre las 2 variantes por rol del diseño. |
 
 ## Pendientes sin ningún código todavía — cubiertos por esta iniciativa
@@ -97,14 +97,14 @@ sólo el resumen de estado.
 Detalle completo de campos, secciones y datos mock por flujo en su spec
 dedicado (mismo criterio que `registrar-establecimiento.md`).
 
-| Flujo | Spec | Archivo de diseño | Pantallas | Offline |
-|---|---|---|---|---|
-| Campo / potreros (mapa, lista, detalle) | [`campo-y-potreros.md`](./campo-y-potreros.md) | `screens-campo.jsx` | 3 | Probablemente offline-first (dato productivo de campo), a confirmar en Etapa 3 |
-| Pesaje en manga (Bluetooth/Manual/Foto) | [`pesaje-en-manga.md`](./pesaje-en-manga.md) | `screens-pesaje.jsx` | 3 (una sola página con tabs) | Offline-first (captura en el campo, sin conectividad) |
-| Sanidad (vacunaciones/tratamientos/alertas/aplicar) | [`sanidad.md`](./sanidad.md) | `screens-sanidad.jsx` | 4 | Offline-first |
-| Gestión de equipo | [`gestion-de-equipo.md`](./gestion-de-equipo.md) | `screens-other.jsx` | 2 | Probablemente online-only (afecta permisos de otro usuario), a confirmar |
-| Sincronización | [`sincronizacion.md`](./sincronizacion.md) | `screens-other.jsx` | 1 | Es la UI del motor de sync que ya existe en `lib/features/sync` |
-| Ajustes (secciones nuevas sobre `ProfilePage`) | [`ajustes.md`](./ajustes.md) | `screens-other.jsx` | Extiende 1 pantalla existente | No aplica (son datos de preferencias/dispositivos, sin sync) |
+| Flujo | Estado | Spec | Archivo de diseño | Pantallas | Offline |
+|---|---|---|---|---|---|
+| Campo / potreros (mapa, lista, detalle) | 🧱 Mergeada a `develop` (PR #37) | [`campo-y-potreros.md`](./campo-y-potreros.md) | `screens-campo.jsx` | 3 | Probablemente offline-first (dato productivo de campo), a confirmar en Etapa 3 |
+| Pesaje en manga (Bluetooth/Manual/Foto) | 🧱 Maquetada, **PR #38 abierto** (`feature/pantalla-pesaje`, sin mergear) | [`pesaje-en-manga.md`](./pesaje-en-manga.md) | `screens-pesaje.jsx` | 3 (una sola página con tabs) | Offline-first (captura en el campo, sin conectividad) |
+| Sanidad (vacunaciones/tratamientos/alertas/aplicar) | 🧱 Maquetada en `feature/pantalla-sanidad` (rama apilada sobre #38 para reusar `AppEarTagBadge`; rebasar sobre `develop` cuando #38 mergee) | [`sanidad.md`](./sanidad.md) | `screens-sanidad.jsx` | 4 | Offline-first |
+| Gestión de equipo | 🎨 | [`gestion-de-equipo.md`](./gestion-de-equipo.md) | `screens-other.jsx` | 2 | Probablemente online-only (afecta permisos de otro usuario), a confirmar |
+| Sincronización | 🎨 | [`sincronizacion.md`](./sincronizacion.md) | `screens-other.jsx` | 1 | Es la UI del motor de sync que ya existe en `lib/features/sync` |
+| Ajustes (secciones nuevas sobre `ProfilePage`) | 🎨 | [`ajustes.md`](./ajustes.md) | `screens-other.jsx` | Extiende 1 pantalla existente | No aplica (son datos de preferencias/dispositivos, sin sync) |
 
 ## Explícitamente fuera de alcance
 

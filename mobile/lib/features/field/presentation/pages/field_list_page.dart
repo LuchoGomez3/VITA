@@ -5,7 +5,6 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/field/presentation/mock/paddock_mock.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/field_paddock_card.dart';
-import 'package:frontend_mayoral/features/field/presentation/widgets/field_sync_badge.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/field_view_toggle.dart';
 import 'package:go_router/go_router.dart';
 
@@ -20,7 +19,7 @@ class FieldListPage extends StatelessWidget {
       appBar: const AppHeader(
         title: FieldStrings.title,
         headline: FieldStrings.establishmentTitle,
-        actions: [FieldSyncBadge(pendingCount: FieldStrings.pendingSyncCount)],
+        actions: [AppSyncBadge(pendingCount: FieldStrings.pendingSyncCount)],
       ),
       body: SafeArea(
         child: Stack(

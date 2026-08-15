@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 
 /// Badge del header con la cantidad de registros pendientes de sincronizar.
-class FieldSyncBadge extends StatelessWidget {
+///
+/// Promovido desde `features/field/presentation/widgets/field_sync_badge.dart`
+/// al reutilizarse también en Sanidad (ver `.claude/specs/sanidad.md`), mismo
+/// criterio que `AppEarTagBadge`.
+class AppSyncBadge extends StatelessWidget {
   /// Crea el badge con el conteo de pendientes.
-  const FieldSyncBadge({required this.pendingCount, super.key});
+  const AppSyncBadge({required this.pendingCount, super.key});
 
   /// Cantidad de registros pendientes de sincronización.
   final int pendingCount;
