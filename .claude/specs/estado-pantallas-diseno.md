@@ -97,14 +97,18 @@ sólo el resumen de estado.
 Detalle completo de campos, secciones y datos mock por flujo en su spec
 dedicado (mismo criterio que `registrar-establecimiento.md`).
 
+**Los 6 flujos de esta iniciativa ya están maquetados (🧱)** — cada uno en
+su propia rama, cada uno con PR abierto a `develop` salvo indicación
+contraria. Ninguno queda en 🎨.
+
 | Flujo | Spec | Archivo de diseño | Pantallas | Offline |
 |---|---|---|---|---|
-| Campo / potreros (mapa, lista, detalle) | [`campo-y-potreros.md`](./campo-y-potreros.md) | `screens-campo.jsx` | 3 | Probablemente offline-first (dato productivo de campo), a confirmar en Etapa 3 |
-| Pesaje en manga (Bluetooth/Manual/Foto) | [`pesaje-en-manga.md`](./pesaje-en-manga.md) | `screens-pesaje.jsx` | 3 (una sola página con tabs) | Offline-first (captura en el campo, sin conectividad) |
-| Sanidad (vacunaciones/tratamientos/alertas/aplicar) | [`sanidad.md`](./sanidad.md) | `screens-sanidad.jsx` | 4 | Offline-first |
-| Gestión de equipo | [`gestion-de-equipo.md`](./gestion-de-equipo.md) | `screens-other.jsx` | 2 | Probablemente online-only (afecta permisos de otro usuario), a confirmar |
-| Sincronización | [`sincronizacion.md`](./sincronizacion.md) | `screens-other.jsx` | 1 | Es la UI del motor de sync que ya existe en `lib/features/sync` |
-| Ajustes (secciones nuevas sobre `ProfilePage`) | [`ajustes.md`](./ajustes.md) | `screens-other.jsx` | Extiende 1 pantalla existente | No aplica (son datos de preferencias/dispositivos, sin sync) |
+| Campo / potreros (mapa, lista, detalle) 🧱 (rama `feature/pantalla-campos`) | [`campo-y-potreros.md`](./campo-y-potreros.md) | `screens-campo.jsx` | 3 | Probablemente offline-first (dato productivo de campo), a confirmar en Etapa 3 |
+| Pesaje en manga (Bluetooth/Manual/Foto) 🧱 (rama `feature/pantalla-pesaje`, PR #38 abierto) | [`pesaje-en-manga.md`](./pesaje-en-manga.md) | `screens-pesaje.jsx` | 3 (una sola página con tabs) | Offline-first (captura en el campo, sin conectividad) |
+| Sanidad (vacunaciones/tratamientos/alertas/aplicar) 🧱 (rama `feature/pantalla-sanidad`, PR #40 abierto, apilada sobre #38) | [`sanidad.md`](./sanidad.md) | `screens-sanidad.jsx` | 4 | Offline-first |
+| Gestión de equipo 🧱 (rama `feature/pantalla-equipo`, PR #42 abierto) | [`gestion-de-equipo.md`](./gestion-de-equipo.md) | `screens-other.jsx` | 2 | Probablemente online-only (afecta permisos de otro usuario), a confirmar; el mock ya lista los 6 roles reales de CLAUDE.md (el diseño sólo tenía 5) |
+| Sincronización 🧱 (rama `feature/pantalla-sync`, PR #41 abierto) | [`sincronizacion.md`](./sincronizacion.md) | `screens-other.jsx` | 1 | Offline-first (es la vista de estado del motor de sync); ojo — `lib/features/sync/` sólo tiene hoy la sincronización inicial post-login, no una cola de operaciones real |
+| Ajustes (secciones nuevas sobre `ProfilePage`) 🧱 (rama `feature/pantalla-ajustes`) | [`ajustes.md`](./ajustes.md) | `screens-other.jsx` | Extiende 1 pantalla existente | No aplica (son datos de preferencias/dispositivos, sin sync) |
 
 ## Explícitamente fuera de alcance
 
