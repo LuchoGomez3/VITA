@@ -27,6 +27,9 @@ import 'package:frontend_mayoral/features/establishment_register/presentation/bl
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_empty_state_page.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_page.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_success_page.dart';
+import 'package:frontend_mayoral/features/field/presentation/pages/field_detail_page.dart';
+import 'package:frontend_mayoral/features/field/presentation/pages/field_list_page.dart';
+import 'package:frontend_mayoral/features/field/presentation/pages/field_map_page.dart';
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
@@ -289,6 +292,21 @@ class AppRouter {
             onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
             onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
           );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.field,
+        builder: (context, state) => const FieldMapPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.fieldList,
+        builder: (context, state) => const FieldListPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.fieldDetail,
+        builder: (context, state) {
+          final potreroId = state.pathParameters['potreroId']!;
+          return FieldDetailPage(potreroId: potreroId);
         },
       ),
       GoRoute(

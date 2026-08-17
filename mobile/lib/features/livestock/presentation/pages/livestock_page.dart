@@ -63,6 +63,25 @@ class LivestockPage extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: AppSpacing.md),
+              AppSurfaceCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      LivestockStrings.fieldTitle,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    const Text(LivestockStrings.fieldDescription),
+                    const SizedBox(height: AppSpacing.md),
+                    AppFilledButton(
+                      label: LivestockStrings.fieldButton,
+                      onPressed: () => context.push(AppRoutes.field),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

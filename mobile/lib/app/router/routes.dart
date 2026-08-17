@@ -86,6 +86,15 @@ class AppRoutes {
   /// Ruta de error del reporte SENASA.
   static const senasaReportError = '/senasa-report/error';
 
+  /// Ruta del mapa de potreros.
+  static const field = '/campo';
+
+  /// Ruta de la lista de potreros.
+  static const fieldList = '/campo/lista';
+
+  /// Ruta del detalle de un potrero.
+  static const fieldDetail = '/campo/:potreroId';
+
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {
     return '/animals/$animalId';
@@ -120,5 +129,10 @@ class AppRoutes {
   /// Construye la ruta de alta con una caravana RFID ya leida.
   static String animalRegisterWithRfid(String rfidTagNumber) {
     return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}';
+  }
+
+  /// Obtiene la ruta de detalle de un potrero por su id.
+  static String fieldDetailById(String potreroId) {
+    return '/campo/$potreroId';
   }
 }
