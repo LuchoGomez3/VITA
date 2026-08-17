@@ -13,10 +13,17 @@ import 'package:frontend_mayoral/features/home/presentation/widgets/home_operati
 /// Organiza las secciones visibles cuando los KPIs terminaron de calcularse.
 class HomeDashboardContent extends StatelessWidget {
   /// Crea el contenido desplazable del tablero.
-  const HomeDashboardContent({required this.dashboard, super.key});
+  const HomeDashboardContent({
+    required this.dashboard,
+    required this.onEstablishmentSelectionRequested,
+    super.key,
+  });
 
   /// Indicadores listos para representar en pantalla.
   final HomeDashboard dashboard;
+
+  /// Abre el selector superior cuando una accion requiere establecimiento.
+  final VoidCallback onEstablishmentSelectionRequested;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +38,9 @@ class HomeDashboardContent extends StatelessWidget {
         ),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          const HomeOperatingBalanceCard(),
+          HomeOperatingBalanceCard(
+            onEstablishmentSelectionRequested: onEstablishmentSelectionRequested,
+          ),
           const SizedBox(height: AppSpacing.lg),
           Text(HomeStrings.title, style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: AppSpacing.xs),

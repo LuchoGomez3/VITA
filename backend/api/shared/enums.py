@@ -55,3 +55,21 @@ class TipoEgreso(str, Enum):
     muerte = "muerte"
     baja = "baja"
     traslado_externo = "traslado_externo"
+
+
+class TipoEgresoOperativo(str, Enum):
+    """Clasificación contable principal de un egreso monetario del campo."""
+
+    costo_produccion = "costo_produccion"
+    gasto_administrativo = "gasto_administrativo"
+
+
+class CategoriaEgresoOperativo(str, Enum):
+    """Categorías cerradas que permiten calcular márgenes de forma consistente."""
+
+    sanidad = "sanidad"
+    alimentacion = "alimentacion"
+    identificacion = "identificacion"
+    combustible = "combustible"
+    estructura = "estructura"
+    honorarios = "honorarios"

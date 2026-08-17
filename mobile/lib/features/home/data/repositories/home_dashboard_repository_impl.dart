@@ -7,6 +7,8 @@ import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/operating_expense_brick_store.dart';
+import 'package:frontend_mayoral/features/operating_expenses/data/mappers/operating_expense_brick_mapper.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -21,17 +23,20 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     required CategoriaBrickStore categoryStore,
     required PesajeBrickStore pesajeStore,
     required SecureStorageService secureStorage,
+    OperatingExpenseBrickStore? operatingExpenseStore,
     DateTime Function()? now,
   }) : _animalStore = animalStore,
        _categoryStore = categoryStore,
        _pesajeStore = pesajeStore,
        _secureStorage = secureStorage,
+       _operatingExpenseStore = operatingExpenseStore,
        _now = now ?? DateTime.now;
 
   final AnimalBrickStore _animalStore;
   final CategoriaBrickStore _categoryStore;
   final PesajeBrickStore _pesajeStore;
   final SecureStorageService _secureStorage;
+  final OperatingExpenseBrickStore? _operatingExpenseStore;
   final DateTime Function() _now;
 
   @override
@@ -49,9 +54,8 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
                 .toList();
       final weighings = await _pesajeStore.getLocalPesajes();
       final categories = await _getCategoriesForAnimals(animals);
-      return Result.success(
-        _calculateDashboard(animals, weighings, categories),
-      );
+      final expenses = await _expensesFor(establishmentIds);
+      return Result.success(_calculateDashboard(animals, weighings, categories, expenses));
     } on Object {
       return const Result.failure(
         DomainException(
@@ -98,6 +102,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     List<BrickAnimalModel> animals,
     List<BrickPesajeModel> weighings,
     List<BrickCategoriaModel> categories,
+    int operatingExpensesCents,
   ) {
     // El tablero trabaja únicamente con animales vigentes. Las altas y bajas
     // mensuales sí se calculan sobre el historial completo para no perder los
@@ -132,7 +137,21 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
       animalsWithDailyGain: dailyGains.length,
       categories: _categoryMetrics(activeAnimals, categories),
       lots: _lotMetrics(activeAnimals, currentWeights),
+      operatingExpensesCents: operatingExpensesCents,
     );
+  }
+
+  Future<int> _expensesFor(Set<String>? establishmentIds) async {
+    final store = _operatingExpenseStore;
+    if (store == null || establishmentIds == null) return 0;
+    var total = 0;
+    for (final id in establishmentIds) {
+      final expenses = await store.getLocalExpenses(id);
+      for (final expense in expenses) {
+        total += OperatingExpenseBrickMapper.decimalToCents(expense.amount);
+      }
+    }
+    return total;
   }
 
   Map<String, List<BrickPesajeModel>> _groupWeighingsByAnimal(

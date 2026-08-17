@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
+import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_cubit.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_asset_icon.dart';
 import 'package:go_router/go_router.dart';
@@ -12,46 +16,72 @@ import 'package:go_router/go_router.dart';
 /// sus fuentes de datos definitivas.
 class HomeOperatingBalanceCard extends StatelessWidget {
   /// Crea el bloque superior del balance operativo.
-  const HomeOperatingBalanceCard({super.key});
+  const HomeOperatingBalanceCard({
+    required this.onEstablishmentSelectionRequested,
+    super.key,
+  });
+
+  /// Solicita desplegar el selector de establecimientos del encabezado.
+  final VoidCallback onEstablishmentSelectionRequested;
 
   @override
   Widget build(BuildContext context) {
-    return const AppSurfaceCard(
-      padding: EdgeInsets.all(AppSpacing.md),
+    return AppSurfaceCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
       elevation: 6,
-      shadowColor: Color(0x33000000),
+      shadowColor: const Color(0x33000000),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             HomeStrings.operatingBalance,
             style: AppTypography.pageTitle,
           ),
           Text(
-            HomeStrings.mockBalanceValue,
+            _formatBalance(context),
             style: AppTypography.balanceValue,
           ),
-          SizedBox(height: AppSpacing.md),
-          _BalanceRow(
+          const SizedBox(height: AppSpacing.md),
+          const _BalanceRow(
             label: HomeStrings.estimatedStock,
             value: HomeStrings.mockStockValue,
           ),
-          SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.sm),
           _BalanceRow(
             label: HomeStrings.operatingExpenses,
-            value: HomeStrings.mockExpensesValue,
+            value: _formatExpenses(context),
           ),
-          SizedBox(height: AppSpacing.lg),
-          _OperatingActions(),
+          const SizedBox(height: AppSpacing.lg),
+          _OperatingActions(
+            onEstablishmentSelectionRequested: onEstablishmentSelectionRequested,
+          ),
         ],
       ),
     );
+  }
+
+  String _formatExpenses(BuildContext context) {
+    final dashboard = context.watch<HomeDashboardCubit>().state.dashboardState;
+    final cents = dashboard is Data<HomeDashboard> ? dashboard.data.operatingExpensesCents : 0;
+    return '- ${_currency(cents)}';
+  }
+
+  String _formatBalance(BuildContext context) => _formatExpenses(context);
+
+  String _currency(int cents) {
+    final whole = cents ~/ 100;
+    final grouped = whole.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.');
+    return '\$ $grouped,${(cents % 100).toString().padLeft(2, '0')}';
   }
 }
 
 /// Distribuye los accesos compactos de ingreso, egreso y movimientos.
 class _OperatingActions extends StatelessWidget {
-  const _OperatingActions();
+  const _OperatingActions({
+    required this.onEstablishmentSelectionRequested,
+  });
+
+  final VoidCallback onEstablishmentSelectionRequested;
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +97,7 @@ class _OperatingActions extends StatelessWidget {
               size: buttonSize,
               label: HomeStrings.registerExpense,
               assetPath: 'assets/icons/money_send.svg',
-              onPressed: () => context.push(AppRoutes.expenseRegister),
+              onPressed: () => _openExpenses(context, AppRoutes.expenseRegister),
             ),
             const SizedBox(width: AppSpacing.md),
             _OperatingActionButton(
@@ -86,6 +116,22 @@ class _OperatingActions extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  void _openExpenses(BuildContext context, String path) {
+    final state = context.read<HomeDashboardCubit>().state;
+    final id = state.selectedEstablishmentId;
+    if (id == null) {
+      onEstablishmentSelectionRequested();
+      return;
+    }
+    context.push(
+      AppRoutes.expensesForEstablishment(
+        path: path,
+        establishmentId: id,
+        establishmentName: state.establishments[id] ?? id,
+      ),
     );
   }
 }

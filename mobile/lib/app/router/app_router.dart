@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
@@ -33,6 +34,8 @@ import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
+import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
+import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expenses_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_menu_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_error_page.dart';
@@ -292,13 +295,12 @@ class AppRouter {
         path: AppRoutes.expenseRecords,
         builder: (context, state) => const ShellPlaceholderPage(
           title: HomeStrings.movements,
+          message: HomeStrings.comingSoon,
         ),
       ),
       GoRoute(
         path: AppRoutes.expenseRegister,
-        builder: (context, state) => const ShellPlaceholderPage(
-          title: HomeStrings.registerExpense,
-        ),
+        builder: _operatingExpensesPage,
       ),
       GoRoute(
         path: AppRoutes.incomeRegister,
@@ -338,4 +340,22 @@ class AppRouter {
       ),
     ],
   );
+
+  static Widget _operatingExpensesPage(BuildContext context, GoRouterState state) {
+    final establishmentId = state.uri.queryParameters['establecimientoId'];
+    final establishmentName = state.uri.queryParameters['establecimientoNombre'];
+    final sessionState = context.read<AuthSessionCubit>().state;
+    if (establishmentId == null || establishmentName == null || sessionState is! AuthSessionAuthenticated) {
+      return const ShellPlaceholderPage(title: 'Seleccioná un establecimiento activo para registrar egresos.');
+    }
+    final user = sessionState.session.user;
+    return OperatingExpensesPage(
+      establishmentName: establishmentName,
+      createCubit: () => createOperatingExpenseCubit(
+        establishmentId: establishmentId,
+        userId: user.id,
+        userName: '${user.firstName} ${user.lastName}'.trim(),
+      ),
+    );
+  }
 }
