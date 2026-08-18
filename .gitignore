@@ -74,6 +74,16 @@ docs/_build/
 .pybuilder/
 target/
 
+# Archivos temporales y caché de Python
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos ocultos y variables de entorno
+.env
+.env.local
+.DS_Store
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
