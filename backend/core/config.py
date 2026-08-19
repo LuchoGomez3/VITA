@@ -8,7 +8,9 @@ load_dotenv()
 
 def _csv_env(name: str, default: str = "") -> list[str]:
     """Convierte una variable separada por comas en valores no vacíos."""
-    return [value.strip() for value in os.getenv(name, default).split(",") if value.strip()]
+    return [
+        value.strip() for value in os.getenv(name, default).split(",") if value.strip()
+    ]
 
 
 class EnvironmentOption(str, Enum):
@@ -77,9 +79,7 @@ class Settings:
         self.AUTH_REGISTRATION_RATE_LIMIT: int = int(
             os.getenv("AUTH_REGISTRATION_RATE_LIMIT", "5")
         )
-        self.AUTH_LOGIN_RATE_LIMIT: int = int(
-            os.getenv("AUTH_LOGIN_RATE_LIMIT", "10")
-        )
+        self.AUTH_LOGIN_RATE_LIMIT: int = int(os.getenv("AUTH_LOGIN_RATE_LIMIT", "10"))
         self.AUTH_REFRESH_RATE_LIMIT: int = int(
             os.getenv("AUTH_REFRESH_RATE_LIMIT", "20")
         )

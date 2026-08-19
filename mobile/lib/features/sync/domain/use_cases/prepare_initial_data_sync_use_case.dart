@@ -13,11 +13,12 @@ class PrepareInitialDataSyncUseCase {
 
   final InitialDataSyncRepository _repository;
 
-  /// Ejecuta la sincronizacion inicial para [userId].
+  /// Ejecuta la actualizacion de los datos disponibles sin parametros de usuario.
   ///
-  /// Un resultado exitoso informa los establecimientos disponibles para que el
+  /// La sesion y el token autenticado determinan el alcance en el backend. Un
+  /// resultado exitoso informa los establecimientos disponibles para que el
   /// flujo llamador decida su proximo destino. Una falla no invalida la sesion.
-  Future<Result<PostAuthenticationSummary>> call(String userId) {
-    return _repository.syncForUser(userId);
+  Future<Result<PostAuthenticationSummary>> call() {
+    return _repository.sync();
   }
 }

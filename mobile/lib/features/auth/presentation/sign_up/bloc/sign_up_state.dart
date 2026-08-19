@@ -1,5 +1,4 @@
-import 'package:frontend_mayoral/core/errors/domain_exception.dart';
-import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
+part of 'sign_up_bloc.dart';
 
 /// Etapa visible del registro y autenticacion inicial.
 enum SignUpStage {
@@ -17,29 +16,27 @@ enum SignUpStage {
 }
 
 /// Estado completo del registro con auto-login.
-class SignUpState {
+@freezed
+sealed class SignUpState with _$SignUpState {
   /// Crea un estado del flujo de registro.
-  const SignUpState({
-    required this.stage,
-    this.session,
-    this.error,
-    this.accountCreated = false,
-  });
+  const factory SignUpState({
+    /// Etapa que la interfaz debe comunicar al usuario.
+    required SignUpStage stage,
+
+    /// Sesion persistida luego del auto-login exitoso.
+    AuthSession? session,
+
+    /// Error bloqueante de registro o auto-login.
+    DomainException? error,
+
+    /// Indica que el alta termino aunque un paso posterior haya fallado.
+    @Default(false) bool accountCreated,
+  }) = _SignUpState;
+
+  const SignUpState._();
 
   /// Estado inicial del formulario.
-  const SignUpState.initial() : this(stage: SignUpStage.idle);
-
-  /// Etapa que la interfaz debe comunicar al usuario.
-  final SignUpStage stage;
-
-  /// Sesion persistida luego del auto-login exitoso.
-  final AuthSession? session;
-
-  /// Error bloqueante de registro o auto-login.
-  final DomainException? error;
-
-  /// Indica que el alta termino aunque un paso posterior haya fallado.
-  final bool accountCreated;
+  factory SignUpState.initial() => const SignUpState(stage: SignUpStage.idle);
 
   /// Indica si debe mantenerse deshabilitado el formulario.
   bool get isProcessing => switch (stage) {

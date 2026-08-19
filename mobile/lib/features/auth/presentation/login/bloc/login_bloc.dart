@@ -37,10 +37,6 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final SignInUseCase _signInUseCase;
   final PreparePostAuthentication _preparePostAuthentication;
   final void Function()? _onClose;
-  PostAuthenticationSummary? _initialDataSyncSummary;
-
-  /// Ultimo resumen exitoso de preparacion para la sesion autenticada.
-  PostAuthenticationSummary? get initialDataSyncSummary => _initialDataSyncSummary;
 
   /// Maneja el submit del formulario de login.
   ///
@@ -58,9 +54,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         signInResult: const ResultState<AuthSession>.loading(),
         isPreparingOfflineData: false,
         initialDataSyncError: null,
+        postAuthenticationSummary: null,
       ),
     );
-    _initialDataSyncSummary = null;
 
     final result = await _signInUseCase(
       email: event.email.trim(),
@@ -77,7 +73,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
         // La sync inicial usa el token que AuthRepositoryImpl acaba de hidratar
         // en SessionBackendAccessTokenProvider durante el signIn exitoso.
-        final syncResult = await _preparePostAuthentication(data.user.id);
+        final syncResult = await _preparePostAuthentication();
         final syncError = switch (syncResult) {
           Failure<PostAuthenticationSummary>(:final error) => error,
           Success<PostAuthenticationSummary>() => null,
@@ -88,13 +84,12 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           Failure<PostAuthenticationSummary>() => null,
           _ => null,
         };
-        _initialDataSyncSummary = syncSummary;
-
         emit(
           state.copyWith(
             signInResult: ResultState<AuthSession>.data(data),
             isPreparingOfflineData: false,
             initialDataSyncError: syncError,
+            postAuthenticationSummary: syncSummary,
           ),
         );
       case Failure<AuthSession>(:final error):
@@ -102,6 +97,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           state.copyWith(
             signInResult: ResultState<AuthSession>.error(error),
             isPreparingOfflineData: false,
+            postAuthenticationSummary: null,
           ),
         );
     }

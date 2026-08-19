@@ -254,6 +254,34 @@ void main() {
       );
     });
 
+    test('signOut exposes programming errors but still clears local session', () async {
+      await secureStorage.write(
+        key: SecureStorageKeys.authSession,
+        value: 'stored-session',
+      );
+      SessionBackendAccessTokenProvider.instance.session = BackendTokenSession(
+        accessToken: 'jwt-token',
+        refreshToken: 'refresh-token',
+        accessTokenExpiresAt: DateTime.now().toUtc().add(
+          const Duration(hours: 1),
+        ),
+      );
+      final repository = _createRepository(
+        secureStorage: secureStorage,
+        client: MockClient((request) async {
+          throw StateError('Unexpected internal state');
+        }),
+      );
+
+      await expectLater(repository.signOut(), throwsA(isA<StateError>()));
+
+      expect(await secureStorage.read(SecureStorageKeys.authSession), isNull);
+      expect(
+        await SessionBackendAccessTokenProvider.instance.getAccessToken(),
+        isNull,
+      );
+    });
+
     test('signOut refreshes an expired token before remote logout', () async {
       await secureStorage.write(
         key: SecureStorageKeys.authSession,

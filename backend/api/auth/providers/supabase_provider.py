@@ -118,13 +118,20 @@ class SupabaseAuthProvider(AuthProvider):
 
     def _sign_up_sync(self, email: str, password: str) -> AuthResult:
         admin_client = _get_admin_client()
+        raw_user_id: str | None = None
         user_id: UUID | None = None
         try:
             created = admin_client.auth.admin.create_user(
                 {"email": email, "password": password, "email_confirm": True}
             )
             user = getattr(created, "user", None) or created
-            user_id = UUID(str(user.id))
+            raw_user_id = str(user.id)
+            try:
+                user_id = UUID(raw_user_id)
+            except ValueError as exc:
+                raise AuthProviderError(
+                    "Supabase devolvió un identificador de usuario inválido"
+                ) from exc
 
             # Iniciar sesión para devolver un token de sesión al cliente.
             # Un cliente publico aislado evita reemplazar la service-role del
@@ -134,13 +141,15 @@ class SupabaseAuthProvider(AuthProvider):
             )
             return _result_from_session(user_id, session.session)
         except Exception as exc:  # red / API de Supabase
-            if user_id is not None:
+            # raw_user_id se conserva antes del parseo para poder eliminar una
+            # credencial que Supabase ya creó aunque devuelva un UUID malformado.
+            if raw_user_id is not None:
                 try:
-                    admin_client.auth.admin.delete_user(str(user_id))
+                    admin_client.auth.admin.delete_user(raw_user_id)
                 except Exception:
                     logger.exception(
                         "[AUTH] No se pudo compensar la credencial %s tras fallar sign_up",
-                        user_id,
+                        raw_user_id,
                     )
             if isinstance(exc, AuthProviderError):
                 raise

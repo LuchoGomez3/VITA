@@ -228,19 +228,31 @@ class AuthRepositoryImpl implements AuthRepository {
       if (accessToken != null) {
         await _remoteDataSource.signOut(accessToken);
       }
-    } on Object catch (error, stackTrace) {
-      // Cerrar localmente tiene prioridad: el productor debe poder salir aun
-      // sin señal. La sesión remota expirará o podrá revocarse posteriormente.
-      developer.log(
-        'No se pudo cerrar la sesion remota.',
-        name: 'AuthRepositoryImpl',
-        error: error,
-        stackTrace: stackTrace,
-      );
+    } on IOException catch (error, stackTrace) {
+      _logRemoteSignOutFailure(error, stackTrace);
+    } on TimeoutException catch (error, stackTrace) {
+      _logRemoteSignOutFailure(error, stackTrace);
+    } on http.ClientException catch (error, stackTrace) {
+      _logRemoteSignOutFailure(error, stackTrace);
+    } on DomainException catch (error, stackTrace) {
+      _logRemoteSignOutFailure(error, stackTrace);
+    } on FormatException catch (error, stackTrace) {
+      _logRemoteSignOutFailure(error, stackTrace);
     } finally {
       await _localDataSource.clearSession();
       _tokenProvider.clearAccessToken();
     }
+  }
+
+  void _logRemoteSignOutFailure(Object error, StackTrace stackTrace) {
+    // Cerrar localmente tiene prioridad ante fallas recuperables: la sesion
+    // remota expirara o podra revocarse en otro momento con conectividad.
+    developer.log(
+      'No se pudo cerrar la sesion remota.',
+      name: 'AuthRepositoryImpl',
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   Future<void> _persistAndHydrate(AuthSession session) async {

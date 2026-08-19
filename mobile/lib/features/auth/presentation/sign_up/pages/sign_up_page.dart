@@ -10,7 +10,6 @@ import 'package:frontend_mayoral/features/auth/domain/entities/registration_requ
 import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_bloc.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_event.dart';
-import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_state.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/strings/sign_up_strings.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/widgets/sign_up_widgets.dart';
 import 'package:go_router/go_router.dart';

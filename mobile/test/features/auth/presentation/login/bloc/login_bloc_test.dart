@@ -18,9 +18,8 @@ void main() {
     final bloc =
         LoginBloc(
           signInUseCase: SignInUseCase(repository),
-          preparePostAuthentication: (userId) async {
-            expect(userId, _session.user.id);
-            return const Result.success(
+          preparePostAuthentication: () async {
+            return Result.success(
               PostAuthenticationSummary(establishmentIds: ['establishment-1']),
             );
           },
@@ -35,7 +34,7 @@ void main() {
     expect(repository.receivedEmail, 'ernesto@example.com');
     expect(bloc.state.signInResult, ResultState<AuthSession>.data(_session));
     expect(bloc.state.initialDataSyncError, isNull);
-    expect(bloc.initialDataSyncSummary?.hasEstablishments, isTrue);
+    expect(bloc.state.postAuthenticationSummary?.hasEstablishments, isTrue);
     await bloc.close();
   });
 
@@ -49,7 +48,7 @@ void main() {
           signInUseCase: SignInUseCase(
             _LoginAuthRepository(signInResult: Result.success(_session)),
           ),
-          preparePostAuthentication: (_) async => const Result.failure(syncError),
+          preparePostAuthentication: () async => const Result.failure(syncError),
         )..add(
           const LoginSubmitted(
             email: 'ernesto@example.com',
@@ -60,7 +59,7 @@ void main() {
 
     expect(bloc.state.signInResult, ResultState<AuthSession>.data(_session));
     expect(bloc.state.initialDataSyncError, syncError);
-    expect(bloc.initialDataSyncSummary, isNull);
+    expect(bloc.state.postAuthenticationSummary, isNull);
     await bloc.close();
   });
 }

@@ -23,8 +23,8 @@ void main() {
       weighingStore: weighingStore,
     );
 
-    await repository.syncForUser('user-1');
-    await repository.syncForUser('user-1');
+    await repository.sync();
+    await repository.sync();
 
     expect(animalStore.pulls, ['establishment-1', 'establishment-1']);
     expect(categoryStore.pulls, ['establishment-1', 'establishment-1']);

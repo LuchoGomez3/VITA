@@ -1,11 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/register_user_use_case.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_event.dart';
-import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_state.dart';
+
+part 'sign_up_bloc.freezed.dart';
+part 'sign_up_state.dart';
 
 /// Bloc que coordina el registro y el inicio de sesion automatico.
 class SignUpBloc extends Bloc<SignUpEvent, SignUpState> {
@@ -15,7 +19,7 @@ class SignUpBloc extends Bloc<SignUpEvent, SignUpState> {
     void Function()? onClose,
   }) : _registerUserUseCase = registerUserUseCase,
        _onClose = onClose,
-       super(const SignUpState.initial()) {
+       super(SignUpState.initial()) {
     on<SignUpSubmitted>(
       _onSubmitted,
       transformer: _droppable(),

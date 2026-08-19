@@ -57,6 +57,23 @@ def test_sign_up_deletes_credentials_when_initial_login_fails(monkeypatch):
     assert admin_api.deleted_user_ids == [user_id]
 
 
+def test_sign_up_deletes_raw_credentials_when_supabase_returns_invalid_id(monkeypatch):
+    raw_user_id = "supabase-invalid-id"
+    admin_api = _RawAdminApi(raw_user_id)
+
+    monkeypatch.setattr(
+        "api.auth.providers.supabase_provider._get_admin_client",
+        lambda: SimpleNamespace(
+            auth=SimpleNamespace(admin=admin_api),
+        ),
+    )
+
+    with pytest.raises(AuthProviderError, match="identificador de usuario inválido"):
+        SupabaseAuthProvider()._sign_up_sync("juan@campo.com", "Segura123")
+
+    assert admin_api.deleted_user_ids == [raw_user_id]
+
+
 def test_sign_out_revokes_all_supabase_sessions(monkeypatch):
     captured: dict[str, object] = {}
 
@@ -135,6 +152,18 @@ class _PublicAuth:
             user=SimpleNamespace(id=self._user_id),
             session=session,
         )
+
+
+class _RawAdminApi:
+    def __init__(self, user_id: str) -> None:
+        self._user_id = user_id
+        self.deleted_user_ids: list[str] = []
+
+    def create_user(self, credentials: dict[str, object]):
+        return SimpleNamespace(user=SimpleNamespace(id=self._user_id))
+
+    def delete_user(self, user_id: str) -> None:
+        self.deleted_user_ids.append(user_id)
 
 
 class _FailingPublicAuth:

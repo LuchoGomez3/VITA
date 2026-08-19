@@ -1,8 +1,8 @@
 -- Normaliza correos y garantiza unicidad real de los identificadores de usuario.
 -- Si existen duplicados, la transaccion falla al crear el indice y no aplica
 -- cambios parciales. Resolver esos registros antes de volver a ejecutar.
--- TODO(equipo): Ejecutar manualmente en Supabase antes del despliegue/PR final
--- y verificar que existan uq_usuarios_email y uq_usuarios_cuit.
+-- Script de respaldo para intervención manual. Los despliegues normales deben
+-- aplicar la migración Alembic 20260819_01 mediante `alembic upgrade head`.
 begin;
 
 update public.usuarios

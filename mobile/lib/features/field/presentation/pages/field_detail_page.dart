@@ -54,8 +54,7 @@ class FieldDetailPage extends StatelessWidget {
                       Expanded(
                         child: AppInfoCell(
                           label: FieldStrings.densityDetailLabel,
-                          value:
-                              '${density.toStringAsFixed(1).replaceAll('.', ',')} ${FieldStrings.densityUnit}',
+                          value: '${density.toStringAsFixed(1).replaceAll('.', ',')} ${FieldStrings.densityUnit}',
                         ),
                       ),
                     ],
@@ -101,8 +100,7 @@ class FieldDetailPage extends StatelessWidget {
                       spacing: AppSpacing.xs,
                       runSpacing: AppSpacing.xs,
                       children: [
-                        for (final (label, count) in laLomaComposition)
-                          AppStatusChip(label: '$label · $count'),
+                        for (final (label, count) in laLomaComposition) AppStatusChip(label: '$label · $count'),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.lg),

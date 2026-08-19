@@ -11,11 +11,4 @@ class SecureStorageKeys {
 
   /// Datos completos de los establecimientos disponibles para la sesión.
   static const establishmentCatalog = 'establishment_catalog_v1';
-
-  /// IDs cuyo bootstrap offline finalizo, separados por usuario.
-  static String initialDataSyncedEstablishments(String userId) {
-    // La version 5 reemplaza el booleano historico por una lista. Asi se pueden
-    // incorporar establecimientos nuevos y reanudar descargas parciales.
-    return 'initial_data_synced_establishments_v5_$userId';
-  }
 }

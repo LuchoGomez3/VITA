@@ -66,11 +66,26 @@ Demo user: `admin` / `admin`.
 ## Tests
 - Todo: units (auth) and integration (httpx/pytest-asyncio).
 
-## Pendientes de despliegue
+## Migraciones de base de datos
 
-- TODO(equipo): Ejecutar `scripts/agregar_unicidad_usuarios.sql` en Supabase
-  antes de desplegar los cambios de registro. El script normaliza los correos y
-  crea los indices unicos `uq_usuarios_email` y `uq_usuarios_cuit`.
+La estructura de las bases compartidas se actualiza con Alembic. Antes de
+iniciar una nueva versión del backend, el proceso de despliegue debe ejecutar:
+
+```bash
+uv run alembic upgrade head
+```
+
+La migración inicial adopta o crea los índices únicos `uq_usuarios_email` y
+`uq_usuarios_cuit`. Si encuentra datos duplicados, se detiene con un mensaje
+claro y no aplica parcialmente el cambio. `create_all()` se conserva solamente
+como ayuda para entornos locales y de prueba; no reemplaza las migraciones.
+
+Para consultar el estado sin modificar la base:
+
+```bash
+uv run alembic current
+uv run alembic heads
+```
 
 ## Protección de autenticación
 

@@ -7,9 +7,9 @@ import 'package:frontend_mayoral/core/result/result.dart';
 /// dominio de autenticacion. Auth solo dispara esta preparacion una vez que hay
 /// una sesion valida y un token disponible para Brick/backend.
 abstract class InitialDataSyncRepository {
-  /// Sincroniza los datos necesarios para operar offline con [userId].
+  /// Actualiza los datos necesarios para operar offline.
   ///
-  /// Debe ser idempotente: si el bootstrap ya se completo para ese usuario,
-  /// puede terminar sin volver a descargar las entidades.
-  Future<Result<PostAuthenticationSummary>> syncForUser(String userId);
+  /// Consulta nuevamente todas las entidades visibles en cada autenticacion
+  /// para incorporar cambios realizados desde otros dispositivos.
+  Future<Result<PostAuthenticationSummary>> sync();
 }

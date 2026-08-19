@@ -42,7 +42,7 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
   final PesajeBrickStore _weighingStore;
 
   @override
-  Future<Result<PostAuthenticationSummary>> syncForUser(String userId) async {
+  Future<Result<PostAuthenticationSummary>> sync() async {
     try {
       final establishments = await _establishmentRemoteDataSource.fetchEstablishments();
       await _secureStorage.write(
