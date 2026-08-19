@@ -4,7 +4,7 @@ import numpy as np
 
 # 1. Cargar el "cerebro" que acabás de entrenar
 print("🧠 Cargando el modelo de VITA...")
-model = tf.keras.models.load_model('modelo_pesaje_base.keras')
+model = tf.keras.models.load_model('modelo_pesaje_b8_d0.1_lr0.01_n512.keras')
 
 def predecir_peso(ruta_imagen):
     if not os.path.exists(ruta_imagen):
@@ -31,5 +31,6 @@ def predecir_peso(ruta_imagen):
 
 if __name__ == "__main__":
     # TODO: Poné acá la ruta a una foto tuya de prueba (Ideal si sabés cuánto pesa realmente)
-    ruta_prueba = r"/home/ernesto/Downloads/images/images/BLF2018/BLF2018_0.jpg" 
+    ruta_prueba = r"/home/ernesto/Documents/dataset_vita_ai/images_1/images/BLF2001/BLF2001_0.jpg" # Ruta de foto dentro del dataset de entrenamiento
+    #ruta_prueba = r"/home/ernesto/Documents/dataset_vita_ai/images_2/Cattle side and back view images/side view/1.png" # Ruta de foto fuera del dataset de entrenamiento 
     predecir_peso(ruta_prueba)

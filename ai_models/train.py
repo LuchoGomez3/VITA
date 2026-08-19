@@ -1,84 +1,95 @@
 import os
+import csv
+import datetime
 import tensorflow as tf
+from tensorboard.plugins.hparams import api as hp
 from model_builder import build_weight_estimation_model
 from data_pipeline import create_tf_dataset
-import csv
 
-# TODO: Importá acá la función que creaste vos
-# from tu_archivo import funcion_que_devuelve_diccionario
+dropout_rate = 0.1
+batch_size = 8
+neurons = 512
+learning_rate = 0.01
+
+HP_DROPOUT = dropout_rate
+HP_BATCH_SIZE = batch_size
+HP_NEURONS = neurons
+HP_LEARNING_RATE = learning_rate
 
 def preparar_datos_entrenamiento():
-    # 1. Llamás a tu función que devuelve el diccionario
-    # weights_dict = funcion_que_devuelve_diccionario()
-    
-    
-    # Acomodar pesos de cada imagen
-
     dict_pesos = {}
+    
+    # Leer el CSV
     with open('dataset.csv', mode='r', encoding='utf-8') as datos:
         lector = csv.reader(datos)
-        lector.__next__()  # Saltar la primera fila (cabecera)
+        next(lector)  # Saltar la primera fila (cabecera)
         for i in lector:
             dict_pesos[i[0]] = float(i[8])
 
-  
-    # 2. Definí la ruta EXACTA donde está la carpeta principal que contiene a todas estas subcarpetas.
-    # Reemplazá 'Dataset_Bovinos' por el nombre de la carpeta real en tus Descargas
-    downloads_path = os.path.join(os.path.expanduser('~'), 'Downloads/images', 'images')
+    # Ruta EXACTA a las imágenes
+    downloads_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'images', 'images')
 
     image_paths = []
     weights = []
 
     print("🔍 Escaneando subcarpetas en busca de imágenes...")
 
-    # 3. Iteramos sobre tu diccionario
     for identificador, peso in dict_pesos.items():
-        # Por si tu función devolvió 'BLF2001_0.jpg' en vez de 'BLF2001', lo limpiamos:
         nombre_carpeta = identificador.replace('_0.jpg', '')
-        
-        # Armamos el nombre del archivo según tu regla
         nombre_archivo = f"{nombre_carpeta}_0.jpg"
-        
-        # MAGIA ACÁ: Unimos la ruta principal + nombre de subcarpeta + nombre del archivo
-        # Quedaría algo como: C:\Users\Ernesto\Downloads\Dataset_Bovinos\BLF2001\BLF2001_0.jpg
         ruta_completa = os.path.join(downloads_path, nombre_carpeta, nombre_archivo)
         
-        # Validamos que la imagen realmente exista en esa subcarpeta
         if os.path.exists(ruta_completa):
             image_paths.append(ruta_completa)
             weights.append(peso)
         else:
             print(f"⚠️ Advertencia: No se encontró la imagen en {ruta_completa}")
 
-    print(f"✅ ¡Listas armadas! Se extrajeron {len(image_paths)} imágenes de las subcarpetas para entrenar.")
+    print(f"✅ ¡Listas armadas! Se extrajeron {len(image_paths)} imágenes para entrenar.")
     return image_paths, weights
 
+def entrenar_con_hparams(hparams, rutas, pesos):
+    # Crear dataset inyectando el Batch Size de esta prueba en particular
+    dataset_entrenamiento = create_tf_dataset(
+        rutas, 
+        pesos, 
+        is_training=True, 
+        batch_size=hparams[HP_BATCH_SIZE]
+    )
+    
+    print(f"🧠 Construyendo modelo con Dropout: {hparams[HP_DROPOUT]}, Batch Size: {hparams[HP_BATCH_SIZE]}, Neuronas: {hparams[HP_NEURONS]}, Tasa de Aprendizaje: {hparams[HP_LEARNING_RATE]}")
+    model = build_weight_estimation_model(dropout_rate=hparams[HP_DROPOUT], 
+                                          neurons=hparams[HP_NEURONS], 
+                                          learning_rate=hparams[HP_LEARNING_RATE])
+    
+    # Entrenar
+    model.fit(
+        dataset_entrenamiento,
+        epochs=10,
+    )
+
+    model.save(f"modelo_pesaje_b{hparams[HP_BATCH_SIZE]}_d{hparams[HP_DROPOUT]}_lr{hparams[HP_LEARNING_RATE]}_n{hparams[HP_NEURONS]}.keras")
+
 def main():
-    # 1. Preparar las listas con tus datos
     rutas, pesos = preparar_datos_entrenamiento()
     
     if len(rutas) == 0:
-        print("❌ Error: No hay imágenes para entrenar. Revisá la carpeta de Descargas.")
+        print("❌ Error: No hay imágenes para entrenar.")
         return
 
-    # 2. Crear el pipeline de datos optimizado (el que armamos en data_pipeline.py)
-    dataset_entrenamiento = create_tf_dataset(rutas, pesos, is_training=True)
-
-    # 3. Traer la arquitectura de la red neuronal (MobileNetV2 adaptada)
-    print("🧠 Construyendo el modelo...")
-    model = build_weight_estimation_model()
-
-    # 4. ¡ARRANCAR EL ENTRENAMIENTO! (Fase 1)
-    # epochs=10 significa que va a repasar todas las imágenes 10 veces para aprender
-    print("🚀 Iniciando entrenamiento...")
-    history = model.fit(
-        dataset_entrenamiento,
-        epochs=160
-    )
+    hparams = {
+        HP_DROPOUT: dropout_rate,
+        HP_BATCH_SIZE: batch_size,
+        HP_NEURONS: neurons,
+        HP_LEARNING_RATE: learning_rate
+    }
     
-    # 5. Guardar el modelo entrenado para usarlo después
-    model.save('modelo_pesaje_base.keras')
-    print("💾 Modelo guardado exitosamente como 'modelo_pesaje_base.keras'")
+    print("-" * 50)
+    print(f"--- Iniciando entranamiento con Dropout: {dropout_rate}, Batch Size: {batch_size}, Neuronas: {neurons}, Tasa de Aprendizaje: {learning_rate} ---")
+    
+    entrenar_con_hparams(hparams, rutas, pesos)
+            
+    print("💾 ¡Entrenamiento finalizado y guardado!")
 
 if __name__ == "__main__":
     main()

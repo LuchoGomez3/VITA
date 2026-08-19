@@ -39,7 +39,7 @@ def augment_image(img, weight):
     
     return img, weight
 
-def create_tf_dataset(image_paths, weights, is_training=True):
+def create_tf_dataset(image_paths, weights, is_training=True, batch_size=32):
     """
     Crea un pipeline de datos ultra eficiente usando tf.data
     """
@@ -56,7 +56,7 @@ def create_tf_dataset(image_paths, weights, is_training=True):
         ds = ds.shuffle(buffer_size=1000)
     
     # Agrupar en lotes de a 32 imágenes y optimizar la carga (prefetch)
-    ds = ds.batch(BATCH_SIZE).prefetch(tf.data.AUTOTUNE)
+    ds = ds.batch(batch_size).prefetch(tf.data.AUTOTUNE)
     
     return ds
 
