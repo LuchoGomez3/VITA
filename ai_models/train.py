@@ -7,8 +7,8 @@ from model_builder import build_weight_estimation_model
 from data_pipeline import create_tf_dataset
 
 dropout_rate = 0.1
-batch_size = 8
-neurons = 512
+batch_size = 16
+neurons = 2048
 learning_rate = 0.01
 
 HP_DROPOUT = dropout_rate
@@ -20,7 +20,7 @@ def preparar_datos_entrenamiento():
     dict_pesos = {}
     
     # Leer el CSV
-    with open('dataset.csv', mode='r', encoding='utf-8') as datos:
+    with open('./datasets/dataset_1.csv', mode='r', encoding='utf-8') as datos:
         lector = csv.reader(datos)
         next(lector)  # Saltar la primera fila (cabecera)
         for i in lector:

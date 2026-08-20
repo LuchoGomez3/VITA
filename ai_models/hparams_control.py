@@ -13,7 +13,7 @@ from data_pipeline import create_tf_dataset
 #HP_LEARNING_RATE = hp.HParam('learning_rate', hp.Discrete([0.0001, 0.001, 0.01])) # Probaremos con 0.0001, 0.001 y 0.01
 
 # Reasignando desde donde se quedo la ejecución anterior
-HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.4])) # Probaremos con 10%, 20%, 30%, 40% y 50%
+HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.5])) # Probaremos con 10%, 20%, 30%, 40% y 50%
 HP_BATCH_SIZE = hp.HParam('batch_size', hp.Discrete([8, 16, 32])) # Probaremos lotes de 8, 16 y 32
 HP_NEURONS = hp.HParam('neurons', hp.Discrete([512, 1024, 2048])) # Probaremos con 512, 1024 y 2048 neuronas
 HP_LEARNING_RATE = hp.HParam('learning_rate', hp.Discrete([0.0001, 0.001, 0.01])) # Probaremos con 0.0001, 0.001 y 0.01
@@ -96,7 +96,7 @@ def main():
     os.makedirs(base_logdir, exist_ok=True)
 
     print("🚀 Iniciando el Bucle de Búsqueda de Hiperparámetros...")
-    session_num = 79
+    session_num = 106
     
     # 2. Bucle Automático: Combina todos los Dropouts con todos los Batch Sizes
     for dropout_rate in HP_DROPOUT.domain.values:

@@ -4,7 +4,7 @@ import numpy as np
 
 # 1. Cargar el "cerebro" que acabás de entrenar
 print("🧠 Cargando el modelo de VITA...")
-model = tf.keras.models.load_model('modelo_pesaje_b8_d0.1_lr0.01_n512.keras')
+model = tf.keras.models.load_model('modelo_pesaje_b16_d0.1_lr0.01_n2048.keras')
 
 def predecir_peso(ruta_imagen):
     if not os.path.exists(ruta_imagen):
