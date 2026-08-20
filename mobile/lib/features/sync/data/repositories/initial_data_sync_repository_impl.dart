@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
+import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -41,12 +42,9 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
   final PesajeBrickStore _weighingStore;
 
   @override
-  Future<Result<void>> syncForUser(String userId) async {
-    final markerKey = SecureStorageKeys.initialDataSyncCompleted(userId);
-
+  Future<Result<PostAuthenticationSummary>> sync() async {
     try {
-      final establishments =
-          await _establishmentRemoteDataSource.fetchEstablishments();
+      final establishments = await _establishmentRemoteDataSource.fetchEstablishments();
       await _secureStorage.write(
         key: SecureStorageKeys.establishmentCatalog,
         value: jsonEncode(
@@ -56,6 +54,7 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
       _logInitialSyncStep('establishments=${establishments.length}');
       for (final establishment in establishments) {
         final establishmentId = establishment.id;
+
         // El catalogo se cachea antes que los animales para que sus referencias
         // de categoria ya esten disponibles en los flujos offline.
         _logInitialSyncStep(
@@ -71,14 +70,16 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
         );
         await _weighingStore.pullRemotePesajes(establishmentId);
       }
-      await _secureStorage.write(key: markerKey, value: 'true');
 
-      return const Result.success(null);
+      return Result.success(
+        PostAuthenticationSummary(
+          establishmentIds: establishments.map((establishment) => establishment.id).toList(growable: false),
+        ),
+      );
     } on SocketException {
       return const Result.failure(
         DomainException(
-          message:
-              'No se pudieron preparar los datos offline por falta de conexion.',
+          message: 'No se pudieron preparar los datos offline por falta de conexion.',
           code: DomainErrorCode.offline,
         ),
       );

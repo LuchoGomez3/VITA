@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
@@ -36,6 +38,9 @@ import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
+import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
+import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
+import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_menu_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_error_page.dart';
@@ -43,317 +48,371 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senas
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
-import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
-import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
-import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
 import 'package:go_router/go_router.dart';
 
-/// Configuracion del router de la app.
+/// Configuracion central de rutas y proteccion de sesion de la aplicacion.
 class AppRouter {
-  /// Router de la app.
-  static final GoRouter router = GoRouter(
-    /// La app arranca restaurando sesion local antes de decidir login/home.
-    initialLocation: AppRoutes.authCheck,
+  const AppRouter._();
 
-    /// Rutas de la app.
-    routes: [
-      GoRoute(
-        path: AppRoutes.authCheck,
-        builder: (context, state) => const AuthCheckPage(),
+  /// Crea el router protegido por el estado global de autenticacion.
+  static GoRouter create({
+    required AuthSessionCubit authSessionCubit,
+    required Listenable refreshListenable,
+  }) {
+    return GoRouter(
+      initialLocation: AppRoutes.authCheck,
+      refreshListenable: refreshListenable,
+      redirect: (context, state) => redirectFor(
+        authState: authSessionCubit.state,
+        location: state.uri.path,
+        hasSignUpSuccessData: state.extra is AppUser,
       ),
-      GoRoute(
-        path: AppRoutes.login,
-        pageBuilder: (context, state) => BackwardPage(
-          state: state,
-          child: const LoginPage(
-            createBloc: createLoginBloc,
+      routes: [
+        GoRoute(
+          path: AppRoutes.authCheck,
+          builder: (context, state) => const AuthCheckPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.login,
+          pageBuilder: (context, state) => BackwardPage(
+            state: state,
+            child: const LoginPage(createBloc: createLoginBloc),
           ),
         ),
-      ),
-      GoRoute(
-        path: AppRoutes.signUp,
-        builder: (context, state) => const WelcomePage(),
-      ),
-      GoRoute(
-        path: AppRoutes.signUpForm,
-        builder: (context, state) => const SignUpPage(
-          createBloc: createSignUpBloc,
+        GoRoute(
+          path: AppRoutes.signUp,
+          builder: (context, state) => const WelcomePage(),
         ),
-      ),
-      GoRoute(
-        path: AppRoutes.signUpSuccess,
-        builder: (context, state) => SignUpSuccessPage(
-          userData: state.extra! as AppUser,
+        GoRoute(
+          path: AppRoutes.signUpForm,
+          builder: (context, state) => const SignUpPage(
+            createBloc: createSignUpBloc,
+          ),
         ),
-      ),
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => MainLayoutPage(
-          navigationShell: navigationShell,
+        GoRoute(
+          path: AppRoutes.signUpSuccess,
+          builder: (context, state) => SignUpSuccessPage(
+            userData: state.extra! as AppUser,
+          ),
         ),
-        branches: [
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.home,
-                pageBuilder: (context, state) {
-                  final sessionState = context.watch<AuthSessionCubit>().state;
-                  final userName = switch (sessionState) {
-                    AuthSessionAuthenticated(:final session) => session.user.firstName,
-                    _ => '',
-                  };
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, navigationShell) => MainLayoutPage(
+            navigationShell: navigationShell,
+          ),
+          branches: [
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: AppRoutes.home,
+                  pageBuilder: (context, state) {
+                    final sessionState = context.watch<AuthSessionCubit>().state;
+                    final userName = switch (sessionState) {
+                      AuthSessionAuthenticated(:final session) => session.user.firstName,
+                      _ => '',
+                    };
 
-                  return FadePage(
-                    state: state,
-                    child: HomePage(
-                      createCubit: createHomeDashboardCubit,
-                      userName: userName,
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.livestock,
-                builder: (context, state) => const LivestockPage(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.procedures,
-                builder: (context, state) => SenasaMenuPage(
-                  key: ValueKey(state.extra),
-                  createCubit: createSenasaMenuCubit,
+                    return FadePage(
+                      state: state,
+                      child: HomePage(
+                        createCubit: createHomeDashboardCubit,
+                        userName: userName,
+                      ),
+                    );
+                  },
                 ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.profile,
-                builder: (context, state) {
-                  final sessionState = context.watch<AuthSessionCubit>().state;
-
-                  return switch (sessionState) {
-                    AuthSessionAuthenticated(:final session) => ProfilePage(
-                      userId: session.user.id,
-                      email: session.user.email,
-                      firstName: session.user.firstName,
-                      lastName: session.user.lastName,
-                      cuit: session.user.cuit,
-                      role: session.user.role.name,
-                      createCubit: createProfileCubit,
-                      signOut: context.read<AuthSessionCubit>().signOut,
-                    ),
-                    _ => ProfilePage(
-                      userId: ProfileStrings.emptyCredential,
-                      email: ProfileStrings.emptyCredential,
-                      firstName: ProfileStrings.emptyCredential,
-                      lastName: ProfileStrings.emptyCredential,
-                      cuit: null,
-                      role: 'unknown',
-                      createCubit: createProfileCubit,
-                      signOut: context.read<AuthSessionCubit>().signOut,
-                    ),
-                  };
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-      GoRoute(
-        path: AppRoutes.animalRegisterStep1,
-        builder: (context, state) => RegisterAnimalPage(
-          createBloc: createRegisterAnimalBloc,
-          initialRfid: state.uri.queryParameters['rfid'] ?? '',
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.animalRegisterStep2,
-        builder: (context, state) => const RegisterAnimalPage(
-          createBloc: createRegisterAnimalBloc,
-          initialStep: RegisterAnimalStep.basicData,
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.animalRegisterStep3,
-        builder: (context, state) => const RegisterAnimalPage(
-          createBloc: createRegisterAnimalBloc,
-          initialStep: RegisterAnimalStep.genealogy,
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.animalRegisterStep4,
-        builder: (context, state) => const RegisterAnimalPage(
-          createBloc: createRegisterAnimalBloc,
-          initialStep: RegisterAnimalStep.review,
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.animalRegisterSuccess,
-        builder: (context, state) {
-          final registeredAnimal = state.extra! as RegisteredAnimal;
-          return RegistrarAnimalSuccessPage(
-            registeredAnimal: registeredAnimal,
-          );
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.animalDetail,
-        builder: (context, state) {
-          final animalId = state.pathParameters['animalId']!;
-          return AnimalDetailPage(
-            animalId: animalId,
-            createCubit: createAnimalDetailCubit,
-          );
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.establishmentRegisterEmpty,
-        builder: (context, state) => EstablishmentEmptyStatePage(
-          onSignOut: context.read<AuthSessionCubit>().signOut,
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.establishmentRegisterStep1,
-        builder: (context, state) => const EstablishmentRegisterPage(
-          createBloc: createRegisterEstablishmentBloc,
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.establishmentRegisterStep2,
-        // Sin persistencia de borrador entre rutas, entrar directo acá
-        // siempre da un BLoC con estado inicial vacío: se redirige al paso 1
-        // hasta que exista hidratación real de deep-link.
-        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
-        builder: (context, state) => const EstablishmentRegisterPage(
-          createBloc: createRegisterEstablishmentBloc,
-          initialStep: RegisterEstablishmentStep.renspa,
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.establishmentRegisterStep3,
-        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
-        builder: (context, state) => const EstablishmentRegisterPage(
-          createBloc: createRegisterEstablishmentBloc,
-          initialStep: RegisterEstablishmentStep.location,
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.establishmentRegisterStep4,
-        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
-        builder: (context, state) => const EstablishmentRegisterPage(
-          createBloc: createRegisterEstablishmentBloc,
-          initialStep: RegisterEstablishmentStep.surface,
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.establishmentRegisterReview,
-        redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
-        builder: (context, state) => const EstablishmentRegisterPage(
-          createBloc: createRegisterEstablishmentBloc,
-          initialStep: RegisterEstablishmentStep.review,
-        ),
-      ),
-      GoRoute(
-        path: AppRoutes.establishmentRegisterSuccess,
-        builder: (context, state) {
-          final registeredEstablishment = state.extra! as RegisteredEstablishment;
-          return EstablishmentRegisterSuccessPage(
-            registeredEstablishment: registeredEstablishment,
-          );
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.rfidScan,
-        builder: (context, state) {
-          final establishmentId = state.uri.queryParameters['establecimientoId'];
-          if (establishmentId == null || establishmentId.isEmpty) {
-            return const ShellPlaceholderPage(title: 'Seleccioná un establecimiento para identificar animales.');
-          }
-
-          final readingSource = HidRfidReadingSource();
-          return RfidScanPage(
-            establishmentId: establishmentId,
-            createBloc: ({required establishmentId}) => createRfidScanBloc(
-              readingSource: readingSource,
-              establishmentId: establishmentId,
+              ],
             ),
-            onHidKeyEvent: readingSource.handleKeyEvent,
-            onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
-            onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
-          );
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.field,
-        builder: (context, state) => const FieldMapPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.fieldList,
-        builder: (context, state) => const FieldListPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.fieldDetail,
-        builder: (context, state) {
-          final potreroId = state.pathParameters['potreroId']!;
-          return FieldDetailPage(potreroId: potreroId);
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.expenseRecords,
-        builder: (context, state) => const ShellPlaceholderPage(
-          title: HomeStrings.movements,
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: AppRoutes.livestock,
+                  builder: (context, state) => const LivestockPage(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: AppRoutes.procedures,
+                  builder: (context, state) => SenasaMenuPage(
+                    key: ValueKey(state.extra),
+                    createCubit: createSenasaMenuCubit,
+                  ),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: AppRoutes.profile,
+                  builder: (context, state) {
+                    final sessionState = context.watch<AuthSessionCubit>().state;
+
+                    return switch (sessionState) {
+                      AuthSessionAuthenticated(:final session) => ProfilePage(
+                        userId: session.user.id,
+                        email: session.user.email,
+                        firstName: session.user.firstName,
+                        lastName: session.user.lastName,
+                        cuit: session.user.cuit,
+                        role: session.user.role.name,
+                        createCubit: createProfileCubit,
+                        signOut: context.read<AuthSessionCubit>().signOut,
+                      ),
+                      _ => ProfilePage(
+                        userId: ProfileStrings.emptyCredential,
+                        email: ProfileStrings.emptyCredential,
+                        firstName: ProfileStrings.emptyCredential,
+                        lastName: ProfileStrings.emptyCredential,
+                        cuit: null,
+                        role: 'unknown',
+                        createCubit: createProfileCubit,
+                        signOut: context.read<AuthSessionCubit>().signOut,
+                      ),
+                    };
+                  },
+                ),
+              ],
+            ),
+          ],
         ),
-      ),
-      GoRoute(
-        path: AppRoutes.expenseRegister,
-        builder: (context, state) => const ShellPlaceholderPage(
-          title: HomeStrings.registerExpense,
+        GoRoute(
+          path: AppRoutes.animalRegisterStep1,
+          builder: (context, state) => RegisterAnimalPage(
+            createBloc: createRegisterAnimalBloc,
+            initialRfid: state.uri.queryParameters['rfid'] ?? '',
+          ),
         ),
-      ),
-      GoRoute(
-        path: AppRoutes.incomeRegister,
-        builder: (context, state) => const ShellPlaceholderPage(
-          title: HomeStrings.registerIncome,
+        GoRoute(
+          path: AppRoutes.animalRegisterStep2,
+          builder: (context, state) => const RegisterAnimalPage(
+            createBloc: createRegisterAnimalBloc,
+            initialStep: RegisterAnimalStep.basicData,
+          ),
         ),
-      ),
-      GoRoute(
-        path: AppRoutes.senasaReport,
-        builder: (context, state) => const SenasaReportPage(
-          createCubit: createSenasaReportCubit,
+        GoRoute(
+          path: AppRoutes.animalRegisterStep3,
+          builder: (context, state) => const RegisterAnimalPage(
+            createBloc: createRegisterAnimalBloc,
+            initialStep: RegisterAnimalStep.genealogy,
+          ),
         ),
-      ),
-      GoRoute(
-        path: AppRoutes.senasaReportGeneration,
-        builder: (context, state) {
-          final request = state.extra! as SenasaReportRequest;
-          return SenasaReportGenerationPage(
-            request: request,
-            createCubit: createSenasaReportGenerationCubit,
-          );
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.senasaReportSuccess,
-        builder: (context, state) {
-          final report = state.extra! as GeneratedSenasaReport;
-          return SenasaReportSuccessPage(report: report);
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.senasaReportError,
-        builder: (context, state) {
-          final args = state.extra! as SenasaReportErrorArgs;
-          return SenasaReportErrorPage(args: args);
-        },
-      ),
-    ],
-  );
+        GoRoute(
+          path: AppRoutes.animalRegisterStep4,
+          builder: (context, state) => const RegisterAnimalPage(
+            createBloc: createRegisterAnimalBloc,
+            initialStep: RegisterAnimalStep.review,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.animalRegisterSuccess,
+          builder: (context, state) {
+            final registeredAnimal = state.extra! as RegisteredAnimal;
+            return RegistrarAnimalSuccessPage(registeredAnimal: registeredAnimal);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.animalDetail,
+          builder: (context, state) {
+            final animalId = state.pathParameters['animalId']!;
+            return AnimalDetailPage(
+              animalId: animalId,
+              createCubit: createAnimalDetailCubit,
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.establishmentRegisterEmpty,
+          builder: (context, state) => EstablishmentEmptyStatePage(
+            onSignOut: context.read<AuthSessionCubit>().signOut,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.establishmentRegisterStep1,
+          builder: (context, state) => const EstablishmentRegisterPage(
+            createBloc: createRegisterEstablishmentBloc,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.establishmentRegisterStep2,
+          redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
+          builder: (context, state) => const EstablishmentRegisterPage(
+            createBloc: createRegisterEstablishmentBloc,
+            initialStep: RegisterEstablishmentStep.renspa,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.establishmentRegisterStep3,
+          redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
+          builder: (context, state) => const EstablishmentRegisterPage(
+            createBloc: createRegisterEstablishmentBloc,
+            initialStep: RegisterEstablishmentStep.location,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.establishmentRegisterStep4,
+          redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
+          builder: (context, state) => const EstablishmentRegisterPage(
+            createBloc: createRegisterEstablishmentBloc,
+            initialStep: RegisterEstablishmentStep.surface,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.establishmentRegisterReview,
+          redirect: (context, state) => AppRoutes.establishmentRegisterStep1,
+          builder: (context, state) => const EstablishmentRegisterPage(
+            createBloc: createRegisterEstablishmentBloc,
+            initialStep: RegisterEstablishmentStep.review,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.establishmentRegisterSuccess,
+          builder: (context, state) {
+            final registeredEstablishment = state.extra! as RegisteredEstablishment;
+            return EstablishmentRegisterSuccessPage(
+              registeredEstablishment: registeredEstablishment,
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.rfidScan,
+          builder: (context, state) {
+            final establishmentId = state.uri.queryParameters['establecimientoId'];
+            if (establishmentId == null || establishmentId.isEmpty) {
+              return const ShellPlaceholderPage(
+                title: 'Seleccioná un establecimiento para identificar animales.',
+              );
+            }
+
+            final readingSource = HidRfidReadingSource();
+            return RfidScanPage(
+              establishmentId: establishmentId,
+              createBloc: ({required establishmentId}) => createRfidScanBloc(
+                readingSource: readingSource,
+                establishmentId: establishmentId,
+              ),
+              onHidKeyEvent: readingSource.handleKeyEvent,
+              onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
+              onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.field,
+          builder: (context, state) => const FieldMapPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.fieldList,
+          builder: (context, state) => const FieldListPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.fieldDetail,
+          builder: (context, state) {
+            final potreroId = state.pathParameters['potreroId']!;
+            return FieldDetailPage(potreroId: potreroId);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.expenseRecords,
+          builder: (context, state) => const ShellPlaceholderPage(
+            title: HomeStrings.movements,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.expenseRegister,
+          builder: (context, state) => const ShellPlaceholderPage(
+            title: HomeStrings.registerExpense,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.incomeRegister,
+          builder: (context, state) => const ShellPlaceholderPage(
+            title: HomeStrings.registerIncome,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.senasaReport,
+          builder: (context, state) => const SenasaReportPage(
+            createCubit: createSenasaReportCubit,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.senasaReportGeneration,
+          builder: (context, state) {
+            final request = state.extra! as SenasaReportRequest;
+            return SenasaReportGenerationPage(
+              request: request,
+              createCubit: createSenasaReportGenerationCubit,
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.senasaReportSuccess,
+          builder: (context, state) {
+            final report = state.extra! as GeneratedSenasaReport;
+            return SenasaReportSuccessPage(report: report);
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.senasaReportError,
+          builder: (context, state) {
+            final args = state.extra! as SenasaReportErrorArgs;
+            return SenasaReportErrorPage(args: args);
+          },
+        ),
+      ],
+    );
+  }
+
+  /// Decide el destino permitido sin realizar navegacion por su cuenta.
+  static String? redirectFor({
+    required AuthSessionState authState,
+    required String location,
+    bool hasSignUpSuccessData = false,
+  }) {
+    if (authState is AuthSessionChecking) {
+      return location == AppRoutes.authCheck ? null : AppRoutes.authCheck;
+    }
+
+    final isAuthenticated = authState is AuthSessionAuthenticated;
+    final isPublicAuthRoute = _publicAuthRoutes.contains(location);
+    final isValidSignUpSuccess = location == AppRoutes.signUpSuccess && hasSignUpSuccessData;
+
+    if (!isAuthenticated) {
+      if (location == AppRoutes.authCheck || (!isPublicAuthRoute && !isValidSignUpSuccess)) {
+        return AppRoutes.signUp;
+      }
+      return null;
+    }
+
+    if (location == AppRoutes.authCheck || isPublicAuthRoute) {
+      return AppRoutes.home;
+    }
+    if (location == AppRoutes.signUpSuccess && !hasSignUpSuccessData) {
+      return AppRoutes.home;
+    }
+    return null;
+  }
+
+  static const Set<String> _publicAuthRoutes = {
+    AppRoutes.signUp,
+    AppRoutes.signUpForm,
+    AppRoutes.login,
+  };
+}
+
+/// Adapta el stream del Cubit al mecanismo reactivo requerido por GoRouter.
+class AuthRouterRefreshNotifier extends ChangeNotifier {
+  /// Escucha cambios de sesion y solicita reevaluar los guards.
+  AuthRouterRefreshNotifier(AuthSessionCubit cubit) {
+    _subscription = cubit.stream.listen((_) => notifyListeners());
+  }
+
+  late final StreamSubscription<AuthSessionState> _subscription;
+
+  @override
+  void dispose() {
+    unawaited(_subscription.cancel());
+    super.dispose();
+  }
 }

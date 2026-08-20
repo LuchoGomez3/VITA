@@ -31,7 +31,9 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     required super.offlineQueueManager,
     required super.reattemptForStatusCodes,
     required StreamController<BackendSyncResult> syncResults,
-  }) : _syncResults = syncResults;
+    required StreamController<void> authRejections,
+  }) : _syncResults = syncResults,
+       _authRejections = authRejections;
 
   static AppBrickRepository? _instance;
 
@@ -40,6 +42,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   /// El repository global no interpreta estos eventos. Cada store por entidad
   /// filtra los recursos que le corresponden y actualiza su estado local.
   final StreamController<BackendSyncResult> _syncResults;
+  final StreamController<void> _authRejections;
 
   /// Instancia unica configurada durante el arranque de la app.
   ///
@@ -57,6 +60,12 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   /// Por ejemplo, `BrickAnimalStore` escucha este stream y solo procesa eventos
   /// cuyo [BackendSyncResult.resourcePath] corresponde a `/api/v1/animales`.
   Stream<BackendSyncResult> get syncResults => _syncResults.stream;
+
+  /// Notifica que el backend rechazo una sesion previamente autenticada.
+  ///
+  /// Auth consume este canal para limpiar solamente las credenciales. Los
+  /// datos offline y la cola de sincronizacion permanecen intactos.
+  Stream<void> get authRejections => _authRejections.stream;
 
   /// Configura e inicializa la infraestructura compartida de Brick.
   ///
@@ -89,6 +98,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     // El cliente HTTP observa responses de backend y publica resultados de sync
     // genericos. La logica de cada entidad queda en su store correspondiente.
     final syncResults = StreamController<BackendSyncResult>.broadcast();
+    final authRejections = StreamController<void>.broadcast();
     final restClient = AuthenticatedBackendClient(
       tokenProvider: tokenProvider ?? SessionBackendAccessTokenProvider.instance,
       inner: client,
@@ -96,6 +106,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
         syncResults.add(result);
         return Future<void>.value();
       },
+      onUnauthorized: () async => authRejections.add(null),
     );
 
     // Provider remoto: Brick lo usa para serializar modelos y hacer requests
@@ -113,6 +124,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
       restProvider: restProvider,
       migrations: migrations.toSet(),
       syncResults: syncResults,
+      authRejections: authRejections,
       offlineQueueManager: RestRequestSqliteCacheManager(
         offlineQueuePath,
         databaseFactory: databaseFactory,

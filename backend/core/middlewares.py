@@ -134,7 +134,11 @@ async def custom_exception_handler(request: Request, exc: Exception) -> JSONResp
         content: dict[str, Any] = {"error": message, "status": exc.status_code}
         if details is not None:
             content["details"] = details
-        return JSONResponse(status_code=exc.status_code, content=content)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=content,
+            headers=exc.headers,
+        )
     # Handle other types of exceptions — log internally, never expose to client
     logger.error(
         "[ERROR] Unhandled exception on %s %s: %s",

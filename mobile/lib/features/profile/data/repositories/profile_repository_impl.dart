@@ -31,10 +31,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       }
 
       return Result.success(
-        decoded
-            .whereType<Map<String, dynamic>>()
-            .map(_mapEstablishment)
-            .toList(),
+        decoded.whereType<Map<String, dynamic>>().map(_mapEstablishment).toList(),
       );
     } on Object {
       return const Result.failure(

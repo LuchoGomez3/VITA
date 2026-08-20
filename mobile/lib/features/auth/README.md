@@ -22,15 +22,14 @@ Esta fase introduce el primer flujo real de sesion:
 - restauracion offline al abrir la app;
 - estado global de autenticacion con `AuthSessionCubit`;
 - hidratacion del token provider que usa Brick;
-- logout local;
-- pantalla tecnica inicial para decidir si mostrar welcome publica o entrar a
-  la app;
+- logout remoto con limpieza local garantizada, incluso sin conexion;
+- proteccion central de arranque y rutas segun el estado de sesion;
 - pantallas de login y registro bajo `presentation`.
 
-No implementa guards completos por ruta ni borrado de bases Brick al cerrar
-sesion. Esas decisiones quedan documentadas en [Fases futuras](#fases-futuras).
-La preparacion masiva de tablas offline vive en `features/sync`; auth solo la
-coordina despues de un login exitoso.
+No implementa el borrado de bases Brick al cerrar sesion. Esa decision queda
+documentada en [Fases futuras](#fases-futuras). La preparacion masiva de tablas
+offline vive en `features/sync`; auth solo la coordina despues de una
+autenticacion exitosa.
 
 ## Capas
 
@@ -57,7 +56,9 @@ Despues del login exitoso, `LoginBloc` invoca un callback de preparacion offline
 inyectado desde la composicion. Ese callback delega en `features/sync` para
 descargar los datos necesarios para operar offline. Ese paso no pertenece al
 dominio de auth: auth obtiene y persiste sesion; sync prepara datos de negocio
-locales.
+locales. El callback devuelve los IDs de establecimientos disponibles. Login
+conserva ese resumen para que otras partes de la aplicacion puedan conocer el
+alcance preparado para la sesion sin duplicar la consulta.
 
 ## Flujo de registro
 
@@ -70,11 +71,24 @@ SignUpPage
   -> Backend /api/v1/usuarios/registro
 ```
 
-El registro es online-only. Si el backend confirma el alta, la UI navega a la
-pantalla de exito con el `AppUser` devuelto por el repositorio. No se guarda la
-password, no se persiste sesion y no se crean datos offline desde este flujo.
-El usuario debe iniciar sesion luego del registro para que mobile guarde la
-sesion y ejecute la preparacion offline.
+El registro es online-only. En la misma respuesta del alta, el backend devuelve
+la sesion completa creada para el usuario. Mobile la persiste e hidrata el token
+provider de Brick sin volver a enviar el correo ni la password en una segunda
+solicitud. La password se limpia de la UI al terminar y nunca se persiste.
+
+Durante el proceso, la UI mantiene el estado de registro ocupado hasta que la
+sesion devuelta queda persistida. Mientras tanto bloquea nuevos envios para
+evitar solicitudes duplicadas.
+
+Al finalizar se muestra una pantalla de confirmacion con dos acciones:
+
+- `Configurar mi establecimiento` abre el asistente del primer establecimiento;
+- `Ir al inicio` permite posponer esa configuracion y entrar a Home.
+
+La sincronizacion de datos operativos no se ejecuta durante el registro porque
+un dueño nuevo todavia no tiene establecimientos, animales ni pesajes. El login
+manual conserva su preparacion offline para dispositivos que deben recuperar
+informacion existente.
 
 Si el backend responde al login con una sesion valida, `AuthRepositoryImpl`:
 
@@ -124,6 +138,11 @@ registro son las excepciones al offline-first porque ambos requieren internet:
 registro para crear la cuenta en backend, login para obtener una sesion inicial
 valida.
 
+Los redirects centrales impiden acceder a rutas privadas sin sesion. Mientras
+se restaura secure storage se muestra la ruta tecnica de chequeo; con una sesion
+valida se habilita la experiencia interna y sin sesion se vuelve al flujo
+publico de autenticacion.
+
 ## Como Brick obtiene el token
 
 Brick no conoce `features/auth`. Su cliente HTTP usa el contrato
@@ -155,7 +174,14 @@ Casos cubiertos por tests:
 - logout limpiando storage seguro y memoria;
 - credenciales invalidas;
 - timeout/backend no disponible;
-- pantalla inicial durante restauracion de sesion.
+- pantalla inicial durante restauracion de sesion;
+- validaciones locales de nombre, CUIT/CUIL, email y password;
+- boton de registro deshabilitado mientras el formulario es invalido;
+- registro seguido de inicio automatico de sesion;
+- estados de carga de registro, login y preparacion offline del login;
+- bloqueo de solicitudes duplicadas;
+- limpieza de la password al completar el flujo;
+- navegacion desde la confirmacion al asistente o a Home.
 
 Comando usado:
 
@@ -172,16 +198,12 @@ no mezclarla con la integracion de sesion.
 
 ## Fases futuras
 
-### Guards reales de router
+### Politica multiusuario
 
-Hoy existe una pantalla inicial de restauracion. Mas adelante conviene sumar
-redirects/guards centrales para evitar acceder a rutas internas sin sesion.
-
-### Politica multiusuario y logout
-
-La fase actual no borra SQLite/Brick al cerrar sesion. Antes de hacerlo hay que
-definir que pasa con datos locales pendientes de sincronizar y con el caso de
-otro usuario iniciando sesion en el mismo dispositivo.
+El logout revoca la sesion remota cuando hay conexion y siempre elimina tokens
+del almacenamiento seguro y de memoria. No borra SQLite/Brick: antes de hacerlo
+hay que definir que pasa con datos locales pendientes de sincronizar y con el
+caso de otro usuario iniciando sesion en el mismo dispositivo.
 
 ### Payloads mas estrictos
 
@@ -193,3 +215,8 @@ claros.
 
 Conviene diferenciar mejor backend caido, timeout, token expirado, credenciales
 invalidas y perfil inexistente para mostrar mensajes mas utiles.
+
+Los estados y entidades que contienen `AuthSession` no deben imprimirse ni
+enviarse completos a herramientas de observabilidad, porque incluyen access y
+refresh tokens. Antes de incorporar un `BlocObserver` o reporte automatico de
+estado se deben redactar esos campos sensibles.

@@ -80,20 +80,18 @@ class BrickCategoriaStore implements CategoriaBrickStore {
 
   @override
   Future<void> pullRemoteCategorias(String establishmentId) async {
-    final remoteCategorias = await _repository.remoteProvider
-        .get<BrickCategoriaModel>(
-          repository: _repository,
-          query: Query(
-            forProviders: [
-              RestProviderQuery(
-                request:
-                    BrickCategoriaRequestTransformer.listByEstablishmentRequest(
-                  establishmentId,
-                ),
-              ),
-            ],
+    final remoteCategorias = await _repository.remoteProvider.get<BrickCategoriaModel>(
+      repository: _repository,
+      query: Query(
+        forProviders: [
+          RestProviderQuery(
+            request: BrickCategoriaRequestTransformer.listByEstablishmentRequest(
+              establishmentId,
+            ),
           ),
-        );
+        ],
+      ),
+    );
 
     // Las categorias propias creadas offline y todavia no confirmadas no deben
     // ser pisadas por el pull (podrian no existir aun en el backend).
@@ -142,8 +140,7 @@ class BrickCategoriaStore implements CategoriaBrickStore {
         .where(
           (categoria) =>
               categoria.deletedAt == null &&
-              (categoria.establishmentId == null ||
-                  categoria.establishmentId == establishmentId),
+              (categoria.establishmentId == null || categoria.establishmentId == establishmentId),
         )
         .toList();
   }
@@ -167,9 +164,7 @@ class BrickCategoriaStore implements CategoriaBrickStore {
       }
 
       final updatedCategoria = categoria.copyWith(
-        syncStatus: result.synchronized
-            ? BrickCategoriaSyncStatus.synchronized
-            : BrickCategoriaSyncStatus.rejected,
+        syncStatus: result.synchronized ? BrickCategoriaSyncStatus.synchronized : BrickCategoriaSyncStatus.rejected,
         syncErrorCode: result.errorCode,
       );
       await _repository.upsertLocal<BrickCategoriaModel>(updatedCategoria);
