@@ -51,6 +51,7 @@ class TipoEventoSanitario(str, Enum):
 
 
 class TipoEgreso(str, Enum):
+    """Motivo de salida física de un animal del establecimiento."""
     venta = "venta"
     muerte = "muerte"
     baja = "baja"

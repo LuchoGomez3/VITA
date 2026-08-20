@@ -1,14 +1,41 @@
 """Aceptación backend de registro y sincronización de egresos operativos."""
 
 from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
+import re
 from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import select
 
 from api.modules.egresos_operativos.models import EgresoOperativo
+from api.modules.egresos_operativos.schemas import CATEGORIAS_POR_TIPO
 from api.modules.establecimientos.models import Establecimiento, UsuarioEstablecimiento
 from api.shared.enums import RolUsuario
+
+
+# El script vive dentro de backend, un nivel por encima de la carpeta de pruebas.
+RUTA_SCRIPT_EGRESOS = (
+    Path(__file__).parent.parent / "scripts/crear_egresos_operativos.sql"
+)
+
+
+def test_catalogo_base_coincide_con_trigger_postgresql():
+    """Evita que la API y la defensa de PostgreSQL acepten catálogos distintos."""
+    contenido_sql = RUTA_SCRIPT_EGRESOS.read_text(encoding="utf-8")
+    patron_rama = re.compile(
+        r"new\.tipo = '([^']+)'\s+and new\.categoria in \(([^)]+)\)"
+    )
+    categorias_sql = {
+        tipo: {valor.strip().strip("'") for valor in valores.split(",")}
+        for tipo, valores in patron_rama.findall(contenido_sql)
+    }
+    categorias_python = {
+        tipo.value: {categoria.value for categoria in categorias}
+        for tipo, categorias in CATEGORIAS_POR_TIPO.items()
+    }
+
+    assert categorias_sql == categorias_python
 
 
 @pytest.fixture
@@ -302,3 +329,31 @@ async def test_categoria_personalizada_duplicada_es_rechazada(
     )
     assert duplicada.status_code == 409
     assert duplicada.json()["errors"][0]["code"] == "categoria_egreso_duplicada"
+
+
+@pytest.mark.anyio
+async def test_uuid_de_categoria_con_datos_distintos_informa_colision(
+    auth_client, establecimiento_habilitado
+):
+    """Distingue un UUID reutilizado de una categoría con nombre duplicado."""
+    categoria_id = uuid4()
+    datos = {
+        "id": str(categoria_id),
+        "establecimiento_id": str(establecimiento_habilitado.id),
+        "tipo": "gasto_administrativo",
+        "nombre": "Servicios bancarios",
+    }
+    creada = await auth_client.post("/api/v1/egresos_operativos/categorias", json=datos)
+    assert creada.status_code == 201
+
+    datos["nombre"] = "Seguros"
+    colision = await auth_client.post(
+        "/api/v1/egresos_operativos/categorias", json=datos
+    )
+
+    assert colision.status_code == 409
+    error = colision.json()["errors"][0]
+    assert error["code"] == "categoria_egreso_id_en_conflicto"
+    assert error["message"] == (
+        "El identificador de la categoría ya existe con datos diferentes"
+    )

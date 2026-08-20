@@ -53,7 +53,9 @@ create index if not exists ix_categorias_egresos_operativos_creado_por_id
     on public.categorias_egresos_operativos (creado_por_id);
 
 -- La API valida el catálogo y este trigger replica la garantía para escrituras
--- directas autorizadas por Supabase/RLS.
+-- directas autorizadas por Supabase/RLS. Las categorías base deben mantenerse
+-- sincronizadas con CATEGORIAS_POR_TIPO en api/modules/egresos_operativos/schemas.py;
+-- test_catalogo_base_coincide_con_trigger_postgresql protege ese contrato en CI.
 create or replace function public.validar_categoria_egreso_operativo()
 returns trigger
 language plpgsql
@@ -86,6 +88,29 @@ drop trigger if exists validar_categoria_egreso_operativo
 create trigger validar_categoria_egreso_operativo
 before insert or update on public.egresos_operativos
 for each row execute function public.validar_categoria_egreso_operativo();
+
+-- La autoría identifica a quien creó el egreso y forma parte de su auditoría. Un
+-- miembro puede corregir el movimiento, pero ninguna vía de escritura puede
+-- atribuírselo a otra persona después del alta.
+create or replace function public.preservar_autor_egreso_operativo()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+    if new.cargado_por_id is distinct from old.cargado_por_id then
+        raise exception 'No se puede modificar el autor de un egreso operativo';
+    end if;
+
+    return new;
+end;
+$$;
+
+drop trigger if exists preservar_autor_egreso_operativo
+    on public.egresos_operativos;
+create trigger preservar_autor_egreso_operativo
+before update on public.egresos_operativos
+for each row execute function public.preservar_autor_egreso_operativo();
 
 alter table public.egresos_operativos enable row level security;
 alter table public.categorias_egresos_operativos enable row level security;
@@ -149,8 +174,7 @@ using (
     )
 )
 with check (
-    cargado_por_id = auth.uid()
-    and exists (
+    exists (
         select 1 from public.usuarios_establecimientos ue
         where ue.establecimiento_id = egresos_operativos.establecimiento_id
           and ue.usuario_id = auth.uid() and ue.activo = true

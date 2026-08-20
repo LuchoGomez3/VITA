@@ -42,3 +42,15 @@ class CategoriaEgresoDuplicadaError(ConflictError):
 
     def __init__(self) -> None:
         super().__init__("Ya existe una categoría con ese nombre en el establecimiento")
+
+
+class CategoriaEgresoIdEnConflictoError(ConflictError):
+    """El UUID de sincronización ya identifica una categoría con otros datos."""
+
+    code = "categoria_egreso_id_en_conflicto"
+
+    def __init__(self) -> None:
+        """Informa una colisión de identidad sin confundirla con un nombre repetido."""
+        super().__init__(
+            "El identificador de la categoría ya existe con datos diferentes"
+        )

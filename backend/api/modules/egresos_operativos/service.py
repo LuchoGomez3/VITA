@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.modules.egresos_operativos.exceptions import (
     CategoriaEgresoDuplicadaError,
+    CategoriaEgresoIdEnConflictoError,
     CategoriaEgresoInvalidaError,
     EgresoOperativoNoEncontradoError,
     EstablecimientoNoAutorizadoError,
@@ -225,7 +226,7 @@ class EgresoOperativoService:
                 or existente_id.tipo != datos.tipo
                 or existente_id.nombre != datos.nombre
             ):
-                raise CategoriaEgresoDuplicadaError()
+                raise CategoriaEgresoIdEnConflictoError()
             return CategoriaEgresoPersonalizadaRead.model_validate(existente_id)
 
         valor = self.normalizar_valor_categoria(datos.nombre)

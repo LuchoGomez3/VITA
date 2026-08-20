@@ -13,7 +13,9 @@ from api.shared.schemas import SyncFields
 # La fecha contable se valida según el día civil donde opera el producto.
 ZONA_HORARIA_NEGOCIO = ZoneInfo("America/Argentina/Cordoba")
 
-# Esta matriz es la fuente de verdad que impide mezclar costos y gastos.
+# Esta matriz define el catálogo base que usa la API. Debe mantenerse sincronizada
+# con `validar_categoria_egreso_operativo()` en scripts/crear_egresos_operativos.sql;
+# `test_catalogo_base_coincide_con_trigger_postgresql` protege ese contrato en CI.
 CATEGORIAS_POR_TIPO = {
     TipoEgresoOperativo.costo_produccion: {
         CategoriaEgresoOperativo.sanidad,
