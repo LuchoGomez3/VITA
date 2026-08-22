@@ -9,7 +9,7 @@ Devuelve el modelo ``Usuario`` para que los módulos filtren multi-tenant por
 from typing import Optional
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, Query, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,16 +29,14 @@ _credentials_exception = HTTPException(
 
 async def get_current_user(
     token: Optional[str] = Depends(oauth2_scheme),
-    token_query: Optional[str] = Query(default=None, alias="token"),
     session: AsyncSession = Depends(get_session),
     auth_provider: AuthProvider = Depends(get_auth_provider),
 ) -> Usuario:
-    effective_token = token_query or token
-    if not effective_token:
+    if not token:
         raise _credentials_exception
 
     try:
-        claims = auth_provider.verify_token(effective_token)
+        claims = auth_provider.verify_token(token)
     except AuthProviderError as exc:
         raise _credentials_exception from exc
 

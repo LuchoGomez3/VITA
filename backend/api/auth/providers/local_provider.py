@@ -63,15 +63,24 @@ class LocalAuthProvider(AuthProvider):
             expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
 
+    async def delete_user(self, user_id: UUID) -> None:
+        """No requiere limpieza: el proveedor local no persiste credenciales."""
+
+    async def sign_out(self, access_token: str) -> None:
+        """No persiste sesiones; el cierre local del cliente es suficiente."""
+
     def verify_token(self, token: str) -> dict:
         try:
-            return jwt.decode(
+            claims = jwt.decode(
                 token,
                 settings.JWT_SECRET,
                 algorithms=[settings.JWT_ALGORITHM],
             )
         except JWTError as exc:
             raise AuthProviderError("Token inválido o expirado") from exc
+        if claims.get("typ") == "refresh":
+            raise AuthProviderError("Un refresh token no puede autenticar requests")
+        return claims
 
     def _create_token(self, sub: str) -> str:
         expire = datetime.now(timezone.utc) + timedelta(

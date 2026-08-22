@@ -12,20 +12,19 @@ import 'package:frontend_mayoral/features/sync/data/repositories/initial_data_sy
 
 void main() {
   test('refreshes offline data on every login', () async {
-    final storage = _MemoryStorage();
     final animalStore = _FakeAnimalStore();
     final categoryStore = _FakeCategoryStore();
     final weighingStore = _FakeWeighingStore();
     final repository = InitialDataSyncRepositoryImpl(
-      secureStorage: storage,
+      secureStorage: _MemoryStorage(),
       establishmentRemoteDataSource: _FakeEstablishmentRemoteDataSource(),
       animalStore: animalStore,
       categoryStore: categoryStore,
       weighingStore: weighingStore,
     );
 
-    await repository.syncForUser('user-1');
-    await repository.syncForUser('user-1');
+    await repository.sync();
+    await repository.sync();
 
     expect(animalStore.pulls, ['establishment-1', 'establishment-1']);
     expect(categoryStore.pulls, ['establishment-1', 'establishment-1']);
@@ -76,6 +75,12 @@ class _FakeAnimalStore implements AnimalBrickStore {
 
   @override
   Future<BrickAnimalModel?> getAnimalById(String animalId) async => null;
+
+  @override
+  Future<BrickAnimalModel?> getAnimalByRfidTagNumber({
+    required String rfidTagNumber,
+    required String establishmentId,
+  }) async => null;
 
   @override
   Future<List<BrickAnimalModel>> getLocalAnimals() async => [];

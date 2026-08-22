@@ -2,9 +2,10 @@ part of 'login_bloc.dart';
 
 /// Estado de la pantalla de login.
 ///
-/// Contiene dos operaciones relacionadas pero no identicas:
+/// Contiene el resultado de dos operaciones relacionadas pero no identicas:
 /// - [signInResult], que determina si las credenciales autenticaron o no.
 /// - [initialDataSyncError], que puede fallar aunque el login haya sido exitoso.
+/// [postAuthenticationSummary] expone el alcance cuando esa preparacion termina.
 ///
 /// Esa separacion permite ingresar a la app con sesion valida y avisar que la
 /// preparacion offline no pudo completarse.
@@ -20,6 +21,9 @@ sealed class LoginState with _$LoginState {
 
     /// Error no bloqueante de la sync inicial posterior al login.
     DomainException? initialDataSyncError,
+
+    /// Resumen disponible cuando la preparacion posterior fue exitosa.
+    PostAuthenticationSummary? postAuthenticationSummary,
   }) = _LoginState;
 
   /// Estado inicial del formulario.

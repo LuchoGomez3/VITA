@@ -24,7 +24,7 @@ void main() {
     expect(repository.receivedRequest, request);
     switch (result) {
       case Success(:final data):
-        expect(data.email, request.email);
+        expect(data.user.email, request.email);
       case Failure(:final error):
         fail(error.message);
     }
@@ -35,17 +35,22 @@ class _RegistrationAuthRepository implements AuthRepository {
   RegistrationRequest? receivedRequest;
 
   @override
-  Future<Result<AppUser>> register({
+  Future<Result<AuthSession>> register({
     required RegistrationRequest request,
   }) async {
     receivedRequest = request;
     return Result.success(
-      AppUser(
-        id: 'user-id',
-        email: request.email,
-        firstName: request.firstName,
-        lastName: request.lastName,
-        cuit: request.cuit,
+      AuthSession(
+        user: AppUser(
+          id: 'user-id',
+          email: request.email,
+          firstName: request.firstName,
+          lastName: request.lastName,
+          cuit: request.cuit,
+        ),
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        accessTokenExpiresAt: DateTime.utc(2026),
       ),
     );
   }

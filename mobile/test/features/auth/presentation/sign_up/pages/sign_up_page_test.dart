@@ -14,33 +14,31 @@ import 'package:frontend_mayoral/features/auth/presentation/sign_up/strings/sign
 import 'package:go_router/go_router.dart';
 
 void main() {
-  testWidgets('navigates to success only after registration succeeds', (
+  testWidgets('navigates to success after registration', (
     tester,
   ) async {
+    final completionEvents = <String>[];
     final repository = _PageAuthRepository(
-      result: const Result.success(
-        AppUser(
-          id: 'user-id',
-          email: 'ana@example.com',
-          firstName: 'Ana',
-          lastName: 'Perez',
-          cuit: '20123456786',
-        ),
-      ),
+      registrationResult: Result.success(_pageSession),
     );
-    await _pumpPage(tester, repository);
+    await _pumpPage(
+      tester,
+      repository,
+      completionEvents: completionEvents,
+    );
     await _completeAndSubmitForm(tester);
     await tester.pumpAndSettle();
 
     expect(find.text('ana@example.com'), findsOneWidget);
     expect(repository.registrationCalls, 1);
+    expect(completionEvents, ['authenticated', 'navigated']);
   });
 
   testWidgets('shows the offline modal when registration has no connection', (
     tester,
   ) async {
     final repository = _PageAuthRepository(
-      result: const Result.failure(
+      registrationResult: const Result.failure(
         DomainException(
           message: 'No se pudo conectar con el backend.',
           code: DomainErrorCode.offline,
@@ -57,7 +55,7 @@ void main() {
   testWidgets('shows backend errors without leaving the form', (tester) async {
     const errorMessage = 'El email ya esta registrado.';
     final repository = _PageAuthRepository(
-      result: const Result.failure(
+      registrationResult: const Result.failure(
         DomainException(
           message: errorMessage,
           code: DomainErrorCode.validation,
@@ -75,8 +73,9 @@ void main() {
 
 Future<void> _pumpPage(
   WidgetTester tester,
-  _PageAuthRepository repository,
-) async {
+  _PageAuthRepository repository, {
+  List<String>? completionEvents,
+}) async {
   late final GoRouter router;
   router = GoRouter(
     initialLocation: AppRoutes.signUpForm,
@@ -87,13 +86,17 @@ Future<void> _pumpPage(
           createBloc: () => SignUpBloc(
             registerUserUseCase: RegisterUserUseCase(repository),
           ),
+          onAuthenticated: (_) => completionEvents?.add('authenticated'),
         ),
       ),
       GoRoute(
         path: AppRoutes.signUpSuccess,
         builder: (context, state) {
+          completionEvents?.add('navigated');
           final userData = state.extra! as AppUser;
-          return Scaffold(body: Text(userData.email));
+          return Scaffold(
+            body: Text(userData.email),
+          );
         },
       ),
       GoRoute(
@@ -124,24 +127,26 @@ Future<void> _completeAndSubmitForm(WidgetTester tester) async {
 }
 
 class _PageAuthRepository implements AuthRepository {
-  _PageAuthRepository({required this.result});
+  _PageAuthRepository({
+    required this.registrationResult,
+  });
 
-  final Result<AppUser> result;
+  final Result<AuthSession> registrationResult;
   int registrationCalls = 0;
 
   @override
-  Future<Result<AppUser>> register({
+  Future<Result<AuthSession>> register({
     required RegistrationRequest request,
   }) async {
     registrationCalls += 1;
-    return result;
+    return registrationResult;
   }
 
   @override
   Future<Result<AuthSession>> signIn({
     required String email,
     required String password,
-  }) {
+  }) async {
     return _unusedSessionResult();
   }
 
@@ -170,3 +175,16 @@ class _PageAuthRepository implements AuthRepository {
     );
   }
 }
+
+final _pageSession = AuthSession(
+  user: const AppUser(
+    id: 'user-id',
+    email: 'ana@example.com',
+    firstName: 'Ana',
+    lastName: 'Perez',
+    cuit: '20123456786',
+  ),
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
+  accessTokenExpiresAt: DateTime.utc(2026, 8, 8, 15),
+);

@@ -106,8 +106,6 @@ class _EstablishmentCard extends StatelessWidget {
   }
 
   String _value(String? value) {
-    return value == null || value.trim().isEmpty
-        ? ProfileStrings.emptyCredential
-        : value;
+    return value == null || value.trim().isEmpty ? ProfileStrings.emptyCredential : value;
   }
 }

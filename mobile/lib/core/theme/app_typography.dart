@@ -58,7 +58,7 @@ class AppTypography {
     fontWeight: FontWeight.w400,
     color: AppColors.textHint,
   );
-  
+
   /// Texto para botones de seleccion de fecha predeterminada hoy, mes, 30 dias, ultimos 7 dias.
   static const datePickerChip = TextStyle(
     fontFamily: _baseFontFamily,
@@ -135,7 +135,7 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
-    /// Texto Validacion Positiva
+  /// Texto Validacion Positiva
   static const positiveText = TextStyle(color: AppColors.positiveText, fontWeight: FontWeight.w500, fontSize: 13);
 
   /// Titulo grande para pantallas de resultado o confirmacion.
@@ -219,7 +219,6 @@ class AppTypography {
     color: AppColors.primary,
   );
 
-  
   /// Titulo principal de la pantalla de bienvenida al registro.
   static const welcomeTitle = TextStyle(
     fontFamily: _baseFontFamily,

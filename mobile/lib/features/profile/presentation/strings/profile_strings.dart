@@ -31,8 +31,7 @@ abstract final class ProfileStrings {
   static const establishmentsSection = 'Establecimientos';
 
   /// Mensaje cuando la sesión no tiene establecimientos guardados.
-  static const noEstablishments =
-      'No hay establecimientos disponibles para esta cuenta.';
+  static const noEstablishments = 'No hay establecimientos disponibles para esta cuenta.';
 
   /// Etiqueta del número RENSPA.
   static const renspaLabel = 'RENSPA';
