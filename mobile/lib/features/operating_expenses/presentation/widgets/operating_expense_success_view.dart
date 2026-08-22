@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/formatters/argentine_currency_input_formatter.dart';
+import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
@@ -61,7 +63,11 @@ class OperatingExpenseSubmissionView extends StatelessWidget {
               duration: const Duration(milliseconds: 650),
               curve: Curves.easeInOutCubic,
               alignment: isLoading ? Alignment.center : Alignment.topCenter,
-              child: _ExpenseStatusIndicator(isLoading: isLoading),
+              child: AppStatusIndicator(
+                icon: isLoading ? Icons.cloud_upload_outlined : Icons.check,
+                color: AppColors.primary,
+                isLoading: isLoading,
+              ),
             ),
           ),
         ],
@@ -153,55 +159,6 @@ class _SuccessContent extends StatelessWidget {
   };
 }
 
-class _ExpenseStatusIndicator extends StatelessWidget {
-  const _ExpenseStatusIndicator({required this.isLoading});
-
-  final bool isLoading;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox.square(
-      dimension: 86,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 350),
-            child: SizedBox.square(
-              key: ValueKey(isLoading),
-              dimension: 86,
-              child: CircularProgressIndicator(
-                value: isLoading ? null : 1,
-                strokeWidth: 4,
-                backgroundColor: AppColors.backgroundTertiary,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-          Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
-            ),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 350),
-              transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
-              child: Icon(
-                isLoading ? Icons.cloud_upload_outlined : Icons.check,
-                key: ValueKey(isLoading),
-                color: AppColors.primary,
-                size: 34,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ExpenseSummaryCard extends StatelessWidget {
   const _ExpenseSummaryCard({
     required this.expense,
@@ -221,13 +178,16 @@ class _ExpenseSummaryCard extends StatelessWidget {
           const Text(OperatingExpenseStrings.summary, style: AppTypography.pageTitle),
           const SizedBox(height: AppSpacing.md),
           _SummaryRow(label: OperatingExpenseStrings.establishment, value: establishmentName),
-          _SummaryRow(label: OperatingExpenseStrings.amount, value: _formatCurrency(expense.amountCents)),
+          _SummaryRow(
+            label: OperatingExpenseStrings.amount,
+            value: ArgentineCurrencyInputFormatter.formatCents(expense.amountCents),
+          ),
           _SummaryRow(label: OperatingExpenseStrings.type, value: expense.type.label),
           _SummaryRow(label: OperatingExpenseStrings.category, value: expense.category),
           _SummaryRow(label: OperatingExpenseStrings.supply, value: expense.supply),
           _SummaryRow(
             label: OperatingExpenseStrings.date,
-            value: _formatDate(expense.date),
+            value: DateDisplayFormatter.shortDate(expense.date),
             showDivider: expense.description != null || expense.receiptNumber != null,
           ),
           if (expense.description case final description?)
@@ -246,14 +206,6 @@ class _ExpenseSummaryCard extends StatelessWidget {
       ),
     );
   }
-
-  String _formatCurrency(int cents) {
-    final whole = (cents ~/ 100).toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.');
-    return '\$ $whole,${(cents % 100).toString().padLeft(2, '0')}';
-  }
-
-  String _formatDate(DateTime date) =>
-      '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 }
 
 class _SummaryRow extends StatelessWidget {

@@ -14,6 +14,7 @@ class AddOperatingExpenseCategoryDialog extends StatefulWidget {
 }
 
 class _AddOperatingExpenseCategoryDialogState extends State<AddOperatingExpenseCategoryDialog> {
+  final _formKey = GlobalKey<FormState>();
   final _controller = TextEditingController();
 
   @override
@@ -26,23 +27,37 @@ class _AddOperatingExpenseCategoryDialogState extends State<AddOperatingExpenseC
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text(OperatingExpenseStrings.addCategory),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        decoration: const InputDecoration(
-          labelText: OperatingExpenseStrings.categoryName,
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          controller: _controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: OperatingExpenseStrings.categoryName,
+          ),
+          textInputAction: TextInputAction.done,
+          validator: (value) =>
+              value == null || value.trim().isEmpty ? OperatingExpenseStrings.requiredCategoryName : null,
+          onFieldSubmitted: (_) => _submit(),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
+          child: const Text(OperatingExpenseStrings.cancel),
         ),
         FilledButton(
-          onPressed: () => Navigator.pop(context, _controller.text),
-          child: const Text('Agregar'),
+          onPressed: _submit,
+          child: const Text(OperatingExpenseStrings.add),
         ),
       ],
     );
+  }
+
+  void _submit() {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+    Navigator.pop(context, _controller.text.trim());
   }
 }

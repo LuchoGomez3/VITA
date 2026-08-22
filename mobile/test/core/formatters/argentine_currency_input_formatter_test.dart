@@ -1,7 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/formatters/argentine_currency_input_formatter.dart';
-import 'package:frontend_mayoral/features/operating_expenses/presentation/widgets/operating_expense_form.dart';
 
 void main() {
   const formatter = ArgentineCurrencyInputFormatter();
@@ -21,14 +20,24 @@ void main() {
   });
 
   test('convierte el texto formateado a centavos sin usar double', () {
-    expect(parseArgentineCurrencyToCents('1.250.000,75'), 125000075);
+    expect(ArgentineCurrencyInputFormatter.parseToCents('1.250.000,75'), 125000075);
+  });
+
+  test('tolera simbolos, espacios y una fraccion incompleta', () {
+    expect(ArgentineCurrencyInputFormatter.parseToCents(r'$ 45.000,5'), 4500050);
+    expect(ArgentineCurrencyInputFormatter.parseToCents(''), 0);
+  });
+
+  test('formatea centavos positivos y negativos como moneda argentina', () {
+    expect(ArgentineCurrencyInputFormatter.formatCents(125000075), r'$ 1.250.000,75');
+    expect(ArgentineCurrencyInputFormatter.formatCents(-450050), r'- $ 4.500,50');
   });
 }
 
 String _format(TextInputFormatter formatter, String value) {
   return formatter
       .formatEditUpdate(
-        const TextEditingValue(),
+        TextEditingValue.empty,
         TextEditingValue(
           text: value,
           selection: TextSelection.collapsed(offset: value.length),

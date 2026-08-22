@@ -1,17 +1,8 @@
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
+import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/repositories/operating_expense_repository.dart';
-
-/// Mensajes funcionales cuya redaccion forma parte de los criterios.
-class OperatingExpenseValidationMessages {
-  const OperatingExpenseValidationMessages._();
-  static const invalidAmount = 'El monto ingresado debe ser un valor mayor a cero';
-  static const futureDate = 'No se pueden registrar egresos con fecha futura';
-  static const requiredSupply = 'El insumo es obligatorio';
-  static const requiredCategory = 'La categoría es obligatoria';
-  static const incompatibleCategory = 'La categoría no corresponde al tipo de egreso seleccionado';
-}
 
 /// Valida y registra un egreso preservando el resultado de sincronizacion.
 class CreateOperatingExpenseUseCase {
@@ -26,24 +17,34 @@ class CreateOperatingExpenseUseCase {
     required DateTime today,
   }) {
     final error = validate(expense: expense, categories: categories, today: today);
-    if (error != null) return Future.value(Result.failure(DomainException(message: error)));
+    if (error != null) {
+      return Future.value(
+        Result.failure(
+          DomainException(
+            message: error.name,
+            code: DomainErrorCode.validation,
+            reason: error,
+          ),
+        ),
+      );
+    }
     return _repository.createExpense(expense);
   }
 
   /// Devuelve el primer error respetando el orden visual del formulario.
-  String? validate({
+  OperatingExpenseValidationError? validate({
     required OperatingExpense expense,
     required List<OperatingExpenseCategory> categories,
     required DateTime today,
   }) {
-    if (expense.amountCents <= 0) return OperatingExpenseValidationMessages.invalidAmount;
-    if (expense.category.trim().isEmpty) return OperatingExpenseValidationMessages.requiredCategory;
+    if (expense.amountCents <= 0) return OperatingExpenseValidationError.invalidAmount;
+    if (expense.category.trim().isEmpty) return OperatingExpenseValidationError.requiredCategory;
     final matches = categories.any((item) => item.value == expense.category && item.type == expense.type);
-    if (!matches) return OperatingExpenseValidationMessages.incompatibleCategory;
-    if (expense.supply.trim().isEmpty) return OperatingExpenseValidationMessages.requiredSupply;
+    if (!matches) return OperatingExpenseValidationError.incompatibleCategory;
+    if (expense.supply.trim().isEmpty) return OperatingExpenseValidationError.requiredSupply;
     final selected = DateTime(expense.date.year, expense.date.month, expense.date.day);
     final maximum = DateTime(today.year, today.month, today.day);
-    if (selected.isAfter(maximum)) return OperatingExpenseValidationMessages.futureDate;
+    if (selected.isAfter(maximum)) return OperatingExpenseValidationError.futureDate;
     return null;
   }
 }
@@ -63,5 +64,23 @@ class OperatingExpenseCatalogUseCase {
     String establishmentId,
     OperatingExpenseType type,
     String name,
-  ) => _repository.createCategory(establishmentId: establishmentId, type: type, name: name);
+  ) {
+    if (name.trim().isEmpty) {
+      const error = OperatingExpenseValidationError.requiredCategoryName;
+      return Future.value(
+        const Result.failure(
+          DomainException(
+            message: 'requiredCategoryName',
+            code: DomainErrorCode.validation,
+            reason: error,
+          ),
+        ),
+      );
+    }
+    return _repository.createCategory(
+      establishmentId: establishmentId,
+      type: type,
+      name: name,
+    );
+  }
 }

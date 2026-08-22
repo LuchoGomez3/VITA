@@ -9,6 +9,34 @@ class ArgentineCurrencyInputFormatter extends TextInputFormatter {
   /// Crea el formateador monetario para campos de importe.
   const ArgentineCurrencyInputFormatter();
 
+  /// Convierte un importe visual argentino a centavos enteros.
+  ///
+  /// Tolera espacios, simbolos monetarios y separadores de miles sin recurrir
+  /// a `double`, para conservar exactamente los centavos ingresados.
+  static int parseToCents(String input) {
+    final cleaned = input.trim().replaceAll(RegExp(r'\s'), '');
+    if (cleaned.isEmpty) {
+      return 0;
+    }
+    final comma = cleaned.lastIndexOf(',');
+    final whole = (comma < 0 ? cleaned : cleaned.substring(0, comma)).replaceAll(RegExp('[^0-9]'), '');
+    final fraction = comma < 0 ? '' : cleaned.substring(comma + 1).replaceAll(RegExp('[^0-9]'), '');
+    final cents = fraction.padRight(2, '0').substring(0, 2);
+    return (int.tryParse(whole) ?? 0) * 100 + (int.tryParse(cents) ?? 0);
+  }
+
+  /// Formatea centavos enteros como moneda argentina para textos de lectura.
+  static String formatCents(int cents) {
+    final absolute = cents.abs();
+    final whole = absolute ~/ 100;
+    final grouped = whole.toString().replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (_) => '.',
+    );
+    final sign = cents < 0 ? '- ' : '';
+    return '$sign\$ $grouped,${(absolute % 100).toString().padLeft(2, '0')}';
+  }
+
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,

@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
+import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/repositories/operating_expense_repository.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/use_cases/operating_expense_use_cases.dart';
 
@@ -13,10 +15,12 @@ void main() {
   final today = DateTime(2026, 8, 12);
   late _FakeRepository repository;
   late CreateOperatingExpenseUseCase useCase;
+  late OperatingExpenseCatalogUseCase catalogUseCase;
 
   setUp(() {
     repository = _FakeRepository();
     useCase = CreateOperatingExpenseUseCase(repository);
+    catalogUseCase = OperatingExpenseCatalogUseCase(repository);
   });
 
   test('guarda localmente un egreso valido de vacunas por 150000', () async {
@@ -36,7 +40,9 @@ void main() {
         today: today,
       );
 
-      expect((result as Failure<OperatingExpense>).error.message, OperatingExpenseValidationMessages.invalidAmount);
+      final error = (result as Failure<OperatingExpense>).error;
+      expect(error.code, DomainErrorCode.validation);
+      expect(error.reason, OperatingExpenseValidationError.invalidAmount);
       expect(repository.saved, isNull);
     });
   }
@@ -48,7 +54,10 @@ void main() {
       today: today,
     );
 
-    expect((result as Failure<OperatingExpense>).error.message, OperatingExpenseValidationMessages.futureDate);
+    expect(
+      (result as Failure<OperatingExpense>).error.reason,
+      OperatingExpenseValidationError.futureDate,
+    );
     expect(repository.saved, isNull);
   });
 
@@ -60,9 +69,23 @@ void main() {
     );
 
     expect(
-      (result as Failure<OperatingExpense>).error.message,
-      OperatingExpenseValidationMessages.incompatibleCategory,
+      (result as Failure<OperatingExpense>).error.reason,
+      OperatingExpenseValidationError.incompatibleCategory,
     );
+  });
+
+  test('rechaza un nombre de categoria vacio antes de acceder al repositorio', () async {
+    final result = await catalogUseCase.createCategory(
+      'establishment-id',
+      OperatingExpenseType.productionCost,
+      '   ',
+    );
+
+    expect(
+      (result as Failure<OperatingExpenseCategory>).error.reason,
+      OperatingExpenseValidationError.requiredCategoryName,
+    );
+    expect(repository.createdCategoryName, isNull);
   });
 }
 
@@ -85,6 +108,7 @@ OperatingExpense _expense({
 
 class _FakeRepository implements OperatingExpenseRepository {
   OperatingExpense? saved;
+  String? createdCategoryName;
 
   @override
   Future<Result<OperatingExpense>> createExpense(OperatingExpense expense) async {
@@ -97,7 +121,17 @@ class _FakeRepository implements OperatingExpenseRepository {
     required String establishmentId,
     required OperatingExpenseType type,
     required String name,
-  }) => throw UnimplementedError();
+  }) async {
+    createdCategoryName = name;
+    return Result.success(
+      OperatingExpenseCategory(
+        value: name,
+        label: name,
+        type: type,
+      ),
+    );
+  }
+
   @override
   Future<Result<List<OperatingExpenseCategory>>> getCategories({
     required String establishmentId,

@@ -5,7 +5,6 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
-import 'package:frontend_mayoral/features/operating_expenses/domain/use_cases/operating_expense_use_cases.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/cubit/operating_expense_cubit.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/strings/operating_expense_strings.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/widgets/add_operating_expense_category_dialog.dart';
@@ -110,7 +109,7 @@ class _OperatingExpenseFormState extends State<OperatingExpenseForm> {
       return;
     }
     final saved = await context.read<OperatingExpenseCubit>().save(
-      amountCents: parseArgentineCurrencyToCents(_amountController.text),
+      amountCents: ArgentineCurrencyInputFormatter.parseToCents(_amountController.text),
       supply: _supplyController.text,
       description: _descriptionController.text,
       receiptNumber: _receiptController.text,
@@ -121,7 +120,7 @@ class _OperatingExpenseFormState extends State<OperatingExpenseForm> {
   }
 
   void _focusFirstInvalidField() {
-    if (parseArgentineCurrencyToCents(_amountController.text) <= 0) {
+    if (ArgentineCurrencyInputFormatter.parseToCents(_amountController.text) <= 0) {
       _amountFocus.requestFocus();
       return;
     }
@@ -250,17 +249,15 @@ class _AmountField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    return AppTextFormField(
       controller: controller,
       focusNode: focusNode,
-      decoration: const InputDecoration(
-        labelText: OperatingExpenseStrings.amount,
-        prefixText: r'$ ',
-      ),
+      title: OperatingExpenseStrings.amount,
+      prefixText: r'$ ',
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: const [ArgentineCurrencyInputFormatter()],
       validator: (value) =>
-          parseArgentineCurrencyToCents(value ?? '') <= 0 ? OperatingExpenseValidationMessages.invalidAmount : null,
+          ArgentineCurrencyInputFormatter.parseToCents(value ?? '') <= 0 ? OperatingExpenseStrings.invalidAmount : null,
     );
   }
 }
@@ -316,8 +313,7 @@ class _CategoryField extends StatelessWidget {
                   ),
                 )
                 .toList(),
-            validator: (value) =>
-                value == null || value.isEmpty ? OperatingExpenseValidationMessages.requiredCategory : null,
+            validator: (value) => value == null || value.isEmpty ? OperatingExpenseStrings.requiredCategory : null,
             onChanged: context.read<OperatingExpenseCubit>().selectCategory,
           ),
         ),
@@ -342,15 +338,12 @@ class _SupplyField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    return AppTextFormField(
       controller: controller,
       focusNode: focusNode,
-      decoration: const InputDecoration(
-        labelText: OperatingExpenseStrings.supply,
-      ),
+      title: OperatingExpenseStrings.supply,
       textInputAction: TextInputAction.next,
-      validator: (value) =>
-          value == null || value.trim().isEmpty ? OperatingExpenseValidationMessages.requiredSupply : null,
+      validator: (value) => value == null || value.trim().isEmpty ? OperatingExpenseStrings.requiredSupply : null,
     );
   }
 }
@@ -369,7 +362,7 @@ class _ExpenseDateField extends StatelessWidget {
       lastDate: DateUtils.dateOnly(DateTime.now()),
       onChanged: context.read<OperatingExpenseCubit>().selectDate,
       validator: (value) => value != null && DateUtils.dateOnly(value).isAfter(DateUtils.dateOnly(DateTime.now()))
-          ? OperatingExpenseValidationMessages.futureDate
+          ? OperatingExpenseStrings.futureDate
           : null,
     );
   }
@@ -388,35 +381,17 @@ class _OptionalExpenseFields extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        TextFormField(
+        AppTextFormField(
           controller: descriptionController,
-          decoration: const InputDecoration(
-            labelText: OperatingExpenseStrings.description,
-          ),
+          title: OperatingExpenseStrings.description,
           maxLines: 2,
         ),
         const SizedBox(height: AppSpacing.md),
-        TextFormField(
+        AppTextFormField(
           controller: receiptController,
-          decoration: const InputDecoration(
-            labelText: OperatingExpenseStrings.receipt,
-          ),
+          title: OperatingExpenseStrings.receipt,
         ),
       ],
     );
   }
-}
-
-/// Convierte un importe argentino formateado a centavos enteros.
-@visibleForTesting
-int parseArgentineCurrencyToCents(String input) {
-  final cleaned = input.trim().replaceAll(RegExp(r'\s'), '');
-  if (cleaned.isEmpty) {
-    return 0;
-  }
-  final comma = cleaned.lastIndexOf(',');
-  final whole = (comma < 0 ? cleaned : cleaned.substring(0, comma)).replaceAll(RegExp('[^0-9]'), '');
-  final fraction = comma < 0 ? '' : cleaned.substring(comma + 1).replaceAll(RegExp('[^0-9]'), '');
-  final cents = fraction.padRight(2, '0').substring(0, 2);
-  return (int.tryParse(whole) ?? 0) * 100 + (int.tryParse(cents) ?? 0);
 }

@@ -1,6 +1,5 @@
-import 'dart:math';
-
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/core/utils/uuid_v4.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 
 /// Mapper entre dominio, Brick y contrato backend.
@@ -27,7 +26,7 @@ class AnimalRegistrationBrickMapper {
       // TODO(agustin): Revisit the canonical mobile identity strategy before
       // enabling sync/update flows. `localId` is the exposed domain ID, while
       // Brick also keeps its own SQLite primary key internally.
-      localId: localId ?? _generateUuid(),
+      localId: localId ?? generateUuidV4(),
       rfidTagNumber: registration.rfidTagNumber,
       visualTag: registration.visualTag,
       sex: registration.sex.toBrickModel(),
@@ -116,28 +115,6 @@ class AnimalRegistrationBrickMapper {
       'metodo_pesaje': model.weighingMethod.toDomain().backendValue,
       'fecha_pesaje': model.weighingDate.toIso8601String(),
     };
-  }
-
-  /// Genera un UUID v4 para identificar el registro creado offline.
-  ///
-  /// Se implementa localmente para no introducir una dependencia nueva solo para
-  /// esta operacion. Si el proyecto adopta una libreria UUID compartida, este
-  /// helper se puede reemplazar.
-  static String _generateUuid() {
-    final random = Random.secure();
-    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
-    bytes[6] = (bytes[6] & 0x0f) | 0x40;
-    bytes[8] = (bytes[8] & 0x3f) | 0x80;
-
-    final hex = bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
-
-    return [
-      hex.substring(0, 8),
-      hex.substring(8, 12),
-      hex.substring(12, 16),
-      hex.substring(16, 20),
-      hex.substring(20, 32),
-    ].join('-');
   }
 }
 

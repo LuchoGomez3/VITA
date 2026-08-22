@@ -10,14 +10,13 @@ import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
 
 /// Acceso offline-first a egresos operativos.
 abstract class OperatingExpenseBrickStore {
-  /// Guarda localmente y espera brevemente la confirmacion del backend.
-  Future<BrickOperatingExpenseModel> upsertExpense(
-    BrickOperatingExpenseModel expense, {
-    Duration remoteWaitTimeout = const Duration(seconds: 10),
-  });
+  /// Guarda localmente y encola la sincronizacion sin esperar al backend.
+  Future<BrickOperatingExpenseModel> upsertExpense(BrickOperatingExpenseModel expense);
 
   /// Lista egresos locales vigentes, deduplicados por UUID.
-  Future<List<BrickOperatingExpenseModel>> getLocalExpenses(String establishmentId);
+  ///
+  /// Un [establishmentId] nulo incluye todos los establecimientos disponibles.
+  Future<List<BrickOperatingExpenseModel>> getLocalExpenses(String? establishmentId);
 
   /// Descarga y reconcilia cambios centrales incluyendo tombstones.
   Future<void> pullRemoteExpenses(String establishmentId);
@@ -47,39 +46,14 @@ class BrickOperatingExpenseStore implements OperatingExpenseBrickStore {
   }
 
   @override
-  Future<BrickOperatingExpenseModel> upsertExpense(
-    BrickOperatingExpenseModel expense, {
-    Duration remoteWaitTimeout = const Duration(seconds: 10),
-  }) async {
-    final syncResult = Completer<BackendSyncResult?>();
-    final resultSubscription = _repository.syncResults
-        .where(
-          (result) =>
-              result.localId == expense.localId &&
-              result.resourcePath.endsWith(BrickOperatingExpenseRequestTransformer.expensesPath),
-        )
-        .listen((result) {
-          if (!syncResult.isCompleted) syncResult.complete(result);
-        });
-    try {
-      final saved = await _repository.upsertLocal(expense);
-      if (await _dependencyIsSynchronized(saved)) {
-        unawaited(_repository.enqueueRemoteUpsert(saved));
-      }
-      final result = await syncResult.future.timeout(
-        remoteWaitTimeout,
-        onTimeout: () => null,
-      );
-      if (result == null) return saved;
-      return saved.copyWith(
-        syncStatus: result.synchronized
-            ? BrickOperatingExpenseSyncStatus.synchronized
-            : BrickOperatingExpenseSyncStatus.rejected,
-        syncErrorCode: result.errorCode,
-      );
-    } finally {
-      await resultSubscription.cancel();
+  Future<BrickOperatingExpenseModel> upsertExpense(BrickOperatingExpenseModel expense) async {
+    final saved = await _repository.upsertLocal(expense);
+    if (await _dependencyIsSynchronized(saved)) {
+      // La copia local ya esta disponible. La red nunca bloquea la confirmacion
+      // del alta y el listener aplica luego el resultado definitivo del backend.
+      unawaited(_repository.enqueueRemoteUpsert(saved));
     }
+    return saved;
   }
 
   Future<bool> _dependencyIsSynchronized(BrickOperatingExpenseModel expense) async {
@@ -90,10 +64,19 @@ class BrickOperatingExpenseStore implements OperatingExpenseBrickStore {
   }
 
   @override
-  Future<List<BrickOperatingExpenseModel>> getLocalExpenses(String establishmentId) async {
+  Future<List<BrickOperatingExpenseModel>> getLocalExpenses(String? establishmentId) async {
     final stored = await _repository.getLocal<BrickOperatingExpenseModel>();
+    return selectLocalExpenses(stored, establishmentId: establishmentId);
+  }
+
+  /// Selecciona la version vigente de cada egreso para el alcance solicitado.
+  static List<BrickOperatingExpenseModel> selectLocalExpenses(
+    Iterable<BrickOperatingExpenseModel> stored, {
+    required String? establishmentId,
+  }) {
     final byId = <String, BrickOperatingExpenseModel>{};
-    for (final expense in stored.where((item) => item.establishmentId == establishmentId)) {
+    final scoped = establishmentId == null ? stored : stored.where((item) => item.establishmentId == establishmentId);
+    for (final expense in scoped) {
       final current = byId[expense.localId];
       if (current == null || _prefer(expense, current)) byId[expense.localId] = expense;
     }
@@ -101,7 +84,7 @@ class BrickOperatingExpenseStore implements OperatingExpenseBrickStore {
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
-  bool _prefer(BrickOperatingExpenseModel candidate, BrickOperatingExpenseModel current) {
+  static bool _prefer(BrickOperatingExpenseModel candidate, BrickOperatingExpenseModel current) {
     if (candidate.syncStatus != BrickOperatingExpenseSyncStatus.synchronized &&
         current.syncStatus == BrickOperatingExpenseSyncStatus.synchronized) {
       return true;
@@ -136,10 +119,16 @@ class BrickOperatingExpenseStore implements OperatingExpenseBrickStore {
 
   Future<void> _applySyncResult(BackendSyncResult result) async {
     if (result.resourcePath.endsWith(
-          BrickOperatingExpenseCategoryRequestTransformer.categoriesPath,
-        ) &&
-        result.synchronized) {
-      await _enqueueExpensesWaitingFor(result.localId);
+      BrickOperatingExpenseCategoryRequestTransformer.categoriesPath,
+    )) {
+      if (result.synchronized) {
+        await _enqueueExpensesWaitingFor(result.localId);
+      } else {
+        await _rejectExpensesWaitingFor(
+          result.localId,
+          result.errorCode,
+        );
+      }
       return;
     }
     if (!result.resourcePath.endsWith(BrickOperatingExpenseRequestTransformer.expensesPath)) return;
@@ -165,6 +154,42 @@ class BrickOperatingExpenseStore implements OperatingExpenseBrickStore {
     )) {
       unawaited(_repository.enqueueRemoteUpsert(expense));
     }
+  }
+
+  Future<void> _rejectExpensesWaitingFor(
+    String categoryId,
+    String? errorCode,
+  ) async {
+    final stored = await _repository.getLocal<BrickOperatingExpenseModel>();
+    for (final expense in stored.where(
+      (item) => item.customCategoryId == categoryId && item.syncStatus == BrickOperatingExpenseSyncStatus.pending,
+    )) {
+      await _repository.upsertLocal(
+        rejectExpenseForCategory(
+          expense: expense,
+          categoryId: categoryId,
+          errorCode: errorCode,
+        ),
+      );
+    }
+  }
+
+  /// Propaga el rechazo de una categoria al egreso que depende de ella.
+  ///
+  /// Se mantiene como transformacion pura para verificar que el estado y el
+  /// codigo funcional se conserven antes de escribir la copia en SQLite.
+  static BrickOperatingExpenseModel rejectExpenseForCategory({
+    required BrickOperatingExpenseModel expense,
+    required String categoryId,
+    required String? errorCode,
+  }) {
+    if (expense.customCategoryId != categoryId || expense.syncStatus != BrickOperatingExpenseSyncStatus.pending) {
+      return expense;
+    }
+    return expense.copyWith(
+      syncStatus: BrickOperatingExpenseSyncStatus.rejected,
+      syncErrorCode: errorCode,
+    );
   }
 
   /// Libera la escucha del canal global de sincronizacion.
