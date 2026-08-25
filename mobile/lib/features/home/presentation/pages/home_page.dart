@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
 import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_cubit.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
@@ -72,7 +72,11 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
             onSelected: _selectEstablishment,
             onIdentifyAnimal: _identifyAnimal,
           ),
-          const Expanded(child: _HomeDashboardBody()),
+          Expanded(
+            child: _HomeDashboardBody(
+              onEstablishmentSelectionRequested: _openSelector,
+            ),
+          ),
         ],
       ),
     );
@@ -100,6 +104,14 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
     });
   }
 
+  void _openSelector() {
+    final cubit = context.read<HomeDashboardCubit>();
+    setState(() {
+      _highlightedEstablishmentId = cubit.state.selectedEstablishmentId;
+      _isSelectorExpanded = true;
+    });
+  }
+
   void _selectEstablishment(String? establishmentId) {
     setState(() {
       _highlightedEstablishmentId = establishmentId;
@@ -123,7 +135,11 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
 }
 
 class _HomeDashboardBody extends StatelessWidget {
-  const _HomeDashboardBody();
+  const _HomeDashboardBody({
+    required this.onEstablishmentSelectionRequested,
+  });
+
+  final VoidCallback onEstablishmentSelectionRequested;
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +149,10 @@ class _HomeDashboardBody extends StatelessWidget {
         builder: (context, state) {
           final dashboardState = state.dashboardState;
           return switch (dashboardState) {
-            Data<HomeDashboard>(:final data) => HomeDashboardContent(dashboard: data),
+            Data<HomeDashboard>(:final data) => HomeDashboardContent(
+              dashboard: data,
+              onEstablishmentSelectionRequested: onEstablishmentSelectionRequested,
+            ),
             ResultError<HomeDashboard>(:final error) => HomeDashboardError(message: error.message),
             _ => const Center(child: CircularProgressIndicator()),
           };

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
@@ -35,11 +35,15 @@ import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
+import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
+import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expenses_page.dart';
+import 'package:frontend_mayoral/features/operating_expenses/presentation/strings/operating_expense_strings.dart';
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
 import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
+import 'package:frontend_mayoral/features/rfid_scan/presentation/strings/rfid_scan_strings.dart';
 import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_menu_page.dart';
@@ -278,9 +282,9 @@ class AppRouter {
           path: AppRoutes.rfidScan,
           builder: (context, state) {
             final establishmentId = state.uri.queryParameters['establecimientoId'];
-            if (establishmentId == null || establishmentId.isEmpty) {
+            if (establishmentId == null || establishmentId.trim().isEmpty) {
               return const ShellPlaceholderPage(
-                title: 'Seleccioná un establecimiento para identificar animales.',
+                title: RfidScanStrings.requiredEstablishment,
               );
             }
 
@@ -316,13 +320,12 @@ class AppRouter {
           path: AppRoutes.expenseRecords,
           builder: (context, state) => const ShellPlaceholderPage(
             title: HomeStrings.movements,
+            message: HomeStrings.comingSoon,
           ),
         ),
         GoRoute(
           path: AppRoutes.expenseRegister,
-          builder: (context, state) => const ShellPlaceholderPage(
-            title: HomeStrings.registerExpense,
-          ),
+          builder: _operatingExpensesPage,
         ),
         GoRoute(
           path: AppRoutes.incomeRegister,
@@ -361,6 +364,35 @@ class AppRouter {
           },
         ),
       ],
+    );
+  }
+
+  static Widget _operatingExpensesPage(
+    BuildContext context,
+    GoRouterState state,
+  ) {
+    final establishmentId = state.uri.queryParameters['establecimientoId'];
+    final establishmentName = state.uri.queryParameters['establecimientoNombre'];
+    final sessionState = context.read<AuthSessionCubit>().state;
+    final missingEstablishment =
+        establishmentId == null ||
+        establishmentId.trim().isEmpty ||
+        establishmentName == null ||
+        establishmentName.trim().isEmpty;
+    if (missingEstablishment || sessionState is! AuthSessionAuthenticated) {
+      return const ShellPlaceholderPage(
+        title: OperatingExpenseStrings.requiredEstablishment,
+      );
+    }
+
+    final user = sessionState.session.user;
+    return OperatingExpensesPage(
+      establishmentName: establishmentName,
+      createCubit: () => createOperatingExpenseCubit(
+        establishmentId: establishmentId,
+        userId: user.id,
+        userName: '${user.firstName} ${user.lastName}'.trim(),
+      ),
     );
   }
 

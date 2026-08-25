@@ -70,6 +70,9 @@ abstract final class HomeStrings {
   /// Accion para consultar ingresos y egresos.
   static const movements = 'Movimientos';
 
+  /// Mensaje temporal para funcionalidades planificadas en otra historia.
+  static const comingSoon = 'Próximamente';
+
   /// Etiqueta del stock vigente.
   static const activeStock = 'Stock activo';
 

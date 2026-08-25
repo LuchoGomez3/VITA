@@ -5,11 +5,10 @@ import 'package:brick_sqlite/db.dart';
 // ignore: unused_import, unused_shown_name, unnecessary_import
 import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart';
 // ignore: unused_import, unused_shown_name, unnecessary_import
-import 'package:brick_rest/brick_rest.dart'; // GENERATED CODE DO NOT EDIT
+import 'package:brick_rest/brick_rest.dart';// GENERATED CODE DO NOT EDIT
 // ignore: unused_import
 import 'dart:convert';
-import 'package:brick_sqlite/brick_sqlite.dart'
-    show SqliteModel, SqliteAdapter, SqliteModelDictionary, RuntimeSqliteColumnDefinition, SqliteProvider;
+import 'package:brick_sqlite/brick_sqlite.dart' show SqliteModel, SqliteAdapter, SqliteModelDictionary, RuntimeSqliteColumnDefinition, SqliteProvider;
 import 'package:brick_rest/brick_rest.dart' show RestProvider, RestModel, RestAdapter, RestModelDictionary;
 // ignore: unused_import, unused_shown_name
 import 'package:brick_offline_first/brick_offline_first.dart' show RuntimeOfflineFirstDefinition;
@@ -18,17 +17,23 @@ import 'package:sqflite_common/sqlite_api.dart' show DatabaseExecutor;
 
 import '../brick/models/animal.model.dart';
 import '../brick/models/categoria.model.dart';
+import '../brick/models/operating_expense.model.dart';
+import '../brick/models/operating_expense_category.model.dart';
 import '../brick/models/pesaje.model.dart';
 
 part 'adapters/brick_animal_model_adapter.g.dart';
 part 'adapters/brick_categoria_model_adapter.g.dart';
+part 'adapters/brick_operating_expense_model_adapter.g.dart';
+part 'adapters/brick_operating_expense_category_model_adapter.g.dart';
 part 'adapters/brick_pesaje_model_adapter.g.dart';
 
 /// Rest mappings should only be used when initializing a [RestProvider]
 final Map<Type, RestAdapter<RestModel>> restMappings = {
   BrickAnimalModel: BrickAnimalModelAdapter(),
   BrickCategoriaModel: BrickCategoriaModelAdapter(),
-  BrickPesajeModel: BrickPesajeModelAdapter(),
+  BrickOperatingExpenseModel: BrickOperatingExpenseModelAdapter(),
+  BrickOperatingExpenseCategoryModel: BrickOperatingExpenseCategoryModelAdapter(),
+  BrickPesajeModel: BrickPesajeModelAdapter()
 };
 final restModelDictionary = RestModelDictionary(restMappings);
 
@@ -36,6 +41,8 @@ final restModelDictionary = RestModelDictionary(restMappings);
 final Map<Type, SqliteAdapter<SqliteModel>> sqliteMappings = {
   BrickAnimalModel: BrickAnimalModelAdapter(),
   BrickCategoriaModel: BrickCategoriaModelAdapter(),
-  BrickPesajeModel: BrickPesajeModelAdapter(),
+  BrickOperatingExpenseModel: BrickOperatingExpenseModelAdapter(),
+  BrickOperatingExpenseCategoryModel: BrickOperatingExpenseCategoryModelAdapter(),
+  BrickPesajeModel: BrickPesajeModelAdapter()
 };
 final sqliteModelDictionary = SqliteModelDictionary(sqliteMappings);

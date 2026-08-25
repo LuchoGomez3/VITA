@@ -62,6 +62,15 @@ class AppRoutes {
   /// Ruta temporal para registrar un ingreso operativo.
   static const incomeRegister = '/registros-de-gastos/registrar-ingreso';
 
+  /// Construye la ruta de egresos con el establecimiento activo explicito.
+  static String expensesForEstablishment({
+    required String path,
+    required String establishmentId,
+    required String establishmentName,
+  }) =>
+      '$path?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}'
+      '&establecimientoNombre=${Uri.encodeQueryComponent(establishmentName)}';
+
   /// Ruta del menu principal de reportes SENASA.
   static const senasaMenu = procedures;
 

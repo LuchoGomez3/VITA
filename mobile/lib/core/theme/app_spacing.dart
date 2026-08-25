@@ -25,4 +25,10 @@ class AppSpacing {
 
   /// Espaciado extra grande para elementos que van al fondo de la pantalla.
   static const xl = 32.0;
+
+  /// Espaciado mega grande para logo de carga
+  static const xxl = 80.0;
+
+  /// Espaciado extra mega grande para botones de egresos operativos
+  static const xxxl = 83.0;
 }

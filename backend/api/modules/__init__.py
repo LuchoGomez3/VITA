@@ -20,4 +20,5 @@ from api.modules.productos_sanitarios import models as productos_sanitarios_mode
 from api.modules.eventos_sanitarios import models as eventos_sanitarios_models  # noqa: F401
 from api.modules.movimientos import models as movimientos_models  # noqa: F401
 from api.modules.egresos import models as egresos_models  # noqa: F401
+from api.modules.egresos_operativos import models as egresos_operativos_models  # noqa: F401
 from api.reportes import models as reportes_models  # noqa: F401
