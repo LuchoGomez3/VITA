@@ -1,143 +1,110 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
-import 'package:frontend_mayoral/features/field/presentation/mock/paddock_mock.dart';
+import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
+import 'package:frontend_mayoral/features/field/domain/services/local_lot_boundary_validator.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/get_lot_use_case.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
-import 'package:frontend_mayoral/features/field/presentation/widgets/field_paddock_mosaic.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/lot_overview_canvas.dart';
 
-/// Ficha de un potrero: KPIs, forraje y servicios, composición del rodeo e
-/// historial de ocupación.
+/// Detalle durable de un lote recuperado desde SQLite.
 class FieldDetailPage extends StatelessWidget {
-  /// Crea la ficha de detalle a partir del id de potrero recibido por ruta.
-  const FieldDetailPage({required this.potreroId, super.key});
+  /// Crea la ficha local del lote solicitado.
+  const FieldDetailPage({
+    required this.lotId,
+    required this.getLot,
+    super.key,
+  });
 
-  /// Id del potrero mostrado (ver `paddocksMock`).
-  final String potreroId;
+  /// UUID generado en el dispositivo.
+  final String lotId;
+
+  /// Consulta de dominio inyectada por composición.
+  final GetLotUseCase getLot;
 
   @override
   Widget build(BuildContext context) {
-    final paddock = paddocksMock.firstWhere(
-      (p) => p.id == potreroId,
-      orElse: () => paddocksMock.first,
+    return FutureBuilder<Result<Lot>>(
+      future: getLot(lotId),
+      builder: (context, snapshot) {
+        final result = snapshot.data;
+        final title = switch (result) {
+          Success<Lot>(:final data) => data.name,
+          _ => FieldStrings.lotDetailTitle,
+        };
+        return Scaffold(
+          appBar: AppBar(title: Text(title)),
+          body: SafeArea(
+            child: switch (result) {
+              null => const Center(child: CircularProgressIndicator()),
+              Failure<Lot>(:final error) => Center(child: Text(error.message)),
+              Success<Lot>(:final data) => _LotDetailBody(lot: data),
+              _ => const Center(child: Text(FieldStrings.localLotsLoadError)),
+            },
+          ),
+        );
+      },
     );
-    final density = paddock.isEmpty ? 0.0 : paddock.headCount / paddock.hectares;
-    final hasFullDetail = paddock.id == 'la-loma';
+  }
+}
 
-    return Scaffold(
-      appBar: AppBar(title: Text(paddock.name)),
-      body: SafeArea(
-        child: Column(
+class _LotDetailBody extends StatelessWidget {
+  const _LotDetailBody({required this.lot});
+
+  final Lot lot;
+
+  @override
+  Widget build(BuildContext context) {
+    const validator = LocalLotBoundaryValidator();
+    final area = validator.validate(lot.boundary).estimatedAreaSquareUnits;
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      children: [
+        SizedBox(
+          height: 260,
+          child: LotOverviewCanvas(lots: [lot], onLotSelected: (_) {}),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
           children: [
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                children: [
-                  SizedBox(
-                    height: 140,
-                    child: FieldPaddockMosaic(paddocks: [paddock]),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppInfoCell(
-                          label: FieldStrings.headCountDetailLabel,
-                          value: '${paddock.headCount}',
-                        ),
-                      ),
-                      Expanded(
-                        child: AppInfoCell(
-                          label: FieldStrings.surfaceDetailLabel,
-                          value: '${paddock.hectares.toStringAsFixed(0)} ${FieldStrings.hectaresSuffix}',
-                        ),
-                      ),
-                      Expanded(
-                        child: AppInfoCell(
-                          label: FieldStrings.densityDetailLabel,
-                          value: '${density.toStringAsFixed(1).replaceAll('.', ',')} ${FieldStrings.densityUnit}',
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  AppSectionHeader(
-                    title: FieldStrings.forageSectionTitle,
-                    subtitle: paddock.forage ?? FieldStrings.densityNone,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  AppInfoCell(
-                    label: FieldStrings.forageResourceLabel,
-                    value: paddock.forage ?? '—',
-                  ),
-                  if (hasFullDetail) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    const AppInfoCell(
-                      label: FieldStrings.waterSourceLabel,
-                      value: FieldStrings.waterSourceValue,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    const AppInfoCell(
-                      label: FieldStrings.lastRotationLabel,
-                      value: FieldStrings.lastRotationValue,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            FieldStrings.animalsSectionTitle(paddock.headCount),
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                        ),
-                        const Text(
-                          FieldStrings.viewAnimalsLink,
-                          style: AppTypography.inlinePrimaryLink,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Wrap(
-                      spacing: AppSpacing.xs,
-                      runSpacing: AppSpacing.xs,
-                      children: [
-                        for (final (label, count) in laLomaComposition) AppStatusChip(label: '$label · $count'),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      FieldStrings.occupationHistoryTitle,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    for (final (range, value) in laLomaOccupationHistory)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(range, style: AppTypography.formFieldHelper),
-                            Text(value, style: AppTypography.mediumEmphasis),
-                          ],
-                        ),
-                      ),
-                  ],
-                ],
+              child: AppInfoCell(
+                label: FieldStrings.lotVerticesLabel,
+                value: '${lot.boundary.vertices.length}',
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: AppFilledButton(
-                label: FieldStrings.moveAnimalsCta,
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Fuera de alcance de esta iniciativa')),
-                  );
-                },
+            Expanded(
+              child: AppInfoCell(
+                label: FieldStrings.relativeAreaLabel,
+                value: '${area.toStringAsFixed(0)} ${FieldStrings.relativeAreaUnit}',
               ),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: AppSpacing.md),
+        const AppStatusChip(
+          label: FieldStrings.savedOnDeviceStatus,
+          tone: AppStatusChipTone.success,
+          showDot: true,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppInfoCell(
+          label: FieldStrings.createdAtLabel,
+          value: _formatDate(lot.createdAt),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        AppInfoCell(
+          label: FieldStrings.updatedAtLabel,
+          value: _formatDate(lot.updatedAt),
+        ),
+      ],
     );
+  }
+
+  String _formatDate(DateTime date) {
+    final local = date.toLocal();
+    return '${local.day.toString().padLeft(2, '0')}/'
+        '${local.month.toString().padLeft(2, '0')}/${local.year}';
   }
 }

@@ -17,12 +17,14 @@ import 'package:sqflite_common/sqlite_api.dart' show DatabaseExecutor;
 
 import '../brick/models/animal.model.dart';
 import '../brick/models/categoria.model.dart';
+import '../brick/models/lot.model.dart';
 import '../brick/models/operating_expense.model.dart';
 import '../brick/models/operating_expense_category.model.dart';
 import '../brick/models/pesaje.model.dart';
 
 part 'adapters/brick_animal_model_adapter.g.dart';
 part 'adapters/brick_categoria_model_adapter.g.dart';
+part 'adapters/brick_lot_model_adapter.g.dart';
 part 'adapters/brick_operating_expense_model_adapter.g.dart';
 part 'adapters/brick_operating_expense_category_model_adapter.g.dart';
 part 'adapters/brick_pesaje_model_adapter.g.dart';
@@ -31,6 +33,7 @@ part 'adapters/brick_pesaje_model_adapter.g.dart';
 final Map<Type, RestAdapter<RestModel>> restMappings = {
   BrickAnimalModel: BrickAnimalModelAdapter(),
   BrickCategoriaModel: BrickCategoriaModelAdapter(),
+  BrickLotModel: BrickLotModelAdapter(),
   BrickOperatingExpenseModel: BrickOperatingExpenseModelAdapter(),
   BrickOperatingExpenseCategoryModel: BrickOperatingExpenseCategoryModelAdapter(),
   BrickPesajeModel: BrickPesajeModelAdapter()
@@ -41,6 +44,7 @@ final restModelDictionary = RestModelDictionary(restMappings);
 final Map<Type, SqliteAdapter<SqliteModel>> sqliteMappings = {
   BrickAnimalModel: BrickAnimalModelAdapter(),
   BrickCategoriaModel: BrickCategoriaModelAdapter(),
+  BrickLotModel: BrickLotModelAdapter(),
   BrickOperatingExpenseModel: BrickOperatingExpenseModelAdapter(),
   BrickOperatingExpenseCategoryModel: BrickOperatingExpenseCategoryModelAdapter(),
   BrickPesajeModel: BrickPesajeModelAdapter()
