@@ -17,6 +17,9 @@ abstract class OperatingExpenseCategoryBrickStore {
 
   /// Busca una categoria por UUID local.
   Future<BrickOperatingExpenseCategoryModel?> getById(String id);
+
+  /// Guarda categorias de catalogo central sin encolarlas como altas locales.
+  Future<void> cacheRemoteCategories(Iterable<BrickOperatingExpenseCategoryModel> categories);
 }
 
 /// Implementacion Brick para categorias de egresos.
@@ -75,6 +78,17 @@ class BrickOperatingExpenseCategoryStore implements OperatingExpenseCategoryBric
       if (category.localId == id) return category;
     }
     return null;
+  }
+
+  @override
+  Future<void> cacheRemoteCategories(Iterable<BrickOperatingExpenseCategoryModel> categories) async {
+    final stored = await _repository.getLocal<BrickOperatingExpenseCategoryModel>();
+    final byId = {for (final item in stored) item.localId: item};
+    for (final category in categories) {
+      final current = byId[category.localId];
+      if (current != null && current.updatedAt.isAfter(category.updatedAt)) continue;
+      await _repository.upsertLocal(category..primaryKey = current?.primaryKey);
+    }
   }
 
   Future<void> _applySyncResult(BackendSyncResult result) async {

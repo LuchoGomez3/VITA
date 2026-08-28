@@ -141,4 +141,32 @@ class SessionBackendAccessTokenProvider implements BackendAccessTokenProvider {
     session = refreshed;
     return refreshed.accessToken;
   }
+
+  /// Fuerza una unica renovacion despues de que el backend rechaza un token.
+  ///
+  /// Se usa para el caso en que la expiracion local quedo desfasada respecto
+  /// del servidor. Los datos offline no se eliminan si la renovacion falla.
+  Future<String?> refreshAccessToken() async {
+    final refreshToken = _refreshToken;
+    final refreshCallback = this.refreshCallback;
+    if (refreshToken == null || refreshToken.isEmpty || refreshCallback == null) {
+      clearAccessToken();
+      return null;
+    }
+
+    BackendTokenSession? refreshed;
+    try {
+      refreshed = await (_refreshInFlight ??= refreshCallback(refreshToken));
+    } on DomainException catch (error) {
+      if (error.code == DomainErrorCode.unauthorized) clearAccessToken();
+      rethrow;
+    } finally {
+      _refreshInFlight = null;
+    }
+    if (refreshed == null) {
+      return null;
+    }
+    session = refreshed;
+    return refreshed.accessToken;
+  }
 }

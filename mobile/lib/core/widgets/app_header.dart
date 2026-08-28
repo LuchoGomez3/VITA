@@ -9,6 +9,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     this.headline,
     this.actions,
+    this.titleWidget,
   });
 
   /// Titulo que identifica la seccion actual.
@@ -19,6 +20,9 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
 
   /// Acciones opcionales ubicadas en el extremo derecho.
   final List<Widget>? actions;
+
+  /// Contenido opcional que reemplaza la presentación estándar del título.
+  final Widget? titleWidget;
 
   @override
   Size get preferredSize => Size.fromHeight(headline == null ? 70 : 86);
@@ -35,16 +39,18 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
           bottom: Radius.circular(AppRadius.lg),
         ),
       ),
-      title: visibleHeadline == null
-          ? Text(title, style: AppTypography.appBarTitle)
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(visibleHeadline, style: AppTypography.appBarTitle),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(title, style: AppTypography.smallEmphasis),
-              ],
-            ),
+      title:
+          titleWidget ??
+          (visibleHeadline == null
+              ? Text(title, style: AppTypography.appBarTitle)
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(visibleHeadline, style: AppTypography.appBarTitle),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(title, style: AppTypography.smallEmphasis),
+                  ],
+                )),
       actions: actions,
     );
   }

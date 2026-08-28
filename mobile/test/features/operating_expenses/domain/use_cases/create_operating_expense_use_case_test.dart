@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
+import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/repositories/operating_expense_repository.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/use_cases/operating_expense_use_cases.dart';
@@ -136,5 +137,27 @@ class _FakeRepository implements OperatingExpenseRepository {
   Future<Result<List<OperatingExpenseCategory>>> getCategories({
     required String establishmentId,
     required OperatingExpenseType type,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<Result<OperatingExpenseExport>> exportHistory({
+    required String establishmentId,
+    required OperatingExpenseFilters filters,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<Result<OperatingExpenseHistory>> getLocalHistory({
+    required String establishmentId,
+    required OperatingExpenseFilters filters,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<Result<List<OperatingExpenseCategory>>> refreshCategories({required String establishmentId}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Result<OperatingExpenseHistory>> refreshHistory({
+    required String establishmentId,
+    required OperatingExpenseFilters filters,
   }) => throw UnimplementedError();
 }

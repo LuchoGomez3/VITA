@@ -20,6 +20,9 @@ abstract class OperatingExpenseBrickStore {
 
   /// Descarga y reconcilia cambios centrales incluyendo tombstones.
   Future<void> pullRemoteExpenses(String establishmentId);
+
+  /// Reconcilia una respuesta ya descargada usando UUID y last-write-wins.
+  Future<void> reconcileRemoteExpenses(Iterable<BrickOperatingExpenseModel> expenses);
 }
 
 /// Implementacion Brick que garantiza categoria antes que egreso dependiente.
@@ -80,16 +83,14 @@ class BrickOperatingExpenseStore implements OperatingExpenseBrickStore {
       final current = byId[expense.localId];
       if (current == null || _prefer(expense, current)) byId[expense.localId] = expense;
     }
-    return byId.values.where((expense) => expense.deletedAt == null).toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return byId.values.where((expense) => expense.deletedAt == null).toList()..sort((a, b) => b.date.compareTo(a.date));
   }
 
   static bool _prefer(BrickOperatingExpenseModel candidate, BrickOperatingExpenseModel current) {
-    if (candidate.syncStatus != BrickOperatingExpenseSyncStatus.synchronized &&
-        current.syncStatus == BrickOperatingExpenseSyncStatus.synchronized) {
-      return true;
-    }
-    return candidate.updatedAt.isAfter(current.updatedAt);
+    final updatedComparison = candidate.updatedAt.compareTo(current.updatedAt);
+    if (updatedComparison != 0) return updatedComparison > 0;
+    return candidate.syncStatus != BrickOperatingExpenseSyncStatus.synchronized &&
+        current.syncStatus == BrickOperatingExpenseSyncStatus.synchronized;
   }
 
   @override
@@ -104,16 +105,24 @@ class BrickOperatingExpenseStore implements OperatingExpenseBrickStore {
         ],
       ),
     );
-    final local = await _repository.getLocal<BrickOperatingExpenseModel>();
-    final localById = {for (final item in local) item.localId: item};
-    for (final expense in remote) {
-      final existing = localById[expense.localId];
-      if (existing != null && existing.syncStatus != BrickOperatingExpenseSyncStatus.synchronized) continue;
-      await _repository.upsertLocal(
-        expense.copyWith(
-          syncStatus: BrickOperatingExpenseSyncStatus.synchronized,
-        )..primaryKey = existing?.primaryKey,
-      );
+    await reconcileRemoteExpenses(remote);
+  }
+
+  @override
+  Future<void> reconcileRemoteExpenses(Iterable<BrickOperatingExpenseModel> expenses) async {
+    final stored = await _repository.getLocal<BrickOperatingExpenseModel>();
+    final localById = <String, BrickOperatingExpenseModel>{};
+    for (final item in stored) {
+      final current = localById[item.localId];
+      if (current == null || _prefer(item, current)) localById[item.localId] = item;
+    }
+    for (final remote in expenses) {
+      final local = localById[remote.localId];
+      if (local != null && local.updatedAt.isAfter(remote.updatedAt)) continue;
+      final reconciled = remote.copyWith(syncStatus: BrickOperatingExpenseSyncStatus.synchronized)
+        ..primaryKey = local?.primaryKey;
+      await _repository.upsertLocal(reconciled);
+      localById[remote.localId] = reconciled;
     }
   }
 

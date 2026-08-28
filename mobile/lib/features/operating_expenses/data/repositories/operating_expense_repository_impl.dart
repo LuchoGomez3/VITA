@@ -8,9 +8,11 @@ import 'package:frontend_mayoral/brick/stores/operating_expense_category_brick_s
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/utils/uuid_v4.dart';
+import 'package:frontend_mayoral/features/operating_expenses/data/datasources/operating_expense_remote_data_source.dart';
 import 'package:frontend_mayoral/features/operating_expenses/data/mappers/operating_expense_brick_mapper.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/catalogs/operating_expense_category_catalog.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
+import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/repositories/operating_expense_repository.dart';
 import 'package:logging/logging.dart';
@@ -22,15 +24,18 @@ class OperatingExpenseRepositoryImpl implements OperatingExpenseRepository {
   OperatingExpenseRepositoryImpl({
     required OperatingExpenseBrickStore expenseStore,
     required OperatingExpenseCategoryBrickStore categoryStore,
+    OperatingExpenseRemoteDataSource? remoteDataSource,
     DateTime Function()? now,
     String Function()? createId,
   }) : _expenseStore = expenseStore,
        _categoryStore = categoryStore,
+       _remoteDataSource = remoteDataSource,
        _now = now ?? DateTime.now,
        _createId = createId ?? generateUuidV4;
 
   final OperatingExpenseBrickStore _expenseStore;
   final OperatingExpenseCategoryBrickStore _categoryStore;
+  final OperatingExpenseRemoteDataSource? _remoteDataSource;
   final DateTime Function() _now;
   final String Function() _createId;
   static final Logger _logger = Logger('OperatingExpenseRepository');
@@ -123,6 +128,174 @@ class OperatingExpenseRepositoryImpl implements OperatingExpenseRepository {
       return _persistenceFailure(OperatingExpensePersistenceError.loadCategories, error, stackTrace);
     }
   }
+
+  @override
+  Future<Result<OperatingExpenseHistory>> getLocalHistory({
+    required String establishmentId,
+    required OperatingExpenseFilters filters,
+  }) async {
+    try {
+      final expenses = await _filteredLocalExpenses(establishmentId, filters);
+      return Result.success(_localHistory(expenses));
+    } on Object catch (error, stackTrace) {
+      return _historyFailure(OperatingExpensePersistenceError.loadHistory, error, stackTrace);
+    }
+  }
+
+  @override
+  Future<Result<OperatingExpenseHistory>> refreshHistory({
+    required String establishmentId,
+    required OperatingExpenseFilters filters,
+  }) async {
+    final remoteDataSource = _remoteDataSource;
+    if (remoteDataSource == null) {
+      return const Result.failure(DomainException(message: 'Remote data source is not configured.'));
+    }
+    try {
+      final page = await remoteDataSource.getExpenses(establishmentId, filters);
+      await _expenseStore.reconcileRemoteExpenses(page.expenses);
+      final visible = await _filteredLocalExpenses(establishmentId, filters);
+      final remoteById = {for (final item in page.expenses) item.localId: item};
+      final pending = visible.where((item) => item.syncStatus != OperatingExpenseSyncStatus.synchronized).toList();
+      final pendingAdjustment = pending.fold(0, (sum, item) {
+        final remote = remoteById[item.id];
+        final replacedRemoteAmount = remote == null || remote.deletedAt != null
+            ? 0
+            : OperatingExpenseBrickMapper.decimalToCents(remote.amount);
+        return sum + item.amountCents - replacedRemoteAmount;
+      });
+      return Result.success(
+        OperatingExpenseHistory(
+          expenses: visible,
+          totalCents: page.totalCents + pendingAdjustment,
+          cachedWithoutConnection: false,
+          pendingCount: pending.length,
+          totalIncludesPending: pending.isNotEmpty,
+        ),
+      );
+    } on DomainException catch (error) {
+      return Result.failure(error);
+    } on Object catch (error, stackTrace) {
+      return _historyFailure(OperatingExpensePersistenceError.refreshHistory, error, stackTrace);
+    }
+  }
+
+  @override
+  Future<Result<List<OperatingExpenseCategory>>> refreshCategories({required String establishmentId}) async {
+    final remoteDataSource = _remoteDataSource;
+    if (remoteDataSource == null) {
+      return const Result.failure(DomainException(message: 'Remote data source is not configured.'));
+    }
+    try {
+      final groups = await remoteDataSource.getCatalog(establishmentId);
+      final timestamp = _now().toUtc();
+      final remoteModels = groups.expand(
+        (group) => group.categories
+            .where((item) => item.custom)
+            .map(
+              (item) => BrickOperatingExpenseCategoryModel(
+                localId: item.id ?? 'catalog:${group.type.value}:${item.value}:$establishmentId',
+                establishmentId: establishmentId,
+                type: group.type.value,
+                name: item.label,
+                value: item.value,
+                createdAt: timestamp,
+                updatedAt: timestamp,
+                syncStatus: BrickOperatingExpenseCategorySyncStatus.synchronized,
+              ),
+            ),
+      );
+      await _categoryStore.cacheRemoteCategories(remoteModels);
+      final local = await Future.wait(
+        OperatingExpenseType.values.map((type) => _allCategories(establishmentId, type)),
+      );
+      return Result.success(
+        _mergeCatalog([...groups.expand((group) => group.categories), ...local.expand((items) => items)]),
+      );
+    } on DomainException catch (error) {
+      return Result.failure(error);
+    } on Object catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpensePersistenceError.loadCategories, _asException(error), stackTrace);
+    }
+  }
+
+  @override
+  Future<Result<OperatingExpenseExport>> exportHistory({
+    required String establishmentId,
+    required OperatingExpenseFilters filters,
+  }) async {
+    final remoteDataSource = _remoteDataSource;
+    if (remoteDataSource == null) {
+      return const Result.failure(DomainException(message: 'Remote data source is not configured.'));
+    }
+    try {
+      return Result.success(await remoteDataSource.export(establishmentId, filters));
+    } on DomainException catch (error) {
+      return Result.failure(error);
+    } on Object catch (error, stackTrace) {
+      return _historyFailure(OperatingExpensePersistenceError.exportFailed, error, stackTrace);
+    }
+  }
+
+  Future<List<OperatingExpense>> _filteredLocalExpenses(
+    String establishmentId,
+    OperatingExpenseFilters filters,
+  ) async {
+    final stored = await _expenseStore.getLocalExpenses(establishmentId);
+    final categories = await Future.wait(
+      OperatingExpenseType.values.map((type) => _allCategories(establishmentId, type)),
+    );
+    final labels = {
+      for (final item in categories.expand((items) => items)) '${item.type.value}:${item.value}': item.label,
+    };
+    final mapped =
+        stored
+            .map(OperatingExpenseBrickMapper.fromBrick)
+            .where((expense) {
+              final date = DateTime(expense.date.year, expense.date.month, expense.date.day);
+              final from = filters.from;
+              final to = filters.to;
+              return (from == null || !date.isBefore(from)) &&
+                  (to == null || !date.isAfter(to)) &&
+                  (filters.type == null || expense.type == filters.type) &&
+                  (filters.category == null || expense.category == filters.category);
+            })
+            .map(
+              (expense) => expense.copyWith(categoryLabel: labels['${expense.type.value}:${expense.category}']),
+            )
+            .toList()
+          ..sort((left, right) => right.date.compareTo(left.date));
+    return mapped;
+  }
+
+  OperatingExpenseHistory _localHistory(List<OperatingExpense> expenses) {
+    final pendingCount = expenses.where((item) => item.syncStatus != OperatingExpenseSyncStatus.synchronized).length;
+    return OperatingExpenseHistory(
+      expenses: expenses,
+      totalCents: expenses.fold(0, (sum, item) => sum + item.amountCents),
+      cachedWithoutConnection: true,
+      pendingCount: pendingCount,
+      totalIncludesPending: pendingCount > 0,
+    );
+  }
+
+  List<OperatingExpenseCategory> _mergeCatalog(Iterable<OperatingExpenseCategory> remote) {
+    final byKey = <String, OperatingExpenseCategory>{
+      for (final item in OperatingExpenseCategoryCatalog.values) '${item.type.value}:${item.value}': item,
+    };
+    for (final item in remote) {
+      byKey['${item.type.value}:${item.value}'] = item;
+    }
+    return byKey.values.toList(growable: false);
+  }
+
+  Result<T> _historyFailure<T>(
+    OperatingExpensePersistenceError reason,
+    Object error,
+    StackTrace stackTrace,
+  ) => _persistenceFailure(reason, _asException(error), stackTrace);
+
+  Exception _asException(Object error) => error is Exception ? error : Exception(error.toString());
 
   Future<List<OperatingExpenseCategory>> _allCategories(String establishmentId, OperatingExpenseType type) async {
     final predefined = OperatingExpenseCategoryCatalog.forType(type);

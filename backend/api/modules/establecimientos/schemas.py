@@ -6,6 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
+from api.shared.enums import RolUsuario
+
 
 class EstablecimientoVertice(BaseModel):
     """Un vértice del polígono que delimita la superficie del campo."""
@@ -72,3 +74,9 @@ class EstablecimientoRead(BaseModel):
     poligono: list[EstablecimientoVertice] | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class EstablecimientoConRolRead(EstablecimientoRead):
+    """Establecimiento junto al rol de la membresía del usuario actual."""
+
+    rol: RolUsuario

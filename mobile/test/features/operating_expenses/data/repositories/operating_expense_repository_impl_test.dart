@@ -74,6 +74,9 @@ class _FakeCategoryStore implements OperatingExpenseCategoryBrickStore {
   final Future<List<BrickOperatingExpenseCategoryModel>> Function() onGet;
 
   @override
+  Future<void> cacheRemoteCategories(Iterable<BrickOperatingExpenseCategoryModel> categories) async {}
+
+  @override
   Future<List<BrickOperatingExpenseCategoryModel>> getLocalCategories({
     required String establishmentId,
     required String type,
@@ -89,6 +92,9 @@ class _FakeCategoryStore implements OperatingExpenseCategoryBrickStore {
 }
 
 class _FakeExpenseStore implements OperatingExpenseBrickStore {
+  @override
+  Future<void> reconcileRemoteExpenses(Iterable<BrickOperatingExpenseModel> expenses) async {}
+
   @override
   Future<List<BrickOperatingExpenseModel>> getLocalExpenses(String? establishmentId) => throw UnimplementedError();
 

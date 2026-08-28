@@ -22,6 +22,7 @@ from api.modules.establecimientos.repository import (
     UsuarioEstablecimientoRepository,
 )
 from api.modules.establecimientos.schemas import (
+    EstablecimientoConRolRead,
     EstablecimientoCreate,
     EstablecimientoRead,
     EstablecimientoUpdate,
@@ -43,7 +44,7 @@ class EstablecimientoService:
 
     async def crear(
         self, current_user: Usuario, data: EstablecimientoCreate
-    ) -> EstablecimientoRead:
+    ) -> EstablecimientoConRolRead:
         """Crea el establecimiento y la membresía owner en la misma transacción."""
         nro_renspa = data.nro_renspa.strip()
         if not nro_renspa:
@@ -91,28 +92,33 @@ class EstablecimientoService:
             await self.session.rollback()
             raise RenspaDuplicadoError(nro_renspa) from exc
 
-        return EstablecimientoRead.model_validate(establecimiento)
+        return self._representar_con_rol(establecimiento, RolUsuario.owner)
 
-    async def listar(self, current_user: Usuario) -> list[EstablecimientoRead]:
+    async def listar(
+        self, current_user: Usuario
+    ) -> list[EstablecimientoConRolRead]:
         establecimientos = await self.repository.list_by_usuario(current_user.id)
-        return [EstablecimientoRead.model_validate(e) for e in establecimientos]
+        return [
+            self._representar_con_rol(establecimiento, rol)
+            for establecimiento, rol in establecimientos
+        ]
 
     async def detalle(
         self, current_user: Usuario, establecimiento_id: UUID
-    ) -> EstablecimientoRead:
-        establecimiento = await self._obtener_con_acceso(
+    ) -> EstablecimientoConRolRead:
+        establecimiento, membership = await self._obtener_con_acceso(
             current_user, establecimiento_id
         )
-        return EstablecimientoRead.model_validate(establecimiento)
+        return self._representar_con_rol(establecimiento, membership.rol)
 
     async def actualizar(
         self,
         current_user: Usuario,
         establecimiento_id: UUID,
         data: EstablecimientoUpdate,
-    ) -> EstablecimientoRead:
+    ) -> EstablecimientoConRolRead:
         """Actualiza los campos provistos, re-validando cada uno igual que en `crear`."""
-        establecimiento = await self._obtener_con_acceso(
+        establecimiento, membership = await self._obtener_con_acceso(
             current_user, establecimiento_id
         )
 
@@ -163,11 +169,11 @@ class EstablecimientoService:
             await self.session.rollback()
             raise RenspaDuplicadoError(nro_renspa) from exc
 
-        return EstablecimientoRead.model_validate(establecimiento)
+        return self._representar_con_rol(establecimiento, membership.rol)
 
     async def _obtener_con_acceso(
         self, current_user: Usuario, establecimiento_id: UUID
-    ) -> Establecimiento:
+    ) -> tuple[Establecimiento, UsuarioEstablecimiento]:
         establecimiento = await self.repository.get_by_id(establecimiento_id)
         if establecimiento is None:
             raise EstablecimientoNoEncontradoError()
@@ -179,7 +185,14 @@ class EstablecimientoService:
         if membership is None:
             raise EstablecimientoNoEncontradoError()
 
-        return establecimiento
+        return establecimiento, membership
+
+    @staticmethod
+    def _representar_con_rol(
+        establecimiento: Establecimiento, rol: RolUsuario
+    ) -> EstablecimientoConRolRead:
+        datos = EstablecimientoRead.model_validate(establecimiento).model_dump()
+        return EstablecimientoConRolRead(**datos, rol=rol)
 
     def _validar_cuit_opcional(self, cuit: str | None) -> str | None:
         if cuit is None:

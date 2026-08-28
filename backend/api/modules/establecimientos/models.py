@@ -1,7 +1,7 @@
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import JSON, Numeric, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, JSON, Numeric, String, UniqueConstraint
 from sqlmodel import Field
 
 from api.shared.enums import RolUsuario
@@ -32,6 +32,10 @@ class Establecimiento(Base, SoftDeleteMixin, table=True):
 class UsuarioEstablecimiento(Base, table=True):
     __tablename__ = "usuarios_establecimientos"
     __table_args__ = (
+        CheckConstraint(
+            "rol IN ('admin', 'owner', 'employee')",
+            name="ck_usuarios_establecimientos_rol",
+        ),
         UniqueConstraint(
             "usuario_id",
             "establecimiento_id",

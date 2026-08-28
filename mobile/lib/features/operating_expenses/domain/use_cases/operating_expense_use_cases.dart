@@ -1,6 +1,7 @@
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
+import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/repositories/operating_expense_repository.dart';
 
@@ -47,6 +48,52 @@ class CreateOperatingExpenseUseCase {
     if (selected.isAfter(maximum)) return OperatingExpenseValidationError.futureDate;
     return null;
   }
+}
+
+/// Expone el historial local y su actualizacion remota manteniendo los filtros.
+class GetOperatingExpenseHistoryUseCase {
+  /// Crea el caso de uso.
+  const GetOperatingExpenseHistoryUseCase(this._repository);
+
+  final OperatingExpenseRepository _repository;
+
+  /// Obtiene primero la fuente persistida en SQLite.
+  Future<Result<OperatingExpenseHistory>> local(
+    String establishmentId,
+    OperatingExpenseFilters filters,
+  ) => _repository.getLocalHistory(establishmentId: establishmentId, filters: filters);
+
+  /// Consulta backend y reconcilia el resultado con SQLite.
+  Future<Result<OperatingExpenseHistory>> refresh(
+    String establishmentId,
+    OperatingExpenseFilters filters,
+  ) => _repository.refreshHistory(establishmentId: establishmentId, filters: filters);
+}
+
+/// Obtiene el catalogo completo, incluidas categorias centrales personalizadas.
+class RefreshOperatingExpenseCatalogUseCase {
+  /// Crea el caso de uso.
+  const RefreshOperatingExpenseCatalogUseCase(this._repository);
+
+  final OperatingExpenseRepository _repository;
+
+  /// Actualiza y devuelve las categorias disponibles para el establecimiento.
+  Future<Result<List<OperatingExpenseCategory>>> call(String establishmentId) =>
+      _repository.refreshCategories(establishmentId: establishmentId);
+}
+
+/// Solicita el archivo CSV exactamente para el filtro activo.
+class ExportOperatingExpensesUseCase {
+  /// Crea el caso de uso.
+  const ExportOperatingExpensesUseCase(this._repository);
+
+  final OperatingExpenseRepository _repository;
+
+  /// Descarga el archivo central.
+  Future<Result<OperatingExpenseExport>> call(
+    String establishmentId,
+    OperatingExpenseFilters filters,
+  ) => _repository.exportHistory(establishmentId: establishmentId, filters: filters);
 }
 
 /// Expone operaciones de catalogo sin filtrar detalles de persistencia.

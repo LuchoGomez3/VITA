@@ -3,7 +3,7 @@
 from uuid import UUID, uuid4
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from api.modules.establecimientos.models import (
     Establecimiento,
@@ -36,6 +36,7 @@ async def test_alta_exitosa_crea_membresia_owner(auth_client, session, usuario_a
     est_id = body["data"]["id"]
     assert body["data"]["owner_id"] == str(usuario_actual.id)
     assert body["data"]["nro_renspa"] == "12.345.6.78901/00"
+    assert body["data"]["rol"] == "owner"
 
     # Se creó la membresía owner en la misma operación.
     result = await session.execute(
@@ -119,6 +120,7 @@ async def test_detalle_incluye_auditoria(auth_client, usuario_actual):
     assert resp.status_code == 200
     data = resp.json()["data"]
     assert data["owner_id"] == str(usuario_actual.id)
+    assert data["rol"] == "owner"
     assert data["created_at"]
     assert data["updated_at"]
 
@@ -165,6 +167,36 @@ async def test_listado_solo_del_usuario(auth_client, session):
     detalle = await auth_client.get(f"/api/v1/establecimientos/{ajeno.id}")
     assert detalle.status_code == 404
     assert detalle.json()["errors"][0]["code"] == "establecimiento_no_encontrado"
+
+
+@pytest.mark.anyio
+async def test_listado_y_detalle_incluyen_rol_admin(
+    auth_client, session, usuario_actual
+):
+    creado = await auth_client.post("/api/v1/establecimientos", json=_payload())
+    establecimiento_id = creado.json()["data"]["id"]
+    await session.execute(
+        update(UsuarioEstablecimiento)
+        .where(
+            UsuarioEstablecimiento.usuario_id == usuario_actual.id,
+            UsuarioEstablecimiento.establecimiento_id == UUID(establecimiento_id),
+        )
+        .values(rol=RolUsuario.admin)
+    )
+    await session.commit()
+
+    listado = await auth_client.get("/api/v1/establecimientos")
+    establecimiento = next(
+        item for item in listado.json()["data"] if item["id"] == establecimiento_id
+    )
+    assert listado.status_code == 200
+    assert establecimiento["rol"] == "admin"
+
+    detalle = await auth_client.get(
+        f"/api/v1/establecimientos/{establecimiento_id}"
+    )
+    assert detalle.status_code == 200
+    assert detalle.json()["data"]["rol"] == "admin"
 
 
 @pytest.mark.anyio

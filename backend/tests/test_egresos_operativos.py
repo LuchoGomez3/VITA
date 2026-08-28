@@ -6,7 +6,7 @@ import re
 from uuid import UUID, uuid4
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from api.modules.egresos_operativos.models import EgresoOperativo
 from api.modules.egresos_operativos.schemas import CATEGORIAS_POR_TIPO
@@ -222,6 +222,151 @@ async def test_historial_incluye_auditoria_y_pull_delta(
     historial = respuesta.json()["data"]
     assert len(historial) == 1
     assert historial[0]["cargado_por"]["id"] == str(usuario_actual.id)
+
+
+@pytest.mark.anyio
+async def test_historial_filtra_y_totaliza_sanidad(
+    auth_client, establecimiento_habilitado
+):
+    """Los filtros combinados recalculan total y agrupaciones sobre los resultados."""
+    hoy = date.today()
+    ayer = hoy - timedelta(days=1)
+    hace_dos_dias = hoy - timedelta(days=2)
+    for datos in (
+        payload(
+            establecimiento_habilitado.id, monto="100000.00", fecha=hoy.isoformat()
+        ),
+        payload(
+            establecimiento_habilitado.id, monto="50000.00", fecha=ayer.isoformat()
+        ),
+        payload(
+            establecimiento_habilitado.id,
+            monto="70000.00",
+            tipo="gasto_administrativo",
+            categoria="combustible",
+            fecha=hace_dos_dias.isoformat(),
+        ),
+    ):
+        assert (
+            await auth_client.post("/api/v1/egresos_operativos", json=datos)
+        ).status_code == 201
+
+    respuesta = await auth_client.get(
+        "/api/v1/egresos_operativos",
+        params={
+            "establecimiento_id": str(establecimiento_habilitado.id),
+            "fecha_desde": ayer.isoformat(),
+            "fecha_hasta": hoy.isoformat(),
+            "tipo": "costo_produccion",
+            "categoria": "sanidad",
+        },
+    )
+    cuerpo = respuesta.json()
+    assert respuesta.status_code == 200
+    assert len(cuerpo["data"]) == 2
+    assert cuerpo["meta"] == {
+        "total_egresos": "150000.00",
+        "cantidad": 2,
+        "totales_por_tipo": {"costo_produccion": "150000.00"},
+        "totales_por_categoria": {"sanidad": "150000.00"},
+    }
+
+
+@pytest.mark.anyio
+async def test_operario_no_puede_visualizar_informacion_financiera(
+    auth_client, session, establecimiento_habilitado, usuario_actual
+):
+    """Un rol operativo recibe el mensaje de confidencialidad exigido."""
+    await session.execute(
+        update(UsuarioEstablecimiento)
+        .where(
+            UsuarioEstablecimiento.usuario_id == usuario_actual.id,
+            UsuarioEstablecimiento.establecimiento_id == establecimiento_habilitado.id,
+        )
+        .values(rol=RolUsuario.employee)
+    )
+    await session.commit()
+    respuesta = await auth_client.get(
+        "/api/v1/egresos_operativos",
+        params={"establecimiento_id": str(establecimiento_habilitado.id)},
+    )
+    assert respuesta.status_code == 403
+    error = respuesta.json()["errors"][0]
+    assert error["code"] == "acceso_financiero_denegado"
+    assert error["message"] == (
+        "Acceso denegado. No posee los privilegios necesarios para visualizar "
+        "información financiera"
+    )
+
+
+@pytest.mark.anyio
+async def test_admin_puede_visualizar_informacion_financiera(
+    auth_client, session, establecimiento_habilitado, usuario_actual
+):
+    """El administrador mantiene acceso a toda la información financiera."""
+    await session.execute(
+        update(UsuarioEstablecimiento)
+        .where(
+            UsuarioEstablecimiento.usuario_id == usuario_actual.id,
+            UsuarioEstablecimiento.establecimiento_id == establecimiento_habilitado.id,
+        )
+        .values(rol=RolUsuario.admin)
+    )
+    await session.commit()
+
+    respuesta = await auth_client.get(
+        "/api/v1/egresos_operativos",
+        params={"establecimiento_id": str(establecimiento_habilitado.id)},
+    )
+
+    assert respuesta.status_code == 200
+
+
+@pytest.mark.anyio
+async def test_exportacion_csv_respeta_filtros(auth_client, establecimiento_habilitado):
+    """La descarga tabular contiene solamente el subconjunto solicitado."""
+    await auth_client.post(
+        "/api/v1/egresos_operativos",
+        json=payload(establecimiento_habilitado.id, monto="42000.00"),
+    )
+    await auth_client.post(
+        "/api/v1/egresos_operativos",
+        json=payload(
+            establecimiento_habilitado.id,
+            monto="9000.00",
+            tipo="gasto_administrativo",
+            categoria="combustible",
+            insumo="Gasoil",
+        ),
+    )
+    respuesta = await auth_client.get(
+        "/api/v1/egresos_operativos/exportar",
+        params={
+            "establecimiento_id": str(establecimiento_habilitado.id),
+            "tipo": "gasto_administrativo",
+        },
+    )
+    assert respuesta.status_code == 200
+    assert respuesta.headers["content-type"].startswith("text/csv")
+    assert "egresos_operativos.csv" in respuesta.headers["content-disposition"]
+    assert "Gasoil" in respuesta.text
+    assert "Vacunas reproductivas" not in respuesta.text
+
+
+@pytest.mark.anyio
+async def test_rango_de_fechas_invertido_es_rechazado(
+    auth_client, establecimiento_habilitado
+):
+    respuesta = await auth_client.get(
+        "/api/v1/egresos_operativos",
+        params={
+            "establecimiento_id": str(establecimiento_habilitado.id),
+            "fecha_desde": date.today().isoformat(),
+            "fecha_hasta": (date.today() - timedelta(days=1)).isoformat(),
+        },
+    )
+    assert respuesta.status_code == 422
+    assert respuesta.json()["errors"][0]["code"] == "rango_fechas_invalido"
 
 
 @pytest.mark.anyio

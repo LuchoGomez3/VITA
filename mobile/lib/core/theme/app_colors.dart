@@ -81,6 +81,12 @@ class AppColors {
   /// Amarillo usado para indicar una contraseña de fuerza normal.
   static const passwordStrengthNormal = Color(0xFFF9A825);
 
+  /// Amarillo oscuro accesible para iconos de sincronizacion pendiente.
+  static const syncPending = Color(0xFF8A5A00);
+
+  /// Fondo claro para estados pendientes sin depender solo del color.
+  static const syncPendingContainer = Color(0xFFFFF3CD);
+
   /// Verde intenso usado para indicar una contraseña muy fuerte.
   static const passwordStrengthVeryStrong = Color(0xFF1B5E20);
 

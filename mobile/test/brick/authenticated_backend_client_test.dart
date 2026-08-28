@@ -156,6 +156,40 @@ void main() {
       );
     });
 
+    test('refreshes and retries once when backend unexpectedly returns 401', () async {
+      var requestCount = 0;
+      SessionBackendAccessTokenProvider.instance
+        ..session = BackendTokenSession(
+          accessToken: 'apparently-valid-token',
+          refreshToken: 'refresh-token',
+          accessTokenExpiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        )
+        ..refreshCallback = (_) async => BackendTokenSession(
+          accessToken: 'renewed-token',
+          refreshToken: 'renewed-refresh-token',
+          accessTokenExpiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        );
+      final client = AuthenticatedBackendClient(
+        tokenProvider: SessionBackendAccessTokenProvider.instance,
+        onSyncResult: (_) async {},
+        inner: MockClient((request) async {
+          requestCount++;
+          if (requestCount == 1) return http.Response('unauthorized', 401);
+          expect(request.headers['Authorization'], 'Bearer renewed-token');
+          expect(jsonDecode(request.body), _requestBody);
+          return http.Response(_successBody, 201);
+        }),
+      );
+
+      final response = await client.post(
+        Uri.parse('http://localhost:8000/api/v1/animales'),
+        body: jsonEncode(_requestBody),
+      );
+
+      expect(response.statusCode, 201);
+      expect(requestCount, 2);
+    });
+
     test('returns a transient response when refresh fails offline', () async {
       SessionBackendAccessTokenProvider.instance
         ..session = BackendTokenSession(

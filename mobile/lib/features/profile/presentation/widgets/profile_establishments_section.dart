@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/authentication/user_role_strings.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/profile/domain/entities/establishment_details.dart';
@@ -58,6 +59,12 @@ class _EstablishmentCard extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.md),
+          ProfileInfoRow(
+            label: ProfileStrings.roleLabel,
+            value: UserRoleStrings.name(establishment.role),
+            icon: Icons.admin_panel_settings_outlined,
+          ),
+          const Divider(),
           ProfileInfoRow(
             label: ProfileStrings.renspaLabel,
             value: _value(establishment.renspaNumber),

@@ -18,6 +18,7 @@ class HomeDashboardContent extends StatelessWidget {
   const HomeDashboardContent({
     required this.dashboard,
     required this.onEstablishmentSelectionRequested,
+    required this.canViewFinancialInformation,
     super.key,
   });
 
@@ -26,6 +27,9 @@ class HomeDashboardContent extends StatelessWidget {
 
   /// Abre el selector superior cuando una accion requiere establecimiento.
   final VoidCallback onEstablishmentSelectionRequested;
+
+  /// Oculta toda la informacion financiera para roles no autorizados.
+  final bool canViewFinancialInformation;
 
   @override
   Widget build(BuildContext context) {
@@ -40,13 +44,15 @@ class HomeDashboardContent extends StatelessWidget {
         ),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          HomeOperatingBalanceCard(
-            dashboard: dashboard,
-            onRegisterExpense: () => _openExpenses(context, AppRoutes.expenseRegister),
-            onRegisterIncome: () => context.push(AppRoutes.incomeRegister),
-            onViewMovements: () => context.push(AppRoutes.expenseRecords),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+          if (canViewFinancialInformation) ...[
+            HomeOperatingBalanceCard(
+              dashboard: dashboard,
+              onRegisterExpense: () => _openExpenses(context, AppRoutes.expenseRegister),
+              onRegisterIncome: () => context.push(AppRoutes.incomeRegister),
+              onViewMovements: () => _openExpenses(context, AppRoutes.expenseRecords),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
           Text(HomeStrings.title, style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: AppSpacing.xs),
           Text(HomeStrings.subtitle, style: Theme.of(context).textTheme.bodyLarge),
@@ -74,7 +80,7 @@ class HomeDashboardContent extends StatelessWidget {
       AppRoutes.expensesForEstablishment(
         path: path,
         establishmentId: id,
-        establishmentName: state.establishments[id] ?? id,
+        establishmentName: state.establishments[id]?.name ?? id,
       ),
     );
   }

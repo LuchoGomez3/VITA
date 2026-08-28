@@ -6,11 +6,10 @@ Devuelve el modelo ``Usuario`` para que los módulos filtren multi-tenant por
 ``current_user.id``.
 """
 
-from typing import Optional
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth.providers import AuthProvider, AuthProviderError, get_auth_provider
@@ -18,7 +17,11 @@ from api.modules.usuarios.models import Usuario
 from api.modules.usuarios.repository import UsuarioRepository
 from database.database import get_session
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
+bearer_scheme = HTTPBearer(
+    auto_error=False,
+    scheme_name="BearerAuth",
+    description="Pegue únicamente el access token JWT, sin escribir el prefijo Bearer.",
+)
 
 _credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -28,12 +31,13 @@ _credentials_exception = HTTPException(
 
 
 async def get_current_user(
-    token: Optional[str] = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     session: AsyncSession = Depends(get_session),
     auth_provider: AuthProvider = Depends(get_auth_provider),
 ) -> Usuario:
-    if not token:
+    if credentials is None:
         raise _credentials_exception
+    token = credentials.credentials
 
     try:
         claims = auth_provider.verify_token(token)
@@ -53,3 +57,12 @@ async def get_current_user(
     if usuario is None:
         raise _credentials_exception
     return usuario
+
+
+async def get_bearer_token(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> str:
+    """Extrae el JWT del header Authorization para operaciones como logout."""
+    if credentials is None:
+        raise _credentials_exception
+    return credentials.credentials

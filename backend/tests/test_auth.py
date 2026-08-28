@@ -5,6 +5,24 @@ from core.config import settings
 
 
 @pytest.mark.anyio
+async def test_openapi_solicita_solo_token_bearer(app):
+    """Swagger debe pedir un JWT, no usuario y contraseña en Authorize."""
+    esquema = app.openapi()
+    seguridad = esquema["components"]["securitySchemes"]
+
+    assert seguridad == {
+        "BearerAuth": {
+            "type": "http",
+            "description": (
+                "Pegue únicamente el access token JWT, sin escribir el prefijo Bearer."
+            ),
+            "scheme": "bearer",
+        }
+    }
+    assert esquema["paths"]["/api/auth/me"]["get"]["security"] == [{"BearerAuth": []}]
+
+
+@pytest.mark.anyio
 async def test_me_sin_token_devuelve_401(client):
     resp = await client.get("/api/auth/me")
     assert resp.status_code == 401

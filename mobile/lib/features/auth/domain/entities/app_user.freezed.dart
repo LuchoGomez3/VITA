@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AppUser {
 
- String get id; String get email; String get firstName; String get lastName; String? get cuit; UserRole get role;
+ String get id; String get email; String get firstName; String get lastName; String? get cuit;
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $AppUserCopyWith<AppUser> get copyWith => _$AppUserCopyWithImpl<AppUser>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppUser&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.firstName, firstName) || other.firstName == firstName)&&(identical(other.lastName, lastName) || other.lastName == lastName)&&(identical(other.cuit, cuit) || other.cuit == cuit)&&(identical(other.role, role) || other.role == role));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppUser&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.firstName, firstName) || other.firstName == firstName)&&(identical(other.lastName, lastName) || other.lastName == lastName)&&(identical(other.cuit, cuit) || other.cuit == cuit));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,email,firstName,lastName,cuit,role);
+int get hashCode => Object.hash(runtimeType,id,email,firstName,lastName,cuit);
 
 @override
 String toString() {
-  return 'AppUser(id: $id, email: $email, firstName: $firstName, lastName: $lastName, cuit: $cuit, role: $role)';
+  return 'AppUser(id: $id, email: $email, firstName: $firstName, lastName: $lastName, cuit: $cuit)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $AppUserCopyWith<$Res>  {
   factory $AppUserCopyWith(AppUser value, $Res Function(AppUser) _then) = _$AppUserCopyWithImpl;
 @useResult
 $Res call({
- String id, String email, String firstName, String lastName, String? cuit, UserRole role
+ String id, String email, String firstName, String lastName, String? cuit
 });
 
 
@@ -62,15 +62,14 @@ class _$AppUserCopyWithImpl<$Res>
 
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? email = null,Object? firstName = null,Object? lastName = null,Object? cuit = freezed,Object? role = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? email = null,Object? firstName = null,Object? lastName = null,Object? cuit = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,firstName: null == firstName ? _self.firstName : firstName // ignore: cast_nullable_to_non_nullable
 as String,lastName: null == lastName ? _self.lastName : lastName // ignore: cast_nullable_to_non_nullable
 as String,cuit: freezed == cuit ? _self.cuit : cuit // ignore: cast_nullable_to_non_nullable
-as String?,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
-as UserRole,
+as String?,
   ));
 }
 
@@ -155,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String email,  String firstName,  String lastName,  String? cuit,  UserRole role)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String email,  String firstName,  String lastName,  String? cuit)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppUser() when $default != null:
-return $default(_that.id,_that.email,_that.firstName,_that.lastName,_that.cuit,_that.role);case _:
+return $default(_that.id,_that.email,_that.firstName,_that.lastName,_that.cuit);case _:
   return orElse();
 
 }
@@ -176,10 +175,10 @@ return $default(_that.id,_that.email,_that.firstName,_that.lastName,_that.cuit,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String email,  String firstName,  String lastName,  String? cuit,  UserRole role)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String email,  String firstName,  String lastName,  String? cuit)  $default,) {final _that = this;
 switch (_that) {
 case _AppUser():
-return $default(_that.id,_that.email,_that.firstName,_that.lastName,_that.cuit,_that.role);case _:
+return $default(_that.id,_that.email,_that.firstName,_that.lastName,_that.cuit);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -196,10 +195,10 @@ return $default(_that.id,_that.email,_that.firstName,_that.lastName,_that.cuit,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String email,  String firstName,  String lastName,  String? cuit,  UserRole role)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String email,  String firstName,  String lastName,  String? cuit)?  $default,) {final _that = this;
 switch (_that) {
 case _AppUser() when $default != null:
-return $default(_that.id,_that.email,_that.firstName,_that.lastName,_that.cuit,_that.role);case _:
+return $default(_that.id,_that.email,_that.firstName,_that.lastName,_that.cuit);case _:
   return null;
 
 }
@@ -211,7 +210,7 @@ return $default(_that.id,_that.email,_that.firstName,_that.lastName,_that.cuit,_
 
 
 class _AppUser implements AppUser {
-  const _AppUser({required this.id, required this.email, required this.firstName, required this.lastName, this.cuit, this.role = UserRole.unknown});
+  const _AppUser({required this.id, required this.email, required this.firstName, required this.lastName, this.cuit});
   
 
 @override final  String id;
@@ -219,7 +218,6 @@ class _AppUser implements AppUser {
 @override final  String firstName;
 @override final  String lastName;
 @override final  String? cuit;
-@override@JsonKey() final  UserRole role;
 
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
@@ -231,16 +229,16 @@ _$AppUserCopyWith<_AppUser> get copyWith => __$AppUserCopyWithImpl<_AppUser>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppUser&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.firstName, firstName) || other.firstName == firstName)&&(identical(other.lastName, lastName) || other.lastName == lastName)&&(identical(other.cuit, cuit) || other.cuit == cuit)&&(identical(other.role, role) || other.role == role));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppUser&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.firstName, firstName) || other.firstName == firstName)&&(identical(other.lastName, lastName) || other.lastName == lastName)&&(identical(other.cuit, cuit) || other.cuit == cuit));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,email,firstName,lastName,cuit,role);
+int get hashCode => Object.hash(runtimeType,id,email,firstName,lastName,cuit);
 
 @override
 String toString() {
-  return 'AppUser(id: $id, email: $email, firstName: $firstName, lastName: $lastName, cuit: $cuit, role: $role)';
+  return 'AppUser(id: $id, email: $email, firstName: $firstName, lastName: $lastName, cuit: $cuit)';
 }
 
 
@@ -251,7 +249,7 @@ abstract mixin class _$AppUserCopyWith<$Res> implements $AppUserCopyWith<$Res> {
   factory _$AppUserCopyWith(_AppUser value, $Res Function(_AppUser) _then) = __$AppUserCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String email, String firstName, String lastName, String? cuit, UserRole role
+ String id, String email, String firstName, String lastName, String? cuit
 });
 
 
@@ -268,15 +266,14 @@ class __$AppUserCopyWithImpl<$Res>
 
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? email = null,Object? firstName = null,Object? lastName = null,Object? cuit = freezed,Object? role = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? email = null,Object? firstName = null,Object? lastName = null,Object? cuit = freezed,}) {
   return _then(_AppUser(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,firstName: null == firstName ? _self.firstName : firstName // ignore: cast_nullable_to_non_nullable
 as String,lastName: null == lastName ? _self.lastName : lastName // ignore: cast_nullable_to_non_nullable
 as String,cuit: freezed == cuit ? _self.cuit : cuit // ignore: cast_nullable_to_non_nullable
-as String?,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
-as UserRole,
+as String?,
   ));
 }
 

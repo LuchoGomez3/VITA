@@ -12,7 +12,6 @@ class ProfileUserCard extends StatelessWidget {
     required this.firstName,
     required this.lastName,
     required this.cuit,
-    required this.role,
     super.key,
   });
 
@@ -30,9 +29,6 @@ class ProfileUserCard extends StatelessWidget {
 
   /// CUIT opcional.
   final String? cuit;
-
-  /// Rol guardado en la sesión.
-  final String role;
 
   @override
   Widget build(BuildContext context) {
@@ -75,12 +71,6 @@ class ProfileUserCard extends StatelessWidget {
                 label: ProfileStrings.cuitLabel,
                 value: cuit ?? ProfileStrings.emptyCredential,
                 icon: Icons.numbers,
-              ),
-              const Divider(),
-              ProfileInfoRow(
-                label: ProfileStrings.roleLabel,
-                value: ProfileStrings.roleName(role),
-                icon: Icons.admin_panel_settings_outlined,
               ),
             ],
           ),

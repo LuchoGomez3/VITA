@@ -38,7 +38,7 @@ const List<MigrationCommand> _migration_20260812200326_up = [
   InsertColumn('updated_at', Column.datetime, onTable: 'BrickOperatingExpenseCategoryModel'),
   InsertColumn('deleted_at', Column.datetime, onTable: 'BrickOperatingExpenseCategoryModel'),
   InsertColumn('sync_status', Column.integer, onTable: 'BrickOperatingExpenseCategoryModel'),
-  InsertColumn('sync_error_code', Column.varchar, onTable: 'BrickOperatingExpenseCategoryModel')
+  InsertColumn('sync_error_code', Column.varchar, onTable: 'BrickOperatingExpenseCategoryModel'),
 ];
 
 const List<MigrationCommand> _migration_20260812200326_down = [
@@ -70,7 +70,7 @@ const List<MigrationCommand> _migration_20260812200326_down = [
   DropColumn('updated_at', onTable: 'BrickOperatingExpenseCategoryModel'),
   DropColumn('deleted_at', onTable: 'BrickOperatingExpenseCategoryModel'),
   DropColumn('sync_status', onTable: 'BrickOperatingExpenseCategoryModel'),
-  DropColumn('sync_error_code', onTable: 'BrickOperatingExpenseCategoryModel')
+  DropColumn('sync_error_code', onTable: 'BrickOperatingExpenseCategoryModel'),
 ];
 
 //

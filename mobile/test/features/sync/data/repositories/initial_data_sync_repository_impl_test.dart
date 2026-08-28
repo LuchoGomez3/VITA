@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
@@ -5,6 +7,7 @@ import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/sync/data/datasources/establishment_remote_data_source.dart';
 import 'package:frontend_mayoral/features/sync/data/models/establishment_remote_summary.dart';
@@ -30,6 +33,23 @@ void main() {
     expect(categoryStore.pulls, ['establishment-1', 'establishment-1']);
     expect(weighingStore.pulls, ['establishment-1', 'establishment-1']);
   });
+
+  test('persists the establishment role in the offline catalog', () async {
+    final storage = _MemoryStorage();
+    final repository = InitialDataSyncRepositoryImpl(
+      secureStorage: storage,
+      establishmentRemoteDataSource: _FakeEstablishmentRemoteDataSource(),
+      animalStore: _FakeAnimalStore(),
+      categoryStore: _FakeCategoryStore(),
+      weighingStore: _FakeWeighingStore(),
+    );
+
+    await repository.sync();
+
+    final encoded = await storage.read(SecureStorageKeys.establishmentCatalog);
+    final catalog = jsonDecode(encoded!) as List<dynamic>;
+    expect(catalog.single, containsPair('role', 'owner'));
+  });
 }
 
 class _FakeEstablishmentRemoteDataSource implements EstablishmentRemoteDataSource {
@@ -39,6 +59,7 @@ class _FakeEstablishmentRemoteDataSource implements EstablishmentRemoteDataSourc
       id: 'establishment-1',
       ownerId: 'owner-1',
       name: 'Establecimiento',
+      role: UserRole.owner,
       createdAt: _date,
       updatedAt: _date,
     ),

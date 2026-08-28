@@ -1,9 +1,9 @@
 """DTOs y validaciones del contrato HTTP de egresos operativos."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from uuid import UUID
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -11,7 +11,11 @@ from api.shared.enums import CategoriaEgresoOperativo, TipoEgresoOperativo
 from api.shared.schemas import SyncFields
 
 # La fecha contable se valida según el día civil donde opera el producto.
-ZONA_HORARIA_NEGOCIO = ZoneInfo("America/Argentina/Cordoba")
+try:
+    ZONA_HORARIA_NEGOCIO = ZoneInfo("America/Argentina/Cordoba")
+except ZoneInfoNotFoundError:
+    # Windows puede no incluir la base IANA. Argentina mantiene UTC-03 sin DST.
+    ZONA_HORARIA_NEGOCIO = timezone(timedelta(hours=-3))
 
 # Esta matriz define el catálogo base que usa la API. Debe mantenerse sincronizada
 # con `validar_categoria_egreso_operativo()` en scripts/crear_egresos_operativos.sql;

@@ -14,18 +14,10 @@ Future<BrickOperatingExpenseModel> _$BrickOperatingExpenseModelFromRest(
     category: data['categoria'] as String,
     supply: data['insumo'] as String,
     date: DateTime.parse(data['fecha'] as String),
-    description: data['descripcion'] == null
-        ? null
-        : data['descripcion'] as String?,
-    receiptNumber: data['numero_comprobante'] == null
-        ? null
-        : data['numero_comprobante'] as String?,
-    loadedById: data['cargado_por_id'] == null
-        ? null
-        : data['cargado_por_id'] as String?,
-    loadedByName: data['cargado_por'] == null
-        ? null
-        : brickOperatingExpenseLoadedByName(data['cargado_por']),
+    description: data['descripcion'] == null ? null : data['descripcion'] as String?,
+    receiptNumber: data['numero_comprobante'] == null ? null : data['numero_comprobante'] as String?,
+    loadedById: data['cargado_por_id'] == null ? null : data['cargado_por_id'] as String?,
+    loadedByName: data['cargado_por'] == null ? null : brickOperatingExpenseLoadedByName(data['cargado_por']),
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -70,18 +62,10 @@ Future<BrickOperatingExpenseModel> _$BrickOperatingExpenseModelFromSqlite(
     category: data['category'] as String,
     supply: data['supply'] as String,
     date: DateTime.parse(data['date'] as String),
-    description: data['description'] == null
-        ? null
-        : data['description'] as String?,
-    receiptNumber: data['receipt_number'] == null
-        ? null
-        : data['receipt_number'] as String?,
-    loadedById: data['loaded_by_id'] == null
-        ? null
-        : data['loaded_by_id'] as String?,
-    loadedByName: data['loaded_by_name'] == null
-        ? null
-        : data['loaded_by_name'] as String?,
+    description: data['description'] == null ? null : data['description'] as String?,
+    receiptNumber: data['receipt_number'] == null ? null : data['receipt_number'] as String?,
+    loadedById: data['loaded_by_id'] == null ? null : data['loaded_by_id'] as String?,
+    loadedByName: data['loaded_by_name'] == null ? null : data['loaded_by_name'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -89,14 +73,9 @@ Future<BrickOperatingExpenseModel> _$BrickOperatingExpenseModelFromSqlite(
         : data['deleted_at'] == null
         ? null
         : DateTime.tryParse(data['deleted_at'] as String),
-    customCategoryId: data['custom_category_id'] == null
-        ? null
-        : data['custom_category_id'] as String?,
-    syncStatus:
-        BrickOperatingExpenseSyncStatus.values[data['sync_status'] as int],
-    syncErrorCode: data['sync_error_code'] == null
-        ? null
-        : data['sync_error_code'] as String?,
+    customCategoryId: data['custom_category_id'] == null ? null : data['custom_category_id'] as String?,
+    syncStatus: BrickOperatingExpenseSyncStatus.values[data['sync_status'] as int],
+    syncErrorCode: data['sync_error_code'] == null ? null : data['sync_error_code'] as String?,
   )..primaryKey = data['_brick_id'] as int;
 }
 
@@ -129,8 +108,7 @@ Future<Map<String, dynamic>> _$BrickOperatingExpenseModelToSqlite(
 }
 
 /// Construct a [BrickOperatingExpenseModel]
-class BrickOperatingExpenseModelAdapter
-    extends OfflineFirstWithRestAdapter<BrickOperatingExpenseModel> {
+class BrickOperatingExpenseModelAdapter extends OfflineFirstWithRestAdapter<BrickOperatingExpenseModel> {
   BrickOperatingExpenseModelAdapter();
 
   @override

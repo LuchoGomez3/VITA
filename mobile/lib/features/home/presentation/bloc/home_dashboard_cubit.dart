@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
@@ -31,9 +32,9 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
     );
     final establishmentsResult = await _getHomeEstablishmentsUseCase();
     switch (establishmentsResult) {
-      case Success<Map<String, String>>(:final data):
+      case Success<Map<String, EstablishmentMembership>>(:final data):
         emit(state.copyWith(establishments: data));
-      case Failure<Map<String, String>>(:final error):
+      case Failure<Map<String, EstablishmentMembership>>(:final error):
         emit(
           state.copyWith(
             dashboardState: ResultState<HomeDashboard>.error(error),

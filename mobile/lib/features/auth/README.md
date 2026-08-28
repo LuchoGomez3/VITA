@@ -113,9 +113,10 @@ La clave `SecureStorageKeys.authSession` contiene un JSON versionado con:
 - `first_name`
 - `last_name`
 - `cuit` si el backend lo devuelve
-- `role`
 
 No se guardan passwords. Tampoco se guarda el token dentro de SQLite/Brick.
+Los roles no forman parte de la sesion: se persisten por establecimiento en
+`SecureStorageKeys.establishmentCatalog` durante la sincronizacion inicial.
 
 ## Arranque offline
 

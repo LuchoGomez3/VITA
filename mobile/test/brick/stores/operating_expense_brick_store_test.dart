@@ -17,6 +17,32 @@ void main() {
 
       expect(selected.map((expense) => expense.localId), containsAll(['expense-a', 'expense-b']));
     });
+
+    test('deduplica por UUID, aplica last-write-wins y excluye soft-deletes', () {
+      final old = _expense(localId: 'same-id', updatedAt: DateTime(2026, 8, 20));
+      final current = _expense(localId: 'same-id', updatedAt: DateTime(2026, 8, 22));
+      final deleted = _expense(localId: 'deleted-id', deletedAt: DateTime(2026, 8, 23));
+
+      final selected = BrickOperatingExpenseStore.selectLocalExpenses(
+        [old, current, deleted],
+        establishmentId: 'establishment-id',
+      );
+
+      expect(selected, hasLength(1));
+      expect(selected.single.updatedAt, DateTime(2026, 8, 22));
+    });
+
+    test('ordena por fecha contable descendente', () {
+      final selected = BrickOperatingExpenseStore.selectLocalExpenses(
+        [
+          _expense(localId: 'older', date: DateTime(2026, 8, 10)),
+          _expense(localId: 'newer', date: DateTime(2026, 8, 25)),
+        ],
+        establishmentId: 'establishment-id',
+      );
+
+      expect(selected.map((item) => item.localId), ['newer', 'older']);
+    });
   });
 
   group('BrickOperatingExpenseStore.rejectExpenseForCategory', () {
@@ -51,6 +77,9 @@ void main() {
 BrickOperatingExpenseModel _expense({
   String localId = 'expense-id',
   String establishmentId = 'establishment-id',
+  DateTime? date,
+  DateTime? updatedAt,
+  DateTime? deletedAt,
 }) => BrickOperatingExpenseModel(
   localId: localId,
   establishmentId: establishmentId,
@@ -58,8 +87,9 @@ BrickOperatingExpenseModel _expense({
   type: 'costo_produccion',
   category: 'vacunas',
   supply: 'Vacunas reproductivas',
-  date: DateTime(2026, 8, 21),
+  date: date ?? DateTime(2026, 8, 21),
   createdAt: DateTime(2026, 8, 21),
-  updatedAt: DateTime(2026, 8, 21),
+  updatedAt: updatedAt ?? DateTime(2026, 8, 21),
+  deletedAt: deletedAt,
   customCategoryId: 'category-id',
 )..primaryKey = 7;

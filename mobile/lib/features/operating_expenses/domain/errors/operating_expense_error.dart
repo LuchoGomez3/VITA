@@ -29,4 +29,19 @@ enum OperatingExpensePersistenceError {
 
   /// No fue posible recuperar el catalogo disponible.
   loadCategories,
+
+  /// No fue posible leer el historial local.
+  loadHistory,
+
+  /// No fue posible actualizar el historial central.
+  refreshHistory,
+
+  /// La exportacion requiere conectividad.
+  exportOffline,
+
+  /// El backend rechazo el acceso financiero.
+  financialAccessDenied,
+
+  /// No fue posible generar o descargar el CSV.
+  exportFailed,
 }
