@@ -16,6 +16,7 @@ import 'package:brick_offline_first/brick_offline_first.dart' show RuntimeOfflin
 import 'package:sqflite_common/sqlite_api.dart' show DatabaseExecutor;
 
 import '../brick/models/animal.model.dart';
+import '../brick/models/animal_lot_movement.model.dart';
 import '../brick/models/categoria.model.dart';
 import '../brick/models/lot.model.dart';
 import '../brick/models/operating_expense.model.dart';
@@ -23,6 +24,7 @@ import '../brick/models/operating_expense_category.model.dart';
 import '../brick/models/pesaje.model.dart';
 
 part 'adapters/brick_animal_model_adapter.g.dart';
+part 'adapters/brick_animal_lot_movement_model_adapter.g.dart';
 part 'adapters/brick_categoria_model_adapter.g.dart';
 part 'adapters/brick_lot_model_adapter.g.dart';
 part 'adapters/brick_operating_expense_model_adapter.g.dart';
@@ -32,6 +34,7 @@ part 'adapters/brick_pesaje_model_adapter.g.dart';
 /// Rest mappings should only be used when initializing a [RestProvider]
 final Map<Type, RestAdapter<RestModel>> restMappings = {
   BrickAnimalModel: BrickAnimalModelAdapter(),
+  BrickAnimalLotMovementModel: BrickAnimalLotMovementModelAdapter(),
   BrickCategoriaModel: BrickCategoriaModelAdapter(),
   BrickLotModel: BrickLotModelAdapter(),
   BrickOperatingExpenseModel: BrickOperatingExpenseModelAdapter(),
@@ -43,6 +46,7 @@ final restModelDictionary = RestModelDictionary(restMappings);
 /// Sqlite mappings should only be used when initializing a [SqliteProvider]
 final Map<Type, SqliteAdapter<SqliteModel>> sqliteMappings = {
   BrickAnimalModel: BrickAnimalModelAdapter(),
+  BrickAnimalLotMovementModel: BrickAnimalLotMovementModelAdapter(),
   BrickCategoriaModel: BrickCategoriaModelAdapter(),
   BrickLotModel: BrickLotModelAdapter(),
   BrickOperatingExpenseModel: BrickOperatingExpenseModelAdapter(),

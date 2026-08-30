@@ -35,6 +35,8 @@ sealed class RegisterAnimalDraft with _$RegisterAnimalDraft {
   }) = _RegisterAnimalDraft;
 
   /// Creates the initial values currently displayed by the flow.
+  // TODO(agusf): eliminar categoria y madre preseleccionadas cuando sus
+  // catalogos reales hidraten el draft desde Brick.
   factory RegisterAnimalDraft.initial({String rfid = ''}) => RegisterAnimalDraft(
     rfid: rfid,
     visualTagSeries: '',
@@ -46,7 +48,6 @@ sealed class RegisterAnimalDraft with _$RegisterAnimalDraft {
     category: AnimalRegisterStrings.stepTwoCategories.first,
     birthWeight: '',
     motherId: 'mother-003-0421',
-    destinationId: 'destination-la-cumbre',
   );
 }
 
@@ -57,6 +58,9 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
   const factory RegisterAnimalState({
     required RegisterAnimalStep currentStep,
     required RegisterAnimalDraft draft,
+    @Default(<AnimalRegistrationDestination>[]) List<AnimalRegistrationDestination> destinations,
+    @Default(false) bool isLoadingDestinations,
+    String? destinationsError,
     @Default(ResultState<RegisteredAnimal>.initial()) ResultState<RegisteredAnimal> submitResult,
   }) = _RegisterAnimalState;
 }

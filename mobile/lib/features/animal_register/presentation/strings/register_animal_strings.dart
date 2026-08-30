@@ -5,6 +5,9 @@ import 'package:frontend_mayoral/features/animal_register/presentation/widgets/e
 class AnimalRegisterStrings {
   const AnimalRegisterStrings._();
 
+  /// Estado vacío cuando todavía no existen lotes activos offline.
+  static const noActiveLotsMessage = 'No hay lotes activos disponibles. Creá o activá un lote antes de continuar.';
+
   /// Titulo de la pagina.
   static const pageTitle = 'Alta de animal';
 

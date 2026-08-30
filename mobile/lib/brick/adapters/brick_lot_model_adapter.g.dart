@@ -10,7 +10,12 @@ Future<BrickLotModel> _$BrickLotModelFromRest(
     localId: data['id'] as String,
     establishmentId: data['establecimiento_id'] as String,
     name: data['nombre'] as String,
-    boundaryJson: data['geometria_local'] as String,
+    boundaryJson: brickLotGeometryFromBackend(data['geometria_local']),
+    geometryMode: data['geometry_mode'] as String,
+    surfaceTenths: brickLotSurfaceFromBackend(data['superficie_ha']),
+    forageResourceCode: data['recurso_forrajero_codigo'] == null ? null : data['recurso_forrajero_codigo'] as String?,
+    hasWater: data['tiene_agua'] as bool,
+    statusCode: data['estado'] as String,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -30,7 +35,12 @@ Future<Map<String, dynamic>> _$BrickLotModelToRest(
     'id': instance.localId,
     'establecimiento_id': instance.establishmentId,
     'nombre': instance.name,
-    'geometria_local': instance.boundaryJson,
+    'geometria_local': brickLotGeometryToBackend(instance.boundaryJson),
+    'geometry_mode': instance.geometryMode,
+    'superficie_ha': brickLotSurfaceToBackend(instance.surfaceTenths),
+    'recurso_forrajero_codigo': instance.forageResourceCode,
+    'tiene_agua': instance.hasWater,
+    'estado': instance.statusCode,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),
@@ -47,6 +57,11 @@ Future<BrickLotModel> _$BrickLotModelFromSqlite(
     establishmentId: data['establishment_id'] as String,
     name: data['name'] as String,
     boundaryJson: data['boundary_json'] as String,
+    geometryMode: data['geometry_mode'] as String,
+    surfaceTenths: data['surface_tenths'] as int,
+    forageResourceCode: data['forage_resource_code'] == null ? null : data['forage_resource_code'] as String?,
+    hasWater: data['has_water'] == 1,
+    statusCode: data['status_code'] as String,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -54,6 +69,8 @@ Future<BrickLotModel> _$BrickLotModelFromSqlite(
         : data['deleted_at'] == null
         ? null
         : DateTime.tryParse(data['deleted_at'] as String),
+    syncStatus: BrickLotSyncStatus.values[data['sync_status'] as int],
+    syncErrorCode: data['sync_error_code'] == null ? null : data['sync_error_code'] as String?,
   )..primaryKey = data['_brick_id'] as int;
 }
 
@@ -67,9 +84,16 @@ Future<Map<String, dynamic>> _$BrickLotModelToSqlite(
     'establishment_id': instance.establishmentId,
     'name': instance.name,
     'boundary_json': instance.boundaryJson,
+    'geometry_mode': instance.geometryMode,
+    'surface_tenths': instance.surfaceTenths,
+    'forage_resource_code': instance.forageResourceCode,
+    'has_water': instance.hasWater ? 1 : 0,
+    'status_code': instance.statusCode,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),
+    'sync_status': BrickLotSyncStatus.values.indexOf(instance.syncStatus),
+    'sync_error_code': instance.syncErrorCode,
   };
 }
 
@@ -111,6 +135,36 @@ class BrickLotModelAdapter extends OfflineFirstWithRestAdapter<BrickLotModel> {
       iterable: false,
       type: String,
     ),
+    'geometryMode': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'geometry_mode',
+      iterable: false,
+      type: String,
+    ),
+    'surfaceTenths': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'surface_tenths',
+      iterable: false,
+      type: int,
+    ),
+    'forageResourceCode': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'forage_resource_code',
+      iterable: false,
+      type: String,
+    ),
+    'hasWater': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'has_water',
+      iterable: false,
+      type: bool,
+    ),
+    'statusCode': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'status_code',
+      iterable: false,
+      type: String,
+    ),
     'createdAt': const RuntimeSqliteColumnDefinition(
       association: false,
       columnName: 'created_at',
@@ -128,6 +182,18 @@ class BrickLotModelAdapter extends OfflineFirstWithRestAdapter<BrickLotModel> {
       columnName: 'deleted_at',
       iterable: false,
       type: DateTime,
+    ),
+    'syncStatus': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'sync_status',
+      iterable: false,
+      type: BrickLotSyncStatus,
+    ),
+    'syncErrorCode': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'sync_error_code',
+      iterable: false,
+      type: String,
     ),
   };
   @override

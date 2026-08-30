@@ -1,6 +1,7 @@
 import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/features/field/data/mappers/lot_boundary_local_json_mapper.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
+import 'package:frontend_mayoral/features/field/domain/entities/lot_status.dart';
 
 /// Traduce entre dominio y el modelo técnico de Brick.
 class LotBrickMapper {
@@ -12,6 +13,10 @@ class LotBrickMapper {
     establishmentId: lot.establishmentId,
     name: lot.name,
     boundaryJson: LotBoundaryLocalJsonMapper.encode(lot.boundary),
+    surfaceTenths: lot.surfaceTenths,
+    forageResourceCode: lot.forageResourceCode,
+    hasWater: lot.hasWater,
+    statusCode: lot.status.code,
     createdAt: lot.createdAt,
     updatedAt: lot.updatedAt,
     deletedAt: lot.deletedAt,
@@ -23,6 +28,10 @@ class LotBrickMapper {
     establishmentId: model.establishmentId,
     name: model.name,
     boundary: LotBoundaryLocalJsonMapper.decode(model.boundaryJson),
+    surfaceTenths: model.surfaceTenths,
+    forageResourceCode: model.forageResourceCode,
+    hasWater: model.hasWater,
+    status: LotStatus.fromCode(model.statusCode),
     createdAt: model.createdAt,
     updatedAt: model.updatedAt,
     deletedAt: model.deletedAt,

@@ -1,13 +1,16 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/local_point.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_boundary.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_boundary_validation.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_draft.dart';
+import 'package:frontend_mayoral/features/field/domain/entities/lot_status.dart';
+import 'package:frontend_mayoral/features/field/domain/entities/lot_surface.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/save_lot_use_case.dart';
-import 'package:frontend_mayoral/features/field/domain/use_cases/validate_lot_boundary_use_case.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/validate_lot_placement_use_case.dart';
 
 part 'lot_editor_bloc.freezed.dart';
 part 'lot_editor_event.dart';
@@ -17,17 +20,20 @@ part 'lot_editor_state.dart';
 class LotEditorBloc extends Bloc<LotEditorEvent, LotEditorState> {
   /// Crea el editor con un borrador vacío y validación local disponible.
   LotEditorBloc({
-    required ValidateLotBoundaryUseCase validateBoundary,
+    required ValidateLotPlacementUseCase validatePlacement,
     required SaveLotUseCase saveLot,
     required String establishmentId,
     List<Lot> existingLots = const [],
-  }) : _validateBoundary = validateBoundary,
+  }) : _validatePlacement = validatePlacement,
        _saveLot = saveLot,
        _establishmentId = establishmentId,
        super(
          LotEditorState(
            draft: LotDraft.initial(),
-           validation: validateBoundary(const LotBoundary()),
+           validation: validatePlacement(
+             const LotBoundary(),
+             existingLots: existingLots,
+           ),
            existingLots: existingLots,
          ),
        ) {
@@ -41,10 +47,16 @@ class LotEditorBloc extends Bloc<LotEditorEvent, LotEditorState> {
     on<_ClearRequested>(_onClearRequested);
     on<_BoundaryCloseRequested>(_onBoundaryCloseRequested);
     on<_NameChanged>(_onNameChanged);
+    on<_SurfaceChanged>(_onSurfaceChanged);
+    on<_DetailsStepRequested>(_onDetailsStepRequested);
+    on<_BoundaryStepRequested>(_onBoundaryStepRequested);
+    on<_ForageResourceChanged>(_onForageResourceChanged);
+    on<_WaterAvailabilityChanged>(_onWaterAvailabilityChanged);
+    on<_StatusChanged>(_onStatusChanged);
     on<_SaveRequested>(_onSaveRequested);
   }
 
-  final ValidateLotBoundaryUseCase _validateBoundary;
+  final ValidateLotPlacementUseCase _validatePlacement;
   final SaveLotUseCase _saveLot;
   final String _establishmentId;
 
@@ -164,7 +176,10 @@ class LotEditorBloc extends Bloc<LotEditorEvent, LotEditorState> {
     _BoundaryCloseRequested event,
     Emitter<LotEditorState> emit,
   ) {
-    final validation = _validateBoundary(state.draft.boundary);
+    final validation = _validatePlacement(
+      state.draft.boundary,
+      existingLots: state.existingLots,
+    );
     emit(
       state.copyWith(
         validation: validation,
@@ -176,7 +191,83 @@ class LotEditorBloc extends Bloc<LotEditorEvent, LotEditorState> {
   }
 
   void _onNameChanged(_NameChanged event, Emitter<LotEditorState> emit) {
-    emit(state.copyWith(draft: state.draft.copyWith(name: event.name), errorMessage: null));
+    emit(
+      state.copyWith(
+        draft: state.draft.copyWith(name: event.name),
+        submitResult: const ResultState.initial(),
+      ),
+    );
+  }
+
+  void _onSurfaceChanged(_SurfaceChanged event, Emitter<LotEditorState> emit) {
+    final surface = LotSurface.tryParse(event.value);
+    emit(
+      state.copyWith(
+        draft: state.draft.copyWith(surfaceTenths: surface?.tenths ?? 0),
+        submitResult: const ResultState.initial(),
+      ),
+    );
+  }
+
+  void _onDetailsStepRequested(
+    _DetailsStepRequested event,
+    Emitter<LotEditorState> emit,
+  ) {
+    if (!state.canContinue) {
+      emit(state.copyWith(showValidationErrors: true));
+      return;
+    }
+    emit(
+      state.copyWith(
+        step: LotEditorStep.details,
+        submitResult: const ResultState.initial(),
+      ),
+    );
+  }
+
+  void _onBoundaryStepRequested(
+    _BoundaryStepRequested event,
+    Emitter<LotEditorState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        step: LotEditorStep.boundary,
+        submitResult: const ResultState.initial(),
+      ),
+    );
+  }
+
+  void _onForageResourceChanged(
+    _ForageResourceChanged event,
+    Emitter<LotEditorState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        draft: state.draft.copyWith(forageResourceCode: event.code),
+        submitResult: const ResultState.initial(),
+      ),
+    );
+  }
+
+  void _onWaterAvailabilityChanged(
+    _WaterAvailabilityChanged event,
+    Emitter<LotEditorState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        draft: state.draft.copyWith(hasWater: event.hasWater),
+        submitResult: const ResultState.initial(),
+      ),
+    );
+  }
+
+  void _onStatusChanged(_StatusChanged event, Emitter<LotEditorState> emit) {
+    emit(
+      state.copyWith(
+        draft: state.draft.copyWith(status: event.status),
+        submitResult: const ResultState.initial(),
+      ),
+    );
   }
 
   Future<void> _onSaveRequested(
@@ -184,16 +275,16 @@ class LotEditorBloc extends Bloc<LotEditorEvent, LotEditorState> {
     Emitter<LotEditorState> emit,
   ) async {
     if (!state.canComplete || state.isSaving) return;
-    emit(state.copyWith(isSaving: true, errorMessage: null));
+    emit(state.copyWith(submitResult: const ResultState.loading()));
     final result = await _saveLot(
       establishmentId: _establishmentId,
       draft: state.draft,
     );
     switch (result) {
       case Success<Lot>(:final data):
-        emit(state.copyWith(isSaving: false, savedLot: data));
+        emit(state.copyWith(submitResult: ResultState.data(data)));
       case Failure<Lot>(:final error):
-        emit(state.copyWith(isSaving: false, errorMessage: error.message));
+        emit(state.copyWith(submitResult: ResultState.error(error)));
     }
   }
 
@@ -205,7 +296,10 @@ class LotEditorBloc extends Bloc<LotEditorEvent, LotEditorState> {
     bool preserveClosed = false,
   }) {
     final boundary = LotBoundary(vertices: vertices);
-    final validation = _validateBoundary(boundary);
+    final validation = _validatePlacement(
+      boundary,
+      existingLots: state.existingLots,
+    );
     return state.copyWith(
       draft: state.draft.copyWith(boundary: boundary),
       validation: validation,

@@ -33,6 +33,24 @@ sealed class LotEditorEvent with _$LotEditorEvent {
   /// Actualiza el nombre local del borrador.
   const factory LotEditorEvent.nameChanged(String name) = _NameChanged;
 
+  /// Actualiza la superficie declarada en hectáreas.
+  const factory LotEditorEvent.surfaceChanged(String value) = _SurfaceChanged;
+
+  /// Continúa al formulario de datos del lote.
+  const factory LotEditorEvent.detailsStepRequested() = _DetailsStepRequested;
+
+  /// Regresa a la delimitación conservando el borrador.
+  const factory LotEditorEvent.boundaryStepRequested() = _BoundaryStepRequested;
+
+  /// Selecciona el recurso forrajero opcional.
+  const factory LotEditorEvent.forageResourceChanged(String? code) = _ForageResourceChanged;
+
+  /// Define explícitamente la disponibilidad de agua.
+  const factory LotEditorEvent.waterAvailabilityChanged({required bool hasWater}) = _WaterAvailabilityChanged;
+
+  /// Cambia el estado inicial del lote.
+  const factory LotEditorEvent.statusChanged(LotStatus status) = _StatusChanged;
+
   /// Persiste el borrador validado exclusivamente en SQLite.
   const factory LotEditorEvent.saveRequested() = _SaveRequested;
 }

@@ -17,7 +17,7 @@ const List<MigrationCommand> _migration_20260828160014_up = [
   InsertColumn('boundary_json', Column.varchar, onTable: 'BrickLotModel'),
   InsertColumn('created_at', Column.datetime, onTable: 'BrickLotModel'),
   InsertColumn('updated_at', Column.datetime, onTable: 'BrickLotModel'),
-  InsertColumn('deleted_at', Column.datetime, onTable: 'BrickLotModel')
+  InsertColumn('deleted_at', Column.datetime, onTable: 'BrickLotModel'),
 ];
 
 const List<MigrationCommand> _migration_20260828160014_down = [
@@ -28,7 +28,7 @@ const List<MigrationCommand> _migration_20260828160014_down = [
   DropColumn('boundary_json', onTable: 'BrickLotModel'),
   DropColumn('created_at', onTable: 'BrickLotModel'),
   DropColumn('updated_at', onTable: 'BrickLotModel'),
-  DropColumn('deleted_at', onTable: 'BrickLotModel')
+  DropColumn('deleted_at', onTable: 'BrickLotModel'),
 ];
 
 //

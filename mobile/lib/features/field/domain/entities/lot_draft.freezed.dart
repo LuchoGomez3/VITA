@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LotDraft {
 
- String get name; LotBoundary get boundary;
+ String get name; LotBoundary get boundary; int get surfaceTenths; String? get forageResourceCode; bool? get hasWater; LotStatus get status;
 /// Create a copy of LotDraft
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $LotDraftCopyWith<LotDraft> get copyWith => _$LotDraftCopyWithImpl<LotDraft>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LotDraft&&(identical(other.name, name) || other.name == name)&&(identical(other.boundary, boundary) || other.boundary == boundary));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LotDraft&&(identical(other.name, name) || other.name == name)&&(identical(other.boundary, boundary) || other.boundary == boundary)&&(identical(other.surfaceTenths, surfaceTenths) || other.surfaceTenths == surfaceTenths)&&(identical(other.forageResourceCode, forageResourceCode) || other.forageResourceCode == forageResourceCode)&&(identical(other.hasWater, hasWater) || other.hasWater == hasWater)&&(identical(other.status, status) || other.status == status));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,boundary);
+int get hashCode => Object.hash(runtimeType,name,boundary,surfaceTenths,forageResourceCode,hasWater,status);
 
 @override
 String toString() {
-  return 'LotDraft(name: $name, boundary: $boundary)';
+  return 'LotDraft(name: $name, boundary: $boundary, surfaceTenths: $surfaceTenths, forageResourceCode: $forageResourceCode, hasWater: $hasWater, status: $status)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $LotDraftCopyWith<$Res>  {
   factory $LotDraftCopyWith(LotDraft value, $Res Function(LotDraft) _then) = _$LotDraftCopyWithImpl;
 @useResult
 $Res call({
- String name, LotBoundary boundary
+ String name, LotBoundary boundary, int surfaceTenths, String? forageResourceCode, bool? hasWater, LotStatus status
 });
 
 
@@ -62,11 +62,15 @@ class _$LotDraftCopyWithImpl<$Res>
 
 /// Create a copy of LotDraft
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? boundary = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? boundary = null,Object? surfaceTenths = null,Object? forageResourceCode = freezed,Object? hasWater = freezed,Object? status = null,}) {
   return _then(_self.copyWith(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,boundary: null == boundary ? _self.boundary : boundary // ignore: cast_nullable_to_non_nullable
-as LotBoundary,
+as LotBoundary,surfaceTenths: null == surfaceTenths ? _self.surfaceTenths : surfaceTenths // ignore: cast_nullable_to_non_nullable
+as int,forageResourceCode: freezed == forageResourceCode ? _self.forageResourceCode : forageResourceCode // ignore: cast_nullable_to_non_nullable
+as String?,hasWater: freezed == hasWater ? _self.hasWater : hasWater // ignore: cast_nullable_to_non_nullable
+as bool?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as LotStatus,
   ));
 }
 /// Create a copy of LotDraft
@@ -157,10 +161,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  LotBoundary boundary)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  LotBoundary boundary,  int surfaceTenths,  String? forageResourceCode,  bool? hasWater,  LotStatus status)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LotDraft() when $default != null:
-return $default(_that.name,_that.boundary);case _:
+return $default(_that.name,_that.boundary,_that.surfaceTenths,_that.forageResourceCode,_that.hasWater,_that.status);case _:
   return orElse();
 
 }
@@ -178,10 +182,10 @@ return $default(_that.name,_that.boundary);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  LotBoundary boundary)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  LotBoundary boundary,  int surfaceTenths,  String? forageResourceCode,  bool? hasWater,  LotStatus status)  $default,) {final _that = this;
 switch (_that) {
 case _LotDraft():
-return $default(_that.name,_that.boundary);}
+return $default(_that.name,_that.boundary,_that.surfaceTenths,_that.forageResourceCode,_that.hasWater,_that.status);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -195,10 +199,10 @@ return $default(_that.name,_that.boundary);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  LotBoundary boundary)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  LotBoundary boundary,  int surfaceTenths,  String? forageResourceCode,  bool? hasWater,  LotStatus status)?  $default,) {final _that = this;
 switch (_that) {
 case _LotDraft() when $default != null:
-return $default(_that.name,_that.boundary);case _:
+return $default(_that.name,_that.boundary,_that.surfaceTenths,_that.forageResourceCode,_that.hasWater,_that.status);case _:
   return null;
 
 }
@@ -210,11 +214,15 @@ return $default(_that.name,_that.boundary);case _:
 
 
 class _LotDraft implements LotDraft {
-  const _LotDraft({required this.name, required this.boundary});
+  const _LotDraft({required this.name, required this.boundary, this.surfaceTenths = 0, this.forageResourceCode, this.hasWater, this.status = LotStatus.active});
   
 
 @override final  String name;
 @override final  LotBoundary boundary;
+@override@JsonKey() final  int surfaceTenths;
+@override final  String? forageResourceCode;
+@override final  bool? hasWater;
+@override@JsonKey() final  LotStatus status;
 
 /// Create a copy of LotDraft
 /// with the given fields replaced by the non-null parameter values.
@@ -226,16 +234,16 @@ _$LotDraftCopyWith<_LotDraft> get copyWith => __$LotDraftCopyWithImpl<_LotDraft>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LotDraft&&(identical(other.name, name) || other.name == name)&&(identical(other.boundary, boundary) || other.boundary == boundary));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LotDraft&&(identical(other.name, name) || other.name == name)&&(identical(other.boundary, boundary) || other.boundary == boundary)&&(identical(other.surfaceTenths, surfaceTenths) || other.surfaceTenths == surfaceTenths)&&(identical(other.forageResourceCode, forageResourceCode) || other.forageResourceCode == forageResourceCode)&&(identical(other.hasWater, hasWater) || other.hasWater == hasWater)&&(identical(other.status, status) || other.status == status));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,boundary);
+int get hashCode => Object.hash(runtimeType,name,boundary,surfaceTenths,forageResourceCode,hasWater,status);
 
 @override
 String toString() {
-  return 'LotDraft(name: $name, boundary: $boundary)';
+  return 'LotDraft(name: $name, boundary: $boundary, surfaceTenths: $surfaceTenths, forageResourceCode: $forageResourceCode, hasWater: $hasWater, status: $status)';
 }
 
 
@@ -246,7 +254,7 @@ abstract mixin class _$LotDraftCopyWith<$Res> implements $LotDraftCopyWith<$Res>
   factory _$LotDraftCopyWith(_LotDraft value, $Res Function(_LotDraft) _then) = __$LotDraftCopyWithImpl;
 @override @useResult
 $Res call({
- String name, LotBoundary boundary
+ String name, LotBoundary boundary, int surfaceTenths, String? forageResourceCode, bool? hasWater, LotStatus status
 });
 
 
@@ -263,11 +271,15 @@ class __$LotDraftCopyWithImpl<$Res>
 
 /// Create a copy of LotDraft
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? boundary = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? boundary = null,Object? surfaceTenths = null,Object? forageResourceCode = freezed,Object? hasWater = freezed,Object? status = null,}) {
   return _then(_LotDraft(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,boundary: null == boundary ? _self.boundary : boundary // ignore: cast_nullable_to_non_nullable
-as LotBoundary,
+as LotBoundary,surfaceTenths: null == surfaceTenths ? _self.surfaceTenths : surfaceTenths // ignore: cast_nullable_to_non_nullable
+as int,forageResourceCode: freezed == forageResourceCode ? _self.forageResourceCode : forageResourceCode // ignore: cast_nullable_to_non_nullable
+as String?,hasWater: freezed == hasWater ? _self.hasWater : hasWater // ignore: cast_nullable_to_non_nullable
+as bool?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as LotStatus,
   ));
 }
 

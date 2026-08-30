@@ -1,3 +1,5 @@
+import 'package:frontend_mayoral/features/field/domain/entities/lot_status.dart';
+
 /// Textos centralizados del flujo de campo y potreros.
 abstract final class FieldStrings {
   /// Título del establecimiento mostrado en el header.
@@ -88,7 +90,7 @@ abstract final class FieldStrings {
   static const densityUnit = 'cab/ha';
 
   /// CTA fijo al pie del detalle (sin flujo destino todavía).
-  static const moveAnimalsCta = 'Mover a otro potrero';
+  static const moveAnimalsCta = 'Mover animales';
 
   /// CTA para abrir la delimitación local de un lote.
   static const newLotCta = 'Nuevo lote';
@@ -111,23 +113,56 @@ abstract final class FieldStrings {
   /// Ejemplo para el campo de nombre.
   static const lotNameHint = 'Ej. La Loma';
 
-  /// Etiqueta de cantidad de vértices.
-  static const lotVerticesLabel = 'Vértices';
+  /// Campo de superficie productiva declarada.
+  static const surfaceHectaresLabel = 'Superficie (ha)';
 
-  /// Etiqueta de superficie estimada.
-  static const lotAreaLabel = 'Superficie relativa';
+  /// Ejemplo de superficie con un decimal.
+  static const surfaceHectaresHint = 'Ej. 45,7';
 
-  /// Etiqueta correcta para una superficie sin escala física.
-  static const relativeAreaLabel = 'Superficie relativa';
+  /// Aclara el redondeo persistido.
+  static const surfaceHectaresHelper = 'Se guarda redondeada a 1 decimal.';
 
-  /// Unidad propia del lienzo lógico; no representa metros ni hectáreas.
-  static const relativeAreaUnit = 'u²';
+  /// Validación de superficie obligatoria.
+  static const requiredSurfaceError = 'Ingresá una superficie mayor a 0.';
 
   /// Acción para cerrar el perímetro.
   static const closeLotBoundaryCta = 'Cerrar lote';
 
   /// Acción final de la Fase 1.
   static const confirmLotBoundaryCta = 'Confirmar delimitación';
+
+  /// Continúa al segundo paso del alta.
+  static const continueLotDetailsCta = 'Continuar';
+
+  /// Regresa al editor conservando los datos.
+  static const backToBoundaryCta = 'Volver a delimitación';
+
+  /// Título del segundo paso.
+  static const lotDetailsStepTitle = 'Datos del lote';
+
+  /// Etiqueta del catálogo de forraje.
+  static const forageResourceFieldLabel = 'Recurso forrajero';
+
+  /// Opción vacía del catálogo.
+  static const forageResourceHint = 'Seleccioná una opción (opcional)';
+
+  /// Etiqueta para disponibilidad de agua.
+  static const waterAvailabilityLabel = 'Disponibilidad de agua';
+
+  /// Opción afirmativa de agua.
+  static const waterAvailable = 'Tiene agua';
+
+  /// Opción negativa de agua.
+  static const waterUnavailable = 'Sin agua';
+
+  /// Error cuando no se respondió la disponibilidad de agua.
+  static const requiredWaterError = 'Indicá si el lote tiene agua disponible.';
+
+  /// Etiqueta de estado operativo.
+  static const lotStatusLabel = 'Estado inicial';
+
+  /// Acción final del alta.
+  static const saveLotCta = 'Guardar lote';
 
   /// Estado del botón mientras SQLite confirma la escritura.
   static const savingLotCta = 'Guardando…';
@@ -195,6 +230,49 @@ abstract final class FieldStrings {
   /// Título de respaldo del detalle.
   static const lotDetailTitle = 'Detalle del lote';
 
+  /// Acción para modificar datos alfanuméricos.
+  static const editLotCta = 'Editar lote';
+
+  /// Título del formulario de edición.
+  static const editLotTitle = 'Editar datos del lote';
+
+  /// Acción destructiva de borrado lógico.
+  static const deleteLotCta = 'Eliminar lote';
+
+  /// Título de confirmación del borrado.
+  static const deleteLotDialogTitle = '¿Eliminar este lote?';
+
+  /// Consecuencia del borrado lógico.
+  static const deleteLotDialogMessage = 'El lote desaparecerá y su espacio podrá ser utilizado por otro.';
+
+  /// Confirma cambios de edición.
+  static const saveChangesCta = 'Guardar cambios';
+
+  /// Validación genérica del formulario editable.
+  static const invalidLotDetailsError = 'Revisá el nombre y la superficie.';
+
+  /// Estado vacío de animales dentro del lote.
+  static const noAnimalsInLotMessage = 'Este lote no tiene animales asignados.';
+
+  /// Acción para iniciar un traslado local.
+  /// Título del formulario de traslado.
+  static const moveAnimalsTitle = 'Mover animales a otro lote';
+
+  /// Etiqueta del destino.
+  static const destinationLotLabel = 'Lote de destino';
+
+  /// Etiqueta del motivo auditable.
+  static const movementReasonLabel = 'Motivo';
+
+  /// Etiqueta de fecha efectiva.
+  static const movementDateLabel = 'Fecha del movimiento';
+
+  /// Mensaje cuando no hay un destino válido.
+  static const noMovementDestinationMessage = 'No hay otro lote activo disponible como destino.';
+
+  /// Validación del formulario de movimiento.
+  static const invalidMovementError = 'Seleccioná al menos un animal, un destino y escribí el motivo.';
+
   /// Fecha de alta local.
   static const createdAtLabel = 'Creado';
 
@@ -206,6 +284,15 @@ abstract final class FieldStrings {
 
   /// Confirma la escritura durable al regresar del editor.
   static String lotSavedMessage(String name) => '$name quedó guardado en este dispositivo.';
+
+  /// Etiqueta localizada de un estado operativo.
+  static String statusName(LotStatus status) => switch (status) {
+    LotStatus.active => 'Activo',
+    LotStatus.resting => 'En descanso',
+    LotStatus.maintenance => 'Mantenimiento',
+    LotStatus.inactive => 'Inactivo',
+    LotStatus.unknown => 'Estado desconocido',
+  };
 
   /// Error por cantidad insuficiente de vértices.
   static const insufficientVerticesError = 'Marcá al menos 3 vértices distintos.';
@@ -224,4 +311,10 @@ abstract final class FieldStrings {
 
   /// Error cuando falta nombrar el borrador.
   static const requiredLotNameError = 'Ingresá un nombre para continuar.';
+
+  /// Error cuando el polígono ocupa parte de otro lote.
+  static const overlappingLotError = 'La delimitación se superpone con otro lote.';
+
+  /// Feedback al intentar marcar dentro de una división existente.
+  static const vertexInsideLotError = 'No podés marcar un vértice dentro de un lote existente.';
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/register_animal_review_section.dart';
@@ -12,9 +13,8 @@ class RegisterAnimalReviewStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final draft = context.select(
-      (RegisterAnimalBloc bloc) => bloc.state.draft,
-    );
+    final state = context.watch<RegisterAnimalBloc>().state;
+    final draft = state.draft;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
@@ -99,7 +99,10 @@ class RegisterAnimalReviewStep extends StatelessWidget {
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourDestinationLabel,
-                value: _destination(draft.destinationId),
+                value: _destination(
+                  draft.destinationId,
+                  state.destinations,
+                ),
               ),
             ],
           ),
@@ -139,10 +142,16 @@ class RegisterAnimalReviewStep extends StatelessWidget {
     };
   }
 
-  String _destination(String? id) {
-    return id == 'destination-la-cumbre'
-        ? AnimalRegisterStrings.stepFourDestinationValue
-        : AnimalRegisterStrings.stepFourNoDataValue;
+  String _destination(
+    String? id,
+    List<AnimalRegistrationDestination> destinations,
+  ) {
+    for (final destination in destinations) {
+      if (destination.id == id) {
+        return '${destination.name} · ${destination.details}';
+      }
+    }
+    return AnimalRegisterStrings.stepFourNoDataValue;
   }
 }
 

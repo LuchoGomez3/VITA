@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
-import 'package:go_router/go_router.dart';
 
-/// Toggle segmentado flotante para alternar entre el mapa y la lista de
-/// potreros. Cada opción es una ruta distinta, no un estado local.
+/// Toggle segmentado para alternar localmente entre el mapa y la lista.
 class FieldViewToggle extends StatelessWidget {
   /// Crea el toggle marcando cuál de las dos vistas está activa.
-  const FieldViewToggle({required this.isMapActive, super.key});
+  const FieldViewToggle({
+    required this.isMapActive,
+    required this.onMapSelected,
+    required this.onListSelected,
+    super.key,
+  });
 
   /// Si la vista de mapa es la activa (en caso contrario, es la de lista).
   final bool isMapActive;
+
+  /// Selecciona el lienzo esquemático.
+  final VoidCallback onMapSelected;
+
+  /// Selecciona el listado local.
+  final VoidCallback onListSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -30,14 +38,14 @@ class FieldViewToggle extends StatelessWidget {
               icon: Icons.map_outlined,
               label: FieldStrings.mapTab,
               isActive: isMapActive,
-              onTap: () => context.go(AppRoutes.field),
+              onTap: onMapSelected,
             ),
             _segment(
               context: context,
               icon: Icons.list,
               label: FieldStrings.listTab,
               isActive: !isMapActive,
-              onTap: () => context.go(AppRoutes.fieldList),
+              onTap: onListSelected,
             ),
           ],
         ),

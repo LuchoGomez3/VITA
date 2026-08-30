@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/features/field/domain/entities/local_coordinate_space.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/local_point.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_boundary.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_boundary_validation.dart';
@@ -8,8 +9,6 @@ class LocalLotBoundaryValidator implements LotBoundaryValidator {
   /// Crea el validador determinista sin dependencias cartográficas.
   const LocalLotBoundaryValidator();
 
-  /// Extensión lógica compartida por todos los lotes del establecimiento.
-  static const double canvasExtent = 1000;
   static const _coordinateTolerance = 1e-7;
   static const _minimumAreaSquareUnits = 0.01;
 
@@ -53,9 +52,9 @@ class LocalLotBoundaryValidator implements LotBoundaryValidator {
       !point.x.isFinite ||
       !point.y.isFinite ||
       point.x < 0 ||
-      point.x > canvasExtent ||
+      point.x > LocalCoordinateSpace.extent ||
       point.y < 0 ||
-      point.y > canvasExtent;
+      point.y > LocalCoordinateSpace.extent;
 
   bool _hasDuplicateVertex(List<LocalPoint> vertices) {
     for (var first = 0; first < vertices.length; first++) {

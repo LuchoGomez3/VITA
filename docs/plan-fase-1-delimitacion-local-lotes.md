@@ -384,7 +384,7 @@ mobile/lib/features/field/
 │   ├── services/
 │   │   └── lot_boundary_validator.dart
 │   └── use_cases/
-│       └── validate_lot_boundary_use_case.dart
+│       └── validate_lot_placement_use_case.dart
 └── data/                         # solo si Turf es elegido
     └── geometry/
         └── turf_lot_boundary_validator.dart

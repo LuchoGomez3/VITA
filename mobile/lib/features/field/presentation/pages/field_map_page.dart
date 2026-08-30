@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/params/lot_editor_route_data.dart';
 import 'package:frontend_mayoral/features/field/presentation/cubit/lot_overview_cubit.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/field_paddock_card.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/field_view_toggle.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_overview_canvas.dart';
 import 'package:go_router/go_router.dart';
 
@@ -58,20 +61,20 @@ class _FieldMapView extends StatelessWidget {
   }
 
   Widget _body(BuildContext context, LotOverviewState state) {
-    if (state.status == LotOverviewStatus.loading || state.status == LotOverviewStatus.initial) {
+    if (state.loadState is Loading<void> || state.loadState is Initial<void>) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (state.status == LotOverviewStatus.emptyContext) {
+    if (state.loadState is Data<void> && state.selectedEstablishmentId == null) {
       return const Center(child: Text(FieldStrings.noEstablishmentMessage));
     }
-    if (state.status == LotOverviewStatus.failure) {
+    if (state.loadState case ResultError<void>(:final error)) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(state.errorMessage ?? FieldStrings.localLotsLoadError),
+              Text(error.message),
               const SizedBox(height: AppSpacing.md),
               AppFilledButton(
                 label: FieldStrings.retryCta,
@@ -107,13 +110,41 @@ class _FieldMapView extends StatelessWidget {
                 tone: AppStatusChipTone.success,
                 showDot: true,
               ),
+              const SizedBox(width: AppSpacing.xs),
+              AppStatusChip(
+                label: FieldStrings.totalHectaresChip(
+                  state.lots.fold<double>(0, (total, lot) => total + lot.surfaceHectares).toStringAsFixed(1),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
+          // TODO(field-map): reemplazar el fondo esquemático por un proveedor
+          // real sólo cuando se definan permisos, tiles, caché y conversión de
+          // geometrías; este lienzo seguirá siendo el fallback offline.
           Expanded(
-            child: LotOverviewCanvas(
-              lots: state.lots,
-              onLotSelected: (lotId) => context.push(AppRoutes.fieldDetailById(lotId)),
+            child: state.view == LotOverviewView.schematic
+                ? LotOverviewCanvas(
+                    lots: state.lots,
+                    onLotSelected: (lotId) => _openLotDetail(context, lotId),
+                  )
+                : _LotList(
+                    lots: state.lots,
+                    animalCounts: state.animalCounts,
+                    onLotSelected: (lotId) => _openLotDetail(context, lotId),
+                  ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FieldViewToggle(
+              isMapActive: state.view == LotOverviewView.schematic,
+              onMapSelected: () => context.read<LotOverviewCubit>().showView(
+                LotOverviewView.schematic,
+              ),
+              onListSelected: () => context.read<LotOverviewCubit>().showView(
+                LotOverviewView.list,
+              ),
             ),
           ),
         ],
@@ -136,6 +167,43 @@ class _FieldMapView extends StatelessWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(FieldStrings.lotSavedMessage(saved.name))),
+    );
+  }
+
+  Future<void> _openLotDetail(BuildContext context, String lotId) async {
+    await context.push<bool>(AppRoutes.fieldDetailById(lotId));
+    if (!context.mounted) return;
+    await context.read<LotOverviewCubit>().refresh();
+  }
+}
+
+class _LotList extends StatelessWidget {
+  const _LotList({
+    required this.lots,
+    required this.animalCounts,
+    required this.onLotSelected,
+  });
+
+  final List<Lot> lots;
+  final Map<String, int> animalCounts;
+  final ValueChanged<String> onLotSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    if (lots.isEmpty) {
+      return const Center(child: Text(FieldStrings.noLocalLotsMessage));
+    }
+    return ListView.separated(
+      itemCount: lots.length,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
+      itemBuilder: (context, index) {
+        final lot = lots[index];
+        return FieldPaddockCard(
+          lot: lot,
+          animalCount: animalCounts[lot.id] ?? 0,
+          onTap: () => onLotSelected(lot.id),
+        );
+      },
     );
   }
 }

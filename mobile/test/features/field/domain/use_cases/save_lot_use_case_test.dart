@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/features/field/data/services/turf_lot_overlap_validator.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/local_point.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_boundary.dart';
@@ -17,6 +18,7 @@ void main() {
     saveLot = SaveLotUseCase(
       repository: repository,
       validator: const LocalLotBoundaryValidator(),
+      overlapValidator: const TurfLotOverlapValidator(),
       createId: () => 'lot-local-1',
       now: () => DateTime.utc(2026, 8, 28, 17),
     );
@@ -45,10 +47,24 @@ void main() {
     expect(result, isA<Failure<Lot>>());
     expect(repository.records, hasLength(1));
   });
+
+  test('impide guardar un lote superpuesto aunque tenga otro nombre', () async {
+    await saveLot(establishmentId: 'est-1', draft: _draft('Lote norte'));
+
+    final result = await saveLot(
+      establishmentId: 'est-1',
+      draft: _draft('Lote sur'),
+    );
+
+    expect(result, isA<Failure<Lot>>());
+    expect(repository.records, hasLength(1));
+  });
 }
 
 LotDraft _draft(String name) => LotDraft(
   name: name,
+  surfaceTenths: 457,
+  hasWater: true,
   boundary: const LotBoundary(
     vertices: [
       LocalPoint(x: 100, y: 100),

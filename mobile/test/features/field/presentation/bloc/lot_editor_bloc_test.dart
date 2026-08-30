@@ -1,11 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/features/field/data/services/turf_lot_overlap_validator.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/local_point.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/repositories/lot_repository.dart';
 import 'package:frontend_mayoral/features/field/domain/services/local_lot_boundary_validator.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/save_lot_use_case.dart';
-import 'package:frontend_mayoral/features/field/domain/use_cases/validate_lot_boundary_use_case.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/validate_lot_placement_use_case.dart';
 import 'package:frontend_mayoral/features/field/presentation/bloc/lot_editor_bloc.dart';
 
 void main() {
@@ -15,11 +16,16 @@ void main() {
   setUp(() {
     repository = _MemoryLotRepository();
     const validator = LocalLotBoundaryValidator();
+    const overlapValidator = TurfLotOverlapValidator();
     bloc = LotEditorBloc(
-      validateBoundary: const ValidateLotBoundaryUseCase(validator),
+      validatePlacement: const ValidateLotPlacementUseCase(
+        boundaryValidator: validator,
+        overlapValidator: overlapValidator,
+      ),
       saveLot: SaveLotUseCase(
         repository: repository,
         validator: validator,
+        overlapValidator: overlapValidator,
         createId: () => 'lot-1',
         now: () => DateTime.utc(2026, 8, 28),
       ),
@@ -61,6 +67,9 @@ void main() {
     await addValidRectangle();
     await dispatch(const LotEditorEvent.boundaryCloseRequested());
     await dispatch(const LotEditorEvent.nameChanged('Lote norte'));
+    await dispatch(const LotEditorEvent.surfaceChanged('45,7'));
+    await dispatch(const LotEditorEvent.detailsStepRequested());
+    await dispatch(const LotEditorEvent.waterAvailabilityChanged(hasWater: true));
 
     final saving = await dispatch(const LotEditorEvent.saveRequested());
     expect(saving.isSaving, isTrue);

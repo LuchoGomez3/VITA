@@ -336,8 +336,7 @@ class AppRouter {
           builder: (context, state) {
             final lotId = state.pathParameters['loteId']!;
             return FieldDetailPage(
-              lotId: lotId,
-              getLot: createGetLotUseCase(),
+              createCubit: () => createLotDetailCubit(lotId),
             );
           },
         ),

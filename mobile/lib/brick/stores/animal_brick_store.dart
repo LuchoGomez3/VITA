@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:brick_offline_first/brick_offline_first.dart';
 import 'package:brick_rest/brick_rest.dart';
-import 'package:meta/meta.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
+import 'package:meta/meta.dart';
 
 /// Contrato usado por features para persistir animales con Brick.
 ///

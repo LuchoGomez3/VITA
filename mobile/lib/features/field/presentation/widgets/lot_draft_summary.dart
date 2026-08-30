@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/field/presentation/bloc/lot_editor_bloc.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
 
 /// Resumen editable del nombre, vértices y superficie del borrador.
-class LotDraftSummary extends StatelessWidget {
+class LotDraftSummary extends StatefulWidget {
   /// Crea el resumen conectado al estado actual.
   const LotDraftSummary({
     required this.state,
     required this.onNameChanged,
+    required this.onSurfaceChanged,
     super.key,
   });
 
@@ -18,72 +21,70 @@ class LotDraftSummary extends StatelessWidget {
   /// Notifica cada cambio del nombre local.
   final ValueChanged<String> onNameChanged;
 
+  /// Notifica cambios en la superficie declarada en hectáreas.
+  final ValueChanged<String> onSurfaceChanged;
+
+  @override
+  State<LotDraftSummary> createState() => _LotDraftSummaryState();
+}
+
+class _LotDraftSummaryState extends State<LotDraftSummary> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _surfaceController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.state.draft.name);
+    _surfaceController = TextEditingController(
+      text: widget.state.draft.surfaceTenths > 0 ? (widget.state.draft.surfaceTenths / 10).toStringAsFixed(1) : '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _surfaceController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _Metric(
-                label: FieldStrings.lotVerticesLabel,
-                value: '${state.vertices.length}',
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: _Metric(
-                label: FieldStrings.lotAreaLabel,
-                value: _formatArea(
-                  state.validation.estimatedAreaSquareUnits,
-                ),
-              ),
-            ),
-          ],
+        AppTextFormField(
+          controller: _nameController,
+          title: FieldStrings.lotNameLabel,
+          hintText: FieldStrings.lotNameHint,
+          textInputAction: TextInputAction.next,
+          validation: widget.state.isClosed && widget.state.draft.name.trim().isEmpty
+              ? AppFieldValidation.invalid
+              : AppFieldValidation.neutral,
+          validationMessage: widget.state.isClosed && widget.state.draft.name.trim().isEmpty
+              ? FieldStrings.requiredLotNameError
+              : null,
+          onChanged: widget.onNameChanged,
         ),
         const SizedBox(height: AppSpacing.sm),
-        TextFormField(
-          initialValue: state.draft.name,
-          onChanged: onNameChanged,
-          textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(
-            labelText: FieldStrings.lotNameLabel,
-            hintText: FieldStrings.lotNameHint,
-            errorText: state.isClosed && state.draft.name.trim().isEmpty ? FieldStrings.requiredLotNameError : null,
-          ),
+        AppTextFormField(
+          controller: _surfaceController,
+          title: FieldStrings.surfaceHectaresLabel,
+          hintText: FieldStrings.surfaceHectaresHint,
+          helperText: FieldStrings.surfaceHectaresHelper,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp('[0-9,.]')),
+          ],
+          validation: widget.state.isClosed && widget.state.draft.surfaceTenths <= 0
+              ? AppFieldValidation.invalid
+              : AppFieldValidation.neutral,
+          validationMessage: widget.state.isClosed && widget.state.draft.surfaceTenths <= 0
+              ? FieldStrings.requiredSurfaceError
+              : null,
+          onChanged: widget.onSurfaceChanged,
         ),
       ],
-    );
-  }
-
-  String _formatArea(double squareUnits) => '${squareUnits.toStringAsFixed(0)} ${FieldStrings.relativeAreaUnit}';
-}
-
-class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.termsBackground,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xs),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: AppTypography.smallEmphasis),
-            const SizedBox(height: AppSpacing.xxs),
-            Text(value, style: AppTypography.formFieldValueEmphasis),
-          ],
-        ),
-      ),
     );
   }
 }

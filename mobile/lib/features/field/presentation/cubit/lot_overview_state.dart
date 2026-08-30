@@ -1,32 +1,24 @@
 part of 'lot_overview_cubit.dart';
 
-/// Estado de carga de la colección local.
-enum LotOverviewStatus {
-  /// Todavía no comenzó la lectura.
-  initial,
+/// Modo elegido para consultar los lotes.
+enum LotOverviewView {
+  /// Lienzo esquematico local.
+  schematic,
 
-  /// Existe una consulta local en curso.
-  loading,
-
-  /// La colección local está disponible.
-  ready,
-
-  /// No existe ningún establecimiento offline.
-  emptyContext,
-
-  /// La lectura local falló.
-  failure,
+  /// Tarjetas tabuladas.
+  list,
 }
 
 /// Estado inmutable del visor de lotes.
 @freezed
 sealed class LotOverviewState with _$LotOverviewState {
-  /// Crea el estado inicial vacío.
+  /// Crea el estado inicial vacio.
   const factory LotOverviewState({
-    @Default(LotOverviewStatus.initial) LotOverviewStatus status,
+    @Default(ResultState<void>.initial()) ResultState<void> loadState,
     @Default(<String, String>{}) Map<String, String> establishments,
     String? selectedEstablishmentId,
     @Default(<Lot>[]) List<Lot> lots,
-    String? errorMessage,
+    @Default(<String, int>{}) Map<String, int> animalCounts,
+    @Default(LotOverviewView.schematic) LotOverviewView view,
   }) = _LotOverviewState;
 }

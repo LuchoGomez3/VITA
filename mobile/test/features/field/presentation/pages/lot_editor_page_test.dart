@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/features/field/data/services/turf_lot_overlap_validator.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/local_point.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
+import 'package:frontend_mayoral/features/field/domain/entities/lot_boundary.dart';
 import 'package:frontend_mayoral/features/field/domain/repositories/lot_repository.dart';
 import 'package:frontend_mayoral/features/field/domain/services/local_lot_boundary_validator.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/save_lot_use_case.dart';
-import 'package:frontend_mayoral/features/field/domain/use_cases/validate_lot_boundary_use_case.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/validate_lot_placement_use_case.dart';
 import 'package:frontend_mayoral/features/field/presentation/bloc/lot_editor_bloc.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/lot_editor_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
@@ -29,6 +31,8 @@ void main() {
     expect(find.byType(FlutterMap), findsOneWidget);
     expect(find.byType(TileLayer), findsNothing);
     expect(find.text(FieldStrings.localDraftBadge), findsOneWidget);
+    expect(find.text('Vértices'), findsNothing);
+    expect(find.text('Superficie relativa'), findsNothing);
   });
 
   testWidgets('el callback del fondo agrega un vértice móvil', (tester) async {
@@ -94,6 +98,47 @@ void main() {
     map = tester.widget<FlutterMap>(find.byType(FlutterMap));
     expect(map.options.interactionOptions.flags, InteractiveFlag.all);
   });
+
+  testWidgets('el formulario con error no desborda al abrir el teclado', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(470, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewInsets);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: LotEditorPage(createBloc: createOverlappingLotEditorBloc),
+      ),
+    );
+    await tester.pump();
+
+    final editor = tester.widget<GeographicLotEditor>(
+      find.byType(GeographicLotEditor),
+    );
+    for (final point in const [
+      LocalPoint(x: 150, y: 150),
+      LocalPoint(x: 350, y: 150),
+      LocalPoint(x: 350, y: 350),
+      LocalPoint(x: 150, y: 350),
+    ]) {
+      editor.onVertexAdded(point);
+    }
+    await tester.pump();
+    await tester.ensureVisible(find.text(FieldStrings.closeLotBoundaryCta));
+    await tester.pump();
+    await tester.tap(find.text(FieldStrings.closeLotBoundaryCta));
+    await tester.pump();
+    expect(find.text(FieldStrings.overlappingLotError), findsOneWidget);
+
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.showKeyboard(find.byType(TextFormField).first);
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
 }
 
 void _addVertexThroughEditor(WidgetTester tester) {
@@ -102,14 +147,56 @@ void _addVertexThroughEditor(WidgetTester tester) {
 
 LotEditorBloc createTestLotEditorBloc() {
   const validator = LocalLotBoundaryValidator();
+  const overlapValidator = TurfLotOverlapValidator();
   return LotEditorBloc(
-    validateBoundary: const ValidateLotBoundaryUseCase(validator),
+    validatePlacement: const ValidateLotPlacementUseCase(
+      boundaryValidator: validator,
+      overlapValidator: overlapValidator,
+    ),
     saveLot: SaveLotUseCase(
       repository: _MemoryLotRepository(),
       validator: validator,
+      overlapValidator: overlapValidator,
       createId: () => 'lot-test',
     ),
     establishmentId: 'establishment-test',
+  );
+}
+
+LotEditorBloc createOverlappingLotEditorBloc() {
+  const validator = LocalLotBoundaryValidator();
+  const overlapValidator = TurfLotOverlapValidator();
+  return LotEditorBloc(
+    validatePlacement: const ValidateLotPlacementUseCase(
+      boundaryValidator: validator,
+      overlapValidator: overlapValidator,
+    ),
+    saveLot: SaveLotUseCase(
+      repository: _MemoryLotRepository(),
+      validator: validator,
+      overlapValidator: overlapValidator,
+      createId: () => 'lot-test',
+    ),
+    establishmentId: 'establishment-test',
+    existingLots: [
+      Lot(
+        id: 'existing-lot',
+        establishmentId: 'establishment-test',
+        name: 'Existente',
+        boundary: const LotBoundary(
+          vertices: [
+            LocalPoint(x: 100, y: 100),
+            LocalPoint(x: 300, y: 100),
+            LocalPoint(x: 300, y: 300),
+            LocalPoint(x: 100, y: 300),
+          ],
+        ),
+        surfaceTenths: 100,
+        hasWater: true,
+        createdAt: DateTime.utc(2026),
+        updatedAt: DateTime.utc(2026),
+      ),
+    ],
   );
 }
 

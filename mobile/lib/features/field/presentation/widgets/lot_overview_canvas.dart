@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
+import 'package:frontend_mayoral/features/field/domain/entities/lot_status.dart';
 import 'package:frontend_mayoral/features/field/presentation/geometry/local_canvas_projection.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
 import 'package:latlong2/latlong.dart';
@@ -76,8 +77,8 @@ class _LotOverviewCanvasState extends State<LotOverviewCanvas> {
                         points: [
                           for (final vertex in lot.boundary.vertices) LocalCanvasProjection.toViewport(vertex),
                         ],
-                        color: AppColors.primary.withValues(alpha: 0.28),
-                        borderColor: AppColors.primary,
+                        color: _statusColor(lot.status).withValues(alpha: 0.28),
+                        borderColor: _statusColor(lot.status),
                         borderStrokeWidth: 3,
                         label: lot.name,
                         labelStyle: AppTypography.smallEmphasis,
@@ -106,6 +107,13 @@ class _LotOverviewCanvasState extends State<LotOverviewCanvas> {
       ),
     );
   }
+
+  Color _statusColor(LotStatus status) => switch (status) {
+    LotStatus.active => AppColors.primary,
+    LotStatus.resting => AppColors.earTagBlue,
+    LotStatus.maintenance => Colors.orange,
+    LotStatus.inactive || LotStatus.unknown => AppColors.textHint,
+  };
 }
 
 class _LocalOnlyBadge extends StatelessWidget {

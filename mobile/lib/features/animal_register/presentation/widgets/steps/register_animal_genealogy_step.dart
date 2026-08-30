@@ -17,6 +17,8 @@ class RegisterAnimalGenealogyStep extends StatefulWidget {
 }
 
 class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogyStep> {
+  // TODO(agusf): reemplazar madre y padres estaticos por animales elegibles
+  // consultados offline desde BrickAnimalStore para el establecimiento activo.
   static const _mother = GenealogyAnimalOption(
     id: 'mother-003-0421',
     visualTag: AnimalRegisterStrings.stepThreeMockMotherTag,
@@ -53,12 +55,6 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
     ),
   ];
 
-  static const _destination = AnimalDestinationOption(
-    id: 'destination-la-cumbre',
-    name: AnimalRegisterStrings.stepThreeMockDestinationName,
-    details: AnimalRegisterStrings.stepThreeMockDestinationDetails,
-  );
-
   String _fatherSearch = '';
 
   List<GenealogyAnimalOption> get _filteredFatherOptions {
@@ -75,12 +71,13 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
 
   @override
   Widget build(BuildContext context) {
-    final draft = context.select(
-      (RegisterAnimalBloc bloc) => bloc.state.draft,
-    );
+    final state = context.watch<RegisterAnimalBloc>().state;
+    final draft = state.draft;
 
     return Column(
       children: [
+        // TODO(agusf): mostrar metodo y fecha reales recibidos del flujo RFID,
+        // OCR o carga manual cuando identificacion entregue esos metadatos.
         AnimalIdentificationSummary(
           rfid: draft.rfid,
           visualTag: _visualTag(draft),
@@ -148,17 +145,28 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
                   style: AppTypography.pageBodyTitle,
                 ),
                 const SizedBox(height: AppSpacing.md),
-                DestinationSelectionCard(
-                  destination: _destination,
-                  isSelected: draft.destinationId == _destination.id,
-                  onTap: () {
-                    _updateDraft(
-                      draft.copyWith(
-                        destinationId: draft.destinationId == _destination.id ? null : _destination.id,
-                      ),
-                    );
-                  },
-                ),
+                if (state.isLoadingDestinations)
+                  const Center(child: CircularProgressIndicator())
+                else if (state.destinations.isEmpty)
+                  Text(
+                    state.destinationsError ?? AnimalRegisterStrings.noActiveLotsMessage,
+                    style: AppTypography.pageBodyTitle,
+                  )
+                else
+                  for (final destination in state.destinations) ...[
+                    DestinationSelectionCard(
+                      destination: destination,
+                      isSelected: draft.destinationId == destination.id,
+                      onTap: () {
+                        _updateDraft(
+                          draft.copyWith(
+                            destinationId: draft.destinationId == destination.id ? null : destination.id,
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                  ],
               ],
             ),
           ),

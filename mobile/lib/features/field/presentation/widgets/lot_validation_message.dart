@@ -41,6 +41,7 @@ class LotValidationMessage extends StatelessWidget {
       LotBoundaryValidationIssue.duplicateVertex => FieldStrings.duplicateVertexError,
       LotBoundaryValidationIssue.zeroArea => FieldStrings.zeroAreaError,
       LotBoundaryValidationIssue.selfIntersection => FieldStrings.selfIntersectionError,
+      LotBoundaryValidationIssue.overlapsExistingLot => FieldStrings.overlappingLotError,
     };
   }
 }

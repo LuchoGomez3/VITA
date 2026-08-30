@@ -18,6 +18,9 @@ enum LotBoundaryValidationIssue {
 
   /// Dos lados no adyacentes se cruzan.
   selfIntersection,
+
+  /// El lote ocupa área positiva de otro lote no eliminado.
+  overlapsExistingLot,
 }
 
 /// Resultado tipado de validar un perímetro de lote.

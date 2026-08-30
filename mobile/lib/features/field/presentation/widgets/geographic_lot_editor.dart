@@ -5,6 +5,7 @@ import 'package:frontend_mayoral/features/field/domain/entities/local_point.dart
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/presentation/bloc/lot_editor_bloc.dart';
 import 'package:frontend_mayoral/features/field/presentation/geometry/local_canvas_projection.dart';
+import 'package:frontend_mayoral/features/field/presentation/geometry/local_lot_placement_resolver.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_vertex_marker.dart';
 import 'package:latlong2/latlong.dart';
@@ -91,7 +92,14 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
                 if (widget.state.isClosed) {
                   return;
                 }
-                widget.onVertexAdded(LocalCanvasProjection.fromViewport(point));
+                final placement = _resolvePlacement(
+                  LocalCanvasProjection.fromViewport(point),
+                );
+                if (placement.isBlocked) {
+                  _showBlockedPlacementMessage();
+                  return;
+                }
+                widget.onVertexAdded(placement.point);
               },
             ),
             children: [
@@ -150,7 +158,12 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
                         onInteractionStarted: _lockMapGestures,
                         onInteractionEnded: _unlockMapGestures,
                         onMoveStarted: () => widget.onVertexMoveStarted(index),
-                        onMoved: (point) => widget.onVertexMoved(index, point),
+                        onMoved: (point) {
+                          final placement = _resolvePlacement(point);
+                          if (!placement.isBlocked) {
+                            widget.onVertexMoved(index, placement.point);
+                          }
+                        },
                       ),
                     ),
                 ],
@@ -188,6 +201,36 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
     if (_isInteractingWithVertex && mounted) {
       setState(() => _isInteractingWithVertex = false);
     }
+  }
+
+  LocalLotPlacement _resolvePlacement(LocalPoint point) {
+    if (widget.existingLots.isEmpty) {
+      return LocalLotPlacement(point: point, isBlocked: false);
+    }
+    final viewportPoint = LocalCanvasProjection.toViewport(point);
+    final screenPoint = _mapController.camera.latLngToScreenOffset(
+      viewportPoint,
+    );
+    final toleranceViewport = _mapController.camera.screenOffsetToLatLng(
+      screenPoint + const Offset(18, 0),
+    );
+    final tolerancePoint = LocalCanvasProjection.fromViewport(
+      toleranceViewport,
+    );
+    final tolerance = (tolerancePoint.x - point.x).abs();
+    return LocalLotPlacementResolver.resolve(
+      point: point,
+      existingLots: widget.existingLots,
+      snapTolerance: tolerance,
+    );
+  }
+
+  void _showBlockedPlacementMessage() {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(content: Text(FieldStrings.vertexInsideLotError)),
+      );
   }
 }
 

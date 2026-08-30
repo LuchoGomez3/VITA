@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart';
 import 'package:brick_rest/brick_rest.dart';
 
@@ -8,6 +10,15 @@ class BrickLotRequestTransformer extends RestRequestTransformer {
 
   /// Ruta reservada para la futura fase de sincronización.
   static const lotsPath = '/api/v1/lotes';
+
+  /// Crea el pull incremental filtrado por tenant.
+  static RestRequest listByEstablishmentRequest(String establishmentId) => RestRequest(
+    url: '$lotsPath?establecimiento_id=${Uri.encodeQueryComponent(establishmentId)}&include_deleted=true',
+    topLevelKey: 'data',
+  );
+
+  /// Identifica eventos de sync correspondientes a lotes.
+  static bool matchesLotResource(String resourcePath) => resourcePath.endsWith(lotsPath);
 
   @override
   RestRequest get get => const RestRequest(url: lotsPath, topLevelKey: 'data');
@@ -29,9 +40,16 @@ class BrickLotModel extends OfflineFirstWithRestModel {
     required this.establishmentId,
     required this.name,
     required this.boundaryJson,
+    required this.surfaceTenths,
+    required this.hasWater,
+    required this.statusCode,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.forageResourceCode,
+    this.syncStatus = BrickLotSyncStatus.pending,
+    this.syncErrorCode,
+    this.geometryMode = 'local_schematic',
   });
 
   /// UUID generado por el dispositivo para identificar el lote offline.
@@ -47,8 +65,36 @@ class BrickLotModel extends OfflineFirstWithRestModel {
   final String name;
 
   /// Geometría cartesiana versionada; no es WGS84 ni GeoJSON.
-  @Rest(name: 'geometria_local')
+  @Rest(
+    name: 'geometria_local',
+    toGenerator: 'brickLotGeometryToBackend(%INSTANCE_PROPERTY%)',
+    fromGenerator: 'brickLotGeometryFromBackend(%DATA_PROPERTY%)',
+  )
   final String boundaryJson;
+
+  /// Distingue el esquema local de una geometría geográfica futura.
+  @Rest(name: 'geometry_mode')
+  final String geometryMode;
+
+  /// Superficie productiva exacta; 457 representa 45,7 hectáreas.
+  @Rest(
+    name: 'superficie_ha',
+    toGenerator: 'brickLotSurfaceToBackend(%INSTANCE_PROPERTY%)',
+    fromGenerator: 'brickLotSurfaceFromBackend(%DATA_PROPERTY%)',
+  )
+  final int surfaceTenths;
+
+  /// Código estable del catálogo de recurso forrajero.
+  @Rest(name: 'recurso_forrajero_codigo')
+  final String? forageResourceCode;
+
+  /// Disponibilidad actual de agua.
+  @Rest(name: 'tiene_agua')
+  final bool hasWater;
+
+  /// Estado operativo persistido como código para tolerar versiones futuras.
+  @Rest(name: 'estado')
+  final String statusCode;
 
   /// Momento de creación generado en el dispositivo.
   @Rest(name: 'created_at')
@@ -61,4 +107,68 @@ class BrickLotModel extends OfflineFirstWithRestModel {
   /// Marca de borrado lógico reservada para futuras operaciones.
   @Rest(name: 'deleted_at')
   final DateTime? deletedAt;
+
+  /// Estado técnico local; nunca forma parte del payload de negocio.
+  @Rest(ignore: true)
+  final BrickLotSyncStatus syncStatus;
+
+  /// Último código de rechazo remoto, si la sincronización está habilitada.
+  @Rest(ignore: true)
+  final String? syncErrorCode;
+
+  /// Crea una copia reconciliada conservando la fila SQLite.
+  BrickLotModel copyWith({
+    BrickLotSyncStatus? syncStatus,
+    String? syncErrorCode,
+  }) => BrickLotModel(
+    localId: localId,
+    establishmentId: establishmentId,
+    name: name,
+    boundaryJson: boundaryJson,
+    geometryMode: geometryMode,
+    surfaceTenths: surfaceTenths,
+    forageResourceCode: forageResourceCode,
+    hasWater: hasWater,
+    statusCode: statusCode,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    deletedAt: deletedAt,
+    syncStatus: syncStatus ?? this.syncStatus,
+    syncErrorCode: syncErrorCode,
+  )..primaryKey = primaryKey;
+}
+
+/// Estado técnico de sincronización de un lote.
+enum BrickLotSyncStatus {
+  /// Guardado en el dispositivo y todavía no confirmado por backend.
+  pending,
+
+  /// Confirmado por backend.
+  synchronized,
+
+  /// Rechazado por una regla autoritativa de backend.
+  rejected,
+}
+
+/// Serializa décimas exactas como decimal de hectáreas.
+double brickLotSurfaceToBackend(int tenths) => tenths / 10;
+
+/// Recupera hectáreas decimales en décimas exactas.
+int brickLotSurfaceFromBackend(Object? value) {
+  if (value is num) return (value.toDouble() * 10).round();
+  final parsed = double.tryParse(value?.toString() ?? '');
+  if (parsed == null) return 0;
+  return (parsed * 10).round();
+}
+
+/// Envía la geometría versionada como objeto JSON y no como texto escapado.
+Object brickLotGeometryToBackend(String encoded) {
+  final decoded = jsonDecode(encoded) as Object?;
+  return decoded ?? const <String, Object?>{};
+}
+
+/// Conserva el objeto remoto como texto canónico para SQLite.
+String brickLotGeometryFromBackend(Object? value) {
+  if (value is String) return value;
+  return jsonEncode(value);
 }

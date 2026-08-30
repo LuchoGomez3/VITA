@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LotOverviewState {
 
- LotOverviewStatus get status; Map<String, String> get establishments; String? get selectedEstablishmentId; List<Lot> get lots; String? get errorMessage;
+ ResultState<void> get loadState; Map<String, String> get establishments; String? get selectedEstablishmentId; List<Lot> get lots; Map<String, int> get animalCounts; LotOverviewView get view;
 /// Create a copy of LotOverviewState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $LotOverviewStateCopyWith<LotOverviewState> get copyWith => _$LotOverviewStateCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LotOverviewState&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other.establishments, establishments)&&(identical(other.selectedEstablishmentId, selectedEstablishmentId) || other.selectedEstablishmentId == selectedEstablishmentId)&&const DeepCollectionEquality().equals(other.lots, lots)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LotOverviewState&&(identical(other.loadState, loadState) || other.loadState == loadState)&&const DeepCollectionEquality().equals(other.establishments, establishments)&&(identical(other.selectedEstablishmentId, selectedEstablishmentId) || other.selectedEstablishmentId == selectedEstablishmentId)&&const DeepCollectionEquality().equals(other.lots, lots)&&const DeepCollectionEquality().equals(other.animalCounts, animalCounts)&&(identical(other.view, view) || other.view == view));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,const DeepCollectionEquality().hash(establishments),selectedEstablishmentId,const DeepCollectionEquality().hash(lots),errorMessage);
+int get hashCode => Object.hash(runtimeType,loadState,const DeepCollectionEquality().hash(establishments),selectedEstablishmentId,const DeepCollectionEquality().hash(lots),const DeepCollectionEquality().hash(animalCounts),view);
 
 @override
 String toString() {
-  return 'LotOverviewState(status: $status, establishments: $establishments, selectedEstablishmentId: $selectedEstablishmentId, lots: $lots, errorMessage: $errorMessage)';
+  return 'LotOverviewState(loadState: $loadState, establishments: $establishments, selectedEstablishmentId: $selectedEstablishmentId, lots: $lots, animalCounts: $animalCounts, view: $view)';
 }
 
 
@@ -45,11 +45,11 @@ abstract mixin class $LotOverviewStateCopyWith<$Res>  {
   factory $LotOverviewStateCopyWith(LotOverviewState value, $Res Function(LotOverviewState) _then) = _$LotOverviewStateCopyWithImpl;
 @useResult
 $Res call({
- LotOverviewStatus status, Map<String, String> establishments, String? selectedEstablishmentId, List<Lot> lots, String? errorMessage
+ ResultState<void> loadState, Map<String, String> establishments, String? selectedEstablishmentId, List<Lot> lots, Map<String, int> animalCounts, LotOverviewView view
 });
 
 
-
+$ResultStateCopyWith<void, $Res> get loadState;
 
 }
 /// @nodoc
@@ -62,17 +62,27 @@ class _$LotOverviewStateCopyWithImpl<$Res>
 
 /// Create a copy of LotOverviewState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? establishments = null,Object? selectedEstablishmentId = freezed,Object? lots = null,Object? errorMessage = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? loadState = null,Object? establishments = null,Object? selectedEstablishmentId = freezed,Object? lots = null,Object? animalCounts = null,Object? view = null,}) {
   return _then(_self.copyWith(
-status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as LotOverviewStatus,establishments: null == establishments ? _self.establishments : establishments // ignore: cast_nullable_to_non_nullable
+loadState: null == loadState ? _self.loadState : loadState // ignore: cast_nullable_to_non_nullable
+as ResultState<void>,establishments: null == establishments ? _self.establishments : establishments // ignore: cast_nullable_to_non_nullable
 as Map<String, String>,selectedEstablishmentId: freezed == selectedEstablishmentId ? _self.selectedEstablishmentId : selectedEstablishmentId // ignore: cast_nullable_to_non_nullable
 as String?,lots: null == lots ? _self.lots : lots // ignore: cast_nullable_to_non_nullable
-as List<Lot>,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
-as String?,
+as List<Lot>,animalCounts: null == animalCounts ? _self.animalCounts : animalCounts // ignore: cast_nullable_to_non_nullable
+as Map<String, int>,view: null == view ? _self.view : view // ignore: cast_nullable_to_non_nullable
+as LotOverviewView,
   ));
 }
-
+/// Create a copy of LotOverviewState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<void, $Res> get loadState {
+  
+  return $ResultStateCopyWith<void, $Res>(_self.loadState, (value) {
+    return _then(_self.copyWith(loadState: value));
+  });
+}
 }
 
 
@@ -151,10 +161,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LotOverviewStatus status,  Map<String, String> establishments,  String? selectedEstablishmentId,  List<Lot> lots,  String? errorMessage)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<void> loadState,  Map<String, String> establishments,  String? selectedEstablishmentId,  List<Lot> lots,  Map<String, int> animalCounts,  LotOverviewView view)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LotOverviewState() when $default != null:
-return $default(_that.status,_that.establishments,_that.selectedEstablishmentId,_that.lots,_that.errorMessage);case _:
+return $default(_that.loadState,_that.establishments,_that.selectedEstablishmentId,_that.lots,_that.animalCounts,_that.view);case _:
   return orElse();
 
 }
@@ -172,10 +182,10 @@ return $default(_that.status,_that.establishments,_that.selectedEstablishmentId,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LotOverviewStatus status,  Map<String, String> establishments,  String? selectedEstablishmentId,  List<Lot> lots,  String? errorMessage)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<void> loadState,  Map<String, String> establishments,  String? selectedEstablishmentId,  List<Lot> lots,  Map<String, int> animalCounts,  LotOverviewView view)  $default,) {final _that = this;
 switch (_that) {
 case _LotOverviewState():
-return $default(_that.status,_that.establishments,_that.selectedEstablishmentId,_that.lots,_that.errorMessage);}
+return $default(_that.loadState,_that.establishments,_that.selectedEstablishmentId,_that.lots,_that.animalCounts,_that.view);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -189,10 +199,10 @@ return $default(_that.status,_that.establishments,_that.selectedEstablishmentId,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LotOverviewStatus status,  Map<String, String> establishments,  String? selectedEstablishmentId,  List<Lot> lots,  String? errorMessage)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<void> loadState,  Map<String, String> establishments,  String? selectedEstablishmentId,  List<Lot> lots,  Map<String, int> animalCounts,  LotOverviewView view)?  $default,) {final _that = this;
 switch (_that) {
 case _LotOverviewState() when $default != null:
-return $default(_that.status,_that.establishments,_that.selectedEstablishmentId,_that.lots,_that.errorMessage);case _:
+return $default(_that.loadState,_that.establishments,_that.selectedEstablishmentId,_that.lots,_that.animalCounts,_that.view);case _:
   return null;
 
 }
@@ -204,10 +214,10 @@ return $default(_that.status,_that.establishments,_that.selectedEstablishmentId,
 
 
 class _LotOverviewState implements LotOverviewState {
-  const _LotOverviewState({this.status = LotOverviewStatus.initial, final  Map<String, String> establishments = const <String, String>{}, this.selectedEstablishmentId, final  List<Lot> lots = const <Lot>[], this.errorMessage}): _establishments = establishments,_lots = lots;
+  const _LotOverviewState({this.loadState = const ResultState<void>.initial(), final  Map<String, String> establishments = const <String, String>{}, this.selectedEstablishmentId, final  List<Lot> lots = const <Lot>[], final  Map<String, int> animalCounts = const <String, int>{}, this.view = LotOverviewView.schematic}): _establishments = establishments,_lots = lots,_animalCounts = animalCounts;
   
 
-@override@JsonKey() final  LotOverviewStatus status;
+@override@JsonKey() final  ResultState<void> loadState;
  final  Map<String, String> _establishments;
 @override@JsonKey() Map<String, String> get establishments {
   if (_establishments is EqualUnmodifiableMapView) return _establishments;
@@ -223,7 +233,14 @@ class _LotOverviewState implements LotOverviewState {
   return EqualUnmodifiableListView(_lots);
 }
 
-@override final  String? errorMessage;
+ final  Map<String, int> _animalCounts;
+@override@JsonKey() Map<String, int> get animalCounts {
+  if (_animalCounts is EqualUnmodifiableMapView) return _animalCounts;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_animalCounts);
+}
+
+@override@JsonKey() final  LotOverviewView view;
 
 /// Create a copy of LotOverviewState
 /// with the given fields replaced by the non-null parameter values.
@@ -235,16 +252,16 @@ _$LotOverviewStateCopyWith<_LotOverviewState> get copyWith => __$LotOverviewStat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LotOverviewState&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other._establishments, _establishments)&&(identical(other.selectedEstablishmentId, selectedEstablishmentId) || other.selectedEstablishmentId == selectedEstablishmentId)&&const DeepCollectionEquality().equals(other._lots, _lots)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LotOverviewState&&(identical(other.loadState, loadState) || other.loadState == loadState)&&const DeepCollectionEquality().equals(other._establishments, _establishments)&&(identical(other.selectedEstablishmentId, selectedEstablishmentId) || other.selectedEstablishmentId == selectedEstablishmentId)&&const DeepCollectionEquality().equals(other._lots, _lots)&&const DeepCollectionEquality().equals(other._animalCounts, _animalCounts)&&(identical(other.view, view) || other.view == view));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,const DeepCollectionEquality().hash(_establishments),selectedEstablishmentId,const DeepCollectionEquality().hash(_lots),errorMessage);
+int get hashCode => Object.hash(runtimeType,loadState,const DeepCollectionEquality().hash(_establishments),selectedEstablishmentId,const DeepCollectionEquality().hash(_lots),const DeepCollectionEquality().hash(_animalCounts),view);
 
 @override
 String toString() {
-  return 'LotOverviewState(status: $status, establishments: $establishments, selectedEstablishmentId: $selectedEstablishmentId, lots: $lots, errorMessage: $errorMessage)';
+  return 'LotOverviewState(loadState: $loadState, establishments: $establishments, selectedEstablishmentId: $selectedEstablishmentId, lots: $lots, animalCounts: $animalCounts, view: $view)';
 }
 
 
@@ -255,11 +272,11 @@ abstract mixin class _$LotOverviewStateCopyWith<$Res> implements $LotOverviewSta
   factory _$LotOverviewStateCopyWith(_LotOverviewState value, $Res Function(_LotOverviewState) _then) = __$LotOverviewStateCopyWithImpl;
 @override @useResult
 $Res call({
- LotOverviewStatus status, Map<String, String> establishments, String? selectedEstablishmentId, List<Lot> lots, String? errorMessage
+ ResultState<void> loadState, Map<String, String> establishments, String? selectedEstablishmentId, List<Lot> lots, Map<String, int> animalCounts, LotOverviewView view
 });
 
 
-
+@override $ResultStateCopyWith<void, $Res> get loadState;
 
 }
 /// @nodoc
@@ -272,18 +289,28 @@ class __$LotOverviewStateCopyWithImpl<$Res>
 
 /// Create a copy of LotOverviewState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? establishments = null,Object? selectedEstablishmentId = freezed,Object? lots = null,Object? errorMessage = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? loadState = null,Object? establishments = null,Object? selectedEstablishmentId = freezed,Object? lots = null,Object? animalCounts = null,Object? view = null,}) {
   return _then(_LotOverviewState(
-status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as LotOverviewStatus,establishments: null == establishments ? _self._establishments : establishments // ignore: cast_nullable_to_non_nullable
+loadState: null == loadState ? _self.loadState : loadState // ignore: cast_nullable_to_non_nullable
+as ResultState<void>,establishments: null == establishments ? _self._establishments : establishments // ignore: cast_nullable_to_non_nullable
 as Map<String, String>,selectedEstablishmentId: freezed == selectedEstablishmentId ? _self.selectedEstablishmentId : selectedEstablishmentId // ignore: cast_nullable_to_non_nullable
 as String?,lots: null == lots ? _self._lots : lots // ignore: cast_nullable_to_non_nullable
-as List<Lot>,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
-as String?,
+as List<Lot>,animalCounts: null == animalCounts ? _self._animalCounts : animalCounts // ignore: cast_nullable_to_non_nullable
+as Map<String, int>,view: null == view ? _self.view : view // ignore: cast_nullable_to_non_nullable
+as LotOverviewView,
   ));
 }
 
-
+/// Create a copy of LotOverviewState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<void, $Res> get loadState {
+  
+  return $ResultStateCopyWith<void, $Res>(_self.loadState, (value) {
+    return _then(_self.copyWith(loadState: value));
+  });
+}
 }
 
 // dart format on
