@@ -1,4 +1,6 @@
 /// Estado operativo de un lote.
+// TODO(field-catalog): validar estos códigos con el contrato backend definitivo
+// y migrar a catálogo sincronizado si Producto decide que sean configurables.
 enum LotStatus {
   /// Disponible para recibir animales.
   active('active'),

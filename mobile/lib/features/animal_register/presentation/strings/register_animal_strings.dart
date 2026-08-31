@@ -146,7 +146,8 @@ class AnimalRegisterStrings {
   /// Texto del boton que avanza al siguiente paso.
   static const stepTwoNextButton = 'Siguiente';
 
-  // Datos mock hasta conectar el flujo con su fuente de datos real.
+  // TODO(agusf): eliminar los datos mock restantes cuando identificacion,
+  // catalogos y genealogia expongan sus fuentes offline reales.
 
   /// RFID mock mostrado en el resumen de identificacion.
   static const stepTwoMockRfid = '982 000 412 991 416';

@@ -9,6 +9,8 @@ class BrickAnimalLotMovementRequestTransformer extends RestRequestTransformer {
   const BrickAnimalLotMovementRequestTransformer(super.query, super.instance);
 
   /// Endpoint acordado provisionalmente con backend.
+  // TODO(field-backend): validar el contrato batch, la atomicidad y los códigos
+  // de conflicto antes de habilitar la sincronización de movimientos.
   static const movementsPath = '/api/v1/movimientos_lotes';
 
   @override
@@ -79,6 +81,8 @@ class BrickAnimalLotMovementModel extends OfflineFirstWithRestModel {
   final String reason;
 
   /// Usuario responsable; queda opcional hasta alinear roles/sesión.
+  // TODO(field-auth): completar siempre este UUID desde la sesión autenticada
+  // cuando se cierre el modelo definitivo de roles y auditoría.
   @Rest(name: 'responsable_id')
   final String? responsibleId;
 

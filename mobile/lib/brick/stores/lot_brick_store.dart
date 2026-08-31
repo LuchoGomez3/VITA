@@ -72,6 +72,8 @@ class BrickLotStore implements LotBrickStore {
 
   @override
   Future<void> pullRemoteLots(String establishmentId) async {
+    // TODO(field-sync): invocar este pull desde el coordinador global de sync
+    // por cada establecimiento y acordar cursor/LWW con backend.
     if (!_enableRemoteSync) return;
     final remoteLots = await _repository.remoteProvider.get<BrickLotModel>(
       repository: _repository,
@@ -101,6 +103,8 @@ class BrickLotStore implements LotBrickStore {
 
   /// Aplica confirmaciones o rechazos publicados por el cliente HTTP.
   Future<void> applyLotSyncResult(BackendSyncResult result) async {
+    // TODO(field-sync): mapear los códigos autoritativos de nombre duplicado,
+    // geometría inválida y superposición al flujo de reconciliación mobile.
     if (!_enableRemoteSync || !BrickLotRequestTransformer.matchesLotResource(result.resourcePath)) {
       return;
     }

@@ -45,4 +45,7 @@ class BrickAnimalLotMovementStore {
     }
     return saved;
   }
+
+  // TODO(field-sync): escuchar BackendSyncResult y persistir estado
+  // synchronized/rejected cuando backend implemente movimientos atómicos.
 }

@@ -9,6 +9,8 @@ class BrickLotRequestTransformer extends RestRequestTransformer {
   const BrickLotRequestTransformer(super.query, super.instance);
 
   /// Ruta reservada para la futura fase de sincronización.
+  // TODO(field-backend): validar con backend ruta, upsert, pull incremental,
+  // tombstones y códigos de rechazo antes de habilitar el feature flag.
   static const lotsPath = '/api/v1/lotes';
 
   /// Crea el pull incremental filtrado por tenant.
@@ -65,6 +67,8 @@ class BrickLotModel extends OfflineFirstWithRestModel {
   final String name;
 
   /// Geometría cartesiana versionada; no es WGS84 ni GeoJSON.
+  // TODO(field-geo): agregar una geometría geográfica GeoJSON/WGS84 separada
+  // cuando exista mapa real; conservar esta geometría como fallback offline.
   @Rest(
     name: 'geometria_local',
     toGenerator: 'brickLotGeometryToBackend(%INSTANCE_PROPERTY%)',
@@ -73,6 +77,8 @@ class BrickLotModel extends OfflineFirstWithRestModel {
   final String boundaryJson;
 
   /// Distingue el esquema local de una geometría geográfica futura.
+  // TODO(field-geo): acordar con backend los modos y la estrategia para lotes
+  // creados en el lienzo local que todavía no tengan coordenadas reales.
   @Rest(name: 'geometry_mode')
   final String geometryMode;
 
@@ -162,6 +168,8 @@ int brickLotSurfaceFromBackend(Object? value) {
 }
 
 /// Envía la geometría versionada como objeto JSON y no como texto escapado.
+// TODO(field-geo): ramificar este serializador por geometryMode cuando exista
+// GeoJSON real; nunca interpretar el lienzo 0..1000 como latitud/longitud.
 Object brickLotGeometryToBackend(String encoded) {
   final decoded = jsonDecode(encoded) as Object?;
   return decoded ?? const <String, Object?>{};

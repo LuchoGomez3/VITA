@@ -128,12 +128,16 @@ class RegisterAnimalReviewStep extends StatelessWidget {
   }
 
   String _mother(String? id) {
+    // TODO(agusf): resolver el nombre desde los animales cargados en el BLoC
+    // cuando la genealogia deje de utilizar opciones estaticas.
     return id == 'mother-003-0421'
         ? AnimalRegisterStrings.stepFourMotherValue
         : AnimalRegisterStrings.stepFourNoDataValue;
   }
 
   String _father(String? id) {
+    // TODO(agusf): resolver el nombre desde los animales cargados en el BLoC
+    // cuando la genealogia deje de utilizar opciones estaticas.
     return switch (id) {
       'father-003-0820' => AnimalRegisterStrings.stepThreeMockFatherOneName,
       'father-003-0612' => AnimalRegisterStrings.stepThreeMockFatherTwoName,

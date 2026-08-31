@@ -14,6 +14,8 @@ sealed class ForageResource with _$ForageResource {
 }
 
 /// Catálogo inicial disponible sin conectividad.
+// TODO(field-catalog): reemplazar este catálogo inicial por entradas
+// sincronizadas desde backend/Brick, conservándolo sólo como fallback offline.
 abstract final class InitialForageResources {
   /// Entradas iniciales ordenadas para presentación.
   static const values = <ForageResource>[
