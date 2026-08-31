@@ -3,6 +3,9 @@ part of 'register_animal_bloc.dart';
 /// Events accepted by [RegisterAnimalBloc].
 @freezed
 sealed class RegisterAnimalEvent with _$RegisterAnimalEvent {
+  /// Carga los lotes de destino disponibles offline.
+  const factory RegisterAnimalEvent.destinationsRequested() = _DestinationsRequested;
+
   /// Replaces the current registration draft.
   const factory RegisterAnimalEvent.draftChanged(
     RegisterAnimalDraft draft,

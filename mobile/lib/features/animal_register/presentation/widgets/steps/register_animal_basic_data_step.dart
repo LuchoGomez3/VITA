@@ -48,6 +48,8 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
 
     return Column(
       children: [
+        // TODO(agusf): mostrar metodo y fecha reales recibidos del flujo RFID,
+        // OCR o carga manual cuando identificacion entregue esos metadatos.
         AnimalIdentificationSummary(
           rfid: draft.rfid,
           visualTag: _visualTag(draft),
@@ -73,6 +75,8 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                   title: AnimalRegisterStrings.stepTwoBreedTitle,
                   hintText: AnimalRegisterStrings.stepTwoBreedHint,
                   initialValue: draft.breed,
+                  // TODO(agusf): reemplazar por el catalogo offline de razas
+                  // cuando backend defina y sincronice esa fuente.
                   options: AnimalRegisterStrings.stepTwoBreedOptions
                       .map(
                         (breed) => AppDropdownOption(
@@ -149,6 +153,8 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                 AppChoiceSelector<String>(
                   title: AnimalRegisterStrings.stepTwoCategoryTitle,
                   value: draft.category,
+                  // TODO(agusf): consumir categorias desde el BLoC usando el
+                  // catalogo Brick, con UUID real como valor seleccionado.
                   options: AnimalRegisterStrings.stepTwoCategories
                       .map(
                         (category) => AppChoiceOption(

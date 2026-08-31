@@ -44,7 +44,9 @@ _SenasaRecordIssueDto _$SenasaRecordIssueDtoFromJson(
   Map<String, dynamic> json,
 ) => _SenasaRecordIssueDto(
   animalId: json['animal_id'] as String,
-  missingFields: (json['faltante'] as List<dynamic>).map((e) => e as String).toList(),
+  missingFields: (json['faltante'] as List<dynamic>)
+      .map((e) => e as String)
+      .toList(),
   tag: json['caravana'] as String?,
 );
 

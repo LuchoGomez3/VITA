@@ -1,143 +1,265 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
-import 'package:frontend_mayoral/features/field/presentation/mock/paddock_mock.dart';
+import 'package:frontend_mayoral/features/field/domain/entities/forage_resource.dart';
+import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
+import 'package:frontend_mayoral/features/field/presentation/cubit/lot_detail_cubit.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
-import 'package:frontend_mayoral/features/field/presentation/widgets/field_paddock_mosaic.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/lot_edit_dialog.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/lot_movement_dialog.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/lot_overview_canvas.dart';
+import 'package:go_router/go_router.dart';
 
-/// Ficha de un potrero: KPIs, forraje y servicios, composición del rodeo e
-/// historial de ocupación.
+/// Fábrica inyectable del estado de detalle.
+typedef LotDetailCubitFactory = LotDetailCubit Function();
+
+/// Ficha offline de un lote y sus animales actuales.
 class FieldDetailPage extends StatelessWidget {
-  /// Crea la ficha de detalle a partir del id de potrero recibido por ruta.
-  const FieldDetailPage({required this.potreroId, super.key});
+  /// Crea la pantalla con sus dependencias resueltas en composición.
+  const FieldDetailPage({required this.createCubit, super.key});
 
-  /// Id del potrero mostrado (ver `paddocksMock`).
-  final String potreroId;
+  /// Construye el Cubit propietario de la ficha.
+  final LotDetailCubitFactory createCubit;
 
   @override
   Widget build(BuildContext context) {
-    final paddock = paddocksMock.firstWhere(
-      (p) => p.id == potreroId,
-      orElse: () => paddocksMock.first,
+    return BlocProvider(
+      create: (_) => createCubit()..load(),
+      child: BlocListener<LotDetailCubit, LotDetailState>(
+        listenWhen: (previous, current) => previous.isDeleted != current.isDeleted && current.isDeleted,
+        listener: (context, _) => context.pop(true),
+        child: const _FieldDetailView(),
+      ),
     );
-    final density = paddock.isEmpty ? 0.0 : paddock.headCount / paddock.hectares;
-    final hasFullDetail = paddock.id == 'la-loma';
+  }
+}
 
-    return Scaffold(
-      appBar: AppBar(title: Text(paddock.name)),
-      body: SafeArea(
-        child: Column(
+class _FieldDetailView extends StatelessWidget {
+  const _FieldDetailView();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<LotDetailCubit, LotDetailState>(
+      builder: (context, state) {
+        final lot = state.lot;
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(lot?.name ?? FieldStrings.lotDetailTitle),
+            actions: lot == null
+                ? null
+                : [
+                    IconButton(
+                      tooltip: FieldStrings.editLotCta,
+                      onPressed: state.isSaving ? null : () => _edit(context, lot),
+                      icon: const Icon(Icons.edit_outlined),
+                    ),
+                    IconButton(
+                      tooltip: FieldStrings.deleteLotCta,
+                      onPressed: state.isSaving ? null : () => _delete(context),
+                      icon: const Icon(Icons.delete_outline),
+                    ),
+                  ],
+          ),
+          body: SafeArea(
+            child: switch (state.loadState) {
+              Initial<void>() || Loading<void>() => const Center(child: CircularProgressIndicator()),
+              ResultError<void>(:final error) => _ErrorBody(message: error.message),
+              Data<void>() => state.isDeleted ? const SizedBox.shrink() : _LotDetailBody(state: state),
+              _ => const SizedBox.shrink(),
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _edit(BuildContext context, Lot lot) async {
+    final input = await showDialog<LotEditInput>(
+      context: context,
+      builder: (_) => LotEditDialog(lot: lot),
+    );
+    if (input == null || !context.mounted) return;
+    await context.read<LotDetailCubit>().update(
+      name: input.name,
+      surfaceTenths: input.surfaceTenths,
+      forageResourceCode: input.forageResourceCode,
+      hasWater: input.hasWater,
+      status: input.status,
+    );
+  }
+
+  Future<void> _delete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text(FieldStrings.deleteLotDialogTitle),
+        content: const Text(FieldStrings.deleteLotDialogMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text(FieldStrings.cancelClearBoundaryCta),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text(FieldStrings.deleteLotCta),
+          ),
+        ],
+      ),
+    );
+    if ((confirmed ?? false) && context.mounted) {
+      await context.read<LotDetailCubit>().delete();
+    }
+  }
+}
+
+class _LotDetailBody extends StatelessWidget {
+  const _LotDetailBody({required this.state});
+
+  final LotDetailState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final lot = state.lot!;
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      children: [
+        SizedBox(
+          height: 260,
+          child: LotOverviewCanvas(lots: [lot], onLotSelected: (_) {}),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
           children: [
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                children: [
-                  SizedBox(
-                    height: 140,
-                    child: FieldPaddockMosaic(paddocks: [paddock]),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppInfoCell(
-                          label: FieldStrings.headCountDetailLabel,
-                          value: '${paddock.headCount}',
-                        ),
-                      ),
-                      Expanded(
-                        child: AppInfoCell(
-                          label: FieldStrings.surfaceDetailLabel,
-                          value: '${paddock.hectares.toStringAsFixed(0)} ${FieldStrings.hectaresSuffix}',
-                        ),
-                      ),
-                      Expanded(
-                        child: AppInfoCell(
-                          label: FieldStrings.densityDetailLabel,
-                          value: '${density.toStringAsFixed(1).replaceAll('.', ',')} ${FieldStrings.densityUnit}',
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  AppSectionHeader(
-                    title: FieldStrings.forageSectionTitle,
-                    subtitle: paddock.forage ?? FieldStrings.densityNone,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  AppInfoCell(
-                    label: FieldStrings.forageResourceLabel,
-                    value: paddock.forage ?? '—',
-                  ),
-                  if (hasFullDetail) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    const AppInfoCell(
-                      label: FieldStrings.waterSourceLabel,
-                      value: FieldStrings.waterSourceValue,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    const AppInfoCell(
-                      label: FieldStrings.lastRotationLabel,
-                      value: FieldStrings.lastRotationValue,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            FieldStrings.animalsSectionTitle(paddock.headCount),
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                        ),
-                        const Text(
-                          FieldStrings.viewAnimalsLink,
-                          style: AppTypography.inlinePrimaryLink,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Wrap(
-                      spacing: AppSpacing.xs,
-                      runSpacing: AppSpacing.xs,
-                      children: [
-                        for (final (label, count) in laLomaComposition) AppStatusChip(label: '$label · $count'),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      FieldStrings.occupationHistoryTitle,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    for (final (range, value) in laLomaOccupationHistory)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(range, style: AppTypography.formFieldHelper),
-                            Text(value, style: AppTypography.mediumEmphasis),
-                          ],
-                        ),
-                      ),
-                  ],
-                ],
+              child: AppInfoCell(
+                label: FieldStrings.surfaceDetailLabel,
+                value: FieldStrings.surfaceValue(lot.surfaceHectares),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: AppFilledButton(
-                label: FieldStrings.moveAnimalsCta,
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Fuera de alcance de esta iniciativa')),
-                  );
-                },
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: AppInfoCell(
+                label: FieldStrings.headCountDetailLabel,
+                value: '${state.animals.length}',
               ),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: AppSpacing.sm),
+        AppInfoCell(
+          label: FieldStrings.forageResourceLabel,
+          value: InitialForageResources.displayNameFor(lot.forageResourceCode),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        AppInfoCell(
+          label: FieldStrings.waterAvailabilityLabel,
+          value: lot.hasWater ? FieldStrings.waterAvailable : FieldStrings.waterUnavailable,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        AppInfoCell(
+          label: FieldStrings.lotStatusLabel,
+          value: FieldStrings.statusName(lot.status),
+        ),
+        if (state.mutationErrorMessage case final message?) ...[
+          const SizedBox(height: AppSpacing.md),
+          Text(message, style: AppTypography.errorBody),
+        ],
+        const SizedBox(height: AppSpacing.lg),
+        Text(
+          FieldStrings.animalsSectionTitle(state.animals.length),
+          style: AppTypography.pageTitle,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (state.animals.isNotEmpty)
+          switch (state.destinationsState) {
+            ResultError<List<Lot>>(:final error) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Text(error.message, style: AppTypography.errorBody),
+            ),
+            Data<List<Lot>>(:final data) when data.isNotEmpty => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: AppFilledButton(
+                label: FieldStrings.moveAnimalsCta,
+                onPressed: state.isSaving ? null : () => _moveAnimals(context),
+              ),
+            ),
+            _ => const Padding(
+              padding: EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Text(FieldStrings.noMovementDestinationMessage),
+            ),
+          },
+        if (state.animals.isEmpty)
+          const Text(FieldStrings.noAnimalsInLotMessage)
+        else
+          for (final animal in state.animals)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.pets_outlined),
+              title: Text(
+                animal.visualTag.isEmpty ? animal.rfidTagNumber : animal.visualTag,
+              ),
+              subtitle: Text(
+                FieldStrings.animalRfidDetails(
+                  categoryName: animal.categoryName,
+                  rfidTagNumber: animal.rfidTagNumber,
+                ),
+              ),
+            ),
+        const SizedBox(height: AppSpacing.md),
+        AppInfoCell(
+          label: FieldStrings.createdAtLabel,
+          value: DateDisplayFormatter.shortDate(lot.createdAt.toLocal()),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        AppInfoCell(
+          label: FieldStrings.updatedAtLabel,
+          value: DateDisplayFormatter.shortDate(lot.updatedAt.toLocal()),
+        ),
+      ],
     );
   }
+
+  Future<void> _moveAnimals(BuildContext context) async {
+    final input = await showDialog<LotMovementInput>(
+      context: context,
+      builder: (_) => LotMovementDialog(
+        animals: state.animals,
+        destinations: state.availableDestinations,
+      ),
+    );
+    if (input == null || !context.mounted) return;
+    await context.read<LotDetailCubit>().moveAnimals(
+      animalIds: input.animalIds,
+      destinationLotId: input.destinationLotId,
+      occurredAt: input.occurredAt,
+      reason: input.reason,
+    );
+  }
+}
+
+class _ErrorBody extends StatelessWidget {
+  const _ErrorBody({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message),
+          const SizedBox(height: AppSpacing.md),
+          AppFilledButton(
+            label: FieldStrings.retryCta,
+            onPressed: context.read<LotDetailCubit>().load,
+          ),
+        ],
+      ),
+    ),
+  );
 }
