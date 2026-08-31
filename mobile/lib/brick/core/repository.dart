@@ -153,9 +153,13 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     );
     final savedModel = model..primaryKey = primaryKey;
     memoryCacheProvider.upsert<TModel>(savedModel);
-    await notifySubscriptionsWithLocalData<TModel>();
+    await _notifyLocalSubscribers<TModel>();
 
     return savedModel;
+  }
+
+  Future<void> _notifyLocalSubscribers<TModel extends OfflineFirstWithRestModel>() {
+    return notifySubscriptionsWithLocalData<TModel>();
   }
 
   /// Ejecuta varios upserts locales dentro de una unica transaccion SQLite.
@@ -266,7 +270,7 @@ class AppBrickTransaction {
     );
     _afterCommit.add(() async {
       _repository.memoryCacheProvider.upsert<TModel>(model);
-      await _repository.notifySubscriptionsWithLocalData<TModel>();
+      await _repository._notifyLocalSubscribers<TModel>();
     });
     return model;
   }
