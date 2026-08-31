@@ -9,7 +9,7 @@ sealed class LotDetailState with _$LotDetailState {
     @Default(ResultState<void>.initial()) ResultState<void> mutationState,
     Lot? lot,
     @Default(<LotAnimalSummary>[]) List<LotAnimalSummary> animals,
-    @Default(<Lot>[]) List<Lot> availableDestinations,
+    @Default(ResultState<List<Lot>>.initial()) ResultState<List<Lot>> destinationsState,
     @Default(false) bool isDeleted,
   }) = _LotDetailState;
 
@@ -17,6 +17,12 @@ sealed class LotDetailState with _$LotDetailState {
 
   /// Indica si una edicion, eliminacion o movimiento esta en curso.
   bool get isSaving => mutationState is Loading<void>;
+
+  /// Destinos disponibles cuando su lectura local fue exitosa.
+  List<Lot> get availableDestinations => switch (destinationsState) {
+    Data<List<Lot>>(:final data) => data,
+    _ => const [],
+  };
 
   /// Mensaje de la ultima mutacion fallida, si existe.
   String? get mutationErrorMessage => switch (mutationState) {

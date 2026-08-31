@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LotDetailState {
 
- ResultState<void> get loadState; ResultState<void> get mutationState; Lot? get lot; List<LotAnimalSummary> get animals; List<Lot> get availableDestinations; bool get isDeleted;
+ ResultState<void> get loadState; ResultState<void> get mutationState; Lot? get lot; List<LotAnimalSummary> get animals; ResultState<List<Lot>> get destinationsState; bool get isDeleted;
 /// Create a copy of LotDetailState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $LotDetailStateCopyWith<LotDetailState> get copyWith => _$LotDetailStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LotDetailState&&(identical(other.loadState, loadState) || other.loadState == loadState)&&(identical(other.mutationState, mutationState) || other.mutationState == mutationState)&&(identical(other.lot, lot) || other.lot == lot)&&const DeepCollectionEquality().equals(other.animals, animals)&&const DeepCollectionEquality().equals(other.availableDestinations, availableDestinations)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LotDetailState&&(identical(other.loadState, loadState) || other.loadState == loadState)&&(identical(other.mutationState, mutationState) || other.mutationState == mutationState)&&(identical(other.lot, lot) || other.lot == lot)&&const DeepCollectionEquality().equals(other.animals, animals)&&(identical(other.destinationsState, destinationsState) || other.destinationsState == destinationsState)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,loadState,mutationState,lot,const DeepCollectionEquality().hash(animals),const DeepCollectionEquality().hash(availableDestinations),isDeleted);
+int get hashCode => Object.hash(runtimeType,loadState,mutationState,lot,const DeepCollectionEquality().hash(animals),destinationsState,isDeleted);
 
 @override
 String toString() {
-  return 'LotDetailState(loadState: $loadState, mutationState: $mutationState, lot: $lot, animals: $animals, availableDestinations: $availableDestinations, isDeleted: $isDeleted)';
+  return 'LotDetailState(loadState: $loadState, mutationState: $mutationState, lot: $lot, animals: $animals, destinationsState: $destinationsState, isDeleted: $isDeleted)';
 }
 
 
@@ -45,11 +45,11 @@ abstract mixin class $LotDetailStateCopyWith<$Res>  {
   factory $LotDetailStateCopyWith(LotDetailState value, $Res Function(LotDetailState) _then) = _$LotDetailStateCopyWithImpl;
 @useResult
 $Res call({
- ResultState<void> loadState, ResultState<void> mutationState, Lot? lot, List<LotAnimalSummary> animals, List<Lot> availableDestinations, bool isDeleted
+ ResultState<void> loadState, ResultState<void> mutationState, Lot? lot, List<LotAnimalSummary> animals, ResultState<List<Lot>> destinationsState, bool isDeleted
 });
 
 
-$ResultStateCopyWith<void, $Res> get loadState;$ResultStateCopyWith<void, $Res> get mutationState;$LotCopyWith<$Res>? get lot;
+$ResultStateCopyWith<void, $Res> get loadState;$ResultStateCopyWith<void, $Res> get mutationState;$LotCopyWith<$Res>? get lot;$ResultStateCopyWith<List<Lot>, $Res> get destinationsState;
 
 }
 /// @nodoc
@@ -62,14 +62,14 @@ class _$LotDetailStateCopyWithImpl<$Res>
 
 /// Create a copy of LotDetailState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? loadState = null,Object? mutationState = null,Object? lot = freezed,Object? animals = null,Object? availableDestinations = null,Object? isDeleted = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? loadState = null,Object? mutationState = null,Object? lot = freezed,Object? animals = null,Object? destinationsState = null,Object? isDeleted = null,}) {
   return _then(_self.copyWith(
 loadState: null == loadState ? _self.loadState : loadState // ignore: cast_nullable_to_non_nullable
 as ResultState<void>,mutationState: null == mutationState ? _self.mutationState : mutationState // ignore: cast_nullable_to_non_nullable
 as ResultState<void>,lot: freezed == lot ? _self.lot : lot // ignore: cast_nullable_to_non_nullable
 as Lot?,animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
-as List<LotAnimalSummary>,availableDestinations: null == availableDestinations ? _self.availableDestinations : availableDestinations // ignore: cast_nullable_to_non_nullable
-as List<Lot>,isDeleted: null == isDeleted ? _self.isDeleted : isDeleted // ignore: cast_nullable_to_non_nullable
+as List<LotAnimalSummary>,destinationsState: null == destinationsState ? _self.destinationsState : destinationsState // ignore: cast_nullable_to_non_nullable
+as ResultState<List<Lot>>,isDeleted: null == isDeleted ? _self.isDeleted : isDeleted // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -102,6 +102,15 @@ $LotCopyWith<$Res>? get lot {
 
   return $LotCopyWith<$Res>(_self.lot!, (value) {
     return _then(_self.copyWith(lot: value));
+  });
+}/// Create a copy of LotDetailState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<List<Lot>, $Res> get destinationsState {
+  
+  return $ResultStateCopyWith<List<Lot>, $Res>(_self.destinationsState, (value) {
+    return _then(_self.copyWith(destinationsState: value));
   });
 }
 }
@@ -182,10 +191,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<void> loadState,  ResultState<void> mutationState,  Lot? lot,  List<LotAnimalSummary> animals,  List<Lot> availableDestinations,  bool isDeleted)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<void> loadState,  ResultState<void> mutationState,  Lot? lot,  List<LotAnimalSummary> animals,  ResultState<List<Lot>> destinationsState,  bool isDeleted)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LotDetailState() when $default != null:
-return $default(_that.loadState,_that.mutationState,_that.lot,_that.animals,_that.availableDestinations,_that.isDeleted);case _:
+return $default(_that.loadState,_that.mutationState,_that.lot,_that.animals,_that.destinationsState,_that.isDeleted);case _:
   return orElse();
 
 }
@@ -203,10 +212,10 @@ return $default(_that.loadState,_that.mutationState,_that.lot,_that.animals,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<void> loadState,  ResultState<void> mutationState,  Lot? lot,  List<LotAnimalSummary> animals,  List<Lot> availableDestinations,  bool isDeleted)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<void> loadState,  ResultState<void> mutationState,  Lot? lot,  List<LotAnimalSummary> animals,  ResultState<List<Lot>> destinationsState,  bool isDeleted)  $default,) {final _that = this;
 switch (_that) {
 case _LotDetailState():
-return $default(_that.loadState,_that.mutationState,_that.lot,_that.animals,_that.availableDestinations,_that.isDeleted);}
+return $default(_that.loadState,_that.mutationState,_that.lot,_that.animals,_that.destinationsState,_that.isDeleted);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -220,10 +229,10 @@ return $default(_that.loadState,_that.mutationState,_that.lot,_that.animals,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<void> loadState,  ResultState<void> mutationState,  Lot? lot,  List<LotAnimalSummary> animals,  List<Lot> availableDestinations,  bool isDeleted)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<void> loadState,  ResultState<void> mutationState,  Lot? lot,  List<LotAnimalSummary> animals,  ResultState<List<Lot>> destinationsState,  bool isDeleted)?  $default,) {final _that = this;
 switch (_that) {
 case _LotDetailState() when $default != null:
-return $default(_that.loadState,_that.mutationState,_that.lot,_that.animals,_that.availableDestinations,_that.isDeleted);case _:
+return $default(_that.loadState,_that.mutationState,_that.lot,_that.animals,_that.destinationsState,_that.isDeleted);case _:
   return null;
 
 }
@@ -235,7 +244,7 @@ return $default(_that.loadState,_that.mutationState,_that.lot,_that.animals,_tha
 
 
 class _LotDetailState extends LotDetailState {
-  const _LotDetailState({this.loadState = const ResultState<void>.initial(), this.mutationState = const ResultState<void>.initial(), this.lot, final  List<LotAnimalSummary> animals = const <LotAnimalSummary>[], final  List<Lot> availableDestinations = const <Lot>[], this.isDeleted = false}): _animals = animals,_availableDestinations = availableDestinations,super._();
+  const _LotDetailState({this.loadState = const ResultState<void>.initial(), this.mutationState = const ResultState<void>.initial(), this.lot, final  List<LotAnimalSummary> animals = const <LotAnimalSummary>[], this.destinationsState = const ResultState<List<Lot>>.initial(), this.isDeleted = false}): _animals = animals,super._();
   
 
 @override@JsonKey() final  ResultState<void> loadState;
@@ -248,13 +257,7 @@ class _LotDetailState extends LotDetailState {
   return EqualUnmodifiableListView(_animals);
 }
 
- final  List<Lot> _availableDestinations;
-@override@JsonKey() List<Lot> get availableDestinations {
-  if (_availableDestinations is EqualUnmodifiableListView) return _availableDestinations;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_availableDestinations);
-}
-
+@override@JsonKey() final  ResultState<List<Lot>> destinationsState;
 @override@JsonKey() final  bool isDeleted;
 
 /// Create a copy of LotDetailState
@@ -267,16 +270,16 @@ _$LotDetailStateCopyWith<_LotDetailState> get copyWith => __$LotDetailStateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LotDetailState&&(identical(other.loadState, loadState) || other.loadState == loadState)&&(identical(other.mutationState, mutationState) || other.mutationState == mutationState)&&(identical(other.lot, lot) || other.lot == lot)&&const DeepCollectionEquality().equals(other._animals, _animals)&&const DeepCollectionEquality().equals(other._availableDestinations, _availableDestinations)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LotDetailState&&(identical(other.loadState, loadState) || other.loadState == loadState)&&(identical(other.mutationState, mutationState) || other.mutationState == mutationState)&&(identical(other.lot, lot) || other.lot == lot)&&const DeepCollectionEquality().equals(other._animals, _animals)&&(identical(other.destinationsState, destinationsState) || other.destinationsState == destinationsState)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,loadState,mutationState,lot,const DeepCollectionEquality().hash(_animals),const DeepCollectionEquality().hash(_availableDestinations),isDeleted);
+int get hashCode => Object.hash(runtimeType,loadState,mutationState,lot,const DeepCollectionEquality().hash(_animals),destinationsState,isDeleted);
 
 @override
 String toString() {
-  return 'LotDetailState(loadState: $loadState, mutationState: $mutationState, lot: $lot, animals: $animals, availableDestinations: $availableDestinations, isDeleted: $isDeleted)';
+  return 'LotDetailState(loadState: $loadState, mutationState: $mutationState, lot: $lot, animals: $animals, destinationsState: $destinationsState, isDeleted: $isDeleted)';
 }
 
 
@@ -287,11 +290,11 @@ abstract mixin class _$LotDetailStateCopyWith<$Res> implements $LotDetailStateCo
   factory _$LotDetailStateCopyWith(_LotDetailState value, $Res Function(_LotDetailState) _then) = __$LotDetailStateCopyWithImpl;
 @override @useResult
 $Res call({
- ResultState<void> loadState, ResultState<void> mutationState, Lot? lot, List<LotAnimalSummary> animals, List<Lot> availableDestinations, bool isDeleted
+ ResultState<void> loadState, ResultState<void> mutationState, Lot? lot, List<LotAnimalSummary> animals, ResultState<List<Lot>> destinationsState, bool isDeleted
 });
 
 
-@override $ResultStateCopyWith<void, $Res> get loadState;@override $ResultStateCopyWith<void, $Res> get mutationState;@override $LotCopyWith<$Res>? get lot;
+@override $ResultStateCopyWith<void, $Res> get loadState;@override $ResultStateCopyWith<void, $Res> get mutationState;@override $LotCopyWith<$Res>? get lot;@override $ResultStateCopyWith<List<Lot>, $Res> get destinationsState;
 
 }
 /// @nodoc
@@ -304,14 +307,14 @@ class __$LotDetailStateCopyWithImpl<$Res>
 
 /// Create a copy of LotDetailState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? loadState = null,Object? mutationState = null,Object? lot = freezed,Object? animals = null,Object? availableDestinations = null,Object? isDeleted = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? loadState = null,Object? mutationState = null,Object? lot = freezed,Object? animals = null,Object? destinationsState = null,Object? isDeleted = null,}) {
   return _then(_LotDetailState(
 loadState: null == loadState ? _self.loadState : loadState // ignore: cast_nullable_to_non_nullable
 as ResultState<void>,mutationState: null == mutationState ? _self.mutationState : mutationState // ignore: cast_nullable_to_non_nullable
 as ResultState<void>,lot: freezed == lot ? _self.lot : lot // ignore: cast_nullable_to_non_nullable
 as Lot?,animals: null == animals ? _self._animals : animals // ignore: cast_nullable_to_non_nullable
-as List<LotAnimalSummary>,availableDestinations: null == availableDestinations ? _self._availableDestinations : availableDestinations // ignore: cast_nullable_to_non_nullable
-as List<Lot>,isDeleted: null == isDeleted ? _self.isDeleted : isDeleted // ignore: cast_nullable_to_non_nullable
+as List<LotAnimalSummary>,destinationsState: null == destinationsState ? _self.destinationsState : destinationsState // ignore: cast_nullable_to_non_nullable
+as ResultState<List<Lot>>,isDeleted: null == isDeleted ? _self.isDeleted : isDeleted // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -345,6 +348,15 @@ $LotCopyWith<$Res>? get lot {
 
   return $LotCopyWith<$Res>(_self.lot!, (value) {
     return _then(_self.copyWith(lot: value));
+  });
+}/// Create a copy of LotDetailState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<List<Lot>, $Res> get destinationsState {
+  
+  return $ResultStateCopyWith<List<Lot>, $Res>(_self.destinationsState, (value) {
+    return _then(_self.copyWith(destinationsState: value));
   });
 }
 }

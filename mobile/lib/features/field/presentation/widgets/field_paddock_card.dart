@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/forage_resource.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
-import 'package:frontend_mayoral/features/field/domain/entities/lot_status.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
+import 'package:frontend_mayoral/features/field/presentation/theme/lot_status_visuals.dart';
 
 /// Tarjeta de un lote persistido localmente.
 class FieldPaddockCard extends StatelessWidget {
@@ -40,7 +40,7 @@ class FieldPaddockCard extends StatelessWidget {
           child: Row(
             children: [
               DecoratedBox(
-                decoration: BoxDecoration(color: _statusColor(lot.status)),
+                decoration: BoxDecoration(color: lot.status.color),
                 child: const SizedBox(width: 6, height: 82),
               ),
               Expanded(
@@ -70,8 +70,7 @@ class FieldPaddockCard extends StatelessWidget {
                       ),
                       const SizedBox(height: AppSpacing.xxs),
                       Text(
-                        '${lot.surfaceHectares.toStringAsFixed(1)} '
-                        '${FieldStrings.hectaresSuffix} · '
+                        '${FieldStrings.surfaceValue(lot.surfaceHectares)} · '
                         '${InitialForageResources.displayNameFor(lot.forageResourceCode)}',
                         style: AppTypography.formFieldHelper,
                       ),
@@ -92,11 +91,4 @@ class FieldPaddockCard extends StatelessWidget {
       ),
     );
   }
-
-  Color _statusColor(LotStatus status) => switch (status) {
-    LotStatus.active => AppColors.primary,
-    LotStatus.resting => AppColors.earTagBlue,
-    LotStatus.maintenance => Colors.orange,
-    LotStatus.inactive || LotStatus.unknown => AppColors.textHint,
-  };
 }

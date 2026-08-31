@@ -21,4 +21,12 @@ sealed class LotOverviewState with _$LotOverviewState {
     @Default(<String, int>{}) Map<String, int> animalCounts,
     @Default(LotOverviewView.schematic) LotOverviewView view,
   }) = _LotOverviewState;
+
+  const LotOverviewState._();
+
+  /// Superficie declarada total de los lotes visibles.
+  double get totalHectares => lots.fold(
+    0,
+    (total, lot) => total + lot.surfaceHectares,
+  );
 }

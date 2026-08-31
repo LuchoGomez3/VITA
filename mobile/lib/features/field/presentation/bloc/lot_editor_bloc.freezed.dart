@@ -1145,12 +1145,12 @@ $LotEditorStateCopyWith<LotEditorState> get copyWith => _$LotEditorStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LotEditorState&&(identical(other.draft, draft) || other.draft == draft)&&const DeepCollectionEquality().equals(other.validation, validation)&&(identical(other.step, step) || other.step == step)&&const DeepCollectionEquality().equals(other.undoStack, undoStack)&&const DeepCollectionEquality().equals(other.redoStack, redoStack)&&(identical(other.isClosed, isClosed) || other.isClosed == isClosed)&&(identical(other.showValidationErrors, showValidationErrors) || other.showValidationErrors == showValidationErrors)&&(identical(other.selectedVertexIndex, selectedVertexIndex) || other.selectedVertexIndex == selectedVertexIndex)&&const DeepCollectionEquality().equals(other.existingLots, existingLots)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LotEditorState&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.validation, validation) || other.validation == validation)&&(identical(other.step, step) || other.step == step)&&const DeepCollectionEquality().equals(other.undoStack, undoStack)&&const DeepCollectionEquality().equals(other.redoStack, redoStack)&&(identical(other.isClosed, isClosed) || other.isClosed == isClosed)&&(identical(other.showValidationErrors, showValidationErrors) || other.showValidationErrors == showValidationErrors)&&(identical(other.selectedVertexIndex, selectedVertexIndex) || other.selectedVertexIndex == selectedVertexIndex)&&const DeepCollectionEquality().equals(other.existingLots, existingLots)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,draft,const DeepCollectionEquality().hash(validation),step,const DeepCollectionEquality().hash(undoStack),const DeepCollectionEquality().hash(redoStack),isClosed,showValidationErrors,selectedVertexIndex,const DeepCollectionEquality().hash(existingLots),submitResult);
+int get hashCode => Object.hash(runtimeType,draft,validation,step,const DeepCollectionEquality().hash(undoStack),const DeepCollectionEquality().hash(redoStack),isClosed,showValidationErrors,selectedVertexIndex,const DeepCollectionEquality().hash(existingLots),submitResult);
 
 @override
 String toString() {
@@ -1169,7 +1169,7 @@ $Res call({
 });
 
 
-$LotDraftCopyWith<$Res> get draft;$ResultStateCopyWith<Lot, $Res> get submitResult;
+$LotDraftCopyWith<$Res> get draft;$LotBoundaryValidationCopyWith<$Res> get validation;$ResultStateCopyWith<Lot, $Res> get submitResult;
 
 }
 /// @nodoc
@@ -1182,10 +1182,10 @@ class _$LotEditorStateCopyWithImpl<$Res>
 
 /// Create a copy of LotEditorState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? draft = null,Object? validation = freezed,Object? step = null,Object? undoStack = null,Object? redoStack = null,Object? isClosed = null,Object? showValidationErrors = null,Object? selectedVertexIndex = freezed,Object? existingLots = null,Object? submitResult = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? draft = null,Object? validation = null,Object? step = null,Object? undoStack = null,Object? redoStack = null,Object? isClosed = null,Object? showValidationErrors = null,Object? selectedVertexIndex = freezed,Object? existingLots = null,Object? submitResult = null,}) {
   return _then(_self.copyWith(
 draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
-as LotDraft,validation: freezed == validation ? _self.validation : validation // ignore: cast_nullable_to_non_nullable
+as LotDraft,validation: null == validation ? _self.validation : validation // ignore: cast_nullable_to_non_nullable
 as LotBoundaryValidation,step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as LotEditorStep,undoStack: null == undoStack ? _self.undoStack : undoStack // ignore: cast_nullable_to_non_nullable
 as List<List<LocalPoint>>,redoStack: null == redoStack ? _self.redoStack : redoStack // ignore: cast_nullable_to_non_nullable
@@ -1205,6 +1205,15 @@ $LotDraftCopyWith<$Res> get draft {
   
   return $LotDraftCopyWith<$Res>(_self.draft, (value) {
     return _then(_self.copyWith(draft: value));
+  });
+}/// Create a copy of LotEditorState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$LotBoundaryValidationCopyWith<$Res> get validation {
+  
+  return $LotBoundaryValidationCopyWith<$Res>(_self.validation, (value) {
+    return _then(_self.copyWith(validation: value));
   });
 }/// Create a copy of LotEditorState
 /// with the given fields replaced by the non-null parameter values.
@@ -1389,12 +1398,12 @@ _$LotEditorStateCopyWith<_LotEditorState> get copyWith => __$LotEditorStateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LotEditorState&&(identical(other.draft, draft) || other.draft == draft)&&const DeepCollectionEquality().equals(other.validation, validation)&&(identical(other.step, step) || other.step == step)&&const DeepCollectionEquality().equals(other._undoStack, _undoStack)&&const DeepCollectionEquality().equals(other._redoStack, _redoStack)&&(identical(other.isClosed, isClosed) || other.isClosed == isClosed)&&(identical(other.showValidationErrors, showValidationErrors) || other.showValidationErrors == showValidationErrors)&&(identical(other.selectedVertexIndex, selectedVertexIndex) || other.selectedVertexIndex == selectedVertexIndex)&&const DeepCollectionEquality().equals(other._existingLots, _existingLots)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LotEditorState&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.validation, validation) || other.validation == validation)&&(identical(other.step, step) || other.step == step)&&const DeepCollectionEquality().equals(other._undoStack, _undoStack)&&const DeepCollectionEquality().equals(other._redoStack, _redoStack)&&(identical(other.isClosed, isClosed) || other.isClosed == isClosed)&&(identical(other.showValidationErrors, showValidationErrors) || other.showValidationErrors == showValidationErrors)&&(identical(other.selectedVertexIndex, selectedVertexIndex) || other.selectedVertexIndex == selectedVertexIndex)&&const DeepCollectionEquality().equals(other._existingLots, _existingLots)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,draft,const DeepCollectionEquality().hash(validation),step,const DeepCollectionEquality().hash(_undoStack),const DeepCollectionEquality().hash(_redoStack),isClosed,showValidationErrors,selectedVertexIndex,const DeepCollectionEquality().hash(_existingLots),submitResult);
+int get hashCode => Object.hash(runtimeType,draft,validation,step,const DeepCollectionEquality().hash(_undoStack),const DeepCollectionEquality().hash(_redoStack),isClosed,showValidationErrors,selectedVertexIndex,const DeepCollectionEquality().hash(_existingLots),submitResult);
 
 @override
 String toString() {
@@ -1413,7 +1422,7 @@ $Res call({
 });
 
 
-@override $LotDraftCopyWith<$Res> get draft;@override $ResultStateCopyWith<Lot, $Res> get submitResult;
+@override $LotDraftCopyWith<$Res> get draft;@override $LotBoundaryValidationCopyWith<$Res> get validation;@override $ResultStateCopyWith<Lot, $Res> get submitResult;
 
 }
 /// @nodoc
@@ -1426,10 +1435,10 @@ class __$LotEditorStateCopyWithImpl<$Res>
 
 /// Create a copy of LotEditorState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? draft = null,Object? validation = freezed,Object? step = null,Object? undoStack = null,Object? redoStack = null,Object? isClosed = null,Object? showValidationErrors = null,Object? selectedVertexIndex = freezed,Object? existingLots = null,Object? submitResult = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? draft = null,Object? validation = null,Object? step = null,Object? undoStack = null,Object? redoStack = null,Object? isClosed = null,Object? showValidationErrors = null,Object? selectedVertexIndex = freezed,Object? existingLots = null,Object? submitResult = null,}) {
   return _then(_LotEditorState(
 draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
-as LotDraft,validation: freezed == validation ? _self.validation : validation // ignore: cast_nullable_to_non_nullable
+as LotDraft,validation: null == validation ? _self.validation : validation // ignore: cast_nullable_to_non_nullable
 as LotBoundaryValidation,step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as LotEditorStep,undoStack: null == undoStack ? _self._undoStack : undoStack // ignore: cast_nullable_to_non_nullable
 as List<List<LocalPoint>>,redoStack: null == redoStack ? _self._redoStack : redoStack // ignore: cast_nullable_to_non_nullable
@@ -1450,6 +1459,15 @@ $LotDraftCopyWith<$Res> get draft {
   
   return $LotDraftCopyWith<$Res>(_self.draft, (value) {
     return _then(_self.copyWith(draft: value));
+  });
+}/// Create a copy of LotEditorState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$LotBoundaryValidationCopyWith<$Res> get validation {
+  
+  return $LotBoundaryValidationCopyWith<$Res>(_self.validation, (value) {
+    return _then(_self.copyWith(validation: value));
   });
 }/// Create a copy of LotEditorState
 /// with the given fields replaced by the non-null parameter values.

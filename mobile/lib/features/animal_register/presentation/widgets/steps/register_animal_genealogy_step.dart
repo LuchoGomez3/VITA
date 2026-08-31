@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
@@ -145,28 +146,38 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
                   style: AppTypography.pageBodyTitle,
                 ),
                 const SizedBox(height: AppSpacing.md),
-                if (state.isLoadingDestinations)
-                  const Center(child: CircularProgressIndicator())
-                else if (state.destinations.isEmpty)
-                  Text(
-                    state.destinationsError ?? AnimalRegisterStrings.noActiveLotsMessage,
+                switch (state.destinationsState) {
+                  Initial() || Loading() => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  ResultError(:final error) => Text(
+                    error.message,
+                    style: AppTypography.errorBody,
+                  ),
+                  Data(:final data) when data.isEmpty => const Text(
+                    AnimalRegisterStrings.noActiveLotsMessage,
                     style: AppTypography.pageBodyTitle,
-                  )
-                else
-                  for (final destination in state.destinations) ...[
-                    DestinationSelectionCard(
-                      destination: destination,
-                      isSelected: draft.destinationId == destination.id,
-                      onTap: () {
-                        _updateDraft(
-                          draft.copyWith(
-                            destinationId: draft.destinationId == destination.id ? null : destination.id,
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                  ],
+                  ),
+                  Data(:final data) => Column(
+                    children: [
+                      for (final destination in data) ...[
+                        DestinationSelectionCard(
+                          destination: destination,
+                          isSelected: draft.destinationId == destination.id,
+                          onTap: () {
+                            _updateDraft(
+                              draft.copyWith(
+                                destinationId: draft.destinationId == destination.id ? null : destination.id,
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                      ],
+                    ],
+                  ),
+                  _ => const SizedBox.shrink(),
+                },
               ],
             ),
           ),

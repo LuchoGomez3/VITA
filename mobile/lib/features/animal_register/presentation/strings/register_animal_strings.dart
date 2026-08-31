@@ -5,6 +5,9 @@ import 'package:frontend_mayoral/features/animal_register/presentation/widgets/e
 class AnimalRegisterStrings {
   const AnimalRegisterStrings._();
 
+  /// Error al leer los lotes disponibles desde el almacenamiento local.
+  static const destinationsLoadError = 'No se pudieron cargar los lotes guardados.';
+
   /// Estado vacío cuando todavía no existen lotes activos offline.
   static const noActiveLotsMessage = 'No hay lotes activos disponibles. Creá o activá un lote antes de continuar.';
 

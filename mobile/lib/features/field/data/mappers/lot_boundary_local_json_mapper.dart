@@ -33,7 +33,9 @@ class LotBoundaryLocalJsonMapper {
     final decoded = jsonDecode(encoded);
     if (decoded is! Map<String, dynamic> ||
         decoded['type'] != 'LocalPolygon' ||
-        (decoded['coordinate_space'] ?? decoded['coordinateSpace']) != coordinateSpace) {
+        (decoded['coordinate_space'] ?? decoded['coordinateSpace']) != coordinateSpace ||
+        decoded['version'] != version ||
+        !_hasExpectedExtent(decoded['extent'])) {
       throw const FormatException('Invalid local lot geometry.');
     }
     final rawVertices = decoded['vertices'];
@@ -45,6 +47,13 @@ class LotBoundaryLocalJsonMapper {
         for (final rawPoint in rawVertices) _decodePoint(rawPoint),
       ],
     );
+  }
+
+  static bool _hasExpectedExtent(Object? rawExtent) {
+    if (rawExtent case {'width': final num width, 'height': final num height}) {
+      return width.toDouble() == LocalCoordinateSpace.extent && height.toDouble() == LocalCoordinateSpace.extent;
+    }
+    return false;
   }
 
   static LocalPoint _decodePoint(Object? rawPoint) {

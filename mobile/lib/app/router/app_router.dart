@@ -28,8 +28,8 @@ import 'package:frontend_mayoral/features/establishment_register/presentation/bl
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_empty_state_page.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_page.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_success_page.dart';
-import 'package:frontend_mayoral/features/field/domain/params/lot_editor_route_data.dart';
 import 'package:frontend_mayoral/features/field/field_composition.dart';
+import 'package:frontend_mayoral/features/field/presentation/navigation/lot_editor_route_data.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/field_detail_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/field_map_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/lot_editor_page.dart';

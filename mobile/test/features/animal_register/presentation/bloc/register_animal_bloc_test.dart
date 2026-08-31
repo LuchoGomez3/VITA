@@ -76,6 +76,24 @@ void main() {
       expect(reviewBloc.state.currentStep, RegisterAnimalStep.review);
     });
 
+    test('represents destination loading failures with ResultState', () async {
+      final failingBloc = RegisterAnimalBloc(
+        registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        registrationContext: const _FailingAnimalRegistrationContext(),
+      );
+      addTearDown(failingBloc.close);
+
+      failingBloc.add(const RegisterAnimalEvent.destinationsRequested());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        failingBloc.state.destinationsState,
+        isA<ResultError<List<AnimalRegistrationDestination>>>(),
+      );
+      expect(failingBloc.state.destinations, isEmpty);
+    });
+
     test('submits a valid draft and emits loading then data', () async {
       final expectedResult = ResultState<RegisteredAnimal>.data(
         RegisteredAnimal(
@@ -204,6 +222,33 @@ class _TestAnimalRegistrationContext implements AnimalRegistrationContext {
   @override
   String? resolveMotherId(String? motherSelectionId) =>
       motherSelectionId == null ? null : '56fb8531-13f7-41c6-a1e1-85ea9b7094fa';
+}
+
+class _FailingAnimalRegistrationContext implements AnimalRegistrationContext {
+  const _FailingAnimalRegistrationContext();
+
+  @override
+  String get establishmentId => 'establishment-id';
+
+  @override
+  Future<List<AnimalRegistrationDestination>> loadDestinations() {
+    throw StateError('forced local read failure');
+  }
+
+  @override
+  String resolveCategoryId(String categoryName) => 'category-id';
+
+  @override
+  String? resolveFatherId(String? fatherSelectionId) => null;
+
+  @override
+  String resolveLotId(String destinationSelectionId) => 'lot-id';
+
+  @override
+  String resolveLotName(String destinationSelectionId) => 'Lote';
+
+  @override
+  String? resolveMotherId(String? motherSelectionId) => null;
 }
 
 class _FakeAnimalRegistrationRepository implements AnimalRegistrationRepository {

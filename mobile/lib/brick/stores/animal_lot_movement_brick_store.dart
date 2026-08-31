@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:frontend_mayoral/brick/core/repository.dart';
+import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
 
 /// Persistencia local y cola remota opcional para movimientos entre lotes.
@@ -40,6 +41,23 @@ class BrickAnimalLotMovementStore {
     BrickAnimalLotMovementModel movement,
   ) async {
     final saved = await _repository.upsertLocal(movement);
+    if (_enableRemoteSync) {
+      unawaited(_repository.enqueueRemoteUpsert(saved));
+    }
+    return saved;
+  }
+
+  /// Actualiza animales y registra su movimiento en una sola transaccion.
+  Future<BrickAnimalLotMovementModel> saveWithAnimals({
+    required List<BrickAnimalModel> animals,
+    required BrickAnimalLotMovementModel movement,
+  }) async {
+    final saved = await _repository.runLocalTransaction((transaction) async {
+      for (final animal in animals) {
+        await transaction.upsert<BrickAnimalModel>(animal);
+      }
+      return transaction.upsert<BrickAnimalLotMovementModel>(movement);
+    });
     if (_enableRemoteSync) {
       unawaited(_repository.enqueueRemoteUpsert(saved));
     }

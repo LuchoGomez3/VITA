@@ -83,6 +83,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     String? backendBaseUrl,
     BackendAccessTokenProvider? tokenProvider,
     http.Client? client,
+    DatabaseFactory? localDatabaseFactory,
   }) async {
     if (_instance != null) {
       return;
@@ -91,7 +92,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     // Provider local: Brick lo usa para leer/escribir modelos en SQLite.
     final sqliteProvider = SqliteProvider(
       sqlitePath,
-      databaseFactory: databaseFactory,
+      databaseFactory: localDatabaseFactory ?? databaseFactory,
       modelDictionary: sqliteModelDictionary,
     );
 
@@ -127,7 +128,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
       authRejections: authRejections,
       offlineQueueManager: RestRequestSqliteCacheManager(
         offlineQueuePath,
-        databaseFactory: databaseFactory,
+        databaseFactory: localDatabaseFactory ?? databaseFactory,
       ),
       // Los 5xx se consideran transitorios: Brick los deja en cola para
       // reintentar. Los 4xx funcionales se procesan como rechazo del sync.
@@ -157,6 +158,29 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     return savedModel;
   }
 
+  /// Ejecuta varios upserts locales dentro de una unica transaccion SQLite.
+  ///
+  /// Los stores de una operacion compuesta, como un movimiento de animales,
+  /// usan este limite para evitar estados parciales si alguna escritura falla.
+  Future<T> runLocalTransaction<T>(
+    Future<T> Function(AppBrickTransaction transaction) callback,
+  ) async {
+    final afterCommit = <Future<void> Function()>[];
+    final result = await sqliteProvider.transaction(
+      (sqliteTransaction) => callback(
+        AppBrickTransaction._(
+          repository: this,
+          transaction: sqliteTransaction,
+          afterCommit: afterCommit,
+        ),
+      ),
+    );
+    for (final action in afterCommit) {
+      await action();
+    }
+    return result;
+  }
+
   /// Envia un modelo al provider REST dejando que Brick maneje la cola offline.
   ///
   /// Este helper no debe bloquear la UX de una feature. Los stores suelen
@@ -179,5 +203,71 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     return get<TModel>(
       policy: OfflineFirstGetPolicy.localOnly,
     );
+  }
+}
+
+/// Contexto restringido para escribir modelos Brick en una transaccion local.
+class AppBrickTransaction {
+  AppBrickTransaction._({
+    required AppBrickRepository repository,
+    required Transaction transaction,
+    required List<Future<void> Function()> afterCommit,
+  }) : _repository = repository,
+       _transaction = transaction,
+       _afterCommit = afterCommit;
+
+  final AppBrickRepository _repository;
+  final Transaction _transaction;
+  final List<Future<void> Function()> _afterCommit;
+
+  /// Inserta o actualiza [model] usando el adapter generado por Brick.
+  Future<TModel> upsert<TModel extends OfflineFirstWithRestModel>(
+    TModel model,
+  ) async {
+    final adapter = _repository.sqliteProvider.modelDictionary.adapterFor[TModel]!;
+    await adapter.beforeSave(
+      model,
+      provider: _repository.sqliteProvider,
+      repository: _repository,
+    );
+    await model.beforeSave(
+      provider: _repository.sqliteProvider,
+      repository: _repository,
+    );
+    final data = await adapter.toSqlite(
+      model,
+      provider: _repository.sqliteProvider,
+      repository: _repository,
+    );
+    final existingPrimaryKey = await adapter.primaryKeyByUniqueColumns(
+      model,
+      _transaction,
+    );
+    final primaryKey = existingPrimaryKey ?? model.primaryKey;
+    if (model.isNewRecord && existingPrimaryKey == null) {
+      model.primaryKey = await _transaction.insert(adapter.tableName, data);
+    } else {
+      await _transaction.update(
+        adapter.tableName,
+        data,
+        where: '_brick_id = ?',
+        whereArgs: [primaryKey],
+      );
+      model.primaryKey = primaryKey;
+    }
+    await adapter.afterSave(
+      model,
+      provider: _repository.sqliteProvider,
+      repository: _repository,
+    );
+    await model.afterSave(
+      provider: _repository.sqliteProvider,
+      repository: _repository,
+    );
+    _afterCommit.add(() async {
+      _repository.memoryCacheProvider.upsert<TModel>(model);
+      await _repository.notifySubscriptionsWithLocalData<TModel>();
+    });
+    return model;
   }
 }

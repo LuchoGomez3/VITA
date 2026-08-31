@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
@@ -135,7 +136,7 @@ class _LotDetailBody extends StatelessWidget {
             Expanded(
               child: AppInfoCell(
                 label: FieldStrings.surfaceDetailLabel,
-                value: '${lot.surfaceHectares.toStringAsFixed(1)} ha',
+                value: FieldStrings.surfaceValue(lot.surfaceHectares),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -172,16 +173,24 @@ class _LotDetailBody extends StatelessWidget {
           style: AppTypography.pageTitle,
         ),
         const SizedBox(height: AppSpacing.sm),
-        if (state.animals.isNotEmpty && state.availableDestinations.isNotEmpty) ...[
-          AppFilledButton(
-            label: FieldStrings.moveAnimalsCta,
-            onPressed: state.isSaving ? null : () => _moveAnimals(context),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-        ] else if (state.animals.isNotEmpty) ...[
-          const Text(FieldStrings.noMovementDestinationMessage),
-          const SizedBox(height: AppSpacing.sm),
-        ],
+        if (state.animals.isNotEmpty)
+          switch (state.destinationsState) {
+            ResultError<List<Lot>>(:final error) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Text(error.message, style: AppTypography.errorBody),
+            ),
+            Data<List<Lot>>(:final data) when data.isNotEmpty => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: AppFilledButton(
+                label: FieldStrings.moveAnimalsCta,
+                onPressed: state.isSaving ? null : () => _moveAnimals(context),
+              ),
+            ),
+            _ => const Padding(
+              padding: EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Text(FieldStrings.noMovementDestinationMessage),
+            ),
+          },
         if (state.animals.isEmpty)
           const Text(FieldStrings.noAnimalsInLotMessage)
         else
@@ -193,18 +202,21 @@ class _LotDetailBody extends StatelessWidget {
                 animal.visualTag.isEmpty ? animal.rfidTagNumber : animal.visualTag,
               ),
               subtitle: Text(
-                '${animal.categoryName} · RFID ${animal.rfidTagNumber}',
+                FieldStrings.animalRfidDetails(
+                  categoryName: animal.categoryName,
+                  rfidTagNumber: animal.rfidTagNumber,
+                ),
               ),
             ),
         const SizedBox(height: AppSpacing.md),
         AppInfoCell(
           label: FieldStrings.createdAtLabel,
-          value: _formatDate(lot.createdAt),
+          value: DateDisplayFormatter.shortDate(lot.createdAt.toLocal()),
         ),
         const SizedBox(height: AppSpacing.sm),
         AppInfoCell(
           label: FieldStrings.updatedAtLabel,
-          value: _formatDate(lot.updatedAt),
+          value: DateDisplayFormatter.shortDate(lot.updatedAt.toLocal()),
         ),
       ],
     );
@@ -225,12 +237,6 @@ class _LotDetailBody extends StatelessWidget {
       occurredAt: input.occurredAt,
       reason: input.reason,
     );
-  }
-
-  String _formatDate(DateTime date) {
-    final local = date.toLocal();
-    return '${local.day.toString().padLeft(2, '0')}/'
-        '${local.month.toString().padLeft(2, '0')}/${local.year}';
   }
 }
 

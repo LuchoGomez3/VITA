@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
@@ -106,7 +107,7 @@ class _LotMovementDialogState extends State<LotMovementDialog> {
               icon: const Icon(Icons.calendar_today_outlined),
               label: Text(
                 '${FieldStrings.movementDateLabel}: '
-                '${_formatDate(_occurredAt)}',
+                '${DateDisplayFormatter.shortDate(_occurredAt)}',
               ),
             ),
             if (_validationMessage case final message?) ...[
@@ -154,8 +155,4 @@ class _LotMovementDialogState extends State<LotMovementDialog> {
       ),
     );
   }
-
-  String _formatDate(DateTime date) =>
-      '${date.day.toString().padLeft(2, '0')}/'
-      '${date.month.toString().padLeft(2, '0')}/${date.year}';
 }

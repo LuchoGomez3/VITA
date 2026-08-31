@@ -213,8 +213,8 @@ return $default(_that.loadState,_that.establishments,_that.selectedEstablishment
 /// @nodoc
 
 
-class _LotOverviewState implements LotOverviewState {
-  const _LotOverviewState({this.loadState = const ResultState<void>.initial(), final  Map<String, String> establishments = const <String, String>{}, this.selectedEstablishmentId, final  List<Lot> lots = const <Lot>[], final  Map<String, int> animalCounts = const <String, int>{}, this.view = LotOverviewView.schematic}): _establishments = establishments,_lots = lots,_animalCounts = animalCounts;
+class _LotOverviewState extends LotOverviewState {
+  const _LotOverviewState({this.loadState = const ResultState<void>.initial(), final  Map<String, String> establishments = const <String, String>{}, this.selectedEstablishmentId, final  List<Lot> lots = const <Lot>[], final  Map<String, int> animalCounts = const <String, int>{}, this.view = LotOverviewView.schematic}): _establishments = establishments,_lots = lots,_animalCounts = animalCounts,super._();
   
 
 @override@JsonKey() final  ResultState<void> loadState;

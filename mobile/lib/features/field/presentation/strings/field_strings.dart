@@ -47,8 +47,17 @@ abstract final class FieldStrings {
   /// Sufijo de hectáreas para una card de la lista.
   static const hectaresSuffix = 'ha';
 
+  /// Superficie localizada con una cifra decimal.
+  static String surfaceValue(double hectares) => '${hectares.toStringAsFixed(1)} $hectaresSuffix';
+
   /// Prefijo de cabezas para una card de la lista.
   static const headCountSuffix = 'cab';
+
+  /// Metadata compacta mostrada debajo de cada animal del lote.
+  static String animalRfidDetails({
+    required String categoryName,
+    required String rfidTagNumber,
+  }) => '$categoryName · RFID $rfidTagNumber';
 
   /// Sección "Forraje y servicios" del detalle.
   static const forageSectionTitle = 'Forraje y servicios';

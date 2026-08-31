@@ -29,4 +29,22 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test('rechaza una version de geometria no soportada', () {
+    expect(
+      () => LotBoundaryLocalJsonMapper.decode(
+        '{"type":"LocalPolygon","coordinate_space":"establishment_canvas_v1","version":2,"extent":{"width":1000,"height":1000},"vertices":[]}',
+      ),
+      throwsFormatException,
+    );
+  });
+
+  test('rechaza dimensiones distintas al lienzo actual', () {
+    expect(
+      () => LotBoundaryLocalJsonMapper.decode(
+        '{"type":"LocalPolygon","coordinate_space":"establishment_canvas_v1","version":1,"extent":{"width":1,"height":1},"vertices":[]}',
+      ),
+      throwsFormatException,
+    );
+  });
 }

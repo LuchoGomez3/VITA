@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart';
 import 'package:brick_rest/brick_rest.dart';
 
+const _unchangedLotSyncErrorCode = Object();
+
 /// Configuración REST futura del recurso; la Fase 2 no invoca este endpoint.
 class BrickLotRequestTransformer extends RestRequestTransformer {
   /// Crea el transformer exigido por el modelo offline-first.
@@ -125,23 +127,32 @@ class BrickLotModel extends OfflineFirstWithRestModel {
   /// Crea una copia reconciliada conservando la fila SQLite.
   BrickLotModel copyWith({
     BrickLotSyncStatus? syncStatus,
-    String? syncErrorCode,
-  }) => BrickLotModel(
-    localId: localId,
-    establishmentId: establishmentId,
-    name: name,
-    boundaryJson: boundaryJson,
-    geometryMode: geometryMode,
-    surfaceTenths: surfaceTenths,
-    forageResourceCode: forageResourceCode,
-    hasWater: hasWater,
-    statusCode: statusCode,
-    createdAt: createdAt,
-    updatedAt: updatedAt,
-    deletedAt: deletedAt,
-    syncStatus: syncStatus ?? this.syncStatus,
-    syncErrorCode: syncErrorCode,
-  )..primaryKey = primaryKey;
+    Object? syncErrorCode = _unchangedLotSyncErrorCode,
+  }) {
+    final nextSyncErrorCode =
+        identical(
+          syncErrorCode,
+          _unchangedLotSyncErrorCode,
+        )
+        ? this.syncErrorCode
+        : syncErrorCode as String?;
+    return BrickLotModel(
+      localId: localId,
+      establishmentId: establishmentId,
+      name: name,
+      boundaryJson: boundaryJson,
+      geometryMode: geometryMode,
+      surfaceTenths: surfaceTenths,
+      forageResourceCode: forageResourceCode,
+      hasWater: hasWater,
+      statusCode: statusCode,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      deletedAt: deletedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      syncErrorCode: nextSyncErrorCode,
+    )..primaryKey = primaryKey;
+  }
 }
 
 /// Estado técnico de sincronización de un lote.

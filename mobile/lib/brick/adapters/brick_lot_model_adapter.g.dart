@@ -13,7 +13,9 @@ Future<BrickLotModel> _$BrickLotModelFromRest(
     boundaryJson: brickLotGeometryFromBackend(data['geometria_local']),
     geometryMode: data['geometry_mode'] as String,
     surfaceTenths: brickLotSurfaceFromBackend(data['superficie_ha']),
-    forageResourceCode: data['recurso_forrajero_codigo'] == null ? null : data['recurso_forrajero_codigo'] as String?,
+    forageResourceCode: data['recurso_forrajero_codigo'] == null
+        ? null
+        : data['recurso_forrajero_codigo'] as String?,
     hasWater: data['tiene_agua'] as bool,
     statusCode: data['estado'] as String,
     createdAt: DateTime.parse(data['created_at'] as String),
@@ -59,7 +61,9 @@ Future<BrickLotModel> _$BrickLotModelFromSqlite(
     boundaryJson: data['boundary_json'] as String,
     geometryMode: data['geometry_mode'] as String,
     surfaceTenths: data['surface_tenths'] as int,
-    forageResourceCode: data['forage_resource_code'] == null ? null : data['forage_resource_code'] as String?,
+    forageResourceCode: data['forage_resource_code'] == null
+        ? null
+        : data['forage_resource_code'] as String?,
     hasWater: data['has_water'] == 1,
     statusCode: data['status_code'] as String,
     createdAt: DateTime.parse(data['created_at'] as String),
@@ -70,7 +74,9 @@ Future<BrickLotModel> _$BrickLotModelFromSqlite(
         ? null
         : DateTime.tryParse(data['deleted_at'] as String),
     syncStatus: BrickLotSyncStatus.values[data['sync_status'] as int],
-    syncErrorCode: data['sync_error_code'] == null ? null : data['sync_error_code'] as String?,
+    syncErrorCode: data['sync_error_code'] == null
+        ? null
+        : data['sync_error_code'] as String?,
   )..primaryKey = data['_brick_id'] as int;
 }
 

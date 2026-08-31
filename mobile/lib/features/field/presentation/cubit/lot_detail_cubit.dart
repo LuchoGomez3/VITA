@@ -61,14 +61,18 @@ class LotDetailCubit extends Cubit<LotDetailState> {
         );
         switch (animalsResult) {
           case Success<List<LotAnimalSummary>>(data: final animals):
-            final destinations = destinationsResult is Success<List<Lot>> ? destinationsResult.data : const <Lot>[];
+            final destinationsState = destinationsResult is Success<List<Lot>>
+                ? ResultState<List<Lot>>.data(destinationsResult.data)
+                : ResultState<List<Lot>>.error(
+                    (destinationsResult as Failure<List<Lot>>).error,
+                  );
             emit(
               state.copyWith(
                 loadState: const ResultState.data(null),
                 mutationState: const ResultState.initial(),
                 lot: data,
                 animals: animals,
-                availableDestinations: destinations,
+                destinationsState: destinationsState,
               ),
             );
           case Failure<List<LotAnimalSummary>>(:final error):

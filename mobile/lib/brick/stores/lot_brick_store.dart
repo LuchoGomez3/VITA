@@ -48,11 +48,29 @@ class BrickLotStore implements LotBrickStore {
 
   @override
   Future<BrickLotModel> upsertLocalLot(BrickLotModel lot) async {
+    if (lot.primaryKey == null) {
+      final stored = await _repository.getLocal<BrickLotModel>();
+      final existing = _latestVersionWithId(stored, lot.localId);
+      lot.primaryKey = existing?.primaryKey;
+    }
     final saved = await _repository.upsertLocal(lot);
     if (_enableRemoteSync) {
       unawaited(_repository.enqueueRemoteUpsert<BrickLotModel>(saved));
     }
     return saved;
+  }
+
+  static BrickLotModel? _latestVersionWithId(
+    Iterable<BrickLotModel> stored,
+    String localId,
+  ) {
+    BrickLotModel? latest;
+    for (final lot in stored.where((item) => item.localId == localId)) {
+      if (latest == null || lot.updatedAt.isAfter(latest.updatedAt)) {
+        latest = lot;
+      }
+    }
+    return latest;
   }
 
   @override

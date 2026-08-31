@@ -205,9 +205,9 @@ Además persiste superficie en décimas de hectárea, forraje, agua, estado y lo
 timestamps necesarios para el futuro esquema LWW.
 
 El movimiento entre lotes actualiza la ubicación de los animales y guarda un
-`BrickAnimalLotMovementModel` con origen, destino, animales, fecha y motivo. Si
-falla una escritura, el repositorio intenta restaurar los animales ya
-actualizados para no dejar un traslado parcial.
+`BrickAnimalLotMovementModel` con origen, destino, animales, fecha y motivo.
+Ambas escrituras se ejecutan dentro de una única transacción SQLite para no
+dejar un traslado parcial si alguna operación falla.
 
 Los contratos REST están preparados, pero se encuentran apagados por defecto:
 

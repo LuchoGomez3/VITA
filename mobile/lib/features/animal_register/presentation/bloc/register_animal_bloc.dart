@@ -51,12 +51,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     _DestinationsRequested event,
     Emitter<RegisterAnimalState> emit,
   ) async {
-    emit(
-      state.copyWith(
-        isLoadingDestinations: true,
-        destinationsError: null,
-      ),
-    );
+    emit(state.copyWith(destinationsState: const ResultState.loading()));
     try {
       final destinations = await _registrationContext.loadDestinations();
       final selectedId = state.draft.destinationId;
@@ -65,16 +60,19 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
       );
       emit(
         state.copyWith(
-          destinations: destinations,
-          isLoadingDestinations: false,
+          destinationsState: ResultState.data(destinations),
           draft: selectionStillExists ? state.draft : state.draft.copyWith(destinationId: null),
         ),
       );
     } on Object {
       emit(
         state.copyWith(
-          isLoadingDestinations: false,
-          destinationsError: 'No se pudieron cargar los lotes guardados.',
+          destinationsState: const ResultState.error(
+            DomainException(
+              message: AnimalRegisterStrings.destinationsLoadError,
+              code: DomainErrorCode.offline,
+            ),
+          ),
         ),
       );
     }

@@ -31,7 +31,6 @@ class LotAnimalMovementRepositoryImpl implements LotAnimalMovementRepository {
   Future<Result<LotAnimalMovement>> moveAnimals(
     LotAnimalMovement movement,
   ) async {
-    final originals = <BrickAnimalModel>[];
     try {
       final destination = await _lotStore.getLocalLot(movement.destinationLotId);
       if (destination == null) {
@@ -61,9 +60,8 @@ class LotAnimalMovementRepositoryImpl implements LotAnimalMovementRepository {
         );
       }
 
-      originals.addAll(selected);
-      for (final animal in originals) {
-        await _animalStore.cacheAnimal(
+      final movedAnimals = [
+        for (final animal in selected)
           animal.copyWith(
             lotId: destination.localId,
             lotName: destination.name,
@@ -71,10 +69,10 @@ class LotAnimalMovementRepositoryImpl implements LotAnimalMovementRepository {
             syncStatus: BrickAnimalSyncStatus.pending,
             syncErrorCode: null,
           ),
-        );
-      }
-      await _movementStore.save(
-        BrickAnimalLotMovementModel(
+      ];
+      await _movementStore.saveWithAnimals(
+        animals: movedAnimals,
+        movement: BrickAnimalLotMovementModel(
           localId: movement.id,
           establishmentId: movement.establishmentId,
           sourceLotId: movement.sourceLotId,
@@ -91,17 +89,6 @@ class LotAnimalMovementRepositoryImpl implements LotAnimalMovementRepository {
       return Result.success(movement);
     } on Object catch (error, stackTrace) {
       _logger.severe('No se pudo completar el movimiento local.', error, stackTrace);
-      for (final animal in originals) {
-        try {
-          await _animalStore.cacheAnimal(animal);
-        } on Object catch (rollbackError, rollbackStackTrace) {
-          _logger.severe(
-            'No se pudo revertir un animal del movimiento.',
-            rollbackError,
-            rollbackStackTrace,
-          );
-        }
-      }
       return const Result.failure(
         DomainException(
           message: 'No se pudo guardar el movimiento en el dispositivo.',

@@ -71,6 +71,7 @@ dev_dependencies:
   # rules and activating additional ones.
   json_serializable: ^6.9.5
   melos: ^6.3.2
+  sqflite_common_ffi: 2.4.2+1
   very_good_analysis: 9.0.0
 
 # For information on the generic Dart part of this file, see the

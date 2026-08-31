@@ -751,7 +751,7 @@ as String?,
 /// @nodoc
 mixin _$RegisterAnimalState {
 
- RegisterAnimalStep get currentStep; RegisterAnimalDraft get draft; List<AnimalRegistrationDestination> get destinations; bool get isLoadingDestinations; String? get destinationsError; ResultState<RegisteredAnimal> get submitResult;
+ RegisterAnimalStep get currentStep; RegisterAnimalDraft get draft; ResultState<List<AnimalRegistrationDestination>> get destinationsState; ResultState<RegisteredAnimal> get submitResult;
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -762,16 +762,16 @@ $RegisterAnimalStateCopyWith<RegisterAnimalState> get copyWith => _$RegisterAnim
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&const DeepCollectionEquality().equals(other.destinations, destinations)&&(identical(other.isLoadingDestinations, isLoadingDestinations) || other.isLoadingDestinations == isLoadingDestinations)&&(identical(other.destinationsError, destinationsError) || other.destinationsError == destinationsError)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.destinationsState, destinationsState) || other.destinationsState == destinationsState)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,currentStep,draft,const DeepCollectionEquality().hash(destinations),isLoadingDestinations,destinationsError,submitResult);
+int get hashCode => Object.hash(runtimeType,currentStep,draft,destinationsState,submitResult);
 
 @override
 String toString() {
-  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, destinations: $destinations, isLoadingDestinations: $isLoadingDestinations, destinationsError: $destinationsError, submitResult: $submitResult)';
+  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, destinationsState: $destinationsState, submitResult: $submitResult)';
 }
 
 
@@ -782,11 +782,11 @@ abstract mixin class $RegisterAnimalStateCopyWith<$Res>  {
   factory $RegisterAnimalStateCopyWith(RegisterAnimalState value, $Res Function(RegisterAnimalState) _then) = _$RegisterAnimalStateCopyWithImpl;
 @useResult
 $Res call({
- RegisterAnimalStep currentStep, RegisterAnimalDraft draft, List<AnimalRegistrationDestination> destinations, bool isLoadingDestinations, String? destinationsError, ResultState<RegisteredAnimal> submitResult
+ RegisterAnimalStep currentStep, RegisterAnimalDraft draft, ResultState<List<AnimalRegistrationDestination>> destinationsState, ResultState<RegisteredAnimal> submitResult
 });
 
 
-$RegisterAnimalDraftCopyWith<$Res> get draft;$ResultStateCopyWith<RegisteredAnimal, $Res> get submitResult;
+$RegisterAnimalDraftCopyWith<$Res> get draft;$ResultStateCopyWith<List<AnimalRegistrationDestination>, $Res> get destinationsState;$ResultStateCopyWith<RegisteredAnimal, $Res> get submitResult;
 
 }
 /// @nodoc
@@ -799,14 +799,12 @@ class _$RegisterAnimalStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? currentStep = null,Object? draft = null,Object? destinations = null,Object? isLoadingDestinations = null,Object? destinationsError = freezed,Object? submitResult = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? currentStep = null,Object? draft = null,Object? destinationsState = null,Object? submitResult = null,}) {
   return _then(_self.copyWith(
 currentStep: null == currentStep ? _self.currentStep : currentStep // ignore: cast_nullable_to_non_nullable
 as RegisterAnimalStep,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
-as RegisterAnimalDraft,destinations: null == destinations ? _self.destinations : destinations // ignore: cast_nullable_to_non_nullable
-as List<AnimalRegistrationDestination>,isLoadingDestinations: null == isLoadingDestinations ? _self.isLoadingDestinations : isLoadingDestinations // ignore: cast_nullable_to_non_nullable
-as bool,destinationsError: freezed == destinationsError ? _self.destinationsError : destinationsError // ignore: cast_nullable_to_non_nullable
-as String?,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
+as RegisterAnimalDraft,destinationsState: null == destinationsState ? _self.destinationsState : destinationsState // ignore: cast_nullable_to_non_nullable
+as ResultState<List<AnimalRegistrationDestination>>,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
 as ResultState<RegisteredAnimal>,
   ));
 }
@@ -818,6 +816,15 @@ $RegisterAnimalDraftCopyWith<$Res> get draft {
   
   return $RegisterAnimalDraftCopyWith<$Res>(_self.draft, (value) {
     return _then(_self.copyWith(draft: value));
+  });
+}/// Create a copy of RegisterAnimalState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<List<AnimalRegistrationDestination>, $Res> get destinationsState {
+  
+  return $ResultStateCopyWith<List<AnimalRegistrationDestination>, $Res>(_self.destinationsState, (value) {
+    return _then(_self.copyWith(destinationsState: value));
   });
 }/// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
@@ -907,10 +914,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  List<AnimalRegistrationDestination> destinations,  bool isLoadingDestinations,  String? destinationsError,  ResultState<RegisteredAnimal> submitResult)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<RegisteredAnimal> submitResult)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisterAnimalState() when $default != null:
-return $default(_that.currentStep,_that.draft,_that.destinations,_that.isLoadingDestinations,_that.destinationsError,_that.submitResult);case _:
+return $default(_that.currentStep,_that.draft,_that.destinationsState,_that.submitResult);case _:
   return orElse();
 
 }
@@ -928,10 +935,10 @@ return $default(_that.currentStep,_that.draft,_that.destinations,_that.isLoading
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  List<AnimalRegistrationDestination> destinations,  bool isLoadingDestinations,  String? destinationsError,  ResultState<RegisteredAnimal> submitResult)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<RegisteredAnimal> submitResult)  $default,) {final _that = this;
 switch (_that) {
 case _RegisterAnimalState():
-return $default(_that.currentStep,_that.draft,_that.destinations,_that.isLoadingDestinations,_that.destinationsError,_that.submitResult);}
+return $default(_that.currentStep,_that.draft,_that.destinationsState,_that.submitResult);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -945,10 +952,10 @@ return $default(_that.currentStep,_that.draft,_that.destinations,_that.isLoading
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  List<AnimalRegistrationDestination> destinations,  bool isLoadingDestinations,  String? destinationsError,  ResultState<RegisteredAnimal> submitResult)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<RegisteredAnimal> submitResult)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisterAnimalState() when $default != null:
-return $default(_that.currentStep,_that.draft,_that.destinations,_that.isLoadingDestinations,_that.destinationsError,_that.submitResult);case _:
+return $default(_that.currentStep,_that.draft,_that.destinationsState,_that.submitResult);case _:
   return null;
 
 }
@@ -959,21 +966,13 @@ return $default(_that.currentStep,_that.draft,_that.destinations,_that.isLoading
 /// @nodoc
 
 
-class _RegisterAnimalState implements RegisterAnimalState {
-  const _RegisterAnimalState({required this.currentStep, required this.draft, final  List<AnimalRegistrationDestination> destinations = const <AnimalRegistrationDestination>[], this.isLoadingDestinations = false, this.destinationsError, this.submitResult = const ResultState<RegisteredAnimal>.initial()}): _destinations = destinations;
+class _RegisterAnimalState extends RegisterAnimalState {
+  const _RegisterAnimalState({required this.currentStep, required this.draft, this.destinationsState = const ResultState<List<AnimalRegistrationDestination>>.initial(), this.submitResult = const ResultState<RegisteredAnimal>.initial()}): super._();
   
 
 @override final  RegisterAnimalStep currentStep;
 @override final  RegisterAnimalDraft draft;
- final  List<AnimalRegistrationDestination> _destinations;
-@override@JsonKey() List<AnimalRegistrationDestination> get destinations {
-  if (_destinations is EqualUnmodifiableListView) return _destinations;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_destinations);
-}
-
-@override@JsonKey() final  bool isLoadingDestinations;
-@override final  String? destinationsError;
+@override@JsonKey() final  ResultState<List<AnimalRegistrationDestination>> destinationsState;
 @override@JsonKey() final  ResultState<RegisteredAnimal> submitResult;
 
 /// Create a copy of RegisterAnimalState
@@ -986,16 +985,16 @@ _$RegisterAnimalStateCopyWith<_RegisterAnimalState> get copyWith => __$RegisterA
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&const DeepCollectionEquality().equals(other._destinations, _destinations)&&(identical(other.isLoadingDestinations, isLoadingDestinations) || other.isLoadingDestinations == isLoadingDestinations)&&(identical(other.destinationsError, destinationsError) || other.destinationsError == destinationsError)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.destinationsState, destinationsState) || other.destinationsState == destinationsState)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,currentStep,draft,const DeepCollectionEquality().hash(_destinations),isLoadingDestinations,destinationsError,submitResult);
+int get hashCode => Object.hash(runtimeType,currentStep,draft,destinationsState,submitResult);
 
 @override
 String toString() {
-  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, destinations: $destinations, isLoadingDestinations: $isLoadingDestinations, destinationsError: $destinationsError, submitResult: $submitResult)';
+  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, destinationsState: $destinationsState, submitResult: $submitResult)';
 }
 
 
@@ -1006,11 +1005,11 @@ abstract mixin class _$RegisterAnimalStateCopyWith<$Res> implements $RegisterAni
   factory _$RegisterAnimalStateCopyWith(_RegisterAnimalState value, $Res Function(_RegisterAnimalState) _then) = __$RegisterAnimalStateCopyWithImpl;
 @override @useResult
 $Res call({
- RegisterAnimalStep currentStep, RegisterAnimalDraft draft, List<AnimalRegistrationDestination> destinations, bool isLoadingDestinations, String? destinationsError, ResultState<RegisteredAnimal> submitResult
+ RegisterAnimalStep currentStep, RegisterAnimalDraft draft, ResultState<List<AnimalRegistrationDestination>> destinationsState, ResultState<RegisteredAnimal> submitResult
 });
 
 
-@override $RegisterAnimalDraftCopyWith<$Res> get draft;@override $ResultStateCopyWith<RegisteredAnimal, $Res> get submitResult;
+@override $RegisterAnimalDraftCopyWith<$Res> get draft;@override $ResultStateCopyWith<List<AnimalRegistrationDestination>, $Res> get destinationsState;@override $ResultStateCopyWith<RegisteredAnimal, $Res> get submitResult;
 
 }
 /// @nodoc
@@ -1023,14 +1022,12 @@ class __$RegisterAnimalStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? currentStep = null,Object? draft = null,Object? destinations = null,Object? isLoadingDestinations = null,Object? destinationsError = freezed,Object? submitResult = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? currentStep = null,Object? draft = null,Object? destinationsState = null,Object? submitResult = null,}) {
   return _then(_RegisterAnimalState(
 currentStep: null == currentStep ? _self.currentStep : currentStep // ignore: cast_nullable_to_non_nullable
 as RegisterAnimalStep,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
-as RegisterAnimalDraft,destinations: null == destinations ? _self._destinations : destinations // ignore: cast_nullable_to_non_nullable
-as List<AnimalRegistrationDestination>,isLoadingDestinations: null == isLoadingDestinations ? _self.isLoadingDestinations : isLoadingDestinations // ignore: cast_nullable_to_non_nullable
-as bool,destinationsError: freezed == destinationsError ? _self.destinationsError : destinationsError // ignore: cast_nullable_to_non_nullable
-as String?,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
+as RegisterAnimalDraft,destinationsState: null == destinationsState ? _self.destinationsState : destinationsState // ignore: cast_nullable_to_non_nullable
+as ResultState<List<AnimalRegistrationDestination>>,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
 as ResultState<RegisteredAnimal>,
   ));
 }
@@ -1043,6 +1040,15 @@ $RegisterAnimalDraftCopyWith<$Res> get draft {
   
   return $RegisterAnimalDraftCopyWith<$Res>(_self.draft, (value) {
     return _then(_self.copyWith(draft: value));
+  });
+}/// Create a copy of RegisterAnimalState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<List<AnimalRegistrationDestination>, $Res> get destinationsState {
+  
+  return $ResultStateCopyWith<List<AnimalRegistrationDestination>, $Res>(_self.destinationsState, (value) {
+    return _then(_self.copyWith(destinationsState: value));
   });
 }/// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.

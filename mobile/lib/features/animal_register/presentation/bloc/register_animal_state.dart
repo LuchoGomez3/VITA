@@ -58,9 +58,16 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
   const factory RegisterAnimalState({
     required RegisterAnimalStep currentStep,
     required RegisterAnimalDraft draft,
-    @Default(<AnimalRegistrationDestination>[]) List<AnimalRegistrationDestination> destinations,
-    @Default(false) bool isLoadingDestinations,
-    String? destinationsError,
+    @Default(ResultState<List<AnimalRegistrationDestination>>.initial())
+    ResultState<List<AnimalRegistrationDestination>> destinationsState,
     @Default(ResultState<RegisteredAnimal>.initial()) ResultState<RegisteredAnimal> submitResult,
   }) = _RegisterAnimalState;
+
+  const RegisterAnimalState._();
+
+  /// Destinos disponibles cuando la lectura local finalizo correctamente.
+  List<AnimalRegistrationDestination> get destinations => switch (destinationsState) {
+    Data<List<AnimalRegistrationDestination>>(:final data) => data,
+    _ => const [],
+  };
 }

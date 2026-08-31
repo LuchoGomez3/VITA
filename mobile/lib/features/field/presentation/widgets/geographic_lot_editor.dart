@@ -309,11 +309,7 @@ class _LocalDraftBadge extends StatelessWidget {
         ),
         child: Text(
           FieldStrings.localDraftBadge,
-          style: TextStyle(
-            color: AppColors.onPrimary,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-          ),
+          style: AppTypography.mapBadge,
         ),
       ),
     );

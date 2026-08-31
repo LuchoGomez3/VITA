@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
@@ -71,7 +72,7 @@ class RegisterAnimalReviewStep extends StatelessWidget {
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourBirthDateLabel,
-                value: _date(draft.birthDate),
+                value: DateDisplayFormatter.shortDate(draft.birthDate),
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourCategoryLabel,
@@ -119,12 +120,6 @@ class RegisterAnimalReviewStep extends StatelessWidget {
 
   String _visualTag(RegisterAnimalDraft draft) {
     return '${draft.visualTagSeries} ${draft.visualTagNumber}'.trim();
-  }
-
-  String _date(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    return '$day/$month/${date.year}';
   }
 
   String _mother(String? id) {

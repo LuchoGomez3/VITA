@@ -127,6 +127,14 @@ class AppTypography {
     color: AppColors.textSecondary,
   );
 
+  /// Etiquetas compactas superpuestas sobre lienzos y mapas.
+  static const mapBadge = TextStyle(
+    fontFamily: _baseFontFamily,
+    fontSize: 10,
+    fontWeight: FontWeight.w700,
+    color: AppColors.onPrimary,
+  );
+
   /// Texto pequeno con enfasis, util para microcopys o metadata.
   static const mediumEmphasis = TextStyle(
     fontFamily: _baseFontFamily,

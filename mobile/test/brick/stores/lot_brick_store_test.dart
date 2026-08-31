@@ -35,6 +35,26 @@ void main() {
       expect(selected, isEmpty);
     });
   });
+
+  test('copyWith permite limpiar el ultimo error de sincronizacion', () {
+    final rejected =
+        _lot(
+          id: 'sync-lot',
+          establishmentId: 'est-1',
+          name: 'Rechazado',
+        ).copyWith(
+          syncStatus: BrickLotSyncStatus.rejected,
+          syncErrorCode: 'duplicate_name',
+        );
+
+    final synchronized = rejected.copyWith(
+      syncStatus: BrickLotSyncStatus.synchronized,
+      syncErrorCode: null,
+    );
+
+    expect(synchronized.syncErrorCode, isNull);
+    expect(synchronized.syncStatus, BrickLotSyncStatus.synchronized);
+  });
 }
 
 BrickLotModel _lot({

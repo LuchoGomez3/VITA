@@ -14,7 +14,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AppConfig {
 
- String get appName; String get environment; String get backendBaseUrl; bool get enableLogs; bool get enableLotRemoteSync; bool get enableLotMovementRemoteSync;
+ String get appName; String get environment; String get backendBaseUrl; bool get enableLogs;// TODO(field-sync): habilitar estos flags en builds desplegadas solamente
+// después de validar ambos contratos REST y sus pruebas de integración.
+ bool get enableLotRemoteSync; bool get enableLotMovementRemoteSync;
 /// Create a copy of AppConfig
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -218,6 +220,8 @@ class _AppConfig implements AppConfig {
 @override final  String environment;
 @override final  String backendBaseUrl;
 @override@JsonKey() final  bool enableLogs;
+// TODO(field-sync): habilitar estos flags en builds desplegadas solamente
+// después de validar ambos contratos REST y sus pruebas de integración.
 @override@JsonKey() final  bool enableLotRemoteSync;
 @override@JsonKey() final  bool enableLotMovementRemoteSync;
 

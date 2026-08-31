@@ -5,8 +5,8 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
-import 'package:frontend_mayoral/features/field/domain/params/lot_editor_route_data.dart';
 import 'package:frontend_mayoral/features/field/presentation/cubit/lot_overview_cubit.dart';
+import 'package:frontend_mayoral/features/field/presentation/navigation/lot_editor_route_data.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/field_paddock_card.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/field_view_toggle.dart';
@@ -90,12 +90,13 @@ class _FieldMapView extends StatelessWidget {
       child: Column(
         children: [
           if (state.establishments.length > 1) ...[
-            DropdownButtonFormField<String>(
+            AppDropdownFormField<String>(
               initialValue: state.selectedEstablishmentId,
-              decoration: const InputDecoration(labelText: FieldStrings.establishmentSelectorLabel),
-              items: [
+              title: FieldStrings.establishmentSelectorLabel,
+              hintText: FieldStrings.establishmentSelectorLabel,
+              options: [
                 for (final entry in state.establishments.entries)
-                  DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+                  AppDropdownOption(value: entry.key, label: entry.value),
               ],
               onChanged: (value) {
                 if (value != null) context.read<LotOverviewCubit>().selectEstablishment(value);
@@ -113,7 +114,7 @@ class _FieldMapView extends StatelessWidget {
               const SizedBox(width: AppSpacing.xs),
               AppStatusChip(
                 label: FieldStrings.totalHectaresChip(
-                  state.lots.fold<double>(0, (total, lot) => total + lot.surfaceHectares).toStringAsFixed(1),
+                  state.totalHectares.toStringAsFixed(1),
                 ),
               ),
             ],
