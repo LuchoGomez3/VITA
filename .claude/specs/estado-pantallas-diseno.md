@@ -106,14 +106,20 @@ dedicado (mismo criterio que `registrar-establecimiento.md`).
 | Sincronización | [`sincronizacion.md`](./sincronizacion.md) | `screens-other.jsx` | 1 | Es la UI del motor de sync que ya existe en `lib/features/sync` |
 | Ajustes (secciones nuevas sobre `ProfilePage`) | [`ajustes.md`](./ajustes.md) | `screens-other.jsx` | Extiende 1 pantalla existente | No aplica (son datos de preferencias/dispositivos, sin sync) |
 
+## Pendientes sin spec todavía
+
+| Flujo | Archivo de diseño | Pantallas | Offline |
+|---|---|---|---|
+| Mercado (cotizaciones Liniers/Rosgan, $/kg vivo) | `screens-other.jsx` (`MercadoScreen`) | 1 | Offline-first con caché: la última cotización conocida se muestra con su fecha, y la pantalla renderiza igual sin conectividad. El feed nunca puede ser precondición para operar. |
+
+> `MercadoScreen` estuvo fuera de alcance mientras rigió la prohibición de módulo
+> económico en `CLAUDE.md`. Esa restricción se levantó: el módulo económico (ventas,
+> egresos operativos, flujo de caja, valuación de stock, cotizaciones externas y
+> simulación) está dentro de alcance. Falta escribirle el spec y definir la fuente de
+> datos antes de maquetarla.
+
 ## Explícitamente fuera de alcance
 
-- **`MercadoScreen`** (`screens-other.jsx`): cotizaciones Liniers/Rosgan
-  ($/kg vivo). Existe en el archivo de diseño de referencia, pero choca
-  directo con la restricción dura de CLAUDE.md ("no agregar, mencionar ni
-  scaffoldear ningún módulo económico/de precios"). **No implementar bajo
-  ningún concepto**; si el Product Owner lo pide, primero hay que resolver
-  esa contradicción con el Working Agreement, no programarlo directamente.
 - `screens-dark.jsx`: son las mismas 3 pantallas (`DashboardCapataz`,
   `PesajeShell`, `AplicarVacunacion`) con `dark=true`, no pantallas nuevas a
   trackear aparte.
