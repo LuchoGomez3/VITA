@@ -11,8 +11,9 @@
 Hasta ahora no existía forma de persistir la venta de un animal. El backend tenía un
 modelo `Egreso` / `EgresoDetalle` con `TipoEgreso.venta`, `comprador_texto`,
 `peso_total_kg` y `precio_total`, pero era un esqueleto huérfano: sin router, service,
-repository ni schemas, sin tabla creada en Supabase y sin ningún código que lo
-referenciara. El mobile tampoco lo consumía.
+repository ni schemas, y sin ningún código que lo referenciara. El mobile tampoco lo
+consumía. La tabla sí existe en Supabase (la creó `create_all` en su momento), con una
+sola fila de prueba y ningún egreso real.
 
 En paralelo, el PR #44 incorporó `egresos_operativos` (movimientos de caja) y fijó por
 escrito que `egresos` representa "salidas físicas de animales". Quedaron entonces tres
@@ -31,7 +32,10 @@ independientes, en el módulo `api/modules/ventas/`.
 **2. `egresos` se conserva y pierde el valor `venta`.** `TipoEgreso` queda como
 `muerte | baja | traslado_externo`: salidas físicas **no comerciales**. Se le quita el
 `default=TipoEgreso.venta` a `Egreso.tipo`, porque el motivo de una salida siempre es una
-decisión explícita. No se elimina el módulo ni se migran datos: no hay ninguno.
+decisión explícita. No se elimina el módulo ni se migran datos: la tabla existe en
+Supabase con una única fila de prueba cuyo `tipo` es `'Egreso'`, un valor que ni
+siquiera pertenece al enum. No hay ningún egreso real, y menos aún uno de tipo `venta`,
+así que quitar ese valor no deja registros huérfanos.
 
 La frontera queda así:
 
@@ -103,9 +107,9 @@ fuente de datos real.
 - **Extender `Egreso` con los campos comerciales.** Habría mezclado en una tabla la muerte
   de un animal y una operación de venta, con la mitad de las columnas siempre nulas, y
   obligado a validaciones condicionales por `tipo` en cada consulta.
-- **Eliminar el módulo `egresos`.** Era gratis técnicamente (sin API, sin tabla, sin datos),
-  pero habría dejado sin modelo a muerte, baja y traslado externo, y contradice la frontera
-  que el equipo acababa de fijar por escrito en el PR #44.
+- **Eliminar el módulo `egresos`.** Era casi gratis técnicamente (sin API, y con una sola
+  fila de prueba en Supabase), pero habría dejado sin modelo a muerte, baja y traslado
+  externo, y contradice la frontera que el equipo acababa de fijar por escrito en el PR #44.
 
 ## Pendiente de validación
 
