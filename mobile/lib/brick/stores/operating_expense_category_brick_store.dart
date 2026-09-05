@@ -56,13 +56,7 @@ class BrickOperatingExpenseCategoryStore implements OperatingExpenseCategoryBric
     required String type,
   }) async {
     final stored = await _repository.getLocal<BrickOperatingExpenseCategoryModel>();
-    final byId = <String, BrickOperatingExpenseCategoryModel>{};
-    for (final category in stored) {
-      final current = byId[category.localId];
-      if (current == null || category.updatedAt.isAfter(current.updatedAt)) {
-        byId[category.localId] = category;
-      }
-    }
+    final byId = _latestById(stored);
     return byId.values
         .where(
           (category) =>
@@ -74,21 +68,41 @@ class BrickOperatingExpenseCategoryStore implements OperatingExpenseCategoryBric
   @override
   Future<BrickOperatingExpenseCategoryModel?> getById(String id) async {
     final stored = await _repository.getLocal<BrickOperatingExpenseCategoryModel>();
-    for (final category in stored.reversed) {
-      if (category.localId == id) return category;
-    }
-    return null;
+    return selectLatestById(stored, id);
   }
+
+  /// Selecciona por UUID la version con `updatedAt` mas reciente.
+  static BrickOperatingExpenseCategoryModel? selectLatestById(
+    Iterable<BrickOperatingExpenseCategoryModel> stored,
+    String id,
+  ) => _latestById(stored)[id];
 
   @override
   Future<void> cacheRemoteCategories(Iterable<BrickOperatingExpenseCategoryModel> categories) async {
     final stored = await _repository.getLocal<BrickOperatingExpenseCategoryModel>();
-    final byId = {for (final item in stored) item.localId: item};
+    final byId = _latestById(stored);
     for (final category in categories) {
       final current = byId[category.localId];
       if (current != null && current.updatedAt.isAfter(category.updatedAt)) continue;
-      await _repository.upsertLocal(category..primaryKey = current?.primaryKey);
+      final reconciled = category.copyWith(
+        syncStatus: BrickOperatingExpenseCategorySyncStatus.synchronized,
+      )..primaryKey = current?.primaryKey;
+      await _repository.upsertLocal(reconciled);
+      byId[category.localId] = reconciled;
     }
+  }
+
+  static Map<String, BrickOperatingExpenseCategoryModel> _latestById(
+    Iterable<BrickOperatingExpenseCategoryModel> stored,
+  ) {
+    final byId = <String, BrickOperatingExpenseCategoryModel>{};
+    for (final category in stored) {
+      final current = byId[category.localId];
+      if (current == null || category.updatedAt.isAfter(current.updatedAt)) {
+        byId[category.localId] = category;
+      }
+    }
+    return byId;
   }
 
   Future<void> _applySyncResult(BackendSyncResult result) async {

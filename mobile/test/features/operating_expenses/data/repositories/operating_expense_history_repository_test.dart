@@ -70,7 +70,13 @@ void main() {
       ]);
       final remote = _RemoteSource(
         page: OperatingExpenseRemotePage(
-          expenses: [_expense(id: 'confirmed', amount: '100.00', updatedAt: DateTime(2026, 8, 27))],
+          expenses: [
+            _remoteExpense(
+              id: 'confirmed',
+              amount: '100.00',
+              updatedAt: DateTime(2026, 8, 27),
+            ),
+          ],
           totalCents: 10000,
         ),
       );
@@ -99,7 +105,7 @@ void main() {
       final remote = _RemoteSource(
         page: OperatingExpenseRemotePage(
           expenses: [
-            _expense(
+            _remoteExpense(
               id: 'edited-offline',
               amount: '100.00',
               updatedAt: DateTime.utc(2026, 8, 26),
@@ -120,16 +126,50 @@ void main() {
       expect(history.expenses.single.amountCents, 15000);
     });
 
+    test('elimina de la vista una copia remota que dejo de coincidir', () async {
+      final store = _ExpenseStore([
+        _expense(
+          id: 'moved',
+          amount: '100.00',
+          updatedAt: DateTime.utc(2026, 8, 26),
+        ),
+      ]);
+      final remote = _RemoteSource(
+        page: OperatingExpenseRemotePage(
+          expenses: [
+            _remoteExpense(
+              id: 'moved',
+              amount: '100.00',
+              category: 'alimentacion',
+              updatedAt: DateTime.utc(2026, 8, 27),
+            ),
+          ],
+          totalCents: 10000,
+        ),
+      );
+
+      final result = await _repository(store, remote: remote).refreshHistory(
+        establishmentId: 'establishment-id',
+        filters: const OperatingExpenseFilters(
+          period: OperatingExpensePeriod.allHistory,
+          category: 'sanidad',
+        ),
+      );
+
+      final history = (result as Success<OperatingExpenseHistory>).data;
+      expect(history.expenses, isEmpty);
+      expect(history.totalCents, 0);
+    });
+
     test('reconcilia categorias personalizadas del catalogo', () async {
       final remote = _RemoteSource(
         catalog: const [
           OperatingExpenseRemoteCatalogType(
-            type: OperatingExpenseType.productionCost,
+            type: 'costo_produccion',
             categories: [
-              OperatingExpenseCategory(
+              OperatingExpenseRemoteCategory(
                 value: 'reparacion_manga',
                 label: 'Reparación de manga',
-                type: OperatingExpenseType.productionCost,
                 custom: true,
               ),
             ],
@@ -150,7 +190,7 @@ OperatingExpenseRepositoryImpl _repository(_ExpenseStore store, {_RemoteSource? 
     OperatingExpenseRepositoryImpl(
       expenseStore: store,
       categoryStore: _CategoryStore(),
-      remoteDataSource: remote,
+      remoteDataSource: remote ?? _RemoteSource(),
       now: () => DateTime.utc(2026, 8, 26),
     );
 
@@ -174,6 +214,23 @@ BrickOperatingExpenseModel _expense({
   createdAt: DateTime.utc(2026, 8, 26),
   updatedAt: updatedAt ?? DateTime.utc(2026, 8, 26),
   syncStatus: syncStatus,
+);
+
+OperatingExpenseRemoteDto _remoteExpense({
+  required String id,
+  required String amount,
+  String category = 'sanidad',
+  DateTime? updatedAt,
+}) => OperatingExpenseRemoteDto(
+  id: id,
+  establishmentId: 'establishment-id',
+  amount: amount,
+  type: 'costo_produccion',
+  category: category,
+  supply: id,
+  date: DateTime(2026, 8, 26),
+  createdAt: DateTime.utc(2026, 8, 26),
+  updatedAt: updatedAt ?? DateTime.utc(2026, 8, 26),
 );
 
 class _ExpenseStore implements OperatingExpenseBrickStore {

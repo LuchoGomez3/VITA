@@ -94,9 +94,7 @@ class EstablecimientoService:
 
         return self._representar_con_rol(establecimiento, RolUsuario.owner)
 
-    async def listar(
-        self, current_user: Usuario
-    ) -> list[EstablecimientoConRolRead]:
+    async def listar(self, current_user: Usuario) -> list[EstablecimientoConRolRead]:
         establecimientos = await self.repository.list_by_usuario(current_user.id)
         return [
             self._representar_con_rol(establecimiento, rol)

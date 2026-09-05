@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
@@ -26,6 +28,36 @@ void main() {
   });
 
   tearDown(() => cubit.close());
+
+  for (final stage in ['localCatalog', 'localHistory', 'remoteHistory', 'remoteCatalog', 'export']) {
+    for (final fail in [false, true]) {
+      test('ignora ${fail ? 'error' : 'respuesta'} de $stage despues del cierre', () async {
+        final started = Completer<void>();
+        final response = Completer<void>();
+        final calls = <String>[];
+        repository
+          ..beforeResponse = (currentStage) async {
+            calls.add(currentStage);
+            if (currentStage == stage) {
+              if (!started.isCompleted) started.complete();
+              await response.future;
+            }
+          }
+          ..failedStage = fail ? stage : null;
+
+        final operation = stage == 'export' ? cubit.exportCsv() : cubit.load();
+        await started.future;
+        await cubit.close();
+        final closedState = cubit.state;
+        final callsAtClose = List<String>.of(calls);
+        response.complete();
+
+        await expectLater(operation, completes);
+        expect(cubit.state, closedState);
+        expect(calls, callsAtClose);
+      });
+    }
+  }
 
   test('abre con mes actual y total consolidado correspondiente', () async {
     await cubit.load();
@@ -70,6 +102,13 @@ void main() {
 }
 
 class _HistoryRepository implements OperatingExpenseRepository {
+  Future<void> Function(String)? beforeResponse;
+  String? failedStage;
+
+  Result<T> _result<T>(String stage, T data) => failedStage == stage
+      ? const Result.failure(DomainException(message: 'Sin conexion', code: DomainErrorCode.offline))
+      : Result.success(data);
+
   OperatingExpenseFilters? lastFilters;
   OperatingExpenseFilters? exportedFilters;
   String? exportedEstablishmentId;
@@ -105,7 +144,10 @@ class _HistoryRepository implements OperatingExpenseRepository {
   Future<Result<OperatingExpenseHistory>> getLocalHistory({
     required String establishmentId,
     required OperatingExpenseFilters filters,
-  }) async => Result.success(_history(filters, cached: true));
+  }) async {
+    await beforeResponse?.call('localHistory');
+    return _result('localHistory', _history(filters, cached: true));
+  }
 
   @override
   Future<Result<OperatingExpenseHistory>> refreshHistory({
@@ -113,7 +155,8 @@ class _HistoryRepository implements OperatingExpenseRepository {
     required OperatingExpenseFilters filters,
   }) async {
     lastFilters = filters;
-    return Result.success(_history(filters, cached: false));
+    await beforeResponse?.call('remoteHistory');
+    return _result('remoteHistory', _history(filters, cached: false));
   }
 
   OperatingExpenseHistory _history(OperatingExpenseFilters filters, {required bool cached}) {
@@ -134,30 +177,36 @@ class _HistoryRepository implements OperatingExpenseRepository {
   Future<Result<List<OperatingExpenseCategory>>> getCategories({
     required String establishmentId,
     required OperatingExpenseType type,
-  }) async => Result.success(
-    type == OperatingExpenseType.productionCost
-        ? const [
-            OperatingExpenseCategory(value: 'sanidad', label: 'Sanidad', type: OperatingExpenseType.productionCost),
-          ]
-        : const [
-            OperatingExpenseCategory(
-              value: 'combustible',
-              label: 'Combustible',
-              type: OperatingExpenseType.administrativeExpense,
-            ),
-          ],
-  );
+  }) async {
+    await beforeResponse?.call('localCatalog');
+    return _result(
+      'localCatalog',
+      type == OperatingExpenseType.productionCost
+          ? const [
+              OperatingExpenseCategory(value: 'sanidad', label: 'Sanidad', type: OperatingExpenseType.productionCost),
+            ]
+          : const [
+              OperatingExpenseCategory(
+                value: 'combustible',
+                label: 'Combustible',
+                type: OperatingExpenseType.administrativeExpense,
+              ),
+            ],
+    );
+  }
 
   @override
-  Future<Result<List<OperatingExpenseCategory>>> refreshCategories({required String establishmentId}) async =>
-      const Result.success([
-        OperatingExpenseCategory(value: 'sanidad', label: 'Sanidad', type: OperatingExpenseType.productionCost),
-        OperatingExpenseCategory(
-          value: 'combustible',
-          label: 'Combustible',
-          type: OperatingExpenseType.administrativeExpense,
-        ),
-      ]);
+  Future<Result<List<OperatingExpenseCategory>>> refreshCategories({required String establishmentId}) async {
+    await beforeResponse?.call('remoteCatalog');
+    return _result('remoteCatalog', const [
+      OperatingExpenseCategory(value: 'sanidad', label: 'Sanidad', type: OperatingExpenseType.productionCost),
+      OperatingExpenseCategory(
+        value: 'combustible',
+        label: 'Combustible',
+        type: OperatingExpenseType.administrativeExpense,
+      ),
+    ]);
+  }
 
   @override
   Future<Result<OperatingExpenseExport>> exportHistory({
@@ -166,7 +215,9 @@ class _HistoryRepository implements OperatingExpenseRepository {
   }) async {
     exportedEstablishmentId = establishmentId;
     exportedFilters = filters;
-    return Result.success(
+    await beforeResponse?.call('export');
+    return _result(
+      'export',
       OperatingExpenseExport(bytes: Uint8List.fromList([1]), filename: 'egresos_operativos.csv', mediaType: 'text/csv'),
     );
   }

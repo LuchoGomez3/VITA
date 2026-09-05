@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:brick_offline_first/brick_offline_first.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
@@ -5,8 +7,11 @@ import 'package:frontend_mayoral/brick/models/operating_expense_category.model.d
 import 'package:frontend_mayoral/brick/stores/operating_expense_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/operating_expense_category_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/features/operating_expenses/data/datasources/operating_expense_remote_data_source.dart';
+import 'package:frontend_mayoral/features/operating_expenses/data/models/operating_expense_remote_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/data/repositories/operating_expense_repository_impl.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
+import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
 
 void main() {
@@ -39,7 +44,7 @@ void main() {
 
       expect(
         (result as Failure<List<OperatingExpenseCategory>>).error.reason,
-        OperatingExpensePersistenceError.loadCategories,
+        OperatingExpenseFailure.loadCategories,
       );
     });
 
@@ -66,6 +71,7 @@ OperatingExpenseRepositoryImpl _repository({
 }) => OperatingExpenseRepositoryImpl(
   expenseStore: _FakeExpenseStore(),
   categoryStore: categoryStore,
+  remoteDataSource: _UnusedRemoteSource(),
 );
 
 class _FakeCategoryStore implements OperatingExpenseCategoryBrickStore {
@@ -89,6 +95,29 @@ class _FakeCategoryStore implements OperatingExpenseCategoryBrickStore {
   Future<BrickOperatingExpenseCategoryModel> upsertCategory(
     BrickOperatingExpenseCategoryModel category,
   ) => throw UnimplementedError();
+}
+
+class _UnusedRemoteSource implements OperatingExpenseRemoteDataSource {
+  @override
+  Future<OperatingExpenseRemotePage> getExpenses(
+    String establishmentId,
+    OperatingExpenseFilters filters,
+  ) => throw UnimplementedError();
+
+  @override
+  Future<List<OperatingExpenseRemoteCatalogType>> getCatalog(
+    String establishmentId,
+  ) => throw UnimplementedError();
+
+  @override
+  Future<OperatingExpenseExport> export(
+    String establishmentId,
+    OperatingExpenseFilters filters,
+  ) async => OperatingExpenseExport(
+    bytes: Uint8List(0),
+    filename: 'unused.csv',
+    mediaType: 'text/csv',
+  );
 }
 
 class _FakeExpenseStore implements OperatingExpenseBrickStore {

@@ -117,6 +117,9 @@ La clave `SecureStorageKeys.authSession` contiene un JSON versionado con:
 No se guardan passwords. Tampoco se guarda el token dentro de SQLite/Brick.
 Los roles no forman parte de la sesion: se persisten por establecimiento en
 `SecureStorageKeys.establishmentCatalog` durante la sincronizacion inicial.
+El contrato vigente entre backend y mobile usa `admin`, `owner` y `employee`.
+El valor local `unknown` no es un rol de negocio: permite fallar cerrado cuando
+el catalogo falta, esta corrupto o contiene un valor que esta version no conoce.
 
 ## Arranque offline
 

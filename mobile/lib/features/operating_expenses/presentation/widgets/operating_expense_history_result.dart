@@ -24,7 +24,9 @@ class OperatingExpenseHistoryResult extends StatelessWidget {
       Data<OperatingExpenseHistory>(:final data) => _ExpenseList(history: data),
       ResultError<OperatingExpenseHistory>(:final error) => SliverFillRemaining(
         hasScrollBody: false,
-        child: _HistoryError(message: error.message),
+        child: _HistoryError(
+          message: OperatingExpenseStrings.failureMessage(error),
+        ),
       ),
       _ => const SliverFillRemaining(
         hasScrollBody: false,

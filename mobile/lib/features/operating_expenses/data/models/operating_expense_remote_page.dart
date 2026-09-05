@@ -1,32 +1,57 @@
-import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
-import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'operating_expense_remote_page.freezed.dart';
 
 /// Respuesta remota tipada antes de reconciliarla con SQLite.
-class OperatingExpenseRemotePage {
+@freezed
+sealed class OperatingExpenseRemotePage with _$OperatingExpenseRemotePage {
   /// Crea una pagina con total central exacto y modelos sincronizados.
-  const OperatingExpenseRemotePage({
-    required this.expenses,
-    required this.totalCents,
-  });
-
-  /// Registros devueltos por el backend, incluidos tombstones solicitados.
-  final List<BrickOperatingExpenseModel> expenses;
-
-  /// Total consolidado informado por `meta.total_egresos`.
-  final int totalCents;
+  const factory OperatingExpenseRemotePage({
+    required List<OperatingExpenseRemoteDto> expenses,
+    required int totalCents,
+  }) = _OperatingExpenseRemotePage;
 }
 
-/// Tipo y categorias devueltos por el catalogo central.
-class OperatingExpenseRemoteCatalogType {
-  /// Crea un grupo del catalogo.
-  const OperatingExpenseRemoteCatalogType({
-    required this.type,
-    required this.categories,
-  });
+/// DTO de un egreso recibido desde HTTP, independiente de Brick y dominio.
+@freezed
+sealed class OperatingExpenseRemoteDto with _$OperatingExpenseRemoteDto {
+  /// Crea un egreso remoto validado por el datasource.
+  const factory OperatingExpenseRemoteDto({
+    required String id,
+    required String establishmentId,
+    required String amount,
+    required String type,
+    required String category,
+    required String supply,
+    required DateTime date,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    String? description,
+    String? receiptNumber,
+    String? loadedById,
+    String? loadedByName,
+    DateTime? deletedAt,
+  }) = _OperatingExpenseRemoteDto;
+}
 
-  /// Clasificacion contable del grupo.
-  final OperatingExpenseType type;
+/// DTO de un tipo y sus categorias devueltos por el catalogo central.
+@freezed
+sealed class OperatingExpenseRemoteCatalogType with _$OperatingExpenseRemoteCatalogType {
+  /// Crea un grupo remoto validado.
+  const factory OperatingExpenseRemoteCatalogType({
+    required String type,
+    required List<OperatingExpenseRemoteCategory> categories,
+  }) = _OperatingExpenseRemoteCatalogType;
+}
 
-  /// Categorias base y personalizadas del backend.
-  final List<OperatingExpenseCategory> categories;
+/// DTO de una categoria del catalogo financiero.
+@freezed
+sealed class OperatingExpenseRemoteCategory with _$OperatingExpenseRemoteCategory {
+  /// Crea una categoria remota validada.
+  const factory OperatingExpenseRemoteCategory({
+    required String value,
+    required String label,
+    required bool custom,
+    String? id,
+  }) = _OperatingExpenseRemoteCategory;
 }

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
-import 'package:frontend_mayoral/core/authentication/user_role_strings.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
 import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_cubit.dart';
@@ -72,7 +71,6 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
             onSelected: _selectEstablishment,
             onIdentifyAnimal: _identifyAnimal,
           ),
-          const _SelectedEstablishmentRoleIndicator(),
           Expanded(
             child: _HomeDashboardBody(
               onEstablishmentSelectionRequested: _openSelector,
@@ -132,39 +130,6 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
       _ => HomeStrings.goodEvening,
     };
     return '$greeting, $name';
-  }
-}
-
-class _SelectedEstablishmentRoleIndicator extends StatelessWidget {
-  const _SelectedEstablishmentRoleIndicator();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
-      buildWhen: (previous, current) =>
-          previous.selectedEstablishmentId != current.selectedEstablishmentId ||
-          previous.establishments != current.establishments,
-      builder: (context, state) {
-        final membership = state.establishments[state.selectedEstablishmentId];
-        if (membership == null) {
-          return const SizedBox.shrink();
-        }
-        final label = '${HomeStrings.roleLabel}: ${UserRoleStrings.name(membership.role)}';
-        return Semantics(
-          label: label,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            color: Theme.of(context).colorScheme.secondaryContainer,
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-          ),
-        );
-      },
-    );
   }
 }
 

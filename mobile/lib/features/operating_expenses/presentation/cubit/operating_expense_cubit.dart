@@ -5,7 +5,6 @@ import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/utils/uuid_v4.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
-import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/use_cases/operating_expense_use_cases.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/strings/operating_expense_strings.dart';
 
@@ -168,9 +167,5 @@ class OperatingExpenseCubit extends Cubit<OperatingExpenseState> {
     }
   }
 
-  String _messageFor(DomainException error) => switch (error.reason) {
-    final OperatingExpenseValidationError reason => OperatingExpenseStrings.validationError(reason),
-    final OperatingExpensePersistenceError reason => OperatingExpenseStrings.persistenceError(reason),
-    _ => error.message,
-  };
+  String _messageFor(DomainException error) => OperatingExpenseStrings.failureMessage(error);
 }

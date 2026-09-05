@@ -1,13 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/formatters/decimal_amount_formatter.dart';
 import 'package:frontend_mayoral/features/operating_expenses/data/models/operating_expense_remote_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/data/services/operating_expense_api_service.dart';
-import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
+import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
 import 'package:http/http.dart' as http;
 
 /// Interpreta respuestas HTTP de egresos sin exponer JSON al repositorio.
@@ -71,11 +70,11 @@ class OperatingExpenseRemoteDataSource {
     throw _invalidResponse();
   }
 
-  BrickOperatingExpenseModel _expenseFrom(Object? raw) {
+  OperatingExpenseRemoteDto _expenseFrom(Object? raw) {
     if (raw is! Map<String, dynamic>) throw _invalidResponse();
     final loadedBy = raw['cargado_por'];
-    return BrickOperatingExpenseModel(
-      localId: _string(raw, 'id'),
+    return OperatingExpenseRemoteDto(
+      id: _string(raw, 'id'),
       establishmentId: _string(raw, 'establecimiento_id'),
       amount: _string(raw, 'monto'),
       type: _string(raw, 'tipo'),
@@ -85,29 +84,26 @@ class OperatingExpenseRemoteDataSource {
       description: _nullableString(raw, 'descripcion'),
       receiptNumber: _nullableString(raw, 'numero_comprobante'),
       loadedById: _nullableString(raw, 'cargado_por_id'),
-      loadedByName: brickOperatingExpenseLoadedByName(loadedBy),
+      loadedByName: _loadedByName(loadedBy),
       createdAt: _date(raw, 'created_at'),
       updatedAt: _date(raw, 'updated_at'),
       deletedAt: _nullableDate(raw, 'deleted_at'),
-      syncStatus: BrickOperatingExpenseSyncStatus.synchronized,
     );
   }
 
   OperatingExpenseRemoteCatalogType _catalogTypeFrom(Object? raw) {
     if (raw is! Map<String, dynamic>) throw _invalidResponse();
     final typeValue = _string(raw, 'valor');
-    final type = OperatingExpenseType.values.where((item) => item.value == typeValue).firstOrNull;
     final categories = raw['categorias'];
-    if (type == null || categories is! List) throw _invalidResponse();
+    if (categories is! List) throw _invalidResponse();
     return OperatingExpenseRemoteCatalogType(
-      type: type,
+      type: typeValue,
       categories: categories
           .map((item) {
             if (item is! Map<String, dynamic>) throw _invalidResponse();
-            return OperatingExpenseCategory(
+            return OperatingExpenseRemoteCategory(
               value: _string(item, 'valor'),
               label: _string(item, 'etiqueta'),
-              type: type,
               custom: item['personalizada'] == true,
               id: _nullableString(item, 'id'),
             );
@@ -140,5 +136,18 @@ class OperatingExpenseRemoteDataSource {
 
   String? _filename(String? disposition) => RegExp('filename="?([^";]+)').firstMatch(disposition ?? '')?.group(1);
 
-  DomainException _invalidResponse() => const DomainException(message: 'El backend devolvio egresos no validos.');
+  String? _loadedByName(Object? data) {
+    if (data is! Map<String, dynamic>) return null;
+    final firstName = data['nombre'] is String ? data['nombre']! as String : '';
+    final lastName = data['apellido'] is String ? data['apellido']! as String : '';
+    final fullName = '$firstName $lastName'.trim();
+    if (fullName.isNotEmpty) return fullName;
+    final email = data['email'];
+    return email is String && email.isNotEmpty ? email : null;
+  }
+
+  DomainException _invalidResponse() => const DomainException(
+    message: 'invalidResponse',
+    reason: OperatingExpenseFailure.invalidResponse,
+  );
 }

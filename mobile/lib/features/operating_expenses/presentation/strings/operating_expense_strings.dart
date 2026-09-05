@@ -1,6 +1,6 @@
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
-import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_failure_messages.dart';
 
 /// Textos centralizados de egresos operativos.
 class OperatingExpenseStrings {
@@ -77,10 +77,12 @@ class OperatingExpenseStrings {
   static const emptyHistory = 'Todavía no hay egresos registrados';
   static const emptyFilters = 'No encontramos egresos para los filtros seleccionados';
   static const loadHistoryError = 'No se pudo cargar el historial de egresos.';
-  static const remoteError = OperatingExpenseFailureMessages.remote;
-  static const offlineMessage = OperatingExpenseFailureMessages.offline;
-  static const sessionExpired = OperatingExpenseFailureMessages.sessionExpired;
-  static const accessDenied = OperatingExpenseFailureMessages.accessDenied;
+  static const remoteError = 'El servidor no pudo completar la solicitud.';
+  static const offlineMessage = 'Sin conexión. Se mantienen visibles los datos guardados en el dispositivo.';
+  static const sessionExpired = 'Tu sesión venció. Volvé a iniciar sesión.';
+  static const accessDenied =
+      'Acceso denegado. No posee los privilegios necesarios para visualizar información financiera';
+  static const invalidResponse = 'No se pudo interpretar la respuesta del servidor.';
   static const conceptLabel = 'Concepto del egreso';
   static const registeredBy = 'Registrado por';
   static const receiptLabel = 'Comprobante';
@@ -98,15 +100,26 @@ class OperatingExpenseStrings {
   };
 
   /// Traduce una falla esperada de persistencia a un mensaje funcional.
-  static String persistenceError(OperatingExpensePersistenceError error) => switch (error) {
-    OperatingExpensePersistenceError.saveExpense => saveError,
-    OperatingExpensePersistenceError.saveCategory => saveCategoryError,
-    OperatingExpensePersistenceError.loadCategories => loadCategoriesError,
-    OperatingExpensePersistenceError.loadHistory => loadHistoryError,
-    OperatingExpensePersistenceError.refreshHistory => remoteError,
-    OperatingExpensePersistenceError.exportOffline => exportPendingWarning,
-    OperatingExpensePersistenceError.financialAccessDenied => accessDenied,
-    OperatingExpensePersistenceError.exportFailed => exportError,
+  static String failure(OperatingExpenseFailure error) => switch (error) {
+    OperatingExpenseFailure.saveExpense => saveError,
+    OperatingExpenseFailure.saveCategory => saveCategoryError,
+    OperatingExpenseFailure.loadCategories => loadCategoriesError,
+    OperatingExpenseFailure.loadHistory => loadHistoryError,
+    OperatingExpenseFailure.refreshHistory || OperatingExpenseFailure.remote => remoteError,
+    OperatingExpenseFailure.offline => offlineMessage,
+    OperatingExpenseFailure.unauthorized => sessionExpired,
+    OperatingExpenseFailure.accessDenied => accessDenied,
+    OperatingExpenseFailure.invalidResponse => invalidResponse,
+    OperatingExpenseFailure.exportFailed => exportError,
+  };
+
+  /// Traduce cualquier falla de la feature sin exponer mensajes tecnicos.
+  static String failureMessage(DomainException error) => switch (error.reason) {
+    final OperatingExpenseValidationError reason => validationError(reason),
+    final OperatingExpenseFailure reason => failure(reason),
+    _ when error.code == DomainErrorCode.offline => offlineMessage,
+    _ when error.code == DomainErrorCode.unauthorized => sessionExpired,
+    _ => remoteError,
   };
 
   /// Etiqueta visible para cada periodo.

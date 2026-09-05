@@ -61,8 +61,7 @@ class EstablecimientoRepository:
             .order_by(Establecimiento.created_at)
         )
         return [
-            (establecimiento, RolUsuario(rol))
-            for establecimiento, rol in result.all()
+            (establecimiento, RolUsuario(rol)) for establecimiento, rol in result.all()
         ]
 
 

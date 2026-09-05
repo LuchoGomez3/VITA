@@ -39,6 +39,37 @@ class EstablishmentCatalog {
     return null;
   }
 
+  /// Agrega o reemplaza una membresia sin descartar el resto del catalogo.
+  Future<void> upsert(
+    EstablishmentMembership membership, {
+    Map<String, Object?> metadata = const {},
+  }) async {
+    final encoded = await _secureStorage.read(
+      SecureStorageKeys.establishmentCatalog,
+    );
+    final entries = <Map<String, dynamic>>[];
+    if (encoded != null && encoded.isNotEmpty) {
+      final decoded = jsonDecode(encoded);
+      if (decoded is! List) {
+        throw const FormatException('Invalid establishment catalog.');
+      }
+      entries.addAll(decoded.whereType<Map<String, dynamic>>());
+    }
+
+    entries
+      ..removeWhere((entry) => entry['id'] == membership.id)
+      ..add({
+        ...metadata,
+        'id': membership.id,
+        'name': membership.name,
+        'role': membership.role.backendValue,
+      });
+    await _secureStorage.write(
+      key: SecureStorageKeys.establishmentCatalog,
+      value: jsonEncode(entries),
+    );
+  }
+
   EstablishmentMembership? _fromJson(Map<String, dynamic> json) {
     final id = json['id'];
     final name = json['name'];

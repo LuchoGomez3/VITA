@@ -53,7 +53,9 @@ class OperatingExpenseHistoryCubit extends Cubit<OperatingExpenseHistoryState> {
   /// Muestra SQLite enseguida y refresca backend en segundo plano.
   Future<void> load() async {
     await _loadLocalCatalog();
+    if (isClosed) return;
     await _showLocalThenRefresh(showLoadingWhenEmpty: true);
+    if (isClosed) return;
     await _refreshRemoteCatalog();
   }
 
@@ -122,6 +124,7 @@ class OperatingExpenseHistoryCubit extends Cubit<OperatingExpenseHistoryState> {
     if (state.export is Loading<OperatingExpenseExport>) return;
     emit(state.copyWith(export: const ResultState.loading(), message: null));
     final result = await _exportExpenses(establishmentId, state.filters);
+    if (isClosed) return;
     switch (result) {
       case Success<OperatingExpenseExport>(:final data):
         emit(state.copyWith(export: ResultState.data(data), message: OperatingExpenseStrings.exportSuccess));
@@ -136,7 +139,7 @@ class OperatingExpenseHistoryCubit extends Cubit<OperatingExpenseHistoryState> {
   Future<void> _showLocalThenRefresh({required bool showLoadingWhenEmpty}) async {
     final version = ++_requestVersion;
     final local = await _getHistory.local(establishmentId, state.filters);
-    if (version != _requestVersion) return;
+    if (isClosed || version != _requestVersion) return;
     switch (local) {
       case Success<OperatingExpenseHistory>(:final data):
         emit(state.copyWith(history: ResultState.data(data), refreshing: true, message: null));
@@ -149,7 +152,7 @@ class OperatingExpenseHistoryCubit extends Cubit<OperatingExpenseHistoryState> {
 
   Future<void> _refreshRemote(int version) async {
     final result = await _getHistory.refresh(establishmentId, state.filters);
-    if (version != _requestVersion) return;
+    if (isClosed || version != _requestVersion) return;
     switch (result) {
       case Success<OperatingExpenseHistory>(:final data):
         emit(state.copyWith(history: ResultState.data(data), refreshing: false, message: null));
@@ -162,6 +165,7 @@ class OperatingExpenseHistoryCubit extends Cubit<OperatingExpenseHistoryState> {
     final results = await Future.wait(
       OperatingExpenseType.values.map((type) => _localCatalog.getCategories(establishmentId, type)),
     );
+    if (isClosed) return;
     final categories = results
         .whereType<Success<List<OperatingExpenseCategory>>>()
         .expand((item) => item.data)
@@ -171,13 +175,13 @@ class OperatingExpenseHistoryCubit extends Cubit<OperatingExpenseHistoryState> {
 
   Future<void> _refreshRemoteCatalog() async {
     final result = await _refreshCatalog(establishmentId);
+    if (isClosed) return;
     if (result case Success<List<OperatingExpenseCategory>>(:final data)) {
       emit(state.copyWith(categories: data));
     }
   }
 
-  String _messageFor(DomainException error) =>
-      error.code == DomainErrorCode.offline ? OperatingExpenseStrings.offlineMessage : error.message;
+  String _messageFor(DomainException error) => OperatingExpenseStrings.failureMessage(error);
 
   DateTime _day(DateTime value) => DateTime(value.year, value.month, value.day);
 }

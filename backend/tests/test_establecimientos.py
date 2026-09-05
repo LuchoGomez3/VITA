@@ -192,9 +192,7 @@ async def test_listado_y_detalle_incluyen_rol_admin(
     assert listado.status_code == 200
     assert establecimiento["rol"] == "admin"
 
-    detalle = await auth_client.get(
-        f"/api/v1/establecimientos/{establecimiento_id}"
-    )
+    detalle = await auth_client.get(f"/api/v1/establecimientos/{establecimiento_id}")
     assert detalle.status_code == 200
     assert detalle.json()["data"]["rol"] == "admin"
 

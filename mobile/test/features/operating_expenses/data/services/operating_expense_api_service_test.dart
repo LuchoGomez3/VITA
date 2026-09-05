@@ -4,7 +4,7 @@ import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/features/operating_expenses/data/services/operating_expense_api_service.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
-import 'package:frontend_mayoral/features/operating_expenses/presentation/strings/operating_expense_strings.dart';
+import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -81,7 +81,7 @@ void main() {
     expect(calls, 2);
   });
 
-  test('mapea el codigo 403 financiero al mensaje requerido', () async {
+  test('mapea el codigo 403 financiero a una falla tipada', () async {
     final service = _service(
       tokenProvider,
       MockClient(
@@ -96,9 +96,9 @@ void main() {
       () => service.getCatalog('establishment-id'),
       throwsA(
         isA<DomainException>().having(
-          (error) => error.message,
-          'message',
-          OperatingExpenseStrings.accessDenied,
+          (error) => error.reason,
+          'reason',
+          OperatingExpenseFailure.accessDenied,
         ),
       ),
     );

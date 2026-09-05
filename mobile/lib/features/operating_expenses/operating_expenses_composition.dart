@@ -15,10 +15,7 @@ OperatingExpenseCubit createOperatingExpenseCubit({
   required String userId,
   required String userName,
 }) {
-  final repository = OperatingExpenseRepositoryImpl(
-    expenseStore: BrickOperatingExpenseStore.instance,
-    categoryStore: BrickOperatingExpenseCategoryStore.instance,
-  );
+  final repository = _createRepository();
   return OperatingExpenseCubit(
     establishmentId: establishmentId,
     userId: userId,
@@ -30,16 +27,7 @@ OperatingExpenseCubit createOperatingExpenseCubit({
 
 /// Construye el historial con cache Brick y consultas autenticadas.
 OperatingExpenseHistoryCubit createOperatingExpenseHistoryCubit({required String establishmentId}) {
-  final repository = OperatingExpenseRepositoryImpl(
-    expenseStore: BrickOperatingExpenseStore.instance,
-    categoryStore: BrickOperatingExpenseCategoryStore.instance,
-    remoteDataSource: OperatingExpenseRemoteDataSource(
-      service: OperatingExpenseApiService(
-        baseUrl: AppConfig.current.backendBaseUrl,
-        tokenProvider: SessionBackendAccessTokenProvider.instance,
-      ),
-    ),
-  );
+  final repository = _createRepository();
   return OperatingExpenseHistoryCubit(
     establishmentId: establishmentId,
     getHistory: GetOperatingExpenseHistoryUseCase(repository),
@@ -48,3 +36,14 @@ OperatingExpenseHistoryCubit createOperatingExpenseHistoryCubit({required String
     exportExpenses: ExportOperatingExpensesUseCase(repository),
   );
 }
+
+OperatingExpenseRepositoryImpl _createRepository() => OperatingExpenseRepositoryImpl(
+  expenseStore: BrickOperatingExpenseStore.instance,
+  categoryStore: BrickOperatingExpenseCategoryStore.instance,
+  remoteDataSource: OperatingExpenseRemoteDataSource(
+    service: OperatingExpenseApiService(
+      baseUrl: AppConfig.current.backendBaseUrl,
+      tokenProvider: SessionBackendAccessTokenProvider.instance,
+    ),
+  ),
+);

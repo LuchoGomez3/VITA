@@ -57,7 +57,7 @@ void main() {
     expect(find.text(HomeStrings.operatingBalance), findsNothing);
   });
 
-  testWidgets('Home muestra el rol del establecimiento seleccionado', (tester) async {
+  testWidgets('Home no expone el rol del establecimiento seleccionado', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: HomePage(
@@ -71,7 +71,7 @@ void main() {
     await _createdHomeCubit.selectEstablishment('employee-establishment');
     await tester.pumpAndSettle();
 
-    expect(find.text('${HomeStrings.roleLabel}: Empleado'), findsOneWidget);
+    expect(find.textContaining('Empleado'), findsNothing);
   });
 
   testWidgets('ruta protegida muestra el mensaje financiero requerido', (tester) async {

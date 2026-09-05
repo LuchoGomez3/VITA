@@ -25,8 +25,6 @@ abstract final class HomeStrings {
   static const defaultUserName = 'Productor';
 
   /// Etiqueta del rol en el establecimiento seleccionado.
-  static const roleLabel = 'Rol';
-
   /// Titulo principal del tablero.
   static const title = 'Estado de la hacienda';
 

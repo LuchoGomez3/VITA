@@ -3,13 +3,18 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
+import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
+import 'package:frontend_mayoral/brick/models/operating_expense_category.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/operating_expense_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/operating_expense_category_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/sync/data/datasources/establishment_remote_data_source.dart';
+import 'package:frontend_mayoral/features/sync/data/datasources/operating_expense_catalog_remote_data_source.dart';
 import 'package:frontend_mayoral/features/sync/data/models/establishment_remote_summary.dart';
 import 'package:frontend_mayoral/features/sync/data/repositories/initial_data_sync_repository_impl.dart';
 
@@ -18,12 +23,18 @@ void main() {
     final animalStore = _FakeAnimalStore();
     final categoryStore = _FakeCategoryStore();
     final weighingStore = _FakeWeighingStore();
+    final expenseStore = _FakeOperatingExpenseStore();
+    final expenseCategoryStore = _FakeOperatingExpenseCategoryStore();
+    final expenseCatalogSource = _FakeOperatingExpenseCatalogRemoteDataSource();
     final repository = InitialDataSyncRepositoryImpl(
       secureStorage: _MemoryStorage(),
       establishmentRemoteDataSource: _FakeEstablishmentRemoteDataSource(),
       animalStore: animalStore,
       categoryStore: categoryStore,
       weighingStore: weighingStore,
+      operatingExpenseStore: expenseStore,
+      operatingExpenseCategoryStore: expenseCategoryStore,
+      operatingExpenseCatalogRemoteDataSource: expenseCatalogSource,
     );
 
     await repository.sync();
@@ -32,6 +43,11 @@ void main() {
     expect(animalStore.pulls, ['establishment-1', 'establishment-1']);
     expect(categoryStore.pulls, ['establishment-1', 'establishment-1']);
     expect(weighingStore.pulls, ['establishment-1', 'establishment-1']);
+    expect(expenseStore.pulls, ['establishment-1', 'establishment-1']);
+    expect(
+      expenseCatalogSource.pulls,
+      ['establishment-1', 'establishment-1'],
+    );
   });
 
   test('persists the establishment role in the offline catalog', () async {
@@ -42,6 +58,9 @@ void main() {
       animalStore: _FakeAnimalStore(),
       categoryStore: _FakeCategoryStore(),
       weighingStore: _FakeWeighingStore(),
+      operatingExpenseStore: _FakeOperatingExpenseStore(),
+      operatingExpenseCategoryStore: _FakeOperatingExpenseCategoryStore(),
+      operatingExpenseCatalogRemoteDataSource: _FakeOperatingExpenseCatalogRemoteDataSource(),
     );
 
     await repository.sync();
@@ -50,16 +69,99 @@ void main() {
     final catalog = jsonDecode(encoded!) as List<dynamic>;
     expect(catalog.single, containsPair('role', 'owner'));
   });
+
+  test('does not hydrate finances for a role without access', () async {
+    final expenseStore = _FakeOperatingExpenseStore();
+    final expenseCatalogSource = _FakeOperatingExpenseCatalogRemoteDataSource();
+    final repository = InitialDataSyncRepositoryImpl(
+      secureStorage: _MemoryStorage(),
+      establishmentRemoteDataSource: _FakeEstablishmentRemoteDataSource(
+        role: UserRole.employee,
+      ),
+      animalStore: _FakeAnimalStore(),
+      categoryStore: _FakeCategoryStore(),
+      weighingStore: _FakeWeighingStore(),
+      operatingExpenseStore: expenseStore,
+      operatingExpenseCategoryStore: _FakeOperatingExpenseCategoryStore(),
+      operatingExpenseCatalogRemoteDataSource: expenseCatalogSource,
+    );
+
+    await repository.sync();
+
+    expect(expenseStore.pulls, isEmpty);
+    expect(expenseCatalogSource.pulls, isEmpty);
+  });
+}
+
+class _FakeOperatingExpenseStore implements OperatingExpenseBrickStore {
+  final List<String> pulls = [];
+
+  @override
+  Future<void> pullRemoteExpenses(String establishmentId) async {
+    pulls.add(establishmentId);
+  }
+
+  @override
+  Future<List<BrickOperatingExpenseModel>> getLocalExpenses(
+    String? establishmentId,
+  ) async => [];
+
+  @override
+  Future<void> reconcileRemoteExpenses(
+    Iterable<BrickOperatingExpenseModel> expenses,
+  ) async {}
+
+  @override
+  Future<BrickOperatingExpenseModel> upsertExpense(
+    BrickOperatingExpenseModel expense,
+  ) async => expense;
+}
+
+class _FakeOperatingExpenseCategoryStore implements OperatingExpenseCategoryBrickStore {
+  @override
+  Future<void> cacheRemoteCategories(
+    Iterable<BrickOperatingExpenseCategoryModel> categories,
+  ) async {}
+
+  @override
+  Future<BrickOperatingExpenseCategoryModel?> getById(String id) async => null;
+
+  @override
+  Future<List<BrickOperatingExpenseCategoryModel>> getLocalCategories({
+    required String establishmentId,
+    required String type,
+  }) async => [];
+
+  @override
+  Future<BrickOperatingExpenseCategoryModel> upsertCategory(
+    BrickOperatingExpenseCategoryModel category,
+  ) async => category;
+}
+
+class _FakeOperatingExpenseCatalogRemoteDataSource implements OperatingExpenseCatalogRemoteDataSource {
+  final List<String> pulls = [];
+
+  @override
+  Future<List<BrickOperatingExpenseCategoryModel>> fetchCustomCategories(
+    String establishmentId,
+  ) async {
+    pulls.add(establishmentId);
+    return [];
+  }
 }
 
 class _FakeEstablishmentRemoteDataSource implements EstablishmentRemoteDataSource {
+  _FakeEstablishmentRemoteDataSource({this.role = UserRole.owner});
+
+  final UserRole role;
+
   @override
   Future<List<EstablishmentRemoteSummary>> fetchEstablishments() async => [
     EstablishmentRemoteSummary(
       id: 'establishment-1',
       ownerId: 'owner-1',
       name: 'Establecimiento',
-      role: UserRole.owner,
+      role: role,
       createdAt: _date,
       updatedAt: _date,
     ),

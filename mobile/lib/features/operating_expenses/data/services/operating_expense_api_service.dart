@@ -6,7 +6,6 @@ import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
-import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_failure_messages.dart';
 import 'package:http/http.dart' as http;
 
 /// Transporte autenticado para consultas financieras de solo lectura.
@@ -14,7 +13,7 @@ class OperatingExpenseApiService {
   /// Crea el servicio sobre la configuracion y sesion compartidas.
   OperatingExpenseApiService({
     required String baseUrl,
-    required SessionBackendAccessTokenProvider tokenProvider,
+    required RefreshableBackendAccessTokenProvider tokenProvider,
     http.Client? client,
     Duration timeout = const Duration(seconds: 15),
   }) : _baseUrl = baseUrl.replaceFirst(RegExp(r'/$'), ''),
@@ -23,7 +22,7 @@ class OperatingExpenseApiService {
        _timeout = timeout;
 
   final String _baseUrl;
-  final SessionBackendAccessTokenProvider _tokenProvider;
+  final RefreshableBackendAccessTokenProvider _tokenProvider;
   final http.Client _client;
   final Duration _timeout;
 
@@ -80,8 +79,9 @@ class OperatingExpenseApiService {
       final refreshedToken = await _tokenProvider.refreshAccessToken();
       if (refreshedToken == null) {
         throw const DomainException(
-          message: OperatingExpenseFailureMessages.sessionExpired,
+          message: 'unauthorized',
           code: DomainErrorCode.unauthorized,
+          reason: OperatingExpenseFailure.unauthorized,
         );
       }
       return _ensureSuccessful(await _send(uri, refreshedToken));
@@ -89,18 +89,21 @@ class OperatingExpenseApiService {
       rethrow;
     } on SocketException {
       throw const DomainException(
-        message: OperatingExpenseFailureMessages.offline,
+        message: 'offline',
         code: DomainErrorCode.offline,
+        reason: OperatingExpenseFailure.offline,
       );
     } on TimeoutException {
       throw const DomainException(
-        message: OperatingExpenseFailureMessages.offline,
+        message: 'offline',
         code: DomainErrorCode.offline,
+        reason: OperatingExpenseFailure.offline,
       );
     } on http.ClientException {
       throw const DomainException(
-        message: OperatingExpenseFailureMessages.offline,
+        message: 'offline',
         code: DomainErrorCode.offline,
+        reason: OperatingExpenseFailure.offline,
       );
     }
   }
@@ -108,8 +111,9 @@ class OperatingExpenseApiService {
   Future<http.Response> _send(Uri uri, String? token) {
     if (token == null || token.isEmpty) {
       throw const DomainException(
-        message: OperatingExpenseFailureMessages.sessionExpired,
+        message: 'unauthorized',
         code: DomainErrorCode.unauthorized,
+        reason: OperatingExpenseFailure.unauthorized,
       );
     }
     return _client.get(uri, headers: {'Authorization': 'Bearer $token'}).timeout(_timeout);
@@ -120,26 +124,26 @@ class OperatingExpenseApiService {
     final code = _errorCode(response);
     if (response.statusCode == 403 && code == 'acceso_financiero_denegado') {
       throw const DomainException(
-        message: OperatingExpenseFailureMessages.accessDenied,
+        message: 'accessDenied',
         code: DomainErrorCode.validation,
-        reason: OperatingExpensePersistenceError.financialAccessDenied,
+        reason: OperatingExpenseFailure.accessDenied,
       );
     }
     if (response.statusCode == 401) {
       throw const DomainException(
-        message: OperatingExpenseFailureMessages.sessionExpired,
+        message: 'unauthorized',
         code: DomainErrorCode.unauthorized,
+        reason: OperatingExpenseFailure.unauthorized,
       );
     }
-    throw DomainException(
-      message: _errorMessage(response) ?? OperatingExpenseFailureMessages.remote,
+    throw const DomainException(
+      message: 'remote',
       code: DomainErrorCode.syncFailed,
+      reason: OperatingExpenseFailure.remote,
     );
   }
 
   String? _errorCode(http.Response response) => _firstErrorValue(response, 'code');
-
-  String? _errorMessage(http.Response response) => _firstErrorValue(response, 'message');
 
   String? _firstErrorValue(http.Response response, String key) {
     try {
@@ -147,7 +151,8 @@ class OperatingExpenseApiService {
       if (payload is! Map<String, dynamic>) return null;
       final errors = payload['errors'];
       if (errors is! List || errors.isEmpty || errors.first is! Map<String, dynamic>) return null;
-      return (errors.first as Map<String, dynamic>)[key] as String?;
+      final value = (errors.first as Map<String, dynamic>)[key];
+      return value is String ? value : null;
     } on FormatException {
       return null;
     }

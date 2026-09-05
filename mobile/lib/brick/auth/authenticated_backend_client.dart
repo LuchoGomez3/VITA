@@ -77,7 +77,19 @@ class AuthenticatedBackendClient extends http.BaseClient {
     _logResponse(bufferedResponse);
 
     if (bufferedResponse.statusCode == 401 && retryRequest != null) {
-      final refreshedToken = await _refreshAfterUnauthorized();
+      String? refreshedToken;
+      try {
+        refreshedToken = await _refreshAfterUnauthorized();
+      } on DomainException catch (error) {
+        if (error.code != DomainErrorCode.unauthorized) {
+          return _syntheticResponse(
+            request: request,
+            syncRequest: syncRequest,
+            statusCode: 503,
+            body: const {'error': 'offline'},
+          );
+        }
+      }
       if (refreshedToken != null) {
         retryRequest.headers['Authorization'] = 'Bearer $refreshedToken';
         _logRequest(retryRequest);
@@ -118,12 +130,8 @@ class AuthenticatedBackendClient extends http.BaseClient {
 
   Future<String?> _refreshAfterUnauthorized() async {
     final tokenProvider = _tokenProvider;
-    if (tokenProvider is! SessionBackendAccessTokenProvider) return null;
-    try {
-      return await tokenProvider.refreshAccessToken();
-    } on DomainException {
-      return null;
-    }
+    if (tokenProvider is! RefreshableBackendAccessTokenProvider) return null;
+    return tokenProvider.refreshAccessToken();
   }
 
   http.Request? _copyRequest(http.BaseRequest request) {

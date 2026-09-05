@@ -5,12 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
-import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_case.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
-import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
@@ -68,12 +66,8 @@ class AppRouter {
   static GoRouter create({
     required AuthSessionCubit authSessionCubit,
     required Listenable refreshListenable,
+    required GetEstablishmentRoleUseCase getEstablishmentRole,
   }) {
-    const getEstablishmentRole = GetEstablishmentRoleUseCase(
-      EstablishmentCatalog(
-        secureStorage: FlutterSecureStorageService(),
-      ),
-    );
     return GoRouter(
       initialLocation: AppRoutes.authCheck,
       refreshListenable: refreshListenable,
@@ -400,7 +394,7 @@ class AppRouter {
     }
 
     final user = sessionState.session.user;
-    return _FinancialRouteGuard(
+    return FinancialRouteGuard(
       establishmentId: establishmentId,
       getEstablishmentRole: getEstablishmentRole,
       child: OperatingExpensesPage(
@@ -429,7 +423,7 @@ class AppRouter {
         establishmentName.trim().isEmpty) {
       return const ShellPlaceholderPage(title: OperatingExpenseStrings.requiredEstablishment);
     }
-    return _FinancialRouteGuard(
+    return FinancialRouteGuard(
       establishmentId: establishmentId,
       getEstablishmentRole: getEstablishmentRole,
       child: OperatingExpenseHistoryPage(
@@ -487,15 +481,22 @@ class AppRouter {
   };
 }
 
-class _FinancialRouteGuard extends StatelessWidget {
-  const _FinancialRouteGuard({
+/// Protege las rutas financieras con la membresia offline del establecimiento.
+class FinancialRouteGuard extends StatelessWidget {
+  /// Crea el guard que falla cerrado ante permisos ausentes o invalidos.
+  const FinancialRouteGuard({
     required this.establishmentId,
     required this.getEstablishmentRole,
     required this.child,
   });
 
+  /// UUID cuyo permiso financiero se evalua.
   final String establishmentId;
+
+  /// Caso de uso inyectado por la composicion de la aplicacion.
   final GetEstablishmentRoleUseCase getEstablishmentRole;
+
+  /// Contenido que se muestra exclusivamente a roles autorizados.
   final Widget child;
 
   @override

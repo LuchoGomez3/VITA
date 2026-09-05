@@ -30,9 +30,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     # Un admin se degrada a owner para volver al conjunto anterior sin perder
     # su acceso al establecimiento.
-    op.execute(
-        f"UPDATE {_TABLE} SET rol = 'owner' WHERE rol = 'admin'"
-    )
+    op.execute(f"UPDATE {_TABLE} SET rol = 'owner' WHERE rol = 'admin'")
     with op.batch_alter_table(_TABLE) as batch_op:
         batch_op.drop_constraint(_ROLE_CONSTRAINT, type_="check")
         batch_op.create_check_constraint(

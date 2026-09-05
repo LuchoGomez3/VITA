@@ -190,6 +190,32 @@ void main() {
       expect(requestCount, 2);
     });
 
+    test('keeps a pending request when 401 refresh fails offline', () async {
+      final results = <BackendSyncResult>[];
+      SessionBackendAccessTokenProvider.instance
+        ..session = BackendTokenSession(
+          accessToken: 'apparently-valid-token',
+          refreshToken: 'refresh-token',
+          accessTokenExpiresAt: DateTime.now().toUtc().add(
+            const Duration(hours: 1),
+          ),
+        )
+        ..refreshCallback = (_) async => null;
+      final client = AuthenticatedBackendClient(
+        tokenProvider: SessionBackendAccessTokenProvider.instance,
+        onSyncResult: (result) async => results.add(result),
+        inner: MockClient((_) async => http.Response('unauthorized', 401)),
+      );
+
+      final response = await client.post(
+        Uri.parse('http://localhost:8000/api/v1/animales'),
+        body: jsonEncode(_requestBody),
+      );
+
+      expect(response.statusCode, 503);
+      expect(results, isEmpty);
+    });
+
     test('returns a transient response when refresh fails offline', () async {
       SessionBackendAccessTokenProvider.instance
         ..session = BackendTokenSession(
