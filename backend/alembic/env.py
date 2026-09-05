@@ -31,6 +31,21 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+# Índices de expresión que cada dialecto escribe distinto y que autogenerate no
+# puede comparar: Postgres normaliza ``lower(trim(nombre))`` a
+# ``lower(btrim(nombre::text))``, sintaxis que SQLite (los tests) no acepta. Se
+# declaran igual en el modelo — para que ``create_all`` los aplique en test — y
+# se crean explícitamente en su migración; excluirlos de la comparación evita
+# que ``alembic check`` reporte una diferencia permanente que no existe.
+_INDICES_DE_EXPRESION = {"uq_lotes_nombre_establecimiento"}
+
+
+def include_object(object_, name, type_, reflected, compare_to) -> bool:
+    if type_ == "index" and name in _INDICES_DE_EXPRESION:
+        return False
+    return True
+
+
 # ConfigParser interpreta los porcentajes; duplicarlos permite URLs que los
 # contengan sin alterar la contraseña ni registrar el secreto en el repositorio.
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
@@ -45,6 +60,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -56,6 +72,7 @@ def do_run_migrations(connection) -> None:
         connection=connection,
         target_metadata=target_metadata,
         compare_type=True,
+        include_object=include_object,
     )
 
     with context.begin_transaction():

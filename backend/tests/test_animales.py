@@ -9,9 +9,9 @@ from api.modules.establecimientos.models import (
     Establecimiento,
     UsuarioEstablecimiento,
 )
-from api.modules.lotes.models import Lote
 from api.modules.pesajes.models import Pesaje
 from api.shared.enums import RolUsuario
+from tests.factories import crear_lote
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ async def establecimiento_con_lote(session, usuario_actual):
             activo=True,
         )
     )
-    lote = Lote(establecimiento_id=est.id, nombre="Lote 1")
+    lote = crear_lote(est.id, "Lote 1")
     session.add(lote)
     await session.commit()
     return est, lote
@@ -171,7 +171,7 @@ async def test_lote_de_otro_establecimiento(
     )
     session.add(otro_est)
     await session.flush()
-    lote_ajeno = Lote(establecimiento_id=otro_est.id, nombre="Lote B")
+    lote_ajeno = crear_lote(otro_est.id, "Lote B")
     session.add(lote_ajeno)
     await session.commit()
 
@@ -449,7 +449,7 @@ async def test_put_a_lote_de_otro_establecimiento_falla(
     )
     session.add(otro_est)
     await session.flush()
-    lote_ajeno = Lote(establecimiento_id=otro_est.id, nombre="Lote C")
+    lote_ajeno = crear_lote(otro_est.id, "Lote C")
     session.add(lote_ajeno)
     await session.commit()
 
