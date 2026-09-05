@@ -1,6 +1,6 @@
 """Consultas SQL del módulo de egresos operativos, sin reglas de negocio."""
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -11,6 +11,7 @@ from api.modules.egresos_operativos.models import (
     EgresoOperativo,
 )
 from api.modules.usuarios.models import Usuario
+from api.shared.enums import TipoEgresoOperativo
 
 
 class EgresoOperativoRepository:
@@ -80,6 +81,10 @@ class EgresoOperativoRepository:
         *,
         updated_since: datetime | None,
         include_deleted: bool,
+        fecha_desde: date | None = None,
+        fecha_hasta: date | None = None,
+        tipo: TipoEgresoOperativo | None = None,
+        categoria: str | None = None,
     ) -> list[tuple[EgresoOperativo, Usuario]]:
         """Lista el historial y soporta pull delta mediante ``updated_at``."""
         consulta = (
@@ -91,6 +96,14 @@ class EgresoOperativoRepository:
             consulta = consulta.where(EgresoOperativo.deleted_at.is_(None))
         if updated_since is not None:
             consulta = consulta.where(EgresoOperativo.updated_at >= updated_since)
+        if fecha_desde is not None:
+            consulta = consulta.where(EgresoOperativo.fecha >= fecha_desde)
+        if fecha_hasta is not None:
+            consulta = consulta.where(EgresoOperativo.fecha <= fecha_hasta)
+        if tipo is not None:
+            consulta = consulta.where(EgresoOperativo.tipo == tipo)
+        if categoria is not None:
+            consulta = consulta.where(EgresoOperativo.categoria == categoria)
         resultado = await self.session.execute(
             consulta.order_by(
                 EgresoOperativo.fecha.desc(), EgresoOperativo.created_at.desc()

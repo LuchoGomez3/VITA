@@ -8,12 +8,9 @@ from enum import Enum
 
 
 class RolUsuario(str, Enum):
-    administrator = "administrator"
+    admin = "admin"
     owner = "owner"
-    veterinarian = "veterinarian"
-    capataz = "capataz"
-    asset_manager = "asset_manager"
-    external_buyer = "external_buyer"
+    employee = "employee"
 
 
 class SexoAnimal(str, Enum):

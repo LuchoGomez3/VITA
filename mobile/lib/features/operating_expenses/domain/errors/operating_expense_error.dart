@@ -19,8 +19,8 @@ enum OperatingExpenseValidationError {
   incompatibleCategory,
 }
 
-/// Fallas esperadas de persistencia que la presentacion puede comunicar.
-enum OperatingExpensePersistenceError {
+/// Fallas funcionales que pueden atravesar las capas de la feature.
+enum OperatingExpenseFailure {
   /// No fue posible persistir el egreso localmente.
   saveExpense,
 
@@ -29,4 +29,28 @@ enum OperatingExpensePersistenceError {
 
   /// No fue posible recuperar el catalogo disponible.
   loadCategories,
+
+  /// No fue posible leer el historial local.
+  loadHistory,
+
+  /// No fue posible actualizar el historial central.
+  refreshHistory,
+
+  /// La operacion requiere conectividad.
+  offline,
+
+  /// La sesion no permite continuar la operacion.
+  unauthorized,
+
+  /// El backend rechazo el acceso financiero.
+  accessDenied,
+
+  /// El backend devolvio datos que no cumplen el contrato.
+  invalidResponse,
+
+  /// El backend no pudo completar la operacion.
+  remote,
+
+  /// No fue posible generar o descargar el CSV.
+  exportFailed,
 }

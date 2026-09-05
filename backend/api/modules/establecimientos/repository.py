@@ -9,6 +9,7 @@ from api.modules.establecimientos.models import (
     Establecimiento,
     UsuarioEstablecimiento,
 )
+from api.shared.enums import RolUsuario
 
 
 class EstablecimientoRepository:
@@ -42,10 +43,12 @@ class EstablecimientoRepository:
         await self.session.refresh(establecimiento)
         return establecimiento
 
-    async def list_by_usuario(self, usuario_id: UUID) -> list[Establecimiento]:
+    async def list_by_usuario(
+        self, usuario_id: UUID
+    ) -> list[tuple[Establecimiento, RolUsuario]]:
         """Establecimientos a los que el usuario tiene acceso (membresía activa)."""
         result = await self.session.execute(
-            select(Establecimiento)
+            select(Establecimiento, UsuarioEstablecimiento.rol)
             .join(
                 UsuarioEstablecimiento,
                 UsuarioEstablecimiento.establecimiento_id == Establecimiento.id,
@@ -57,7 +60,9 @@ class EstablecimientoRepository:
             )
             .order_by(Establecimiento.created_at)
         )
-        return list(result.scalars().all())
+        return [
+            (establecimiento, RolUsuario(rol)) for establecimiento, rol in result.all()
+        ]
 
 
 class UsuarioEstablecimientoRepository:
@@ -82,3 +87,16 @@ class UsuarioEstablecimientoRepository:
             )
         )
         return result.scalars().first()
+
+    async def get_memberships(
+        self, usuario_id: UUID, establecimiento_id: UUID
+    ) -> list[UsuarioEstablecimiento]:
+        """Devuelve todos los roles activos del usuario dentro del establecimiento."""
+        result = await self.session.execute(
+            select(UsuarioEstablecimiento).where(
+                UsuarioEstablecimiento.usuario_id == usuario_id,
+                UsuarioEstablecimiento.establecimiento_id == establecimiento_id,
+                UsuarioEstablecimiento.activo.is_(True),
+            )
+        )
+        return list(result.scalars().all())

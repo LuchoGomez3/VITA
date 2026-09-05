@@ -124,6 +124,7 @@ using (
         select 1 from public.usuarios_establecimientos ue
         where ue.establecimiento_id = categorias_egresos_operativos.establecimiento_id
           and ue.usuario_id = auth.uid() and ue.activo = true
+          and ue.rol in ('admin', 'owner')
     )
 );
 
@@ -148,6 +149,7 @@ using (
         select 1 from public.usuarios_establecimientos ue
         where ue.establecimiento_id = egresos_operativos.establecimiento_id
           and ue.usuario_id = auth.uid() and ue.activo = true
+          and ue.rol in ('admin', 'owner')
     )
 );
 

@@ -1,5 +1,6 @@
 import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
 import 'package:frontend_mayoral/core/formatters/decimal_amount_formatter.dart';
+import 'package:frontend_mayoral/features/operating_expenses/data/models/operating_expense_remote_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
 
 /// Traduce egresos entre dominio y persistencia Brick.
@@ -11,6 +12,27 @@ class OperatingExpenseBrickMapper {
 
   /// Convierte un decimal backend sin pasar por punto flotante.
   static int decimalToCents(String amount) => DecimalAmountFormatter.decimalToCents(amount);
+
+  /// Convierte el contrato HTTP validado en un modelo tecnico de cache.
+  static BrickOperatingExpenseModel fromRemote(
+    OperatingExpenseRemoteDto expense,
+  ) => BrickOperatingExpenseModel(
+    localId: expense.id,
+    establishmentId: expense.establishmentId,
+    amount: expense.amount,
+    type: expense.type,
+    category: expense.category,
+    supply: expense.supply,
+    date: expense.date,
+    description: expense.description,
+    receiptNumber: expense.receiptNumber,
+    loadedById: expense.loadedById,
+    loadedByName: _loadedByName(expense.loadedBy),
+    createdAt: expense.createdAt,
+    updatedAt: expense.updatedAt,
+    deletedAt: expense.deletedAt,
+    syncStatus: BrickOperatingExpenseSyncStatus.synchronized,
+  );
 
   /// Convierte la entidad en modelo tecnico.
   static BrickOperatingExpenseModel toBrick(OperatingExpense expense) => BrickOperatingExpenseModel(
@@ -59,4 +81,10 @@ class OperatingExpenseBrickMapper {
     },
     syncErrorCode: model.syncErrorCode,
   );
+
+  static String? _loadedByName(OperatingExpenseRemoteUserDto? user) {
+    if (user == null) return null;
+    final fullName = '${user.firstName ?? ''} ${user.lastName ?? ''}'.trim();
+    return fullName.isEmpty ? user.email : fullName;
+  }
 }

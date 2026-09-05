@@ -17,6 +17,27 @@ class EstablecimientoNoAutorizadoError(ForbiddenError):
         super().__init__("No tiene acceso al establecimiento indicado")
 
 
+class AccesoFinancieroDenegadoError(ForbiddenError):
+    """El rol del miembro no permite consultar información financiera."""
+
+    code = "acceso_financiero_denegado"
+
+    def __init__(self) -> None:
+        super().__init__(
+            "Acceso denegado. No posee los privilegios necesarios para visualizar "
+            "información financiera"
+        )
+
+
+class RangoFechasInvalidoError(ValidationError):
+    """La fecha inicial del filtro es posterior a la fecha final."""
+
+    code = "rango_fechas_invalido"
+
+    def __init__(self) -> None:
+        super().__init__("La fecha desde no puede ser posterior a la fecha hasta")
+
+
 class EgresoOperativoNoEncontradoError(NotFoundError):
     """El movimiento no existe o pertenece a otro tenant."""
 

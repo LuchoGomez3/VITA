@@ -26,7 +26,6 @@ class ProfilePage extends StatefulWidget {
     required this.firstName,
     required this.lastName,
     required this.cuit,
-    required this.role,
     required this.createCubit,
     required this.signOut,
     super.key,
@@ -46,9 +45,6 @@ class ProfilePage extends StatefulWidget {
 
   /// CUIT opcional del usuario.
   final String? cuit;
-
-  /// Rol persistido en la sesión.
-  final String role;
 
   /// Crea el Cubit perteneciente a esta página.
   final ProfileCubitFactory createCubit;
@@ -84,7 +80,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 firstName: widget.firstName,
                 lastName: widget.lastName,
                 cuit: widget.cuit,
-                role: widget.role,
               ),
               const SizedBox(height: AppSpacing.xl),
               const _EstablishmentsContent(),

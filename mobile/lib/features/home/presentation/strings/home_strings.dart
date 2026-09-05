@@ -24,6 +24,7 @@ abstract final class HomeStrings {
   /// Nombre de respaldo mientras la sesion termina de restaurarse.
   static const defaultUserName = 'Productor';
 
+  /// Etiqueta del rol en el establecimiento seleccionado.
   /// Titulo principal del tablero.
   static const title = 'Estado de la hacienda';
 

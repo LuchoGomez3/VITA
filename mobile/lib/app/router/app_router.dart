@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_case.dart';
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
 import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
@@ -39,6 +41,8 @@ import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
+import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/financial_access_denied_page.dart';
+import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expense_history_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expenses_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/strings/operating_expense_strings.dart';
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
@@ -65,6 +69,7 @@ class AppRouter {
   static GoRouter create({
     required AuthSessionCubit authSessionCubit,
     required Listenable refreshListenable,
+    required GetEstablishmentRoleUseCase getEstablishmentRole,
   }) {
     return GoRouter(
       initialLocation: AppRoutes.authCheck,
@@ -117,7 +122,6 @@ class AppRouter {
                       AuthSessionAuthenticated(:final session) => session.user.firstName,
                       _ => '',
                     };
-
                     return FadePage(
                       state: state,
                       child: HomePage(
@@ -162,7 +166,6 @@ class AppRouter {
                         firstName: session.user.firstName,
                         lastName: session.user.lastName,
                         cuit: session.user.cuit,
-                        role: session.user.role.name,
                         createCubit: createProfileCubit,
                         signOut: context.read<AuthSessionCubit>().signOut,
                       ),
@@ -172,7 +175,6 @@ class AppRouter {
                         firstName: ProfileStrings.emptyCredential,
                         lastName: ProfileStrings.emptyCredential,
                         cuit: null,
-                        role: 'unknown',
                         createCubit: createProfileCubit,
                         signOut: context.read<AuthSessionCubit>().signOut,
                       ),
@@ -342,14 +344,19 @@ class AppRouter {
         ),
         GoRoute(
           path: AppRoutes.expenseRecords,
-          builder: (context, state) => const ShellPlaceholderPage(
-            title: HomeStrings.movements,
-            message: HomeStrings.comingSoon,
+          builder: (context, state) => _operatingExpenseHistoryPage(
+            context,
+            state,
+            getEstablishmentRole,
           ),
         ),
         GoRoute(
           path: AppRoutes.expenseRegister,
-          builder: _operatingExpensesPage,
+          builder: (context, state) => _operatingExpensesPage(
+            context,
+            state,
+            getEstablishmentRole,
+          ),
         ),
         GoRoute(
           path: AppRoutes.incomeRegister,
@@ -394,6 +401,7 @@ class AppRouter {
   static Widget _operatingExpensesPage(
     BuildContext context,
     GoRouterState state,
+    GetEstablishmentRoleUseCase getEstablishmentRole,
   ) {
     final establishmentId = state.uri.queryParameters['establecimientoId'];
     final establishmentName = state.uri.queryParameters['establecimientoNombre'];
@@ -410,14 +418,54 @@ class AppRouter {
     }
 
     final user = sessionState.session.user;
-    return OperatingExpensesPage(
-      establishmentName: establishmentName,
-      createCubit: () => createOperatingExpenseCubit(
-        establishmentId: establishmentId,
-        userId: user.id,
-        userName: '${user.firstName} ${user.lastName}'.trim(),
+    return FinancialRouteGuard(
+      establishmentId: establishmentId,
+      getEstablishmentRole: getEstablishmentRole,
+      child: OperatingExpensesPage(
+        establishmentName: establishmentName,
+        createCubit: () => createOperatingExpenseCubit(
+          establishmentId: establishmentId,
+          userId: user.id,
+          userName: '${user.firstName} ${user.lastName}'.trim(),
+        ),
       ),
     );
+  }
+
+  static Widget _operatingExpenseHistoryPage(
+    BuildContext context,
+    GoRouterState state,
+    GetEstablishmentRoleUseCase getEstablishmentRole,
+  ) {
+    final establishmentId = state.uri.queryParameters['establecimientoId'];
+    final establishmentName = state.uri.queryParameters['establecimientoNombre'];
+    final sessionState = context.read<AuthSessionCubit>().state;
+    if (sessionState is! AuthSessionAuthenticated ||
+        establishmentId == null ||
+        establishmentId.trim().isEmpty ||
+        establishmentName == null ||
+        establishmentName.trim().isEmpty) {
+      return const ShellPlaceholderPage(title: OperatingExpenseStrings.requiredEstablishment);
+    }
+    return FinancialRouteGuard(
+      establishmentId: establishmentId,
+      getEstablishmentRole: getEstablishmentRole,
+      child: OperatingExpenseHistoryPage(
+        establishmentName: establishmentName,
+        createCubit: () => createOperatingExpenseHistoryCubit(
+          establishmentId: establishmentId,
+        ),
+      ),
+    );
+  }
+
+  /// Evalua el rol del establecimiento solicitado, nunca un rol global.
+  static Future<bool> canAccessFinancialRoute({
+    required String establishmentId,
+    required Future<UserRole> Function(String establishmentId) getRole,
+  }) async {
+    final role = await getRole(establishmentId);
+    return role.canViewFinancialInformation;
   }
 
   /// Decide el destino permitido sin realizar navegacion por su cuenta.
@@ -455,6 +503,44 @@ class AppRouter {
     AppRoutes.signUpForm,
     AppRoutes.login,
   };
+}
+
+/// Protege las rutas financieras con la membresia offline del establecimiento.
+class FinancialRouteGuard extends StatelessWidget {
+  /// Crea el guard que falla cerrado ante permisos ausentes o invalidos.
+  const FinancialRouteGuard({
+    required this.establishmentId,
+    required this.getEstablishmentRole,
+    required this.child,
+    super.key,
+  });
+
+  /// UUID cuyo permiso financiero se evalua.
+  final String establishmentId;
+
+  /// Caso de uso inyectado por la composicion de la aplicacion.
+  final GetEstablishmentRoleUseCase getEstablishmentRole;
+
+  /// Contenido que se muestra exclusivamente a roles autorizados.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: AppRouter.canAccessFinancialRoute(
+        establishmentId: establishmentId,
+        getRole: getEstablishmentRole.call,
+      ),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        return (snapshot.data ?? false) ? child : const FinancialAccessDeniedPage();
+      },
+    );
+  }
 }
 
 /// Adapta el stream del Cubit al mecanismo reactivo requerido por GoRouter.

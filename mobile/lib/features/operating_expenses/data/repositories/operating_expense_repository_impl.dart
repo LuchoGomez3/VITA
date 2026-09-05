@@ -8,9 +8,13 @@ import 'package:frontend_mayoral/brick/stores/operating_expense_category_brick_s
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/utils/uuid_v4.dart';
+import 'package:frontend_mayoral/features/operating_expenses/data/datasources/operating_expense_remote_data_source.dart';
 import 'package:frontend_mayoral/features/operating_expenses/data/mappers/operating_expense_brick_mapper.dart';
+import 'package:frontend_mayoral/features/operating_expenses/data/mappers/operating_expense_category_brick_mapper.dart';
+import 'package:frontend_mayoral/features/operating_expenses/data/models/operating_expense_remote_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/catalogs/operating_expense_category_catalog.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
+import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/repositories/operating_expense_repository.dart';
 import 'package:logging/logging.dart';
@@ -22,15 +26,18 @@ class OperatingExpenseRepositoryImpl implements OperatingExpenseRepository {
   OperatingExpenseRepositoryImpl({
     required OperatingExpenseBrickStore expenseStore,
     required OperatingExpenseCategoryBrickStore categoryStore,
+    required OperatingExpenseRemoteDataSource remoteDataSource,
     DateTime Function()? now,
     String Function()? createId,
   }) : _expenseStore = expenseStore,
        _categoryStore = categoryStore,
+       _remoteDataSource = remoteDataSource,
        _now = now ?? DateTime.now,
        _createId = createId ?? generateUuidV4;
 
   final OperatingExpenseBrickStore _expenseStore;
   final OperatingExpenseCategoryBrickStore _categoryStore;
+  final OperatingExpenseRemoteDataSource _remoteDataSource;
   final DateTime Function() _now;
   final String Function() _createId;
   static final Logger _logger = Logger('OperatingExpenseRepository');
@@ -41,13 +48,13 @@ class OperatingExpenseRepositoryImpl implements OperatingExpenseRepository {
       final saved = await _expenseStore.upsertExpense(OperatingExpenseBrickMapper.toBrick(expense));
       return Result.success(OperatingExpenseBrickMapper.fromBrick(saved));
     } on DatabaseException catch (error, stackTrace) {
-      return _persistenceFailure(OperatingExpensePersistenceError.saveExpense, error, stackTrace);
+      return _persistenceFailure(OperatingExpenseFailure.saveExpense, error, stackTrace);
     } on OfflineFirstException catch (error, stackTrace) {
-      return _persistenceFailure(OperatingExpensePersistenceError.saveExpense, error, stackTrace);
+      return _persistenceFailure(OperatingExpenseFailure.saveExpense, error, stackTrace);
     } on RestException catch (error, stackTrace) {
-      return _persistenceFailure(OperatingExpensePersistenceError.saveExpense, error, stackTrace);
+      return _persistenceFailure(OperatingExpenseFailure.saveExpense, error, stackTrace);
     } on FileSystemException catch (error, stackTrace) {
-      return _persistenceFailure(OperatingExpensePersistenceError.saveExpense, error, stackTrace);
+      return _persistenceFailure(OperatingExpenseFailure.saveExpense, error, stackTrace);
     }
   }
 
@@ -96,13 +103,13 @@ class OperatingExpenseRepositoryImpl implements OperatingExpenseRepository {
       final saved = await _categoryStore.upsertCategory(model);
       return Result.success(_categoryFromBrick(saved, type));
     } on DatabaseException catch (error, stackTrace) {
-      return _persistenceFailure(OperatingExpensePersistenceError.saveCategory, error, stackTrace);
+      return _persistenceFailure(OperatingExpenseFailure.saveCategory, error, stackTrace);
     } on OfflineFirstException catch (error, stackTrace) {
-      return _persistenceFailure(OperatingExpensePersistenceError.saveCategory, error, stackTrace);
+      return _persistenceFailure(OperatingExpenseFailure.saveCategory, error, stackTrace);
     } on RestException catch (error, stackTrace) {
-      return _persistenceFailure(OperatingExpensePersistenceError.saveCategory, error, stackTrace);
+      return _persistenceFailure(OperatingExpenseFailure.saveCategory, error, stackTrace);
     } on FileSystemException catch (error, stackTrace) {
-      return _persistenceFailure(OperatingExpensePersistenceError.saveCategory, error, stackTrace);
+      return _persistenceFailure(OperatingExpenseFailure.saveCategory, error, stackTrace);
     }
   }
 
@@ -114,14 +121,201 @@ class OperatingExpenseRepositoryImpl implements OperatingExpenseRepository {
     try {
       return Result.success(await _allCategories(establishmentId, type));
     } on DatabaseException catch (error, stackTrace) {
-      return _persistenceFailure(OperatingExpensePersistenceError.loadCategories, error, stackTrace);
+      return _persistenceFailure(OperatingExpenseFailure.loadCategories, error, stackTrace);
     } on OfflineFirstException catch (error, stackTrace) {
-      return _persistenceFailure(OperatingExpensePersistenceError.loadCategories, error, stackTrace);
+      return _persistenceFailure(OperatingExpenseFailure.loadCategories, error, stackTrace);
     } on RestException catch (error, stackTrace) {
-      return _persistenceFailure(OperatingExpensePersistenceError.loadCategories, error, stackTrace);
+      return _persistenceFailure(OperatingExpenseFailure.loadCategories, error, stackTrace);
     } on FileSystemException catch (error, stackTrace) {
-      return _persistenceFailure(OperatingExpensePersistenceError.loadCategories, error, stackTrace);
+      return _persistenceFailure(OperatingExpenseFailure.loadCategories, error, stackTrace);
     }
+  }
+
+  @override
+  Future<Result<OperatingExpenseHistory>> getLocalHistory({
+    required String establishmentId,
+    required OperatingExpenseFilters filters,
+  }) async {
+    try {
+      final expenses = await _filteredLocalExpenses(establishmentId, filters);
+      return Result.success(_localHistory(expenses));
+    } on DatabaseException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.loadHistory, error, stackTrace);
+    } on OfflineFirstException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.loadHistory, error, stackTrace);
+    } on RestException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.loadHistory, error, stackTrace);
+    } on FileSystemException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.loadHistory, error, stackTrace);
+    } on FormatException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.loadHistory, error, stackTrace);
+    }
+  }
+
+  @override
+  Future<Result<OperatingExpenseHistory>> refreshHistory({
+    required String establishmentId,
+    required OperatingExpenseFilters filters,
+  }) async {
+    try {
+      final page = await _remoteDataSource.getExpenses(
+        establishmentId,
+        const OperatingExpenseFilters(
+          period: OperatingExpensePeriod.allHistory,
+        ),
+      );
+      await _expenseStore.reconcileRemoteExpenses(
+        page.expenses.map(OperatingExpenseBrickMapper.fromRemote),
+      );
+      final visible = await _filteredLocalExpenses(establishmentId, filters);
+      final pending = visible
+          .where(
+            (item) => item.syncStatus != OperatingExpenseSyncStatus.synchronized,
+          )
+          .toList();
+      return Result.success(
+        OperatingExpenseHistory(
+          expenses: visible,
+          totalCents: visible.fold(0, (sum, item) => sum + item.amountCents),
+          cachedWithoutConnection: false,
+          pendingCount: pending.length,
+          totalIncludesPending: pending.isNotEmpty,
+        ),
+      );
+    } on DomainException catch (error) {
+      return Result.failure(error);
+    } on DatabaseException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.refreshHistory, error, stackTrace);
+    } on OfflineFirstException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.refreshHistory, error, stackTrace);
+    } on RestException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.refreshHistory, error, stackTrace);
+    } on FileSystemException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.refreshHistory, error, stackTrace);
+    } on FormatException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.refreshHistory, error, stackTrace);
+    }
+  }
+
+  @override
+  Future<Result<List<OperatingExpenseCategory>>> refreshCategories({required String establishmentId}) async {
+    try {
+      final groups = await _remoteDataSource.getCatalog(establishmentId);
+      final timestamp = _now().toUtc();
+      final remoteModels = OperatingExpenseCategoryBrickMapper.fromRemoteCatalog(
+        groups: groups,
+        establishmentId: establishmentId,
+        cachedAt: timestamp,
+      );
+      await _categoryStore.cacheRemoteCategories(remoteModels);
+      final local = await Future.wait(
+        OperatingExpenseType.values.map((type) => _allCategories(establishmentId, type)),
+      );
+      return Result.success(
+        _mergeCatalog([
+          ...groups.expand(_categoriesFromRemote),
+          ...local.expand((items) => items),
+        ]),
+      );
+    } on DomainException catch (error) {
+      return Result.failure(error);
+    } on DatabaseException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.loadCategories, error, stackTrace);
+    } on OfflineFirstException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.loadCategories, error, stackTrace);
+    } on RestException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.loadCategories, error, stackTrace);
+    } on FileSystemException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.loadCategories, error, stackTrace);
+    } on FormatException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.loadCategories, error, stackTrace);
+    }
+  }
+
+  @override
+  Future<Result<OperatingExpenseExport>> exportHistory({
+    required String establishmentId,
+    required OperatingExpenseFilters filters,
+  }) async {
+    try {
+      return Result.success(await _remoteDataSource.export(establishmentId, filters));
+    } on DomainException catch (error) {
+      return Result.failure(error);
+    } on FileSystemException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.exportFailed, error, stackTrace);
+    } on FormatException catch (error, stackTrace) {
+      return _persistenceFailure(OperatingExpenseFailure.exportFailed, error, stackTrace);
+    }
+  }
+
+  Future<List<OperatingExpense>> _filteredLocalExpenses(
+    String establishmentId,
+    OperatingExpenseFilters filters,
+  ) async {
+    final stored = await _expenseStore.getLocalExpenses(establishmentId);
+    final categories = await Future.wait(
+      OperatingExpenseType.values.map((type) => _allCategories(establishmentId, type)),
+    );
+    final labels = {
+      for (final item in categories.expand((items) => items)) '${item.type.value}:${item.value}': item.label,
+    };
+    final mapped =
+        stored
+            .map(OperatingExpenseBrickMapper.fromBrick)
+            .where((expense) {
+              final date = DateTime(expense.date.year, expense.date.month, expense.date.day);
+              final from = filters.from;
+              final to = filters.to;
+              return (from == null || !date.isBefore(from)) &&
+                  (to == null || !date.isAfter(to)) &&
+                  (filters.type == null || expense.type == filters.type) &&
+                  (filters.category == null || expense.category == filters.category);
+            })
+            .map(
+              (expense) => expense.copyWith(categoryLabel: labels['${expense.type.value}:${expense.category}']),
+            )
+            .toList()
+          ..sort((left, right) => right.date.compareTo(left.date));
+    return mapped;
+  }
+
+  OperatingExpenseHistory _localHistory(List<OperatingExpense> expenses) {
+    final pendingCount = expenses.where((item) => item.syncStatus != OperatingExpenseSyncStatus.synchronized).length;
+    return OperatingExpenseHistory(
+      expenses: expenses,
+      totalCents: expenses.fold(0, (sum, item) => sum + item.amountCents),
+      cachedWithoutConnection: true,
+      pendingCount: pendingCount,
+      totalIncludesPending: pendingCount > 0,
+    );
+  }
+
+  List<OperatingExpenseCategory> _mergeCatalog(Iterable<OperatingExpenseCategory> remote) {
+    final byKey = <String, OperatingExpenseCategory>{
+      for (final item in OperatingExpenseCategoryCatalog.values) '${item.type.value}:${item.value}': item,
+    };
+    for (final item in remote) {
+      byKey['${item.type.value}:${item.value}'] = item;
+    }
+    return byKey.values.toList(growable: false);
+  }
+
+  Iterable<OperatingExpenseCategory> _categoriesFromRemote(
+    OperatingExpenseRemoteCatalogType group,
+  ) {
+    final type = OperatingExpenseType.values.where((item) => item.value == group.type).firstOrNull;
+    if (type == null) {
+      throw const FormatException('Invalid operating expense type.');
+    }
+    return group.categories.map(
+      (item) => OperatingExpenseCategory(
+        value: item.value,
+        label: item.label,
+        type: type,
+        custom: item.custom,
+        id: item.id,
+      ),
+    );
   }
 
   Future<List<OperatingExpenseCategory>> _allCategories(String establishmentId, OperatingExpenseType type) async {
@@ -134,7 +328,7 @@ class OperatingExpenseRepositoryImpl implements OperatingExpenseRepository {
       OperatingExpenseCategory(value: model.value, label: model.name, type: type, custom: true, id: model.localId);
 
   Result<T> _persistenceFailure<T>(
-    OperatingExpensePersistenceError reason,
+    OperatingExpenseFailure reason,
     Exception error,
     StackTrace stackTrace,
   ) {

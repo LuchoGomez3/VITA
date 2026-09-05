@@ -1,6 +1,9 @@
 """Reglas de negocio, auditoría y reconciliación de egresos operativos."""
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from decimal import Decimal
+import csv
+from io import StringIO
 import re
 import unicodedata
 from uuid import UUID, uuid4
@@ -8,11 +11,13 @@ from uuid import UUID, uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.modules.egresos_operativos.exceptions import (
+    AccesoFinancieroDenegadoError,
     CategoriaEgresoDuplicadaError,
     CategoriaEgresoIdEnConflictoError,
     CategoriaEgresoInvalidaError,
     EgresoOperativoNoEncontradoError,
     EstablecimientoNoAutorizadoError,
+    RangoFechasInvalidoError,
 )
 from api.modules.egresos_operativos.models import (
     CategoriaEgresoPersonalizada,
@@ -31,7 +36,10 @@ from api.modules.egresos_operativos.schemas import (
 )
 from api.modules.establecimientos.repository import UsuarioEstablecimientoRepository
 from api.modules.usuarios.models import Usuario
-from api.shared.enums import CategoriaEgresoOperativo, TipoEgresoOperativo
+from api.shared.enums import CategoriaEgresoOperativo, RolUsuario, TipoEgresoOperativo
+
+
+ROLES_FINANCIEROS = {RolUsuario.admin, RolUsuario.owner}
 
 
 def normalizar_utc(instante: datetime | None) -> datetime | None:
@@ -55,6 +63,18 @@ class EgresoOperativoService:
         )
         if membresia is None:
             raise EstablecimientoNoAutorizadoError()
+
+    async def exigir_acceso_financiero(
+        self, usuario: Usuario, establecimiento_id: UUID
+    ) -> None:
+        """Limita los datos financieros al administrador o dueño."""
+        membresias = await self.memberships.get_memberships(
+            usuario.id, establecimiento_id
+        )
+        if not membresias:
+            raise EstablecimientoNoAutorizadoError()
+        if not any(membresia.rol in ROLES_FINANCIEROS for membresia in membresias):
+            raise AccesoFinancieroDenegadoError()
 
     @staticmethod
     def representar(egreso: EgresoOperativo, usuario: Usuario) -> EgresoOperativoRead:
@@ -158,21 +178,104 @@ class EgresoOperativoService:
         *,
         updated_since: datetime | None,
         include_deleted: bool,
-    ) -> list[EgresoOperativoRead]:
+        fecha_desde: date | None = None,
+        fecha_hasta: date | None = None,
+        tipo: TipoEgresoOperativo | None = None,
+        categoria: str | None = None,
+    ) -> tuple[list[EgresoOperativoRead], dict]:
         """Entrega historial auditable o cambios incrementales para SQLite."""
-        await self.exigir_acceso(usuario, establecimiento_id)
+        await self.exigir_acceso_financiero(usuario, establecimiento_id)
+        if (
+            fecha_desde is not None
+            and fecha_hasta is not None
+            and fecha_desde > fecha_hasta
+        ):
+            raise RangoFechasInvalidoError()
         filas = await self.repository.list_by_establecimiento(
             establecimiento_id,
             updated_since=updated_since,
             include_deleted=include_deleted,
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            tipo=tipo,
+            categoria=categoria.strip().lower() if categoria else None,
         )
-        return [self.representar(egreso, cargador) for egreso, cargador in filas]
+        egresos = [self.representar(egreso, cargador) for egreso, cargador in filas]
+        activos = [egreso for egreso in egresos if egreso.deleted_at is None]
+        por_tipo: dict[str, Decimal] = {}
+        por_categoria: dict[str, Decimal] = {}
+        for egreso in activos:
+            por_tipo[egreso.tipo.value] = (
+                por_tipo.get(egreso.tipo.value, Decimal()) + egreso.monto
+            )
+            por_categoria[egreso.categoria] = (
+                por_categoria.get(egreso.categoria, Decimal()) + egreso.monto
+            )
+        resumen = {
+            "total_egresos": sum((egreso.monto for egreso in activos), Decimal()),
+            "cantidad": len(activos),
+            "totales_por_tipo": por_tipo,
+            "totales_por_categoria": por_categoria,
+        }
+        return egresos, resumen
+
+    async def exportar_csv(
+        self,
+        usuario: Usuario,
+        establecimiento_id: UUID,
+        *,
+        fecha_desde: date | None = None,
+        fecha_hasta: date | None = None,
+        tipo: TipoEgresoOperativo | None = None,
+        categoria: str | None = None,
+    ) -> str:
+        """Genera un CSV del mismo conjunto filtrado que se totaliza en pantalla."""
+        egresos, _ = await self.listar(
+            usuario,
+            establecimiento_id,
+            updated_since=None,
+            include_deleted=False,
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            tipo=tipo,
+            categoria=categoria,
+        )
+        salida = StringIO(newline="")
+        escritor = csv.writer(salida)
+        escritor.writerow(
+            [
+                "fecha",
+                "tipo",
+                "categoria",
+                "insumo",
+                "monto_pesos",
+                "registrado_por",
+                "email_registrador",
+                "numero_comprobante",
+                "descripcion",
+            ]
+        )
+        for egreso in egresos:
+            escritor.writerow(
+                [
+                    egreso.fecha.isoformat(),
+                    egreso.tipo.value,
+                    egreso.categoria,
+                    egreso.insumo,
+                    format(egreso.monto, ".2f"),
+                    f"{egreso.cargado_por.nombre} {egreso.cargado_por.apellido}",
+                    egreso.cargado_por.email,
+                    egreso.numero_comprobante or "",
+                    egreso.descripcion or "",
+                ]
+            )
+        return "\ufeff" + salida.getvalue()
 
     async def catalogo(
         self, usuario: Usuario, establecimiento_id: UUID
     ) -> list[TipoEgresoRead]:
         """Combina las categorías base con las creadas específicamente para el campo."""
-        await self.exigir_acceso(usuario, establecimiento_id)
+        await self.exigir_acceso_financiero(usuario, establecimiento_id)
         personalizadas = await self.repository.list_categorias(establecimiento_id)
         etiquetas_tipo = {
             TipoEgresoOperativo.costo_produccion: "Costo de Producción",

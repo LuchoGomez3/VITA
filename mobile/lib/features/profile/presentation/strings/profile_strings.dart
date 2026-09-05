@@ -62,14 +62,4 @@ abstract final class ProfileStrings {
 
   /// Valor usado brevemente mientras la sesion termina de restaurarse.
   static const emptyCredential = '—';
-
-  /// Devuelve el nombre visible de un rol persistido.
-  static String roleName(String role) {
-    return switch (role) {
-      'admin' => 'Administrador',
-      'encargado' => 'Encargado',
-      'operario' => 'Operario',
-      _ => 'Sin rol asignado',
-    };
-  }
 }
