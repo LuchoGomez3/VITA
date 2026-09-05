@@ -37,6 +37,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
          ),
        ) {
     on<_DraftChanged>(_onDraftChanged);
+    on<_DestinationsRequested>(_onDestinationsRequested);
     on<_NextStepRequested>(_onNextStepRequested);
     on<_PreviousStepRequested>(_onPreviousStepRequested);
     on<_StepRequested>(_onStepRequested);
@@ -45,6 +46,37 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
 
   final RegisterAnimalUseCase _registerAnimalUseCase;
   final AnimalRegistrationContext _registrationContext;
+
+  Future<void> _onDestinationsRequested(
+    _DestinationsRequested event,
+    Emitter<RegisterAnimalState> emit,
+  ) async {
+    emit(state.copyWith(destinationsState: const ResultState.loading()));
+    try {
+      final destinations = await _registrationContext.loadDestinations();
+      final selectedId = state.draft.destinationId;
+      final selectionStillExists = destinations.any(
+        (destination) => destination.id == selectedId,
+      );
+      emit(
+        state.copyWith(
+          destinationsState: ResultState.data(destinations),
+          draft: selectionStillExists ? state.draft : state.draft.copyWith(destinationId: null),
+        ),
+      );
+    } on Object {
+      emit(
+        state.copyWith(
+          destinationsState: const ResultState.error(
+            DomainException(
+              message: AnimalRegisterStrings.destinationsLoadError,
+              code: DomainErrorCode.offline,
+            ),
+          ),
+        ),
+      );
+    }
+  }
 
   /// Reemplaza el borrador completo cuando un campo del formulario cambia.
   ///

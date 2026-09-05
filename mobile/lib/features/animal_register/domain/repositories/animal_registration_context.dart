@@ -1,5 +1,24 @@
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 
+/// Lote local disponible como destino del alta de un animal.
+class AnimalRegistrationDestination {
+  /// Crea una opción con UUID y texto listo para presentación.
+  const AnimalRegistrationDestination({
+    required this.id,
+    required this.name,
+    required this.details,
+  });
+
+  /// UUID real del lote.
+  final String id;
+
+  /// Nombre visible.
+  final String name;
+
+  /// Resumen productivo.
+  final String details;
+}
+
 /// Contrato temporal para resolver el contexto de negocio del registro.
 ///
 /// El formulario trabaja con selecciones de UI: potrero elegido, categoria
@@ -8,8 +27,9 @@ import 'package:frontend_mayoral/features/animal_register/domain/entities/animal
 /// nombres consistentes con el backend.
 ///
 /// Este contrato mantiene esa resolucion fuera del BLoC mientras todavia no
-/// existen los flujos reales de sesion y catalogos. Hoy lo implementa un mock
-/// temporal.
+/// existen todos los flujos reales de sesion y catalogos. La implementacion
+/// actual obtiene lotes desde Brick, pero categorias y genealogia conservan
+/// resoluciones temporales.
 ///
 /// Diseno final esperado:
 /// - El usuario y el establecimiento seleccionado deberian venir de un
@@ -25,6 +45,9 @@ import 'package:frontend_mayoral/features/animal_register/domain/entities/animal
 /// `WatchLotsUseCase`, `WatchCategoriesUseCase`, `GetSelectedEstablishmentUseCase`
 /// o equivalentes.
 abstract class AnimalRegistrationContext {
+  /// Carga los lotes activos disponibles desde la caché local.
+  Future<List<AnimalRegistrationDestination>> loadDestinations();
+
   /// ID del establecimiento seleccionado para la sesion actual de registro.
   String get establishmentId;
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
@@ -17,6 +18,8 @@ class RegisterAnimalGenealogyStep extends StatefulWidget {
 }
 
 class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogyStep> {
+  // TODO(agusf): reemplazar madre y padres estaticos por animales elegibles
+  // consultados offline desde BrickAnimalStore para el establecimiento activo.
   static const _mother = GenealogyAnimalOption(
     id: 'mother-003-0421',
     visualTag: AnimalRegisterStrings.stepThreeMockMotherTag,
@@ -53,12 +56,6 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
     ),
   ];
 
-  static const _destination = AnimalDestinationOption(
-    id: 'destination-la-cumbre',
-    name: AnimalRegisterStrings.stepThreeMockDestinationName,
-    details: AnimalRegisterStrings.stepThreeMockDestinationDetails,
-  );
-
   String _fatherSearch = '';
 
   List<GenealogyAnimalOption> get _filteredFatherOptions {
@@ -75,12 +72,13 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
 
   @override
   Widget build(BuildContext context) {
-    final draft = context.select(
-      (RegisterAnimalBloc bloc) => bloc.state.draft,
-    );
+    final state = context.watch<RegisterAnimalBloc>().state;
+    final draft = state.draft;
 
     return Column(
       children: [
+        // TODO(agusf): mostrar metodo y fecha reales recibidos del flujo RFID,
+        // OCR o carga manual cuando identificacion entregue esos metadatos.
         AnimalIdentificationSummary(
           rfid: draft.rfid,
           visualTag: _visualTag(draft),
@@ -148,17 +146,38 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
                   style: AppTypography.pageBodyTitle,
                 ),
                 const SizedBox(height: AppSpacing.md),
-                DestinationSelectionCard(
-                  destination: _destination,
-                  isSelected: draft.destinationId == _destination.id,
-                  onTap: () {
-                    _updateDraft(
-                      draft.copyWith(
-                        destinationId: draft.destinationId == _destination.id ? null : _destination.id,
-                      ),
-                    );
-                  },
-                ),
+                switch (state.destinationsState) {
+                  Initial() || Loading() => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  ResultError(:final error) => Text(
+                    error.message,
+                    style: AppTypography.errorBody,
+                  ),
+                  Data(:final data) when data.isEmpty => const Text(
+                    AnimalRegisterStrings.noActiveLotsMessage,
+                    style: AppTypography.pageBodyTitle,
+                  ),
+                  Data(:final data) => Column(
+                    children: [
+                      for (final destination in data) ...[
+                        DestinationSelectionCard(
+                          destination: destination,
+                          isSelected: draft.destinationId == destination.id,
+                          onTap: () {
+                            _updateDraft(
+                              draft.copyWith(
+                                destinationId: draft.destinationId == destination.id ? null : destination.id,
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                      ],
+                    ],
+                  ),
+                  _ => const SizedBox.shrink(),
+                },
               ],
             ),
           ),

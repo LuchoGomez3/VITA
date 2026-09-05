@@ -1,9 +1,12 @@
+import 'package:frontend_mayoral/app/config/app_config.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
-import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/operating_expense_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/operating_expense_category_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -36,8 +39,16 @@ class BrickBootstrap {
     // Stores por entidad. A medida que sumemos modelos Brick, aca se registran
     // stores como BrickMovimientoStore, BrickEventoSanitarioStore, etc.
     BrickAnimalStore.configure(AppBrickRepository.instance);
+    BrickAnimalLotMovementStore.configure(
+      AppBrickRepository.instance,
+      enableRemoteSync: AppConfig.current.enableLotMovementRemoteSync,
+    );
     BrickCategoriaStore.configure(AppBrickRepository.instance);
     BrickPesajeStore.configure(AppBrickRepository.instance);
+    BrickLotStore.configure(
+      AppBrickRepository.instance,
+      enableRemoteSync: AppConfig.current.enableLotRemoteSync,
+    );
     BrickOperatingExpenseCategoryStore.configure(AppBrickRepository.instance);
     BrickOperatingExpenseStore.configure(
       AppBrickRepository.instance,

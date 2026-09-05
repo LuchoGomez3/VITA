@@ -16,7 +16,9 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromRest(
     categoryId: brickStringFromBackend(data['categoria_id']),
     lotId: brickStringFromBackend(data['lote_id']),
     establishmentId: data['establecimiento_id'] as String,
-    initialWeight: data['peso_inicial'] == null ? null : brickNullableDoubleFromBackend(data['peso_inicial']),
+    initialWeight: data['peso_inicial'] == null
+        ? null
+        : brickNullableDoubleFromBackend(data['peso_inicial']),
     weighingMethod: brickAnimalWeighingMethodFromBackend(
       data['metodo_pesaje'] as String?,
     ),
@@ -24,7 +26,9 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromRest(
     motherId: data['madre_id'] == null ? null : data['madre_id'] as String?,
     fatherId: data['padre_id'] == null ? null : data['padre_id'] as String?,
     coat: data['pelaje'] == null ? null : data['pelaje'] as String?,
-    observations: data['observaciones'] == null ? null : data['observaciones'] as String?,
+    observations: data['observaciones'] == null
+        ? null
+        : data['observaciones'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -82,15 +86,22 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromSqlite(
     lotId: data['lot_id'] as String,
     lotName: data['lot_name'] as String,
     establishmentId: data['establishment_id'] as String,
-    initialWeight: data['initial_weight'] == null ? null : data['initial_weight'] as double?,
-    weighingMethod: BrickAnimalWeighingMethod.values[data['weighing_method'] as int],
+    initialWeight: data['initial_weight'] == null
+        ? null
+        : data['initial_weight'] as double?,
+    weighingMethod:
+        BrickAnimalWeighingMethod.values[data['weighing_method'] as int],
     weighingDate: DateTime.parse(data['weighing_date'] as String),
     motherId: data['mother_id'] == null ? null : data['mother_id'] as String?,
     fatherId: data['father_id'] == null ? null : data['father_id'] as String?,
     coat: data['coat'] == null ? null : data['coat'] as String?,
-    observations: data['observations'] == null ? null : data['observations'] as String?,
+    observations: data['observations'] == null
+        ? null
+        : data['observations'] as String?,
     syncStatus: BrickAnimalSyncStatus.values[data['sync_status'] as int],
-    syncErrorCode: data['sync_error_code'] == null ? null : data['sync_error_code'] as String?,
+    syncErrorCode: data['sync_error_code'] == null
+        ? null
+        : data['sync_error_code'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -136,7 +147,8 @@ Future<Map<String, dynamic>> _$BrickAnimalModelToSqlite(
 }
 
 /// Construct a [BrickAnimalModel]
-class BrickAnimalModelAdapter extends OfflineFirstWithRestAdapter<BrickAnimalModel> {
+class BrickAnimalModelAdapter
+    extends OfflineFirstWithRestAdapter<BrickAnimalModel> {
   BrickAnimalModelAdapter();
 
   @override
