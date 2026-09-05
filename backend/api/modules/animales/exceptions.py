@@ -2,10 +2,20 @@
 
 from api.shared.exceptions import (
     ConflictError,
-    ForbiddenError,
+    EstablecimientoNoAutorizadoError,
     NotFoundError,
     ValidationError,
 )
+
+# Se re-exporta para no romper los imports existentes: la excepción se promovió a
+# ``api.shared.exceptions`` cuando lotes y movimientos también la necesitaron.
+__all__ = [
+    "AnimalNoEncontradoError",
+    "AnimalReferenciaInvalidaError",
+    "CaravanaDuplicadaError",
+    "EstablecimientoNoAutorizadoError",
+    "LoteNoPerteneceAlEstablecimientoError",
+]
 
 
 class CaravanaDuplicadaError(ConflictError):
@@ -31,13 +41,6 @@ class AnimalReferenciaInvalidaError(ValidationError):
         super().__init__(
             f"La referencia '{campo}' es inválida o pertenece a otro establecimiento"
         )
-
-
-class EstablecimientoNoAutorizadoError(ForbiddenError):
-    code = "establecimiento_no_autorizado"
-
-    def __init__(self) -> None:
-        super().__init__("No tiene acceso al establecimiento indicado")
 
 
 class AnimalNoEncontradoError(NotFoundError):

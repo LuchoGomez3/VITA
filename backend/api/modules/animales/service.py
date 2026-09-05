@@ -21,17 +21,7 @@ from api.modules.pesajes.models import Pesaje
 from api.modules.pesajes.repository import PesajeRepository
 from api.modules.usuarios.models import Usuario
 from api.shared.enums import EstadoAnimal, SexoAnimal
-
-
-def _as_utc(dt: datetime | None) -> datetime | None:
-    """Normaliza a UTC-aware para comparar timestamps de forma robusta.
-
-    Postgres devuelve datetimes aware; SQLite (tests) puede devolverlos naive.
-    Asumimos UTC en los naive para no romper la comparación del last-write-wins.
-    """
-    if dt is None:
-        return None
-    return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
+from api.shared.sync import as_utc
 
 
 class AnimalService:
@@ -140,8 +130,8 @@ class AnimalService:
         """Aplica los campos de un alta reenviada solo si el cliente trae una versión
         más nueva (last-write-wins por ``updated_at``). Si es más vieja o igual, se
         conserva la del servidor (no-op)."""
-        entrante = _as_utc(data.updated_at) or datetime.now(UTC)
-        if entrante <= _as_utc(existente.updated_at):
+        entrante = as_utc(data.updated_at) or datetime.now(UTC)
+        if entrante <= as_utc(existente.updated_at):
             return
         existente.nro_caravana_rfid = data.nro_caravana_rfid
         existente.caravana_visual = data.caravana_visual
@@ -168,8 +158,8 @@ class AnimalService:
             raise AnimalNoEncontradoError()
         await self._exigir_acceso(current_user, animal.establecimiento_id)
 
-        entrante = _as_utc(data.updated_at) or datetime.now(UTC)
-        if entrante <= _as_utc(animal.updated_at):
+        entrante = as_utc(data.updated_at) or datetime.now(UTC)
+        if entrante <= as_utc(animal.updated_at):
             # Cambio rancio: gana el servidor.
             return AnimalRead.model_validate(animal)
 
@@ -219,9 +209,9 @@ class AnimalService:
             raise AnimalNoEncontradoError()
         await self._exigir_acceso(current_user, animal.establecimiento_id)
 
-        ts = _as_utc(deleted_at) or datetime.now(UTC)
+        ts = as_utc(deleted_at) or datetime.now(UTC)
         animal.deleted_at = ts
-        animal.updated_at = _as_utc(updated_at) or ts
+        animal.updated_at = as_utc(updated_at) or ts
         await self.repository.save(animal)
         return AnimalRead.model_validate(animal)
 
