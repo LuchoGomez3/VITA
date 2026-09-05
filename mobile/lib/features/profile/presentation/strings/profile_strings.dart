@@ -63,6 +63,21 @@ abstract final class ProfileStrings {
   /// Valor usado brevemente mientras la sesion termina de restaurarse.
   static const emptyCredential = '—';
 
+  /// Título de la sección de dispositivos emparejados.
+  static const pairedDevicesSection = 'Dispositivos emparejados';
+
+  /// Etiqueta de la acción para vincular un dispositivo nuevo.
+  static const addDeviceLabel = 'Vincular nuevo dispositivo';
+
+  /// Título de la sección de preferencias.
+  static const preferencesSection = 'Preferencias';
+
+  /// Título de la sección "Sobre la app".
+  static const aboutAppSection = 'Sobre la app';
+
+  /// Mensaje mostrado por acciones sin funcionalidad real todavía.
+  static const outOfScopeMessage = 'Fuera de alcance de esta iniciativa';
+
   /// Devuelve el nombre visible de un rol persistido.
   static String roleName(String role) {
     return switch (role) {

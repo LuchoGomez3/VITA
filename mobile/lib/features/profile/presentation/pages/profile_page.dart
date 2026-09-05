@@ -6,9 +6,12 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/profile/domain/entities/establishment_details.dart';
 import 'package:frontend_mayoral/features/profile/presentation/cubit/profile_cubit.dart';
+import 'package:frontend_mayoral/features/profile/presentation/mock/settings_mock.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_establishments_section.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_user_card.dart';
+import 'package:frontend_mayoral/features/profile/presentation/widgets/settings_row.dart';
+import 'package:frontend_mayoral/features/profile/presentation/widgets/settings_section_card.dart';
 import 'package:go_router/go_router.dart';
 
 /// Callback que cierra la sesión actual.
@@ -88,6 +91,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: AppSpacing.xl),
               const _EstablishmentsContent(),
+              const SizedBox(height: AppSpacing.xl),
+              const _SettingsSections(),
               const SizedBox(height: AppSpacing.lg),
               AppFilledButton(
                 label: ProfileStrings.signOutButton,
@@ -135,6 +140,74 @@ class _EstablishmentsContent extends StatelessWidget {
         ),
         _ => const Center(child: CircularProgressIndicator()),
       },
+    );
+  }
+}
+
+/// Secciones mock de sólo lectura: dispositivos, preferencias y "sobre la
+/// app". Réplica visual estática de `AjustesScreen` (ver
+/// `.claude/specs/ajustes.md`); ninguna fila navega a algo real todavía.
+class _SettingsSections extends StatelessWidget {
+  const _SettingsSections();
+
+  void _showOutOfScopeSnackBar(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text(ProfileStrings.outOfScopeMessage)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SettingsSectionCard(
+          title: ProfileStrings.pairedDevicesSection,
+          rows: [
+            for (final device in pairedDevicesMock)
+              SettingsRow(
+                icon: Icons.bluetooth,
+                label: device.name,
+                subtitle: device.detail,
+                subtitleColor: device.isConnected ? AppColors.primary : null,
+              ),
+            SettingsRow(
+              icon: Icons.add,
+              label: ProfileStrings.addDeviceLabel,
+              isPrimaryAction: true,
+              onTap: () => _showOutOfScopeSnackBar(context),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        SettingsSectionCard(
+          title: ProfileStrings.preferencesSection,
+          rows: [
+            for (final item in preferencesMock)
+              SettingsRow(
+                icon: Icons.tune,
+                label: item.label,
+                subtitle: item.value,
+                isNavigable: item.isNavigable,
+                onTap: item.isNavigable ? () => _showOutOfScopeSnackBar(context) : null,
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        SettingsSectionCard(
+          title: ProfileStrings.aboutAppSection,
+          rows: [
+            for (final item in aboutAppMock)
+              SettingsRow(
+                icon: Icons.info_outline,
+                label: item.label,
+                subtitle: item.value,
+                isNavigable: item.isNavigable,
+                onTap: item.isNavigable ? () => _showOutOfScopeSnackBar(context) : null,
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
