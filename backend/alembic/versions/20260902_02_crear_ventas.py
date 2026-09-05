@@ -4,7 +4,7 @@ La venta es una operación comercial (comprador, DTe, monto) y vive separada de
 ``egresos``, que registra salidas físicas no comerciales del animal.
 
 Revision ID: 20260902_02
-Revises: 20260819_01
+Revises: 20260827_02
 Create Date: 2026-09-02
 """
 
@@ -16,7 +16,7 @@ import sqlmodel
 from sqlalchemy.engine import Connection
 
 revision: str = "20260902_02"
-down_revision: str | None = "20260819_01"
+down_revision: str | None = "20260827_02"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
