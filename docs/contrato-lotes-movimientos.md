@@ -180,7 +180,8 @@ Mobile valida primero para dar feedback inmediato en la manga; estas son las aut
 ## 7. Lo que queda pendiente
 
 - **Autorización por rol.** Hoy solo se valida pertenencia al establecimiento, igual que en
-  animales. Cuando Producto cierre la matriz, `external_buyer` no debería mover animales.
+  animales. `RolUsuario` quedó en `admin`/`owner`/`employee` tras el PR #45; falta definir
+  cuáles de esos pueden mover hacienda.
 - **Paginación del pull.** No existe en ningún listado delta. Con decenas de lotes por
   establecimiento no molesta; el historial de movimientos puede crecer.
 - **Purga de tombstones.** No hay política todavía.

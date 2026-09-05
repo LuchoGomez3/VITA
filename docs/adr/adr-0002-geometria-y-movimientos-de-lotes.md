@@ -131,8 +131,10 @@ valor local.
   `pesajes` siguen en esa situación: queda como deuda.
 - El aislamiento sigue siendo responsabilidad del service, que filtra por membresía en
   toda consulta. RLS es defensa en profundidad, nunca el mecanismo principal.
-- Sigue sin haber autorización por rol, igual que en animales. Cuando Producto cierre la
-  matriz, `external_buyer` no debería poder mover animales.
+- Sigue sin haber autorización por rol, igual que en animales: solo se valida
+  pertenencia al establecimiento. El PR #45 redujo `RolUsuario` a
+  `admin`/`owner`/`employee`; cuando Producto cierre la matriz definitiva habrá que
+  decidir qué roles pueden mover hacienda.
 
 ## Alternativas descartadas
 
