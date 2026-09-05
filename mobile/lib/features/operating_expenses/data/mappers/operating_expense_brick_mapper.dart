@@ -27,7 +27,7 @@ class OperatingExpenseBrickMapper {
     description: expense.description,
     receiptNumber: expense.receiptNumber,
     loadedById: expense.loadedById,
-    loadedByName: expense.loadedByName,
+    loadedByName: _loadedByName(expense.loadedBy),
     createdAt: expense.createdAt,
     updatedAt: expense.updatedAt,
     deletedAt: expense.deletedAt,
@@ -81,4 +81,10 @@ class OperatingExpenseBrickMapper {
     },
     syncErrorCode: model.syncErrorCode,
   );
+
+  static String? _loadedByName(OperatingExpenseRemoteUserDto? user) {
+    if (user == null) return null;
+    final fullName = '${user.firstName ?? ''} ${user.lastName ?? ''}'.trim();
+    return fullName.isEmpty ? user.email : fullName;
+  }
 }

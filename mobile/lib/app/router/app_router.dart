@@ -488,6 +488,7 @@ class FinancialRouteGuard extends StatelessWidget {
     required this.establishmentId,
     required this.getEstablishmentRole,
     required this.child,
+    super.key,
   });
 
   /// UUID cuyo permiso financiero se evalua.

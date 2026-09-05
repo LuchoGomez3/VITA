@@ -130,7 +130,7 @@ class BrickOperatingExpenseStore implements OperatingExpenseBrickStore {
     if (result.resourcePath.endsWith(
       BrickOperatingExpenseCategoryRequestTransformer.categoriesPath,
     )) {
-      if (result.synchronized) {
+      if (BrickOperatingExpenseCategoryStore.isConfirmed(result)) {
         await _enqueueExpensesWaitingFor(result.localId);
       } else {
         await _rejectExpensesWaitingFor(

@@ -10,6 +10,7 @@ import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/utils/uuid_v4.dart';
 import 'package:frontend_mayoral/features/operating_expenses/data/datasources/operating_expense_remote_data_source.dart';
 import 'package:frontend_mayoral/features/operating_expenses/data/mappers/operating_expense_brick_mapper.dart';
+import 'package:frontend_mayoral/features/operating_expenses/data/mappers/operating_expense_category_brick_mapper.dart';
 import 'package:frontend_mayoral/features/operating_expenses/data/models/operating_expense_remote_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/catalogs/operating_expense_category_catalog.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
@@ -201,21 +202,10 @@ class OperatingExpenseRepositoryImpl implements OperatingExpenseRepository {
     try {
       final groups = await _remoteDataSource.getCatalog(establishmentId);
       final timestamp = _now().toUtc();
-      final remoteModels = groups.expand(
-        (group) => group.categories
-            .where((item) => item.custom)
-            .map(
-              (item) => BrickOperatingExpenseCategoryModel(
-                localId: item.id ?? 'catalog:${group.type}:${item.value}:$establishmentId',
-                establishmentId: establishmentId,
-                type: group.type,
-                name: item.label,
-                value: item.value,
-                createdAt: timestamp,
-                updatedAt: timestamp,
-                syncStatus: BrickOperatingExpenseCategorySyncStatus.synchronized,
-              ),
-            ),
+      final remoteModels = OperatingExpenseCategoryBrickMapper.fromRemoteCatalog(
+        groups: groups,
+        establishmentId: establishmentId,
+        cachedAt: timestamp,
       );
       await _categoryStore.cacheRemoteCategories(remoteModels);
       final local = await Future.wait(

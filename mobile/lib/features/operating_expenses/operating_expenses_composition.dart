@@ -5,9 +5,26 @@ import 'package:frontend_mayoral/brick/stores/operating_expense_category_brick_s
 import 'package:frontend_mayoral/features/operating_expenses/data/datasources/operating_expense_remote_data_source.dart';
 import 'package:frontend_mayoral/features/operating_expenses/data/repositories/operating_expense_repository_impl.dart';
 import 'package:frontend_mayoral/features/operating_expenses/data/services/operating_expense_api_service.dart';
+import 'package:frontend_mayoral/features/operating_expenses/data/services/operating_expense_initial_sync_service.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/use_cases/operating_expense_use_cases.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/cubit/operating_expense_cubit.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/cubit/operating_expense_history_cubit.dart';
+import 'package:http/http.dart' as http;
+
+/// Construye la preparación offline de egresos reutilizando el transporte de la feature.
+OperatingExpenseInitialSyncService createOperatingExpenseInitialSyncService({
+  required http.Client client,
+}) => OperatingExpenseInitialSyncService(
+  remoteDataSource: OperatingExpenseRemoteDataSource(
+    service: OperatingExpenseApiService(
+      baseUrl: AppConfig.current.backendBaseUrl,
+      tokenProvider: SessionBackendAccessTokenProvider.instance,
+      client: client,
+    ),
+  ),
+  categoryStore: BrickOperatingExpenseCategoryStore.instance,
+  expenseStore: BrickOperatingExpenseStore.instance,
+);
 
 /// Construye el cubit con la infraestructura offline-first real.
 OperatingExpenseCubit createOperatingExpenseCubit({

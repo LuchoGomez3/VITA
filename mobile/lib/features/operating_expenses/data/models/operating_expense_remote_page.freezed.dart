@@ -271,30 +271,33 @@ as int,
 
 }
 
+
 /// @nodoc
 mixin _$OperatingExpenseRemoteDto {
 
- String get id; String get establishmentId; String get amount; String get type; String get category; String get supply; DateTime get date; DateTime get createdAt; DateTime get updatedAt; String? get description; String? get receiptNumber; String? get loadedById; String? get loadedByName; DateTime? get deletedAt;
+ String get id;@JsonKey(name: 'establecimiento_id') String get establishmentId;@JsonKey(name: 'monto') String get amount;@JsonKey(name: 'tipo') String get type;@JsonKey(name: 'categoria') String get category;@JsonKey(name: 'insumo') String get supply;@JsonKey(name: 'fecha') DateTime get date;@JsonKey(name: 'created_at') DateTime get createdAt;@JsonKey(name: 'updated_at') DateTime get updatedAt;@JsonKey(name: 'descripcion') String? get description;@JsonKey(name: 'numero_comprobante') String? get receiptNumber;@JsonKey(name: 'cargado_por_id') String? get loadedById;@JsonKey(name: 'cargado_por') OperatingExpenseRemoteUserDto? get loadedBy;@JsonKey(name: 'deleted_at') DateTime? get deletedAt;
 /// Create a copy of OperatingExpenseRemoteDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $OperatingExpenseRemoteDtoCopyWith<OperatingExpenseRemoteDto> get copyWith => _$OperatingExpenseRemoteDtoCopyWithImpl<OperatingExpenseRemoteDto>(this as OperatingExpenseRemoteDto, _$identity);
 
+  /// Serializes this OperatingExpenseRemoteDto to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is OperatingExpenseRemoteDto&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.type, type) || other.type == type)&&(identical(other.category, category) || other.category == category)&&(identical(other.supply, supply) || other.supply == supply)&&(identical(other.date, date) || other.date == date)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.receiptNumber, receiptNumber) || other.receiptNumber == receiptNumber)&&(identical(other.loadedById, loadedById) || other.loadedById == loadedById)&&(identical(other.loadedByName, loadedByName) || other.loadedByName == loadedByName)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OperatingExpenseRemoteDto&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.type, type) || other.type == type)&&(identical(other.category, category) || other.category == category)&&(identical(other.supply, supply) || other.supply == supply)&&(identical(other.date, date) || other.date == date)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.receiptNumber, receiptNumber) || other.receiptNumber == receiptNumber)&&(identical(other.loadedById, loadedById) || other.loadedById == loadedById)&&(identical(other.loadedBy, loadedBy) || other.loadedBy == loadedBy)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,establishmentId,amount,type,category,supply,date,createdAt,updatedAt,description,receiptNumber,loadedById,loadedByName,deletedAt);
+int get hashCode => Object.hash(runtimeType,id,establishmentId,amount,type,category,supply,date,createdAt,updatedAt,description,receiptNumber,loadedById,loadedBy,deletedAt);
 
 @override
 String toString() {
-  return 'OperatingExpenseRemoteDto(id: $id, establishmentId: $establishmentId, amount: $amount, type: $type, category: $category, supply: $supply, date: $date, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, receiptNumber: $receiptNumber, loadedById: $loadedById, loadedByName: $loadedByName, deletedAt: $deletedAt)';
+  return 'OperatingExpenseRemoteDto(id: $id, establishmentId: $establishmentId, amount: $amount, type: $type, category: $category, supply: $supply, date: $date, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, receiptNumber: $receiptNumber, loadedById: $loadedById, loadedBy: $loadedBy, deletedAt: $deletedAt)';
 }
 
 
@@ -305,11 +308,11 @@ abstract mixin class $OperatingExpenseRemoteDtoCopyWith<$Res>  {
   factory $OperatingExpenseRemoteDtoCopyWith(OperatingExpenseRemoteDto value, $Res Function(OperatingExpenseRemoteDto) _then) = _$OperatingExpenseRemoteDtoCopyWithImpl;
 @useResult
 $Res call({
- String id, String establishmentId, String amount, String type, String category, String supply, DateTime date, DateTime createdAt, DateTime updatedAt, String? description, String? receiptNumber, String? loadedById, String? loadedByName, DateTime? deletedAt
+ String id,@JsonKey(name: 'establecimiento_id') String establishmentId,@JsonKey(name: 'monto') String amount,@JsonKey(name: 'tipo') String type,@JsonKey(name: 'categoria') String category,@JsonKey(name: 'insumo') String supply,@JsonKey(name: 'fecha') DateTime date,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt,@JsonKey(name: 'descripcion') String? description,@JsonKey(name: 'numero_comprobante') String? receiptNumber,@JsonKey(name: 'cargado_por_id') String? loadedById,@JsonKey(name: 'cargado_por') OperatingExpenseRemoteUserDto? loadedBy,@JsonKey(name: 'deleted_at') DateTime? deletedAt
 });
 
 
-
+$OperatingExpenseRemoteUserDtoCopyWith<$Res>? get loadedBy;
 
 }
 /// @nodoc
@@ -322,7 +325,7 @@ class _$OperatingExpenseRemoteDtoCopyWithImpl<$Res>
 
 /// Create a copy of OperatingExpenseRemoteDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? establishmentId = null,Object? amount = null,Object? type = null,Object? category = null,Object? supply = null,Object? date = null,Object? createdAt = null,Object? updatedAt = null,Object? description = freezed,Object? receiptNumber = freezed,Object? loadedById = freezed,Object? loadedByName = freezed,Object? deletedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? establishmentId = null,Object? amount = null,Object? type = null,Object? category = null,Object? supply = null,Object? date = null,Object? createdAt = null,Object? updatedAt = null,Object? description = freezed,Object? receiptNumber = freezed,Object? loadedById = freezed,Object? loadedBy = freezed,Object? deletedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
@@ -336,12 +339,24 @@ as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore
 as DateTime,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,receiptNumber: freezed == receiptNumber ? _self.receiptNumber : receiptNumber // ignore: cast_nullable_to_non_nullable
 as String?,loadedById: freezed == loadedById ? _self.loadedById : loadedById // ignore: cast_nullable_to_non_nullable
-as String?,loadedByName: freezed == loadedByName ? _self.loadedByName : loadedByName // ignore: cast_nullable_to_non_nullable
-as String?,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
+as String?,loadedBy: freezed == loadedBy ? _self.loadedBy : loadedBy // ignore: cast_nullable_to_non_nullable
+as OperatingExpenseRemoteUserDto?,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }
+/// Create a copy of OperatingExpenseRemoteDto
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$OperatingExpenseRemoteUserDtoCopyWith<$Res>? get loadedBy {
+    if (_self.loadedBy == null) {
+    return null;
+  }
 
+  return $OperatingExpenseRemoteUserDtoCopyWith<$Res>(_self.loadedBy!, (value) {
+    return _then(_self.copyWith(loadedBy: value));
+  });
+}
 }
 
 
@@ -420,10 +435,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String amount,  String type,  String category,  String supply,  DateTime date,  DateTime createdAt,  DateTime updatedAt,  String? description,  String? receiptNumber,  String? loadedById,  String? loadedByName,  DateTime? deletedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'establecimiento_id')  String establishmentId, @JsonKey(name: 'monto')  String amount, @JsonKey(name: 'tipo')  String type, @JsonKey(name: 'categoria')  String category, @JsonKey(name: 'insumo')  String supply, @JsonKey(name: 'fecha')  DateTime date, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt, @JsonKey(name: 'descripcion')  String? description, @JsonKey(name: 'numero_comprobante')  String? receiptNumber, @JsonKey(name: 'cargado_por_id')  String? loadedById, @JsonKey(name: 'cargado_por')  OperatingExpenseRemoteUserDto? loadedBy, @JsonKey(name: 'deleted_at')  DateTime? deletedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OperatingExpenseRemoteDto() when $default != null:
-return $default(_that.id,_that.establishmentId,_that.amount,_that.type,_that.category,_that.supply,_that.date,_that.createdAt,_that.updatedAt,_that.description,_that.receiptNumber,_that.loadedById,_that.loadedByName,_that.deletedAt);case _:
+return $default(_that.id,_that.establishmentId,_that.amount,_that.type,_that.category,_that.supply,_that.date,_that.createdAt,_that.updatedAt,_that.description,_that.receiptNumber,_that.loadedById,_that.loadedBy,_that.deletedAt);case _:
   return orElse();
 
 }
@@ -441,10 +456,10 @@ return $default(_that.id,_that.establishmentId,_that.amount,_that.type,_that.cat
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String amount,  String type,  String category,  String supply,  DateTime date,  DateTime createdAt,  DateTime updatedAt,  String? description,  String? receiptNumber,  String? loadedById,  String? loadedByName,  DateTime? deletedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'establecimiento_id')  String establishmentId, @JsonKey(name: 'monto')  String amount, @JsonKey(name: 'tipo')  String type, @JsonKey(name: 'categoria')  String category, @JsonKey(name: 'insumo')  String supply, @JsonKey(name: 'fecha')  DateTime date, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt, @JsonKey(name: 'descripcion')  String? description, @JsonKey(name: 'numero_comprobante')  String? receiptNumber, @JsonKey(name: 'cargado_por_id')  String? loadedById, @JsonKey(name: 'cargado_por')  OperatingExpenseRemoteUserDto? loadedBy, @JsonKey(name: 'deleted_at')  DateTime? deletedAt)  $default,) {final _that = this;
 switch (_that) {
 case _OperatingExpenseRemoteDto():
-return $default(_that.id,_that.establishmentId,_that.amount,_that.type,_that.category,_that.supply,_that.date,_that.createdAt,_that.updatedAt,_that.description,_that.receiptNumber,_that.loadedById,_that.loadedByName,_that.deletedAt);}
+return $default(_that.id,_that.establishmentId,_that.amount,_that.type,_that.category,_that.supply,_that.date,_that.createdAt,_that.updatedAt,_that.description,_that.receiptNumber,_that.loadedById,_that.loadedBy,_that.deletedAt);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -458,10 +473,10 @@ return $default(_that.id,_that.establishmentId,_that.amount,_that.type,_that.cat
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String establishmentId,  String amount,  String type,  String category,  String supply,  DateTime date,  DateTime createdAt,  DateTime updatedAt,  String? description,  String? receiptNumber,  String? loadedById,  String? loadedByName,  DateTime? deletedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'establecimiento_id')  String establishmentId, @JsonKey(name: 'monto')  String amount, @JsonKey(name: 'tipo')  String type, @JsonKey(name: 'categoria')  String category, @JsonKey(name: 'insumo')  String supply, @JsonKey(name: 'fecha')  DateTime date, @JsonKey(name: 'created_at')  DateTime createdAt, @JsonKey(name: 'updated_at')  DateTime updatedAt, @JsonKey(name: 'descripcion')  String? description, @JsonKey(name: 'numero_comprobante')  String? receiptNumber, @JsonKey(name: 'cargado_por_id')  String? loadedById, @JsonKey(name: 'cargado_por')  OperatingExpenseRemoteUserDto? loadedBy, @JsonKey(name: 'deleted_at')  DateTime? deletedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _OperatingExpenseRemoteDto() when $default != null:
-return $default(_that.id,_that.establishmentId,_that.amount,_that.type,_that.category,_that.supply,_that.date,_that.createdAt,_that.updatedAt,_that.description,_that.receiptNumber,_that.loadedById,_that.loadedByName,_that.deletedAt);case _:
+return $default(_that.id,_that.establishmentId,_that.amount,_that.type,_that.category,_that.supply,_that.date,_that.createdAt,_that.updatedAt,_that.description,_that.receiptNumber,_that.loadedById,_that.loadedBy,_that.deletedAt);case _:
   return null;
 
 }
@@ -471,25 +486,25 @@ return $default(_that.id,_that.establishmentId,_that.amount,_that.type,_that.cat
 
 /// @nodoc
 
-
+@JsonSerializable(checked: true)
 class _OperatingExpenseRemoteDto implements OperatingExpenseRemoteDto {
-  const _OperatingExpenseRemoteDto({required this.id, required this.establishmentId, required this.amount, required this.type, required this.category, required this.supply, required this.date, required this.createdAt, required this.updatedAt, this.description, this.receiptNumber, this.loadedById, this.loadedByName, this.deletedAt});
-  
+  const _OperatingExpenseRemoteDto({required this.id, @JsonKey(name: 'establecimiento_id') required this.establishmentId, @JsonKey(name: 'monto') required this.amount, @JsonKey(name: 'tipo') required this.type, @JsonKey(name: 'categoria') required this.category, @JsonKey(name: 'insumo') required this.supply, @JsonKey(name: 'fecha') required this.date, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'updated_at') required this.updatedAt, @JsonKey(name: 'descripcion') this.description, @JsonKey(name: 'numero_comprobante') this.receiptNumber, @JsonKey(name: 'cargado_por_id') this.loadedById, @JsonKey(name: 'cargado_por') this.loadedBy, @JsonKey(name: 'deleted_at') this.deletedAt});
+  factory _OperatingExpenseRemoteDto.fromJson(Map<String, dynamic> json) => _$OperatingExpenseRemoteDtoFromJson(json);
 
 @override final  String id;
-@override final  String establishmentId;
-@override final  String amount;
-@override final  String type;
-@override final  String category;
-@override final  String supply;
-@override final  DateTime date;
-@override final  DateTime createdAt;
-@override final  DateTime updatedAt;
-@override final  String? description;
-@override final  String? receiptNumber;
-@override final  String? loadedById;
-@override final  String? loadedByName;
-@override final  DateTime? deletedAt;
+@override@JsonKey(name: 'establecimiento_id') final  String establishmentId;
+@override@JsonKey(name: 'monto') final  String amount;
+@override@JsonKey(name: 'tipo') final  String type;
+@override@JsonKey(name: 'categoria') final  String category;
+@override@JsonKey(name: 'insumo') final  String supply;
+@override@JsonKey(name: 'fecha') final  DateTime date;
+@override@JsonKey(name: 'created_at') final  DateTime createdAt;
+@override@JsonKey(name: 'updated_at') final  DateTime updatedAt;
+@override@JsonKey(name: 'descripcion') final  String? description;
+@override@JsonKey(name: 'numero_comprobante') final  String? receiptNumber;
+@override@JsonKey(name: 'cargado_por_id') final  String? loadedById;
+@override@JsonKey(name: 'cargado_por') final  OperatingExpenseRemoteUserDto? loadedBy;
+@override@JsonKey(name: 'deleted_at') final  DateTime? deletedAt;
 
 /// Create a copy of OperatingExpenseRemoteDto
 /// with the given fields replaced by the non-null parameter values.
@@ -497,20 +512,23 @@ class _OperatingExpenseRemoteDto implements OperatingExpenseRemoteDto {
 @pragma('vm:prefer-inline')
 _$OperatingExpenseRemoteDtoCopyWith<_OperatingExpenseRemoteDto> get copyWith => __$OperatingExpenseRemoteDtoCopyWithImpl<_OperatingExpenseRemoteDto>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$OperatingExpenseRemoteDtoToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OperatingExpenseRemoteDto&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.type, type) || other.type == type)&&(identical(other.category, category) || other.category == category)&&(identical(other.supply, supply) || other.supply == supply)&&(identical(other.date, date) || other.date == date)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.receiptNumber, receiptNumber) || other.receiptNumber == receiptNumber)&&(identical(other.loadedById, loadedById) || other.loadedById == loadedById)&&(identical(other.loadedByName, loadedByName) || other.loadedByName == loadedByName)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OperatingExpenseRemoteDto&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.type, type) || other.type == type)&&(identical(other.category, category) || other.category == category)&&(identical(other.supply, supply) || other.supply == supply)&&(identical(other.date, date) || other.date == date)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.receiptNumber, receiptNumber) || other.receiptNumber == receiptNumber)&&(identical(other.loadedById, loadedById) || other.loadedById == loadedById)&&(identical(other.loadedBy, loadedBy) || other.loadedBy == loadedBy)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,establishmentId,amount,type,category,supply,date,createdAt,updatedAt,description,receiptNumber,loadedById,loadedByName,deletedAt);
+int get hashCode => Object.hash(runtimeType,id,establishmentId,amount,type,category,supply,date,createdAt,updatedAt,description,receiptNumber,loadedById,loadedBy,deletedAt);
 
 @override
 String toString() {
-  return 'OperatingExpenseRemoteDto(id: $id, establishmentId: $establishmentId, amount: $amount, type: $type, category: $category, supply: $supply, date: $date, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, receiptNumber: $receiptNumber, loadedById: $loadedById, loadedByName: $loadedByName, deletedAt: $deletedAt)';
+  return 'OperatingExpenseRemoteDto(id: $id, establishmentId: $establishmentId, amount: $amount, type: $type, category: $category, supply: $supply, date: $date, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, receiptNumber: $receiptNumber, loadedById: $loadedById, loadedBy: $loadedBy, deletedAt: $deletedAt)';
 }
 
 
@@ -521,11 +539,11 @@ abstract mixin class _$OperatingExpenseRemoteDtoCopyWith<$Res> implements $Opera
   factory _$OperatingExpenseRemoteDtoCopyWith(_OperatingExpenseRemoteDto value, $Res Function(_OperatingExpenseRemoteDto) _then) = __$OperatingExpenseRemoteDtoCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String establishmentId, String amount, String type, String category, String supply, DateTime date, DateTime createdAt, DateTime updatedAt, String? description, String? receiptNumber, String? loadedById, String? loadedByName, DateTime? deletedAt
+ String id,@JsonKey(name: 'establecimiento_id') String establishmentId,@JsonKey(name: 'monto') String amount,@JsonKey(name: 'tipo') String type,@JsonKey(name: 'categoria') String category,@JsonKey(name: 'insumo') String supply,@JsonKey(name: 'fecha') DateTime date,@JsonKey(name: 'created_at') DateTime createdAt,@JsonKey(name: 'updated_at') DateTime updatedAt,@JsonKey(name: 'descripcion') String? description,@JsonKey(name: 'numero_comprobante') String? receiptNumber,@JsonKey(name: 'cargado_por_id') String? loadedById,@JsonKey(name: 'cargado_por') OperatingExpenseRemoteUserDto? loadedBy,@JsonKey(name: 'deleted_at') DateTime? deletedAt
 });
 
 
-
+@override $OperatingExpenseRemoteUserDtoCopyWith<$Res>? get loadedBy;
 
 }
 /// @nodoc
@@ -538,7 +556,7 @@ class __$OperatingExpenseRemoteDtoCopyWithImpl<$Res>
 
 /// Create a copy of OperatingExpenseRemoteDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? establishmentId = null,Object? amount = null,Object? type = null,Object? category = null,Object? supply = null,Object? date = null,Object? createdAt = null,Object? updatedAt = null,Object? description = freezed,Object? receiptNumber = freezed,Object? loadedById = freezed,Object? loadedByName = freezed,Object? deletedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? establishmentId = null,Object? amount = null,Object? type = null,Object? category = null,Object? supply = null,Object? date = null,Object? createdAt = null,Object? updatedAt = null,Object? description = freezed,Object? receiptNumber = freezed,Object? loadedById = freezed,Object? loadedBy = freezed,Object? deletedAt = freezed,}) {
   return _then(_OperatingExpenseRemoteDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
@@ -552,25 +570,303 @@ as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore
 as DateTime,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,receiptNumber: freezed == receiptNumber ? _self.receiptNumber : receiptNumber // ignore: cast_nullable_to_non_nullable
 as String?,loadedById: freezed == loadedById ? _self.loadedById : loadedById // ignore: cast_nullable_to_non_nullable
-as String?,loadedByName: freezed == loadedByName ? _self.loadedByName : loadedByName // ignore: cast_nullable_to_non_nullable
-as String?,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
+as String?,loadedBy: freezed == loadedBy ? _self.loadedBy : loadedBy // ignore: cast_nullable_to_non_nullable
+as OperatingExpenseRemoteUserDto?,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
+}
+
+/// Create a copy of OperatingExpenseRemoteDto
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$OperatingExpenseRemoteUserDtoCopyWith<$Res>? get loadedBy {
+    if (_self.loadedBy == null) {
+    return null;
+  }
+
+  return $OperatingExpenseRemoteUserDtoCopyWith<$Res>(_self.loadedBy!, (value) {
+    return _then(_self.copyWith(loadedBy: value));
+  });
+}
+}
+
+
+/// @nodoc
+mixin _$OperatingExpenseRemoteUserDto {
+
+@JsonKey(name: 'nombre') String? get firstName;@JsonKey(name: 'apellido') String? get lastName; String? get email;
+/// Create a copy of OperatingExpenseRemoteUserDto
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$OperatingExpenseRemoteUserDtoCopyWith<OperatingExpenseRemoteUserDto> get copyWith => _$OperatingExpenseRemoteUserDtoCopyWithImpl<OperatingExpenseRemoteUserDto>(this as OperatingExpenseRemoteUserDto, _$identity);
+
+  /// Serializes this OperatingExpenseRemoteUserDto to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OperatingExpenseRemoteUserDto&&(identical(other.firstName, firstName) || other.firstName == firstName)&&(identical(other.lastName, lastName) || other.lastName == lastName)&&(identical(other.email, email) || other.email == email));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,firstName,lastName,email);
+
+@override
+String toString() {
+  return 'OperatingExpenseRemoteUserDto(firstName: $firstName, lastName: $lastName, email: $email)';
 }
 
 
 }
 
 /// @nodoc
+abstract mixin class $OperatingExpenseRemoteUserDtoCopyWith<$Res>  {
+  factory $OperatingExpenseRemoteUserDtoCopyWith(OperatingExpenseRemoteUserDto value, $Res Function(OperatingExpenseRemoteUserDto) _then) = _$OperatingExpenseRemoteUserDtoCopyWithImpl;
+@useResult
+$Res call({
+@JsonKey(name: 'nombre') String? firstName,@JsonKey(name: 'apellido') String? lastName, String? email
+});
+
+
+
+
+}
+/// @nodoc
+class _$OperatingExpenseRemoteUserDtoCopyWithImpl<$Res>
+    implements $OperatingExpenseRemoteUserDtoCopyWith<$Res> {
+  _$OperatingExpenseRemoteUserDtoCopyWithImpl(this._self, this._then);
+
+  final OperatingExpenseRemoteUserDto _self;
+  final $Res Function(OperatingExpenseRemoteUserDto) _then;
+
+/// Create a copy of OperatingExpenseRemoteUserDto
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? firstName = freezed,Object? lastName = freezed,Object? email = freezed,}) {
+  return _then(_self.copyWith(
+firstName: freezed == firstName ? _self.firstName : firstName // ignore: cast_nullable_to_non_nullable
+as String?,lastName: freezed == lastName ? _self.lastName : lastName // ignore: cast_nullable_to_non_nullable
+as String?,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [OperatingExpenseRemoteUserDto].
+extension OperatingExpenseRemoteUserDtoPatterns on OperatingExpenseRemoteUserDto {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _OperatingExpenseRemoteUserDto value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _OperatingExpenseRemoteUserDto() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _OperatingExpenseRemoteUserDto value)  $default,){
+final _that = this;
+switch (_that) {
+case _OperatingExpenseRemoteUserDto():
+return $default(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _OperatingExpenseRemoteUserDto value)?  $default,){
+final _that = this;
+switch (_that) {
+case _OperatingExpenseRemoteUserDto() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'nombre')  String? firstName, @JsonKey(name: 'apellido')  String? lastName,  String? email)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _OperatingExpenseRemoteUserDto() when $default != null:
+return $default(_that.firstName,_that.lastName,_that.email);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'nombre')  String? firstName, @JsonKey(name: 'apellido')  String? lastName,  String? email)  $default,) {final _that = this;
+switch (_that) {
+case _OperatingExpenseRemoteUserDto():
+return $default(_that.firstName,_that.lastName,_that.email);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'nombre')  String? firstName, @JsonKey(name: 'apellido')  String? lastName,  String? email)?  $default,) {final _that = this;
+switch (_that) {
+case _OperatingExpenseRemoteUserDto() when $default != null:
+return $default(_that.firstName,_that.lastName,_that.email);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+@JsonSerializable(checked: true)
+class _OperatingExpenseRemoteUserDto implements OperatingExpenseRemoteUserDto {
+  const _OperatingExpenseRemoteUserDto({@JsonKey(name: 'nombre') this.firstName, @JsonKey(name: 'apellido') this.lastName, this.email});
+  factory _OperatingExpenseRemoteUserDto.fromJson(Map<String, dynamic> json) => _$OperatingExpenseRemoteUserDtoFromJson(json);
+
+@override@JsonKey(name: 'nombre') final  String? firstName;
+@override@JsonKey(name: 'apellido') final  String? lastName;
+@override final  String? email;
+
+/// Create a copy of OperatingExpenseRemoteUserDto
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$OperatingExpenseRemoteUserDtoCopyWith<_OperatingExpenseRemoteUserDto> get copyWith => __$OperatingExpenseRemoteUserDtoCopyWithImpl<_OperatingExpenseRemoteUserDto>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$OperatingExpenseRemoteUserDtoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OperatingExpenseRemoteUserDto&&(identical(other.firstName, firstName) || other.firstName == firstName)&&(identical(other.lastName, lastName) || other.lastName == lastName)&&(identical(other.email, email) || other.email == email));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,firstName,lastName,email);
+
+@override
+String toString() {
+  return 'OperatingExpenseRemoteUserDto(firstName: $firstName, lastName: $lastName, email: $email)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$OperatingExpenseRemoteUserDtoCopyWith<$Res> implements $OperatingExpenseRemoteUserDtoCopyWith<$Res> {
+  factory _$OperatingExpenseRemoteUserDtoCopyWith(_OperatingExpenseRemoteUserDto value, $Res Function(_OperatingExpenseRemoteUserDto) _then) = __$OperatingExpenseRemoteUserDtoCopyWithImpl;
+@override @useResult
+$Res call({
+@JsonKey(name: 'nombre') String? firstName,@JsonKey(name: 'apellido') String? lastName, String? email
+});
+
+
+
+
+}
+/// @nodoc
+class __$OperatingExpenseRemoteUserDtoCopyWithImpl<$Res>
+    implements _$OperatingExpenseRemoteUserDtoCopyWith<$Res> {
+  __$OperatingExpenseRemoteUserDtoCopyWithImpl(this._self, this._then);
+
+  final _OperatingExpenseRemoteUserDto _self;
+  final $Res Function(_OperatingExpenseRemoteUserDto) _then;
+
+/// Create a copy of OperatingExpenseRemoteUserDto
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? firstName = freezed,Object? lastName = freezed,Object? email = freezed,}) {
+  return _then(_OperatingExpenseRemoteUserDto(
+firstName: freezed == firstName ? _self.firstName : firstName // ignore: cast_nullable_to_non_nullable
+as String?,lastName: freezed == lastName ? _self.lastName : lastName // ignore: cast_nullable_to_non_nullable
+as String?,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$OperatingExpenseRemoteCatalogType {
 
- String get type; List<OperatingExpenseRemoteCategory> get categories;
+@JsonKey(name: 'valor') String get type;@JsonKey(name: 'categorias') List<OperatingExpenseRemoteCategory> get categories;
 /// Create a copy of OperatingExpenseRemoteCatalogType
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $OperatingExpenseRemoteCatalogTypeCopyWith<OperatingExpenseRemoteCatalogType> get copyWith => _$OperatingExpenseRemoteCatalogTypeCopyWithImpl<OperatingExpenseRemoteCatalogType>(this as OperatingExpenseRemoteCatalogType, _$identity);
 
+  /// Serializes this OperatingExpenseRemoteCatalogType to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -578,7 +874,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is OperatingExpenseRemoteCatalogType&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.categories, categories));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,type,const DeepCollectionEquality().hash(categories));
 
@@ -595,7 +891,7 @@ abstract mixin class $OperatingExpenseRemoteCatalogTypeCopyWith<$Res>  {
   factory $OperatingExpenseRemoteCatalogTypeCopyWith(OperatingExpenseRemoteCatalogType value, $Res Function(OperatingExpenseRemoteCatalogType) _then) = _$OperatingExpenseRemoteCatalogTypeCopyWithImpl;
 @useResult
 $Res call({
- String type, List<OperatingExpenseRemoteCategory> categories
+@JsonKey(name: 'valor') String type,@JsonKey(name: 'categorias') List<OperatingExpenseRemoteCategory> categories
 });
 
 
@@ -698,7 +994,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String type,  List<OperatingExpenseRemoteCategory> categories)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'valor')  String type, @JsonKey(name: 'categorias')  List<OperatingExpenseRemoteCategory> categories)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OperatingExpenseRemoteCatalogType() when $default != null:
 return $default(_that.type,_that.categories);case _:
@@ -719,7 +1015,7 @@ return $default(_that.type,_that.categories);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String type,  List<OperatingExpenseRemoteCategory> categories)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'valor')  String type, @JsonKey(name: 'categorias')  List<OperatingExpenseRemoteCategory> categories)  $default,) {final _that = this;
 switch (_that) {
 case _OperatingExpenseRemoteCatalogType():
 return $default(_that.type,_that.categories);}
@@ -736,7 +1032,7 @@ return $default(_that.type,_that.categories);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String type,  List<OperatingExpenseRemoteCategory> categories)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'valor')  String type, @JsonKey(name: 'categorias')  List<OperatingExpenseRemoteCategory> categories)?  $default,) {final _that = this;
 switch (_that) {
 case _OperatingExpenseRemoteCatalogType() when $default != null:
 return $default(_that.type,_that.categories);case _:
@@ -749,14 +1045,14 @@ return $default(_that.type,_that.categories);case _:
 
 /// @nodoc
 
-
+@JsonSerializable(checked: true)
 class _OperatingExpenseRemoteCatalogType implements OperatingExpenseRemoteCatalogType {
-  const _OperatingExpenseRemoteCatalogType({required this.type, required final  List<OperatingExpenseRemoteCategory> categories}): _categories = categories;
-  
+  const _OperatingExpenseRemoteCatalogType({@JsonKey(name: 'valor') required this.type, @JsonKey(name: 'categorias') required final  List<OperatingExpenseRemoteCategory> categories}): _categories = categories;
+  factory _OperatingExpenseRemoteCatalogType.fromJson(Map<String, dynamic> json) => _$OperatingExpenseRemoteCatalogTypeFromJson(json);
 
-@override final  String type;
+@override@JsonKey(name: 'valor') final  String type;
  final  List<OperatingExpenseRemoteCategory> _categories;
-@override List<OperatingExpenseRemoteCategory> get categories {
+@override@JsonKey(name: 'categorias') List<OperatingExpenseRemoteCategory> get categories {
   if (_categories is EqualUnmodifiableListView) return _categories;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_categories);
@@ -769,14 +1065,17 @@ class _OperatingExpenseRemoteCatalogType implements OperatingExpenseRemoteCatalo
 @pragma('vm:prefer-inline')
 _$OperatingExpenseRemoteCatalogTypeCopyWith<_OperatingExpenseRemoteCatalogType> get copyWith => __$OperatingExpenseRemoteCatalogTypeCopyWithImpl<_OperatingExpenseRemoteCatalogType>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$OperatingExpenseRemoteCatalogTypeToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _OperatingExpenseRemoteCatalogType&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other._categories, _categories));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,type,const DeepCollectionEquality().hash(_categories));
 
@@ -793,7 +1092,7 @@ abstract mixin class _$OperatingExpenseRemoteCatalogTypeCopyWith<$Res> implement
   factory _$OperatingExpenseRemoteCatalogTypeCopyWith(_OperatingExpenseRemoteCatalogType value, $Res Function(_OperatingExpenseRemoteCatalogType) _then) = __$OperatingExpenseRemoteCatalogTypeCopyWithImpl;
 @override @useResult
 $Res call({
- String type, List<OperatingExpenseRemoteCategory> categories
+@JsonKey(name: 'valor') String type,@JsonKey(name: 'categorias') List<OperatingExpenseRemoteCategory> categories
 });
 
 
@@ -821,16 +1120,19 @@ as List<OperatingExpenseRemoteCategory>,
 
 }
 
+
 /// @nodoc
 mixin _$OperatingExpenseRemoteCategory {
 
- String get value; String get label; bool get custom; String? get id;
+@JsonKey(name: 'valor') String get value;@JsonKey(name: 'etiqueta') String get label;@JsonKey(name: 'personalizada') bool get custom; String? get id;
 /// Create a copy of OperatingExpenseRemoteCategory
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $OperatingExpenseRemoteCategoryCopyWith<OperatingExpenseRemoteCategory> get copyWith => _$OperatingExpenseRemoteCategoryCopyWithImpl<OperatingExpenseRemoteCategory>(this as OperatingExpenseRemoteCategory, _$identity);
 
+  /// Serializes this OperatingExpenseRemoteCategory to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -838,7 +1140,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is OperatingExpenseRemoteCategory&&(identical(other.value, value) || other.value == value)&&(identical(other.label, label) || other.label == label)&&(identical(other.custom, custom) || other.custom == custom)&&(identical(other.id, id) || other.id == id));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,value,label,custom,id);
 
@@ -855,7 +1157,7 @@ abstract mixin class $OperatingExpenseRemoteCategoryCopyWith<$Res>  {
   factory $OperatingExpenseRemoteCategoryCopyWith(OperatingExpenseRemoteCategory value, $Res Function(OperatingExpenseRemoteCategory) _then) = _$OperatingExpenseRemoteCategoryCopyWithImpl;
 @useResult
 $Res call({
- String value, String label, bool custom, String? id
+@JsonKey(name: 'valor') String value,@JsonKey(name: 'etiqueta') String label,@JsonKey(name: 'personalizada') bool custom, String? id
 });
 
 
@@ -960,7 +1262,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String value,  String label,  bool custom,  String? id)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'valor')  String value, @JsonKey(name: 'etiqueta')  String label, @JsonKey(name: 'personalizada')  bool custom,  String? id)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OperatingExpenseRemoteCategory() when $default != null:
 return $default(_that.value,_that.label,_that.custom,_that.id);case _:
@@ -981,7 +1283,7 @@ return $default(_that.value,_that.label,_that.custom,_that.id);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String value,  String label,  bool custom,  String? id)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'valor')  String value, @JsonKey(name: 'etiqueta')  String label, @JsonKey(name: 'personalizada')  bool custom,  String? id)  $default,) {final _that = this;
 switch (_that) {
 case _OperatingExpenseRemoteCategory():
 return $default(_that.value,_that.label,_that.custom,_that.id);}
@@ -998,7 +1300,7 @@ return $default(_that.value,_that.label,_that.custom,_that.id);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String value,  String label,  bool custom,  String? id)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'valor')  String value, @JsonKey(name: 'etiqueta')  String label, @JsonKey(name: 'personalizada')  bool custom,  String? id)?  $default,) {final _that = this;
 switch (_that) {
 case _OperatingExpenseRemoteCategory() when $default != null:
 return $default(_that.value,_that.label,_that.custom,_that.id);case _:
@@ -1011,14 +1313,14 @@ return $default(_that.value,_that.label,_that.custom,_that.id);case _:
 
 /// @nodoc
 
-
+@JsonSerializable(checked: true)
 class _OperatingExpenseRemoteCategory implements OperatingExpenseRemoteCategory {
-  const _OperatingExpenseRemoteCategory({required this.value, required this.label, required this.custom, this.id});
-  
+  const _OperatingExpenseRemoteCategory({@JsonKey(name: 'valor') required this.value, @JsonKey(name: 'etiqueta') required this.label, @JsonKey(name: 'personalizada') required this.custom, this.id});
+  factory _OperatingExpenseRemoteCategory.fromJson(Map<String, dynamic> json) => _$OperatingExpenseRemoteCategoryFromJson(json);
 
-@override final  String value;
-@override final  String label;
-@override final  bool custom;
+@override@JsonKey(name: 'valor') final  String value;
+@override@JsonKey(name: 'etiqueta') final  String label;
+@override@JsonKey(name: 'personalizada') final  bool custom;
 @override final  String? id;
 
 /// Create a copy of OperatingExpenseRemoteCategory
@@ -1027,14 +1329,17 @@ class _OperatingExpenseRemoteCategory implements OperatingExpenseRemoteCategory 
 @pragma('vm:prefer-inline')
 _$OperatingExpenseRemoteCategoryCopyWith<_OperatingExpenseRemoteCategory> get copyWith => __$OperatingExpenseRemoteCategoryCopyWithImpl<_OperatingExpenseRemoteCategory>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$OperatingExpenseRemoteCategoryToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _OperatingExpenseRemoteCategory&&(identical(other.value, value) || other.value == value)&&(identical(other.label, label) || other.label == label)&&(identical(other.custom, custom) || other.custom == custom)&&(identical(other.id, id) || other.id == id));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,value,label,custom,id);
 
@@ -1051,7 +1356,7 @@ abstract mixin class _$OperatingExpenseRemoteCategoryCopyWith<$Res> implements $
   factory _$OperatingExpenseRemoteCategoryCopyWith(_OperatingExpenseRemoteCategory value, $Res Function(_OperatingExpenseRemoteCategory) _then) = __$OperatingExpenseRemoteCategoryCopyWithImpl;
 @override @useResult
 $Res call({
- String value, String label, bool custom, String? id
+@JsonKey(name: 'valor') String value,@JsonKey(name: 'etiqueta') String label,@JsonKey(name: 'personalizada') bool custom, String? id
 });
 
 

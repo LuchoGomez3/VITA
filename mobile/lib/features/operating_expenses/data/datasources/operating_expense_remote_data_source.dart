@@ -5,9 +5,11 @@ import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/formatters/decimal_amount_formatter.dart';
 import 'package:frontend_mayoral/features/operating_expenses/data/models/operating_expense_remote_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/data/services/operating_expense_api_service.dart';
+import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
 import 'package:http/http.dart' as http;
+import 'package:json_annotation/json_annotation.dart';
 
 /// Interpreta respuestas HTTP de egresos sin exponer JSON al repositorio.
 class OperatingExpenseRemoteDataSource {
@@ -27,16 +29,14 @@ class OperatingExpenseRemoteDataSource {
     final expenses = rawData.map(_expenseFrom).toList(growable: false);
     final meta = envelope['meta'];
     final total = meta is Map<String, dynamic> ? meta['total_egresos'] : null;
+    if (total is! String) {
+      throw _invalidResponse();
+    }
     return OperatingExpenseRemotePage(
       expenses: expenses,
-      totalCents: total is String
-          ? DecimalAmountFormatter.decimalToCents(total)
-          : expenses
-                .where((item) => item.deletedAt == null)
-                .fold(
-                  0,
-                  (sum, item) => sum + DecimalAmountFormatter.decimalToCents(item.amount),
-                ),
+      totalCents: _parse(
+        () => _decimalToCents(total, allowZero: true),
+      ),
     );
   }
 
@@ -63,7 +63,9 @@ class OperatingExpenseRemoteDataSource {
   Map<String, dynamic> _envelope(http.Response response) {
     try {
       final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map<String, dynamic> && decoded['success'] == true) {
+        return decoded;
+      }
     } on FormatException {
       throw _invalidResponse();
     }
@@ -72,79 +74,64 @@ class OperatingExpenseRemoteDataSource {
 
   OperatingExpenseRemoteDto _expenseFrom(Object? raw) {
     if (raw is! Map<String, dynamic>) throw _invalidResponse();
-    final loadedBy = raw['cargado_por'];
-    return OperatingExpenseRemoteDto(
-      id: _string(raw, 'id'),
-      establishmentId: _string(raw, 'establecimiento_id'),
-      amount: _string(raw, 'monto'),
-      type: _string(raw, 'tipo'),
-      category: _string(raw, 'categoria'),
-      supply: _string(raw, 'insumo'),
-      date: _date(raw, 'fecha'),
-      description: _nullableString(raw, 'descripcion'),
-      receiptNumber: _nullableString(raw, 'numero_comprobante'),
-      loadedById: _nullableString(raw, 'cargado_por_id'),
-      loadedByName: _loadedByName(loadedBy),
-      createdAt: _date(raw, 'created_at'),
-      updatedAt: _date(raw, 'updated_at'),
-      deletedAt: _nullableDate(raw, 'deleted_at'),
-    );
+    return _parse(() {
+      final expense = OperatingExpenseRemoteDto.fromJson(raw);
+      _requireValues([
+        expense.id,
+        expense.establishmentId,
+        expense.category,
+        expense.supply,
+      ]);
+      _validateType(expense.type);
+      _decimalToCents(expense.amount);
+      return expense;
+    });
   }
 
   OperatingExpenseRemoteCatalogType _catalogTypeFrom(Object? raw) {
     if (raw is! Map<String, dynamic>) throw _invalidResponse();
-    final typeValue = _string(raw, 'valor');
-    final categories = raw['categorias'];
-    if (categories is! List) throw _invalidResponse();
-    return OperatingExpenseRemoteCatalogType(
-      type: typeValue,
-      categories: categories
-          .map((item) {
-            if (item is! Map<String, dynamic>) throw _invalidResponse();
-            return OperatingExpenseRemoteCategory(
-              value: _string(item, 'valor'),
-              label: _string(item, 'etiqueta'),
-              custom: item['personalizada'] == true,
-              id: _nullableString(item, 'id'),
-            );
-          })
-          .toList(growable: false),
-    );
+    return _parse(() {
+      final group = OperatingExpenseRemoteCatalogType.fromJson(raw);
+      _validateType(group.type);
+      for (final category in group.categories) {
+        _requireValues([category.value, category.label]);
+      }
+      return group;
+    });
   }
 
-  String _string(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is String && value.isNotEmpty) return value;
-    throw _invalidResponse();
+  int _decimalToCents(String amount, {bool allowZero = false}) {
+    if (!RegExp(r'^\d+(?:\.\d{1,2})?$').hasMatch(amount)) {
+      throw _invalidResponse();
+    }
+    final cents = DecimalAmountFormatter.decimalToCents(amount);
+    if (cents < 0 || (!allowZero && cents == 0)) throw _invalidResponse();
+    return cents;
   }
 
-  String? _nullableString(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    return value is String && value.isNotEmpty ? value : null;
+  void _validateType(String value) {
+    if (!OperatingExpenseType.values.any((type) => type.value == value)) {
+      throw _invalidResponse();
+    }
   }
 
-  DateTime _date(Map<String, dynamic> json, String key) {
-    final parsed = DateTime.tryParse(_string(json, key));
-    if (parsed == null) throw _invalidResponse();
-    return parsed;
+  void _requireValues(Iterable<String> values) {
+    if (values.any((value) => value.trim().isEmpty)) throw _invalidResponse();
   }
 
-  DateTime? _nullableDate(Map<String, dynamic> json, String key) {
-    final value = _nullableString(json, key);
-    return value == null ? null : DateTime.tryParse(value);
+  T _parse<T>(T Function() parse) {
+    try {
+      return parse();
+    } on DomainException {
+      rethrow;
+    } on CheckedFromJsonException {
+      throw _invalidResponse();
+    } on FormatException {
+      throw _invalidResponse();
+    }
   }
 
   String? _filename(String? disposition) => RegExp('filename="?([^";]+)').firstMatch(disposition ?? '')?.group(1);
-
-  String? _loadedByName(Object? data) {
-    if (data is! Map<String, dynamic>) return null;
-    final firstName = data['nombre'] is String ? data['nombre']! as String : '';
-    final lastName = data['apellido'] is String ? data['apellido']! as String : '';
-    final fullName = '$firstName $lastName'.trim();
-    if (fullName.isNotEmpty) return fullName;
-    final email = data['email'];
-    return email is String && email.isNotEmpty ? email : null;
-  }
 
   DomainException _invalidResponse() => const DomainException(
     message: 'invalidResponse',
