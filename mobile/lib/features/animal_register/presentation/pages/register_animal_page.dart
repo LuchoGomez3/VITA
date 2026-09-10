@@ -20,6 +20,7 @@ typedef RegisterAnimalBlocFactory =
     RegisterAnimalBloc Function({
       RegisterAnimalStep initialStep,
       String initialRfid,
+      String? initialEstablishmentId,
     });
 
 /// Hosts the complete animal registration flow.
@@ -29,6 +30,7 @@ class RegisterAnimalPage extends StatelessWidget {
     required this.createBloc,
     this.initialStep = RegisterAnimalStep.identification,
     this.initialRfid = '',
+    this.initialEstablishmentId,
     super.key,
   });
 
@@ -41,10 +43,17 @@ class RegisterAnimalPage extends StatelessWidget {
   /// RFID opcional recibido desde una lectura de identificacion.
   final String initialRfid;
 
+  /// Establecimiento opcional recibido desde el flujo que inicia el alta.
+  final String? initialEstablishmentId;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => createBloc(initialStep: initialStep, initialRfid: initialRfid),
+      create: (_) => createBloc(
+        initialStep: initialStep,
+        initialRfid: initialRfid,
+        initialEstablishmentId: initialEstablishmentId,
+      ),
       child: const _RegisterAnimalView(),
     );
   }

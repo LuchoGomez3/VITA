@@ -190,6 +190,7 @@ class AppRouter {
           builder: (context, state) => RegisterAnimalPage(
             createBloc: createRegisterAnimalBloc,
             initialRfid: state.uri.queryParameters['rfid'] ?? '',
+            initialEstablishmentId: state.uri.queryParameters['establecimientoId'],
           ),
         ),
         GoRoute(
@@ -302,7 +303,12 @@ class AppRouter {
               ),
               onHidKeyEvent: readingSource.handleKeyEvent,
               onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
-              onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
+              onRegisterAnimalRequested: (rfid) => context.push(
+                AppRoutes.animalRegisterWithRfid(
+                  rfidTagNumber: rfid,
+                  establishmentId: establishmentId,
+                ),
+              ),
             );
           },
         ),

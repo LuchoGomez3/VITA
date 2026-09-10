@@ -45,6 +45,50 @@ void main() {
       expect(prefilledBloc.state.draft.rfid, '982000412991416');
     });
 
+    test('keeps a valid establishment received from identification', () async {
+      final prefilledBloc = RegisterAnimalBloc(
+        initialEstablishmentId: '8b75eb38-8b0f-44dc-979f-89ce2817b63d',
+        registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        registrationContext: const _TestAnimalRegistrationContext(),
+      );
+      addTearDown(prefilledBloc.close);
+
+      prefilledBloc.add(const RegisterAnimalEvent.establishmentsRequested());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        prefilledBloc.state.draft.establishmentId,
+        '8b75eb38-8b0f-44dc-979f-89ce2817b63d',
+      );
+      expect(prefilledBloc.state.draft.establishmentName, 'La Sirena');
+      expect(prefilledBloc.state.destinations, isNotEmpty);
+    });
+
+    test('requires an explicit choice and loads lots from that establishment', () async {
+      final context = _MultipleEstablishmentsContext();
+      final selectionBloc = RegisterAnimalBloc(
+        registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        registrationContext: context,
+      );
+      addTearDown(selectionBloc.close);
+
+      selectionBloc.add(const RegisterAnimalEvent.establishmentsRequested());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(selectionBloc.state.draft.establishmentId, isNull);
+
+      selectionBloc.add(
+        const RegisterAnimalEvent.establishmentSelected('establishment-2'),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(selectionBloc.state.draft.establishmentId, 'establishment-2');
+      expect(selectionBloc.state.draft.establishmentName, 'El Ombú');
+      expect(context.destinationRequests, ['establishment-2']);
+      expect(selectionBloc.state.destinations.single.name, 'Lote Sur');
+    });
+
     test('moves forward and backward through the flow', () async {
       final forwardState = bloc.state.copyWith(
         currentStep: RegisterAnimalStep.basicData,
@@ -76,22 +120,22 @@ void main() {
       expect(reviewBloc.state.currentStep, RegisterAnimalStep.review);
     });
 
-    test('represents destination loading failures with ResultState', () async {
+    test('represents establishment loading failures with ResultState', () async {
       final failingBloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
         registrationContext: const _FailingAnimalRegistrationContext(),
       );
       addTearDown(failingBloc.close);
 
-      failingBloc.add(const RegisterAnimalEvent.destinationsRequested());
+      failingBloc.add(const RegisterAnimalEvent.establishmentsRequested());
       await Future<void>.delayed(Duration.zero);
       await Future<void>.delayed(Duration.zero);
 
       expect(
-        failingBloc.state.destinationsState,
-        isA<ResultError<List<AnimalRegistrationDestination>>>(),
+        failingBloc.state.establishmentsState,
+        isA<ResultError<List<AnimalRegistrationEstablishment>>>(),
       );
-      expect(failingBloc.state.destinations, isEmpty);
+      expect(failingBloc.state.establishments, isEmpty);
     });
 
     test('submits a valid draft and emits loading then data', () async {
@@ -126,6 +170,8 @@ void main() {
         visualTagSeries: '003',
         visualTagNumber: '1295',
         birthWeight: '32,5',
+        establishmentId: '8b75eb38-8b0f-44dc-979f-89ce2817b63d',
+        establishmentName: 'La Sirena',
         destinationId: 'lot-1',
       );
       bloc.add(RegisterAnimalEvent.draftChanged(draft));
@@ -176,6 +222,8 @@ void main() {
         visualTagSeries: '003',
         visualTagNumber: '1295',
         birthWeight: '32.5',
+        establishmentId: '8b75eb38-8b0f-44dc-979f-89ce2817b63d',
+        establishmentName: 'La Sirena',
         destinationId: 'lot-1',
       );
       bloc.add(RegisterAnimalEvent.draftChanged(draft));
@@ -194,10 +242,17 @@ class _TestAnimalRegistrationContext implements AnimalRegistrationContext {
   const _TestAnimalRegistrationContext();
 
   @override
-  String get establishmentId => '8b75eb38-8b0f-44dc-979f-89ce2817b63d';
+  Future<List<AnimalRegistrationEstablishment>> loadEstablishments() async => const [
+    AnimalRegistrationEstablishment(
+      id: '8b75eb38-8b0f-44dc-979f-89ce2817b63d',
+      name: 'La Sirena',
+    ),
+  ];
 
   @override
-  Future<List<AnimalRegistrationDestination>> loadDestinations() async => const [
+  Future<List<AnimalRegistrationDestination>> loadDestinations(
+    String establishmentId,
+  ) async => const [
     AnimalRegistrationDestination(
       id: 'lot-1',
       name: 'La Cumbre',
@@ -228,10 +283,14 @@ class _FailingAnimalRegistrationContext implements AnimalRegistrationContext {
   const _FailingAnimalRegistrationContext();
 
   @override
-  String get establishmentId => 'establishment-id';
+  Future<List<AnimalRegistrationEstablishment>> loadEstablishments() {
+    throw StateError('forced local read failure');
+  }
 
   @override
-  Future<List<AnimalRegistrationDestination>> loadDestinations() {
+  Future<List<AnimalRegistrationDestination>> loadDestinations(
+    String establishmentId,
+  ) {
     throw StateError('forced local read failure');
   }
 
@@ -249,6 +308,51 @@ class _FailingAnimalRegistrationContext implements AnimalRegistrationContext {
 
   @override
   String? resolveMotherId(String? motherSelectionId) => null;
+}
+
+class _MultipleEstablishmentsContext implements AnimalRegistrationContext {
+  final destinationRequests = <String>[];
+
+  @override
+  Future<List<AnimalRegistrationEstablishment>> loadEstablishments() async => const [
+    AnimalRegistrationEstablishment(
+      id: 'establishment-1',
+      name: 'La Sirena',
+    ),
+    AnimalRegistrationEstablishment(
+      id: 'establishment-2',
+      name: 'El Ombú',
+    ),
+  ];
+
+  @override
+  Future<List<AnimalRegistrationDestination>> loadDestinations(
+    String establishmentId,
+  ) async {
+    destinationRequests.add(establishmentId);
+    return const [
+      AnimalRegistrationDestination(
+        id: 'lot-2',
+        name: 'Lote Sur',
+        details: '20,0 ha',
+      ),
+    ];
+  }
+
+  @override
+  String resolveCategoryId(String categoryName) => 'category-id';
+
+  @override
+  String? resolveFatherId(String? fatherSelectionId) => fatherSelectionId;
+
+  @override
+  String resolveLotId(String destinationSelectionId) => destinationSelectionId;
+
+  @override
+  String resolveLotName(String destinationSelectionId) => 'Lote Sur';
+
+  @override
+  String? resolveMotherId(String? motherSelectionId) => motherSelectionId;
 }
 
 class _FakeAnimalRegistrationRepository implements AnimalRegistrationRepository {

@@ -5,6 +5,21 @@ import 'package:frontend_mayoral/features/animal_register/presentation/widgets/e
 class AnimalRegisterStrings {
   const AnimalRegisterStrings._();
 
+  /// Error al leer los establecimientos disponibles sin conexion.
+  static const establishmentsLoadError = 'No se pudieron cargar los establecimientos guardados.';
+
+  /// Etiqueta del selector que contextualiza el alta.
+  static const establishmentSelectorLabel = 'Establecimiento';
+
+  /// Ayuda visible antes de seleccionar el establecimiento del animal.
+  static const establishmentSelectorHint = 'Seleccioná un establecimiento';
+
+  /// Validacion cuando el alta todavia no tiene establecimiento.
+  static const establishmentRequired = 'Seleccioná un establecimiento antes de guardar.';
+
+  /// Estado vacio cuando el usuario no tiene establecimientos disponibles.
+  static const noEstablishmentsMessage = 'No hay establecimientos disponibles para registrar el animal.';
+
   /// Error al leer los lotes disponibles desde el almacenamiento local.
   static const destinationsLoadError = 'No se pudieron cargar los lotes guardados.';
 
@@ -317,6 +332,9 @@ class AnimalRegisterStrings {
 
   /// Label del campo potrero.
   static const stepFourDestinationLabel = 'Potrero';
+
+  /// Label del establecimiento en la revision del alta.
+  static const stepFourEstablishmentLabel = 'Establecimiento';
 
   /// Valor mock del campo potrero.
   static const stepFourDestinationValue = 'La Cumbre · 142 ha';

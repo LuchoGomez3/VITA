@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/animal_identification_summary.dart';
@@ -146,7 +147,43 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
                   style: AppTypography.pageBodyTitle,
                 ),
                 const SizedBox(height: AppSpacing.md),
+                switch (state.establishmentsState) {
+                  Initial() || Loading() => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  ResultError(:final error) => Text(
+                    error.message,
+                    style: AppTypography.errorBody,
+                  ),
+                  Data(:final data) when data.isEmpty => const Text(
+                    AnimalRegisterStrings.noEstablishmentsMessage,
+                    style: AppTypography.pageBodyTitle,
+                  ),
+                  Data(:final data) => AppDropdownFormField<String>(
+                    key: ValueKey(draft.establishmentId),
+                    title: AnimalRegisterStrings.establishmentSelectorLabel,
+                    hintText: AnimalRegisterStrings.establishmentSelectorHint,
+                    initialValue: draft.establishmentId,
+                    options: [
+                      for (final establishment in data)
+                        AppDropdownOption(
+                          value: establishment.id,
+                          label: establishment.name,
+                        ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        context.read<RegisterAnimalBloc>().add(
+                          RegisterAnimalEvent.establishmentSelected(value),
+                        );
+                      }
+                    },
+                  ),
+                  _ => const SizedBox.shrink(),
+                },
+                const SizedBox(height: AppSpacing.md),
                 switch (state.destinationsState) {
+                  Initial() when draft.establishmentId == null => const SizedBox.shrink(),
                   Initial() || Loading() => const Center(
                     child: CircularProgressIndicator(),
                   ),

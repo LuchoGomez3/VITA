@@ -1,5 +1,6 @@
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/animal_register/data/datasources/animal_registration_offline_context.dart';
 import 'package:frontend_mayoral/features/animal_register/data/repositories/animal_registration_repository_impl.dart';
@@ -19,12 +20,15 @@ import 'package:frontend_mayoral/features/animal_register/presentation/bloc/regi
 RegisterAnimalBloc createRegisterAnimalBloc({
   RegisterAnimalStep initialStep = RegisterAnimalStep.identification,
   String initialRfid = '',
+  String? initialEstablishmentId,
 }) {
   // TODO(agusf): inyectar el proveedor del establecimiento activo,
   // BrickCategoriaStore y BrickAnimalStore cuando categorias y genealogia
   // tengan catalogos offline reales.
   final registrationContext = AnimalRegistrationOfflineContext(
-    storage: const FlutterSecureStorageService(),
+    establishmentCatalog: const EstablishmentCatalog(
+      secureStorage: FlutterSecureStorageService(),
+    ),
     lotStore: BrickLotStore.instance,
   );
   final repository = AnimalRegistrationRepositoryImpl(
@@ -34,7 +38,8 @@ RegisterAnimalBloc createRegisterAnimalBloc({
   return RegisterAnimalBloc(
     initialStep: initialStep,
     initialRfid: initialRfid,
+    initialEstablishmentId: initialEstablishmentId,
     registerAnimalUseCase: RegisterAnimalUseCase(repository),
     registrationContext: registrationContext,
-  )..add(const RegisterAnimalEvent.destinationsRequested());
+  )..add(const RegisterAnimalEvent.establishmentsRequested());
 }

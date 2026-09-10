@@ -130,8 +130,12 @@ class AppRoutes {
   }
 
   /// Construye la ruta de alta con una caravana RFID ya leida.
-  static String animalRegisterWithRfid(String rfidTagNumber) {
-    return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}';
+  static String animalRegisterWithRfid({
+    required String rfidTagNumber,
+    required String establishmentId,
+  }) {
+    return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}'
+        '&establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
   }
 
   /// Obtiene la ruta de detalle de un lote por su id.
