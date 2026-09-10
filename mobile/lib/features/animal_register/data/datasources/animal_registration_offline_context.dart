@@ -1,8 +1,6 @@
-import 'dart:convert';
-
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
-import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 
 /// Resuelve establecimiento y lotes reales desde datos disponibles offline.
@@ -12,15 +10,14 @@ import 'package:frontend_mayoral/features/animal_register/domain/repositories/an
 class AnimalRegistrationOfflineContext implements AnimalRegistrationContext {
   /// Crea el contexto con almacenamiento y store inyectables.
   AnimalRegistrationOfflineContext({
-    required SecureStorageService storage,
+    required EstablishmentCatalog establishmentCatalog,
     required LotBrickStore lotStore,
-  }) : _storage = storage,
+  }) : _establishmentCatalog = establishmentCatalog,
        _lotStore = lotStore;
 
-  final SecureStorageService _storage;
+  final EstablishmentCatalog _establishmentCatalog;
   final LotBrickStore _lotStore;
   final Map<String, AnimalRegistrationDestination> _destinations = {};
-  String _establishmentId = '';
 
   // TODO(agusf): reemplazar este mapa por el catalogo de categorias
   // sincronizado en Brick y hacer que el draft conserve el UUID real.
@@ -48,24 +45,23 @@ class AnimalRegistrationOfflineContext implements AnimalRegistrationContext {
   };
 
   @override
-  String get establishmentId => _establishmentId;
+  Future<List<AnimalRegistrationEstablishment>> loadEstablishments() async {
+    final memberships = await _establishmentCatalog.getMemberships();
+    return memberships
+        .map(
+          (membership) => AnimalRegistrationEstablishment(
+            id: membership.id,
+            name: membership.name,
+          ),
+        )
+        .toList(growable: false);
+  }
 
   @override
-  Future<List<AnimalRegistrationDestination>> loadDestinations() async {
-    final encoded = await _storage.read(SecureStorageKeys.establishmentCatalog);
-    if (encoded == null || encoded.isEmpty) return const [];
-    final decoded = jsonDecode(encoded);
-    if (decoded is! List) return const [];
-    final establishments = decoded.whereType<Map<String, dynamic>>();
-    if (establishments.isEmpty) return const [];
-    // TODO(agusf): obtener el establecimiento activo desde un proveedor de
-    // sesion/seleccion; no asumir que el primero del catalogo es el elegido.
-    final first = establishments.first;
-    final id = first['id'];
-    if (id is! String || id.isEmpty) return const [];
-    _establishmentId = id;
-
-    final lots = await _lotStore.getLocalLots(id);
+  Future<List<AnimalRegistrationDestination>> loadDestinations(
+    String establishmentId,
+  ) async {
+    final lots = await _lotStore.getLocalLots(establishmentId);
     _destinations
       ..clear()
       ..addEntries(

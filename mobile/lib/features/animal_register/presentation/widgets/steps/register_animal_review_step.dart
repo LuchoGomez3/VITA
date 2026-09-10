@@ -91,6 +91,10 @@ class RegisterAnimalReviewStep extends StatelessWidget {
             onEdit: () => _edit(context, RegisterAnimalStep.genealogy),
             rows: [
               RegisterAnimalReviewRow(
+                label: AnimalRegisterStrings.stepFourEstablishmentLabel,
+                value: draft.establishmentName ?? AnimalRegisterStrings.stepFourNoDataValue,
+              ),
+              RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourMotherLabel,
                 value: _mother(draft.motherId),
               ),

@@ -29,6 +29,8 @@ sealed class RegisterAnimalDraft with _$RegisterAnimalDraft {
     required DateTime birthDate,
     required String category,
     required String birthWeight,
+    String? establishmentId,
+    String? establishmentName,
     String? motherId,
     String? fatherId,
     String? destinationId,
@@ -58,6 +60,8 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
   const factory RegisterAnimalState({
     required RegisterAnimalStep currentStep,
     required RegisterAnimalDraft draft,
+    @Default(ResultState<List<AnimalRegistrationEstablishment>>.initial())
+    ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,
     @Default(ResultState<List<AnimalRegistrationDestination>>.initial())
     ResultState<List<AnimalRegistrationDestination>> destinationsState,
     @Default(ResultState<RegisteredAnimal>.initial()) ResultState<RegisteredAnimal> submitResult,
@@ -68,6 +72,12 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
   /// Destinos disponibles cuando la lectura local finalizo correctamente.
   List<AnimalRegistrationDestination> get destinations => switch (destinationsState) {
     Data<List<AnimalRegistrationDestination>>(:final data) => data,
+    _ => const [],
+  };
+
+  /// Establecimientos disponibles cuando finalizó la lectura local.
+  List<AnimalRegistrationEstablishment> get establishments => switch (establishmentsState) {
+    Data<List<AnimalRegistrationEstablishment>>(:final data) => data,
     _ => const [],
   };
 }

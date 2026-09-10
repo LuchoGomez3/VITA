@@ -28,16 +28,20 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     required AnimalRegistrationContext registrationContext,
     RegisterAnimalStep initialStep = RegisterAnimalStep.identification,
     String initialRfid = '',
+    String? initialEstablishmentId,
   }) : _registerAnimalUseCase = registerAnimalUseCase,
        _registrationContext = registrationContext,
        super(
          RegisterAnimalState(
            currentStep: initialStep,
-           draft: RegisterAnimalDraft.initial(rfid: initialRfid),
+           draft: RegisterAnimalDraft.initial(rfid: initialRfid).copyWith(
+             establishmentId: initialEstablishmentId,
+           ),
          ),
        ) {
     on<_DraftChanged>(_onDraftChanged);
-    on<_DestinationsRequested>(_onDestinationsRequested);
+    on<_EstablishmentsRequested>(_onEstablishmentsRequested);
+    on<_EstablishmentSelected>(_onEstablishmentSelected);
     on<_NextStepRequested>(_onNextStepRequested);
     on<_PreviousStepRequested>(_onPreviousStepRequested);
     on<_StepRequested>(_onStepRequested);
@@ -47,23 +51,74 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
   final RegisterAnimalUseCase _registerAnimalUseCase;
   final AnimalRegistrationContext _registrationContext;
 
-  Future<void> _onDestinationsRequested(
-    _DestinationsRequested event,
+  Future<void> _onEstablishmentsRequested(
+    _EstablishmentsRequested event,
     Emitter<RegisterAnimalState> emit,
   ) async {
-    emit(state.copyWith(destinationsState: const ResultState.loading()));
+    emit(state.copyWith(establishmentsState: const ResultState.loading()));
     try {
-      final destinations = await _registrationContext.loadDestinations();
-      final selectedId = state.draft.destinationId;
-      final selectionStillExists = destinations.any(
-        (destination) => destination.id == selectedId,
+      final establishments = await _registrationContext.loadEstablishments();
+      final requestedId = state.draft.establishmentId;
+      final requested = establishments.where(
+        (establishment) => establishment.id == requestedId,
       );
+      final selected = requested.isNotEmpty
+          ? requested.first
+          : establishments.length == 1
+          ? establishments.first
+          : null;
       emit(
         state.copyWith(
-          destinationsState: ResultState.data(destinations),
-          draft: selectionStillExists ? state.draft : state.draft.copyWith(destinationId: null),
+          establishmentsState: ResultState.data(establishments),
+          destinationsState: const ResultState.initial(),
+          draft: state.draft.copyWith(
+            establishmentId: selected?.id,
+            establishmentName: selected?.name,
+            destinationId: null,
+          ),
         ),
       );
+      if (selected != null) {
+        add(RegisterAnimalEvent.establishmentSelected(selected.id));
+      }
+    } on Object {
+      emit(
+        state.copyWith(
+          establishmentsState: const ResultState.error(
+            DomainException(
+              message: AnimalRegisterStrings.establishmentsLoadError,
+              code: DomainErrorCode.offline,
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _onEstablishmentSelected(
+    _EstablishmentSelected event,
+    Emitter<RegisterAnimalState> emit,
+  ) async {
+    final establishment = state.establishments.where((item) => item.id == event.establishmentId).firstOrNull;
+    if (establishment == null) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        draft: state.draft.copyWith(
+          establishmentId: establishment.id,
+          establishmentName: establishment.name,
+          destinationId: null,
+        ),
+        destinationsState: const ResultState.loading(),
+      ),
+    );
+    try {
+      final destinations = await _registrationContext.loadDestinations(
+        establishment.id,
+      );
+      emit(state.copyWith(destinationsState: ResultState.data(destinations)));
     } on Object {
       emit(
         state.copyWith(
@@ -183,6 +238,16 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
       );
     }
 
+    final establishmentId = draft.establishmentId;
+    if (establishmentId == null) {
+      return const Result.failure(
+        DomainException(
+          message: AnimalRegisterStrings.establishmentRequired,
+          code: DomainErrorCode.validation,
+        ),
+      );
+    }
+
     final destinationId = draft.destinationId;
     if (destinationId == null) {
       return const Result.failure(
@@ -220,7 +285,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
           birthDate: draft.birthDate,
           lotId: _registrationContext.resolveLotId(destinationId),
           lotName: _registrationContext.resolveLotName(destinationId),
-          establishmentId: _registrationContext.establishmentId,
+          establishmentId: establishmentId,
           categoryId: _registrationContext.resolveCategoryId(draft.category),
           categoryName: draft.category,
           initialWeight: parsedWeight,

@@ -1,5 +1,20 @@
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 
+/// Establecimiento disponible para contextualizar el alta de un animal.
+class AnimalRegistrationEstablishment {
+  /// Crea una opcion seleccionable con identidad real y nombre visible.
+  const AnimalRegistrationEstablishment({
+    required this.id,
+    required this.name,
+  });
+
+  /// UUID real del establecimiento.
+  final String id;
+
+  /// Nombre mostrado al productor.
+  final String name;
+}
+
 /// Lote local disponible como destino del alta de un animal.
 class AnimalRegistrationDestination {
   /// Crea una opción con UUID y texto listo para presentación.
@@ -45,11 +60,13 @@ class AnimalRegistrationDestination {
 /// `WatchLotsUseCase`, `WatchCategoriesUseCase`, `GetSelectedEstablishmentUseCase`
 /// o equivalentes.
 abstract class AnimalRegistrationContext {
-  /// Carga los lotes activos disponibles desde la caché local.
-  Future<List<AnimalRegistrationDestination>> loadDestinations();
+  /// Carga los establecimientos disponibles para el usuario autenticado.
+  Future<List<AnimalRegistrationEstablishment>> loadEstablishments();
 
-  /// ID del establecimiento seleccionado para la sesion actual de registro.
-  String get establishmentId;
+  /// Carga los lotes activos disponibles desde la caché local.
+  Future<List<AnimalRegistrationDestination>> loadDestinations(
+    String establishmentId,
+  );
 
   /// Resuelve el ID de lote que espera backend desde la seleccion de destino.
   String resolveLotId(String destinationSelectionId);
