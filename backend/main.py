@@ -22,5 +22,5 @@ if __name__ == "__main__":
         workers=1,
         factory=True,
         proxy_headers=True,
-        forwarded_allow_ips="*",
+        forwarded_allow_ips=settings.FORWARDED_ALLOW_IPS,
     )

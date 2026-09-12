@@ -22,7 +22,7 @@ class WelcomePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Spacer(flex: 2),
-              _LogoPlaceholder(),
+              _AppLogo(),
               SizedBox(height: AppSpacing.lg),
               _HeaderTexts(),
               Spacer(flex: 3),
@@ -36,26 +36,13 @@ class WelcomePage extends StatelessWidget {
   }
 }
 
-// TODO(FRANCO): Agregar imagen de la empresa en lugar del placeholder.
-class _LogoPlaceholder extends StatelessWidget {
-  const _LogoPlaceholder();
+class _AppLogo extends StatelessWidget {
+  const _AppLogo();
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 96,
-        height: 96,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: const Icon(
-          Icons.face_retouching_natural,
-          color: AppColors.onPrimary,
-          size: 48,
-        ),
-      ),
+    return const Center(
+      child: AppLogo(),
     );
   }
 }

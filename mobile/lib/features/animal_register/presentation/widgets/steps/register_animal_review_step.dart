@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/register_animal_review_section.dart';
@@ -12,9 +14,8 @@ class RegisterAnimalReviewStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final draft = context.select(
-      (RegisterAnimalBloc bloc) => bloc.state.draft,
-    );
+    final state = context.watch<RegisterAnimalBloc>().state;
+    final draft = state.draft;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
@@ -71,7 +72,7 @@ class RegisterAnimalReviewStep extends StatelessWidget {
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourBirthDateLabel,
-                value: _date(draft.birthDate),
+                value: DateDisplayFormatter.shortDate(draft.birthDate),
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourCategoryLabel,
@@ -99,7 +100,10 @@ class RegisterAnimalReviewStep extends StatelessWidget {
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourDestinationLabel,
-                value: _destination(draft.destinationId),
+                value: _destination(
+                  draft.destinationId,
+                  state.destinations,
+                ),
               ),
             ],
           ),
@@ -118,19 +122,17 @@ class RegisterAnimalReviewStep extends StatelessWidget {
     return '${draft.visualTagSeries} ${draft.visualTagNumber}'.trim();
   }
 
-  String _date(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    return '$day/$month/${date.year}';
-  }
-
   String _mother(String? id) {
+    // TODO(agusf): resolver el nombre desde los animales cargados en el BLoC
+    // cuando la genealogia deje de utilizar opciones estaticas.
     return id == 'mother-003-0421'
         ? AnimalRegisterStrings.stepFourMotherValue
         : AnimalRegisterStrings.stepFourNoDataValue;
   }
 
   String _father(String? id) {
+    // TODO(agusf): resolver el nombre desde los animales cargados en el BLoC
+    // cuando la genealogia deje de utilizar opciones estaticas.
     return switch (id) {
       'father-003-0820' => AnimalRegisterStrings.stepThreeMockFatherOneName,
       'father-003-0612' => AnimalRegisterStrings.stepThreeMockFatherTwoName,
@@ -139,10 +141,16 @@ class RegisterAnimalReviewStep extends StatelessWidget {
     };
   }
 
-  String _destination(String? id) {
-    return id == 'destination-la-cumbre'
-        ? AnimalRegisterStrings.stepFourDestinationValue
-        : AnimalRegisterStrings.stepFourNoDataValue;
+  String _destination(
+    String? id,
+    List<AnimalRegistrationDestination> destinations,
+  ) {
+    for (final destination in destinations) {
+      if (destination.id == id) {
+        return '${destination.name} · ${destination.details}';
+      }
+    }
+    return AnimalRegisterStrings.stepFourNoDataValue;
   }
 }
 

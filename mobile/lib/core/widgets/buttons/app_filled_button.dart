@@ -70,9 +70,12 @@ class AppFilledButton extends StatelessWidget {
             children: [
               icon!,
               const SizedBox(width: AppSpacing.sm),
-              Text(
-                label,
-                style: buttonTextStyle,
+              Flexible(
+                child: Text(
+                  label,
+                  style: buttonTextStyle,
+                  textAlign: TextAlign.center,
+                ),
               ),
             ],
           );

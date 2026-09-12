@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 
-/// Animal mock disponible para vincular como madre o padre.
+/// Animal disponible para vincular como madre o padre.
 class GenealogyAnimalOption {
   /// Crea una opcion de animal para el selector de genealogia.
   const GenealogyAnimalOption({
@@ -39,7 +39,7 @@ class GenealogyAnimalOption {
 
 /// Selector reutilizable de un animal dentro de la genealogia.
 class GenealogyAnimalSelector extends StatelessWidget {
-  /// Crea un selector con busqueda, valor seleccionado y resultados mock.
+  /// Crea un selector con busqueda, valor seleccionado y resultados.
   const GenealogyAnimalSelector({
     required this.title,
     required this.searchHint,

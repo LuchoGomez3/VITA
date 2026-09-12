@@ -1,5 +1,6 @@
 import 'package:frontend_mayoral/app/config/config.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
+import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -48,23 +49,22 @@ AuthSessionCubit createAuthSessionCubit() {
   return AuthSessionCubit(
     restoreSessionUseCase: RestoreSessionUseCase(repository),
     signOutUseCase: SignOutUseCase(repository),
+    authRejections: AppBrickRepository.instance.authRejections,
     onClose: client.close,
   );
 }
 
 /// Crea el bloc local de la pantalla de login.
 ///
-/// El login es el punto donde se inicia la sesion offline-first: si las
-/// credenciales son validas, el repositorio persiste la sesion, hidrata el token
-/// provider de Brick y despues se ejecuta la sync inicial. Registro no hace esa
-/// preparacion mientras no exista auto-login post-registro.
+/// Si las credenciales son validas, el repositorio persiste la sesion, hidrata
+/// el token provider de Brick y despues ejecuta la preparacion compartida.
 LoginBloc createLoginBloc() {
   final client = http.Client();
   final repository = _createAuthRepository(client);
 
   return LoginBloc(
     signInUseCase: SignInUseCase(repository),
-    prepareOfflineData: createPrepareInitialDataSyncUseCase(
+    preparePostAuthentication: createPrepareInitialDataSyncUseCase(
       client: client,
     ).call,
     onClose: client.close,
@@ -73,11 +73,8 @@ LoginBloc createLoginBloc() {
 
 /// Crea el bloc local de la pantalla de registro.
 ///
-/// El registro crea el usuario en backend y devuelve el perfil confirmado.
-/// El repositorio hidrata el token de Brick en memoria con la sesion que el
-/// backend ya devuelve (para poder llamar a `/api/v1/establecimientos` a
-/// continuacion sin pedir login), pero no persiste sesion local ni corre sync
-/// inicial: eso sigue reservado a un login real.
+/// El registro crea la cuenta e inicia una sesion persistida automaticamente.
+/// La preparacion de datos offline queda reservada para el login manual.
 SignUpBloc createSignUpBloc() {
   final client = http.Client();
   final repository = _createAuthRepository(client);

@@ -2,10 +2,13 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
-import 'package:frontend_mayoral/features/establishment_register/data/repositories/establishment_registration_repository_impl.dart';
+import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/establishment_register/data/datasources/establishment_registration_remote_data_source.dart';
+import 'package:frontend_mayoral/features/establishment_register/data/repositories/establishment_registration_repository_impl.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -13,14 +16,19 @@ import 'package:http/testing.dart';
 void main() {
   group('EstablishmentRegistrationRepositoryImpl', () {
     test('returns success with the registered establishment', () async {
+      final storage = _MemoryStorage();
       final repository = _createRepository(
+        storage: storage,
         client: MockClient((request) async {
           return http.Response(
             jsonEncode({
               'success': true,
               'data': {
                 'id': 'est-123',
+                'owner_id': 'owner-123',
                 'created_at': '2025-03-14T00:00:00.000Z',
+                'updated_at': '2025-03-14T00:00:00.000Z',
+                'rol': 'owner',
               },
             }),
             201,
@@ -37,6 +45,15 @@ void main() {
         case Failure(:final error):
           fail(error.message);
       }
+      final membership = await EstablishmentCatalog(
+        secureStorage: storage,
+      ).getById('est-123');
+      expect(membership?.name, 'La Sirena');
+      expect(membership?.role, UserRole.owner);
+      final encoded = await storage.read(
+        SecureStorageKeys.establishmentCatalog,
+      );
+      expect(encoded, contains('owner-123'));
     });
 
     test('maps a renspa_duplicado backend error to a conflict failure', () async {
@@ -104,9 +121,13 @@ void main() {
 
 EstablishmentRegistrationRepositoryImpl _createRepository({
   required http.Client client,
+  SecureStorageService? storage,
   Duration requestTimeout = const Duration(seconds: 10),
 }) {
   return EstablishmentRegistrationRepositoryImpl(
+    establishmentCatalog: EstablishmentCatalog(
+      secureStorage: storage ?? _MemoryStorage(),
+    ),
     remoteDataSource: EstablishmentRegistrationRemoteDataSource(
       backendBaseUrl: 'http://localhost:8000',
       tokenProvider: const _FakeTokenProvider('access-token'),
@@ -114,6 +135,21 @@ EstablishmentRegistrationRepositoryImpl _createRepository({
       requestTimeout: requestTimeout,
     ),
   );
+}
+
+class _MemoryStorage implements SecureStorageService {
+  final Map<String, String> values = {};
+
+  @override
+  Future<void> delete(String key) async => values.remove(key);
+
+  @override
+  Future<String?> read(String key) async => values[key];
+
+  @override
+  Future<void> write({required String key, required String value}) async {
+    values[key] = value;
+  }
 }
 
 const _registration = EstablishmentRegistration(

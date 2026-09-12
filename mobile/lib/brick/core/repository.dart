@@ -31,7 +31,9 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     required super.offlineQueueManager,
     required super.reattemptForStatusCodes,
     required StreamController<BackendSyncResult> syncResults,
-  }) : _syncResults = syncResults;
+    required StreamController<void> authRejections,
+  }) : _syncResults = syncResults,
+       _authRejections = authRejections;
 
   static AppBrickRepository? _instance;
 
@@ -40,6 +42,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   /// El repository global no interpreta estos eventos. Cada store por entidad
   /// filtra los recursos que le corresponden y actualiza su estado local.
   final StreamController<BackendSyncResult> _syncResults;
+  final StreamController<void> _authRejections;
 
   /// Instancia unica configurada durante el arranque de la app.
   ///
@@ -58,6 +61,12 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   /// cuyo [BackendSyncResult.resourcePath] corresponde a `/api/v1/animales`.
   Stream<BackendSyncResult> get syncResults => _syncResults.stream;
 
+  /// Notifica que el backend rechazo una sesion previamente autenticada.
+  ///
+  /// Auth consume este canal para limpiar solamente las credenciales. Los
+  /// datos offline y la cola de sincronizacion permanecen intactos.
+  Stream<void> get authRejections => _authRejections.stream;
+
   /// Configura e inicializa la infraestructura compartida de Brick.
   ///
   /// Parametros principales:
@@ -74,6 +83,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     String? backendBaseUrl,
     BackendAccessTokenProvider? tokenProvider,
     http.Client? client,
+    DatabaseFactory? localDatabaseFactory,
   }) async {
     if (_instance != null) {
       return;
@@ -82,13 +92,14 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     // Provider local: Brick lo usa para leer/escribir modelos en SQLite.
     final sqliteProvider = SqliteProvider(
       sqlitePath,
-      databaseFactory: databaseFactory,
+      databaseFactory: localDatabaseFactory ?? databaseFactory,
       modelDictionary: sqliteModelDictionary,
     );
 
     // El cliente HTTP observa responses de backend y publica resultados de sync
     // genericos. La logica de cada entidad queda en su store correspondiente.
     final syncResults = StreamController<BackendSyncResult>.broadcast();
+    final authRejections = StreamController<void>.broadcast();
     final restClient = AuthenticatedBackendClient(
       tokenProvider: tokenProvider ?? SessionBackendAccessTokenProvider.instance,
       inner: client,
@@ -96,6 +107,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
         syncResults.add(result);
         return Future<void>.value();
       },
+      onUnauthorized: () async => authRejections.add(null),
     );
 
     // Provider remoto: Brick lo usa para serializar modelos y hacer requests
@@ -113,9 +125,10 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
       restProvider: restProvider,
       migrations: migrations.toSet(),
       syncResults: syncResults,
+      authRejections: authRejections,
       offlineQueueManager: RestRequestSqliteCacheManager(
         offlineQueuePath,
-        databaseFactory: databaseFactory,
+        databaseFactory: localDatabaseFactory ?? databaseFactory,
       ),
       // Los 5xx se consideran transitorios: Brick los deja en cola para
       // reintentar. Los 4xx funcionales se procesan como rechazo del sync.
@@ -140,9 +153,36 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     );
     final savedModel = model..primaryKey = primaryKey;
     memoryCacheProvider.upsert<TModel>(savedModel);
-    await notifySubscriptionsWithLocalData<TModel>();
+    await _notifyLocalSubscribers<TModel>();
 
     return savedModel;
+  }
+
+  Future<void> _notifyLocalSubscribers<TModel extends OfflineFirstWithRestModel>() {
+    return notifySubscriptionsWithLocalData<TModel>();
+  }
+
+  /// Ejecuta varios upserts locales dentro de una unica transaccion SQLite.
+  ///
+  /// Los stores de una operacion compuesta, como un movimiento de animales,
+  /// usan este limite para evitar estados parciales si alguna escritura falla.
+  Future<T> runLocalTransaction<T>(
+    Future<T> Function(AppBrickTransaction transaction) callback,
+  ) async {
+    final afterCommit = <Future<void> Function()>[];
+    final result = await sqliteProvider.transaction(
+      (sqliteTransaction) => callback(
+        AppBrickTransaction._(
+          repository: this,
+          transaction: sqliteTransaction,
+          afterCommit: afterCommit,
+        ),
+      ),
+    );
+    for (final action in afterCommit) {
+      await action();
+    }
+    return result;
   }
 
   /// Envia un modelo al provider REST dejando que Brick maneje la cola offline.
@@ -167,5 +207,71 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     return get<TModel>(
       policy: OfflineFirstGetPolicy.localOnly,
     );
+  }
+}
+
+/// Contexto restringido para escribir modelos Brick en una transaccion local.
+class AppBrickTransaction {
+  AppBrickTransaction._({
+    required AppBrickRepository repository,
+    required Transaction transaction,
+    required List<Future<void> Function()> afterCommit,
+  }) : _repository = repository,
+       _transaction = transaction,
+       _afterCommit = afterCommit;
+
+  final AppBrickRepository _repository;
+  final Transaction _transaction;
+  final List<Future<void> Function()> _afterCommit;
+
+  /// Inserta o actualiza [model] usando el adapter generado por Brick.
+  Future<TModel> upsert<TModel extends OfflineFirstWithRestModel>(
+    TModel model,
+  ) async {
+    final adapter = _repository.sqliteProvider.modelDictionary.adapterFor[TModel]!;
+    await adapter.beforeSave(
+      model,
+      provider: _repository.sqliteProvider,
+      repository: _repository,
+    );
+    await model.beforeSave(
+      provider: _repository.sqliteProvider,
+      repository: _repository,
+    );
+    final data = await adapter.toSqlite(
+      model,
+      provider: _repository.sqliteProvider,
+      repository: _repository,
+    );
+    final existingPrimaryKey = await adapter.primaryKeyByUniqueColumns(
+      model,
+      _transaction,
+    );
+    final primaryKey = existingPrimaryKey ?? model.primaryKey;
+    if (model.isNewRecord && existingPrimaryKey == null) {
+      model.primaryKey = await _transaction.insert(adapter.tableName, data);
+    } else {
+      await _transaction.update(
+        adapter.tableName,
+        data,
+        where: '_brick_id = ?',
+        whereArgs: [primaryKey],
+      );
+      model.primaryKey = primaryKey;
+    }
+    await adapter.afterSave(
+      model,
+      provider: _repository.sqliteProvider,
+      repository: _repository,
+    );
+    await model.afterSave(
+      provider: _repository.sqliteProvider,
+      repository: _repository,
+    );
+    _afterCommit.add(() async {
+      _repository.memoryCacheProvider.upsert<TModel>(model);
+      await _repository._notifyLocalSubscribers<TModel>();
+    });
+    return model;
   }
 }

@@ -65,6 +65,15 @@ class AppRoutes {
   /// Ruta temporal para registrar un ingreso operativo.
   static const incomeRegister = '/registros-de-gastos/registrar-ingreso';
 
+  /// Construye la ruta de egresos con el establecimiento activo explicito.
+  static String expensesForEstablishment({
+    required String path,
+    required String establishmentId,
+    required String establishmentName,
+  }) =>
+      '$path?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}'
+      '&establecimientoNombre=${Uri.encodeQueryComponent(establishmentName)}';
+
   /// Ruta del menu principal de reportes SENASA.
   static const String senasaMenu = procedures;
 
@@ -83,11 +92,14 @@ class AppRoutes {
   /// Ruta del mapa de potreros.
   static const field = '/campo';
 
-  /// Ruta de la lista de potreros.
+  /// Alias legado que redirige al visor local de lotes.
   static const fieldList = '/campo/lista';
 
-  /// Ruta del detalle de un potrero.
-  static const fieldDetail = '/campo/:potreroId';
+  /// Ruta del editor local para delimitar un nuevo lote.
+  static const lotRegister = '/campo/nuevo-lote';
+
+  /// Ruta del detalle de un lote.
+  static const fieldDetail = '/campo/:loteId';
 
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {
@@ -125,8 +137,8 @@ class AppRoutes {
     return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}';
   }
 
-  /// Obtiene la ruta de detalle de un potrero por su id.
-  static String fieldDetailById(String potreroId) {
-    return '/campo/$potreroId';
+  /// Obtiene la ruta de detalle de un lote por su id.
+  static String fieldDetailById(String lotId) {
+    return '/campo/$lotId';
   }
 }

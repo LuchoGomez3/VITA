@@ -156,6 +156,66 @@ void main() {
       );
     });
 
+    test('refreshes and retries once when backend unexpectedly returns 401', () async {
+      var requestCount = 0;
+      SessionBackendAccessTokenProvider.instance
+        ..session = BackendTokenSession(
+          accessToken: 'apparently-valid-token',
+          refreshToken: 'refresh-token',
+          accessTokenExpiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        )
+        ..refreshCallback = (_) async => BackendTokenSession(
+          accessToken: 'renewed-token',
+          refreshToken: 'renewed-refresh-token',
+          accessTokenExpiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        );
+      final client = AuthenticatedBackendClient(
+        tokenProvider: SessionBackendAccessTokenProvider.instance,
+        onSyncResult: (_) async {},
+        inner: MockClient((request) async {
+          requestCount++;
+          if (requestCount == 1) return http.Response('unauthorized', 401);
+          expect(request.headers['Authorization'], 'Bearer renewed-token');
+          expect(jsonDecode(request.body), _requestBody);
+          return http.Response(_successBody, 201);
+        }),
+      );
+
+      final response = await client.post(
+        Uri.parse('http://localhost:8000/api/v1/animales'),
+        body: jsonEncode(_requestBody),
+      );
+
+      expect(response.statusCode, 201);
+      expect(requestCount, 2);
+    });
+
+    test('keeps a pending request when 401 refresh fails offline', () async {
+      final results = <BackendSyncResult>[];
+      SessionBackendAccessTokenProvider.instance
+        ..session = BackendTokenSession(
+          accessToken: 'apparently-valid-token',
+          refreshToken: 'refresh-token',
+          accessTokenExpiresAt: DateTime.now().toUtc().add(
+            const Duration(hours: 1),
+          ),
+        )
+        ..refreshCallback = (_) async => null;
+      final client = AuthenticatedBackendClient(
+        tokenProvider: SessionBackendAccessTokenProvider.instance,
+        onSyncResult: (result) async => results.add(result),
+        inner: MockClient((_) async => http.Response('unauthorized', 401)),
+      );
+
+      final response = await client.post(
+        Uri.parse('http://localhost:8000/api/v1/animales'),
+        body: jsonEncode(_requestBody),
+      );
+
+      expect(response.statusCode, 503);
+      expect(results, isEmpty);
+    });
+
     test('returns a transient response when refresh fails offline', () async {
       SessionBackendAccessTokenProvider.instance
         ..session = BackendTokenSession(
@@ -217,6 +277,40 @@ void main() {
       expect(results.single.synchronized, isFalse);
       expect(results.single.errorCode, 'auth_error');
       expect(SessionBackendAccessTokenProvider.instance.accessToken, isNull);
+    });
+
+    test('notifies auth rejection when backend returns 401', () async {
+      var rejectionCount = 0;
+      final client = AuthenticatedBackendClient(
+        tokenProvider: const _FakeTokenProvider('jwt-token'),
+        onSyncResult: (_) async {},
+        onUnauthorized: () async => rejectionCount++,
+        inner: MockClient((_) async => http.Response('unauthorized', 401)),
+      );
+
+      final response = await client.get(
+        Uri.parse('http://localhost:8000/api/v1/categorias'),
+      );
+
+      expect(response.statusCode, 401);
+      expect(rejectionCount, 1);
+    });
+
+    test('does not reject auth for non-401 backend errors', () async {
+      var rejectionCount = 0;
+      final client = AuthenticatedBackendClient(
+        tokenProvider: const _FakeTokenProvider('jwt-token'),
+        onSyncResult: (_) async {},
+        onUnauthorized: () async => rejectionCount++,
+        inner: MockClient((_) async => http.Response('server error', 503)),
+      );
+
+      final response = await client.get(
+        Uri.parse('http://localhost:8000/api/v1/categorias'),
+      );
+
+      expect(response.statusCode, 503);
+      expect(rejectionCount, 0);
     });
   });
 }

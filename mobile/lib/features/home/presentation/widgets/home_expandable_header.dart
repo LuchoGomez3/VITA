@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_cubit.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
@@ -39,8 +40,8 @@ class HomeExpandableHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
       builder: (context, state) {
-        final selectedEstablishmentName = state.establishments[highlightedEstablishmentId];
-        final selectedName = selectedEstablishmentName ?? HomeStrings.allEstablishments;
+        final selectedEstablishment = state.establishments[highlightedEstablishmentId];
+        final selectedName = selectedEstablishment?.name ?? HomeStrings.allEstablishments;
 
         return Material(
           color: AppColors.backgroundTertiary,
@@ -164,7 +165,7 @@ class _EstablishmentOptions extends StatelessWidget {
     required this.onSelected,
   });
 
-  final Map<String, String> establishments;
+  final Map<String, EstablishmentMembership> establishments;
   final String? highlightedEstablishmentId;
   final ValueChanged<String?> onSelected;
 
@@ -221,7 +222,7 @@ class _EstablishmentOptions extends StatelessWidget {
                 ),
                 ...entries.map(
                   (entry) => _EstablishmentOption(
-                    label: entry.value,
+                    label: entry.value.name,
                     onTap: () => onSelected(entry.key),
                   ),
                 ),

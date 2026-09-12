@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/generated_report_file_card.dart';
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_status_indicator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -39,7 +39,11 @@ class SenasaReportSuccessPage extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const ReportStatusIndicator.success(),
+                        const AppStatusIndicator(
+                          icon: Icons.check,
+                          color: AppColors.primary,
+                          isLoading: false,
+                        ),
                         const SizedBox(height: AppSpacing.lg),
                         const Text(
                           SenasaStrings.successTitle,

@@ -11,11 +11,15 @@ class SignUpActions extends StatelessWidget {
     required this.isSubmitting,
     required this.onLoginPressed,
     required this.onRegisterPressed,
+    this.loadingLabel = SignUpStrings.registeringButton,
     super.key,
   });
 
   /// Indica si el registro esta siendo procesado.
   final bool isSubmitting;
+
+  /// Texto que comunica la etapa actual mientras el boton esta bloqueado.
+  final String loadingLabel;
 
   /// Accion ejecutada al seleccionar el enlace de inicio de sesion.
   final VoidCallback onLoginPressed;
@@ -40,7 +44,7 @@ class SignUpActions extends StatelessWidget {
           ),
           onPressed: onRegisterPressed,
           isLoading: isSubmitting,
-          loadingLabel: SignUpStrings.registeringButton,
+          loadingLabel: loadingLabel,
         ),
         const SizedBox(height: AppSpacing.lg),
         Center(

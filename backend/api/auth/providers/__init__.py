@@ -6,6 +6,7 @@ from api.auth.providers.base import (
     AuthProvider,
     AuthProviderError,
     AuthResult,
+    IdentityAlreadyExistsError,
     InvalidCredentialsError,
 )
 from api.auth.providers.local_provider import LocalAuthProvider
@@ -15,6 +16,7 @@ __all__ = [
     "AuthProvider",
     "AuthProviderError",
     "AuthResult",
+    "IdentityAlreadyExistsError",
     "InvalidCredentialsError",
     "get_auth_provider",
 ]

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -19,15 +21,22 @@ class AuthSessionCubit extends Cubit<AuthSessionState> {
   AuthSessionCubit({
     required RestoreSessionUseCase restoreSessionUseCase,
     required SignOutUseCase signOutUseCase,
+    Stream<void>? authRejections,
     void Function()? onClose,
   }) : _restoreSessionUseCase = restoreSessionUseCase,
        _signOutUseCase = signOutUseCase,
        _onClose = onClose,
-       super(const AuthSessionState.checking());
+       super(const AuthSessionState.checking()) {
+    _authRejectionSubscription = authRejections?.listen((_) {
+      unawaited(_invalidateSession());
+    });
+  }
 
   final RestoreSessionUseCase _restoreSessionUseCase;
   final SignOutUseCase _signOutUseCase;
   final void Function()? _onClose;
+  StreamSubscription<void>? _authRejectionSubscription;
+  bool _isSigningOut = false;
 
   /// Restaura la sesion guardada durante el arranque de la app.
   Future<void> restoreSession() async {
@@ -52,12 +61,26 @@ class AuthSessionCubit extends Cubit<AuthSessionState> {
 
   /// Cierra la sesion local y deja a Brick sin token en memoria.
   Future<void> signOut() async {
-    await _signOutUseCase();
-    emit(const AuthSessionState.unauthenticated());
+    await _invalidateSession();
+  }
+
+  Future<void> _invalidateSession() async {
+    if (_isSigningOut || state is AuthSessionUnauthenticated) {
+      return;
+    }
+
+    _isSigningOut = true;
+    try {
+      await _signOutUseCase();
+      emit(const AuthSessionState.unauthenticated());
+    } finally {
+      _isSigningOut = false;
+    }
   }
 
   @override
   Future<void> close() async {
+    await _authRejectionSubscription?.cancel();
     _onClose?.call();
     return super.close();
   }

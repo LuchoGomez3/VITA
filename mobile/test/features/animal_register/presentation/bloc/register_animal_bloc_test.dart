@@ -2,8 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
-import 'package:frontend_mayoral/features/animal_register/data/datasources/animal_registration_mock_context.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_repository.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
@@ -17,7 +17,7 @@ void main() {
       repository = _FakeAnimalRegistrationRepository();
       bloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
-        registrationContext: const AnimalRegistrationMockContext(),
+        registrationContext: const _TestAnimalRegistrationContext(),
       );
       addTearDown(bloc.close);
     });
@@ -38,7 +38,7 @@ void main() {
       final prefilledBloc = RegisterAnimalBloc(
         initialRfid: '982000412991416',
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
-        registrationContext: const AnimalRegistrationMockContext(),
+        registrationContext: const _TestAnimalRegistrationContext(),
       );
       addTearDown(prefilledBloc.close);
 
@@ -66,7 +66,7 @@ void main() {
       final reviewBloc = RegisterAnimalBloc(
         initialStep: RegisterAnimalStep.review,
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
-        registrationContext: const AnimalRegistrationMockContext(),
+        registrationContext: const _TestAnimalRegistrationContext(),
       );
       addTearDown(reviewBloc.close);
 
@@ -74,6 +74,24 @@ void main() {
 
       await Future<void>.delayed(Duration.zero);
       expect(reviewBloc.state.currentStep, RegisterAnimalStep.review);
+    });
+
+    test('represents destination loading failures with ResultState', () async {
+      final failingBloc = RegisterAnimalBloc(
+        registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        registrationContext: const _FailingAnimalRegistrationContext(),
+      );
+      addTearDown(failingBloc.close);
+
+      failingBloc.add(const RegisterAnimalEvent.destinationsRequested());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        failingBloc.state.destinationsState,
+        isA<ResultError<List<AnimalRegistrationDestination>>>(),
+      );
+      expect(failingBloc.state.destinations, isEmpty);
     });
 
     test('submits a valid draft and emits loading then data', () async {
@@ -93,7 +111,6 @@ void main() {
             categoryName: 'Ternera',
             initialWeight: 32.5,
             motherId: '56fb8531-13f7-41c6-a1e1-85ea9b7094fa',
-            weighingMethod: AnimalWeighingMethod.manual,
             weighingDate: DateTime(2025, 3, 14),
           ),
           syncStatus: AnimalSyncStatus.pending,
@@ -109,6 +126,7 @@ void main() {
         visualTagSeries: '003',
         visualTagNumber: '1295',
         birthWeight: '32,5',
+        destinationId: 'lot-1',
       );
       bloc.add(RegisterAnimalEvent.draftChanged(draft));
       await Future<void>.delayed(Duration.zero);
@@ -158,6 +176,7 @@ void main() {
         visualTagSeries: '003',
         visualTagNumber: '1295',
         birthWeight: '32.5',
+        destinationId: 'lot-1',
       );
       bloc.add(RegisterAnimalEvent.draftChanged(draft));
       await Future<void>.delayed(Duration.zero);
@@ -169,6 +188,67 @@ void main() {
       expect(repository.registerCalls, 1);
     });
   });
+}
+
+class _TestAnimalRegistrationContext implements AnimalRegistrationContext {
+  const _TestAnimalRegistrationContext();
+
+  @override
+  String get establishmentId => '8b75eb38-8b0f-44dc-979f-89ce2817b63d';
+
+  @override
+  Future<List<AnimalRegistrationDestination>> loadDestinations() async => const [
+    AnimalRegistrationDestination(
+      id: 'lot-1',
+      name: 'La Cumbre',
+      details: '142,0 ha',
+    ),
+  ];
+
+  @override
+  String resolveLotId(String destinationSelectionId) => destinationSelectionId == 'lot-1'
+      ? '62af91d7-307d-4a07-b2bd-b2d8976ec91a'
+      : throw StateError('Unknown destination.');
+
+  @override
+  String resolveLotName(String destinationSelectionId) => 'La Cumbre';
+
+  @override
+  String resolveCategoryId(String categoryName) => 'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8';
+
+  @override
+  String? resolveFatherId(String? fatherSelectionId) => null;
+
+  @override
+  String? resolveMotherId(String? motherSelectionId) =>
+      motherSelectionId == null ? null : '56fb8531-13f7-41c6-a1e1-85ea9b7094fa';
+}
+
+class _FailingAnimalRegistrationContext implements AnimalRegistrationContext {
+  const _FailingAnimalRegistrationContext();
+
+  @override
+  String get establishmentId => 'establishment-id';
+
+  @override
+  Future<List<AnimalRegistrationDestination>> loadDestinations() {
+    throw StateError('forced local read failure');
+  }
+
+  @override
+  String resolveCategoryId(String categoryName) => 'category-id';
+
+  @override
+  String? resolveFatherId(String? fatherSelectionId) => null;
+
+  @override
+  String resolveLotId(String destinationSelectionId) => 'lot-id';
+
+  @override
+  String resolveLotName(String destinationSelectionId) => 'Lote';
+
+  @override
+  String? resolveMotherId(String? motherSelectionId) => null;
 }
 
 class _FakeAnimalRegistrationRepository implements AnimalRegistrationRepository {
@@ -190,7 +270,6 @@ class _FakeAnimalRegistrationRepository implements AnimalRegistrationRepository 
         categoryName: 'Ternera',
         initialWeight: 32.5,
         motherId: '56fb8531-13f7-41c6-a1e1-85ea9b7094fa',
-        weighingMethod: AnimalWeighingMethod.manual,
         weighingDate: DateTime(2025, 3, 14),
       ),
       syncStatus: AnimalSyncStatus.pending,

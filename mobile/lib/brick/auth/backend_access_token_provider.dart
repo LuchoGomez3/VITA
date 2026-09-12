@@ -37,12 +37,18 @@ abstract class BackendAccessTokenProvider {
   Future<String?> getAccessToken();
 }
 
+/// Fuente de token capaz de forzar una renovacion tras un rechazo del backend.
+abstract class RefreshableBackendAccessTokenProvider implements BackendAccessTokenProvider {
+  /// Renueva la sesion y devuelve el nuevo access token cuando fue posible.
+  Future<String?> refreshAccessToken();
+}
+
 /// Provider de token compartido por el flujo de login y Brick.
 ///
 /// Mantiene el JWT solo en memoria del proceso. Auth lo hidrata despues de un
 /// login exitoso o al restaurar una sesion desde secure storage. Brick no conoce
 /// esa persistencia: solo pide el token vigente mediante este contrato.
-class SessionBackendAccessTokenProvider implements BackendAccessTokenProvider {
+class SessionBackendAccessTokenProvider implements RefreshableBackendAccessTokenProvider {
   SessionBackendAccessTokenProvider._();
 
   /// Instancia compartida durante el ciclo de vida de la app.
@@ -138,6 +144,38 @@ class SessionBackendAccessTokenProvider implements BackendAccessTokenProvider {
       );
     }
 
+    session = refreshed;
+    return refreshed.accessToken;
+  }
+
+  /// Fuerza una unica renovacion despues de que el backend rechaza un token.
+  ///
+  /// Se usa para el caso en que la expiracion local quedo desfasada respecto
+  /// del servidor. Los datos offline no se eliminan si la renovacion falla.
+  @override
+  Future<String?> refreshAccessToken() async {
+    final refreshToken = _refreshToken;
+    final refreshCallback = this.refreshCallback;
+    if (refreshToken == null || refreshToken.isEmpty || refreshCallback == null) {
+      clearAccessToken();
+      return null;
+    }
+
+    BackendTokenSession? refreshed;
+    try {
+      refreshed = await (_refreshInFlight ??= refreshCallback(refreshToken));
+    } on DomainException catch (error) {
+      if (error.code == DomainErrorCode.unauthorized) clearAccessToken();
+      rethrow;
+    } finally {
+      _refreshInFlight = null;
+    }
+    if (refreshed == null) {
+      throw const DomainException(
+        message: 'No se pudo renovar la sesion por un problema de red.',
+        code: DomainErrorCode.offline,
+      );
+    }
     session = refreshed;
     return refreshed.accessToken;
   }

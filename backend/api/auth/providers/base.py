@@ -28,6 +28,19 @@ class InvalidCredentialsError(DomainException):
     code = "invalid_credentials"
 
 
+class IdentityAlreadyExistsError(DomainException):
+    """La identidad ya existe sin revelar qué dato produjo el conflicto."""
+
+    status_code = 409
+    code = "usuario_ya_registrado"
+
+    def __init__(self) -> None:
+        super().__init__(
+            "El CUIT o correo ingresado ya se encuentran asociados a una cuenta activa. "
+            "Por favor, iniciá sesión."
+        )
+
+
 @dataclass(frozen=True)
 class AuthResult:
     """Resultado de una operación de sesión (alta, login o refresh).
@@ -70,6 +83,16 @@ class AuthProvider(ABC):
         Lanza ``InvalidCredentialsError`` si el refresh venció o fue revocado y
         ``AuthProviderError`` ante fallos de red o del proveedor.
         """
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete_user(self, user_id: UUID) -> None:
+        """Elimina credenciales creadas que no pudieron asociarse a un perfil."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def sign_out(self, access_token: str) -> None:
+        """Revoca remotamente la sesión identificada por el access token."""
         raise NotImplementedError
 
     @abstractmethod

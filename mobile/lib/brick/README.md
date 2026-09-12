@@ -186,6 +186,39 @@ El alta es offline-first:
 7. `AnimalBrickStore` actualiza el registro local:
    `pending -> synchronized` o `pending -> rejected`.
 
+## Flujo local de lotes y movimientos
+
+La gestión de lotes utiliza SQLite como fuente de verdad mientras backend
+termina y valida su contrato:
+
+```txt
+Field UI
+  -> casos de uso de field
+  -> repositorios de field
+  -> BrickLotStore / BrickAnimalLotMovementStore / AnimalBrickStore
+  -> SQLite
+```
+
+`BrickLotModel` conserva la delimitación cartesiana local versionada. Sus
+coordenadas pertenecen al lienzo `0..1000`; no son latitud/longitud ni GeoJSON.
+Además persiste superficie en décimas de hectárea, forraje, agua, estado y los
+timestamps necesarios para el futuro esquema LWW.
+
+El movimiento entre lotes actualiza la ubicación de los animales y guarda un
+`BrickAnimalLotMovementModel` con origen, destino, animales, fecha y motivo.
+Ambas escrituras se ejecutan dentro de una única transacción SQLite para no
+dejar un traslado parcial si alguna operación falla.
+
+Los contratos REST están preparados, pero se encuentran apagados por defecto:
+
+- `VITA_ENABLE_LOT_REMOTE_SYNC=true` habilita `/api/v1/lotes`.
+- `VITA_ENABLE_LOT_MOVEMENT_REMOTE_SYNC=true` habilita
+  `/api/v1/movimientos_lotes`.
+
+No deben activarse hasta que ambos contratos sean revisados con backend. Con
+los flags apagados no se crean requests ni entradas nuevas en la cola REST para
+estas dos entidades.
+
 ## Codigo generado
 
 Si cambia un modelo Brick, se debe regenerar:

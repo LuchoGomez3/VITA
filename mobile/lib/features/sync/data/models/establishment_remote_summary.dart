@@ -1,3 +1,5 @@
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
+
 /// Datos completos de un establecimiento conservados para el uso offline.
 class EstablishmentRemoteSummary {
   /// Crea el establecimiento recibido desde el backend.
@@ -5,6 +7,7 @@ class EstablishmentRemoteSummary {
     required this.id,
     required this.ownerId,
     required this.name,
+    required this.role,
     required this.createdAt,
     required this.updatedAt,
     this.renspaNumber,
@@ -21,6 +24,7 @@ class EstablishmentRemoteSummary {
       id: json['id'] as String,
       ownerId: json['owner_id'] as String,
       name: json['nombre'] as String,
+      role: UserRolePermissions.fromBackend(_readString(json['rol'])),
       renspaNumber: json['nro_renspa'] as String?,
       cuit: json['cuit'] as String?,
       areaHectares: _readDouble(json['superficie_ha']),
@@ -40,6 +44,9 @@ class EstablishmentRemoteSummary {
 
   /// Nombre visible para selectores de establecimiento.
   final String name;
+
+  /// Rol del usuario autenticado en este establecimiento.
+  final UserRole role;
 
   /// Numero RENSPA informado por el backend.
   final String? renspaNumber;
@@ -70,6 +77,7 @@ class EstablishmentRemoteSummary {
     'id': id,
     'owner_id': ownerId,
     'name': name,
+    'role': role.backendValue,
     'renspa_number': renspaNumber,
     'cuit': cuit,
     'area_hectares': areaHectares,
@@ -90,4 +98,6 @@ class EstablishmentRemoteSummary {
 
     return null;
   }
+
+  static String? _readString(Object? value) => value is String ? value : null;
 }

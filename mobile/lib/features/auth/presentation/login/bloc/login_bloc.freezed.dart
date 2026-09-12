@@ -17,7 +17,8 @@ mixin _$LoginState {
 /// Resultado principal del intento de login.
  ResultState<AuthSession> get signInResult;/// Indica que el login ya fue aceptado y se estan preparando datos locales.
  bool get isPreparingOfflineData;/// Error no bloqueante de la sync inicial posterior al login.
- DomainException? get initialDataSyncError;
+ DomainException? get initialDataSyncError;/// Resumen disponible cuando la preparacion posterior fue exitosa.
+ PostAuthenticationSummary? get postAuthenticationSummary;
 /// Create a copy of LoginState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +29,16 @@ $LoginStateCopyWith<LoginState> get copyWith => _$LoginStateCopyWithImpl<LoginSt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LoginState&&(identical(other.signInResult, signInResult) || other.signInResult == signInResult)&&(identical(other.isPreparingOfflineData, isPreparingOfflineData) || other.isPreparingOfflineData == isPreparingOfflineData)&&(identical(other.initialDataSyncError, initialDataSyncError) || other.initialDataSyncError == initialDataSyncError));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LoginState&&(identical(other.signInResult, signInResult) || other.signInResult == signInResult)&&(identical(other.isPreparingOfflineData, isPreparingOfflineData) || other.isPreparingOfflineData == isPreparingOfflineData)&&(identical(other.initialDataSyncError, initialDataSyncError) || other.initialDataSyncError == initialDataSyncError)&&(identical(other.postAuthenticationSummary, postAuthenticationSummary) || other.postAuthenticationSummary == postAuthenticationSummary));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,signInResult,isPreparingOfflineData,initialDataSyncError);
+int get hashCode => Object.hash(runtimeType,signInResult,isPreparingOfflineData,initialDataSyncError,postAuthenticationSummary);
 
 @override
 String toString() {
-  return 'LoginState(signInResult: $signInResult, isPreparingOfflineData: $isPreparingOfflineData, initialDataSyncError: $initialDataSyncError)';
+  return 'LoginState(signInResult: $signInResult, isPreparingOfflineData: $isPreparingOfflineData, initialDataSyncError: $initialDataSyncError, postAuthenticationSummary: $postAuthenticationSummary)';
 }
 
 
@@ -48,7 +49,7 @@ abstract mixin class $LoginStateCopyWith<$Res>  {
   factory $LoginStateCopyWith(LoginState value, $Res Function(LoginState) _then) = _$LoginStateCopyWithImpl;
 @useResult
 $Res call({
- ResultState<AuthSession> signInResult, bool isPreparingOfflineData, DomainException? initialDataSyncError
+ ResultState<AuthSession> signInResult, bool isPreparingOfflineData, DomainException? initialDataSyncError, PostAuthenticationSummary? postAuthenticationSummary
 });
 
 
@@ -65,12 +66,13 @@ class _$LoginStateCopyWithImpl<$Res>
 
 /// Create a copy of LoginState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? signInResult = null,Object? isPreparingOfflineData = null,Object? initialDataSyncError = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? signInResult = null,Object? isPreparingOfflineData = null,Object? initialDataSyncError = freezed,Object? postAuthenticationSummary = freezed,}) {
   return _then(_self.copyWith(
 signInResult: null == signInResult ? _self.signInResult : signInResult // ignore: cast_nullable_to_non_nullable
 as ResultState<AuthSession>,isPreparingOfflineData: null == isPreparingOfflineData ? _self.isPreparingOfflineData : isPreparingOfflineData // ignore: cast_nullable_to_non_nullable
 as bool,initialDataSyncError: freezed == initialDataSyncError ? _self.initialDataSyncError : initialDataSyncError // ignore: cast_nullable_to_non_nullable
-as DomainException?,
+as DomainException?,postAuthenticationSummary: freezed == postAuthenticationSummary ? _self.postAuthenticationSummary : postAuthenticationSummary // ignore: cast_nullable_to_non_nullable
+as PostAuthenticationSummary?,
   ));
 }
 /// Create a copy of LoginState
@@ -173,10 +175,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<AuthSession> signInResult,  bool isPreparingOfflineData,  DomainException? initialDataSyncError)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<AuthSession> signInResult,  bool isPreparingOfflineData,  DomainException? initialDataSyncError,  PostAuthenticationSummary? postAuthenticationSummary)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LoginState() when $default != null:
-return $default(_that.signInResult,_that.isPreparingOfflineData,_that.initialDataSyncError);case _:
+return $default(_that.signInResult,_that.isPreparingOfflineData,_that.initialDataSyncError,_that.postAuthenticationSummary);case _:
   return orElse();
 
 }
@@ -194,10 +196,10 @@ return $default(_that.signInResult,_that.isPreparingOfflineData,_that.initialDat
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<AuthSession> signInResult,  bool isPreparingOfflineData,  DomainException? initialDataSyncError)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<AuthSession> signInResult,  bool isPreparingOfflineData,  DomainException? initialDataSyncError,  PostAuthenticationSummary? postAuthenticationSummary)  $default,) {final _that = this;
 switch (_that) {
 case _LoginState():
-return $default(_that.signInResult,_that.isPreparingOfflineData,_that.initialDataSyncError);}
+return $default(_that.signInResult,_that.isPreparingOfflineData,_that.initialDataSyncError,_that.postAuthenticationSummary);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -211,10 +213,10 @@ return $default(_that.signInResult,_that.isPreparingOfflineData,_that.initialDat
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<AuthSession> signInResult,  bool isPreparingOfflineData,  DomainException? initialDataSyncError)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<AuthSession> signInResult,  bool isPreparingOfflineData,  DomainException? initialDataSyncError,  PostAuthenticationSummary? postAuthenticationSummary)?  $default,) {final _that = this;
 switch (_that) {
 case _LoginState() when $default != null:
-return $default(_that.signInResult,_that.isPreparingOfflineData,_that.initialDataSyncError);case _:
+return $default(_that.signInResult,_that.isPreparingOfflineData,_that.initialDataSyncError,_that.postAuthenticationSummary);case _:
   return null;
 
 }
@@ -226,7 +228,7 @@ return $default(_that.signInResult,_that.isPreparingOfflineData,_that.initialDat
 
 
 class _LoginState implements LoginState {
-  const _LoginState({required this.signInResult, required this.isPreparingOfflineData, this.initialDataSyncError});
+  const _LoginState({required this.signInResult, required this.isPreparingOfflineData, this.initialDataSyncError, this.postAuthenticationSummary});
   
 
 /// Resultado principal del intento de login.
@@ -235,6 +237,8 @@ class _LoginState implements LoginState {
 @override final  bool isPreparingOfflineData;
 /// Error no bloqueante de la sync inicial posterior al login.
 @override final  DomainException? initialDataSyncError;
+/// Resumen disponible cuando la preparacion posterior fue exitosa.
+@override final  PostAuthenticationSummary? postAuthenticationSummary;
 
 /// Create a copy of LoginState
 /// with the given fields replaced by the non-null parameter values.
@@ -246,16 +250,16 @@ _$LoginStateCopyWith<_LoginState> get copyWith => __$LoginStateCopyWithImpl<_Log
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LoginState&&(identical(other.signInResult, signInResult) || other.signInResult == signInResult)&&(identical(other.isPreparingOfflineData, isPreparingOfflineData) || other.isPreparingOfflineData == isPreparingOfflineData)&&(identical(other.initialDataSyncError, initialDataSyncError) || other.initialDataSyncError == initialDataSyncError));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LoginState&&(identical(other.signInResult, signInResult) || other.signInResult == signInResult)&&(identical(other.isPreparingOfflineData, isPreparingOfflineData) || other.isPreparingOfflineData == isPreparingOfflineData)&&(identical(other.initialDataSyncError, initialDataSyncError) || other.initialDataSyncError == initialDataSyncError)&&(identical(other.postAuthenticationSummary, postAuthenticationSummary) || other.postAuthenticationSummary == postAuthenticationSummary));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,signInResult,isPreparingOfflineData,initialDataSyncError);
+int get hashCode => Object.hash(runtimeType,signInResult,isPreparingOfflineData,initialDataSyncError,postAuthenticationSummary);
 
 @override
 String toString() {
-  return 'LoginState(signInResult: $signInResult, isPreparingOfflineData: $isPreparingOfflineData, initialDataSyncError: $initialDataSyncError)';
+  return 'LoginState(signInResult: $signInResult, isPreparingOfflineData: $isPreparingOfflineData, initialDataSyncError: $initialDataSyncError, postAuthenticationSummary: $postAuthenticationSummary)';
 }
 
 
@@ -266,7 +270,7 @@ abstract mixin class _$LoginStateCopyWith<$Res> implements $LoginStateCopyWith<$
   factory _$LoginStateCopyWith(_LoginState value, $Res Function(_LoginState) _then) = __$LoginStateCopyWithImpl;
 @override @useResult
 $Res call({
- ResultState<AuthSession> signInResult, bool isPreparingOfflineData, DomainException? initialDataSyncError
+ ResultState<AuthSession> signInResult, bool isPreparingOfflineData, DomainException? initialDataSyncError, PostAuthenticationSummary? postAuthenticationSummary
 });
 
 
@@ -283,12 +287,13 @@ class __$LoginStateCopyWithImpl<$Res>
 
 /// Create a copy of LoginState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? signInResult = null,Object? isPreparingOfflineData = null,Object? initialDataSyncError = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? signInResult = null,Object? isPreparingOfflineData = null,Object? initialDataSyncError = freezed,Object? postAuthenticationSummary = freezed,}) {
   return _then(_LoginState(
 signInResult: null == signInResult ? _self.signInResult : signInResult // ignore: cast_nullable_to_non_nullable
 as ResultState<AuthSession>,isPreparingOfflineData: null == isPreparingOfflineData ? _self.isPreparingOfflineData : isPreparingOfflineData // ignore: cast_nullable_to_non_nullable
 as bool,initialDataSyncError: freezed == initialDataSyncError ? _self.initialDataSyncError : initialDataSyncError // ignore: cast_nullable_to_non_nullable
-as DomainException?,
+as DomainException?,postAuthenticationSummary: freezed == postAuthenticationSummary ? _self.postAuthenticationSummary : postAuthenticationSummary // ignore: cast_nullable_to_non_nullable
+as PostAuthenticationSummary?,
   ));
 }
 

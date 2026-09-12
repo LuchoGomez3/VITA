@@ -1,13 +1,17 @@
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
+import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/operating_expense_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
+import 'package:frontend_mayoral/core/formatters/decimal_amount_formatter.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
@@ -21,17 +25,22 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     required CategoriaBrickStore categoryStore,
     required PesajeBrickStore pesajeStore,
     required SecureStorageService secureStorage,
+    required OperatingExpenseBrickStore operatingExpenseStore,
     DateTime Function()? now,
   }) : _animalStore = animalStore,
        _categoryStore = categoryStore,
        _pesajeStore = pesajeStore,
-       _secureStorage = secureStorage,
+       _establishmentCatalog = EstablishmentCatalog(
+         secureStorage: secureStorage,
+       ),
+       _operatingExpenseStore = operatingExpenseStore,
        _now = now ?? DateTime.now;
 
   final AnimalBrickStore _animalStore;
   final CategoriaBrickStore _categoryStore;
   final PesajeBrickStore _pesajeStore;
-  final SecureStorageService _secureStorage;
+  final EstablishmentCatalog _establishmentCatalog;
+  final OperatingExpenseBrickStore _operatingExpenseStore;
   final DateTime Function() _now;
 
   @override
@@ -49,9 +58,8 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
                 .toList();
       final weighings = await _pesajeStore.getLocalPesajes();
       final categories = await _getCategoriesForAnimals(animals);
-      return Result.success(
-        _calculateDashboard(animals, weighings, categories),
-      );
+      final expenses = await _expensesFor(establishmentIds);
+      return Result.success(_calculateDashboard(animals, weighings, categories, expenses));
     } on Object {
       return const Result.failure(
         DomainException(
@@ -62,29 +70,12 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
   }
 
   @override
-  Future<Result<Map<String, String>>> getEstablishments() async {
+  Future<Result<Map<String, EstablishmentMembership>>> getEstablishments() async {
     try {
-      final encoded = await _secureStorage.read(
-        SecureStorageKeys.establishmentCatalog,
-      );
-      if (encoded == null || encoded.isEmpty) {
-        return const Result.success({});
-      }
-
-      final decoded = jsonDecode(encoded);
-      if (decoded is! List) {
-        throw const FormatException('Invalid establishment catalog.');
-      }
-
-      final establishments = <String, String>{};
-      for (final item in decoded.whereType<Map<String, dynamic>>()) {
-        final id = item['id'];
-        final name = item['name'];
-        if (id is String && name is String) {
-          establishments[id] = name;
-        }
-      }
-      return Result.success(establishments);
+      final memberships = await _establishmentCatalog.getMemberships();
+      return Result.success({
+        for (final membership in memberships) membership.id: membership,
+      });
     } on Object {
       return const Result.failure(
         DomainException(
@@ -98,6 +89,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     List<BrickAnimalModel> animals,
     List<BrickPesajeModel> weighings,
     List<BrickCategoriaModel> categories,
+    int operatingExpensesCents,
   ) {
     // El tablero trabaja únicamente con animales vigentes. Las altas y bajas
     // mensuales sí se calculan sobre el historial completo para no perder los
@@ -132,8 +124,25 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
       animalsWithDailyGain: dailyGains.length,
       categories: _categoryMetrics(activeAnimals, categories),
       lots: _lotMetrics(activeAnimals, currentWeights),
+      operatingExpensesCents: operatingExpensesCents,
     );
   }
+
+  Future<int> _expensesFor(Set<String>? establishmentIds) async {
+    if (establishmentIds == null) {
+      return _sumExpenses(await _operatingExpenseStore.getLocalExpenses(null));
+    }
+    var total = 0;
+    for (final id in establishmentIds) {
+      total += _sumExpenses(await _operatingExpenseStore.getLocalExpenses(id));
+    }
+    return total;
+  }
+
+  int _sumExpenses(Iterable<BrickOperatingExpenseModel> expenses) => expenses.fold(
+    0,
+    (total, expense) => total + DecimalAmountFormatter.decimalToCents(expense.amount),
+  );
 
   Map<String, List<BrickPesajeModel>> _groupWeighingsByAnimal(
     List<BrickPesajeModel> weighings,

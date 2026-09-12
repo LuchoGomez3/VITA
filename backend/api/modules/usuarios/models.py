@@ -14,7 +14,7 @@ class Usuario(Base, table=True):
 
     nombre: str
     apellido: str
-    email: str
-    cuit: str | None = None
+    email: str = Field(unique=True, index=True)
+    cuit: str | None = Field(default=None, unique=True, index=True)
     telefono: str | None = None
     is_platform_admin: bool = False

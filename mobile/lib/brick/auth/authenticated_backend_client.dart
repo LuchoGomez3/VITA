@@ -18,20 +18,23 @@ import 'package:http/http.dart' as http;
 /// Este cliente no guarda nada en SQLite. Solo mira lo que pasa en la capa HTTP;
 /// los stores de cada entidad deciden que hacer con el resultado.
 class AuthenticatedBackendClient extends http.BaseClient {
-  /// Crea un cliente HTTP autenticado para el [RestProvider] de Brick.
+  /// Crea un cliente HTTP autenticado para el proveedor REST de Brick.
   ///
   /// [inner] permite inyectar un cliente falso en tests. En runtime se usa el
   /// cliente HTTP real por defecto.
   AuthenticatedBackendClient({
     required BackendAccessTokenProvider tokenProvider,
     required BackendSyncResultHandler onSyncResult,
+    Future<void> Function()? onUnauthorized,
     http.Client? inner,
   }) : _tokenProvider = tokenProvider,
        _onSyncResult = onSyncResult,
+       _onUnauthorized = onUnauthorized,
        _inner = inner ?? http.Client();
 
   final BackendAccessTokenProvider _tokenProvider;
   final BackendSyncResultHandler _onSyncResult;
+  final Future<void> Function()? _onUnauthorized;
   final http.Client _inner;
 
   @override
@@ -50,6 +53,7 @@ class AuthenticatedBackendClient extends http.BaseClient {
       return error.response;
     }
     if (token == null) {
+      await _onUnauthorized?.call();
       return _syntheticResponse(
         request: request,
         syncRequest: syncRequest,
@@ -58,6 +62,7 @@ class AuthenticatedBackendClient extends http.BaseClient {
       );
     }
 
+    final retryRequest = _copyRequest(request);
     request.headers['Authorization'] = 'Bearer $token';
     _logRequest(request);
 
@@ -68,8 +73,34 @@ class AuthenticatedBackendClient extends http.BaseClient {
     // Convertimos a Response para poder leer el body una vez, loguearlo y
     // parsear errores. Luego reconstruimos StreamedResponse porque BaseClient
     // debe devolver ese tipo.
-    final bufferedResponse = await http.Response.fromStream(response);
+    var bufferedResponse = await http.Response.fromStream(response);
     _logResponse(bufferedResponse);
+
+    if (bufferedResponse.statusCode == 401 && retryRequest != null) {
+      String? refreshedToken;
+      try {
+        refreshedToken = await _refreshAfterUnauthorized();
+      } on DomainException catch (error) {
+        if (error.code != DomainErrorCode.unauthorized) {
+          return _syntheticResponse(
+            request: request,
+            syncRequest: syncRequest,
+            statusCode: 503,
+            body: const {'error': 'offline'},
+          );
+        }
+      }
+      if (refreshedToken != null) {
+        retryRequest.headers['Authorization'] = 'Bearer $refreshedToken';
+        _logRequest(retryRequest);
+        bufferedResponse = await http.Response.fromStream(await _inner.send(retryRequest));
+        _logResponse(bufferedResponse);
+      }
+    }
+
+    if (bufferedResponse.statusCode == 401) {
+      await _onUnauthorized?.call();
+    }
 
     // Los errores 5xx son transitorios: Brick debe conservar la request en cola
     // y reintentar. Los 2xx/4xx se informan al store para marcar synchronized o
@@ -95,6 +126,22 @@ class AuthenticatedBackendClient extends http.BaseClient {
       persistentConnection: bufferedResponse.persistentConnection,
       reasonPhrase: bufferedResponse.reasonPhrase,
     );
+  }
+
+  Future<String?> _refreshAfterUnauthorized() async {
+    final tokenProvider = _tokenProvider;
+    if (tokenProvider is! RefreshableBackendAccessTokenProvider) return null;
+    return tokenProvider.refreshAccessToken();
+  }
+
+  http.Request? _copyRequest(http.BaseRequest request) {
+    if (request is! http.Request) return null;
+    return http.Request(request.method, request.url)
+      ..headers.addAll(request.headers)
+      ..bodyBytes = request.bodyBytes
+      ..followRedirects = request.followRedirects
+      ..maxRedirects = request.maxRedirects
+      ..persistentConnection = request.persistentConnection;
   }
 
   Future<String?> _resolveAccessToken({
@@ -172,6 +219,7 @@ class AuthenticatedBackendClient extends http.BaseClient {
       ..writeln('[Backend HTTP] headers: ${_redactedHeaders(request.headers)}');
 
     if (request is http.Request && request.body.isNotEmpty) {
+      // TODO(team): Redactar o resumir payloads antes de probar con datos reales.
       buffer.writeln('[Backend HTTP] body: ${request.body}');
     }
 

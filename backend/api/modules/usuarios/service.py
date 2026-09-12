@@ -1,16 +1,19 @@
 """Lógica de negocio del módulo usuarios."""
 
+import logging
+from uuid import UUID
+
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth.providers import AuthProvider, AuthResult
-from api.modules.usuarios.exceptions import (
-    CuitYaRegistradoError,
-    EmailYaRegistradoError,
-)
+from api.modules.usuarios.exceptions import UsuarioYaRegistradoError
 from api.modules.usuarios.models import Usuario
 from api.modules.usuarios.repository import UsuarioRepository
 from api.modules.usuarios.schemas import UsuarioRead, UsuarioRegistroCreate
 from api.shared.cuit import CuitInvalidoError, validar_cuit
+
+logger = logging.getLogger(__name__)
 
 
 class UsuarioService:
@@ -34,9 +37,9 @@ class UsuarioService:
         # Unicidad de email y CUIT (la constraint final la garantiza la DB,
         # pero validamos antes para devolver un error de dominio claro).
         if await self.repository.get_by_email(data.email) is not None:
-            raise EmailYaRegistradoError(data.email)
+            raise UsuarioYaRegistradoError()
         if await self.repository.get_by_cuit(data.cuit) is not None:
-            raise CuitYaRegistradoError(data.cuit)
+            raise UsuarioYaRegistradoError()
 
         # Credenciales en el proveedor de identidad (Supabase Auth en real).
         # El backend nunca persiste la contraseña.
@@ -49,6 +52,25 @@ class UsuarioService:
             email=data.email,
             cuit=data.cuit,
         )
-        await self.repository.create(usuario)
+        try:
+            await self.repository.create(usuario)
+        except IntegrityError as exc:
+            await self._compensar_credencial(auth_result.user_id)
+            raise UsuarioYaRegistradoError() from exc
+        except Exception:
+            # El alta cruza Supabase Auth y PostgreSQL, que no comparten una
+            # transaccion. Si falla el perfil, compensamos la credencial para
+            # que el productor pueda reintentar el registro con el mismo email.
+            await self._compensar_credencial(auth_result.user_id)
+            raise
 
         return UsuarioRead.model_validate(usuario), auth_result
+
+    async def _compensar_credencial(self, user_id: UUID) -> None:
+        try:
+            await self.auth_provider.delete_user(user_id)
+        except Exception:
+            logger.exception(
+                "[AUTH] No se pudo compensar el usuario %s tras fallar el perfil",
+                user_id,
+            )

@@ -51,7 +51,6 @@ class AppColors {
   /// Borde neutro para inputs, cards y divisores suaves.
   static const border = Color(0xFFE1D3CF);
 
-  
   /// Borde de chips.
   static const chipBorder = Color(0xFFE0E0E0);
 
@@ -79,8 +78,17 @@ class AppColors {
   /// Borde para bloques o campos en estado de error.
   static const errorBorder = Color(0xFFE53935);
 
+  /// Advertencia operativa, por ejemplo para lotes en mantenimiento.
+  static const warning = Color(0xFFF57C00);
+
   /// Amarillo usado para indicar una contraseña de fuerza normal.
   static const passwordStrengthNormal = Color(0xFFF9A825);
+
+  /// Amarillo oscuro accesible para iconos de sincronizacion pendiente.
+  static const syncPending = Color(0xFF8A5A00);
+
+  /// Fondo claro para estados pendientes sin depender solo del color.
+  static const syncPendingContainer = Color(0xFFFFF3CD);
 
   /// Verde intenso usado para indicar una contraseña muy fuerte.
   static const passwordStrengthVeryStrong = Color(0xFF1B5E20);

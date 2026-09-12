@@ -4,17 +4,27 @@ import 'package:brick_sqlite/db.dart';
 part '20260622053112.migration.dart';
 part '20260623151524.migration.dart';
 part '20260711234407.migration.dart';
+part '20260812200326.migration.dart';
+part '20260828160014.migration.dart';
+part '20260830200557.migration.dart';
+part '20260830203237.migration.dart';
+part '20260830204306.migration.dart';
 
 /// All intelligently-generated migrations from all `@Migratable` classes on disk
 final migrations = <Migration>{
   const Migration20260622053112(),
   const Migration20260623151524(),
   const Migration20260711234407(),
+  const Migration20260812200326(),
+  const Migration20260828160014(),
+  const Migration20260830200557(),
+  const Migration20260830203237(),
+  const Migration20260830204306(),
 };
 
 /// A consumable database structure including the latest generated migration.
 final schema = Schema(
-  20260711234407,
+  20260830204306,
   generatorVersion: 1,
   tables: <SchemaTable>{
     SchemaTable(
@@ -54,6 +64,30 @@ final schema = Schema(
       indices: <SchemaIndex>{},
     ),
     SchemaTable(
+      'BrickAnimalLotMovementModel',
+      columns: <SchemaColumn>{
+        SchemaColumn(
+          '_brick_id',
+          Column.integer,
+          autoincrement: true,
+          nullable: false,
+          isPrimaryKey: true,
+        ),
+        SchemaColumn('local_id', Column.varchar),
+        SchemaColumn('establishment_id', Column.varchar),
+        SchemaColumn('source_lot_id', Column.varchar),
+        SchemaColumn('destination_lot_id', Column.varchar),
+        SchemaColumn('animal_ids_json', Column.varchar),
+        SchemaColumn('occurred_at', Column.datetime),
+        SchemaColumn('reason', Column.varchar),
+        SchemaColumn('responsible_id', Column.varchar),
+        SchemaColumn('created_at', Column.datetime),
+        SchemaColumn('updated_at', Column.datetime),
+        SchemaColumn('deleted_at', Column.datetime),
+      },
+      indices: <SchemaIndex>{},
+    ),
+    SchemaTable(
       'BrickCategoriaModel',
       columns: <SchemaColumn>{
         SchemaColumn(
@@ -72,6 +106,86 @@ final schema = Schema(
         SchemaColumn('created_at', Column.datetime),
         SchemaColumn('updated_at', Column.datetime),
         SchemaColumn('deleted_at', Column.datetime),
+      },
+      indices: <SchemaIndex>{},
+    ),
+    SchemaTable(
+      'BrickLotModel',
+      columns: <SchemaColumn>{
+        SchemaColumn(
+          '_brick_id',
+          Column.integer,
+          autoincrement: true,
+          nullable: false,
+          isPrimaryKey: true,
+        ),
+        SchemaColumn('local_id', Column.varchar),
+        SchemaColumn('establishment_id', Column.varchar),
+        SchemaColumn('name', Column.varchar),
+        SchemaColumn('boundary_json', Column.varchar),
+        SchemaColumn('geometry_mode', Column.varchar),
+        SchemaColumn('surface_tenths', Column.integer),
+        SchemaColumn('forage_resource_code', Column.varchar),
+        SchemaColumn('has_water', Column.boolean),
+        SchemaColumn('status_code', Column.varchar),
+        SchemaColumn('created_at', Column.datetime),
+        SchemaColumn('updated_at', Column.datetime),
+        SchemaColumn('deleted_at', Column.datetime),
+        SchemaColumn('sync_status', Column.integer),
+        SchemaColumn('sync_error_code', Column.varchar),
+      },
+      indices: <SchemaIndex>{},
+    ),
+    SchemaTable(
+      'BrickOperatingExpenseModel',
+      columns: <SchemaColumn>{
+        SchemaColumn(
+          '_brick_id',
+          Column.integer,
+          autoincrement: true,
+          nullable: false,
+          isPrimaryKey: true,
+        ),
+        SchemaColumn('local_id', Column.varchar),
+        SchemaColumn('establishment_id', Column.varchar),
+        SchemaColumn('amount', Column.varchar),
+        SchemaColumn('type', Column.varchar),
+        SchemaColumn('category', Column.varchar),
+        SchemaColumn('supply', Column.varchar),
+        SchemaColumn('date', Column.datetime),
+        SchemaColumn('description', Column.varchar),
+        SchemaColumn('receipt_number', Column.varchar),
+        SchemaColumn('loaded_by_id', Column.varchar),
+        SchemaColumn('loaded_by_name', Column.varchar),
+        SchemaColumn('created_at', Column.datetime),
+        SchemaColumn('updated_at', Column.datetime),
+        SchemaColumn('deleted_at', Column.datetime),
+        SchemaColumn('custom_category_id', Column.varchar),
+        SchemaColumn('sync_status', Column.integer),
+        SchemaColumn('sync_error_code', Column.varchar),
+      },
+      indices: <SchemaIndex>{},
+    ),
+    SchemaTable(
+      'BrickOperatingExpenseCategoryModel',
+      columns: <SchemaColumn>{
+        SchemaColumn(
+          '_brick_id',
+          Column.integer,
+          autoincrement: true,
+          nullable: false,
+          isPrimaryKey: true,
+        ),
+        SchemaColumn('local_id', Column.varchar),
+        SchemaColumn('establishment_id', Column.varchar),
+        SchemaColumn('type', Column.varchar),
+        SchemaColumn('name', Column.varchar),
+        SchemaColumn('value', Column.varchar),
+        SchemaColumn('created_at', Column.datetime),
+        SchemaColumn('updated_at', Column.datetime),
+        SchemaColumn('deleted_at', Column.datetime),
+        SchemaColumn('sync_status', Column.integer),
+        SchemaColumn('sync_error_code', Column.varchar),
       },
       indices: <SchemaIndex>{},
     ),

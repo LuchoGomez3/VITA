@@ -17,6 +17,7 @@ class UsuarioSesion(BaseModel):
     nombre: str
     apellido: str
     email: str
+    cuit: str | None = None
 
 
 class TokenResponse(BaseModel):

@@ -8,12 +8,9 @@ from enum import Enum
 
 
 class RolUsuario(str, Enum):
-    administrator = "administrator"
+    admin = "admin"
     owner = "owner"
-    veterinarian = "veterinarian"
-    capataz = "capataz"
-    asset_manager = "asset_manager"
-    external_buyer = "external_buyer"
+    employee = "employee"
 
 
 class SexoAnimal(str, Enum):
@@ -51,7 +48,27 @@ class TipoEventoSanitario(str, Enum):
 
 
 class TipoEgreso(str, Enum):
+    """Motivo de salida física de un animal del establecimiento."""
+
     venta = "venta"
     muerte = "muerte"
     baja = "baja"
     traslado_externo = "traslado_externo"
+
+
+class TipoEgresoOperativo(str, Enum):
+    """Clasificación contable principal de un egreso monetario del campo."""
+
+    costo_produccion = "costo_produccion"
+    gasto_administrativo = "gasto_administrativo"
+
+
+class CategoriaEgresoOperativo(str, Enum):
+    """Categorías cerradas que permiten calcular márgenes de forma consistente."""
+
+    sanidad = "sanidad"
+    alimentacion = "alimentacion"
+    identificacion = "identificacion"
+    combustible = "combustible"
+    estructura = "estructura"
+    honorarios = "honorarios"

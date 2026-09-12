@@ -28,7 +28,9 @@ class EstablishmentEmptyStatePage extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             children: [
-              EstablishmentEmptyStateHeader(onSignOut: () => _signOut(context)),
+              EstablishmentEmptyStateHeader(
+                onSignOut: () => _signOut(context),
+              ),
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
@@ -104,8 +106,10 @@ class EstablishmentEmptyStatePage extends StatelessWidget {
     );
   }
 
-  void _signOut(BuildContext context) {
-    onSignOut();
-    context.go(AppRoutes.login);
+  Future<void> _signOut(BuildContext context) async {
+    await onSignOut();
+    if (context.mounted) {
+      context.go(AppRoutes.signUp);
+    }
   }
 }

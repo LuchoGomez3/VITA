@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
-import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/registration_request.dart';
@@ -11,171 +10,133 @@ import 'package:frontend_mayoral/features/auth/domain/repositories/auth_reposito
 import 'package:frontend_mayoral/features/auth/domain/use_cases/register_user_use_case.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_bloc.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_event.dart';
-import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_state.dart';
 
 void main() {
-  const request = RegistrationRequest(
-    firstName: 'Ernesto',
-    lastName: 'Diaz',
-    email: 'ernesto@example.com',
-    cuit: '20-12345678-6',
-    password: 'Password1',
-  );
+  test('keeps submission blocked while navigating after success', () {
+    final state = SignUpState(
+      stage: SignUpStage.success,
+      session: _session,
+      accountCreated: true,
+    );
 
-  test('emits loading and data when registration succeeds', () async {
+    expect(state.isProcessing, isTrue);
+  });
+
+  test('registers and signs in automatically in order', () async {
     final repository = _SignUpAuthRepository(
-      result: const Result.success(
-        AppUser(
-          id: 'user-id',
-          email: 'ernesto@example.com',
-          firstName: 'Ernesto',
-          lastName: 'Diaz',
-          cuit: '20123456786',
-        ),
-      ),
+      registrationResult: Result.success(_session),
     );
-    final bloc = SignUpBloc(
-      registerUserUseCase: RegisterUserUseCase(repository),
-    );
-    final states = <SignUpState>[];
-    final subscription = bloc.stream.listen(states.add);
+    final bloc = _createBloc(repository);
+    final stages = <SignUpStage>[];
+    final subscription = bloc.stream.listen((state) => stages.add(state.stage));
 
-    bloc.add(const SignUpSubmitted(request: request));
-    await Future<void>.delayed(Duration.zero);
+    bloc.add(const SignUpSubmitted(request: _request));
+    await bloc.stream.firstWhere((state) => state.stage == SignUpStage.success);
 
-    expect(
-      states,
-      const [
-        ResultState<AppUser>.loading(),
-        ResultState<AppUser>.data(
-          AppUser(
-            id: 'user-id',
-            email: 'ernesto@example.com',
-            firstName: 'Ernesto',
-            lastName: 'Diaz',
-            cuit: '20123456786',
-          ),
-        ),
-      ],
-    );
+    expect(stages, [
+      SignUpStage.registering,
+      SignUpStage.success,
+    ]);
+    expect(bloc.state.session, _session);
     await subscription.cancel();
     await bloc.close();
   });
 
-  test('emits loading and error when registration fails', () async {
+  test('does not auto-login when account registration fails', () async {
     const error = DomainException(message: 'El email ya esta registrado.');
     final repository = _SignUpAuthRepository(
-      result: const Result.failure(error),
+      registrationResult: const Result.failure(error),
     );
-    final bloc = SignUpBloc(
-      registerUserUseCase: RegisterUserUseCase(repository),
-    );
-    final states = <SignUpState>[];
-    final subscription = bloc.stream.listen(states.add);
+    final bloc = _createBloc(repository)..add(const SignUpSubmitted(request: _request));
+    await bloc.stream.firstWhere((state) => state.stage == SignUpStage.failure);
 
-    bloc.add(const SignUpSubmitted(request: request));
-    await Future<void>.delayed(Duration.zero);
-
-    expect(states, const [
-      ResultState<AppUser>.loading(),
-      ResultState<AppUser>.error(error),
-    ]);
-    await subscription.cancel();
+    expect(bloc.state.error, error);
+    expect(bloc.state.accountCreated, isFalse);
     await bloc.close();
   });
 
-  test('releases its owned resources when closed', () async {
-    var wasClosed = false;
-    final bloc = SignUpBloc(
-      registerUserUseCase: RegisterUserUseCase(
-        _SignUpAuthRepository(
-          result: const Result.failure(
-            DomainException(message: 'Resultado no usado en este test.'),
-          ),
-        ),
-      ),
-      onClose: () => wasClosed = true,
-    );
-
-    await bloc.close();
-
-    expect(wasClosed, isTrue);
-  });
-
-  test('ignores a second registration while the first one is loading', () async {
-    final registration = Completer<Result<AppUser>>();
+  test('ignores a repeated submit while registration is running', () async {
+    final registration = Completer<Result<AuthSession>>();
     final repository = _SignUpAuthRepository(
-      result: registration.future,
+      registrationResult: registration.future,
     );
-    final bloc = SignUpBloc(
-      registerUserUseCase: RegisterUserUseCase(repository),
-    );
-
-    bloc.add(const SignUpSubmitted(request: request));
+    final bloc = _createBloc(repository)
+      ..add(const SignUpSubmitted(request: _request))
+      ..add(const SignUpSubmitted(request: _request));
     await Future<void>.delayed(Duration.zero);
-    bloc.add(const SignUpSubmitted(request: request));
-    registration.complete(
-      const Result.success(
-        AppUser(
-          id: 'user-id',
-          email: 'ernesto@example.com',
-          firstName: 'Ernesto',
-          lastName: 'Diaz',
-        ),
-      ),
-    );
-    await Future<void>.delayed(Duration.zero);
-    await Future<void>.delayed(Duration.zero);
+    registration.complete(Result.success(_session));
+    await bloc.stream.firstWhere((state) => state.stage == SignUpStage.success);
 
     expect(repository.registrationCalls, 1);
     await bloc.close();
   });
 }
 
-class _SignUpAuthRepository implements AuthRepository {
-  _SignUpAuthRepository({required this.result});
+SignUpBloc _createBloc(_SignUpAuthRepository repository) {
+  return SignUpBloc(
+    registerUserUseCase: RegisterUserUseCase(repository),
+  );
+}
 
-  final FutureOr<Result<AppUser>> result;
+const _request = RegistrationRequest(
+  firstName: 'Ernesto',
+  lastName: 'Diaz',
+  email: 'ernesto@example.com',
+  cuit: '20-12345678-6',
+  password: 'Password1',
+);
+
+const _user = AppUser(
+  id: 'user-id',
+  email: 'ernesto@example.com',
+  firstName: 'Ernesto',
+  lastName: 'Diaz',
+  cuit: '20123456786',
+);
+
+final _session = AuthSession(
+  user: _user,
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
+  accessTokenExpiresAt: DateTime.utc(2026, 8, 8, 15),
+);
+
+class _SignUpAuthRepository implements AuthRepository {
+  _SignUpAuthRepository({
+    required this.registrationResult,
+  });
+
+  final FutureOr<Result<AuthSession>> registrationResult;
   int registrationCalls = 0;
 
   @override
-  Future<Result<AppUser>> register({
+  Future<Result<AuthSession>> register({
     required RegistrationRequest request,
   }) async {
     registrationCalls += 1;
-    return result;
+    return registrationResult;
   }
 
   @override
   Future<Result<AuthSession>> signIn({
     required String email,
     required String password,
-  }) {
-    return _unusedSessionResult();
+  }) async {
+    throw UnimplementedError();
   }
 
   @override
-  Future<Result<AuthSession>> restoreSession() => _unusedSessionResult();
+  Future<Result<AuthSession>> restoreSession() => throw UnimplementedError();
 
   @override
-  Future<Result<AuthSession>> refreshSession() => _unusedSessionResult();
+  Future<Result<AuthSession>> refreshSession() => throw UnimplementedError();
 
   @override
-  Future<Result<AuthSession>> getCurrentSession() => _unusedSessionResult();
+  Future<Result<AuthSession>> getCurrentSession() => throw UnimplementedError();
 
   @override
-  Future<Result<AppUser>> getCurrentUser() async {
-    return const Result.failure(
-      DomainException(message: 'Operacion no usada en este test.'),
-    );
-  }
+  Future<Result<AppUser>> getCurrentUser() => throw UnimplementedError();
 
   @override
-  Future<void> signOut() async {}
-
-  Future<Result<AuthSession>> _unusedSessionResult() async {
-    return const Result.failure(
-      DomainException(message: 'Operacion no usada en este test.'),
-    );
-  }
+  Future<void> signOut() => throw UnimplementedError();
 }

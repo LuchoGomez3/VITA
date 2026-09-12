@@ -8,7 +8,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 - **Domain goal**: digitize the animal life cycle (identification, weighing, health events, movements, commercialization), surface productive KPIs (notably GPD — daily weight gain), and comply with **SENASA Resolution 530/2025** (mandatory individual electronic identification), generating export files for **SIGBIOTRAZA / SIGSA**.
 - **Defining constraint**: **offline-first**. Producers work in the field ("la manga") with no connectivity. Every feature must be designed first for how it works without internet; connectivity is an optional enhancement, never a requirement.
-- **Multi-tenant**: data is isolated per establishment (`establecimiento`) via Supabase Row Level Security. Six roles: `administrator`, `owner`, `veterinarian`, `capataz`, `asset_manager`, `external_buyer`.
+- **Multi-tenant**: data is isolated per establishment (`establecimiento`) via Supabase Row Level Security. The current backend/mobile contract defines three establishment roles: `admin`, `owner`, and `employee`. Mobile also uses `unknown` only as a fail-closed local state for missing or unrecognized role data.
 - **Identification / reading**: an animal's identifier can be read by RFID Bluetooth, entered manually, or captured by **OCR of the visual ear tag**. OCR is a valid reading method alongside the others — design identification flows so any of these can supply the identifier.
 
 ### Hard constraints — do NOT do these

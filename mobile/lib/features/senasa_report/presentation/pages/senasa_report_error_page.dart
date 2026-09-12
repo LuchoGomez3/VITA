@@ -4,7 +4,6 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_status_indicator.dart';
 import 'package:go_router/go_router.dart';
 
 /// Arguments required to render and retry a failed report generation.
@@ -51,7 +50,11 @@ class SenasaReportErrorPage extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const ReportStatusIndicator.error(),
+                        const AppStatusIndicator(
+                          icon: Icons.priority_high,
+                          color: AppColors.error,
+                          isLoading: false,
+                        ),
                         const SizedBox(height: AppSpacing.lg),
                         const Text(
                           SenasaStrings.errorTitle,
