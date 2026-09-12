@@ -50,6 +50,9 @@ class AppRoutes {
   /// Ruta de la pantalla de detalle de animal.
   static const animalDetail = '/animals/:animalId';
 
+  /// Cámara lateral y revisión de capturas para pesaje por visión.
+  static const visionWeighing = '/pesar-por-vision';
+
   /// Ruta de identificacion de animales mediante caravana RFID.
   static const rfidScan = '/identificar-animal';
 
@@ -63,7 +66,7 @@ class AppRoutes {
   static const incomeRegister = '/registros-de-gastos/registrar-ingreso';
 
   /// Ruta del menu principal de reportes SENASA.
-  static const senasaMenu = procedures;
+  static const String senasaMenu = procedures;
 
   /// Route for the SENASA report filters.
   static const senasaReport = '/senasa-report';

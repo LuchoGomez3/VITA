@@ -4,6 +4,7 @@ import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
+import 'package:frontend_mayoral/core/navigation/camera_reveal_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
 import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
@@ -36,6 +37,9 @@ import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
+import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
+import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
+import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_menu_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_error_page.dart';
@@ -43,9 +47,8 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senas
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
-import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
-import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
-import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/vision_weighing_page.dart';
+import 'package:frontend_mayoral/features/vision_weighing/vision_weighing_composition.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion del router de la app.
@@ -269,6 +272,13 @@ class AppRouter {
             registeredEstablishment: registeredEstablishment,
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.visionWeighing,
+        pageBuilder: (context, state) => CameraRevealPage(
+          state: state,
+          child: const VisionWeighingPage(createCubit: createVisionCaptureCubit),
+        ),
       ),
       GoRoute(
         path: AppRoutes.rfidScan,
