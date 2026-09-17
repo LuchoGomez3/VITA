@@ -1,9 +1,12 @@
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/animal_register/data/datasources/animal_registration_offline_context.dart';
+import 'package:frontend_mayoral/features/animal_register/data/repositories/animal_category_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_register/data/repositories/animal_registration_repository_impl.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_categories_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 
@@ -22,9 +25,8 @@ RegisterAnimalBloc createRegisterAnimalBloc({
   String initialRfid = '',
   String? initialEstablishmentId,
 }) {
-  // TODO(agusf): inyectar el proveedor del establecimiento activo,
-  // BrickCategoriaStore y BrickAnimalStore cuando categorias y genealogia
-  // tengan catalogos offline reales.
+  // TODO(agusf): inyectar BrickAnimalStore cuando genealogia consulte animales
+  // elegibles reales.
   final registrationContext = AnimalRegistrationOfflineContext(
     establishmentCatalog: const EstablishmentCatalog(
       secureStorage: FlutterSecureStorageService(),
@@ -34,12 +36,18 @@ RegisterAnimalBloc createRegisterAnimalBloc({
   final repository = AnimalRegistrationRepositoryImpl(
     brickStore: BrickAnimalStore.instance,
   );
+  final categoryRepository = AnimalCategoryRepositoryImpl(
+    store: BrickCategoriaStore.instance,
+  );
 
   return RegisterAnimalBloc(
-    initialStep: initialStep,
-    initialRfid: initialRfid,
-    initialEstablishmentId: initialEstablishmentId,
-    registerAnimalUseCase: RegisterAnimalUseCase(repository),
-    registrationContext: registrationContext,
-  )..add(const RegisterAnimalEvent.establishmentsRequested());
+      initialStep: initialStep,
+      initialRfid: initialRfid,
+      initialEstablishmentId: initialEstablishmentId,
+      registerAnimalUseCase: RegisterAnimalUseCase(repository),
+      getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(categoryRepository),
+      registrationContext: registrationContext,
+    )
+    ..add(const RegisterAnimalEvent.categoriesRequested())
+    ..add(const RegisterAnimalEvent.establishmentsRequested());
 }

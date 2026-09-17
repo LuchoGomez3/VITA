@@ -3,8 +3,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_category.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_categories_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
 
@@ -21,15 +23,17 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
   /// Crea el BLoC de registro en el paso inicial solicitado.
   ///
   /// [registrationContext] es un contrato de dominio que resuelve IDs de
-  /// establecimiento, lote, categoria y genealogia. Mantenerlo como abstraccion
+  /// establecimiento, lote y genealogia. Mantenerlo como abstraccion
   /// evita que presentation dependa de implementaciones concretas de data.
   RegisterAnimalBloc({
     required RegisterAnimalUseCase registerAnimalUseCase,
+    required GetAnimalCategoriesUseCase getAnimalCategoriesUseCase,
     required AnimalRegistrationContext registrationContext,
     RegisterAnimalStep initialStep = RegisterAnimalStep.identification,
     String initialRfid = '',
     String? initialEstablishmentId,
   }) : _registerAnimalUseCase = registerAnimalUseCase,
+       _getAnimalCategoriesUseCase = getAnimalCategoriesUseCase,
        _registrationContext = registrationContext,
        super(
          RegisterAnimalState(
@@ -40,6 +44,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
          ),
        ) {
     on<_DraftChanged>(_onDraftChanged);
+    on<_CategoriesRequested>(_onCategoriesRequested);
     on<_EstablishmentsRequested>(_onEstablishmentsRequested);
     on<_EstablishmentSelected>(_onEstablishmentSelected);
     on<_NextStepRequested>(_onNextStepRequested);
@@ -49,7 +54,26 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
   }
 
   final RegisterAnimalUseCase _registerAnimalUseCase;
+  final GetAnimalCategoriesUseCase _getAnimalCategoriesUseCase;
   final AnimalRegistrationContext _registrationContext;
+
+  Future<void> _onCategoriesRequested(
+    _CategoriesRequested event,
+    Emitter<RegisterAnimalState> emit,
+  ) async {
+    emit(state.copyWith(categoriesState: const ResultState.loading()));
+    final result = await _getAnimalCategoriesUseCase();
+    switch (result) {
+      case Success<List<AnimalCategory>>(:final data):
+        emit(
+          state.copyWith(
+            categoriesState: ResultState.data(data),
+          ),
+        );
+      case Failure<List<AnimalCategory>>(:final error):
+        emit(state.copyWith(categoriesState: ResultState.error(error)));
+    }
+  }
 
   Future<void> _onEstablishmentsRequested(
     _EstablishmentsRequested event,
@@ -258,6 +282,17 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
       );
     }
 
+    final categoryId = draft.categoryId;
+    final categoryName = draft.categoryName;
+    if (categoryId == null || categoryName == null) {
+      return const Result.failure(
+        DomainException(
+          message: AnimalRegisterStrings.categoryRequired,
+          code: DomainErrorCode.validation,
+        ),
+      );
+    }
+
     final parsedWeight = _parseWeight(draft.birthWeight);
     if (parsedWeight == null || parsedWeight <= 0) {
       return const Result.failure(
@@ -286,8 +321,8 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
           lotId: _registrationContext.resolveLotId(destinationId),
           lotName: _registrationContext.resolveLotName(destinationId),
           establishmentId: establishmentId,
-          categoryId: _registrationContext.resolveCategoryId(draft.category),
-          categoryName: draft.category,
+          categoryId: categoryId,
+          categoryName: categoryName,
           initialWeight: parsedWeight,
           motherId: _registrationContext.resolveMotherId(draft.motherId),
           fatherId: _registrationContext.resolveFatherId(draft.fatherId),

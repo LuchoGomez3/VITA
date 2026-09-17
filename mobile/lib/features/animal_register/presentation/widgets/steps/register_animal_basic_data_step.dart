@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
@@ -150,28 +151,42 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                   onChanged: _applyBirthDatePreset,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                AppChoiceSelector<String>(
-                  title: AnimalRegisterStrings.stepTwoCategoryTitle,
-                  value: draft.category,
-                  // TODO(agusf): consumir categorias desde el BLoC usando el
-                  // catalogo Brick, con UUID real como valor seleccionado.
-                  options: AnimalRegisterStrings.stepTwoCategories
-                      .map(
-                        (category) => AppChoiceOption(
-                          value: category,
-                          label: category,
+                switch (context.watch<RegisterAnimalBloc>().state.categoriesState) {
+                  Initial() || Loading() => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  ResultError(:final error) => Text(
+                    error.message,
+                    style: AppTypography.errorBody,
+                  ),
+                  Data(:final data) when data.isEmpty => const Text(
+                    AnimalRegisterStrings.noCategoriesMessage,
+                    style: AppTypography.pageBodyTitle,
+                  ),
+                  Data(:final data) => AppChoiceSelector<String>(
+                    title: AnimalRegisterStrings.stepTwoCategoryTitle,
+                    value: draft.categoryId,
+                    options: [
+                      for (final category in data)
+                        AppChoiceOption(
+                          value: category.id,
+                          label: category.name,
                         ),
-                      )
-                      .toList(),
-                  onChanged: (category) {
-                    _updateDraft(draft.copyWith(category: category));
-                  },
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                const Text(
-                  AnimalRegisterStrings.stepTwoCategorySuggestion,
-                  style: AppTypography.pageBodyTitle,
-                ),
+                    ],
+                    onChanged: (categoryId) {
+                      final category = data.firstWhere(
+                        (item) => item.id == categoryId,
+                      );
+                      _updateDraft(
+                        draft.copyWith(
+                          categoryId: category.id,
+                          categoryName: category.name,
+                        ),
+                      );
+                    },
+                  ),
+                  _ => const SizedBox.shrink(),
+                },
                 const SizedBox(height: AppSpacing.md),
                 AppTextFormField(
                   controller: _birthWeightController,

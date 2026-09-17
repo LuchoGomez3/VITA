@@ -60,15 +60,10 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
         ),
       );
       _logInitialSyncStep('establishments=${establishments.length}');
+      _logInitialSyncStep('pulling global animal categories');
+      await _categoryStore.pullRemoteCategorias();
       for (final establishment in establishments) {
         final establishmentId = establishment.id;
-
-        // El catalogo se cachea antes que los animales para que sus referencias
-        // de categoria ya esten disponibles en los flujos offline.
-        _logInitialSyncStep(
-          'pulling categories for establishment=$establishmentId',
-        );
-        await _categoryStore.pullRemoteCategorias(establishmentId);
         _logInitialSyncStep(
           'pulling animals for establishment=$establishmentId',
         );

@@ -32,7 +32,7 @@ void main() {
     await repository.sync();
 
     expect(animalStore.pulls, ['establishment-1', 'establishment-1']);
-    expect(categoryStore.pulls, ['establishment-1', 'establishment-1']);
+    expect(categoryStore.pullCount, 2);
     expect(weighingStore.pulls, ['establishment-1', 'establishment-1']);
     expect(financialSync.pulls, ['establishment-1', 'establishment-1']);
   });
@@ -53,6 +53,24 @@ void main() {
     final encoded = await storage.read(SecureStorageKeys.establishmentCatalog);
     final catalog = jsonDecode(encoded!) as List<dynamic>;
     expect(catalog.single, containsPair('role', 'owner'));
+  });
+
+  test('pulls the global category catalog once for multiple establishments', () async {
+    final categoryStore = _FakeCategoryStore();
+    final animalStore = _FakeAnimalStore();
+    final repository = InitialDataSyncRepositoryImpl(
+      secureStorage: _MemoryStorage(),
+      establishmentRemoteDataSource: _MultipleEstablishmentsRemoteDataSource(),
+      animalStore: animalStore,
+      categoryStore: categoryStore,
+      weighingStore: _FakeWeighingStore(),
+      syncOperatingExpenseData: _FakeOperatingExpenseSync().call,
+    );
+
+    await repository.sync();
+
+    expect(categoryStore.pullCount, 1);
+    expect(animalStore.pulls, ['establishment-1', 'establishment-2']);
   });
 
   test('does not hydrate finances for a role without access', () async {
@@ -94,6 +112,28 @@ class _FakeEstablishmentRemoteDataSource implements EstablishmentRemoteDataSourc
       ownerId: 'owner-1',
       name: 'Establecimiento',
       role: role,
+      createdAt: _date,
+      updatedAt: _date,
+    ),
+  ];
+}
+
+class _MultipleEstablishmentsRemoteDataSource implements EstablishmentRemoteDataSource {
+  @override
+  Future<List<EstablishmentRemoteSummary>> fetchEstablishments() async => [
+    EstablishmentRemoteSummary(
+      id: 'establishment-1',
+      ownerId: 'owner-1',
+      name: 'Establecimiento 1',
+      role: UserRole.owner,
+      createdAt: _date,
+      updatedAt: _date,
+    ),
+    EstablishmentRemoteSummary(
+      id: 'establishment-2',
+      ownerId: 'owner-1',
+      name: 'Establecimiento 2',
+      role: UserRole.owner,
       createdAt: _date,
       updatedAt: _date,
     ),
@@ -145,22 +185,13 @@ class _FakeAnimalStore implements AnimalBrickStore {
 }
 
 class _FakeCategoryStore implements CategoriaBrickStore {
-  final List<String> pulls = [];
+  int pullCount = 0;
 
   @override
-  Future<void> pullRemoteCategorias(String establishmentId) async {
-    pulls.add(establishmentId);
-  }
+  Future<void> pullRemoteCategorias() async => pullCount += 1;
 
   @override
-  Future<List<BrickCategoriaModel>> getLocalCategorias(
-    String establishmentId,
-  ) async => [];
-
-  @override
-  Future<BrickCategoriaModel> upsertCategoria(
-    BrickCategoriaModel categoria,
-  ) async => categoria;
+  Future<List<BrickCategoriaModel>> getLocalCategorias() async => [];
 }
 
 class _FakeWeighingStore implements PesajeBrickStore {

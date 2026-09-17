@@ -8,9 +8,6 @@ Future<BrickCategoriaModel> _$BrickCategoriaModelFromRest(
 }) async {
   return BrickCategoriaModel(
     localId: data['id'] as String,
-    establishmentId: data['establecimiento_id'] == null
-        ? null
-        : data['establecimiento_id'] as String?,
     name: data['nombre'] as String,
     description: data['descripcion'] == null
         ? null
@@ -32,7 +29,6 @@ Future<Map<String, dynamic>> _$BrickCategoriaModelToRest(
 }) async {
   return {
     'id': instance.localId,
-    'establecimiento_id': instance.establishmentId,
     'nombre': instance.name,
     'descripcion': instance.description,
     'created_at': instance.createdAt.toIso8601String(),
@@ -48,17 +44,10 @@ Future<BrickCategoriaModel> _$BrickCategoriaModelFromSqlite(
 }) async {
   return BrickCategoriaModel(
     localId: data['local_id'] as String,
-    establishmentId: data['establishment_id'] == null
-        ? null
-        : data['establishment_id'] as String?,
     name: data['name'] as String,
     description: data['description'] == null
         ? null
         : data['description'] as String?,
-    syncStatus: BrickCategoriaSyncStatus.values[data['sync_status'] as int],
-    syncErrorCode: data['sync_error_code'] == null
-        ? null
-        : data['sync_error_code'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -76,11 +65,8 @@ Future<Map<String, dynamic>> _$BrickCategoriaModelToSqlite(
 }) async {
   return {
     'local_id': instance.localId,
-    'establishment_id': instance.establishmentId,
     'name': instance.name,
     'description': instance.description,
-    'sync_status': BrickCategoriaSyncStatus.values.indexOf(instance.syncStatus),
-    'sync_error_code': instance.syncErrorCode,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),
@@ -108,12 +94,6 @@ class BrickCategoriaModelAdapter
       iterable: false,
       type: String,
     ),
-    'establishmentId': const RuntimeSqliteColumnDefinition(
-      association: false,
-      columnName: 'establishment_id',
-      iterable: false,
-      type: String,
-    ),
     'name': const RuntimeSqliteColumnDefinition(
       association: false,
       columnName: 'name',
@@ -123,18 +103,6 @@ class BrickCategoriaModelAdapter
     'description': const RuntimeSqliteColumnDefinition(
       association: false,
       columnName: 'description',
-      iterable: false,
-      type: String,
-    ),
-    'syncStatus': const RuntimeSqliteColumnDefinition(
-      association: false,
-      columnName: 'sync_status',
-      iterable: false,
-      type: BrickCategoriaSyncStatus,
-    ),
-    'syncErrorCode': const RuntimeSqliteColumnDefinition(
-      association: false,
-      columnName: 'sync_error_code',
       iterable: false,
       type: String,
     ),

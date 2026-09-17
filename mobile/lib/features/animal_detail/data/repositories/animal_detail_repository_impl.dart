@@ -80,15 +80,7 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
       );
     }
 
-    try {
-      await _categoriaBrickStore.pullRemoteCategorias(detail.establishmentId);
-    } on Object {
-      // Las categorias ya descargadas siguen resolviendo el nombre sin red.
-    }
-
-    final localCategorias = await _categoriaBrickStore.getLocalCategorias(
-      detail.establishmentId,
-    );
+    final localCategorias = await _categoriaBrickStore.getLocalCategorias();
     final weightHistory = AnimalDetailMapper.weightHistoryFromBrick(
       localPesajes,
     );

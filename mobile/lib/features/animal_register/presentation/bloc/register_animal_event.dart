@@ -3,6 +3,9 @@ part of 'register_animal_bloc.dart';
 /// Events accepted by [RegisterAnimalBloc].
 @freezed
 sealed class RegisterAnimalEvent with _$RegisterAnimalEvent {
+  /// Carga el catalogo global de categorias desde la cache offline.
+  const factory RegisterAnimalEvent.categoriesRequested() = _CategoriesRequested;
+
   /// Carga los establecimientos disponibles offline.
   const factory RegisterAnimalEvent.establishmentsRequested() = _EstablishmentsRequested;
 

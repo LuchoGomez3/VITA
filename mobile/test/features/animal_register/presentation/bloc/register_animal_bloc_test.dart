@@ -2,21 +2,29 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_category.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_category_repository.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_repository.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_categories_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 
 void main() {
   group('RegisterAnimalBloc', () {
     late _FakeAnimalRegistrationRepository repository;
+    late _FakeAnimalCategoryRepository categoryRepository;
     late RegisterAnimalBloc bloc;
 
     setUp(() {
       repository = _FakeAnimalRegistrationRepository();
+      categoryRepository = _FakeAnimalCategoryRepository();
       bloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
+          categoryRepository,
+        ),
         registrationContext: const _TestAnimalRegistrationContext(),
       );
       addTearDown(bloc.close);
@@ -38,17 +46,63 @@ void main() {
       final prefilledBloc = RegisterAnimalBloc(
         initialRfid: '982000412991416',
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
+          categoryRepository,
+        ),
         registrationContext: const _TestAnimalRegistrationContext(),
       );
       addTearDown(prefilledBloc.close);
 
       expect(prefilledBloc.state.draft.rfid, '982000412991416');
+      expect(prefilledBloc.state.draft.categoryId, isNull);
+      expect(prefilledBloc.state.draft.categoryName, isNull);
+    });
+
+    test('loads global categories without preselecting one', () async {
+      bloc.add(const RegisterAnimalEvent.categoriesRequested());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.categories, _FakeAnimalCategoryRepository.categories);
+      expect(bloc.state.draft.categoryId, isNull);
+      expect(bloc.state.draft.categoryName, isNull);
+    });
+
+    test('represents category loading failures with ResultState', () async {
+      categoryRepository.result = const Result.failure(
+        DomainException(
+          message: 'No se pudieron cargar las categorías guardadas.',
+          code: DomainErrorCode.offline,
+        ),
+      );
+
+      bloc.add(const RegisterAnimalEvent.categoriesRequested());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        bloc.state.categoriesState,
+        isA<ResultError<List<AnimalCategory>>>(),
+      );
+      expect(bloc.state.categories, isEmpty);
+    });
+
+    test('represents an empty category catalog without a selection', () async {
+      categoryRepository.result = const Result.success([]);
+
+      bloc.add(const RegisterAnimalEvent.categoriesRequested());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.categoriesState, const ResultState<List<AnimalCategory>>.data([]));
+      expect(bloc.state.draft.categoryId, isNull);
+      expect(bloc.state.draft.categoryName, isNull);
     });
 
     test('keeps a valid establishment received from identification', () async {
       final prefilledBloc = RegisterAnimalBloc(
         initialEstablishmentId: '8b75eb38-8b0f-44dc-979f-89ce2817b63d',
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
+          categoryRepository,
+        ),
         registrationContext: const _TestAnimalRegistrationContext(),
       );
       addTearDown(prefilledBloc.close);
@@ -69,6 +123,9 @@ void main() {
       final context = _MultipleEstablishmentsContext();
       final selectionBloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
+          categoryRepository,
+        ),
         registrationContext: context,
       );
       addTearDown(selectionBloc.close);
@@ -87,6 +144,43 @@ void main() {
       expect(selectionBloc.state.draft.establishmentName, 'El Ombú');
       expect(context.destinationRequests, ['establishment-2']);
       expect(selectionBloc.state.destinations.single.name, 'Lote Sur');
+    });
+
+    test('keeps the selected global category when establishment changes', () async {
+      final context = _MultipleEstablishmentsContext();
+      final selectionBloc = RegisterAnimalBloc(
+        registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
+          categoryRepository,
+        ),
+        registrationContext: context,
+      );
+      addTearDown(selectionBloc.close);
+      selectionBloc.add(const RegisterAnimalEvent.establishmentsRequested());
+      await Future<void>.delayed(Duration.zero);
+      selectionBloc.add(
+        RegisterAnimalEvent.draftChanged(
+          selectionBloc.state.draft.copyWith(
+            categoryId: _FakeAnimalCategoryRepository.categories.single.id,
+            categoryName: _FakeAnimalCategoryRepository.categories.single.name,
+          ),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      selectionBloc.add(
+        const RegisterAnimalEvent.establishmentSelected('establishment-2'),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        selectionBloc.state.draft.categoryId,
+        _FakeAnimalCategoryRepository.categories.single.id,
+      );
+      expect(
+        selectionBloc.state.draft.categoryName,
+        _FakeAnimalCategoryRepository.categories.single.name,
+      );
     });
 
     test('moves forward and backward through the flow', () async {
@@ -110,6 +204,9 @@ void main() {
       final reviewBloc = RegisterAnimalBloc(
         initialStep: RegisterAnimalStep.review,
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
+          categoryRepository,
+        ),
         registrationContext: const _TestAnimalRegistrationContext(),
       );
       addTearDown(reviewBloc.close);
@@ -123,6 +220,9 @@ void main() {
     test('represents establishment loading failures with ResultState', () async {
       final failingBloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
+          categoryRepository,
+        ),
         registrationContext: const _FailingAnimalRegistrationContext(),
       );
       addTearDown(failingBloc.close);
@@ -173,6 +273,8 @@ void main() {
         establishmentId: '8b75eb38-8b0f-44dc-979f-89ce2817b63d',
         establishmentName: 'La Sirena',
         destinationId: 'lot-1',
+        categoryId: 'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8',
+        categoryName: 'Ternera',
       );
       bloc.add(RegisterAnimalEvent.draftChanged(draft));
       await Future<void>.delayed(Duration.zero);
@@ -192,6 +294,11 @@ void main() {
 
       await expectation;
       expect(repository.registerCalls, 1);
+      expect(
+        repository.lastRegistration?.categoryId,
+        'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8',
+      );
+      expect(repository.lastRegistration?.categoryName, 'Ternera');
     });
 
     test('does not submit when validation fails', () async {
@@ -225,6 +332,8 @@ void main() {
         establishmentId: '8b75eb38-8b0f-44dc-979f-89ce2817b63d',
         establishmentName: 'La Sirena',
         destinationId: 'lot-1',
+        categoryId: 'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8',
+        categoryName: 'Ternera',
       );
       bloc.add(RegisterAnimalEvent.draftChanged(draft));
       await Future<void>.delayed(Duration.zero);
@@ -269,9 +378,6 @@ class _TestAnimalRegistrationContext implements AnimalRegistrationContext {
   String resolveLotName(String destinationSelectionId) => 'La Cumbre';
 
   @override
-  String resolveCategoryId(String categoryName) => 'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8';
-
-  @override
   String? resolveFatherId(String? fatherSelectionId) => null;
 
   @override
@@ -293,9 +399,6 @@ class _FailingAnimalRegistrationContext implements AnimalRegistrationContext {
   ) {
     throw StateError('forced local read failure');
   }
-
-  @override
-  String resolveCategoryId(String categoryName) => 'category-id';
 
   @override
   String? resolveFatherId(String? fatherSelectionId) => null;
@@ -340,9 +443,6 @@ class _MultipleEstablishmentsContext implements AnimalRegistrationContext {
   }
 
   @override
-  String resolveCategoryId(String categoryName) => 'category-id';
-
-  @override
   String? resolveFatherId(String? fatherSelectionId) => fatherSelectionId;
 
   @override
@@ -357,6 +457,7 @@ class _MultipleEstablishmentsContext implements AnimalRegistrationContext {
 
 class _FakeAnimalRegistrationRepository implements AnimalRegistrationRepository {
   int registerCalls = 0;
+  AnimalRegistration? lastRegistration;
 
   Result<RegisteredAnimal> result = Result.success(
     RegisteredAnimal(
@@ -389,6 +490,21 @@ class _FakeAnimalRegistrationRepository implements AnimalRegistrationRepository 
     AnimalRegistration registration,
   ) async {
     registerCalls += 1;
+    lastRegistration = registration;
     return result;
   }
+}
+
+class _FakeAnimalCategoryRepository implements AnimalCategoryRepository {
+  static const categories = [
+    AnimalCategory(
+      id: 'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8',
+      name: 'Ternera',
+    ),
+  ];
+
+  Result<List<AnimalCategory>> result = const Result.success(categories);
+
+  @override
+  Future<Result<List<AnimalCategory>>> getCategories() async => result;
 }
