@@ -5,8 +5,8 @@ import 'package:frontend_mayoral/features/animal_register/domain/repositories/an
 
 /// Resuelve establecimiento y lotes reales desde datos disponibles offline.
 ///
-/// Categorías y genealogía conservan temporalmente el catálogo existente hasta
-/// que sus respectivas features expongan fuentes locales equivalentes.
+/// Genealogia conserva temporalmente el catalogo existente hasta que la feature
+/// exponga una fuente local equivalente.
 class AnimalRegistrationOfflineContext implements AnimalRegistrationContext {
   /// Crea el contexto con almacenamiento y store inyectables.
   AnimalRegistrationOfflineContext({
@@ -18,17 +18,6 @@ class AnimalRegistrationOfflineContext implements AnimalRegistrationContext {
   final EstablishmentCatalog _establishmentCatalog;
   final LotBrickStore _lotStore;
   final Map<String, AnimalRegistrationDestination> _destinations = {};
-
-  // TODO(agusf): reemplazar este mapa por el catalogo de categorias
-  // sincronizado en Brick y hacer que el draft conserve el UUID real.
-  static const _categoryIdsByName = <String, String>{
-    'Ternera': 'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8',
-    'Ternero': 'b9a6e57b-20ae-49b1-a7bb-17c71af546f3',
-    'Vaquillona': 'b6d6440c-88c6-48cc-9003-0ad2cc05f3d5',
-    'Vaca': 'ef69117b-c979-4665-b13f-2b26ff0f19b3',
-    'Novillo': '41da4271-bd25-4ba0-ba34-24dc6586f0f2',
-    'Toro': 'b5e8ea91-9789-4f7e-9dad-10262f1920f4',
-  };
 
   // TODO(agusf): consultar en BrickAnimalStore las madres elegibles del
   // establecimiento y eliminar las claves temporales de seleccion.
@@ -98,14 +87,6 @@ class AnimalRegistrationOfflineContext implements AnimalRegistrationContext {
       _destinations[destinationSelectionId]?.name ??
       (throw const DomainException(
         message: 'El lote seleccionado ya no está disponible.',
-        code: DomainErrorCode.validation,
-      ));
-
-  @override
-  String resolveCategoryId(String categoryName) =>
-      _categoryIdsByName[categoryName] ??
-      (throw const DomainException(
-        message: 'La categoría seleccionada no está disponible.',
         code: DomainErrorCode.validation,
       ));
 

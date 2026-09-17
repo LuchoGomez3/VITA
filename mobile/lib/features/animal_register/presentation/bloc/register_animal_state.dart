@@ -27,8 +27,9 @@ sealed class RegisterAnimalDraft with _$RegisterAnimalDraft {
     required String breed,
     required String sex,
     required DateTime birthDate,
-    required String category,
     required String birthWeight,
+    String? categoryId,
+    String? categoryName,
     String? establishmentId,
     String? establishmentName,
     String? motherId,
@@ -37,8 +38,8 @@ sealed class RegisterAnimalDraft with _$RegisterAnimalDraft {
   }) = _RegisterAnimalDraft;
 
   /// Creates the initial values currently displayed by the flow.
-  // TODO(agusf): eliminar categoria y madre preseleccionadas cuando sus
-  // catalogos reales hidraten el draft desde Brick.
+  // TODO(agusf): eliminar la madre preseleccionada cuando genealogia se
+  // hidrate desde animales reales en Brick.
   factory RegisterAnimalDraft.initial({String rfid = ''}) => RegisterAnimalDraft(
     rfid: rfid,
     visualTagSeries: '',
@@ -47,7 +48,6 @@ sealed class RegisterAnimalDraft with _$RegisterAnimalDraft {
     breed: AnimalRegisterStrings.stepTwoBreedOptions.first,
     sex: AnimalRegisterStrings.stepTwoFemale,
     birthDate: DateTime(2025, 3, 14),
-    category: AnimalRegisterStrings.stepTwoCategories.first,
     birthWeight: '',
     motherId: 'mother-003-0421',
   );
@@ -64,6 +64,7 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
     ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,
     @Default(ResultState<List<AnimalRegistrationDestination>>.initial())
     ResultState<List<AnimalRegistrationDestination>> destinationsState,
+    @Default(ResultState<List<AnimalCategory>>.initial()) ResultState<List<AnimalCategory>> categoriesState,
     @Default(ResultState<RegisteredAnimal>.initial()) ResultState<RegisteredAnimal> submitResult,
   }) = _RegisterAnimalState;
 
@@ -78,6 +79,12 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
   /// Establecimientos disponibles cuando finalizó la lectura local.
   List<AnimalRegistrationEstablishment> get establishments => switch (establishmentsState) {
     Data<List<AnimalRegistrationEstablishment>>(:final data) => data,
+    _ => const [],
+  };
+
+  /// Categorias disponibles cuando finalizo la lectura de la cache local.
+  List<AnimalCategory> get categories => switch (categoriesState) {
+    Data<List<AnimalCategory>>(:final data) => data,
     _ => const [],
   };
 }

@@ -139,18 +139,11 @@ class AnimalRegisterStrings {
   /// Titulo del selector de categoria.
   static const stepTwoCategoryTitle = 'Categoría';
 
-  /// Categorias mock disponibles hasta integrar las reglas del dominio.
-  static const stepTwoCategories = [
-    'Ternera',
-    'Ternero',
-    'Vaquillona',
-    'Vaca',
-    'Novillo',
-    'Toro',
-  ];
+  /// Estado vacio cuando la sincronizacion no dejo categorias disponibles.
+  static const noCategoriesMessage = 'No hay categorías disponibles. Sincronizá los datos e intentá nuevamente.';
 
-  /// Aclaracion sobre la futura sugerencia automatica de categoria.
-  static const stepTwoCategorySuggestion = 'Sugerido automáticamente por fecha de nacimiento y sexo.';
+  /// Validacion cuando el productor no selecciono una categoria.
+  static const categoryRequired = 'Seleccioná una categoría antes de guardar.';
 
   /// Titulo del campo opcional de peso al nacer.
   static const stepTwoBirthWeightTitle = 'Peso al nacer • opcional';
@@ -305,9 +298,6 @@ class AnimalRegisterStrings {
 
   /// Label del campo categoria.
   static const stepFourCategoryLabel = 'Categoría';
-
-  /// Valor mock del campo categoria.
-  static const stepFourCategoryValue = 'Ternera';
 
   /// Label del campo peso al nacer.
   static const stepFourBirthWeightLabel = 'Peso al nacer';
