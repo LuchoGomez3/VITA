@@ -17,7 +17,9 @@ class MovimientoLoteCreate(SyncFields):
     """
 
     establecimiento_id: UUID
-    lote_origen_id: UUID
+    # Nulo en la primera asignación: los animales todavía no pertenecen a ningún
+    # lote y este movimiento es el que los ubica.
+    lote_origen_id: UUID | None = None
     lote_destino_id: UUID
     animal_ids: list[UUID] = Field(min_length=1)
     fecha_movimiento: datetime

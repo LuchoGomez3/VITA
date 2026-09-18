@@ -165,6 +165,11 @@ class LoteService:
             )
         if data.estado in ESTADOS_SIN_ANIMALES and existente.estado != data.estado:
             await self._exigir_lote_vaciable(existente.id)
+        # Mismo resguardo que en ``actualizar``: por esta vía también se borra, y
+        # un lote con hacienda adentro no puede desaparecer. Solo se controla la
+        # transición, porque un lote ya borrado no pudo recibir animales después.
+        if data.deleted_at is not None and existente.deleted_at is None:
+            await self._exigir_lote_vaciable(existente.id)
 
         existente.nombre = data.nombre
         existente.superficie_ha = data.superficie_ha

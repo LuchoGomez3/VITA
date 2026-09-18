@@ -75,7 +75,7 @@ def _payload(est_id, origen_id, destino_id, animal_ids, **overrides):
     base = {
         "id": str(uuid4()),
         "establecimiento_id": str(est_id),
-        "lote_origen_id": str(origen_id),
+        "lote_origen_id": str(origen_id) if origen_id is not None else None,
         "lote_destino_id": str(destino_id),
         "animal_ids": [str(a) for a in animal_ids],
         "fecha_movimiento": "2026-08-31T15:30:00Z",
@@ -113,6 +113,57 @@ async def test_movimiento_batch_mueve_todos_los_animales(
         select(func.count()).select_from(MovimientoLoteAnimal)
     )
     assert detalles.scalar_one() == 2
+
+
+@pytest.mark.anyio
+async def test_primera_asignacion_mueve_animales_sin_lote(auth_client, session, campo):
+    """Sin lote de origen: es la primera ubicación de hacienda sin asignar."""
+    est, _, destino, _ = campo
+    sin_asignar = [
+        Animal(
+            establecimiento_id=est.id,
+            lote_id=None,
+            nro_caravana_rfid=f"1111111111111{i}0",
+            sexo=SexoAnimal.hembra,
+            raza="Angus",
+        )
+        for i in range(1, 3)
+    ]
+    session.add_all(sin_asignar)
+    await session.commit()
+    ids = [a.id for a in sin_asignar]
+
+    resp = await auth_client.post(
+        BASE,
+        json=_payload(est.id, None, destino.id, ids, motivo="Ingreso a potrero"),
+    )
+
+    assert resp.status_code == 201
+    data = resp.json()["data"]
+    assert data["lote_origen_id"] is None
+    assert data["lote_destino_id"] == str(destino.id)
+
+    for animal in sin_asignar:
+        await session.refresh(animal)
+        assert animal.lote_id == destino.id
+
+
+@pytest.mark.anyio
+async def test_sin_origen_los_animales_ya_asignados_se_rechazan(auth_client, campo):
+    """Un movimiento sin origen solo alcanza a la hacienda sin lote.
+
+    Aceptar animales que ya están en un potrero permitiría sacarlos de ahí
+    salteándose la validación del lote de origen.
+    """
+    est, _, destino, animales = campo
+
+    resp = await auth_client.post(
+        BASE,
+        json=_payload(est.id, None, destino.id, [a.id for a in animales]),
+    )
+
+    assert resp.status_code == 422
+    assert resp.json()["errors"][0]["code"] == "animales_no_pertenecen_lote_origen"
 
 
 @pytest.mark.anyio

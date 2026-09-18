@@ -64,10 +64,12 @@ class AnimalService:
         ):
             raise CaravanaDuplicadaError(data.nro_caravana_rfid)
 
-        # El lote es obligatorio y debe pertenecer al establecimiento.
-        lote = await self.repository.get_lote(data.lote_id)
-        if lote is None or lote.establecimiento_id != data.establecimiento_id:
-            raise LoteNoPerteneceAlEstablecimientoError()
+        # El lote es opcional —el animal puede entrar sin asignar—, pero si se
+        # informa tiene que existir y ser del establecimiento.
+        if data.lote_id is not None:
+            lote = await self.repository.get_lote(data.lote_id)
+            if lote is None or lote.establecimiento_id != data.establecimiento_id:
+                raise LoteNoPerteneceAlEstablecimientoError()
 
         # La categoría puede ser global (establecimiento_id None) o del propio.
         if data.categoria_id is not None:

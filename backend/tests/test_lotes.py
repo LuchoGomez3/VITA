@@ -520,6 +520,39 @@ async def test_borrar_lote_con_animales_se_rechaza(
 
 
 @pytest.mark.anyio
+async def test_upsert_que_borra_un_lote_con_animales_se_rechaza(
+    auth_client, session, establecimiento
+):
+    """El alta reenviada también borra, y por ahí la regla se colaba.
+
+    El cliente offline manda el registro entero en cada replay: si viene con
+    ``deleted_at`` hay que exigirle lo mismo que al DELETE, o el borrado de un
+    lote con hacienda adentro entraría por la puerta de atrás.
+    """
+    creado = await _crear(auth_client, establecimiento.id)
+    lote = creado.json()["data"]
+    await _crear_animal(session, establecimiento.id, lote["id"])
+
+    # Más nuevo que el alta: con un timestamp rancio el LWW lo descartaría antes
+    # de llegar a la validación y el test no probaría nada.
+    ahora = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+    resp = await _crear(
+        auth_client,
+        establecimiento.id,
+        id=lote["id"],
+        nombre=lote["nombre"],
+        deleted_at=ahora,
+        updated_at=ahora,
+    )
+
+    assert resp.status_code == 409
+    assert resp.json()["errors"][0]["code"] == "lote_con_animales"
+
+    sin_borrar = await auth_client.get(f"{BASE}/{lote['id']}")
+    assert sin_borrar.json()["data"]["deleted_at"] is None
+
+
+@pytest.mark.anyio
 async def test_poner_en_descanso_con_animales_es_valido(
     auth_client, session, establecimiento
 ):

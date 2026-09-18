@@ -69,11 +69,17 @@ class MovimientoLoteService:
                 "El lote de origen y el de destino deben ser distintos"
             )
 
-        origen = await self._resolver_lote(data.lote_origen_id, data.establecimiento_id)
-        if origen is None:
-            raise LoteOrigenNoDisponibleError(
-                "El lote de origen no existe, fue borrado o es de otro establecimiento"
+        # Sin origen no hay nada que validar: es la primera asignación de animales
+        # que todavía no pertenecen a ningún lote.
+        if data.lote_origen_id is not None:
+            origen = await self._resolver_lote(
+                data.lote_origen_id, data.establecimiento_id
             )
+            if origen is None:
+                raise LoteOrigenNoDisponibleError(
+                    "El lote de origen no existe, fue borrado o es de otro"
+                    " establecimiento"
+                )
 
         destino = await self._resolver_lote(
             data.lote_destino_id, data.establecimiento_id
