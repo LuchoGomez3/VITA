@@ -9,7 +9,10 @@ import pytest
 from sqlalchemy import select, update
 
 from api.modules.egresos_operativos.models import EgresoOperativo
-from api.modules.egresos_operativos.schemas import CATEGORIAS_POR_TIPO
+from api.modules.egresos_operativos.schemas import (
+    CATEGORIAS_POR_TIPO,
+    ZONA_HORARIA_NEGOCIO,
+)
 from api.modules.establecimientos.models import Establecimiento, UsuarioEstablecimiento
 from api.shared.enums import RolUsuario
 
@@ -18,6 +21,16 @@ from api.shared.enums import RolUsuario
 RUTA_SCRIPT_EGRESOS = (
     Path(__file__).parent.parent / "scripts/crear_egresos_operativos.sql"
 )
+
+
+def hoy_del_negocio() -> date:
+    """Día civil según la zona donde opera el producto, igual que la API.
+
+    ``date.today()`` usa la zona del sistema y el runner de CI corre en UTC, tres
+    horas adelantado: entre las 00 y las 03 UTC devolvía el día siguiente al que
+    ve el validador y las pruebas fallaban por fecha futura.
+    """
+    return datetime.now(ZONA_HORARIA_NEGOCIO).date()
 
 
 def test_catalogo_base_coincide_con_trigger_postgresql():
@@ -68,7 +81,7 @@ def payload(establecimiento_id, **cambios):
         "tipo": "costo_produccion",
         "categoria": "sanidad",
         "insumo": "Vacunas reproductivas",
-        "fecha": date.today().isoformat(),
+        "fecha": hoy_del_negocio().isoformat(),
         "descripcion": "Compra para campaña anual",
         "numero_comprobante": "FC-A-0001-00000001",
     }
@@ -116,7 +129,7 @@ async def test_monto_no_positivo_es_rechazado(
 @pytest.mark.anyio
 async def test_fecha_futura_es_rechazada(auth_client, establecimiento_habilitado):
     """La API protege la regla incluso si un cliente no limita su date picker."""
-    manana = date.today() + timedelta(days=1)
+    manana = hoy_del_negocio() + timedelta(days=1)
     respuesta = await auth_client.post(
         "/api/v1/egresos_operativos",
         json=payload(establecimiento_habilitado.id, fecha=manana.isoformat()),
@@ -229,7 +242,7 @@ async def test_historial_filtra_y_totaliza_sanidad(
     auth_client, establecimiento_habilitado
 ):
     """Los filtros combinados recalculan total y agrupaciones sobre los resultados."""
-    hoy = date.today()
+    hoy = hoy_del_negocio()
     ayer = hoy - timedelta(days=1)
     hace_dos_dias = hoy - timedelta(days=2)
     for datos in (
@@ -361,8 +374,8 @@ async def test_rango_de_fechas_invertido_es_rechazado(
         "/api/v1/egresos_operativos",
         params={
             "establecimiento_id": str(establecimiento_habilitado.id),
-            "fecha_desde": date.today().isoformat(),
-            "fecha_hasta": (date.today() - timedelta(days=1)).isoformat(),
+            "fecha_desde": hoy_del_negocio().isoformat(),
+            "fecha_hasta": (hoy_del_negocio() - timedelta(days=1)).isoformat(),
         },
     )
     assert respuesta.status_code == 422
