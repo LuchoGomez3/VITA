@@ -55,10 +55,11 @@ extension RegisterAnimalEventPatterns on RegisterAnimalEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _CategoriesRequested value)?  categoriesRequested,TResult Function( _EstablishmentsRequested value)?  establishmentsRequested,TResult Function( _EstablishmentSelected value)?  establishmentSelected,TResult Function( _DraftChanged value)?  draftChanged,TResult Function( _NextStepRequested value)?  nextStepRequested,TResult Function( _PreviousStepRequested value)?  previousStepRequested,TResult Function( _StepRequested value)?  stepRequested,TResult Function( _SubmitRequested value)?  submitRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _ParentsRequested value)?  parentsRequested,TResult Function( _CategoriesRequested value)?  categoriesRequested,TResult Function( _EstablishmentsRequested value)?  establishmentsRequested,TResult Function( _EstablishmentSelected value)?  establishmentSelected,TResult Function( _DraftChanged value)?  draftChanged,TResult Function( _NextStepRequested value)?  nextStepRequested,TResult Function( _PreviousStepRequested value)?  previousStepRequested,TResult Function( _StepRequested value)?  stepRequested,TResult Function( _SubmitRequested value)?  submitRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case _CategoriesRequested() when categoriesRequested != null:
+case _ParentsRequested() when parentsRequested != null:
+return parentsRequested(_that);case _CategoriesRequested() when categoriesRequested != null:
 return categoriesRequested(_that);case _EstablishmentsRequested() when establishmentsRequested != null:
 return establishmentsRequested(_that);case _EstablishmentSelected() when establishmentSelected != null:
 return establishmentSelected(_that);case _DraftChanged() when draftChanged != null:
@@ -84,10 +85,11 @@ return submitRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _CategoriesRequested value)  categoriesRequested,required TResult Function( _EstablishmentsRequested value)  establishmentsRequested,required TResult Function( _EstablishmentSelected value)  establishmentSelected,required TResult Function( _DraftChanged value)  draftChanged,required TResult Function( _NextStepRequested value)  nextStepRequested,required TResult Function( _PreviousStepRequested value)  previousStepRequested,required TResult Function( _StepRequested value)  stepRequested,required TResult Function( _SubmitRequested value)  submitRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _ParentsRequested value)  parentsRequested,required TResult Function( _CategoriesRequested value)  categoriesRequested,required TResult Function( _EstablishmentsRequested value)  establishmentsRequested,required TResult Function( _EstablishmentSelected value)  establishmentSelected,required TResult Function( _DraftChanged value)  draftChanged,required TResult Function( _NextStepRequested value)  nextStepRequested,required TResult Function( _PreviousStepRequested value)  previousStepRequested,required TResult Function( _StepRequested value)  stepRequested,required TResult Function( _SubmitRequested value)  submitRequested,}){
 final _that = this;
 switch (_that) {
-case _CategoriesRequested():
+case _ParentsRequested():
+return parentsRequested(_that);case _CategoriesRequested():
 return categoriesRequested(_that);case _EstablishmentsRequested():
 return establishmentsRequested(_that);case _EstablishmentSelected():
 return establishmentSelected(_that);case _DraftChanged():
@@ -109,10 +111,11 @@ return submitRequested(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _CategoriesRequested value)?  categoriesRequested,TResult? Function( _EstablishmentsRequested value)?  establishmentsRequested,TResult? Function( _EstablishmentSelected value)?  establishmentSelected,TResult? Function( _DraftChanged value)?  draftChanged,TResult? Function( _NextStepRequested value)?  nextStepRequested,TResult? Function( _PreviousStepRequested value)?  previousStepRequested,TResult? Function( _StepRequested value)?  stepRequested,TResult? Function( _SubmitRequested value)?  submitRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _ParentsRequested value)?  parentsRequested,TResult? Function( _CategoriesRequested value)?  categoriesRequested,TResult? Function( _EstablishmentsRequested value)?  establishmentsRequested,TResult? Function( _EstablishmentSelected value)?  establishmentSelected,TResult? Function( _DraftChanged value)?  draftChanged,TResult? Function( _NextStepRequested value)?  nextStepRequested,TResult? Function( _PreviousStepRequested value)?  previousStepRequested,TResult? Function( _StepRequested value)?  stepRequested,TResult? Function( _SubmitRequested value)?  submitRequested,}){
 final _that = this;
 switch (_that) {
-case _CategoriesRequested() when categoriesRequested != null:
+case _ParentsRequested() when parentsRequested != null:
+return parentsRequested(_that);case _CategoriesRequested() when categoriesRequested != null:
 return categoriesRequested(_that);case _EstablishmentsRequested() when establishmentsRequested != null:
 return establishmentsRequested(_that);case _EstablishmentSelected() when establishmentSelected != null:
 return establishmentSelected(_that);case _DraftChanged() when draftChanged != null:
@@ -137,9 +140,10 @@ return submitRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  categoriesRequested,TResult Function()?  establishmentsRequested,TResult Function( String establishmentId)?  establishmentSelected,TResult Function( RegisterAnimalDraft draft)?  draftChanged,TResult Function()?  nextStepRequested,TResult Function()?  previousStepRequested,TResult Function( RegisterAnimalStep step)?  stepRequested,TResult Function()?  submitRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  parentsRequested,TResult Function()?  categoriesRequested,TResult Function()?  establishmentsRequested,TResult Function( String establishmentId)?  establishmentSelected,TResult Function( RegisterAnimalDraft draft)?  draftChanged,TResult Function()?  nextStepRequested,TResult Function()?  previousStepRequested,TResult Function( RegisterAnimalStep step)?  stepRequested,TResult Function()?  submitRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case _CategoriesRequested() when categoriesRequested != null:
+case _ParentsRequested() when parentsRequested != null:
+return parentsRequested();case _CategoriesRequested() when categoriesRequested != null:
 return categoriesRequested();case _EstablishmentsRequested() when establishmentsRequested != null:
 return establishmentsRequested();case _EstablishmentSelected() when establishmentSelected != null:
 return establishmentSelected(_that.establishmentId);case _DraftChanged() when draftChanged != null:
@@ -165,9 +169,10 @@ return submitRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  categoriesRequested,required TResult Function()  establishmentsRequested,required TResult Function( String establishmentId)  establishmentSelected,required TResult Function( RegisterAnimalDraft draft)  draftChanged,required TResult Function()  nextStepRequested,required TResult Function()  previousStepRequested,required TResult Function( RegisterAnimalStep step)  stepRequested,required TResult Function()  submitRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  parentsRequested,required TResult Function()  categoriesRequested,required TResult Function()  establishmentsRequested,required TResult Function( String establishmentId)  establishmentSelected,required TResult Function( RegisterAnimalDraft draft)  draftChanged,required TResult Function()  nextStepRequested,required TResult Function()  previousStepRequested,required TResult Function( RegisterAnimalStep step)  stepRequested,required TResult Function()  submitRequested,}) {final _that = this;
 switch (_that) {
-case _CategoriesRequested():
+case _ParentsRequested():
+return parentsRequested();case _CategoriesRequested():
 return categoriesRequested();case _EstablishmentsRequested():
 return establishmentsRequested();case _EstablishmentSelected():
 return establishmentSelected(_that.establishmentId);case _DraftChanged():
@@ -189,9 +194,10 @@ return submitRequested();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  categoriesRequested,TResult? Function()?  establishmentsRequested,TResult? Function( String establishmentId)?  establishmentSelected,TResult? Function( RegisterAnimalDraft draft)?  draftChanged,TResult? Function()?  nextStepRequested,TResult? Function()?  previousStepRequested,TResult? Function( RegisterAnimalStep step)?  stepRequested,TResult? Function()?  submitRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  parentsRequested,TResult? Function()?  categoriesRequested,TResult? Function()?  establishmentsRequested,TResult? Function( String establishmentId)?  establishmentSelected,TResult? Function( RegisterAnimalDraft draft)?  draftChanged,TResult? Function()?  nextStepRequested,TResult? Function()?  previousStepRequested,TResult? Function( RegisterAnimalStep step)?  stepRequested,TResult? Function()?  submitRequested,}) {final _that = this;
 switch (_that) {
-case _CategoriesRequested() when categoriesRequested != null:
+case _ParentsRequested() when parentsRequested != null:
+return parentsRequested();case _CategoriesRequested() when categoriesRequested != null:
 return categoriesRequested();case _EstablishmentsRequested() when establishmentsRequested != null:
 return establishmentsRequested();case _EstablishmentSelected() when establishmentSelected != null:
 return establishmentSelected(_that.establishmentId);case _DraftChanged() when draftChanged != null:
@@ -206,6 +212,38 @@ return submitRequested();case _:
 }
 
 }
+
+/// @nodoc
+
+
+class _ParentsRequested implements RegisterAnimalEvent {
+  const _ParentsRequested();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ParentsRequested);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'RegisterAnimalEvent.parentsRequested()';
+}
+
+
+}
+
+
+
 
 /// @nodoc
 
@@ -577,7 +615,7 @@ String toString() {
 /// @nodoc
 mixin _$RegisterAnimalDraft {
 
- String get rfid; String get visualTagSeries; String get visualTagNumber; int get earTagColorIndex; String get breed; String get sex; DateTime get birthDate; String get birthWeight; String? get categoryId; String? get categoryName; String? get establishmentId; String? get establishmentName; String? get motherId; String? get fatherId; String? get destinationId;
+ String get rfid; String get visualTagSeries; String get visualTagNumber; int get earTagColorIndex; String get breed; String get sex; DateTime get birthDate; String get birthWeight; String? get categoryId; String? get categoryName; String? get establishmentId; String? get establishmentName; AnimalParent? get mother; AnimalParent? get father; String? get destinationId;
 /// Create a copy of RegisterAnimalDraft
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -588,16 +626,16 @@ $RegisterAnimalDraftCopyWith<RegisterAnimalDraft> get copyWith => _$RegisterAnim
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterAnimalDraft&&(identical(other.rfid, rfid) || other.rfid == rfid)&&(identical(other.visualTagSeries, visualTagSeries) || other.visualTagSeries == visualTagSeries)&&(identical(other.visualTagNumber, visualTagNumber) || other.visualTagNumber == visualTagNumber)&&(identical(other.earTagColorIndex, earTagColorIndex) || other.earTagColorIndex == earTagColorIndex)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.sex, sex) || other.sex == sex)&&(identical(other.birthDate, birthDate) || other.birthDate == birthDate)&&(identical(other.birthWeight, birthWeight) || other.birthWeight == birthWeight)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.establishmentName, establishmentName) || other.establishmentName == establishmentName)&&(identical(other.motherId, motherId) || other.motherId == motherId)&&(identical(other.fatherId, fatherId) || other.fatherId == fatherId)&&(identical(other.destinationId, destinationId) || other.destinationId == destinationId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterAnimalDraft&&(identical(other.rfid, rfid) || other.rfid == rfid)&&(identical(other.visualTagSeries, visualTagSeries) || other.visualTagSeries == visualTagSeries)&&(identical(other.visualTagNumber, visualTagNumber) || other.visualTagNumber == visualTagNumber)&&(identical(other.earTagColorIndex, earTagColorIndex) || other.earTagColorIndex == earTagColorIndex)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.sex, sex) || other.sex == sex)&&(identical(other.birthDate, birthDate) || other.birthDate == birthDate)&&(identical(other.birthWeight, birthWeight) || other.birthWeight == birthWeight)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.establishmentName, establishmentName) || other.establishmentName == establishmentName)&&(identical(other.mother, mother) || other.mother == mother)&&(identical(other.father, father) || other.father == father)&&(identical(other.destinationId, destinationId) || other.destinationId == destinationId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,rfid,visualTagSeries,visualTagNumber,earTagColorIndex,breed,sex,birthDate,birthWeight,categoryId,categoryName,establishmentId,establishmentName,motherId,fatherId,destinationId);
+int get hashCode => Object.hash(runtimeType,rfid,visualTagSeries,visualTagNumber,earTagColorIndex,breed,sex,birthDate,birthWeight,categoryId,categoryName,establishmentId,establishmentName,mother,father,destinationId);
 
 @override
 String toString() {
-  return 'RegisterAnimalDraft(rfid: $rfid, visualTagSeries: $visualTagSeries, visualTagNumber: $visualTagNumber, earTagColorIndex: $earTagColorIndex, breed: $breed, sex: $sex, birthDate: $birthDate, birthWeight: $birthWeight, categoryId: $categoryId, categoryName: $categoryName, establishmentId: $establishmentId, establishmentName: $establishmentName, motherId: $motherId, fatherId: $fatherId, destinationId: $destinationId)';
+  return 'RegisterAnimalDraft(rfid: $rfid, visualTagSeries: $visualTagSeries, visualTagNumber: $visualTagNumber, earTagColorIndex: $earTagColorIndex, breed: $breed, sex: $sex, birthDate: $birthDate, birthWeight: $birthWeight, categoryId: $categoryId, categoryName: $categoryName, establishmentId: $establishmentId, establishmentName: $establishmentName, mother: $mother, father: $father, destinationId: $destinationId)';
 }
 
 
@@ -608,11 +646,11 @@ abstract mixin class $RegisterAnimalDraftCopyWith<$Res>  {
   factory $RegisterAnimalDraftCopyWith(RegisterAnimalDraft value, $Res Function(RegisterAnimalDraft) _then) = _$RegisterAnimalDraftCopyWithImpl;
 @useResult
 $Res call({
- String rfid, String visualTagSeries, String visualTagNumber, int earTagColorIndex, String breed, String sex, DateTime birthDate, String birthWeight, String? categoryId, String? categoryName, String? establishmentId, String? establishmentName, String? motherId, String? fatherId, String? destinationId
+ String rfid, String visualTagSeries, String visualTagNumber, int earTagColorIndex, String breed, String sex, DateTime birthDate, String birthWeight, String? categoryId, String? categoryName, String? establishmentId, String? establishmentName, AnimalParent? mother, AnimalParent? father, String? destinationId
 });
 
 
-
+$AnimalParentCopyWith<$Res>? get mother;$AnimalParentCopyWith<$Res>? get father;
 
 }
 /// @nodoc
@@ -625,7 +663,7 @@ class _$RegisterAnimalDraftCopyWithImpl<$Res>
 
 /// Create a copy of RegisterAnimalDraft
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? rfid = null,Object? visualTagSeries = null,Object? visualTagNumber = null,Object? earTagColorIndex = null,Object? breed = null,Object? sex = null,Object? birthDate = null,Object? birthWeight = null,Object? categoryId = freezed,Object? categoryName = freezed,Object? establishmentId = freezed,Object? establishmentName = freezed,Object? motherId = freezed,Object? fatherId = freezed,Object? destinationId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? rfid = null,Object? visualTagSeries = null,Object? visualTagNumber = null,Object? earTagColorIndex = null,Object? breed = null,Object? sex = null,Object? birthDate = null,Object? birthWeight = null,Object? categoryId = freezed,Object? categoryName = freezed,Object? establishmentId = freezed,Object? establishmentName = freezed,Object? mother = freezed,Object? father = freezed,Object? destinationId = freezed,}) {
   return _then(_self.copyWith(
 rfid: null == rfid ? _self.rfid : rfid // ignore: cast_nullable_to_non_nullable
 as String,visualTagSeries: null == visualTagSeries ? _self.visualTagSeries : visualTagSeries // ignore: cast_nullable_to_non_nullable
@@ -639,13 +677,37 @@ as String,categoryId: freezed == categoryId ? _self.categoryId : categoryId // i
 as String?,categoryName: freezed == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
 as String?,establishmentId: freezed == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
 as String?,establishmentName: freezed == establishmentName ? _self.establishmentName : establishmentName // ignore: cast_nullable_to_non_nullable
-as String?,motherId: freezed == motherId ? _self.motherId : motherId // ignore: cast_nullable_to_non_nullable
-as String?,fatherId: freezed == fatherId ? _self.fatherId : fatherId // ignore: cast_nullable_to_non_nullable
-as String?,destinationId: freezed == destinationId ? _self.destinationId : destinationId // ignore: cast_nullable_to_non_nullable
+as String?,mother: freezed == mother ? _self.mother : mother // ignore: cast_nullable_to_non_nullable
+as AnimalParent?,father: freezed == father ? _self.father : father // ignore: cast_nullable_to_non_nullable
+as AnimalParent?,destinationId: freezed == destinationId ? _self.destinationId : destinationId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
+/// Create a copy of RegisterAnimalDraft
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$AnimalParentCopyWith<$Res>? get mother {
+    if (_self.mother == null) {
+    return null;
+  }
 
+  return $AnimalParentCopyWith<$Res>(_self.mother!, (value) {
+    return _then(_self.copyWith(mother: value));
+  });
+}/// Create a copy of RegisterAnimalDraft
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$AnimalParentCopyWith<$Res>? get father {
+    if (_self.father == null) {
+    return null;
+  }
+
+  return $AnimalParentCopyWith<$Res>(_self.father!, (value) {
+    return _then(_self.copyWith(father: value));
+  });
+}
 }
 
 
@@ -724,10 +786,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String rfid,  String visualTagSeries,  String visualTagNumber,  int earTagColorIndex,  String breed,  String sex,  DateTime birthDate,  String birthWeight,  String? categoryId,  String? categoryName,  String? establishmentId,  String? establishmentName,  String? motherId,  String? fatherId,  String? destinationId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String rfid,  String visualTagSeries,  String visualTagNumber,  int earTagColorIndex,  String breed,  String sex,  DateTime birthDate,  String birthWeight,  String? categoryId,  String? categoryName,  String? establishmentId,  String? establishmentName,  AnimalParent? mother,  AnimalParent? father,  String? destinationId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisterAnimalDraft() when $default != null:
-return $default(_that.rfid,_that.visualTagSeries,_that.visualTagNumber,_that.earTagColorIndex,_that.breed,_that.sex,_that.birthDate,_that.birthWeight,_that.categoryId,_that.categoryName,_that.establishmentId,_that.establishmentName,_that.motherId,_that.fatherId,_that.destinationId);case _:
+return $default(_that.rfid,_that.visualTagSeries,_that.visualTagNumber,_that.earTagColorIndex,_that.breed,_that.sex,_that.birthDate,_that.birthWeight,_that.categoryId,_that.categoryName,_that.establishmentId,_that.establishmentName,_that.mother,_that.father,_that.destinationId);case _:
   return orElse();
 
 }
@@ -745,10 +807,10 @@ return $default(_that.rfid,_that.visualTagSeries,_that.visualTagNumber,_that.ear
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String rfid,  String visualTagSeries,  String visualTagNumber,  int earTagColorIndex,  String breed,  String sex,  DateTime birthDate,  String birthWeight,  String? categoryId,  String? categoryName,  String? establishmentId,  String? establishmentName,  String? motherId,  String? fatherId,  String? destinationId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String rfid,  String visualTagSeries,  String visualTagNumber,  int earTagColorIndex,  String breed,  String sex,  DateTime birthDate,  String birthWeight,  String? categoryId,  String? categoryName,  String? establishmentId,  String? establishmentName,  AnimalParent? mother,  AnimalParent? father,  String? destinationId)  $default,) {final _that = this;
 switch (_that) {
 case _RegisterAnimalDraft():
-return $default(_that.rfid,_that.visualTagSeries,_that.visualTagNumber,_that.earTagColorIndex,_that.breed,_that.sex,_that.birthDate,_that.birthWeight,_that.categoryId,_that.categoryName,_that.establishmentId,_that.establishmentName,_that.motherId,_that.fatherId,_that.destinationId);}
+return $default(_that.rfid,_that.visualTagSeries,_that.visualTagNumber,_that.earTagColorIndex,_that.breed,_that.sex,_that.birthDate,_that.birthWeight,_that.categoryId,_that.categoryName,_that.establishmentId,_that.establishmentName,_that.mother,_that.father,_that.destinationId);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -762,10 +824,10 @@ return $default(_that.rfid,_that.visualTagSeries,_that.visualTagNumber,_that.ear
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String rfid,  String visualTagSeries,  String visualTagNumber,  int earTagColorIndex,  String breed,  String sex,  DateTime birthDate,  String birthWeight,  String? categoryId,  String? categoryName,  String? establishmentId,  String? establishmentName,  String? motherId,  String? fatherId,  String? destinationId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String rfid,  String visualTagSeries,  String visualTagNumber,  int earTagColorIndex,  String breed,  String sex,  DateTime birthDate,  String birthWeight,  String? categoryId,  String? categoryName,  String? establishmentId,  String? establishmentName,  AnimalParent? mother,  AnimalParent? father,  String? destinationId)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisterAnimalDraft() when $default != null:
-return $default(_that.rfid,_that.visualTagSeries,_that.visualTagNumber,_that.earTagColorIndex,_that.breed,_that.sex,_that.birthDate,_that.birthWeight,_that.categoryId,_that.categoryName,_that.establishmentId,_that.establishmentName,_that.motherId,_that.fatherId,_that.destinationId);case _:
+return $default(_that.rfid,_that.visualTagSeries,_that.visualTagNumber,_that.earTagColorIndex,_that.breed,_that.sex,_that.birthDate,_that.birthWeight,_that.categoryId,_that.categoryName,_that.establishmentId,_that.establishmentName,_that.mother,_that.father,_that.destinationId);case _:
   return null;
 
 }
@@ -777,7 +839,7 @@ return $default(_that.rfid,_that.visualTagSeries,_that.visualTagNumber,_that.ear
 
 
 class _RegisterAnimalDraft implements RegisterAnimalDraft {
-  const _RegisterAnimalDraft({required this.rfid, required this.visualTagSeries, required this.visualTagNumber, required this.earTagColorIndex, required this.breed, required this.sex, required this.birthDate, required this.birthWeight, this.categoryId, this.categoryName, this.establishmentId, this.establishmentName, this.motherId, this.fatherId, this.destinationId});
+  const _RegisterAnimalDraft({required this.rfid, required this.visualTagSeries, required this.visualTagNumber, required this.earTagColorIndex, required this.breed, required this.sex, required this.birthDate, required this.birthWeight, this.categoryId, this.categoryName, this.establishmentId, this.establishmentName, this.mother, this.father, this.destinationId});
   
 
 @override final  String rfid;
@@ -792,8 +854,8 @@ class _RegisterAnimalDraft implements RegisterAnimalDraft {
 @override final  String? categoryName;
 @override final  String? establishmentId;
 @override final  String? establishmentName;
-@override final  String? motherId;
-@override final  String? fatherId;
+@override final  AnimalParent? mother;
+@override final  AnimalParent? father;
 @override final  String? destinationId;
 
 /// Create a copy of RegisterAnimalDraft
@@ -806,16 +868,16 @@ _$RegisterAnimalDraftCopyWith<_RegisterAnimalDraft> get copyWith => __$RegisterA
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterAnimalDraft&&(identical(other.rfid, rfid) || other.rfid == rfid)&&(identical(other.visualTagSeries, visualTagSeries) || other.visualTagSeries == visualTagSeries)&&(identical(other.visualTagNumber, visualTagNumber) || other.visualTagNumber == visualTagNumber)&&(identical(other.earTagColorIndex, earTagColorIndex) || other.earTagColorIndex == earTagColorIndex)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.sex, sex) || other.sex == sex)&&(identical(other.birthDate, birthDate) || other.birthDate == birthDate)&&(identical(other.birthWeight, birthWeight) || other.birthWeight == birthWeight)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.establishmentName, establishmentName) || other.establishmentName == establishmentName)&&(identical(other.motherId, motherId) || other.motherId == motherId)&&(identical(other.fatherId, fatherId) || other.fatherId == fatherId)&&(identical(other.destinationId, destinationId) || other.destinationId == destinationId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterAnimalDraft&&(identical(other.rfid, rfid) || other.rfid == rfid)&&(identical(other.visualTagSeries, visualTagSeries) || other.visualTagSeries == visualTagSeries)&&(identical(other.visualTagNumber, visualTagNumber) || other.visualTagNumber == visualTagNumber)&&(identical(other.earTagColorIndex, earTagColorIndex) || other.earTagColorIndex == earTagColorIndex)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.sex, sex) || other.sex == sex)&&(identical(other.birthDate, birthDate) || other.birthDate == birthDate)&&(identical(other.birthWeight, birthWeight) || other.birthWeight == birthWeight)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.establishmentName, establishmentName) || other.establishmentName == establishmentName)&&(identical(other.mother, mother) || other.mother == mother)&&(identical(other.father, father) || other.father == father)&&(identical(other.destinationId, destinationId) || other.destinationId == destinationId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,rfid,visualTagSeries,visualTagNumber,earTagColorIndex,breed,sex,birthDate,birthWeight,categoryId,categoryName,establishmentId,establishmentName,motherId,fatherId,destinationId);
+int get hashCode => Object.hash(runtimeType,rfid,visualTagSeries,visualTagNumber,earTagColorIndex,breed,sex,birthDate,birthWeight,categoryId,categoryName,establishmentId,establishmentName,mother,father,destinationId);
 
 @override
 String toString() {
-  return 'RegisterAnimalDraft(rfid: $rfid, visualTagSeries: $visualTagSeries, visualTagNumber: $visualTagNumber, earTagColorIndex: $earTagColorIndex, breed: $breed, sex: $sex, birthDate: $birthDate, birthWeight: $birthWeight, categoryId: $categoryId, categoryName: $categoryName, establishmentId: $establishmentId, establishmentName: $establishmentName, motherId: $motherId, fatherId: $fatherId, destinationId: $destinationId)';
+  return 'RegisterAnimalDraft(rfid: $rfid, visualTagSeries: $visualTagSeries, visualTagNumber: $visualTagNumber, earTagColorIndex: $earTagColorIndex, breed: $breed, sex: $sex, birthDate: $birthDate, birthWeight: $birthWeight, categoryId: $categoryId, categoryName: $categoryName, establishmentId: $establishmentId, establishmentName: $establishmentName, mother: $mother, father: $father, destinationId: $destinationId)';
 }
 
 
@@ -826,11 +888,11 @@ abstract mixin class _$RegisterAnimalDraftCopyWith<$Res> implements $RegisterAni
   factory _$RegisterAnimalDraftCopyWith(_RegisterAnimalDraft value, $Res Function(_RegisterAnimalDraft) _then) = __$RegisterAnimalDraftCopyWithImpl;
 @override @useResult
 $Res call({
- String rfid, String visualTagSeries, String visualTagNumber, int earTagColorIndex, String breed, String sex, DateTime birthDate, String birthWeight, String? categoryId, String? categoryName, String? establishmentId, String? establishmentName, String? motherId, String? fatherId, String? destinationId
+ String rfid, String visualTagSeries, String visualTagNumber, int earTagColorIndex, String breed, String sex, DateTime birthDate, String birthWeight, String? categoryId, String? categoryName, String? establishmentId, String? establishmentName, AnimalParent? mother, AnimalParent? father, String? destinationId
 });
 
 
-
+@override $AnimalParentCopyWith<$Res>? get mother;@override $AnimalParentCopyWith<$Res>? get father;
 
 }
 /// @nodoc
@@ -843,7 +905,7 @@ class __$RegisterAnimalDraftCopyWithImpl<$Res>
 
 /// Create a copy of RegisterAnimalDraft
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? rfid = null,Object? visualTagSeries = null,Object? visualTagNumber = null,Object? earTagColorIndex = null,Object? breed = null,Object? sex = null,Object? birthDate = null,Object? birthWeight = null,Object? categoryId = freezed,Object? categoryName = freezed,Object? establishmentId = freezed,Object? establishmentName = freezed,Object? motherId = freezed,Object? fatherId = freezed,Object? destinationId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? rfid = null,Object? visualTagSeries = null,Object? visualTagNumber = null,Object? earTagColorIndex = null,Object? breed = null,Object? sex = null,Object? birthDate = null,Object? birthWeight = null,Object? categoryId = freezed,Object? categoryName = freezed,Object? establishmentId = freezed,Object? establishmentName = freezed,Object? mother = freezed,Object? father = freezed,Object? destinationId = freezed,}) {
   return _then(_RegisterAnimalDraft(
 rfid: null == rfid ? _self.rfid : rfid // ignore: cast_nullable_to_non_nullable
 as String,visualTagSeries: null == visualTagSeries ? _self.visualTagSeries : visualTagSeries // ignore: cast_nullable_to_non_nullable
@@ -857,20 +919,44 @@ as String,categoryId: freezed == categoryId ? _self.categoryId : categoryId // i
 as String?,categoryName: freezed == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
 as String?,establishmentId: freezed == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
 as String?,establishmentName: freezed == establishmentName ? _self.establishmentName : establishmentName // ignore: cast_nullable_to_non_nullable
-as String?,motherId: freezed == motherId ? _self.motherId : motherId // ignore: cast_nullable_to_non_nullable
-as String?,fatherId: freezed == fatherId ? _self.fatherId : fatherId // ignore: cast_nullable_to_non_nullable
-as String?,destinationId: freezed == destinationId ? _self.destinationId : destinationId // ignore: cast_nullable_to_non_nullable
+as String?,mother: freezed == mother ? _self.mother : mother // ignore: cast_nullable_to_non_nullable
+as AnimalParent?,father: freezed == father ? _self.father : father // ignore: cast_nullable_to_non_nullable
+as AnimalParent?,destinationId: freezed == destinationId ? _self.destinationId : destinationId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
 
+/// Create a copy of RegisterAnimalDraft
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$AnimalParentCopyWith<$Res>? get mother {
+    if (_self.mother == null) {
+    return null;
+  }
 
+  return $AnimalParentCopyWith<$Res>(_self.mother!, (value) {
+    return _then(_self.copyWith(mother: value));
+  });
+}/// Create a copy of RegisterAnimalDraft
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$AnimalParentCopyWith<$Res>? get father {
+    if (_self.father == null) {
+    return null;
+  }
+
+  return $AnimalParentCopyWith<$Res>(_self.father!, (value) {
+    return _then(_self.copyWith(father: value));
+  });
+}
 }
 
 /// @nodoc
 mixin _$RegisterAnimalState {
 
- RegisterAnimalStep get currentStep; RegisterAnimalDraft get draft; ResultState<List<AnimalRegistrationEstablishment>> get establishmentsState; ResultState<List<AnimalRegistrationDestination>> get destinationsState; ResultState<List<AnimalCategory>> get categoriesState; ResultState<RegisteredAnimal> get submitResult;
+ RegisterAnimalStep get currentStep; RegisterAnimalDraft get draft; ResultState<List<AnimalRegistrationEstablishment>> get establishmentsState; ResultState<List<AnimalRegistrationDestination>> get destinationsState; ResultState<List<AnimalCategory>> get categoriesState; ResultState<List<AnimalParent>> get parentsState; ResultState<RegisteredAnimal> get submitResult;
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -881,16 +967,16 @@ $RegisterAnimalStateCopyWith<RegisterAnimalState> get copyWith => _$RegisterAnim
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.establishmentsState, establishmentsState) || other.establishmentsState == establishmentsState)&&(identical(other.destinationsState, destinationsState) || other.destinationsState == destinationsState)&&(identical(other.categoriesState, categoriesState) || other.categoriesState == categoriesState)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.establishmentsState, establishmentsState) || other.establishmentsState == establishmentsState)&&(identical(other.destinationsState, destinationsState) || other.destinationsState == destinationsState)&&(identical(other.categoriesState, categoriesState) || other.categoriesState == categoriesState)&&(identical(other.parentsState, parentsState) || other.parentsState == parentsState)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,currentStep,draft,establishmentsState,destinationsState,categoriesState,submitResult);
+int get hashCode => Object.hash(runtimeType,currentStep,draft,establishmentsState,destinationsState,categoriesState,parentsState,submitResult);
 
 @override
 String toString() {
-  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, establishmentsState: $establishmentsState, destinationsState: $destinationsState, categoriesState: $categoriesState, submitResult: $submitResult)';
+  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, establishmentsState: $establishmentsState, destinationsState: $destinationsState, categoriesState: $categoriesState, parentsState: $parentsState, submitResult: $submitResult)';
 }
 
 
@@ -901,11 +987,11 @@ abstract mixin class $RegisterAnimalStateCopyWith<$Res>  {
   factory $RegisterAnimalStateCopyWith(RegisterAnimalState value, $Res Function(RegisterAnimalState) _then) = _$RegisterAnimalStateCopyWithImpl;
 @useResult
 $Res call({
- RegisterAnimalStep currentStep, RegisterAnimalDraft draft, ResultState<List<AnimalRegistrationEstablishment>> establishmentsState, ResultState<List<AnimalRegistrationDestination>> destinationsState, ResultState<List<AnimalCategory>> categoriesState, ResultState<RegisteredAnimal> submitResult
+ RegisterAnimalStep currentStep, RegisterAnimalDraft draft, ResultState<List<AnimalRegistrationEstablishment>> establishmentsState, ResultState<List<AnimalRegistrationDestination>> destinationsState, ResultState<List<AnimalCategory>> categoriesState, ResultState<List<AnimalParent>> parentsState, ResultState<RegisteredAnimal> submitResult
 });
 
 
-$RegisterAnimalDraftCopyWith<$Res> get draft;$ResultStateCopyWith<List<AnimalRegistrationEstablishment>, $Res> get establishmentsState;$ResultStateCopyWith<List<AnimalRegistrationDestination>, $Res> get destinationsState;$ResultStateCopyWith<List<AnimalCategory>, $Res> get categoriesState;$ResultStateCopyWith<RegisteredAnimal, $Res> get submitResult;
+$RegisterAnimalDraftCopyWith<$Res> get draft;$ResultStateCopyWith<List<AnimalRegistrationEstablishment>, $Res> get establishmentsState;$ResultStateCopyWith<List<AnimalRegistrationDestination>, $Res> get destinationsState;$ResultStateCopyWith<List<AnimalCategory>, $Res> get categoriesState;$ResultStateCopyWith<List<AnimalParent>, $Res> get parentsState;$ResultStateCopyWith<RegisteredAnimal, $Res> get submitResult;
 
 }
 /// @nodoc
@@ -918,14 +1004,15 @@ class _$RegisterAnimalStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? currentStep = null,Object? draft = null,Object? establishmentsState = null,Object? destinationsState = null,Object? categoriesState = null,Object? submitResult = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? currentStep = null,Object? draft = null,Object? establishmentsState = null,Object? destinationsState = null,Object? categoriesState = null,Object? parentsState = null,Object? submitResult = null,}) {
   return _then(_self.copyWith(
 currentStep: null == currentStep ? _self.currentStep : currentStep // ignore: cast_nullable_to_non_nullable
 as RegisterAnimalStep,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
 as RegisterAnimalDraft,establishmentsState: null == establishmentsState ? _self.establishmentsState : establishmentsState // ignore: cast_nullable_to_non_nullable
 as ResultState<List<AnimalRegistrationEstablishment>>,destinationsState: null == destinationsState ? _self.destinationsState : destinationsState // ignore: cast_nullable_to_non_nullable
 as ResultState<List<AnimalRegistrationDestination>>,categoriesState: null == categoriesState ? _self.categoriesState : categoriesState // ignore: cast_nullable_to_non_nullable
-as ResultState<List<AnimalCategory>>,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
+as ResultState<List<AnimalCategory>>,parentsState: null == parentsState ? _self.parentsState : parentsState // ignore: cast_nullable_to_non_nullable
+as ResultState<List<AnimalParent>>,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
 as ResultState<RegisteredAnimal>,
   ));
 }
@@ -964,6 +1051,15 @@ $ResultStateCopyWith<List<AnimalCategory>, $Res> get categoriesState {
   
   return $ResultStateCopyWith<List<AnimalCategory>, $Res>(_self.categoriesState, (value) {
     return _then(_self.copyWith(categoriesState: value));
+  });
+}/// Create a copy of RegisterAnimalState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<List<AnimalParent>, $Res> get parentsState {
+  
+  return $ResultStateCopyWith<List<AnimalParent>, $Res>(_self.parentsState, (value) {
+    return _then(_self.copyWith(parentsState: value));
   });
 }/// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
@@ -1053,10 +1149,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<List<AnimalCategory>> categoriesState,  ResultState<RegisteredAnimal> submitResult)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<List<AnimalCategory>> categoriesState,  ResultState<List<AnimalParent>> parentsState,  ResultState<RegisteredAnimal> submitResult)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisterAnimalState() when $default != null:
-return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.destinationsState,_that.categoriesState,_that.submitResult);case _:
+return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.destinationsState,_that.categoriesState,_that.parentsState,_that.submitResult);case _:
   return orElse();
 
 }
@@ -1074,10 +1170,10 @@ return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.de
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<List<AnimalCategory>> categoriesState,  ResultState<RegisteredAnimal> submitResult)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<List<AnimalCategory>> categoriesState,  ResultState<List<AnimalParent>> parentsState,  ResultState<RegisteredAnimal> submitResult)  $default,) {final _that = this;
 switch (_that) {
 case _RegisterAnimalState():
-return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.destinationsState,_that.categoriesState,_that.submitResult);}
+return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.destinationsState,_that.categoriesState,_that.parentsState,_that.submitResult);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1091,10 +1187,10 @@ return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.de
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<List<AnimalCategory>> categoriesState,  ResultState<RegisteredAnimal> submitResult)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<List<AnimalCategory>> categoriesState,  ResultState<List<AnimalParent>> parentsState,  ResultState<RegisteredAnimal> submitResult)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisterAnimalState() when $default != null:
-return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.destinationsState,_that.categoriesState,_that.submitResult);case _:
+return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.destinationsState,_that.categoriesState,_that.parentsState,_that.submitResult);case _:
   return null;
 
 }
@@ -1106,7 +1202,7 @@ return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.de
 
 
 class _RegisterAnimalState extends RegisterAnimalState {
-  const _RegisterAnimalState({required this.currentStep, required this.draft, this.establishmentsState = const ResultState<List<AnimalRegistrationEstablishment>>.initial(), this.destinationsState = const ResultState<List<AnimalRegistrationDestination>>.initial(), this.categoriesState = const ResultState<List<AnimalCategory>>.initial(), this.submitResult = const ResultState<RegisteredAnimal>.initial()}): super._();
+  const _RegisterAnimalState({required this.currentStep, required this.draft, this.establishmentsState = const ResultState<List<AnimalRegistrationEstablishment>>.initial(), this.destinationsState = const ResultState<List<AnimalRegistrationDestination>>.initial(), this.categoriesState = const ResultState<List<AnimalCategory>>.initial(), this.parentsState = const ResultState<List<AnimalParent>>.initial(), this.submitResult = const ResultState<RegisteredAnimal>.initial()}): super._();
   
 
 @override final  RegisterAnimalStep currentStep;
@@ -1114,6 +1210,7 @@ class _RegisterAnimalState extends RegisterAnimalState {
 @override@JsonKey() final  ResultState<List<AnimalRegistrationEstablishment>> establishmentsState;
 @override@JsonKey() final  ResultState<List<AnimalRegistrationDestination>> destinationsState;
 @override@JsonKey() final  ResultState<List<AnimalCategory>> categoriesState;
+@override@JsonKey() final  ResultState<List<AnimalParent>> parentsState;
 @override@JsonKey() final  ResultState<RegisteredAnimal> submitResult;
 
 /// Create a copy of RegisterAnimalState
@@ -1126,16 +1223,16 @@ _$RegisterAnimalStateCopyWith<_RegisterAnimalState> get copyWith => __$RegisterA
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.establishmentsState, establishmentsState) || other.establishmentsState == establishmentsState)&&(identical(other.destinationsState, destinationsState) || other.destinationsState == destinationsState)&&(identical(other.categoriesState, categoriesState) || other.categoriesState == categoriesState)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.establishmentsState, establishmentsState) || other.establishmentsState == establishmentsState)&&(identical(other.destinationsState, destinationsState) || other.destinationsState == destinationsState)&&(identical(other.categoriesState, categoriesState) || other.categoriesState == categoriesState)&&(identical(other.parentsState, parentsState) || other.parentsState == parentsState)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,currentStep,draft,establishmentsState,destinationsState,categoriesState,submitResult);
+int get hashCode => Object.hash(runtimeType,currentStep,draft,establishmentsState,destinationsState,categoriesState,parentsState,submitResult);
 
 @override
 String toString() {
-  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, establishmentsState: $establishmentsState, destinationsState: $destinationsState, categoriesState: $categoriesState, submitResult: $submitResult)';
+  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, establishmentsState: $establishmentsState, destinationsState: $destinationsState, categoriesState: $categoriesState, parentsState: $parentsState, submitResult: $submitResult)';
 }
 
 
@@ -1146,11 +1243,11 @@ abstract mixin class _$RegisterAnimalStateCopyWith<$Res> implements $RegisterAni
   factory _$RegisterAnimalStateCopyWith(_RegisterAnimalState value, $Res Function(_RegisterAnimalState) _then) = __$RegisterAnimalStateCopyWithImpl;
 @override @useResult
 $Res call({
- RegisterAnimalStep currentStep, RegisterAnimalDraft draft, ResultState<List<AnimalRegistrationEstablishment>> establishmentsState, ResultState<List<AnimalRegistrationDestination>> destinationsState, ResultState<List<AnimalCategory>> categoriesState, ResultState<RegisteredAnimal> submitResult
+ RegisterAnimalStep currentStep, RegisterAnimalDraft draft, ResultState<List<AnimalRegistrationEstablishment>> establishmentsState, ResultState<List<AnimalRegistrationDestination>> destinationsState, ResultState<List<AnimalCategory>> categoriesState, ResultState<List<AnimalParent>> parentsState, ResultState<RegisteredAnimal> submitResult
 });
 
 
-@override $RegisterAnimalDraftCopyWith<$Res> get draft;@override $ResultStateCopyWith<List<AnimalRegistrationEstablishment>, $Res> get establishmentsState;@override $ResultStateCopyWith<List<AnimalRegistrationDestination>, $Res> get destinationsState;@override $ResultStateCopyWith<List<AnimalCategory>, $Res> get categoriesState;@override $ResultStateCopyWith<RegisteredAnimal, $Res> get submitResult;
+@override $RegisterAnimalDraftCopyWith<$Res> get draft;@override $ResultStateCopyWith<List<AnimalRegistrationEstablishment>, $Res> get establishmentsState;@override $ResultStateCopyWith<List<AnimalRegistrationDestination>, $Res> get destinationsState;@override $ResultStateCopyWith<List<AnimalCategory>, $Res> get categoriesState;@override $ResultStateCopyWith<List<AnimalParent>, $Res> get parentsState;@override $ResultStateCopyWith<RegisteredAnimal, $Res> get submitResult;
 
 }
 /// @nodoc
@@ -1163,14 +1260,15 @@ class __$RegisterAnimalStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? currentStep = null,Object? draft = null,Object? establishmentsState = null,Object? destinationsState = null,Object? categoriesState = null,Object? submitResult = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? currentStep = null,Object? draft = null,Object? establishmentsState = null,Object? destinationsState = null,Object? categoriesState = null,Object? parentsState = null,Object? submitResult = null,}) {
   return _then(_RegisterAnimalState(
 currentStep: null == currentStep ? _self.currentStep : currentStep // ignore: cast_nullable_to_non_nullable
 as RegisterAnimalStep,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
 as RegisterAnimalDraft,establishmentsState: null == establishmentsState ? _self.establishmentsState : establishmentsState // ignore: cast_nullable_to_non_nullable
 as ResultState<List<AnimalRegistrationEstablishment>>,destinationsState: null == destinationsState ? _self.destinationsState : destinationsState // ignore: cast_nullable_to_non_nullable
 as ResultState<List<AnimalRegistrationDestination>>,categoriesState: null == categoriesState ? _self.categoriesState : categoriesState // ignore: cast_nullable_to_non_nullable
-as ResultState<List<AnimalCategory>>,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
+as ResultState<List<AnimalCategory>>,parentsState: null == parentsState ? _self.parentsState : parentsState // ignore: cast_nullable_to_non_nullable
+as ResultState<List<AnimalParent>>,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
 as ResultState<RegisteredAnimal>,
   ));
 }
@@ -1210,6 +1308,15 @@ $ResultStateCopyWith<List<AnimalCategory>, $Res> get categoriesState {
   
   return $ResultStateCopyWith<List<AnimalCategory>, $Res>(_self.categoriesState, (value) {
     return _then(_self.copyWith(categoriesState: value));
+  });
+}/// Create a copy of RegisterAnimalState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<List<AnimalParent>, $Res> get parentsState {
+  
+  return $ResultStateCopyWith<List<AnimalParent>, $Res>(_self.parentsState, (value) {
+    return _then(_self.copyWith(parentsState: value));
   });
 }/// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.

@@ -4,9 +4,11 @@ import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_category.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_parent.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_categories_use_case.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_parents_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
 
@@ -23,17 +25,19 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
   /// Crea el BLoC de registro en el paso inicial solicitado.
   ///
   /// [registrationContext] es un contrato de dominio que resuelve IDs de
-  /// establecimiento, lote y genealogia. Mantenerlo como abstraccion
+  /// establecimiento y lote. Mantenerlo como abstraccion
   /// evita que presentation dependa de implementaciones concretas de data.
   RegisterAnimalBloc({
     required RegisterAnimalUseCase registerAnimalUseCase,
     required GetAnimalCategoriesUseCase getAnimalCategoriesUseCase,
+    required GetAnimalParentsUseCase getAnimalParentsUseCase,
     required AnimalRegistrationContext registrationContext,
     RegisterAnimalStep initialStep = RegisterAnimalStep.identification,
     String initialRfid = '',
     String? initialEstablishmentId,
   }) : _registerAnimalUseCase = registerAnimalUseCase,
        _getAnimalCategoriesUseCase = getAnimalCategoriesUseCase,
+       _getAnimalParentsUseCase = getAnimalParentsUseCase,
        _registrationContext = registrationContext,
        super(
          RegisterAnimalState(
@@ -45,6 +49,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
        ) {
     on<_DraftChanged>(_onDraftChanged);
     on<_CategoriesRequested>(_onCategoriesRequested);
+    on<_ParentsRequested>(_onParentsRequested);
     on<_EstablishmentsRequested>(_onEstablishmentsRequested);
     on<_EstablishmentSelected>(_onEstablishmentSelected);
     on<_NextStepRequested>(_onNextStepRequested);
@@ -55,7 +60,28 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
 
   final RegisterAnimalUseCase _registerAnimalUseCase;
   final GetAnimalCategoriesUseCase _getAnimalCategoriesUseCase;
+  final GetAnimalParentsUseCase _getAnimalParentsUseCase;
   final AnimalRegistrationContext _registrationContext;
+  int _parentsRequest = 0;
+
+  Future<void> _onParentsRequested(
+    _ParentsRequested event,
+    Emitter<RegisterAnimalState> emit,
+  ) async {
+    final establishmentId = state.draft.establishmentId;
+    if (establishmentId == null) return;
+    final request = ++_parentsRequest;
+    emit(state.copyWith(parentsState: const ResultState.loading()));
+    final result = await _getAnimalParentsUseCase(establishmentId);
+    // Un cambio de establecimiento invalida cualquier lectura anterior.
+    if (request != _parentsRequest) return;
+    switch (result) {
+      case Success<List<AnimalParent>>(:final data):
+        emit(state.copyWith(parentsState: ResultState.data(data)));
+      case Failure<List<AnimalParent>>(:final error):
+        emit(state.copyWith(parentsState: ResultState.error(error)));
+    }
+  }
 
   Future<void> _onCategoriesRequested(
     _CategoriesRequested event,
@@ -128,22 +154,29 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
       return;
     }
 
+    _parentsRequest++;
     emit(
       state.copyWith(
         draft: state.draft.copyWith(
           establishmentId: establishment.id,
           establishmentName: establishment.name,
           destinationId: null,
+          mother: null,
+          father: null,
         ),
+        parentsState: const ResultState.initial(),
         destinationsState: const ResultState.loading(),
       ),
     );
+    add(const RegisterAnimalEvent.parentsRequested());
     try {
       final destinations = await _registrationContext.loadDestinations(
         establishment.id,
       );
+      if (state.draft.establishmentId != establishment.id) return;
       emit(state.copyWith(destinationsState: ResultState.data(destinations)));
     } on Object {
+      if (state.draft.establishmentId != establishment.id) return;
       emit(
         state.copyWith(
           destinationsState: const ResultState.error(
@@ -324,8 +357,8 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
           categoryId: categoryId,
           categoryName: categoryName,
           initialWeight: parsedWeight,
-          motherId: _registrationContext.resolveMotherId(draft.motherId),
-          fatherId: _registrationContext.resolveFatherId(draft.fatherId),
+          motherId: draft.mother?.id,
+          fatherId: draft.father?.id,
           weighingDate: DateTime.now().toUtc(),
         ),
       );

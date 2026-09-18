@@ -189,7 +189,10 @@ class AnimalRegisterStrings {
   static const stepThreeFatherTitle = 'Padre (toro)';
 
   /// Hint compartido por los buscadores de progenitores.
-  static const stepThreeSearchHint = 'Buscar caravana o nombre...';
+  static const stepThreeSearchHint = 'Buscar caravana visual o RFID...';
+
+  /// Error inline cuando la caravana no corresponde a un progenitor elegible.
+  static const parentNotFound = 'No se encontró la caravana en este establecimiento.';
 
   /// Encabezado principal de la seccion de destino.
   static const stepThreeDestinationTitle = 'DESTINO';
@@ -202,51 +205,6 @@ class AnimalRegisterStrings {
 
   /// Texto del boton que avanza al siguiente paso.
   static const stepThreeNextButton = 'Siguiente';
-
-  /// Nombre mock de la madre seleccionada.
-  static const stepThreeMockMotherName = 'Aberdeen Angus';
-
-  /// Numero visual mock de la madre seleccionada.
-  static const stepThreeMockMotherTag = '003 0421';
-
-  /// RFID mock de la madre seleccionada.
-  static const stepThreeMockMotherRfid = '982 000 412 884 421';
-
-  /// Nombre mock del primer toro sugerido.
-  static const stepThreeMockFatherOneName = 'Don Pedro';
-
-  /// Raza mock del primer toro sugerido.
-  static const stepThreeMockFatherOneBreed = 'Aberdeen Angus';
-
-  /// Numero visual mock del primer toro sugerido.
-  static const stepThreeMockFatherOneTag = '003 0820';
-
-  /// Nombre mock del segundo toro sugerido.
-  static const stepThreeMockFatherTwoName = 'Tornado';
-
-  /// Raza mock del segundo toro sugerido.
-  static const stepThreeMockFatherTwoBreed = 'Brangus';
-
-  /// Numero visual mock del segundo toro sugerido.
-  static const stepThreeMockFatherTwoTag = '003 0612';
-
-  /// Nombre mock del tercer toro sugerido.
-  static const stepThreeMockFatherThreeName = 'Capitán';
-
-  /// Raza mock del tercer toro sugerido.
-  static const stepThreeMockFatherThreeBreed = 'Hereford';
-
-  /// Numero visual mock del tercer toro sugerido.
-  static const stepThreeMockFatherThreeTag = '002 0118';
-
-  /// Etiqueta visible para los candidatos a padre.
-  static const stepThreeBullBadge = 'Toro';
-
-  /// Nombre mock del potrero seleccionado.
-  static const stepThreeMockDestinationName = 'La Cumbre';
-
-  /// Detalle mock del potrero seleccionado.
-  static const stepThreeMockDestinationDetails = '142 ha · 342 animales actualmente';
 
   // Paso 4: revision.
 
@@ -308,17 +266,11 @@ class AnimalRegisterStrings {
   /// Label del campo madre.
   static const stepFourMotherLabel = 'Madre';
 
-  /// Valor mock del campo madre.
-  static const stepFourMotherValue = '003 0421 · Aberdeen';
-
   /// Label del campo padre.
   static const stepFourFatherLabel = 'Padre';
 
   /// Value displayed when optional information is missing.
   static const stepFourNoDataValue = '— (sin datos)';
-
-  /// Valor mock del campo padre.
-  static const String stepFourFatherValue = stepFourNoDataValue;
 
   /// Label del campo potrero.
   static const stepFourDestinationLabel = 'Potrero';

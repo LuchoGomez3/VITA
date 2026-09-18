@@ -3,11 +3,14 @@ import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_category.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_parent.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_category_repository.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_parent_repository.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_repository.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_categories_use_case.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_parents_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 
@@ -22,6 +25,7 @@ void main() {
       categoryRepository = _FakeAnimalCategoryRepository();
       bloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
         ),
@@ -46,6 +50,7 @@ void main() {
       final prefilledBloc = RegisterAnimalBloc(
         initialRfid: '982000412991416',
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
         ),
@@ -56,6 +61,8 @@ void main() {
       expect(prefilledBloc.state.draft.rfid, '982000412991416');
       expect(prefilledBloc.state.draft.categoryId, isNull);
       expect(prefilledBloc.state.draft.categoryName, isNull);
+      expect(prefilledBloc.state.draft.mother, isNull);
+      expect(prefilledBloc.state.draft.father, isNull);
     });
 
     test('loads global categories without preselecting one', () async {
@@ -100,6 +107,7 @@ void main() {
       final prefilledBloc = RegisterAnimalBloc(
         initialEstablishmentId: '8b75eb38-8b0f-44dc-979f-89ce2817b63d',
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
         ),
@@ -123,6 +131,7 @@ void main() {
       final context = _MultipleEstablishmentsContext();
       final selectionBloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
         ),
@@ -150,6 +159,7 @@ void main() {
       final context = _MultipleEstablishmentsContext();
       final selectionBloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
         ),
@@ -183,6 +193,41 @@ void main() {
       );
     });
 
+    test('loads local parents and clears selections when establishment changes', () async {
+      final parents = _FakeAnimalParentRepository()
+        ..result = const Result.success([
+          AnimalParent(
+            id: 'mother-id',
+            visualTag: '003 0421',
+            rfid: '982000412884421',
+            breed: 'Aberdeen Angus',
+            sex: AnimalSex.female,
+          ),
+        ]);
+      final selectionBloc = RegisterAnimalBloc(
+        registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(categoryRepository),
+        getAnimalParentsUseCase: GetAnimalParentsUseCase(parents),
+        registrationContext: _MultipleEstablishmentsContext(),
+      );
+      addTearDown(selectionBloc.close);
+      selectionBloc.add(const RegisterAnimalEvent.establishmentsRequested());
+      await Future<void>.delayed(Duration.zero);
+      selectionBloc.add(const RegisterAnimalEvent.establishmentSelected('establishment-1'));
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(parents.requestedEstablishments, ['establishment-1']);
+      final mother = (selectionBloc.state.parentsState as Data<List<AnimalParent>>).data.single;
+      selectionBloc.add(RegisterAnimalEvent.draftChanged(selectionBloc.state.draft.copyWith(mother: mother)));
+      await Future<void>.delayed(Duration.zero);
+      selectionBloc.add(const RegisterAnimalEvent.establishmentSelected('establishment-2'));
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(selectionBloc.state.draft.mother, isNull);
+      expect(selectionBloc.state.draft.father, isNull);
+      expect(parents.requestedEstablishments, ['establishment-1', 'establishment-2']);
+    });
+
     test('moves forward and backward through the flow', () async {
       final forwardState = bloc.state.copyWith(
         currentStep: RegisterAnimalStep.basicData,
@@ -204,6 +249,7 @@ void main() {
       final reviewBloc = RegisterAnimalBloc(
         initialStep: RegisterAnimalStep.review,
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
         ),
@@ -220,6 +266,7 @@ void main() {
     test('represents establishment loading failures with ResultState', () async {
       final failingBloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
         ),
@@ -275,6 +322,13 @@ void main() {
         destinationId: 'lot-1',
         categoryId: 'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8',
         categoryName: 'Ternera',
+        mother: const AnimalParent(
+          id: '56fb8531-13f7-41c6-a1e1-85ea9b7094fa',
+          visualTag: '003 0421',
+          rfid: '982000412884421',
+          breed: 'Aberdeen Angus',
+          sex: AnimalSex.female,
+        ),
       );
       bloc.add(RegisterAnimalEvent.draftChanged(draft));
       await Future<void>.delayed(Duration.zero);
@@ -299,6 +353,7 @@ void main() {
         'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8',
       );
       expect(repository.lastRegistration?.categoryName, 'Ternera');
+      expect(repository.lastRegistration?.motherId, '56fb8531-13f7-41c6-a1e1-85ea9b7094fa');
     });
 
     test('does not submit when validation fails', () async {
@@ -376,13 +431,6 @@ class _TestAnimalRegistrationContext implements AnimalRegistrationContext {
 
   @override
   String resolveLotName(String destinationSelectionId) => 'La Cumbre';
-
-  @override
-  String? resolveFatherId(String? fatherSelectionId) => null;
-
-  @override
-  String? resolveMotherId(String? motherSelectionId) =>
-      motherSelectionId == null ? null : '56fb8531-13f7-41c6-a1e1-85ea9b7094fa';
 }
 
 class _FailingAnimalRegistrationContext implements AnimalRegistrationContext {
@@ -401,16 +449,10 @@ class _FailingAnimalRegistrationContext implements AnimalRegistrationContext {
   }
 
   @override
-  String? resolveFatherId(String? fatherSelectionId) => null;
-
-  @override
   String resolveLotId(String destinationSelectionId) => 'lot-id';
 
   @override
   String resolveLotName(String destinationSelectionId) => 'Lote';
-
-  @override
-  String? resolveMotherId(String? motherSelectionId) => null;
 }
 
 class _MultipleEstablishmentsContext implements AnimalRegistrationContext {
@@ -443,16 +485,10 @@ class _MultipleEstablishmentsContext implements AnimalRegistrationContext {
   }
 
   @override
-  String? resolveFatherId(String? fatherSelectionId) => fatherSelectionId;
-
-  @override
   String resolveLotId(String destinationSelectionId) => destinationSelectionId;
 
   @override
   String resolveLotName(String destinationSelectionId) => 'Lote Sur';
-
-  @override
-  String? resolveMotherId(String? motherSelectionId) => motherSelectionId;
 }
 
 class _FakeAnimalRegistrationRepository implements AnimalRegistrationRepository {
@@ -507,4 +543,15 @@ class _FakeAnimalCategoryRepository implements AnimalCategoryRepository {
 
   @override
   Future<Result<List<AnimalCategory>>> getCategories() async => result;
+}
+
+class _FakeAnimalParentRepository implements AnimalParentRepository {
+  Result<List<AnimalParent>> result = const Result.success([]);
+  final requestedEstablishments = <String>[];
+
+  @override
+  Future<Result<List<AnimalParent>>> getParents(String establishmentId) async {
+    requestedEstablishments.add(establishmentId);
+    return result;
+  }
 }

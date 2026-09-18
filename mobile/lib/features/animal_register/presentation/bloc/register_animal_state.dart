@@ -32,14 +32,12 @@ sealed class RegisterAnimalDraft with _$RegisterAnimalDraft {
     String? categoryName,
     String? establishmentId,
     String? establishmentName,
-    String? motherId,
-    String? fatherId,
+    AnimalParent? mother,
+    AnimalParent? father,
     String? destinationId,
   }) = _RegisterAnimalDraft;
 
   /// Creates the initial values currently displayed by the flow.
-  // TODO(agusf): eliminar la madre preseleccionada cuando genealogia se
-  // hidrate desde animales reales en Brick.
   factory RegisterAnimalDraft.initial({String rfid = ''}) => RegisterAnimalDraft(
     rfid: rfid,
     visualTagSeries: '',
@@ -49,7 +47,6 @@ sealed class RegisterAnimalDraft with _$RegisterAnimalDraft {
     sex: AnimalRegisterStrings.stepTwoFemale,
     birthDate: DateTime(2025, 3, 14),
     birthWeight: '',
-    motherId: 'mother-003-0421',
   );
 }
 
@@ -65,6 +62,7 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
     @Default(ResultState<List<AnimalRegistrationDestination>>.initial())
     ResultState<List<AnimalRegistrationDestination>> destinationsState,
     @Default(ResultState<List<AnimalCategory>>.initial()) ResultState<List<AnimalCategory>> categoriesState,
+    @Default(ResultState<List<AnimalParent>>.initial()) ResultState<List<AnimalParent>> parentsState,
     @Default(ResultState<RegisteredAnimal>.initial()) ResultState<RegisteredAnimal> submitResult,
   }) = _RegisterAnimalState;
 
