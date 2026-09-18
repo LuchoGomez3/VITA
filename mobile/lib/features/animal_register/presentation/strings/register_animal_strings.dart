@@ -1,6 +1,3 @@
-import 'package:frontend_mayoral/core/theme/theme.dart';
-import 'package:frontend_mayoral/features/animal_register/presentation/widgets/ear_tag_color_selector.dart';
-
 /// Textos base del flujo de alta manual de animal.
 class AnimalRegisterStrings {
   const AnimalRegisterStrings._();
@@ -58,34 +55,11 @@ class AnimalRegisterStrings {
   /// Hint del campo de número de caravana visual.
   static const visualNumberFieldHint = 'Ej. 1048';
 
-  /// Titulo del campo de color de caravana.
-  static const earTagColorTitle = 'Color de caravana';
-
   /// Titulo del boton de prueba con bastón Bluetooth.
   static const bluetoothButtonLabel = 'Probar con bastón Bluetooth';
 
   /// Titulo del boton de siguiente.
   static const nextButtonLabel = 'Siguiente';
-
-  /// Opciones de color de caravana. (Agus: Esto lo voy a cambiar)
-  static const earTagColorOptions = [
-    EarTagColorOption(
-      name: 'Amarillo',
-      color: AppColors.earTagYellow,
-    ),
-    EarTagColorOption(
-      name: 'Beige',
-      color: AppColors.backgroundTertiary,
-    ),
-    EarTagColorOption(
-      name: 'Lila',
-      color: AppColors.earTagLilac,
-    ),
-    EarTagColorOption(
-      name: 'Naranja',
-      color: AppColors.earTagOrange,
-    ),
-  ];
 
   // Paso 2: datos basicos.
 
@@ -232,9 +206,6 @@ class AnimalRegisterStrings {
 
   /// RFID mostrado en la seccion de identificacion.
   static const stepFourIdentificationRfid = '982 000 412 991 416';
-
-  /// Descripcion visual de la caravana.
-  static const stepFourIdentificationTag = 'Caravana 003 1295 · amarilla';
 
   /// Label del campo raza.
   static const stepFourBreedLabel = 'Raza';

@@ -4,7 +4,6 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
-import 'package:frontend_mayoral/features/animal_register/presentation/widgets/ear_tag_color_selector.dart';
 
 /// Identification form shown in the first step of animal registration.
 class RegisterAnimalIdentificationStep extends StatefulWidget {
@@ -107,22 +106,6 @@ class _RegisterAnimalIdentificationStepState extends State<RegisterAnimalIdentif
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            const Text(
-              AnimalRegisterStrings.earTagColorTitle,
-              style: AppTypography.secondaryEmphasis,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            EarTagColorSelector(
-              options: AnimalRegisterStrings.earTagColorOptions,
-              selectedColor: AnimalRegisterStrings.earTagColorOptions[draft.earTagColorIndex].color,
-              onChanged: (color) {
-                final colorIndex = AnimalRegisterStrings.earTagColorOptions.indexWhere(
-                  (option) => option.color == color,
-                );
-                _updateDraft(draft.copyWith(earTagColorIndex: colorIndex));
-              },
             ),
             const SizedBox(height: AppSpacing.lg),
             AppOutlinedButton(
