@@ -44,7 +44,6 @@ class RegisterAnimalReviewStep extends StatelessWidget {
             onEdit: () => _edit(context, RegisterAnimalStep.identification),
             leading: _ReviewEarTag(
               visualTag: _visualTag(draft),
-              color: AnimalRegisterStrings.earTagColorOptions[draft.earTagColorIndex].color,
             ),
             rows: [
               RegisterAnimalReviewRow(
@@ -146,11 +145,9 @@ class RegisterAnimalReviewStep extends StatelessWidget {
 class _ReviewEarTag extends StatelessWidget {
   const _ReviewEarTag({
     required this.visualTag,
-    required this.color,
   });
 
   final String visualTag;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +158,7 @@ class _ReviewEarTag extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: color,
+        color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
