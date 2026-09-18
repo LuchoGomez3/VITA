@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_parent.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
@@ -96,11 +97,11 @@ class RegisterAnimalReviewStep extends StatelessWidget {
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourMotherLabel,
-                value: _mother(draft.motherId),
+                value: _parent(draft.mother),
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourFatherLabel,
-                value: _father(draft.fatherId),
+                value: _parent(draft.father),
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourDestinationLabel,
@@ -126,24 +127,8 @@ class RegisterAnimalReviewStep extends StatelessWidget {
     return '${draft.visualTagSeries} ${draft.visualTagNumber}'.trim();
   }
 
-  String _mother(String? id) {
-    // TODO(agusf): resolver el nombre desde los animales cargados en el BLoC
-    // cuando la genealogia deje de utilizar opciones estaticas.
-    return id == 'mother-003-0421'
-        ? AnimalRegisterStrings.stepFourMotherValue
-        : AnimalRegisterStrings.stepFourNoDataValue;
-  }
-
-  String _father(String? id) {
-    // TODO(agusf): resolver el nombre desde los animales cargados en el BLoC
-    // cuando la genealogia deje de utilizar opciones estaticas.
-    return switch (id) {
-      'father-003-0820' => AnimalRegisterStrings.stepThreeMockFatherOneName,
-      'father-003-0612' => AnimalRegisterStrings.stepThreeMockFatherTwoName,
-      'father-002-0118' => AnimalRegisterStrings.stepThreeMockFatherThreeName,
-      _ => AnimalRegisterStrings.stepFourNoDataValue,
-    };
-  }
+  String _parent(AnimalParent? parent) =>
+      parent == null ? AnimalRegisterStrings.stepFourNoDataValue : '${parent.visualTag} · ${parent.breed}';
 
   String _destination(
     String? id,

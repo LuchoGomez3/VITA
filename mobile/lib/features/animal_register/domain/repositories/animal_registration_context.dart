@@ -36,23 +36,16 @@ class AnimalRegistrationDestination {
 
 /// Contrato temporal para resolver el contexto de negocio del registro.
 ///
-/// El formulario trabaja con selecciones de UI para lotes y genealogia. Para
-/// construir un
-/// [AnimalRegistration] valido necesitamos convertir esas selecciones a IDs y
-/// nombres consistentes con el backend.
+/// El formulario obtiene establecimientos y lotes para construir un
+/// [AnimalRegistration] con IDs y nombres consistentes.
 ///
 /// Este contrato mantiene esa resolucion fuera del BLoC mientras todavia no
-/// existen todos los flujos reales de sesion y catalogos. La implementacion
-/// actual obtiene lotes desde Brick, pero genealogia conserva resoluciones
-/// temporales.
+/// existen todos los flujos reales de sesion y lotes.
 ///
 /// Diseno final esperado:
 /// - El usuario y el establecimiento seleccionado deberian venir de un
 ///   repository/use case de sesion.
 /// - Los lotes deberian venir de un repository/use case propio.
-/// - Madre/padre deberian seleccionarse desde animales reales disponibles en el
-///   establecimiento.
-/// - El draft del formulario deberia guardar IDs reales, no claves mock de UI.
 ///
 /// Cuando esos datos reales existan, este contrato puede reducirse mucho o
 /// eliminarse, reemplazandose por use cases especificos como
@@ -71,10 +64,4 @@ abstract class AnimalRegistrationContext {
 
   /// Resuelve el nombre visible del lote desde la seleccion de destino.
   String resolveLotName(String destinationSelectionId);
-
-  /// Resuelve el ID backend de la madre desde la seleccion de UI.
-  String? resolveMotherId(String? motherSelectionId);
-
-  /// Resuelve el ID backend del padre desde la seleccion de UI.
-  String? resolveFatherId(String? fatherSelectionId);
 }
