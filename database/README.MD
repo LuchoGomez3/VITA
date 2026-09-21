@@ -97,3 +97,57 @@ del animal (muerte, baja, traslado externo). Ver `docs/adr/adr-0001-ventas-separ
 
 Un mismo animal puede aparecer en ventas distintas (reingresó al stock y se revendió);
 lo que no puede es repetirse dentro de la misma venta.
+
+## Lotes y movimientos entre lotes
+
+`lotes` es la división física del establecimiento donde pastorea un rodeo. Decisiones de
+fondo en `docs/adr/adr-0002-geometria-y-movimientos-de-lotes.md`; contrato con mobile en
+`docs/contrato-lotes-movimientos.md`.
+
+`lotes` — sincronizable:
+
+| Columna | Tipo | Notas |
+| --- | --- | --- |
+| `id` | `uuid` PK | generada en mobile |
+| `establecimiento_id` | `uuid` NOT NULL | FK `establecimientos` |
+| `nombre` | `varchar` NOT NULL | no vacío; único normalizado por establecimiento |
+| `geometria_local` | `jsonb` NOT NULL | polígono esquemático, **no** geografía (ver abajo) |
+| `modo_geometria` | `varchar` NOT NULL | hoy solo `local_schematic` |
+| `superficie_ha` | `numeric(12,2)` NOT NULL | `> 0`, autoritativa a **un decimal** |
+| `recurso_forrajero_codigo` | `varchar` | `pasto_natural` \| `alfalfa` \| `sorgo` \| `maiz` \| `avena` \| `otro` |
+| `tiene_agua` | `boolean` NOT NULL | |
+| `estado` | `varchar` NOT NULL | `activo` \| `descanso` \| `mantenimiento` \| `inactivo` |
+| `plan_alimenticio_id` | `uuid` | FK `planes_alimenticios`; concepto distinto del forraje |
+| `created_at` / `updated_at` / `deleted_at` | `timestamptz` | |
+
+La unicidad de nombre es un índice de expresión **parcial**:
+`unique (establecimiento_id, lower(btrim(nombre))) where deleted_at is null`. Normalizado
+para que " potrero bajo " colisione con "Potrero Bajo", y parcial para que borrar un lote
+libere su nombre. Está excluido de la comparación de `alembic check` (ver `alembic/env.py`):
+Postgres y SQLite escriben la expresión distinto y autogenerate no puede compararla.
+
+### La geometría no es geográfica
+
+`geometria_local` guarda un polígono en un plano cartesiano común a los lotes del
+establecimiento, de extensión lógica 1000×1000. **No es lat/long ni GeoJSON WGS84**, y no
+hay transformación definida hacia el mundo real. Es lo que permite dibujar el campo sin
+mapa, sin GPS y sin señal. La geometría geográfica real será una columna nullable aparte
+cuando exista vista aérea; esta seguirá siendo el fallback. **No se usa PostGIS**: área,
+auto-intersección y superposición se calculan con `shapely` en CPU.
+
+Dos lotes pueden compartir vértice, borde o adyacencia —un campo dividido en potreros es
+exactamente eso—; lo que no pueden es solaparse con área positiva.
+
+### El movimiento es un agregado
+
+`movimientos_lotes` (cabecera, sincronizable) + `movimientos_lotes_animales` (detalle,
+solo `Base`, con `UNIQUE (movimiento_lote_id, animal_id)`).
+
+Mobile crea *una* operación con N animales y le asigna *un* UUID, que es su clave de
+idempotencia; ese UUID tiene que ser PK de una sola fila. La tabla anterior
+`movimientos_lote` guardaba una fila por animal y no podía sostenerlo: se descartó en la
+migración `20260905_03` (estaba vacía).
+
+La cabecera lleva `lote_origen_id` (nullable en la base, obligatorio en la API V1),
+`lote_destino_id`, `fecha_movimiento`, `motivo` y `responsable_id`, que **siempre** sale
+del JWT.

@@ -90,3 +90,32 @@ class CategoriaEgresoOperativo(str, Enum):
     combustible = "combustible"
     estructura = "estructura"
     honorarios = "honorarios"
+
+
+class EstadoLote(str, Enum):
+    """Estado operativo de un lote (potrero).
+
+    Los cuatro estados ocupan espacio en el lienzo del establecimiento: un lote
+    en descanso o mantenimiento sigue siendo una división física y no puede
+    superponerse con otro. Solo ``activo`` admite el ingreso de animales.
+    """
+
+    activo = "activo"
+    descanso = "descanso"
+    mantenimiento = "mantenimiento"
+    inactivo = "inactivo"
+
+
+class RecursoForrajero(str, Enum):
+    """Recurso forrajero predominante del lote.
+
+    Es un catálogo de códigos estables, no una etiqueta visible: la traducción a
+    texto para el usuario la resuelve el cliente.
+    """
+
+    pasto_natural = "pasto_natural"
+    alfalfa = "alfalfa"
+    sorgo = "sorgo"
+    maiz = "maiz"
+    avena = "avena"
+    otro = "otro"

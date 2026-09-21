@@ -5,13 +5,14 @@ from uuid import UUID, uuid4
 import pytest
 from sqlalchemy import select
 
+from api.modules.animales.models import Animal
 from api.modules.establecimientos.models import (
     Establecimiento,
     UsuarioEstablecimiento,
 )
-from api.modules.lotes.models import Lote
 from api.modules.pesajes.models import Pesaje
 from api.shared.enums import RolUsuario
+from tests.factories import crear_lote
 
 
 @pytest.fixture
@@ -32,7 +33,7 @@ async def establecimiento_con_lote(session, usuario_actual):
             activo=True,
         )
     )
-    lote = Lote(establecimiento_id=est.id, nombre="Lote 1")
+    lote = crear_lote(est.id, "Lote 1")
     session.add(lote)
     await session.commit()
     return est, lote
@@ -44,7 +45,7 @@ def _payload(est_id, lote_id, **overrides):
         "sexo": "hembra",
         "raza": "Angus",
         "fecha_nacimiento": "2024-01-15",
-        "lote_id": str(lote_id),
+        "lote_id": str(lote_id) if lote_id is not None else None,
         "establecimiento_id": str(est_id),
         "peso_inicial": "120.500",
         "metodo_pesaje": "manual",
@@ -171,7 +172,7 @@ async def test_lote_de_otro_establecimiento(
     )
     session.add(otro_est)
     await session.flush()
-    lote_ajeno = Lote(establecimiento_id=otro_est.id, nombre="Lote B")
+    lote_ajeno = crear_lote(otro_est.id, "Lote B")
     session.add(lote_ajeno)
     await session.commit()
 
@@ -179,6 +180,45 @@ async def test_lote_de_otro_establecimiento(
         "/api/v1/animales",
         json=_payload(est.id, lote_ajeno.id, nro_caravana_rfid="444444444444444"),
     )
+    assert resp.status_code == 422
+    assert resp.json()["errors"][0]["code"] == "lote_no_pertenece_establecimiento"
+
+
+@pytest.mark.anyio
+async def test_alta_sin_lote_deja_el_animal_sin_asignar(
+    auth_client, session, establecimiento_con_lote
+):
+    """El animal puede ingresar sin lote y asignarse después.
+
+    Es el caso del alta en la manga: se identifica la hacienda al entrar y
+    recién más tarde se decide a qué potrero va.
+    """
+    est, _ = establecimiento_con_lote
+    resp = await auth_client.post(
+        "/api/v1/animales",
+        json=_payload(est.id, None, nro_caravana_rfid="555555555555555"),
+    )
+
+    assert resp.status_code == 201
+    creado = resp.json()["data"]
+    assert creado["lote_id"] is None
+
+    guardado = await session.get(Animal, UUID(creado["id"]))
+    assert guardado is not None
+    assert guardado.lote_id is None
+
+
+@pytest.mark.anyio
+async def test_alta_con_lote_conserva_la_validacion_de_pertenencia(
+    auth_client, establecimiento_con_lote
+):
+    """Volver opcional el lote no aflojó el control cuando sí se informa."""
+    est, _ = establecimiento_con_lote
+    resp = await auth_client.post(
+        "/api/v1/animales",
+        json=_payload(est.id, uuid4(), nro_caravana_rfid="666666666666666"),
+    )
+
     assert resp.status_code == 422
     assert resp.json()["errors"][0]["code"] == "lote_no_pertenece_establecimiento"
 
@@ -449,7 +489,7 @@ async def test_put_a_lote_de_otro_establecimiento_falla(
     )
     session.add(otro_est)
     await session.flush()
-    lote_ajeno = Lote(establecimiento_id=otro_est.id, nombre="Lote C")
+    lote_ajeno = crear_lote(otro_est.id, "Lote C")
     session.add(lote_ajeno)
     await session.commit()
 
