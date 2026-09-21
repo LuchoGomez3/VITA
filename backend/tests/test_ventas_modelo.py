@@ -65,6 +65,8 @@ def _venta(campo_id: UUID, usuario_id: UUID, **overrides) -> Venta:
         "fecha_operacion": date(2026, 8, 20),
         "tipo_comprador": TipoComprador.frigorifico,
         "nombre_comprador": "Frigorífico Rioplatense S.A.",
+        "es_empresa": True,
+        "nro_dte": "DTE-2026-000123",
         "tipo_venta": TipoVenta.al_bulto,
         "monto_total": Decimal("4500000.00"),
         "registrada_por_id": usuario_id,
@@ -104,18 +106,11 @@ async def test_venta_al_bulto_conserva_uuid_de_cliente_y_decimales(
 
 
 @pytest.mark.anyio
-async def test_venta_al_bulto_admite_dte_y_apellido_ausentes(
-    session, campo_id, usuario_id
-):
-    """Escenario de campo: se cierra el trato sin señal y el DTe todavía no existe.
-
-    El comprador es una razón social, así que tampoco tiene apellido.
-    """
-    venta = _venta(campo_id, usuario_id, nro_dte=None, apellido_comprador=None)
+async def test_venta_de_empresa_no_exige_apellido(session, campo_id, usuario_id):
+    venta = _venta(campo_id, usuario_id, es_empresa=True, apellido_comprador=None)
     session.add(venta)
     await session.commit()
 
-    assert venta.nro_dte is None
     assert venta.apellido_comprador is None
     assert venta.peso_total_kg is None
     assert venta.precio_por_kg is None
@@ -155,6 +150,24 @@ async def test_venta_por_kilo_exige_peso_y_precio(session, campo_id, usuario_id)
         ({"monto_total": Decimal("0.00")}, "monto en cero"),
         ({"monto_total": Decimal("-1.00")}, "monto negativo"),
         ({"nombre_comprador": "   "}, "comprador en blanco"),
+        ({"nro_dte": "   "}, "DTe en blanco"),
+        ({"nro_dte": None}, "DTe ausente"),
+        (
+            {"es_empresa": False, "apellido_comprador": None},
+            "persona física sin apellido",
+        ),
+        (
+            {"es_empresa": False, "apellido_comprador": "   "},
+            "persona física con apellido en blanco",
+        ),
+        (
+            {"es_empresa": True, "apellido_comprador": "   "},
+            "empresa con apellido en blanco",
+        ),
+        (
+            {"es_empresa": True, "apellido_comprador": "Gómez"},
+            "empresa con apellido informado",
+        ),
         ({"tipo_comprador": "cooperativa"}, "tipo de comprador fuera del enum"),
         ({"tipo_venta": "por_cabeza"}, "modalidad fuera del enum"),
         ({"peso_total_kg": Decimal("0.000")}, "peso en cero"),

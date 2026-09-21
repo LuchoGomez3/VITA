@@ -82,8 +82,9 @@ del animal (muerte, baja, traslado externo). Ver `docs/adr/adr-0001-ventas-separ
 | `fecha_operacion` | `date` NOT NULL | |
 | `tipo_comprador` | `varchar` NOT NULL | `frigorifico` \| `remate` \| `particular` |
 | `nombre_comprador` | `varchar` NOT NULL | razón social o nombre de pila; no vacío |
-| `apellido_comprador` | `varchar` | solo para persona física |
-| `nro_dte` | `varchar` | **nullable**: SENASA lo emite después del trato |
+| `es_empresa` | `boolean` NOT NULL | distingue persona jurídica de persona física |
+| `apellido_comprador` | `varchar` | obligatorio si no es empresa; debe ser `NULL` si es empresa |
+| `nro_dte` | `varchar` NOT NULL | se conserva como texto; no vacío |
 | `tipo_venta` | `varchar` NOT NULL | `por_kilo` \| `al_bulto` |
 | `peso_total_kg` | `numeric(10,3)` | obligatorio si `por_kilo` |
 | `precio_por_kg` | `numeric(14,2)` | obligatorio si `por_kilo` |
@@ -97,3 +98,7 @@ del animal (muerte, baja, traslado externo). Ver `docs/adr/adr-0001-ventas-separ
 
 Un mismo animal puede aparecer en ventas distintas (reingresó al stock y se revendió);
 lo que no puede es repetirse dentro de la misma venta.
+
+Las políticas RLS de ambas tablas permiten consultar y registrar información comercial
+solo a membresías activas con rol `owner` o `admin`. El rol `employee` no puede acceder a
+las ventas ni a sus montos, incluso si intenta escribir directamente mediante Supabase.
