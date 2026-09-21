@@ -25,6 +25,10 @@ dependencies = [
     "reportlab>=4.2.0",
     "itsdangerous>=2.2.0",
     "tzdata>=2026.3",
+    # Geometría del lote esquemático: área, validez del polígono y superposición.
+    # Es cálculo en CPU sobre un plano cartesiano local, NO geografía: no implica
+    # PostGIS ni ninguna columna espacial en la base.
+    "shapely>=2.0",
 ]
 
 [dependency-groups]
@@ -41,3 +45,10 @@ markers = [
 ]
 [tool.anyio]
 backend = ["asyncio"]
+
+[tool.coverage.run]
+# SQLAlchemy async ejecuta el código de la sesión dentro de greenlets
+# (``greenlet_spawn``). Sin esto, coverage no sigue esa pila y reporta como no
+# cubiertos los cuerpos de todos los services async, aunque los tests los
+# ejecuten: la medición global pasa de 78% a 92% solo con esta línea.
+concurrency = ["greenlet", "thread"]
