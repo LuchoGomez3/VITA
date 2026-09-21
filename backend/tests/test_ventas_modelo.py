@@ -64,9 +64,7 @@ def _venta(campo_id: UUID, usuario_id: UUID, **overrides) -> Venta:
         "establecimiento_id": campo_id,
         "fecha_operacion": date(2026, 8, 20),
         "tipo_comprador": TipoComprador.frigorifico,
-        "es_empresa": True,
         "nombre_comprador": "Frigorífico Rioplatense S.A.",
-        "nro_dte": "DTE-2026-0000123",
         "tipo_venta": TipoVenta.al_bulto,
         "monto_total": Decimal("4500000.00"),
         "registrada_por_id": usuario_id,
@@ -106,38 +104,21 @@ async def test_venta_al_bulto_conserva_uuid_de_cliente_y_decimales(
 
 
 @pytest.mark.anyio
-async def test_venta_a_empresa_se_identifica_sin_apellido(
+async def test_venta_al_bulto_admite_dte_y_apellido_ausentes(
     session, campo_id, usuario_id
 ):
-    """Una razón social se nombra entera en ``nombre_comprador``."""
-    venta = _venta(campo_id, usuario_id)
+    """Escenario de campo: se cierra el trato sin señal y el DTe todavía no existe.
+
+    El comprador es una razón social, así que tampoco tiene apellido.
+    """
+    venta = _venta(campo_id, usuario_id, nro_dte=None, apellido_comprador=None)
     session.add(venta)
     await session.commit()
 
-    assert venta.es_empresa is True
+    assert venta.nro_dte is None
     assert venta.apellido_comprador is None
     assert venta.peso_total_kg is None
     assert venta.precio_por_kg is None
-
-
-@pytest.mark.anyio
-async def test_venta_a_particular_exige_nombre_y_apellido(
-    session, campo_id, usuario_id
-):
-    """Sin apellido, la persona física queda mal identificada en el DTe."""
-    persona = {
-        "tipo_comprador": TipoComprador.particular,
-        "es_empresa": False,
-        "nombre_comprador": "Juan",
-    }
-    await _rechaza(
-        session, _venta(campo_id, usuario_id, **persona, apellido_comprador=None)
-    )
-
-    completa = _venta(campo_id, usuario_id, **persona, apellido_comprador="Pérez")
-    session.add(completa)
-    await session.commit()
-    assert completa.apellido_comprador == "Pérez"
 
 
 @pytest.mark.anyio
@@ -178,16 +159,6 @@ async def test_venta_por_kilo_exige_peso_y_precio(session, campo_id, usuario_id)
         ({"tipo_venta": "por_cabeza"}, "modalidad fuera del enum"),
         ({"peso_total_kg": Decimal("0.000")}, "peso en cero"),
         ({"precio_por_kg": Decimal("0.00")}, "precio por kilo en cero"),
-        # El DTe respalda la venta ante SENASA: sin él la operación no existe.
-        ({"nro_dte": None}, "venta sin DTe"),
-        ({"nro_dte": "   "}, "DTe en blanco"),
-        # El apellido queda determinado por el tipo de comprador.
-        ({"apellido_comprador": "Pérez"}, "empresa con apellido"),
-        ({"es_empresa": False}, "particular sin apellido"),
-        (
-            {"es_empresa": False, "apellido_comprador": "   "},
-            "particular con apellido en blanco",
-        ),
     ],
 )
 async def test_restricciones_rechazan_datos_invalidos(

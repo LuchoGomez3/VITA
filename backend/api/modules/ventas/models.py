@@ -52,16 +52,6 @@ class Venta(Base, SoftDeleteMixin, table=True):
             "trim(nombre_comprador) <> ''",
             name="ck_ventas_nombre_comprador_no_vacio",
         ),
-        CheckConstraint("trim(nro_dte) <> ''", name="ck_ventas_nro_dte_no_vacio"),
-        # Una empresa se identifica por su razón social y no lleva apellido; un
-        # particular es una persona física y sin apellido queda mal identificado
-        # en el DTe.
-        CheckConstraint(
-            "(es_empresa and apellido_comprador is null)"
-            " or (not es_empresa and apellido_comprador is not null"
-            " and trim(apellido_comprador) <> '')",
-            name="ck_ventas_apellido_segun_comprador",
-        ),
         # La venta al bulto se pacta por un monto cerrado; la venta por kilo solo
         # existe si se conocen los dos factores con los que se calcula el monto.
         CheckConstraint(
@@ -77,17 +67,13 @@ class Venta(Base, SoftDeleteMixin, table=True):
     establecimiento_id: UUID = Field(foreign_key="establecimientos.id", index=True)
     fecha_operacion: date = Field(sa_type=Date, nullable=False, index=True)
     tipo_comprador: TipoComprador = Field(sa_type=String, nullable=False)
-    # Decide qué identidad corresponde: una empresa se nombra por razón social,
-    # un particular por nombre y apellido. Lo impone
-    # ``ck_ventas_apellido_segun_comprador``.
-    es_empresa: bool = Field(nullable=False)
     # Razón social del frigorífico o remate, o nombre de pila de un particular.
     nombre_comprador: str = Field(nullable=False)
-    # Obligatorio para un particular y prohibido para una empresa.
+    # Solo aplica cuando el comprador es una persona física.
     apellido_comprador: str | None = None
-    # Documento de Tránsito electrónico de SENASA. Obligatorio: la venta no se
-    # considera registrada hasta que existe el documento que la respalda.
-    nro_dte: str = Field(nullable=False)
+    # Documento de Tránsito electrónico de SENASA. Nullable a propósito: se emite
+    # después de cerrar el trato y la venta puede registrarse en el campo sin él.
+    nro_dte: str | None = None
     tipo_venta: TipoVenta = Field(sa_type=String, nullable=False)
     peso_total_kg: Decimal | None = Field(default=None, sa_type=Numeric(10, 3))
     precio_por_kg: Decimal | None = Field(default=None, sa_type=Numeric(14, 2))
