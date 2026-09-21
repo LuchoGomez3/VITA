@@ -48,12 +48,30 @@ class TipoEventoSanitario(str, Enum):
 
 
 class TipoEgreso(str, Enum):
-    """Motivo de salida física de un animal del establecimiento."""
+    """Motivo de salida física NO comercial de un animal del establecimiento.
 
-    venta = "venta"
+    La salida por venta no se modela acá: es una operación comercial con
+    comprador, DTe y monto, y vive en la tabla ``ventas``.
+    """
+
     muerte = "muerte"
     baja = "baja"
     traslado_externo = "traslado_externo"
+
+
+class TipoVenta(str, Enum):
+    """Modalidad con la que se pacta el monto de una venta de hacienda."""
+
+    por_kilo = "por_kilo"
+    al_bulto = "al_bulto"
+
+
+class TipoComprador(str, Enum):
+    """Canal comercial por el que sale la hacienda."""
+
+    frigorifico = "frigorifico"
+    remate = "remate"
+    particular = "particular"
 
 
 class TipoEgresoOperativo(str, Enum):

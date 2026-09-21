@@ -10,13 +10,14 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 - **Defining constraint**: **offline-first**. Producers work in the field ("la manga") with no connectivity. Every feature must be designed first for how it works without internet; connectivity is an optional enhancement, never a requirement.
 - **Multi-tenant**: data is isolated per establishment (`establecimiento`) via Supabase Row Level Security. The current backend/mobile contract defines three establishment roles: `admin`, `owner`, and `employee`. Mobile also uses `unknown` only as a fail-closed local state for missing or unrecognized role data.
 - **Identification / reading**: an animal's identifier can be read by RFID Bluetooth, entered manually, or captured by **OCR of the visual ear tag**. OCR is a valid reading method alongside the others — design identification flows so any of these can supply the identifier.
+- **Economic module**: in scope. The platform records the money side of the operation — sales (`ventas`), operating expenses (`egresos_operativos`), cash flow and gross margin — and may value stock in pesos, pull external market quotes (Rosgan/Liniers), and simulate or project a sale. Treat it like any other module: offline-first, multi-tenant, tested.
 
 ### Hard constraints — do NOT do these
 
 These are settled team/product decisions. Do not reintroduce them even if they seem like reasonable improvements:
 
 - **Do not** propose or implement blockchain for traceability.
-- **Do not** weaken offline-first to simplify an implementation.
+- **Do not** weaken offline-first to simplify an implementation. This applies to the economic module too: an external price feed is an enhancement, never a precondition — every screen must render and every operation must be recordable with the last cached quote, or with none at all.
 
 ## Monorepo Structure
 
@@ -59,7 +60,19 @@ pytest tests/test_auth.py::test_login_and_me
 
 # Coverage (CI enforces 70% global / 85% on critical modules)
 pytest --cov
+
+# Migrations (Alembic lives in backend/alembic; CI runs `alembic heads`)
+alembic upgrade head          # apply pending migrations
+alembic downgrade -1          # roll back the last one
+alembic check                 # models vs. DB must show no pending diff
+alembic revision --autogenerate -m "descripcion"
 ```
+
+> Migrations are **incremental deltas** — there is no baseline revision, because the
+> schema predates Alembic. Write every `upgrade()` defensively (check with
+> `sa.inspect(connection)` before creating) so it can run on a database that already
+> has the objects. Each migration also ships a mirror `backend/scripts/*.sql` as a
+> manual-intervention fallback for the Supabase SQL Editor.
 
 ## Backend Architecture
 
