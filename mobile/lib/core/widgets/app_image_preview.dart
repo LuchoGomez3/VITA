@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
-/// Visor de una imagen en memoria con zoom, sin recortar ni deformar su contenido.
+/// Visor de una imagen en memoria con zoom y orientación configurable.
 class AppImagePreview extends StatefulWidget {
   /// Reserva la altura indicada y permite ajustar la orientación de la imagen.
   const AppImagePreview({
@@ -10,6 +10,10 @@ class AppImagePreview extends StatefulWidget {
     required this.height,
     this.quarterTurns = 0,
     this.maxScale = 4,
+    this.fillHeight = false,
+    this.zoomEnabled = true,
+    this.borderRadius = BorderRadius.zero,
+    this.onTap,
     this.onInteractionChanged,
     super.key,
   });
@@ -25,6 +29,18 @@ class AppImagePreview extends StatefulWidget {
 
   /// Ampliación máxima disponible para inspeccionar detalles.
   final double maxScale;
+
+  /// Ajusta la imagen al alto del visor y permite desplazar los bordes laterales.
+  final bool fillHeight;
+
+  /// Habilita el pellizco y el desplazamiento dentro del visor.
+  final bool zoomEnabled;
+
+  /// Recorta las esquinas del lienzo sin alterar los bytes de la fotografía.
+  final BorderRadiusGeometry borderRadius;
+
+  /// Acción ejecutada al tocar una vista previa sin zoom.
+  final VoidCallback? onTap;
 
   /// Permite suspender el scroll del contenedor mientras se toca el visor.
   /// Se informa desde el primer dedo, antes de que el scroll gane el gesto.
@@ -49,24 +65,44 @@ class _AppImagePreviewState extends State<AppImagePreview> {
   }
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: widget.height,
-    child: Listener(
-      behavior: HitTestBehavior.opaque,
-      onPointerDown: _startInteraction,
-      onPointerUp: _finishInteraction,
-      onPointerCancel: _finishInteraction,
-      child: ClipRect(
-        child: InteractiveViewer(
-          maxScale: widget.maxScale,
-          child: Center(
+  Widget build(BuildContext context) {
+    final image = widget.fillHeight
+        ? SizedBox.expand(
+            // El lienzo conserva el tamaño del visor para calcular el zoom y
+            // sus límites desde la misma superficie visible.
+            child: RotatedBox(
+              quarterTurns: widget.quarterTurns,
+              child: Image.memory(
+                widget.bytes,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+              ),
+            ),
+          )
+        : Center(
             child: RotatedBox(
               quarterTurns: widget.quarterTurns,
               child: Image.memory(widget.bytes, fit: BoxFit.contain, gaplessPlayback: true),
             ),
-          ),
-        ),
-      ),
-    ),
-  );
+          );
+    final content = widget.zoomEnabled
+        ? Listener(
+            behavior: HitTestBehavior.opaque,
+            onPointerDown: _startInteraction,
+            onPointerUp: _finishInteraction,
+            onPointerCancel: _finishInteraction,
+            child: InteractiveViewer(minScale: 1, maxScale: widget.maxScale, child: image),
+          )
+        : GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onTap,
+            child: image,
+          );
+    return SizedBox(
+      height: widget.height,
+      child: ClipRRect(borderRadius: widget.borderRadius, child: content),
+    );
+  }
 }

@@ -21,7 +21,6 @@ void main() {
   test('foto nítida horizontal exige revisión humana, nunca reconoce perfil', () {
     final result = analyzeCapture(encode(sharpImage()));
     expect(result.quality, CaptureQuality.reviewRequired);
-    expect(result.lateralConfirmed, isFalse);
     expect(img.decodeJpg(result.jpegBytes), isNotNull);
   });
 
@@ -42,7 +41,6 @@ void main() {
     final result = analyzeCapture(encode(sharpImage(width: 540, height: 960)));
 
     expect(result.quality, CaptureQuality.reviewRequired);
-    expect(result.lateralConfirmed, isFalse);
   });
 
   test('resolución insuficiente rechaza en ambas orientaciones', () {

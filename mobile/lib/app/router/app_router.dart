@@ -291,7 +291,12 @@ class AppRouter {
           path: AppRoutes.visionWeighing,
           pageBuilder: (context, state) => CameraRevealPage(
             state: state,
-            child: const VisionWeighingPage(createCubit: createVisionCaptureCubit),
+            child: VisionWeighingPage(
+              createCubit: createVisionCaptureCubit,
+              getAnimalOptions: createVisionAnimalOptionsUseCase(),
+              pickPhoto: createPickVisionPhotoUseCase(),
+              cameraDependencies: createVisionCameraDependencies(),
+            ),
           ),
         ),
         GoRoute(
@@ -305,6 +310,7 @@ class AppRouter {
             }
 
             final readingSource = HidRfidReadingSource();
+            final selectingForVision = state.uri.queryParameters['seleccionarParaPesajeIA'] == 'true';
             return RfidScanPage(
               establishmentId: establishmentId,
               createBloc: ({required establishmentId}) => createRfidScanBloc(
@@ -314,6 +320,7 @@ class AppRouter {
               onHidKeyEvent: readingSource.handleKeyEvent,
               onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
               onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
+              onAnimalSelected: selectingForVision ? (animalId) => context.pop(animalId) : null,
             );
           },
         ),

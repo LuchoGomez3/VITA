@@ -50,7 +50,9 @@ class AnimalEventHistory extends StatelessWidget {
         _AnimalTimelineEvent(
           date: weightRecord.date,
           item: AppTimelineItem(
-            date: DateDisplayFormatter.shortDate(weightRecord.date),
+            // Brick guarda el instante en UTC; la ficha muestra el día local
+            // del operario para que coincida con la fecha de la captura.
+            date: DateDisplayFormatter.shortDate(weightRecord.date.toLocal()),
             title: AnimalDetailStrings.weighingEventTitle,
             description: AnimalDetailStrings.weighingEventDescription(
               weight: weightRecord.weightKg.displayWeight,

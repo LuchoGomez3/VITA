@@ -1,0 +1,13 @@
+{
+  "parametros": {
+    "batch_size": 16,
+    "dropout": 0.2,
+    "learning_rate": 0.001,
+    "neurons": 2048
+  },
+  "mejor_mae_validacion_kg": 33.42045211791992,
+  "fotos_busqueda": 1671,
+  "fotos_validacion": 423,
+  "animales_busqueda": 379,
+  "animales_validacion": 91
+}

@@ -6,29 +6,59 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/navigation/camera_reveal_page.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
-import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_capture.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_device_orientation.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/get_vision_animal_options.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/pick_vision_photo.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/bloc/vision_capture_cubit.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/bloc/vision_capture_view_data.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/models/vision_camera_dependencies.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/strings/vision_weighing_strings.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/widgets/vision_weighing_content.dart';
-import 'package:image_picker/image_picker.dart';
 
 /// Entrada independiente de la feature y dueña del ciclo de vida del Cubit.
 class VisionWeighingPage extends StatelessWidget {
   /// Recibe la composición desde el router, sin importar la capa de datos.
-  const VisionWeighingPage({required this.createCubit, super.key});
+  const VisionWeighingPage({
+    required this.createCubit,
+    required this.getAnimalOptions,
+    required this.pickPhoto,
+    required this.cameraDependencies,
+    super.key,
+  });
 
   /// Construye un coordinador exclusivo para esta sesión de captura.
   final VisionCaptureCubit Function() createCubit;
 
+  /// Consulta animales y establecimientos disponibles en el dispositivo.
+  final GetVisionAnimalOptions getAnimalOptions;
+
+  /// Selecciona imágenes de prueba mediante la integración inyectada.
+  final PickVisionPhoto pickPhoto;
+
+  /// Provee casos de uso y superficie de cámara para esta sesión.
+  final VisionCameraDependencies cameraDependencies;
+
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (_) => createCubit(),
-    child: const _VisionWeighingView(),
+    child: _VisionWeighingView(
+      getAnimalOptions: getAnimalOptions,
+      pickPhoto: pickPhoto,
+      cameraDependencies: cameraDependencies,
+    ),
   );
 }
 
 class _VisionWeighingView extends StatefulWidget {
-  const _VisionWeighingView();
+  const _VisionWeighingView({
+    required this.getAnimalOptions,
+    required this.pickPhoto,
+    required this.cameraDependencies,
+  });
+
+  final GetVisionAnimalOptions getAnimalOptions;
+  final PickVisionPhoto pickPhoto;
+  final VisionCameraDependencies cameraDependencies;
 
   @override
   State<_VisionWeighingView> createState() => _VisionWeighingViewState();
@@ -42,11 +72,11 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
   bool _cameraControlsVisible = false;
   bool _orientationWarningHighlighted = false;
   Timer? _orientationWarningTimer;
-  DeviceOrientation _phoneOrientation = DeviceOrientation.portraitUp;
+  VisionDeviceOrientation _phoneOrientation = VisionDeviceOrientation.portraitUp;
   bool _closing = false;
   bool _allowPop = false;
   double _cameraRevealInitialProgress = 0;
-  DeviceOrientation _captureOrientation = DeviceOrientation.portraitUp;
+  VisionDeviceOrientation _captureOrientation = VisionDeviceOrientation.portraitUp;
   late final AnimationController _cameraLoadingController;
   late final AnimationController _cameraOpeningController;
   late final AnimationController _cameraClosingController;
@@ -81,11 +111,12 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
     _startCameraRevealWhenReady();
   }
 
-  void _updatePhoneOrientation(DeviceOrientation orientation) {
+  void _updatePhoneOrientation(VisionDeviceOrientation orientation) {
     if (_phoneOrientation == orientation) return;
     setState(() {
       _phoneOrientation = orientation;
-      if (orientation == DeviceOrientation.landscapeLeft || orientation == DeviceOrientation.landscapeRight) {
+      if (orientation == VisionDeviceOrientation.landscapeLeft ||
+          orientation == VisionDeviceOrientation.landscapeRight) {
         _orientationWarningTimer?.cancel();
         _orientationWarningHighlighted = false;
       }
@@ -102,9 +133,9 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
     });
   }
 
-  Future<void> _processCapture(Uint8List bytes) {
+  Future<void> _processCapture(Uint8List bytes, Stopwatch captureTimer) {
     _captureOrientation = _phoneOrientation;
-    return context.read<VisionCaptureCubit>().process(bytes);
+    return context.read<VisionCaptureCubit>().process(bytes, captureTimer: captureTimer);
   }
 
   /// Permite probar el flujo con una imagen de la galería. El análisis corrige
@@ -113,11 +144,10 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
     if (_selectingPhoto) return;
     setState(() => _selectingPhoto = true);
     try {
-      final photo = await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (photo == null) return;
-      final bytes = await photo.readAsBytes();
+      final bytes = await widget.pickPhoto();
+      if (bytes == null) return;
       if (!mounted || _closing) return;
-      _captureOrientation = DeviceOrientation.portraitUp;
+      _captureOrientation = VisionDeviceOrientation.portraitUp;
       await context.read<VisionCaptureCubit>().process(bytes);
     } on Exception catch (error, stack) {
       developer.log('No se pudo adjuntar la foto', name: 'vision_weighing', error: error, stackTrace: stack);
@@ -178,11 +208,12 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
         unawaited(_closeCamera());
       }
     },
-    child: BlocConsumer<VisionCaptureCubit, ResultState<VisionCapture>>(
+    child: BlocConsumer<VisionCaptureCubit, ResultState<VisionCaptureViewData>>(
       listener: _listenForCaptureError,
       builder: (context, state) => _buildAnimatedContent(
         VisionWeighingContent(
           state: state,
+          getAnimalOptions: widget.getAnimalOptions,
           calibration: _calibration,
           selectingPhoto: _selectingPhoto,
           onAttachPhoto: _attachPhoto,
@@ -197,6 +228,7 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
           onCalibrationChanged: (value) {
             setState(() => _calibration = value);
           },
+          cameraDependencies: widget.cameraDependencies,
         ),
       ),
     ),
@@ -204,9 +236,9 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
 
   Future<void> _listenForCaptureError(
     BuildContext context,
-    ResultState<VisionCapture> state,
+    ResultState<VisionCaptureViewData> state,
   ) async {
-    if (state case ResultError<VisionCapture>(:final error)) {
+    if (state case ResultError<VisionCaptureViewData>(:final error)) {
       await showDialog<void>(
         context: context,
         barrierDismissible: false,

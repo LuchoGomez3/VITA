@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_device_orientation.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/strings/vision_weighing_strings.dart';
 
 // Acciones independientes: adjuntar una imagen no modifica la calibración.
@@ -20,7 +20,7 @@ class VisionCameraHeader extends StatelessWidget {
   });
 
   /// Orientación física informada por el acelerómetro.
-  final DeviceOrientation orientation;
+  final VisionDeviceOrientation orientation;
 
   /// Refuerza el aviso después de intentar una captura en vertical.
   final bool orientationWarningHighlighted;
@@ -68,7 +68,7 @@ class VisionCameraHeader extends StatelessWidget {
                   enabled: !busy,
                   tooltip: VisionWeighingStrings.settings,
                   icon: Icon(
-                    Icons.tune_rounded,
+                    Icons.more_vert_rounded,
                     color: calibration ? Colors.lightGreenAccent : Colors.white,
                   ),
                   onSelected: (setting) {
@@ -109,14 +109,14 @@ class VisionCameraHeader extends StatelessWidget {
 class _OrientationStatus extends StatelessWidget {
   const _OrientationStatus({required this.orientation, required this.highlighted});
 
-  final DeviceOrientation orientation;
+  final VisionDeviceOrientation orientation;
   final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
     final horizontal = switch (orientation) {
-      DeviceOrientation.landscapeLeft || DeviceOrientation.landscapeRight => true,
-      DeviceOrientation.portraitUp || DeviceOrientation.portraitDown => false,
+      VisionDeviceOrientation.landscapeLeft || VisionDeviceOrientation.landscapeRight => true,
+      VisionDeviceOrientation.portraitUp || VisionDeviceOrientation.portraitDown => false,
     };
     final emphasize = highlighted && !horizontal;
     return Column(
@@ -176,12 +176,12 @@ class _OrientationStatus extends StatelessWidget {
     );
   }
 
-  double _turnsFor(DeviceOrientation orientation) {
+  double _turnsFor(VisionDeviceOrientation orientation) {
     return switch (orientation) {
-      DeviceOrientation.portraitUp => 0,
-      DeviceOrientation.landscapeRight => .25,
-      DeviceOrientation.portraitDown => .5,
-      DeviceOrientation.landscapeLeft => -.25,
+      VisionDeviceOrientation.portraitUp => 0,
+      VisionDeviceOrientation.landscapeRight => .25,
+      VisionDeviceOrientation.portraitDown => .5,
+      VisionDeviceOrientation.landscapeLeft => -.25,
     };
   }
 }

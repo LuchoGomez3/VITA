@@ -13,14 +13,3 @@ class PrepareVisionCapture {
   /// No habilita inferencia: una foto nítida todavía requiere revisar el perfil.
   Future<VisionCapture> call(Uint8List bytes) => _repository.prepare(bytes);
 }
-
-/// Interpreta kilos ingresados en campo, aceptando coma o punto decimal.
-///
-/// No acepta separadores de miles: evita que «1.200» se interprete como 1200 kg
-/// cuando el operario podría haber querido ingresar 1,2 kg.
-double? parseCalibrationWeight(String input) {
-  final normalized = input.trim().replaceAll(',', '.');
-  if (!RegExp(r'^\d+(?:\.\d{1,2})?$').hasMatch(normalized)) return null;
-  final weight = double.tryParse(normalized);
-  return weight != null && weight.isFinite && weight > 0 ? weight : null;
-}

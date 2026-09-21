@@ -14,7 +14,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$VisionCapture {
 
- Uint8List get jpegBytes; CaptureQuality get quality; double get sharpness; double? get calibrationWeightKg; bool get lateralConfirmed;
+ Uint8List get jpegBytes; CaptureQuality get quality; double get sharpness; double? get estimatedWeightKg;/// Límites del intervalo empírico; no son confianza de una foto individual.
+ double? get estimatedWeightLowerKg; double? get estimatedWeightUpperKg; double? get intervalTargetCoverage;
 /// Create a copy of VisionCapture
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +26,16 @@ $VisionCaptureCopyWith<VisionCapture> get copyWith => _$VisionCaptureCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is VisionCapture&&const DeepCollectionEquality().equals(other.jpegBytes, jpegBytes)&&(identical(other.quality, quality) || other.quality == quality)&&(identical(other.sharpness, sharpness) || other.sharpness == sharpness)&&(identical(other.calibrationWeightKg, calibrationWeightKg) || other.calibrationWeightKg == calibrationWeightKg)&&(identical(other.lateralConfirmed, lateralConfirmed) || other.lateralConfirmed == lateralConfirmed));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is VisionCapture&&const DeepCollectionEquality().equals(other.jpegBytes, jpegBytes)&&(identical(other.quality, quality) || other.quality == quality)&&(identical(other.sharpness, sharpness) || other.sharpness == sharpness)&&(identical(other.estimatedWeightKg, estimatedWeightKg) || other.estimatedWeightKg == estimatedWeightKg)&&(identical(other.estimatedWeightLowerKg, estimatedWeightLowerKg) || other.estimatedWeightLowerKg == estimatedWeightLowerKg)&&(identical(other.estimatedWeightUpperKg, estimatedWeightUpperKg) || other.estimatedWeightUpperKg == estimatedWeightUpperKg)&&(identical(other.intervalTargetCoverage, intervalTargetCoverage) || other.intervalTargetCoverage == intervalTargetCoverage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(jpegBytes),quality,sharpness,calibrationWeightKg,lateralConfirmed);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(jpegBytes),quality,sharpness,estimatedWeightKg,estimatedWeightLowerKg,estimatedWeightUpperKg,intervalTargetCoverage);
 
 @override
 String toString() {
-  return 'VisionCapture(jpegBytes: $jpegBytes, quality: $quality, sharpness: $sharpness, calibrationWeightKg: $calibrationWeightKg, lateralConfirmed: $lateralConfirmed)';
+  return 'VisionCapture(jpegBytes: $jpegBytes, quality: $quality, sharpness: $sharpness, estimatedWeightKg: $estimatedWeightKg, estimatedWeightLowerKg: $estimatedWeightLowerKg, estimatedWeightUpperKg: $estimatedWeightUpperKg, intervalTargetCoverage: $intervalTargetCoverage)';
 }
 
 
@@ -45,7 +46,7 @@ abstract mixin class $VisionCaptureCopyWith<$Res>  {
   factory $VisionCaptureCopyWith(VisionCapture value, $Res Function(VisionCapture) _then) = _$VisionCaptureCopyWithImpl;
 @useResult
 $Res call({
- Uint8List jpegBytes, CaptureQuality quality, double sharpness, double? calibrationWeightKg, bool lateralConfirmed
+ Uint8List jpegBytes, CaptureQuality quality, double sharpness, double? estimatedWeightKg, double? estimatedWeightLowerKg, double? estimatedWeightUpperKg, double? intervalTargetCoverage
 });
 
 
@@ -62,14 +63,16 @@ class _$VisionCaptureCopyWithImpl<$Res>
 
 /// Create a copy of VisionCapture
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? jpegBytes = null,Object? quality = null,Object? sharpness = null,Object? calibrationWeightKg = freezed,Object? lateralConfirmed = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? jpegBytes = null,Object? quality = null,Object? sharpness = null,Object? estimatedWeightKg = freezed,Object? estimatedWeightLowerKg = freezed,Object? estimatedWeightUpperKg = freezed,Object? intervalTargetCoverage = freezed,}) {
   return _then(_self.copyWith(
 jpegBytes: null == jpegBytes ? _self.jpegBytes : jpegBytes // ignore: cast_nullable_to_non_nullable
 as Uint8List,quality: null == quality ? _self.quality : quality // ignore: cast_nullable_to_non_nullable
 as CaptureQuality,sharpness: null == sharpness ? _self.sharpness : sharpness // ignore: cast_nullable_to_non_nullable
-as double,calibrationWeightKg: freezed == calibrationWeightKg ? _self.calibrationWeightKg : calibrationWeightKg // ignore: cast_nullable_to_non_nullable
-as double?,lateralConfirmed: null == lateralConfirmed ? _self.lateralConfirmed : lateralConfirmed // ignore: cast_nullable_to_non_nullable
-as bool,
+as double,estimatedWeightKg: freezed == estimatedWeightKg ? _self.estimatedWeightKg : estimatedWeightKg // ignore: cast_nullable_to_non_nullable
+as double?,estimatedWeightLowerKg: freezed == estimatedWeightLowerKg ? _self.estimatedWeightLowerKg : estimatedWeightLowerKg // ignore: cast_nullable_to_non_nullable
+as double?,estimatedWeightUpperKg: freezed == estimatedWeightUpperKg ? _self.estimatedWeightUpperKg : estimatedWeightUpperKg // ignore: cast_nullable_to_non_nullable
+as double?,intervalTargetCoverage: freezed == intervalTargetCoverage ? _self.intervalTargetCoverage : intervalTargetCoverage // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 
@@ -151,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Uint8List jpegBytes,  CaptureQuality quality,  double sharpness,  double? calibrationWeightKg,  bool lateralConfirmed)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Uint8List jpegBytes,  CaptureQuality quality,  double sharpness,  double? estimatedWeightKg,  double? estimatedWeightLowerKg,  double? estimatedWeightUpperKg,  double? intervalTargetCoverage)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _VisionCapture() when $default != null:
-return $default(_that.jpegBytes,_that.quality,_that.sharpness,_that.calibrationWeightKg,_that.lateralConfirmed);case _:
+return $default(_that.jpegBytes,_that.quality,_that.sharpness,_that.estimatedWeightKg,_that.estimatedWeightLowerKg,_that.estimatedWeightUpperKg,_that.intervalTargetCoverage);case _:
   return orElse();
 
 }
@@ -172,10 +175,10 @@ return $default(_that.jpegBytes,_that.quality,_that.sharpness,_that.calibrationW
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Uint8List jpegBytes,  CaptureQuality quality,  double sharpness,  double? calibrationWeightKg,  bool lateralConfirmed)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Uint8List jpegBytes,  CaptureQuality quality,  double sharpness,  double? estimatedWeightKg,  double? estimatedWeightLowerKg,  double? estimatedWeightUpperKg,  double? intervalTargetCoverage)  $default,) {final _that = this;
 switch (_that) {
 case _VisionCapture():
-return $default(_that.jpegBytes,_that.quality,_that.sharpness,_that.calibrationWeightKg,_that.lateralConfirmed);}
+return $default(_that.jpegBytes,_that.quality,_that.sharpness,_that.estimatedWeightKg,_that.estimatedWeightLowerKg,_that.estimatedWeightUpperKg,_that.intervalTargetCoverage);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -189,10 +192,10 @@ return $default(_that.jpegBytes,_that.quality,_that.sharpness,_that.calibrationW
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Uint8List jpegBytes,  CaptureQuality quality,  double sharpness,  double? calibrationWeightKg,  bool lateralConfirmed)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Uint8List jpegBytes,  CaptureQuality quality,  double sharpness,  double? estimatedWeightKg,  double? estimatedWeightLowerKg,  double? estimatedWeightUpperKg,  double? intervalTargetCoverage)?  $default,) {final _that = this;
 switch (_that) {
 case _VisionCapture() when $default != null:
-return $default(_that.jpegBytes,_that.quality,_that.sharpness,_that.calibrationWeightKg,_that.lateralConfirmed);case _:
+return $default(_that.jpegBytes,_that.quality,_that.sharpness,_that.estimatedWeightKg,_that.estimatedWeightLowerKg,_that.estimatedWeightUpperKg,_that.intervalTargetCoverage);case _:
   return null;
 
 }
@@ -204,14 +207,17 @@ return $default(_that.jpegBytes,_that.quality,_that.sharpness,_that.calibrationW
 
 
 class _VisionCapture implements VisionCapture {
-  const _VisionCapture({required this.jpegBytes, required this.quality, required this.sharpness, this.calibrationWeightKg, this.lateralConfirmed = false});
+  const _VisionCapture({required this.jpegBytes, required this.quality, required this.sharpness, this.estimatedWeightKg, this.estimatedWeightLowerKg, this.estimatedWeightUpperKg, this.intervalTargetCoverage});
   
 
 @override final  Uint8List jpegBytes;
 @override final  CaptureQuality quality;
 @override final  double sharpness;
-@override final  double? calibrationWeightKg;
-@override@JsonKey() final  bool lateralConfirmed;
+@override final  double? estimatedWeightKg;
+/// Límites del intervalo empírico; no son confianza de una foto individual.
+@override final  double? estimatedWeightLowerKg;
+@override final  double? estimatedWeightUpperKg;
+@override final  double? intervalTargetCoverage;
 
 /// Create a copy of VisionCapture
 /// with the given fields replaced by the non-null parameter values.
@@ -223,16 +229,16 @@ _$VisionCaptureCopyWith<_VisionCapture> get copyWith => __$VisionCaptureCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _VisionCapture&&const DeepCollectionEquality().equals(other.jpegBytes, jpegBytes)&&(identical(other.quality, quality) || other.quality == quality)&&(identical(other.sharpness, sharpness) || other.sharpness == sharpness)&&(identical(other.calibrationWeightKg, calibrationWeightKg) || other.calibrationWeightKg == calibrationWeightKg)&&(identical(other.lateralConfirmed, lateralConfirmed) || other.lateralConfirmed == lateralConfirmed));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _VisionCapture&&const DeepCollectionEquality().equals(other.jpegBytes, jpegBytes)&&(identical(other.quality, quality) || other.quality == quality)&&(identical(other.sharpness, sharpness) || other.sharpness == sharpness)&&(identical(other.estimatedWeightKg, estimatedWeightKg) || other.estimatedWeightKg == estimatedWeightKg)&&(identical(other.estimatedWeightLowerKg, estimatedWeightLowerKg) || other.estimatedWeightLowerKg == estimatedWeightLowerKg)&&(identical(other.estimatedWeightUpperKg, estimatedWeightUpperKg) || other.estimatedWeightUpperKg == estimatedWeightUpperKg)&&(identical(other.intervalTargetCoverage, intervalTargetCoverage) || other.intervalTargetCoverage == intervalTargetCoverage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(jpegBytes),quality,sharpness,calibrationWeightKg,lateralConfirmed);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(jpegBytes),quality,sharpness,estimatedWeightKg,estimatedWeightLowerKg,estimatedWeightUpperKg,intervalTargetCoverage);
 
 @override
 String toString() {
-  return 'VisionCapture(jpegBytes: $jpegBytes, quality: $quality, sharpness: $sharpness, calibrationWeightKg: $calibrationWeightKg, lateralConfirmed: $lateralConfirmed)';
+  return 'VisionCapture(jpegBytes: $jpegBytes, quality: $quality, sharpness: $sharpness, estimatedWeightKg: $estimatedWeightKg, estimatedWeightLowerKg: $estimatedWeightLowerKg, estimatedWeightUpperKg: $estimatedWeightUpperKg, intervalTargetCoverage: $intervalTargetCoverage)';
 }
 
 
@@ -243,7 +249,7 @@ abstract mixin class _$VisionCaptureCopyWith<$Res> implements $VisionCaptureCopy
   factory _$VisionCaptureCopyWith(_VisionCapture value, $Res Function(_VisionCapture) _then) = __$VisionCaptureCopyWithImpl;
 @override @useResult
 $Res call({
- Uint8List jpegBytes, CaptureQuality quality, double sharpness, double? calibrationWeightKg, bool lateralConfirmed
+ Uint8List jpegBytes, CaptureQuality quality, double sharpness, double? estimatedWeightKg, double? estimatedWeightLowerKg, double? estimatedWeightUpperKg, double? intervalTargetCoverage
 });
 
 
@@ -260,14 +266,16 @@ class __$VisionCaptureCopyWithImpl<$Res>
 
 /// Create a copy of VisionCapture
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? jpegBytes = null,Object? quality = null,Object? sharpness = null,Object? calibrationWeightKg = freezed,Object? lateralConfirmed = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? jpegBytes = null,Object? quality = null,Object? sharpness = null,Object? estimatedWeightKg = freezed,Object? estimatedWeightLowerKg = freezed,Object? estimatedWeightUpperKg = freezed,Object? intervalTargetCoverage = freezed,}) {
   return _then(_VisionCapture(
 jpegBytes: null == jpegBytes ? _self.jpegBytes : jpegBytes // ignore: cast_nullable_to_non_nullable
 as Uint8List,quality: null == quality ? _self.quality : quality // ignore: cast_nullable_to_non_nullable
 as CaptureQuality,sharpness: null == sharpness ? _self.sharpness : sharpness // ignore: cast_nullable_to_non_nullable
-as double,calibrationWeightKg: freezed == calibrationWeightKg ? _self.calibrationWeightKg : calibrationWeightKg // ignore: cast_nullable_to_non_nullable
-as double?,lateralConfirmed: null == lateralConfirmed ? _self.lateralConfirmed : lateralConfirmed // ignore: cast_nullable_to_non_nullable
-as bool,
+as double,estimatedWeightKg: freezed == estimatedWeightKg ? _self.estimatedWeightKg : estimatedWeightKg // ignore: cast_nullable_to_non_nullable
+as double?,estimatedWeightLowerKg: freezed == estimatedWeightLowerKg ? _self.estimatedWeightLowerKg : estimatedWeightLowerKg // ignore: cast_nullable_to_non_nullable
+as double?,estimatedWeightUpperKg: freezed == estimatedWeightUpperKg ? _self.estimatedWeightUpperKg : estimatedWeightUpperKg // ignore: cast_nullable_to_non_nullable
+as double?,intervalTargetCoverage: freezed == intervalTargetCoverage ? _self.intervalTargetCoverage : intervalTargetCoverage // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 

@@ -132,6 +132,11 @@ class AppRoutes {
     return '$rfidScan?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
   }
 
+  /// Abre el lector en modo selección y devuelve el ID del animal encontrado.
+  static String rfidScanForVisionWeighing(String establishmentId) {
+    return '${rfidScanForEstablishment(establishmentId)}&seleccionarParaPesajeIA=true';
+  }
+
   /// Construye la ruta de alta con una caravana RFID ya leida.
   static String animalRegisterWithRfid(String rfidTagNumber) {
     return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}';

@@ -22,7 +22,7 @@ enum CaptureQuality {
   badExposure,
 }
 
-/// Foto orientada para revisión, sin asociarla todavía a un pesaje persistido.
+/// Foto orientada para revisión junto con la predicción local, si existe.
 @freezed
 sealed class VisionCapture with _$VisionCapture {
   /// Conserva JPEG normalizado y diagnóstico de calidad.
@@ -30,7 +30,11 @@ sealed class VisionCapture with _$VisionCapture {
     required Uint8List jpegBytes,
     required CaptureQuality quality,
     required double sharpness,
-    double? calibrationWeightKg,
-    @Default(false) bool lateralConfirmed,
+    double? estimatedWeightKg,
+
+    /// Límites del intervalo empírico; no son confianza de una foto individual.
+    double? estimatedWeightLowerKg,
+    double? estimatedWeightUpperKg,
+    double? intervalTargetCoverage,
   }) = _VisionCapture;
 }

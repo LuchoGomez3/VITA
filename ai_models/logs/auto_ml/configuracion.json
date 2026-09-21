@@ -1,0 +1,6 @@
+{
+  "semilla": 42,
+  "fraccion_validacion": 0.2,
+  "max_epocas": 8,
+  "huella_dataset": "419f79978903a4603d88b60f4b0889fdf0ebdb1f840a171b8d615ac57f1354a5"
+}

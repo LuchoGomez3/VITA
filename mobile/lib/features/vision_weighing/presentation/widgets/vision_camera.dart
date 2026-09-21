@@ -1,18 +1,17 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'dart:math' as math;
+import 'dart:typed_data';
 
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend_mayoral/core/theme/app_navigation_dimensions.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_camera_info.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_device_orientation.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/models/vision_camera_dependencies.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/strings/vision_weighing_strings.dart';
-import 'package:sensors_plus/sensors_plus.dart';
 
-/// Adaptador visual de cámara. Su estado local sólo posee recursos del plugin;
-/// el análisis de la fotografía se delega al Cubit mediante [onCaptured].
+/// Adaptador visual de cámara que consume casos de uso y delega el análisis.
 class VisionCamera extends StatefulWidget {
   /// Crea una cámara sin audio y entrega los bytes de cada toma.
   const VisionCamera({
@@ -21,17 +20,18 @@ class VisionCamera extends StatefulWidget {
     required this.onDeviceOrientationChanged,
     required this.onPortraitCaptureAttempt,
     required this.showControls,
+    required this.dependencies,
     super.key,
   });
 
-  /// Recibe la foto original para el preprocesamiento local.
-  final Future<void> Function(Uint8List) onCaptured;
+  /// Recibe la foto y el cronómetro iniciado al accionar el disparador.
+  final Future<void> Function(Uint8List, Stopwatch) onCaptured;
 
   /// Informa que la inicialización terminó, ya sea con vista previa o error.
   final VoidCallback onInitializationCompleted;
 
   /// Informa la orientación física sin permitir que rote toda la interfaz.
-  final ValueChanged<DeviceOrientation> onDeviceOrientationChanged;
+  final ValueChanged<VisionDeviceOrientation> onDeviceOrientationChanged;
 
   /// Solicita destacar la guía cuando se intenta capturar en vertical.
   final VoidCallback onPortraitCaptureAttempt;
@@ -39,28 +39,30 @@ class VisionCamera extends StatefulWidget {
   /// Muestra el disparador cuando finaliza la expansión circular del visor.
   final bool showControls;
 
+  /// Casos de uso y constructor de vista previa inyectados por composición.
+  final VisionCameraDependencies dependencies;
+
   @override
   State<VisionCamera> createState() => _VisionCameraState();
 }
 
 class _VisionCameraState extends State<VisionCamera> with WidgetsBindingObserver {
-  CameraController? _controller;
+  VisionCameraInfo? _cameraInfo;
   String? _error;
   bool _capturing = false;
   int _generation = 0;
-  DeviceOrientation _captureButtonOrientation = DeviceOrientation.portraitUp;
-  DeviceOrientation? _lastReportedOrientation;
-  StreamSubscription<AccelerometerEvent>? _orientationSubscription;
-  // Serializa aperturas y cierres: el plugin no admite ambas operaciones a la vez.
-  Future<void> _cameraOperation = Future<void>.value();
+  VisionDeviceOrientation _captureButtonOrientation = VisionDeviceOrientation.portraitUp;
+  VisionDeviceOrientation? _lastReportedOrientation;
+  StreamSubscription<VisionDeviceOrientation>? _orientationSubscription;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _orientationSubscription = accelerometerEventStream(
-      samplingPeriod: SensorInterval.uiInterval,
-    ).listen(_updateCaptureButtonOrientation, onError: _logOrientationError);
+    _orientationSubscription = widget.dependencies.watchOrientation().listen(
+      _updateCaptureButtonOrientation,
+      onError: _logOrientationError,
+    );
     _scheduleCamera(active: true);
   }
 
@@ -74,27 +76,7 @@ class _VisionCameraState extends State<VisionCamera> with WidgetsBindingObserver
     _scheduleCamera(active: state == AppLifecycleState.resumed);
   }
 
-  void _updateCaptureButtonOrientation(AccelerometerEvent event) {
-    final horizontalGravity = event.x.abs();
-    final verticalGravity = event.y.abs();
-    if (math.max(horizontalGravity, verticalGravity) < 4) return;
-
-    final wasHorizontal = switch (_captureButtonOrientation) {
-      DeviceOrientation.landscapeLeft || DeviceOrientation.landscapeRight => true,
-      DeviceOrientation.portraitUp || DeviceOrientation.portraitDown => false,
-    };
-    // La histéresis evita que el indicador alterne repetidamente cuando el
-    // teléfono queda cerca de los 45 grados durante el movimiento.
-    final horizontal = wasHorizontal
-        ? horizontalGravity > verticalGravity * .8
-        : horizontalGravity > verticalGravity * 1.2;
-    final orientation = horizontal
-        ? event.x > 0
-              ? DeviceOrientation.landscapeRight
-              : DeviceOrientation.landscapeLeft
-        : event.y > 0
-        ? DeviceOrientation.portraitUp
-        : DeviceOrientation.portraitDown;
+  void _updateCaptureButtonOrientation(VisionDeviceOrientation orientation) {
     if (!mounted) return;
     if (orientation != _captureButtonOrientation) {
       setState(() => _captureButtonOrientation = orientation);
@@ -116,36 +98,28 @@ class _VisionCameraState extends State<VisionCamera> with WidgetsBindingObserver
 
   void _scheduleCamera({required bool active}) {
     final generation = ++_generation;
-    _cameraOperation = _cameraOperation.then((_) async {
-      final previous = _controller;
-      _controller = null;
-      if (mounted) setState(() {});
-      await previous?.dispose();
-      if (!mounted || generation != _generation || !active) return;
-      await _openCamera(generation);
-    });
+    _cameraInfo = null;
+    if (mounted) setState(() {});
+    if (active) {
+      unawaited(_openCamera(generation));
+    } else {
+      unawaited(widget.dependencies.dispose());
+    }
   }
 
   Future<void> _openCamera(int generation) async {
-    CameraController? controller;
     try {
-      final cameras = await availableCameras();
-      if (!mounted || generation != _generation) return;
-      final rear = cameras.where((camera) => camera.lensDirection == CameraLensDirection.back).firstOrNull;
-      if (rear == null) throw CameraException('NoRearCamera', 'Rear camera unavailable');
-      controller = CameraController(rear, ResolutionPreset.high, enableAudio: false);
-      await controller.initialize();
+      final info = await widget.dependencies.initialize();
       if (!mounted || generation != _generation) {
-        await controller.dispose();
+        await widget.dependencies.dispose();
         return;
       }
       setState(() {
-        _controller = controller;
+        _cameraInfo = info;
         _error = null;
       });
       widget.onInitializationCompleted();
     } on Exception catch (error, stack) {
-      await controller?.dispose();
       developer.log('No se pudo inicializar cámara', name: 'vision_weighing', error: error, stackTrace: stack);
       if (mounted && generation == _generation) {
         setState(() => _error = VisionWeighingStrings.cameraError);
@@ -155,21 +129,20 @@ class _VisionCameraState extends State<VisionCamera> with WidgetsBindingObserver
   }
 
   Future<void> _capture() async {
-    final controller = _controller;
-    if (controller == null || !controller.value.isInitialized || _capturing) return;
+    if (_cameraInfo == null || _capturing) return;
     // Se verifica el sensor antes de invocar al plugin: mantener el botón
     // activo permite explicar por qué la toma todavía no está habilitada.
-    if (_captureButtonOrientation == DeviceOrientation.portraitUp ||
-        _captureButtonOrientation == DeviceOrientation.portraitDown) {
+    if (_captureButtonOrientation == VisionDeviceOrientation.portraitUp ||
+        _captureButtonOrientation == VisionDeviceOrientation.portraitDown) {
       widget.onPortraitCaptureAttempt();
       return;
     }
     final generation = _generation;
+    final captureTimer = Stopwatch()..start();
     setState(() => _capturing = true);
     try {
-      final photo = await controller.takePicture();
-      final bytes = await photo.readAsBytes();
-      if (mounted && generation == _generation) await widget.onCaptured(bytes);
+      final bytes = await widget.dependencies.capture();
+      if (mounted && generation == _generation) await widget.onCaptured(bytes, captureTimer);
     } on Exception catch (error, stack) {
       developer.log('Falló la captura', name: 'vision_weighing', error: error, stackTrace: stack);
       if (mounted) setState(() => _error = VisionWeighingStrings.processingError);
@@ -183,13 +156,13 @@ class _VisionCameraState extends State<VisionCamera> with WidgetsBindingObserver
     WidgetsBinding.instance.removeObserver(this);
     _generation++;
     unawaited(_orientationSubscription?.cancel());
-    unawaited(_cameraOperation.then((_) => _controller?.dispose()));
+    unawaited(widget.dependencies.dispose());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final controller = _controller;
+    final cameraInfo = _cameraInfo;
     if (_error case final String error) {
       return Center(
         child: Column(
@@ -211,9 +184,9 @@ class _VisionCameraState extends State<VisionCamera> with WidgetsBindingObserver
         ),
       );
     }
-    if (controller == null) return const Center(child: CircularProgressIndicator());
+    if (cameraInfo == null) return const Center(child: CircularProgressIndicator());
     final landscape = MediaQuery.orientationOf(context) == Orientation.landscape;
-    final ratio = landscape ? controller.value.aspectRatio : 1 / controller.value.aspectRatio;
+    final ratio = landscape ? cameraInfo.aspectRatio : 1 / cameraInfo.aspectRatio;
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -222,7 +195,7 @@ class _VisionCameraState extends State<VisionCamera> with WidgetsBindingObserver
         ClipRect(
           child: FittedBox(
             fit: BoxFit.cover,
-            child: SizedBox(width: ratio * 1000, height: 1000, child: CameraPreview(controller)),
+            child: SizedBox(width: ratio * 1000, height: 1000, child: widget.dependencies.previewBuilder(context)),
           ),
         ),
         const IgnorePointer(child: CustomPaint(painter: _CameraGridPainter())),
@@ -272,14 +245,14 @@ class _VisionCameraState extends State<VisionCamera> with WidgetsBindingObserver
     );
   }
 
-  double _iconTurns(DeviceOrientation orientation) {
+  double _iconTurns(VisionDeviceOrientation orientation) {
     // Se rota sólo el glifo dentro del botón. La vista, los controles y la
     // grilla permanecen quietos aunque cambie la orientación del sensor.
     return switch (orientation) {
-      DeviceOrientation.portraitUp => 0,
-      DeviceOrientation.landscapeRight => .25,
-      DeviceOrientation.portraitDown => .5,
-      DeviceOrientation.landscapeLeft => -.25,
+      VisionDeviceOrientation.portraitUp => 0,
+      VisionDeviceOrientation.landscapeRight => .25,
+      VisionDeviceOrientation.portraitDown => .5,
+      VisionDeviceOrientation.landscapeLeft => -.25,
     };
   }
 }

@@ -32,6 +32,12 @@ abstract final class VisionWeighingStrings {
   /// Error al abrir la galería o leer el archivo elegido.
   static const attachPhotoError = 'No pudimos adjuntar la foto. Intentá elegirla nuevamente.';
 
+  /// Describe la acción disponible al tocar la foto revisada.
+  static const expandPhoto = 'Ampliar foto';
+
+  /// Cierra el visor de fotografía a pantalla completa.
+  static const closeExpandedPhoto = 'Cerrar foto ampliada';
+
   /// Ayuda para el ensayo de campo.
   static const calibrationHelp = 'Asociá la foto con el peso real de balanza.';
 
@@ -41,8 +47,76 @@ abstract final class VisionWeighingStrings {
   /// Validación del dato manual.
   static const invalidWeight = 'Ingresá un peso mayor a cero, con hasta dos decimales.';
 
-  /// Acción de confirmar el borrador.
-  static const confirm = 'Usar esta foto';
+  /// Acción que completa el control visual de la foto.
+  static const confirm = 'Confirmar captura';
+
+  /// Acción que registra el peso con el animal elegido.
+  static const saveEstimate = 'Guardar pesaje IA';
+
+  /// Rótulo del resultado calculado mediante visión.
+  static const estimatedWeight = 'Peso estimado';
+
+  /// Aviso visible sólo cuando captura e inferencia exceden el objetivo.
+  static const slowInference = 'La estimación tardó más de 3 segundos.';
+
+  /// Identificador RFID necesario para vincular el peso al animal local.
+  static const rfidTag = 'Caravana RFID';
+
+  /// Selección de identidad local para la captura actual.
+  static const animalSectionTitle = 'Vincular con un animal';
+
+  /// Explica el alcance local de la asociación.
+  static const animalSectionHelp =
+      'Elegí un animal local o identificá su caravana con el bastón. El pesaje se guardará al confirmar.';
+
+  /// Los animales se ordenan por actualización; no existe historial de lecturas.
+  static const recentAnimals = 'Animales locales recientes';
+
+  /// Estado sin animales locales para el filtro actual.
+  static const noRecentAnimals = 'No hay animales locales para mostrar en este establecimiento.';
+
+  /// Nombre del campo que limita la búsqueda del bastón.
+  static const establishment = 'Establecimiento';
+
+  /// Ayuda cuando hay varios establecimientos disponibles.
+  static const selectEstablishment = 'Seleccioná un establecimiento';
+
+  /// Estado sin catálogo de establecimientos.
+  static const noEstablishments = 'No hay establecimientos disponibles en este dispositivo.';
+
+  /// Abre la identificación RFID existente.
+  static const scanAnimal = 'Identificar con bastón RFID';
+
+  /// Identificador visual del animal local.
+  static const visualTag = 'Caravana visual';
+
+  /// Evita un pesaje sin animal cuando el guardado se habilite.
+  static const selectAnimalBeforeSave = 'Seleccioná un animal antes de guardar el pesaje.';
+
+  /// El animal dejó de estar accesible durante la lectura.
+  static const animalUnavailable = 'El animal leído ya no está disponible en los datos locales.';
+
+  /// Falló la consulta SQLite o del catálogo offline.
+  static const animalLoadError = 'No pudimos cargar los animales locales.';
+
+  /// Reintenta cargar las opciones locales.
+  static const retryAnimalLoad = 'Reintentar carga';
+
+  /// Confirma persistencia SQLite exitosa.
+  static const saved = 'Pesaje IA guardado en este dispositivo.';
+
+  /// Informa fallos de búsqueda o escritura del pesaje local.
+  static const saveError = 'No se pudo guardar el pesaje. Intentá nuevamente.';
+
+  /// Estado de una captura revisada cuando el guardado no está configurado.
+  static const captureReviewed = 'Captura revisada en esta sesión.';
+
+  /// Respaldo para una captura sin metadatos de calibración.
+  static const intervalUnavailable = 'Intervalo de peso no disponible para esta captura.';
+
+  /// Expresa los límites estimados que acompañan al peso calculado.
+  static String weightRange(double lowerKg, double upperKg) =>
+      'Rango: ${lowerKg.toStringAsFixed(1)}–${upperKg.toStringAsFixed(1)} kg';
 
   /// Regreso a cámara.
   static const retry = 'Repetir foto';
@@ -82,7 +156,7 @@ abstract final class VisionWeighingStrings {
   static const processingError = 'No pudimos procesar la foto. Reintentá la captura.';
 
   /// Progreso del análisis offline.
-  static const processing = 'Revisando nitidez y encuadre…';
+  static const processing = 'Analizando la foto…';
 
   /// Confirmación humana de nitidez.
   static const sharpnessConfirmation = 'La fotografía está nítida.';
@@ -101,10 +175,6 @@ abstract final class VisionWeighingStrings {
 
   /// Estado que evita prometer una persistencia todavía no implementada.
   static const draftReady = 'Captura revisada en esta sesión. Todavía no se guarda ni se estima el peso.';
-
-  /// Límite explícito de FRONT-01.
-  static const scope =
-      'Preparación de captura: la estimación de peso y el guardado se habilitarán en una próxima etapa.';
 
   /// Falta al menos una confirmación manual.
   static const confirmManualReview = 'Completá los tres controles o repetí la foto.';

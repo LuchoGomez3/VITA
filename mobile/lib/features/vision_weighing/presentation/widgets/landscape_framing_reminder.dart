@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_device_orientation.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/strings/vision_weighing_strings.dart';
 
 /// Recordatorio alineado con el borde inferior físico del teléfono horizontal.
@@ -9,11 +9,11 @@ class LandscapeFramingReminder extends StatelessWidget {
   const LandscapeFramingReminder({required this.orientation, super.key});
 
   /// Orientación física usada para escoger el borde inferior.
-  final DeviceOrientation orientation;
+  final VisionDeviceOrientation orientation;
 
   @override
   Widget build(BuildContext context) {
-    final rightSide = orientation == DeviceOrientation.landscapeRight;
+    final rightSide = orientation == VisionDeviceOrientation.landscapeRight;
     return Positioned(
       top: 0,
       bottom: 0,
