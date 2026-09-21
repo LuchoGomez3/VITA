@@ -76,6 +76,7 @@ class Venta(Base, SoftDeleteMixin, table=True):
 
     establecimiento_id: UUID = Field(foreign_key="establecimientos.id", index=True)
     fecha_operacion: date = Field(sa_type=Date, nullable=False, index=True)
+    # Clasifica el canal o clase comercial; no determina si el comprador es empresa.
     tipo_comprador: TipoComprador = Field(sa_type=String, nullable=False)
     # Razón social de una empresa o nombre de pila de una persona física.
     nombre_comprador: str = Field(nullable=False)

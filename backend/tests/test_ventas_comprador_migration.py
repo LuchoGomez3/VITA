@@ -2,6 +2,7 @@
 
 import importlib.util
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -41,6 +42,21 @@ def test_migracion_y_script_comparten_restricciones(modulo_migracion):
         assert restriccion in contenido_script
 
 
+def test_migracion_rechaza_comprador_legacy_sin_clasificacion(
+    modulo_migracion, monkeypatch
+):
+    connection = MagicMock()
+    connection.execute.return_value.scalar_one.return_value = 1
+    inspector = MagicMock()
+    inspector.get_columns.return_value = [{"name": "es_empresa"}]
+    monkeypatch.setattr(modulo_migracion.sa, "inspect", lambda _: inspector)
+
+    with pytest.raises(RuntimeError, match="sin es_empresa explícito"):
+        modulo_migracion._agregar_clasificacion_si_falta(connection)
+
+    assert connection.execute.call_count == 1
+
+
 def test_script_exige_dte_y_clasificacion_del_comprador():
     contenido = _SCRIPT_SQL.read_text(encoding="utf-8").lower()
 
@@ -50,3 +66,5 @@ def test_script_exige_dte_y_clasificacion_del_comprador():
     assert "trim(nro_dte) <> ''" in contenido
     assert "es_empresa" in contenido
     assert "trim(apellido_comprador) <> ''" in contenido
+    assert "where es_empresa is null" in contenido
+    assert "set es_empresa = (apellido_comprador is null)" not in contenido

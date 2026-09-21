@@ -102,6 +102,7 @@ lo que no puede es repetirse dentro de la misma venta.
 Las políticas RLS de ambas tablas permiten consultar y registrar información comercial
 solo a membresías activas con rol `owner` o `admin`. El rol `employee` no puede acceder a
 las ventas ni a sus montos, incluso si intenta escribir directamente mediante Supabase.
+
 ## Lotes y movimientos entre lotes
 
 `lotes` es la división física del establecimiento donde pastorea un rodeo. Decisiones de

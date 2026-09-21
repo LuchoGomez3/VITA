@@ -117,6 +117,36 @@ async def test_venta_de_empresa_no_exige_apellido(session, campo_id, usuario_id)
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("tipo_comprador", "es_empresa", "apellido_comprador"),
+    [
+        (TipoComprador.particular, True, None),
+        (TipoComprador.frigorifico, False, "Gómez"),
+    ],
+)
+async def test_tipo_comprador_es_independiente_de_si_es_empresa(
+    session,
+    campo_id,
+    usuario_id,
+    tipo_comprador,
+    es_empresa,
+    apellido_comprador,
+):
+    venta = _venta(
+        campo_id,
+        usuario_id,
+        tipo_comprador=tipo_comprador,
+        es_empresa=es_empresa,
+        apellido_comprador=apellido_comprador,
+    )
+    session.add(venta)
+    await session.commit()
+
+    assert venta.tipo_comprador == tipo_comprador
+    assert venta.es_empresa is es_empresa
+
+
+@pytest.mark.anyio
 async def test_venta_por_kilo_exige_peso_y_precio(session, campo_id, usuario_id):
     """El monto por kilo solo es reconstruible si están sus dos factores."""
     await _rechaza(

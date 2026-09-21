@@ -1,7 +1,7 @@
 """Restringe el acceso directo a ventas a roles comerciales.
 
 Revision ID: 20260910_01
-Revises: 20260902_02
+Revises: 20260905_03
 Create Date: 2026-09-10
 """
 
@@ -12,12 +12,15 @@ import sqlalchemy as sa
 from sqlalchemy.engine import Connection
 
 revision: str = "20260910_01"
-down_revision: str | None = "20260902_02"
+down_revision: str | None = "20260905_03"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 _TABLAS_REQUERIDAS = ("ventas", "ventas_detalles", "usuarios_establecimientos")
-_ROLES_COMERCIALES = "ue.rol in ('admin', 'owner')"
+# La migración conserva su allowlist inmutable. Las pruebas la contrastan con la
+# clasificación exhaustiva de RolUsuario para que un rol nuevo exija una decisión.
+_ROLES_COMERCIALES = ("admin", "owner")
+_ROLES_COMERCIALES_SQL = ", ".join(f"'{rol}'" for rol in _ROLES_COMERCIALES)
 
 _ES_MIEMBRO = """
     exists (
@@ -81,7 +84,9 @@ def _soporta_rls(connection: Connection) -> bool:
 
 
 def _sentencias_politicas(restringir_roles: bool) -> list[str]:
-    restriccion_rol = f"and {_ROLES_COMERCIALES}" if restringir_roles else ""
+    restriccion_rol = (
+        f"and ue.rol in ({_ROLES_COMERCIALES_SQL})" if restringir_roles else ""
+    )
     ventas_es_miembro = _ES_MIEMBRO.format(
         tabla="ventas", restriccion_rol=restriccion_rol
     )

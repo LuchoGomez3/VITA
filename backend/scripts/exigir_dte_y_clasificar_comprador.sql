@@ -5,10 +5,24 @@ begin;
 alter table public.ventas
     add column if not exists es_empresa boolean;
 
--- En el esquema anterior, apellido NULL identificaba una razón social.
-update public.ventas
-set es_empresa = (apellido_comprador is null)
-where es_empresa is null;
+-- El esquema anterior no permite inferir la naturaleza jurídica a partir del
+-- tipo de comprador ni del apellido. Toda fila legacy debe clasificarse de
+-- manera explícita antes de continuar.
+do $$
+declare
+    cantidad bigint;
+begin
+    select count(*) into cantidad
+    from public.ventas
+    where es_empresa is null;
+
+    if cantidad > 0 then
+        raise exception
+            'No se puede inferir la clasificación del comprador: hay % venta(s) sin es_empresa explícito.',
+            cantidad;
+    end if;
+end
+$$;
 
 do $$
 declare

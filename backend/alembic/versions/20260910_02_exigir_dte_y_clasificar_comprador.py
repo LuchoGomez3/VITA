@@ -33,14 +33,17 @@ def _agregar_clasificacion_si_falta(connection: Connection) -> None:
     if "es_empresa" not in columnas:
         op.add_column(_TABLA, sa.Column("es_empresa", sa.Boolean(), nullable=True))
 
-    # El esquema anterior documentaba apellido NULL exclusivamente para personas
-    # jurídicas. Esa semántica permite migrar las filas existentes sin inventar datos.
-    connection.execute(
-        sa.text(
-            "update ventas set es_empresa = (apellido_comprador is null) "
-            "where es_empresa is null"
+    # Tipo de comprador, apellido y naturaleza jurídica eran datos independientes
+    # en el esquema anterior. No hay una regla confiable para inferir es_empresa:
+    # cualquier backfill automático podría alterar el significado de una venta.
+    compradores_sin_clasificar = connection.execute(
+        sa.text("select count(*) from ventas where es_empresa is null")
+    ).scalar_one()
+    if compradores_sin_clasificar:
+        raise RuntimeError(
+            "No se puede inferir la clasificación del comprador: "
+            f"hay {compradores_sin_clasificar} venta(s) sin es_empresa explícito."
         )
-    )
 
 
 def _exigir_datos_compatibles(connection: Connection) -> None:
