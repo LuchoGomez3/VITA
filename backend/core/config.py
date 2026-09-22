@@ -60,6 +60,28 @@ class Settings:
         # validar los tokens emitidos por Supabase en el adaptador correspondiente.
         self.SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
 
+        # Storage: bucket PRIVADO donde viven las fotos del dataset de
+        # calibración del modelo de visión. El backend entra con la service-role
+        # key; nunca se emiten URLs públicas ni firmadas.
+        self.SUPABASE_STORAGE_BUCKET_CALIBRACIONES: str = os.getenv(
+            "SUPABASE_STORAGE_BUCKET_CALIBRACIONES", "calibraciones-ml"
+        )
+
+        # Límites de la imagen de calibración. El proyecto corre en el plan free
+        # de Supabase (1 GB de Storage): sin recompresión, una foto de celular
+        # sin tocar (~4,5 MB) llena el bucket con ~230 muestras. A 1280 px de
+        # lado mayor y calidad 85 baja a ~350 KB, que sigue siendo holgado para
+        # un modelo que entrena a 224-380 px.
+        self.CALIBRACION_IMAGEN_MAX_BYTES: int = int(
+            os.getenv("CALIBRACION_IMAGEN_MAX_BYTES", str(8 * 1024 * 1024))
+        )
+        self.CALIBRACION_IMAGEN_LADO_MAX: int = int(
+            os.getenv("CALIBRACION_IMAGEN_LADO_MAX", "1280")
+        )
+        self.CALIBRACION_IMAGEN_CALIDAD: int = int(
+            os.getenv("CALIBRACION_IMAGEN_CALIDAD", "85")
+        )
+
         # Auth provider: "supabase" en entornos reales; "local" para
         # desarrollo/test (emite y valida JWT con JWT_SECRET, sin red).
         self.AUTH_PROVIDER: str = os.getenv(
