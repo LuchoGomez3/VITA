@@ -86,6 +86,13 @@ async def camel_case_to_snake_case_middleware(
     request: Request, call_next: Callable
 ) -> Any:
     """Middleware to convert camelCase request bodies to snake_case."""
+    # Solo cuerpos JSON. Sin este corte, ``await request.body()`` se traga el
+    # archivo completo de una subida multipart para recién después fallar el
+    # ``json.loads``: eso anula el SpooledTemporaryFile de ``UploadFile`` (la
+    # foto queda entera en RAM) y gasta CPU parseando binario como JSON.
+    if "application/json" not in request.headers.get("content-type", ""):
+        return await call_next(request)
+
     # Only apply to API routes, not GraphQL routes
     if not request.url.path.startswith("/api/graphql"):
         try:
