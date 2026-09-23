@@ -1,6 +1,7 @@
 export 'app_bar_header.dart';
 export 'app_header.dart';
 export 'app_info_cell.dart';
+export 'app_image_preview.dart';
 export 'app_line_chart.dart';
 export 'app_logo.dart';
 export 'app_modal.dart';

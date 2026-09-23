@@ -12,14 +12,8 @@ abstract final class MainLayoutStrings {
   /// Etiqueta de la pestaña de configuracion personal.
   static const profile = 'Perfil';
 
-  /// Descripcion accesible de la accion que abre la camara.
-  static const openCamera = 'Abrir cámara';
-
-  /// Etiqueta visible debajo de la accion central de camara.
+  /// Etiqueta visible y accesible del acceso central al pesaje guiado.
   static const artificialIntelligenceWeighing = 'Pesaje IA';
-
-  /// Mensaje mostrado cuando el dispositivo no puede abrir la camara.
-  static const cameraError = 'No se pudo abrir la cámara. Revisá los permisos e intentá nuevamente.';
 
   /// Texto temporal de la seccion de tramites.
   static const proceduresPlaceholder = 'Reportes SENASA';

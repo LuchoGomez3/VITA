@@ -50,6 +50,9 @@ class AppRoutes {
   /// Ruta de la pantalla de detalle de animal.
   static const animalDetail = '/animals/:animalId';
 
+  /// Cámara lateral y revisión de capturas para pesaje por visión.
+  static const visionWeighing = '/pesar-por-vision';
+
   /// Ruta de identificacion de animales mediante caravana RFID.
   static const rfidScan = '/identificar-animal';
 
@@ -127,6 +130,11 @@ class AppRoutes {
   /// Construye la ruta de identificacion para un establecimiento activo.
   static String rfidScanForEstablishment(String establishmentId) {
     return '$rfidScan?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
+  }
+
+  /// Abre el lector en modo selección y devuelve el ID del animal encontrado.
+  static String rfidScanForVisionWeighing(String establishmentId) {
+    return '${rfidScanForEstablishment(establishmentId)}&seleccionarParaPesajeIA=true';
   }
 
   /// Construye la ruta de alta con una caravana RFID ya leida.

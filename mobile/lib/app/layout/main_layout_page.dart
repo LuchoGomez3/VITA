@@ -1,12 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_strings.dart';
+import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/theme/app_navigation_dimensions.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
 /// Cascaron principal que mantiene visibles y aisladas las ramas de navegacion.
 ///
@@ -28,9 +28,8 @@ class MainLayoutPage extends StatefulWidget {
 
 class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProviderStateMixin {
   // Altura exterior de la barra; modificar este valor cambia su grosor real.
-  static const double _navigationBarHeight = 65;
+  static const double _navigationBarHeight = AppNavigationDimensions.bottomBarHeight;
 
-  final _imagePicker = ImagePicker();
   late final AnimationController _indicatorController;
   late int _indicatorFromIndex;
   late int _indicatorToIndex;
@@ -84,8 +83,8 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
           ],
         ),
         child: FloatingActionButton(
-          tooltip: MainLayoutStrings.openCamera,
-          onPressed: _openCamera,
+          tooltip: MainLayoutStrings.artificialIntelligenceWeighing,
+          onPressed: _openVisionWeighing,
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
           elevation: 2,
@@ -192,23 +191,9 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
     );
   }
 
-  Future<void> _openCamera() async {
-    try {
-      await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        requestFullMetadata: false,
-      );
-    } on PlatformException {
-      if (!mounted) {
-        return;
-      }
-
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text(MainLayoutStrings.cameraError)),
-        );
-    }
+  /// Abre la captura guiada y conserva la pestaña actual para volver atrás.
+  void _openVisionWeighing() {
+    context.push(AppRoutes.visionWeighing);
   }
 }
 

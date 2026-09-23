@@ -22,6 +22,8 @@ class RfidScanStrings {
   static const registerAnimal = 'Registrar nuevo animal';
   static const foundTitle = 'Animal identificado';
   static const viewDetail = 'Ver ficha completa';
+  /// Acción para devolver el animal a la pantalla que abrió el lector.
+  static const useAnimal = 'Usar este animal';
   static const scanAgain = 'Leer otra caravana';
   static const timeoutTitle = 'No se recibió una lectura';
   static const timeoutDescription = 'Revisá que el bastón esté conectado e intentá nuevamente.';

@@ -8,6 +8,7 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_case.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
+import 'package:frontend_mayoral/core/navigation/camera_reveal_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
 import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
@@ -59,6 +60,8 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senas
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/vision_weighing_page.dart';
+import 'package:frontend_mayoral/features/vision_weighing/vision_weighing_composition.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion central de rutas y proteccion de sesion de la aplicacion.
@@ -283,6 +286,19 @@ class AppRouter {
             );
           },
         ),
+        // La cámara usa su propia transición fuera de la navegación con navbar.
+        GoRoute(
+          path: AppRoutes.visionWeighing,
+          pageBuilder: (context, state) => CameraRevealPage(
+            state: state,
+            child: VisionWeighingPage(
+              createCubit: createVisionCaptureCubit,
+              getAnimalOptions: createVisionAnimalOptionsUseCase(),
+              pickPhoto: createPickVisionPhotoUseCase(),
+              cameraDependencies: createVisionCameraDependencies(),
+            ),
+          ),
+        ),
         GoRoute(
           path: AppRoutes.rfidScan,
           builder: (context, state) {
@@ -294,6 +310,7 @@ class AppRouter {
             }
 
             final readingSource = HidRfidReadingSource();
+            final selectingForVision = state.uri.queryParameters['seleccionarParaPesajeIA'] == 'true';
             return RfidScanPage(
               establishmentId: establishmentId,
               createBloc: ({required establishmentId}) => createRfidScanBloc(
@@ -303,6 +320,7 @@ class AppRouter {
               onHidKeyEvent: readingSource.handleKeyEvent,
               onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
               onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
+              onAnimalSelected: selectingForVision ? (animalId) => context.pop(animalId) : null,
             );
           },
         ),

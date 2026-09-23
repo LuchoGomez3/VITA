@@ -77,6 +77,23 @@ void main() {
       expect(detail.weighingMethod, AnimalWeighingMethod.bluetoothScale);
     });
 
+    test('muestra la fecha y el origen IA del pesaje local más reciente', () async {
+      final repository = AnimalDetailRepositoryImpl(
+        brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
+        categoriaBrickStore: _FakeCategoriaBrickStore(),
+        pesajeBrickStore: _FakePesajeBrickStore(pesajes: [_firstPesaje, _aiPesaje]),
+        remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
+      );
+
+      final result = await repository.getById(_animalId);
+      final detail = (result as Success<AnimalDetail>).data;
+
+      expect(detail.currentWeight, 390);
+      expect(detail.weighingDate, _aiPesaje.date);
+      expect(detail.weighingMethod, AnimalWeighingMethod.artificialIntelligence);
+      expect(detail.weightHistory.last.method, AnimalWeighingMethod.artificialIntelligence);
+    });
+
     test('uses cached related data when remote pulls fail', () async {
       final repository = AnimalDetailRepositoryImpl(
         brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
@@ -148,6 +165,18 @@ final _latestPesaje = BrickPesajeModel(
   method: BrickPesajeMethod.bluetoothScale,
   createdAt: DateTime(2025, 6),
   updatedAt: DateTime(2025, 6),
+);
+
+final _aiPesaje = BrickPesajeModel(
+  localId: 'weighing-ai',
+  establishmentId: 'establishment-id',
+  animalId: _animalId,
+  weightKg: 390,
+  date: DateTime(2025, 7),
+  method: BrickPesajeMethod.artificialIntelligence,
+  isEstimated: true,
+  createdAt: DateTime(2025, 7),
+  updatedAt: DateTime(2025, 7),
 );
 
 class _FakeAnimalBrickStore implements AnimalBrickStore {
