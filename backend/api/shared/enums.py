@@ -74,6 +74,22 @@ class TipoComprador(str, Enum):
     particular = "particular"
 
 
+class CondicionCobro(str, Enum):
+    """Forma en que comienza el cobro de una venta al confirmarla."""
+
+    total = "total"
+    parcial = "parcial"
+    pendiente = "pendiente"
+
+
+class EstadoCobro(str, Enum):
+    """Estado derivado de comparar los cobros efectivos con el total vendido."""
+
+    pendiente = "pendiente"
+    parcial = "parcial"
+    cobrada = "cobrada"
+
+
 class TipoEgresoOperativo(str, Enum):
     """Clasificación contable principal de un egreso monetario del campo."""
 
