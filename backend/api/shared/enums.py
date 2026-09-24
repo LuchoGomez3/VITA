@@ -119,3 +119,22 @@ class RecursoForrajero(str, Enum):
     maiz = "maiz"
     avena = "avena"
     otro = "otro"
+
+
+class EstadoMuestraCalibracion(str, Enum):
+    """Completitud de una muestra del dataset de calibración del modelo de visión.
+
+    La muestra llega en dos pasos porque la cola offline del cliente solo sabe
+    reproducir requests de texto: primero la metadata (peso de balanza, animal,
+    fecha) y después la foto. Entre ambos la muestra existe pero todavía no sirve
+    para entrenar, y ese hueco tiene que ser visible: ``pendiente_imagen`` es lo
+    que le dice al cliente que le falta reintentar la subida, y a la exportación
+    que debe saltearla.
+    """
+
+    pendiente_imagen = "pendiente_imagen"
+    completa = "completa"
+    # Muestra que existe pero no debe entrenar (foto inservible, peso mal
+    # anotado). Se descarta sin borrarla: el móvil ya la tiene y un soft delete
+    # la haría desaparecer de su historial.
+    descartada = "descartada"

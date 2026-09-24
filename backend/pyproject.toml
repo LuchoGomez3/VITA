@@ -25,6 +25,10 @@ dependencies = [
     "reportlab>=4.2.0",
     "itsdangerous>=2.2.0",
     "tzdata>=2026.3",
+    # Valida y recomprime las fotos del dataset de calibración antes de subirlas
+    # al bucket. Sin esto, el plan free de Supabase (1 GB) se llena con ~230
+    # muestras y no habría forma de saber si el JPEG es realmente decodificable.
+    "pillow>=11.0.0",
     # Geometría del lote esquemático: área, validez del polígono y superposición.
     # Es cálculo en CPU sobre un plano cartesiano local, NO geografía: no implica
     # PostGIS ni ninguna columna espacial en la base.

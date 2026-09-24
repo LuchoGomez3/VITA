@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from api.auth.router import router as auth_router
 from api.health.router import router as health_router
 from api.modules.animales.router import router as animales_router
+from api.modules.calibraciones_ml.router import router as calibraciones_ml_router
 from api.modules.categorias.router import router as categorias_router
 from api.modules.establecimientos.router import router as establecimientos_router
 from api.modules.egresos_operativos.router import router as egresos_operativos_router
@@ -29,5 +30,6 @@ def get_global_router() -> APIRouter:
     router.include_router(movimientos_lotes_router)
     router.include_router(categorias_router)
     router.include_router(pesajes_router)
+    router.include_router(calibraciones_ml_router)
     router.include_router(reportes_router)
     return router
