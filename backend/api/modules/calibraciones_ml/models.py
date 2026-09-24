@@ -2,11 +2,20 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import DateTime, Index, Numeric, String
+from sqlalchemy import CheckConstraint, DateTime, Index, Numeric, String
 from sqlmodel import Field
 
 from api.shared.enums import EstadoMuestraCalibracion
 from database.models import Base, SoftDeleteMixin
+
+
+def _valores_sql(enum: type[EstadoMuestraCalibracion]) -> str:
+    """Lista los valores del enum para un ``CHECK ... IN`` sin duplicar literales.
+
+    Derivarla del enum evita que la restricción de la base y la validación de
+    Python queden desalineadas cuando se agrega una variante.
+    """
+    return ", ".join(f"'{miembro.value}'" for miembro in enum)
 
 
 class MuestraCalibracion(Base, SoftDeleteMixin, table=True):
@@ -23,6 +32,30 @@ class MuestraCalibracion(Base, SoftDeleteMixin, table=True):
     __table_args__ = (
         # Sostiene la descarga delta del cliente offline (``updated_since``).
         Index("ix_calibraciones_ml_sync", "establecimiento_id", "updated_at"),
+        # La API valida todo esto, pero la base también lo hace: Supabase acepta
+        # escrituras directas y esas no pasan por Pydantic.
+        CheckConstraint(
+            f"estado in ({_valores_sql(EstadoMuestraCalibracion)})",
+            name="ck_calibraciones_ml_estado_valido",
+        ),
+        CheckConstraint(
+            "peso_real_kg > 0", name="ck_calibraciones_ml_peso_real_positivo"
+        ),
+        CheckConstraint(
+            "peso_estimado_kg is null or peso_estimado_kg > 0",
+            name="ck_calibraciones_ml_peso_estimado_positivo",
+        ),
+        # Una muestra completa es, por definición, la que tiene su objeto en
+        # Storage. Sin esto, una escritura directa podría marcar ``completa`` una
+        # fila sin imagen y colarla en el dataset de entrenamiento.
+        CheckConstraint(
+            "estado <> 'completa' or imagen_key is not null",
+            name="ck_calibraciones_ml_completa_exige_imagen",
+        ),
+        CheckConstraint(
+            "imagen_bytes is null or imagen_bytes > 0",
+            name="ck_calibraciones_ml_imagen_bytes_positivo",
+        ),
     )
 
     establecimiento_id: UUID = Field(foreign_key="establecimientos.id", index=True)
