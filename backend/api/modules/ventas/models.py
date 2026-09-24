@@ -52,6 +52,16 @@ class Venta(Base, SoftDeleteMixin, table=True):
             "trim(nombre_comprador) <> ''",
             name="ck_ventas_nombre_comprador_no_vacio",
         ),
+        CheckConstraint(
+            "trim(nro_dte) <> ''",
+            name="ck_ventas_nro_dte_no_vacio",
+        ),
+        CheckConstraint(
+            "(es_empresa and apellido_comprador is null)"
+            " or (not es_empresa and apellido_comprador is not null"
+            " and trim(apellido_comprador) <> '')",
+            name="ck_ventas_apellido_segun_comprador",
+        ),
         # La venta al bulto se pacta por un monto cerrado; la venta por kilo solo
         # existe si se conocen los dos factores con los que se calcula el monto.
         CheckConstraint(
@@ -66,14 +76,15 @@ class Venta(Base, SoftDeleteMixin, table=True):
 
     establecimiento_id: UUID = Field(foreign_key="establecimientos.id", index=True)
     fecha_operacion: date = Field(sa_type=Date, nullable=False, index=True)
+    # Clasifica el canal o clase comercial; no determina si el comprador es empresa.
     tipo_comprador: TipoComprador = Field(sa_type=String, nullable=False)
-    # Razón social del frigorífico o remate, o nombre de pila de un particular.
+    # Razón social de una empresa o nombre de pila de una persona física.
     nombre_comprador: str = Field(nullable=False)
-    # Solo aplica cuando el comprador es una persona física.
+    es_empresa: bool = Field(nullable=False)
+    # Obligatorio para personas físicas; no corresponde cuando es una empresa.
     apellido_comprador: str | None = None
-    # Documento de Tránsito electrónico de SENASA. Nullable a propósito: se emite
-    # después de cerrar el trato y la venta puede registrarse en el campo sin él.
-    nro_dte: str | None = None
+    # Se ingresa manualmente si VITA está offline; no requiere consultar a SENASA.
+    nro_dte: str = Field(nullable=False)
     tipo_venta: TipoVenta = Field(sa_type=String, nullable=False)
     peso_total_kg: Decimal | None = Field(default=None, sa_type=Numeric(10, 3))
     precio_por_kg: Decimal | None = Field(default=None, sa_type=Numeric(14, 2))
