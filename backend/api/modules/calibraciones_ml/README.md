@@ -125,17 +125,40 @@ fuera del repo). A mano, una vez por entorno:
 1. Supabase Dashboard → **Storage** → **New bucket**
 2. Nombre: `calibraciones-ml`
 3. **"Public bucket" DESACTIVADO.**
+4. Ponerle techo y filtro, como segunda línea de defensa detrás de la validación
+   del backend:
+
+   ```sql
+   update storage.buckets
+      set file_size_limit = 8388608,           -- 8 MiB, = CALIBRACION_IMAGEN_MAX_BYTES
+          allowed_mime_types = array['image/jpeg']
+    where id = 'calibraciones-ml';
+   ```
+
+   El límite aplica a lo que **llega** a Storage, no a lo que sube el móvil: el
+   backend recomprime antes, así que los objetos rondan los ~350 KB y el techo
+   solo actúa si algo escribiera al bucket salteándose el endpoint.
 
 Verificar:
 
 ```sql
-select id, public from storage.buckets where id = 'calibraciones-ml';
--- public debe ser false
+select id, public, file_size_limit, allowed_mime_types
+from storage.buckets where id = 'calibraciones-ml';
+-- public debe ser false, file_size_limit 8388608, allowed_mime_types {image/jpeg}
 ```
 
 **No agregar policies de Storage.** El backend entra con la `service_role` key,
 que las bypassea, y no hay ningún otro cliente que deba leer el bucket: una
 policy permisiva solo abriría las fotos de todos los establecimientos.
+
+El bucket tiene que quedar con RLS activa y **cero** policies. Esa combinación
+es lo que lo vuelve *fail-closed*: ni `authenticated` ni `anon` pueden tocarlo, y
+el único que entra es el backend. Comprobarlo:
+
+```sql
+select count(*) from pg_policy where polrelid = 'storage.objects'::regclass;
+-- debe ser 0
+```
 
 ## Variables de entorno
 
