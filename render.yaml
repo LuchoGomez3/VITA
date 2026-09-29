@@ -1,0 +1,46 @@
+# Blueprint de Render para el backend de VITA (un único entorno, plan free).
+# Los valores con `sync: false` se cargan a mano en el dashboard: nunca van en el repo.
+services:
+  - type: web
+    name: vita-api
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./backend/Dockerfile
+    # Contexto en la raíz: el backend importa `database/`, que está fuera de backend/.
+    dockerContext: .
+    healthCheckPath: /health
+    # El deploy lo dispara el CI (deploy hook) después de migrar la base.
+    autoDeploy: false
+    buildFilter:
+      paths:
+        - backend/**
+        - database/**
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: AUTH_PROVIDER
+        value: supabase
+      - key: LOG_LEVEL
+        value: INFO
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET_CALIBRACIONES
+        value: calibraciones-ml
+      # HTTPS obligatorio; la app Flutter nativa no depende de CORS.
+      - key: CORS_ALLOW_ORIGINS
+        sync: false
+      # Red privada desde la que el proxy de Render llega al contenedor.
+      - key: FORWARDED_ALLOW_IPS
+        sync: false
