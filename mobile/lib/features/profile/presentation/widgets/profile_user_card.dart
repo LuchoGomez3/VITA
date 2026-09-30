@@ -3,25 +3,17 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 
-/// Tarjeta que presenta la identidad y los datos personales del usuario.
+/// Tarjeta que presenta los datos personales del usuario.
 class ProfileUserCard extends StatelessWidget {
   /// Crea la tarjeta con la información de la sesión.
   const ProfileUserCard({
     required this.email,
-    required this.firstName,
-    required this.lastName,
     required this.cuit,
     super.key,
   });
 
   /// Correo electrónico de acceso.
   final String email;
-
-  /// Nombre del usuario.
-  final String firstName;
-
-  /// Apellido del usuario.
-  final String lastName;
 
   /// CUIT opcional.
   final String? cuit;
@@ -31,8 +23,6 @@ class ProfileUserCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _ProfileIdentity(firstName: firstName, lastName: lastName),
-        const SizedBox(height: AppSpacing.lg),
         const Text(
           ProfileStrings.userDataSection,
           style: AppTypography.pageTitle,
@@ -107,62 +97,6 @@ class ProfileInfoRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Destaca la identidad sin depender de una foto ni de conexión a internet.
-class _ProfileIdentity extends StatelessWidget {
-  const _ProfileIdentity({required this.firstName, required this.lastName});
-
-  final String firstName;
-  final String lastName;
-
-  @override
-  Widget build(BuildContext context) {
-    // Characters conserva letras con acentos y otros grafemas completos.
-    final names = [firstName.trim(), lastName.trim()].where((name) => name.isNotEmpty);
-    final initials = names.map((name) => name.characters.first).join();
-    final fullName = names.join(' ');
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.passwordStrengthVeryStrong],
-        ),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 36,
-            backgroundColor: AppColors.onPrimary.withValues(alpha: 0.16),
-            child: initials.isEmpty
-                ? const Icon(Icons.person_outline, color: AppColors.onPrimary, size: 32)
-                : Text(
-                    initials.toUpperCase(),
-                    style: AppTypography.bigTitle.copyWith(color: AppColors.onPrimary),
-                  ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            fullName.isEmpty ? ProfileStrings.usernameLabel : fullName,
-            textAlign: TextAlign.center,
-            style: AppTypography.bigTitle.copyWith(color: AppColors.onPrimary),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            ProfileStrings.accountSubtitle,
-            textAlign: TextAlign.center,
-            style: AppTypography.formFieldValue.copyWith(
-              color: AppColors.onPrimary.withValues(alpha: 0.85),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

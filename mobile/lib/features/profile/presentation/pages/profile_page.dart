@@ -8,6 +8,7 @@ import 'package:frontend_mayoral/features/profile/domain/entities/establishment_
 import 'package:frontend_mayoral/features/profile/presentation/cubit/profile_cubit.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_establishments_section.dart';
+import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_sliver_header.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_user_card.dart';
 import 'package:go_router/go_router.dart';
 
@@ -64,41 +65,52 @@ class _ProfilePageState extends State<ProfilePage> {
     return BlocProvider<ProfileCubit>(
       create: (_) => widget.createCubit()..load(),
       child: Scaffold(
-        appBar: const AppHeader(title: ProfileStrings.title),
-        body: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 640),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.lg,
-                  AppSpacing.md,
-                  AppSpacing.xl,
+        body: CustomScrollView(
+          slivers: [
+            ProfileSliverHeader(
+              firstName: widget.firstName,
+              lastName: widget.lastName,
+            ),
+            SliverToBoxAdapter(
+              child: SafeArea(
+                top: false,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 640),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.lg,
+                        AppSpacing.md,
+                        AppSpacing.xl,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ProfileUserCard(
+                            email: widget.email,
+                            cuit: widget.cuit,
+                          ),
+                          const SizedBox(height: AppSpacing.xl),
+                          const _EstablishmentsContent(),
+                          const SizedBox(height: AppSpacing.lg),
+                          AppFilledButton(
+                            label: ProfileStrings.signOutButton,
+                            loadingLabel: ProfileStrings.signingOutButton,
+                            isLoading: _isSigningOut,
+                            icon: const Icon(Icons.logout),
+                            backgroundColor: AppColors.error,
+                            foregroundColor: AppColors.onError,
+                            onPressed: _signOut,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                children: [
-                  ProfileUserCard(
-                    email: widget.email,
-                    firstName: widget.firstName,
-                    lastName: widget.lastName,
-                    cuit: widget.cuit,
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  const _EstablishmentsContent(),
-                  const SizedBox(height: AppSpacing.lg),
-                  AppFilledButton(
-                    label: ProfileStrings.signOutButton,
-                    loadingLabel: ProfileStrings.signingOutButton,
-                    isLoading: _isSigningOut,
-                    icon: const Icon(Icons.logout),
-                    backgroundColor: AppColors.error,
-                    foregroundColor: AppColors.onError,
-                    onPressed: _signOut,
-                  ),
-                ],
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
