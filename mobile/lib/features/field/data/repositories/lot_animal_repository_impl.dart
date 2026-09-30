@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -23,6 +24,7 @@ class LotAnimalRepositoryImpl implements LotAnimalRepository {
       return Result.success([
         for (final animal in animals)
           if (animal.deletedAt == null &&
+              animal.productiveStatus == BrickAnimalProductiveStatus.active &&
               animal.establishmentId == establishmentId &&
               (lotId == null || animal.lotId == lotId))
             LotAnimalSummary(

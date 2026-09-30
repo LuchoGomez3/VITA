@@ -29,6 +29,7 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromRest(
     observations: data['observaciones'] == null
         ? null
         : data['observaciones'] as String?,
+    productiveStatus: brickAnimalProductiveStatusFromBackend(data['estado']),
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -98,6 +99,9 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromSqlite(
     observations: data['observations'] == null
         ? null
         : data['observations'] as String?,
+    productiveStatus: brickAnimalProductiveStatusFromSqlite(
+      data['productive_status'],
+    ),
     syncStatus: BrickAnimalSyncStatus.values[data['sync_status'] as int],
     syncErrorCode: data['sync_error_code'] == null
         ? null
@@ -138,6 +142,9 @@ Future<Map<String, dynamic>> _$BrickAnimalModelToSqlite(
     'father_id': instance.fatherId,
     'coat': instance.coat,
     'observations': instance.observations,
+    'productive_status': brickAnimalProductiveStatusToSqlite(
+      instance.productiveStatus,
+    ),
     'sync_status': BrickAnimalSyncStatus.values.indexOf(instance.syncStatus),
     'sync_error_code': instance.syncErrorCode,
     'created_at': instance.createdAt.toIso8601String(),
@@ -268,6 +275,12 @@ class BrickAnimalModelAdapter
       columnName: 'observations',
       iterable: false,
       type: String,
+    ),
+    'productiveStatus': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'productive_status',
+      iterable: false,
+      type: BrickAnimalProductiveStatus,
     ),
     'syncStatus': const RuntimeSqliteColumnDefinition(
       association: false,
