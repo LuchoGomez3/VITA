@@ -1,7 +1,7 @@
 /// Textos centralizados de la pantalla de perfil.
 abstract final class ProfileStrings {
   /// Titulo de la pantalla.
-  static const title = 'Perfil y ajustes';
+  static const title = 'Perfil';
 
   /// Etiqueta del identificador de inicio de sesion.
   static const usernameLabel = 'Usuario';
