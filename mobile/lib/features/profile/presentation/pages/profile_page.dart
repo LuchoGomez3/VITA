@@ -66,34 +66,38 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Scaffold(
         appBar: const AppHeader(title: ProfileStrings.title),
         body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.sm,
-              AppSpacing.sm,
-              AppSpacing.sm,
-              AppSpacing.xl,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 640),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.xl,
+                ),
+                children: [
+                  ProfileUserCard(
+                    email: widget.email,
+                    firstName: widget.firstName,
+                    lastName: widget.lastName,
+                    cuit: widget.cuit,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  const _EstablishmentsContent(),
+                  const SizedBox(height: AppSpacing.lg),
+                  AppFilledButton(
+                    label: ProfileStrings.signOutButton,
+                    loadingLabel: ProfileStrings.signingOutButton,
+                    isLoading: _isSigningOut,
+                    icon: const Icon(Icons.logout),
+                    backgroundColor: AppColors.error,
+                    foregroundColor: AppColors.onError,
+                    onPressed: _signOut,
+                  ),
+                ],
+              ),
             ),
-            children: [
-              ProfileUserCard(
-                userId: widget.userId,
-                email: widget.email,
-                firstName: widget.firstName,
-                lastName: widget.lastName,
-                cuit: widget.cuit,
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              const _EstablishmentsContent(),
-              const SizedBox(height: AppSpacing.lg),
-              AppFilledButton(
-                label: ProfileStrings.signOutButton,
-                loadingLabel: ProfileStrings.signingOutButton,
-                isLoading: _isSigningOut,
-                icon: const Icon(Icons.logout),
-                backgroundColor: AppColors.error,
-                foregroundColor: AppColors.onError,
-                onPressed: _signOut,
-              ),
-            ],
           ),
         ),
       ),
