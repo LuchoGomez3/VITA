@@ -7,7 +7,13 @@ abstract final class ProfileStrings {
   static const usernameLabel = 'Usuario';
 
   /// Título de la información personal.
-  static const userDataSection = 'Datos del usuario';
+  static const userDataSection = 'Información personal';
+
+  /// Texto de apoyo de la cabecera del perfil.
+  static const accountSubtitle = 'Tu cuenta en VITA';
+
+  /// Explica la relación del usuario con el listado.
+  static const establishmentsSubtitle = 'Los campos de los que formás parte';
 
   /// Etiqueta del ID interno.
   static const userIdLabel = 'ID de usuario';
