@@ -95,7 +95,11 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     // mensuales sí se calculan sobre el historial completo para no perder los
     // movimientos que ocurrieron dentro del mes consultado.
     final now = _now();
-    final activeAnimals = animals.where((animal) => animal.deletedAt == null).toList();
+    final activeAnimals = animals
+        .where(
+          (animal) => animal.deletedAt == null && animal.productiveStatus == BrickAnimalProductiveStatus.active,
+        )
+        .toList();
     final weighingsByAnimal = _groupWeighingsByAnimal(weighings);
     final currentWeights = <String, double>{};
     final dailyGains = <double>[];

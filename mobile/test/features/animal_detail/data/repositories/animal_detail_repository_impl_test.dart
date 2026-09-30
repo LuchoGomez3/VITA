@@ -48,6 +48,10 @@ void main() {
       expect(result, isA<Success<AnimalDetail>>());
       expect(remoteDataSource.calls, 1);
       expect(brickStore.cachedAnimals.single.localId, _animalId);
+      expect(
+        brickStore.cachedAnimals.single.productiveStatus,
+        BrickAnimalProductiveStatus.sold,
+      );
       final detail = (result as Success<AnimalDetail>).data;
       expect(detail.id, _animalId);
       expect(detail.syncStatus, AnimalSyncStatus.synchronized);
@@ -225,6 +229,7 @@ class _FakeAnimalDetailRemoteDataSource extends AnimalDetailRemoteDataSource {
       fatherId: null,
       coat: null,
       observations: null,
+      productiveStatus: 'vendido',
       createdAt: DateTime(2025, 3, 14),
       updatedAt: DateTime(2025, 3, 14),
     );

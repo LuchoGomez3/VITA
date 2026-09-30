@@ -44,6 +44,7 @@ class AnimalRegistrationBrickMapper {
       fatherId: registration.fatherId,
       coat: registration.coat,
       observations: registration.observations,
+      productiveStatus: BrickAnimalProductiveStatus.active,
       createdAt: timestamp,
       updatedAt: timestamp,
     );

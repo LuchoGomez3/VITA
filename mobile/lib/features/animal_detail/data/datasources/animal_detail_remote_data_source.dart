@@ -106,6 +106,7 @@ class AnimalDetailBackendDto {
     required this.fatherId,
     required this.coat,
     required this.observations,
+    required this.productiveStatus,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -126,6 +127,7 @@ class AnimalDetailBackendDto {
       fatherId: json['padre_id'] as String?,
       coat: json['pelaje'] as String?,
       observations: json['observaciones'] as String?,
+      productiveStatus: json['estado'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -169,6 +171,9 @@ class AnimalDetailBackendDto {
 
   /// Observaciones.
   final String? observations;
+
+  /// Estado productivo con el codigo textual definido por backend.
+  final String? productiveStatus;
 
   /// Fecha de creacion.
   final DateTime createdAt;

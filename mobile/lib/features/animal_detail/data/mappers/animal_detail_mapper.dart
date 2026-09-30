@@ -67,6 +67,9 @@ class AnimalDetailMapper {
       fatherId: dto.fatherId,
       coat: dto.coat,
       observations: dto.observations,
+      productiveStatus: brickAnimalProductiveStatusFromBackend(
+        dto.productiveStatus,
+      ),
       syncStatus: BrickAnimalSyncStatus.synchronized,
     );
   }
