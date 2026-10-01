@@ -35,6 +35,8 @@ class HomeOperatingBalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppSurfaceCard(
+      elevation: 3,
+      shadowColor: AppColors.cardShadow,
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

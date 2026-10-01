@@ -18,14 +18,18 @@ class HomeLotMetricsCard extends StatelessWidget {
       // Mantiene la misma profundidad visual que las tarjetas de gastos.
       elevation: 3,
       shadowColor: AppColors.cardShadow,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      // La expansión queda en el widget y conserva su estado durante el scroll.
+      child: ExpansionTile(
+        key: const PageStorageKey('home-lot-metrics'),
+        title: const Text(HomeStrings.weightByLot),
+        tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        childrenPadding: const EdgeInsets.all(AppSpacing.md),
+        expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+        shape: const Border(),
+        collapsedShape: const Border(),
         children: [
-          Text(
-            HomeStrings.weightByLot,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: AppSpacing.md),
           if (lots.isEmpty)
             const Text(HomeStrings.noAnimals)
           else
