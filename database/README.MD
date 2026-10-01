@@ -69,7 +69,7 @@ Las tablas hijas de un agregado atómico (por ejemplo `ventas_detalles`) heredan
 
 ## Animales: categoría y condición reproductiva
 
-Decisiones de fondo en `docs/adr/adr-0005-reglas-reproductivas-de-categorias.md`.
+Decisiones de fondo en `docs/adr/adr-0006-reglas-reproductivas-de-categorias.md`.
 
 `categorias` lleva dos reglas explícitas, que nunca se infieren del nombre:
 

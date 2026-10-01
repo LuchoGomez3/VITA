@@ -1,4 +1,4 @@
-# ADR-0005 — Reglas de sexo y condición reproductiva en categorías y animales
+# ADR-0006 — Reglas de sexo y condición reproductiva en categorías y animales
 
 - **Estado:** aceptado
 - **Fecha:** 2026-10-01
