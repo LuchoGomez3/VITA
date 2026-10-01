@@ -67,6 +67,41 @@ Toda entidad que viaje al cliente offline hereda de `Base` y `SoftDeleteMixin`:
 Las tablas hijas de un agregado atómico (por ejemplo `ventas_detalles`) heredan solo de
 `Base`: viajan dentro del payload de su padre y no se sincronizan por separado.
 
+## Animales: categoría y condición reproductiva
+
+Decisiones de fondo en `docs/adr/adr-0005-reglas-reproductivas-de-categorias.md`.
+
+`categorias` lleva dos reglas explícitas, que nunca se infieren del nombre:
+
+| Columna | Tipo | Notas |
+| --- | --- | --- |
+| `sexo_permitido` | `varchar` NOT NULL | `macho` \| `hembra` \| `ambos` |
+| `permite_estado_reproductivo` | `boolean` NOT NULL, default `false` | habilita `vacia`/`prenada` en sus hembras |
+
+`animales.estado_reproductivo` (`varchar`, nullable) vale `sin_determinar`, `vacia`,
+`prenada` o `null`, y es independiente de `estado`. Los CHECK del propio animal fijan los
+valores válidos y que un macho siempre tenga `null`. La compatibilidad con la categoría es
+lógica entre tablas y vive en dos triggers:
+
+- `trg_animales_categoria_compatible` (`validar_categoria_animal()`) valida el animal en
+  el insert y cuando cambian `sexo`, `categoria_id`, `estado_reproductivo` o
+  `deleted_at`. Comprueba que la categoría admita el sexo y, para `vacia`/`prenada`, que
+  esté habilitada. Al **asignar** la categoría rechaza también una borrada o de otro
+  establecimiento.
+- `trg_categorias_reglas_compatibles` (`validar_reglas_categoria()`) rechaza cambiar
+  `sexo_permitido` o `permite_estado_reproductivo` si deja animales vivos incompatibles.
+
+Las dos funciones son `security definer`: evalúan la regla sin depender de qué filas le
+deja ver el RLS a quien escribe. `create_all` las instala en Postgres; en producción las
+crea la migración `20261001_02` (espejo: `backend/scripts/agregar_reglas_reproductivas_categorias.sql`).
+Sus tests corren contra un Postgres efímero (`VITA_TEST_POSTGRES_URL`, probados con 16;
+Supabase usa 17).
+
+La migración clasifica por id las categorías que ya existían. "Ternero" quedó en `ambos`
+porque en el campo nombra a machos y hembras sin destete, y ya tenía hembras asignadas.
+Ante una categoría sin clasificar o un animal incompatible, la migración se detiene en vez
+de inventar la regla.
+
 ## Ventas de hacienda
 
 `ventas` registra la operación comercial y `ventas_detalles` los animales que la componen.
