@@ -6,7 +6,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from api.shared.enums import EstadoAnimal, MetodoPesaje, SexoAnimal
+from api.shared.enums import (
+    EstadoAnimal,
+    EstadoReproductivo,
+    MetodoPesaje,
+    SexoAnimal,
+)
 from api.shared.schemas import SyncFields
 
 
@@ -37,6 +42,9 @@ class AnimalCreate(SyncFields):
     caravana_visual: str | None = None
     pelaje: str | None = None
     observaciones: str | None = None
+    # Solo para hembras; ``vacia``/``prenada`` exigen una categoría habilitada.
+    # En un reenvío, omitirlo conserva el valor guardado.
+    estado_reproductivo: EstadoReproductivo | None = None
 
     # Pesaje inicial
     peso_inicial: Decimal
@@ -71,7 +79,11 @@ class AnimalCreate(SyncFields):
 
 class AnimalUpdate(SyncFields):
     """Edición de un animal. Hereda ``SyncFields``: ``updated_at`` es el que dirime
-    el conflicto (last-write-wins) y ``deleted_at`` permite propagar un soft delete."""
+    el conflicto (last-write-wins) y ``deleted_at`` permite propagar un soft delete.
+
+    Los campos omitidos no se tocan. ``estado_reproductivo`` es la excepción a
+    "``None`` = sin cambios": enviarlo en ``null`` explícito lo limpia.
+    """
 
     raza: str | None = None
     fecha_nacimiento: date | None = None
@@ -80,6 +92,7 @@ class AnimalUpdate(SyncFields):
     pelaje: str | None = None
     observaciones: str | None = None
     estado: EstadoAnimal | None = None
+    estado_reproductivo: EstadoReproductivo | None = None
 
 
 class AnimalRead(BaseModel):
@@ -98,6 +111,7 @@ class AnimalRead(BaseModel):
     madre_id: UUID | None = None
     pelaje: str | None = None
     estado: EstadoAnimal
+    estado_reproductivo: EstadoReproductivo | None = None
     observaciones: str | None = None
     created_at: datetime
     updated_at: datetime
