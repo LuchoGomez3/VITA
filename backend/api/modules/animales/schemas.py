@@ -4,7 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from api.shared.enums import (
     EstadoAnimal,
@@ -41,7 +41,11 @@ class AnimalCreate(SyncFields):
     categoria_id: UUID | None = None
     caravana_visual: str | None = None
     pelaje: str | None = None
-    observaciones: str | None = None
+    # Obsoleto: las notas viven en /observaciones_animales. Se acepta mientras
+    # haya clientes que lo envían; una nota nueva genera una entrada (adr-0007).
+    observaciones: str | None = Field(
+        default=None, json_schema_extra={"deprecated": True}
+    )
     # Solo para hembras; ``vacia``/``prenada`` exigen una categoría habilitada.
     # En un reenvío, omitirlo conserva el valor guardado.
     estado_reproductivo: EstadoReproductivo | None = None
@@ -90,7 +94,11 @@ class AnimalUpdate(SyncFields):
     categoria_id: UUID | None = None
     lote_id: UUID | None = None
     pelaje: str | None = None
-    observaciones: str | None = None
+    # Obsoleto: las notas viven en /observaciones_animales. Se acepta mientras
+    # haya clientes que lo envían; una nota nueva genera una entrada (adr-0007).
+    observaciones: str | None = Field(
+        default=None, json_schema_extra={"deprecated": True}
+    )
     estado: EstadoAnimal | None = None
     estado_reproductivo: EstadoReproductivo | None = None
 
