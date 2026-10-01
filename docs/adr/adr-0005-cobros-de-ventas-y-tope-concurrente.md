@@ -1,4 +1,4 @@
-# ADR-0004 — Cobros de ventas y tope de cobro garantizado por la base
+# ADR-0005 — Cobros de ventas y tope de cobro garantizado por la base
 
 - **Estado:** propuesto (pendiente de validación del PO en los puntos marcados)
 - **Fecha:** 2026-10-01

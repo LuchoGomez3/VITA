@@ -106,7 +106,7 @@ las ventas ni a sus montos, incluso si intenta escribir directamente mediante Su
 ### Cobros de ventas
 
 `ventas_cobros` registra cada pago efectivamente recibido por una venta. Decisiones en
-`docs/adr/adr-0004-cobros-de-ventas-y-tope-concurrente.md`.
+`docs/adr/adr-0005-cobros-de-ventas-y-tope-concurrente.md`.
 
 `ventas_cobros` — sincronizable:
 
