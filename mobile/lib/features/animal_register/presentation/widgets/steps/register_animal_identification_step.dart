@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
@@ -44,9 +45,19 @@ class _RegisterAnimalIdentificationStepState extends State<RegisterAnimalIdentif
 
   @override
   Widget build(BuildContext context) {
-    final draft = context.select(
-      (RegisterAnimalBloc bloc) => bloc.state.draft,
-    );
+    final state = context.watch<RegisterAnimalBloc>().state;
+    final draft = state.draft;
+    if (_rfidController.text != draft.rfid) {
+      _rfidController.value = TextEditingValue(
+        text: draft.rfid,
+        selection: TextSelection.collapsed(offset: draft.rfid.length),
+      );
+    }
+    final rfidError = switch (state.rfidCheckState) {
+      Data<bool>(data: true) => AnimalRegisterStrings.rfidAlreadyRegistered,
+      ResultError<bool>(:final error) => error.message,
+      _ => null,
+    };
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -75,6 +86,8 @@ class _RegisterAnimalIdentificationStepState extends State<RegisterAnimalIdentif
               hintText: AnimalRegisterStrings.rfidFieldHint,
               keyboardType: TextInputType.number,
               helperText: ' ',
+              validation: rfidError == null ? AppFieldValidation.neutral : AppFieldValidation.invalid,
+              validationMessage: rfidError,
               onChanged: (value) {
                 _updateDraft(draft.copyWith(rfid: value));
               },

@@ -9,6 +9,8 @@ import 'package:frontend_mayoral/features/animal_register/domain/repositories/an
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_parent_repository.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_repository.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_rfid_repository.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/use_cases/check_animal_rfid_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_categories_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_parents_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
@@ -20,6 +22,7 @@ void main() {
   testWidgets('searches local caravans by sex and shows an inline error', (tester) async {
     final bloc = RegisterAnimalBloc(
       registerAnimalUseCase: RegisterAnimalUseCase(_RegistrationRepository()),
+      checkAnimalRfidUseCase: CheckAnimalRfidUseCase(_RfidRepository()),
       getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(_CategoryRepository()),
       getAnimalParentsUseCase: GetAnimalParentsUseCase(_ParentRepository()),
       registrationContext: _Context(),
@@ -96,3 +99,8 @@ class _CategoryRepository extends Fake implements AnimalCategoryRepository {
 }
 
 class _RegistrationRepository extends Fake implements AnimalRegistrationRepository {}
+
+class _RfidRepository extends Fake implements AnimalRfidRepository {
+  @override
+  Future<Result<bool>> isRegistered(String rfid) async => const Result.success(false);
+}

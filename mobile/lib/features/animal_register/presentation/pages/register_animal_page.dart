@@ -108,13 +108,13 @@ class _RegisterAnimalView extends StatelessWidget {
                 Expanded(
                   child: IndexedStack(
                     index: state.currentStep.index,
-                    children: const [
+                    children: [
                       RegisterAnimalIdentificationStep(
-                        onBluetoothRequested: _requestBluetoothReading,
+                        onBluetoothRequested: () => _requestBluetoothReading(context),
                       ),
-                      RegisterAnimalBasicDataStep(),
-                      RegisterAnimalGenealogyStep(),
-                      RegisterAnimalReviewStep(),
+                      const RegisterAnimalBasicDataStep(),
+                      const RegisterAnimalGenealogyStep(),
+                      const RegisterAnimalReviewStep(),
                     ],
                   ),
                 ),
@@ -141,7 +141,11 @@ class _RegisterAnimalView extends StatelessWidget {
     };
   }
 
-  static void _requestBluetoothReading() {}
+  Future<void> _requestBluetoothReading(BuildContext context) async {
+    final rfid = await context.push<String>(AppRoutes.rfidCapture);
+    if (!context.mounted || rfid == null) return;
+    context.read<RegisterAnimalBloc>().add(RegisterAnimalEvent.rfidCaptured(rfid));
+  }
 
   void _goBack(BuildContext context, RegisterAnimalStep currentStep) {
     if (currentStep == RegisterAnimalStep.identification) {

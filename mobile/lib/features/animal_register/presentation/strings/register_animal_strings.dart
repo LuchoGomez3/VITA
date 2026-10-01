@@ -43,6 +43,12 @@ class AnimalRegisterStrings {
   /// Hint del campo de RFID.
   static const rfidFieldHint = 'Ingresá los 15 dígitos';
 
+  /// Error cuando la caravana ya está guardada localmente.
+  static const rfidAlreadyRegistered = 'Esta caravana ya está registrada en el dispositivo.';
+
+  /// Error de formato de la caravana electrónica.
+  static const rfidInvalid = 'Ingresá una caravana RFID válida de 15 dígitos.';
+
   /// Titulo del campo de serie.
   static const seriesFieldTitle = 'Serie';
 

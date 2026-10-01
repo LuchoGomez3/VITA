@@ -24,6 +24,9 @@ sealed class RfidScanState with _$RfidScanState {
     required String rfid,
   }) = _NotFound;
 
+  /// Lectura válida que se entrega al flujo que pidió capturar la caravana.
+  const factory RfidScanState.captured({required String rfid}) = _Captured;
+
   /// La fuente no recibio una lectura dentro del tiempo esperado.
   const factory RfidScanState.timeout() = _Timeout;
 
