@@ -4,6 +4,7 @@ from api.shared.exceptions import (
     ConflictError,
     ForbiddenError,
     NotFoundError,
+    ValidationError,
 )
 
 
@@ -45,4 +46,22 @@ class CategoriaEnUsoError(ConflictError):
     def __init__(self) -> None:
         super().__init__(
             "No se puede eliminar la categoría porque hay animales asignados a ella"
+        )
+
+
+class SexoPermitidoObligatorioError(ValidationError):
+    code = "sexo_permitido_obligatorio"
+
+    def __init__(self) -> None:
+        super().__init__("Indique qué sexo admite la categoría: macho, hembra o ambos")
+
+
+class ReglasCategoriaEnUsoError(ConflictError):
+    code = "reglas_categoria_en_uso"
+
+    def __init__(self, cantidad: int) -> None:
+        super().__init__(
+            "No se pueden cambiar las reglas de la categoría: "
+            f"{cantidad} animal(es) asignado(s) quedarían incompatibles",
+            details={"animales_incompatibles": cantidad},
         )
