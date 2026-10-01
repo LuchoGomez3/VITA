@@ -15,6 +15,9 @@ class HomeCategoryMetricsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppSurfaceCard(
+      // Mantiene la misma profundidad visual que las tarjetas de gastos.
+      elevation: 3,
+      shadowColor: AppColors.cardShadow,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
