@@ -3,6 +3,9 @@ part of 'register_animal_bloc.dart';
 /// Events accepted by [RegisterAnimalBloc].
 @freezed
 sealed class RegisterAnimalEvent with _$RegisterAnimalEvent {
+  /// Recibe una caravana válida desde la pantalla de captura HID.
+  const factory RegisterAnimalEvent.rfidCaptured(String rfid) = _RfidCaptured;
+
   /// Carga los animales locales del establecimiento para buscar progenitores.
   const factory RegisterAnimalEvent.parentsRequested() = _ParentsRequested;
 

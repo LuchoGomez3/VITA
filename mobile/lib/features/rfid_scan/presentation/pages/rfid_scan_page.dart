@@ -196,6 +196,7 @@ class _RfidScanBody extends StatelessWidget {
         onRegister: onRegisterAnimalRequested,
         onScanAgain: onStart,
       ),
+      captured: (_) => const SizedBox.shrink(),
       timeout: () => _MessageAction(
         title: RfidScanStrings.timeoutTitle,
         description: RfidScanStrings.timeoutDescription,

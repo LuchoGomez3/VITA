@@ -61,6 +61,7 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
     ResultState<List<AnimalRegistrationDestination>> destinationsState,
     @Default(ResultState<List<AnimalCategory>>.initial()) ResultState<List<AnimalCategory>> categoriesState,
     @Default(ResultState<List<AnimalParent>>.initial()) ResultState<List<AnimalParent>> parentsState,
+    @Default(ResultState<bool>.initial()) ResultState<bool> rfidCheckState,
     @Default(ResultState<RegisteredAnimal>.initial()) ResultState<RegisteredAnimal> submitResult,
   }) = _RegisterAnimalState;
 

@@ -7,6 +7,8 @@ import 'package:frontend_mayoral/features/animal_register/data/datasources/anima
 import 'package:frontend_mayoral/features/animal_register/data/repositories/animal_category_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_register/data/repositories/animal_parent_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_register/data/repositories/animal_registration_repository_impl.dart';
+import 'package:frontend_mayoral/features/animal_register/data/repositories/animal_rfid_repository_impl.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/use_cases/check_animal_rfid_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_categories_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_parents_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
@@ -46,6 +48,9 @@ RegisterAnimalBloc createRegisterAnimalBloc({
       initialEstablishmentId: initialEstablishmentId,
       registerAnimalUseCase: RegisterAnimalUseCase(repository),
       getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(categoryRepository),
+      checkAnimalRfidUseCase: CheckAnimalRfidUseCase(
+        AnimalRfidRepositoryImpl(store: BrickAnimalStore.instance),
+      ),
       getAnimalParentsUseCase: GetAnimalParentsUseCase(
         AnimalParentRepositoryImpl(store: BrickAnimalStore.instance),
       ),

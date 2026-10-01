@@ -9,6 +9,8 @@ import 'package:frontend_mayoral/features/animal_register/domain/repositories/an
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_parent_repository.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_repository.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_rfid_repository.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/use_cases/check_animal_rfid_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_categories_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_parents_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
@@ -18,13 +20,16 @@ void main() {
   group('RegisterAnimalBloc', () {
     late _FakeAnimalRegistrationRepository repository;
     late _FakeAnimalCategoryRepository categoryRepository;
+    late _FakeAnimalRfidRepository rfidRepository;
     late RegisterAnimalBloc bloc;
 
     setUp(() {
       repository = _FakeAnimalRegistrationRepository();
       categoryRepository = _FakeAnimalCategoryRepository();
+      rfidRepository = _FakeAnimalRfidRepository();
       bloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        checkAnimalRfidUseCase: CheckAnimalRfidUseCase(rfidRepository),
         getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
@@ -50,6 +55,7 @@ void main() {
       final prefilledBloc = RegisterAnimalBloc(
         initialRfid: '982000412991416',
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        checkAnimalRfidUseCase: CheckAnimalRfidUseCase(_FakeAnimalRfidRepository()),
         getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
@@ -107,6 +113,7 @@ void main() {
       final prefilledBloc = RegisterAnimalBloc(
         initialEstablishmentId: '8b75eb38-8b0f-44dc-979f-89ce2817b63d',
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        checkAnimalRfidUseCase: CheckAnimalRfidUseCase(_FakeAnimalRfidRepository()),
         getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
@@ -131,6 +138,7 @@ void main() {
       final context = _MultipleEstablishmentsContext();
       final selectionBloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        checkAnimalRfidUseCase: CheckAnimalRfidUseCase(_FakeAnimalRfidRepository()),
         getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
@@ -159,6 +167,7 @@ void main() {
       final context = _MultipleEstablishmentsContext();
       final selectionBloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        checkAnimalRfidUseCase: CheckAnimalRfidUseCase(_FakeAnimalRfidRepository()),
         getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
@@ -206,6 +215,7 @@ void main() {
         ]);
       final selectionBloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        checkAnimalRfidUseCase: CheckAnimalRfidUseCase(_FakeAnimalRfidRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(categoryRepository),
         getAnimalParentsUseCase: GetAnimalParentsUseCase(parents),
         registrationContext: _MultipleEstablishmentsContext(),
@@ -229,26 +239,46 @@ void main() {
     });
 
     test('moves forward and backward through the flow', () async {
-      final forwardState = bloc.state.copyWith(
-        currentStep: RegisterAnimalStep.basicData,
-      );
-      final backwardState = bloc.state;
+      bloc.add(RegisterAnimalEvent.draftChanged(bloc.state.draft.copyWith(rfid: '982000412991416')));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const RegisterAnimalEvent.nextStepRequested());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(bloc.state.currentStep, RegisterAnimalStep.basicData);
+      bloc.add(const RegisterAnimalEvent.previousStepRequested());
+      await Future<void>.delayed(Duration.zero);
+      expect(bloc.state.currentStep, RegisterAnimalStep.identification);
+    });
 
-      final expectation = expectLater(
-        bloc.stream,
-        emitsInOrder([forwardState, backwardState]),
-      );
-      bloc
-        ..add(const RegisterAnimalEvent.nextStepRequested())
-        ..add(const RegisterAnimalEvent.previousStepRequested());
+    test('rejects a duplicate RFID when leaving manual identification', () async {
+      rfidRepository.registered = true;
+      bloc.add(RegisterAnimalEvent.draftChanged(bloc.state.draft.copyWith(rfid: '982000412991416')));
+      await Future<void>.delayed(Duration.zero);
 
-      await expectation;
+      bloc.add(const RegisterAnimalEvent.nextStepRequested());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.currentStep, RegisterAnimalStep.identification);
+      expect(bloc.state.rfidCheckState, const ResultState<bool>.data(true));
+      expect(rfidRepository.checked, ['982000412991416']);
+    });
+
+    test('checks captured RFID and keeps it in the same draft', () async {
+      bloc.add(const RegisterAnimalEvent.rfidCaptured('982000412991416'));
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.draft.rfid, '982000412991416');
+      expect(bloc.state.rfidCheckState, const ResultState<bool>.data(false));
+      expect(bloc.state.currentStep, RegisterAnimalStep.identification);
     });
 
     test('does not advance beyond review', () async {
       final reviewBloc = RegisterAnimalBloc(
         initialStep: RegisterAnimalStep.review,
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        checkAnimalRfidUseCase: CheckAnimalRfidUseCase(_FakeAnimalRfidRepository()),
         getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
@@ -266,6 +296,7 @@ void main() {
     test('represents establishment loading failures with ResultState', () async {
       final failingBloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
+        checkAnimalRfidUseCase: CheckAnimalRfidUseCase(_FakeAnimalRfidRepository()),
         getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
         getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
           categoryRepository,
@@ -553,5 +584,16 @@ class _FakeAnimalParentRepository implements AnimalParentRepository {
   Future<Result<List<AnimalParent>>> getParents(String establishmentId) async {
     requestedEstablishments.add(establishmentId);
     return result;
+  }
+}
+
+class _FakeAnimalRfidRepository implements AnimalRfidRepository {
+  bool registered = false;
+  final checked = <String>[];
+
+  @override
+  Future<Result<bool>> isRegistered(String rfid) async {
+    checked.add(rfid);
+    return Result.success(registered);
   }
 }

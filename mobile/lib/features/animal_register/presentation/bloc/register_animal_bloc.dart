@@ -7,6 +7,7 @@ import 'package:frontend_mayoral/features/animal_register/domain/entities/animal
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_parent.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/use_cases/check_animal_rfid_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_categories_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_parents_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
@@ -31,6 +32,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     required RegisterAnimalUseCase registerAnimalUseCase,
     required GetAnimalCategoriesUseCase getAnimalCategoriesUseCase,
     required GetAnimalParentsUseCase getAnimalParentsUseCase,
+    required CheckAnimalRfidUseCase checkAnimalRfidUseCase,
     required AnimalRegistrationContext registrationContext,
     RegisterAnimalStep initialStep = RegisterAnimalStep.identification,
     String initialRfid = '',
@@ -38,6 +40,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
   }) : _registerAnimalUseCase = registerAnimalUseCase,
        _getAnimalCategoriesUseCase = getAnimalCategoriesUseCase,
        _getAnimalParentsUseCase = getAnimalParentsUseCase,
+       _checkAnimalRfidUseCase = checkAnimalRfidUseCase,
        _registrationContext = registrationContext,
        super(
          RegisterAnimalState(
@@ -48,6 +51,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
          ),
        ) {
     on<_DraftChanged>(_onDraftChanged);
+    on<_RfidCaptured>(_onRfidCaptured);
     on<_CategoriesRequested>(_onCategoriesRequested);
     on<_ParentsRequested>(_onParentsRequested);
     on<_EstablishmentsRequested>(_onEstablishmentsRequested);
@@ -61,6 +65,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
   final RegisterAnimalUseCase _registerAnimalUseCase;
   final GetAnimalCategoriesUseCase _getAnimalCategoriesUseCase;
   final GetAnimalParentsUseCase _getAnimalParentsUseCase;
+  final CheckAnimalRfidUseCase _checkAnimalRfidUseCase;
   final AnimalRegistrationContext _registrationContext;
   int _parentsRequest = 0;
 
@@ -198,21 +203,71 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     _DraftChanged event,
     Emitter<RegisterAnimalState> emit,
   ) {
-    emit(state.copyWith(draft: event.draft));
+    emit(
+      state.copyWith(
+        draft: event.draft,
+        rfidCheckState: event.draft.rfid == state.draft.rfid ? state.rfidCheckState : const ResultState.initial(),
+      ),
+    );
+  }
+
+  Future<void> _onRfidCaptured(
+    _RfidCaptured event,
+    Emitter<RegisterAnimalState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        draft: state.draft.copyWith(rfid: event.rfid),
+        rfidCheckState: const ResultState.loading(),
+      ),
+    );
+    await _checkRfid(event.rfid, emit);
+  }
+
+  Future<bool> _checkRfid(String rfid, Emitter<RegisterAnimalState> emit) async {
+    if (!_isValidRfid(rfid)) {
+      emit(
+        state.copyWith(
+          rfidCheckState: const ResultState.error(
+            DomainException(message: AnimalRegisterStrings.rfidInvalid, code: DomainErrorCode.validation),
+          ),
+        ),
+      );
+      return false;
+    }
+    emit(state.copyWith(rfidCheckState: const ResultState.loading()));
+    final result = await _checkAnimalRfidUseCase(rfid);
+    if (state.draft.rfid.trim() != rfid) return false;
+    switch (result) {
+      case Success<bool>(:final data):
+        emit(state.copyWith(rfidCheckState: ResultState.data(data)));
+        return !data;
+      case Failure<bool>(:final error):
+        emit(state.copyWith(rfidCheckState: ResultState.error(error)));
+        return false;
+    }
+    return false;
   }
 
   /// Avanza el wizard un paso, sin pasar de la pantalla de revision.
-  void _onNextStepRequested(
+  Future<void> _onNextStepRequested(
     _NextStepRequested event,
     Emitter<RegisterAnimalState> emit,
-  ) {
-    if (state.currentStep == RegisterAnimalStep.review) {
+  ) async {
+    final currentStep = state.currentStep;
+    if (currentStep == RegisterAnimalStep.review || state.rfidCheckState is Loading<bool>) {
       return;
     }
 
+    if (currentStep == RegisterAnimalStep.identification && !await _checkRfid(state.draft.rfid.trim(), emit)) {
+      return;
+    }
+
+    if (state.currentStep != currentStep) return;
+
     emit(
       state.copyWith(
-        currentStep: RegisterAnimalStep.values[state.currentStep.index + 1],
+        currentStep: RegisterAnimalStep.values[currentStep.index + 1],
       ),
     );
   }
@@ -261,6 +316,18 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
       return;
     }
 
+    if (!await _checkRfid(state.draft.rfid.trim(), emit)) {
+      final error = switch (state.rfidCheckState) {
+        ResultError<bool>(:final error) => error,
+        _ => const DomainException(
+          message: AnimalRegisterStrings.rfidAlreadyRegistered,
+          code: DomainErrorCode.validation,
+        ),
+      };
+      emit(state.copyWith(submitResult: ResultState.error(error)));
+      return;
+    }
+
     emit(state.copyWith(submitResult: const ResultState.loading()));
 
     final result = await _registerAnimalUseCase(
@@ -289,7 +356,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     if (!_isValidRfid(rfid)) {
       return const Result.failure(
         DomainException(
-          message: 'Ingresá una caravana RFID válida de 15 dígitos.',
+          message: AnimalRegisterStrings.rfidInvalid,
           code: DomainErrorCode.validation,
         ),
       );

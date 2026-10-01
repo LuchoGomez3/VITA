@@ -53,6 +53,9 @@ class AppRoutes {
   /// Ruta de identificacion de animales mediante caravana RFID.
   static const rfidScan = '/identificar-animal';
 
+  /// Captura RFID para completar un formulario existente.
+  static const rfidCapture = '/capturar-rfid';
+
   /// Ruta de la seccion de registros de gastos.
   static const expenseRecords = '/registros-de-gastos';
 
