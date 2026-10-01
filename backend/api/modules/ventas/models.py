@@ -4,7 +4,16 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, Date, Index, Numeric, String, UniqueConstraint
+from sqlalchemy import (
+    DDL,
+    CheckConstraint,
+    Date,
+    Index,
+    Numeric,
+    String,
+    UniqueConstraint,
+    event,
+)
 from sqlmodel import Field
 
 from api.shared.enums import TipoComprador, TipoVenta
@@ -119,3 +128,156 @@ class VentaDetalle(Base, table=True):
     # operación lo discrimina, sin obligar a hacerlo en la venta por tropa.
     peso_kg: Decimal | None = Field(default=None, sa_type=Numeric(10, 3))
     precio: Decimal | None = Field(default=None, sa_type=Numeric(14, 2))
+
+
+# Tope de cobros. Vive en la base porque Supabase acepta escrituras directas y
+# porque dos dispositivos pueden sincronizar cobros de la misma venta a la vez:
+# el ``for update`` sobre la venta serializa esas escrituras, y la suma posterior
+# ve lo que la otra transacción ya commiteó. ``security definer`` hace que la
+# suma no dependa de qué filas le deja ver el RLS a quien escribe.
+FUNCION_TOPE_COBROS = """
+create or replace function public.validar_tope_cobros_venta()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+    v_monto_total numeric(14, 2);
+    v_venta_borrada timestamptz;
+    v_cobrado numeric(14, 2);
+begin
+    if tg_op = 'UPDATE' and (
+        new.venta_id <> old.venta_id
+        or new.registrado_por_id <> old.registrado_por_id
+    ) then
+        raise exception 'Un cobro no puede cambiar de venta ni de autor'
+            using errcode = 'check_violation';
+    end if;
+
+    -- Anular un cobro solo puede bajar lo cobrado.
+    if new.deleted_at is not null then
+        return new;
+    end if;
+
+    select v.monto_total, v.deleted_at
+      into v_monto_total, v_venta_borrada
+      from public.ventas v
+     where v.id = new.venta_id
+       for update;
+
+    -- Sin venta, la FK rechaza la fila.
+    if not found then
+        return new;
+    end if;
+
+    if v_venta_borrada is not null
+       and (tg_op = 'INSERT' or old.deleted_at is not null) then
+        raise exception 'No se pueden registrar cobros de una venta eliminada'
+            using errcode = 'check_violation';
+    end if;
+
+    select coalesce(sum(c.monto), 0)
+      into v_cobrado
+      from public.ventas_cobros c
+     where c.venta_id = new.venta_id
+       and c.deleted_at is null
+       and c.id <> new.id;
+
+    if v_cobrado + new.monto > v_monto_total then
+        raise exception 'Los cobros superan el monto total de la venta'
+            using errcode = 'check_violation';
+    end if;
+
+    return new;
+end;
+$$
+"""
+
+# Cierra el invariante por la otra punta: bajar el monto de una venta no puede
+# dejarla con más cobrado que vendido.
+FUNCION_MONTO_CUBRE_COBROS = """
+create or replace function public.validar_monto_venta_cubre_cobros()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+    v_cobrado numeric(14, 2);
+begin
+    if new.monto_total >= old.monto_total then
+        return new;
+    end if;
+
+    select coalesce(sum(c.monto), 0)
+      into v_cobrado
+      from public.ventas_cobros c
+     where c.venta_id = new.id
+       and c.deleted_at is null;
+
+    if v_cobrado > new.monto_total then
+        raise exception 'El monto total no puede quedar por debajo de lo cobrado'
+            using errcode = 'check_violation';
+    end if;
+
+    return new;
+end;
+$$
+"""
+
+TRIGGERS_COBROS = (
+    "drop trigger if exists ventas_cobros_validar_tope on public.ventas_cobros",
+    """
+create trigger ventas_cobros_validar_tope
+before insert or update on public.ventas_cobros
+for each row execute function public.validar_tope_cobros_venta()
+""",
+    "drop trigger if exists ventas_validar_monto_cubre_cobros on public.ventas",
+    """
+create trigger ventas_validar_monto_cubre_cobros
+before update of monto_total on public.ventas
+for each row execute function public.validar_monto_venta_cubre_cobros()
+""",
+)
+
+
+class VentaCobro(Base, SoftDeleteMixin, table=True):
+    """Dinero efectivamente recibido por una venta.
+
+    La venta conserva el importe comercial; el estado de cobro (pendiente,
+    parcial, cobrada) y el saldo se calculan sumando los cobros activos y nunca
+    se almacenan. Anular un cobro es un soft delete, así que recalcula el saldo
+    y se propaga al cliente offline.
+
+    No lleva ``establecimiento_id``: el tenant se resuelve por la venta, y
+    duplicarlo abriría la puerta a un cobro de un campo atado a la venta de otro.
+    """
+
+    __tablename__ = "ventas_cobros"
+    __table_args__ = (
+        CheckConstraint("monto > 0", name="ck_ventas_cobros_monto_positivo"),
+        # Lleva ``venta_id`` adelante, así que también sostiene la FK y el cálculo
+        # del saldo: un índice solo por ``venta_id`` sería redundante.
+        Index("ix_ventas_cobros_sync", "venta_id", "updated_at"),
+        Index("ix_ventas_cobros_updated_at", "updated_at"),
+    )
+
+    venta_id: UUID = Field(foreign_key="ventas.id")
+    # Cuándo se recibió el dinero, no cuándo se cargó: alimenta el flujo de caja.
+    fecha_cobro: date = Field(sa_type=Date, nullable=False, index=True)
+    # Sin unicidad por fecha y monto: dos pagos iguales el mismo día son reales.
+    monto: Decimal = Field(sa_type=Numeric(14, 2), nullable=False)
+    # La identidad siempre proviene del JWT; el cliente nunca puede elegirla.
+    registrado_por_id: UUID = Field(foreign_key="usuarios.id", index=True)
+    observaciones: str | None = None
+
+
+# ``create_all`` (LOCAL contra Postgres) también instala los triggers; SQLite no
+# los soporta en este dialecto y en producción los crea la migración.
+for _sentencia in (FUNCION_TOPE_COBROS, FUNCION_MONTO_CUBRE_COBROS, *TRIGGERS_COBROS):
+    event.listen(
+        VentaCobro.__table__,
+        "after_create",
+        DDL(_sentencia).execute_if(dialect="postgresql"),
+    )
