@@ -70,9 +70,11 @@ begin
        );
 
     if v_incompatibles > 0 then
-        raise exception 'Hay % animal(es) que quedarían incompatibles con la categoría',
-            v_incompatibles
-            using errcode = 'check_violation';
+        -- Mensaje concatenado: DDL() de SQLAlchemy interpreta el signo de porcentaje.
+        raise exception using
+            errcode = 'check_violation',
+            message = 'Hay ' || v_incompatibles
+                || ' animal(es) que quedarían incompatibles con la categoría';
     end if;
 
     return new;
