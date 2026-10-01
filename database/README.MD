@@ -102,6 +102,40 @@ porque en el campo nombra a machos y hembras sin destete, y ya tenía hembras as
 Ante una categoría sin clasificar o un animal incompatible, la migración se detiene en vez
 de inventar la regla.
 
+### Observaciones del animal
+
+Decisiones de fondo en `docs/adr/adr-0007-observaciones-animales-como-entradas.md`.
+
+`observaciones_animales` es sincronizable y guarda una fila por nota:
+
+| Columna | Tipo | Notas |
+| --- | --- | --- |
+| `id` | `uuid` PK | generada en mobile |
+| `animal_id` | `uuid` NOT NULL | FK `animales`; inmutable |
+| `establecimiento_id` | `uuid` NOT NULL | FK `establecimientos`; igual al del animal; inmutable |
+| `texto` | `text` NOT NULL | `trim(texto) <> ''` |
+| `fecha` | `timestamptz` NOT NULL | cuándo se hizo la observación |
+| `autor_id` | `uuid` | FK `usuarios`; sale del JWT; inmutable; null solo en notas migradas |
+| `created_at` / `updated_at` / `deleted_at` | `timestamptz` | |
+
+Índices: `ix_observaciones_animales_fecha (animal_id, fecha)` para el historial y
+`ix_observaciones_animales_sync (establecimiento_id, updated_at)` para el pull delta. El
+trigger `trg_observaciones_animales_validar` exige que el animal sea del mismo
+establecimiento y rechaza cambiar animal, establecimiento o autor. Las políticas RLS dejan
+leer, insertar (solo como uno mismo) y actualizar a los miembros activos; no hay política
+de delete porque el borrado es lógico.
+
+La migración `20261001_03` (espejo: `backend/scripts/crear_observaciones_animales.sql`)
+convirtió cada `animales.observaciones` no vacío en una entrada:
+
+- Autor en null.
+- `fecha = animales.created_at`.
+- Id determinista `md5('observacion_legacy:' || animal_id)::uuid`, para no duplicar al
+  reejecutarse.
+
+La columna vieja se conserva por compatibilidad: una nota nueva que llega por ella genera
+también una entrada.
+
 ## Ventas de hacienda
 
 `ventas` registra la operación comercial y `ventas_detalles` los animales que la componen.
