@@ -25,7 +25,9 @@ class AnimalCreate(SyncFields):
     sexo: SexoAnimal
     raza: str
     fecha_nacimiento: date
-    lote_id: UUID
+    # Opcional: un animal recién ingresado puede no estar asignado todavía. Se le
+    # asigna un lote después, con un movimiento sin lote de origen.
+    lote_id: UUID | None = None
     establecimiento_id: UUID
 
     # Opcionales
