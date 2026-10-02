@@ -91,8 +91,14 @@ lógica entre tablas y vive en dos triggers:
 - `trg_categorias_reglas_compatibles` (`validar_reglas_categoria()`) rechaza cambiar
   `sexo_permitido` o `permite_estado_reproductivo` si deja animales vivos incompatibles.
 
-Las dos funciones son `security definer`: evalúan la regla sin depender de qué filas le
-deja ver el RLS a quien escribe. `create_all` las instala en Postgres; en producción las
+Los triggers BEFORE corren antes que el WITH CHECK del RLS, así que no pueden leer filas
+que quien escribe no ve, porque su mensaje de error las revelaría.
+`validar_categoria_animal()` es `security invoker`: el backend (rol `postgres`, que no
+pasa por RLS) valida todo, y un cliente directo recibe siempre el rechazo del RLS (42501),
+sea la categoría ajena, inexistente o incompatible. `validar_reglas_categoria()` es
+`security definer` porque tiene que contar todos los animales de la categoría. No filtra
+información: solo corre en el UPDATE de filas que el RLS ya dejó actualizar.
+`create_all` las instala en Postgres; en producción las
 crea la migración `20261001_02` (espejo: `backend/scripts/agregar_reglas_reproductivas_categorias.sql`).
 Sus tests corren contra un Postgres efímero (`VITA_TEST_POSTGRES_URL`, probados con 16;
 Supabase usa 17).
