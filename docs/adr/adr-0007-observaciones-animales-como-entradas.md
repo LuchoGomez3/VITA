@@ -28,6 +28,21 @@ escrituras encoladas offline que van a llegar después del despliegue.
   - El listado ordena por `fecha` descendente y desempata por `created_at` e `id`.
 - Cualquier miembro activo del establecimiento puede crear, editar y borrar
   lógicamente cualquier entrada del establecimiento, no solo las propias.
+- **Sin fuga entre establecimientos en escrituras directas.** El trigger
+  `validar_observacion_animal()` corre antes que el WITH CHECK del RLS. Como
+  `security definer`, su mensaje revelaba si un animal ajeno existía ("pertenece a otro
+  establecimiento" frente al error de FK). El mismo hallazgo se marcó en la revisión de
+  VITA-172. Por eso:
+  - El trigger es `security invoker`. El backend (rol `postgres`, que no pasa por RLS)
+    sigue validando la pertenencia y la inmutabilidad.
+  - Un cliente directo no ve `animales` (RLS activo sin policies), así que la
+    pertenencia del animal la exige la policy de INSERT con
+    `animal_pertenece_a_establecimiento(animal_id, establecimiento_id)`.
+  - Esa función es `security definer`, pero solo responde por establecimientos donde
+    quien pregunta es miembro activo. Llamada por RPC, no sirve para sondear animales
+    ajenos, y `anon` no puede ejecutarla.
+  - Animal ajeno, inexistente o declarado en otro establecimiento: el cliente recibe
+    siempre el mismo rechazo del RLS (42501). Un test lo fija.
 - **Migración de datos** (`20261001_03` y su script espejo): cada `animales.observaciones`
   no vacío se convierte en una entrada.
   - El texto se copia íntegro.

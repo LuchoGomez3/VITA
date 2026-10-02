@@ -51,7 +51,7 @@ _FUNCION_OBSERVACION_ANIMAL = """
 create or replace function public.validar_observacion_animal()
 returns trigger
 language plpgsql
-security definer
+security invoker
 set search_path = public, pg_temp
 as $$
 declare
@@ -72,7 +72,9 @@ begin
       from public.animales a
      where a.id = new.animal_id;
 
-    -- Sin animal, la FK rechaza la fila.
+    -- Sin animal visible, deciden la FK (backend) o el RLS (cliente directo):
+    -- con security invoker, un cliente no ve animales y el trigger no
+    -- distingue "ajeno" de "inexistente".
     if found and v_establecimiento_id <> new.establecimiento_id then
         raise exception 'El animal pertenece a otro establecimiento'
             using errcode = 'check_violation';
@@ -91,6 +93,41 @@ create trigger trg_observaciones_animales_validar
 before insert or update on public.observaciones_animales
 for each row execute function public.validar_observacion_animal()
 """,
+)
+
+# Pertenencia del animal para la policy de INSERT. Es ``security definer``
+# porque un cliente directo no ve ``animales`` (RLS activo sin policies), pero
+# solo responde por establecimientos donde quien pregunta es miembro activo:
+# llamada directamente (por RPC), no sirve para sondear animales ajenos.
+_FUNCION_PERTENENCIA = """
+create or replace function public.animal_pertenece_a_establecimiento(
+    p_animal_id uuid,
+    p_establecimiento_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+    select exists (
+        select 1
+          from public.animales a
+          join public.usuarios_establecimientos ue
+            on ue.establecimiento_id = a.establecimiento_id
+         where a.id = p_animal_id
+           and a.establecimiento_id = p_establecimiento_id
+           and ue.usuario_id = auth.uid()
+           and ue.activo = true
+    )
+$$
+"""
+
+_PRIVILEGIOS_PERTENENCIA = (
+    "revoke all on function public.animal_pertenece_a_establecimiento(uuid, uuid)"
+    " from public, anon",
+    "grant execute on function public.animal_pertenece_a_establecimiento(uuid, uuid)"
+    " to authenticated",
 )
 
 # Predicado de pertenencia al tenant, idéntico al del resto de las tablas.
@@ -214,6 +251,8 @@ def _aplicar_rls(connection: Connection) -> None:
     if not _soporta_rls(connection):
         return
     sentencias = (
+        _FUNCION_PERTENENCIA,
+        *_PRIVILEGIOS_PERTENENCIA,
         f"alter table public.{_TABLA} enable row level security",
         f"drop policy if exists {_TABLA}_select_miembros on public.{_TABLA}",
         f"""
@@ -225,7 +264,13 @@ def _aplicar_rls(connection: Connection) -> None:
         f"""
         create policy {_TABLA}_insert_miembros on public.{_TABLA}
         for insert to authenticated
-        with check (autor_id = auth.uid() and {_ES_MIEMBRO})
+        with check (
+            autor_id = auth.uid()
+            and {_ES_MIEMBRO}
+            and public.animal_pertenece_a_establecimiento(
+                animal_id, establecimiento_id
+            )
+        )
         """,
         # El borrado es soft (``deleted_at``), así que se cubre con update y no
         # se habilita ninguna política de delete. Cualquier miembro activo puede
@@ -272,3 +317,10 @@ def downgrade() -> None:
         )
     if sa.inspect(connection).has_table(_TABLA):
         op.drop_table(_TABLA)
+    if connection.dialect.name == "postgresql":
+        connection.execute(
+            sa.text(
+                "drop function if exists"
+                " public.animal_pertenece_a_establecimiento(uuid, uuid)"
+            )
+        )

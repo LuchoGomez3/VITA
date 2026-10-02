@@ -41,11 +41,17 @@ class ObservacionAnimal(Base, SoftDeleteMixin, table=True):
 # El animal tiene que ser del mismo establecimiento que la observación, y el
 # animal, el establecimiento y el autor no cambian después de crearla. Supabase
 # acepta escrituras directas, así que no alcanza con que lo valide el service.
+#
+# Es ``security invoker``: un trigger BEFORE corre antes que el WITH CHECK del
+# RLS, y como definer su error revelaba si un animal ajeno existía. El backend
+# (rol ``postgres``, que no pasa por RLS) valida todo. Para un cliente directo,
+# la pertenencia del animal la exige la policy de INSERT, con
+# ``animal_pertenece_a_establecimiento()`` (migración 20261001_03).
 FUNCION_OBSERVACION_ANIMAL = """
 create or replace function public.validar_observacion_animal()
 returns trigger
 language plpgsql
-security definer
+security invoker
 set search_path = public, pg_temp
 as $$
 declare
@@ -66,7 +72,9 @@ begin
       from public.animales a
      where a.id = new.animal_id;
 
-    -- Sin animal, la FK rechaza la fila.
+    -- Sin animal visible, deciden la FK (backend) o el RLS (cliente directo):
+    -- con security invoker, un cliente no ve animales y el trigger no
+    -- distingue "ajeno" de "inexistente".
     if found and v_establecimiento_id <> new.establecimiento_id then
         raise exception 'El animal pertenece a otro establecimiento'
             using errcode = 'check_violation';

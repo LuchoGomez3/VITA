@@ -91,3 +91,22 @@ def test_script_es_transaccional_y_solo_otorga_lo_necesario(script):
         " to authenticated;" in script
     )
     assert "for delete" not in script
+
+
+def test_script_y_migracion_comparten_la_funcion_de_pertenencia(migracion, script):
+    script_normalizado = _normalizar(script)
+    for sentencia in (
+        migracion._FUNCION_PERTENENCIA,
+        *migracion._PRIVILEGIOS_PERTENENCIA,
+    ):
+        assert _normalizar(sentencia) in script_normalizado
+    assert (
+        "public.animal_pertenece_a_establecimiento(animal_id, establecimiento_id)"
+        in script
+    )
+
+
+def test_el_trigger_no_lee_animales_con_privilegios_elevados():
+    """Corre antes que el RLS: como definer, su error filtraba animales ajenos."""
+    assert "security invoker" in models.FUNCION_OBSERVACION_ANIMAL
+    assert "security definer" not in models.FUNCION_OBSERVACION_ANIMAL

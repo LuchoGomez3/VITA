@@ -161,6 +161,9 @@ async def _materializar(url: str, camino: str) -> dict[str, UUID]:
     await _crear_esquema(url, incluir_observaciones=camino == "create_all")
     conexion = await asyncpg.connect(url)
     try:
+        # Estado real de Supabase: RLS activo sin policies en las tablas que lee
+        # el trigger. Un cliente directo no ve ningún animal; el backend, todos.
+        await conexion.execute("alter table animales enable row level security")
         ids = await _sembrar(conexion)
         if camino == "script":
             await conexion.execute(_SCRIPT_SQL.read_text(encoding="utf-8"))
@@ -376,3 +379,55 @@ async def test_miembro_edita_una_nota_migrada_y_no_puede_borrar_fisicamente(cami
             assert editadas == "UPDATE 1"
             with pytest.raises(asyncpg.InsufficientPrivilegeError):
                 await cliente.execute(f"delete from {_TABLA}")
+
+
+@pytest.mark.parametrize("camino", ("migracion", "script"))
+async def test_un_miembro_no_aprende_nada_de_animales_ajenos(camino):
+    """El trigger corre antes que el WITH CHECK del RLS: no puede revelar animales.
+
+    Un miembro del campo A carga una observación apuntando a animales que no le
+    pertenecen. Sea de otro establecimiento, inexistente, o con el
+    establecimiento ajeno declarado, el rechazo tiene que ser siempre el mismo:
+    el del RLS.
+    """
+    async with _base(camino) as (_, conexion, ids):
+        intentos = (
+            ("animal ajeno en mi campo", ids["ajeno"], _CAMPO),
+            ("animal inexistente en mi campo", uuid4(), _CAMPO),
+            ("animal ajeno en su campo", ids["ajeno"], _CAMPO_AJENO),
+            ("animal inexistente en campo ajeno", uuid4(), _CAMPO_AJENO),
+            ("animal mío declarado en campo ajeno", ids["con_nota"], _CAMPO_AJENO),
+        )
+        errores = {}
+        for nombre, animal_id, campo in intentos:
+            async with como_usuario(conexion, _MIEMBRO) as cliente:
+                try:
+                    await _insertar(cliente, animal_id, establecimiento_id=campo)
+                except asyncpg.PostgresError as exc:
+                    errores[nombre] = (exc.sqlstate, str(exc))
+                else:
+                    errores[nombre] = ("sin error", "")
+
+        # Con un animal propio, el mismo cliente sí puede.
+        async with como_usuario(conexion, _MIEMBRO) as cliente:
+            await _insertar(cliente, ids["con_nota"])
+
+    assert {estado for estado, _ in errores.values()} == {"42501"}, errores
+    assert len({mensaje for _, mensaje in errores.values()}) == 1, errores
+
+
+@pytest.mark.parametrize("camino", ("migracion", "script"))
+async def test_la_funcion_de_pertenencia_no_sirve_para_sondear(camino):
+    """La función que usa la policy es invocable por ``authenticated``: fuera de
+    sus propios establecimientos, siempre responde falso."""
+    async with _base(camino) as (_, conexion, ids):
+        consulta = "select public.animal_pertenece_a_establecimiento($1, $2)"
+        async with como_usuario(conexion, _MIEMBRO) as cliente:
+            propio = await cliente.fetchval(consulta, ids["con_nota"], _CAMPO)
+            ajeno = await cliente.fetchval(consulta, ids["ajeno"], _CAMPO_AJENO)
+        async with como_usuario(conexion, None) as cliente:
+            with pytest.raises(asyncpg.InsufficientPrivilegeError):
+                await cliente.fetchval(consulta, ids["ajeno"], _CAMPO_AJENO)
+
+    assert propio is True
+    assert ajeno is False

@@ -143,11 +143,18 @@ Decisiones de fondo en `docs/adr/adr-0007-observaciones-animales-como-entradas.m
 | `created_at` / `updated_at` / `deleted_at` | `timestamptz` | |
 
 Índices: `ix_observaciones_animales_fecha (animal_id, fecha)` para el historial y
-`ix_observaciones_animales_sync (establecimiento_id, updated_at)` para el pull delta. El
-trigger `trg_observaciones_animales_validar` exige que el animal sea del mismo
-establecimiento y rechaza cambiar animal, establecimiento o autor. Las políticas RLS dejan
-leer, insertar (solo como uno mismo) y actualizar a los miembros activos; no hay política
-de delete porque el borrado es lógico.
+`ix_observaciones_animales_sync (establecimiento_id, updated_at)` para el pull delta.
+
+El trigger `trg_observaciones_animales_validar` (`security invoker`) exige que el animal
+sea del mismo establecimiento y rechaza cambiar animal, establecimiento o autor.
+
+Las políticas RLS dejan leer, insertar y actualizar a los miembros activos. El insert
+tiene que ser como uno mismo y con un animal del establecimiento, condición que verifica
+`animal_pertenece_a_establecimiento()`: es `security definer`, pero solo responde por los
+establecimientos de quien pregunta. No hay política de delete porque el borrado es lógico.
+
+Un cliente directo que apunta a un animal ajeno o inexistente recibe siempre el rechazo
+del RLS (42501), sin pistas sobre otros establecimientos.
 
 La migración `20261001_03` (espejo: `backend/scripts/crear_observaciones_animales.sql`)
 convirtió cada `animales.observaciones` no vacío en una entrada:

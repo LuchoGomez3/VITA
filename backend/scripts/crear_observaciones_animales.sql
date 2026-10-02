@@ -27,7 +27,7 @@ create index if not exists ix_observaciones_animales_sync
 create or replace function public.validar_observacion_animal()
 returns trigger
 language plpgsql
-security definer
+security invoker
 set search_path = public, pg_temp
 as $$
 declare
@@ -48,7 +48,9 @@ begin
       from public.animales a
      where a.id = new.animal_id;
 
-    -- Sin animal, la FK rechaza la fila.
+    -- Sin animal visible, deciden la FK (backend) o el RLS (cliente directo):
+    -- con security invoker, un cliente no ve animales y el trigger no
+    -- distingue "ajeno" de "inexistente".
     if found and v_establecimiento_id <> new.establecimiento_id then
         raise exception 'El animal pertenece a otro establecimiento'
             using errcode = 'check_violation';
@@ -88,6 +90,35 @@ select md5('observacion_legacy:' || a.id::text)::uuid,
    and trim(a.observaciones) <> ''
 on conflict (id) do nothing;
 
+-- Pertenencia del animal para la policy de INSERT. Es security definer porque
+-- un cliente directo no ve animales (RLS activo sin policies), pero solo
+-- responde por establecimientos donde quien pregunta es miembro activo:
+-- llamada por RPC no sirve para sondear animales ajenos.
+create or replace function public.animal_pertenece_a_establecimiento(
+    p_animal_id uuid,
+    p_establecimiento_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+    select exists (
+        select 1
+          from public.animales a
+          join public.usuarios_establecimientos ue
+            on ue.establecimiento_id = a.establecimiento_id
+         where a.id = p_animal_id
+           and a.establecimiento_id = p_establecimiento_id
+           and ue.usuario_id = auth.uid()
+           and ue.activo = true
+    )
+$$;
+
+revoke all on function public.animal_pertenece_a_establecimiento(uuid, uuid) from public, anon;
+grant execute on function public.animal_pertenece_a_establecimiento(uuid, uuid) to authenticated;
+
 alter table public.observaciones_animales enable row level security;
 
 drop policy if exists observaciones_animales_select_miembros on public.observaciones_animales;
@@ -115,6 +146,7 @@ with check (
           and ue.usuario_id = auth.uid()
           and ue.activo = true
     )
+    and public.animal_pertenece_a_establecimiento(animal_id, establecimiento_id)
 );
 
 -- El borrado es soft (deleted_at): se cubre con update, sin política de delete.
