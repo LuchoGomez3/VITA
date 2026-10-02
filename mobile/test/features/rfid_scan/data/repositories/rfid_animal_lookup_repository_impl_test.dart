@@ -105,5 +105,8 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   Future<void> pullRemoteAnimals(String establishmentId) async {}
 
   @override
+  Future<void> retryRejectedAnimal(String animalId) async {}
+
+  @override
   Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) async => animal;
 }

@@ -69,6 +69,13 @@ void main() {
       expect(prefilledBloc.state.draft.categoryName, isNull);
       expect(prefilledBloc.state.draft.mother, isNull);
       expect(prefilledBloc.state.draft.father, isNull);
+      expect(prefilledBloc.state.draft.breed, isEmpty);
+      expect(prefilledBloc.state.draft.sex, isEmpty);
+      final today = DateTime.now();
+      expect(
+        prefilledBloc.state.draft.birthDate,
+        DateTime(today.year, today.month, today.day),
+      );
     });
 
     test('loads global categories without preselecting one', () async {
@@ -347,6 +354,9 @@ void main() {
         rfid: '982000412991416',
         visualTagSeries: '003',
         visualTagNumber: '1295',
+        breed: 'Aberdeen Angus',
+        sex: 'Hembra',
+        birthDate: DateTime(2025, 3, 14),
         birthWeight: '32,5',
         establishmentId: '8b75eb38-8b0f-44dc-979f-89ce2817b63d',
         establishmentName: 'La Sirena',
@@ -414,6 +424,9 @@ void main() {
         rfid: '982000412991416',
         visualTagSeries: '003',
         visualTagNumber: '1295',
+        breed: 'Aberdeen Angus',
+        sex: 'Hembra',
+        birthDate: DateTime(2025, 3, 14),
         birthWeight: '32.5',
         establishmentId: '8b75eb38-8b0f-44dc-979f-89ce2817b63d',
         establishmentName: 'La Sirena',

@@ -96,6 +96,21 @@ void main() {
       expect(detail.categoryName, 'Novillito');
       expect(detail.weightHistory.single.weightKg, 210);
     });
+
+    test('retries a rejected animal through the Brick store', () async {
+      final brickStore = _FakeAnimalBrickStore(localAnimal: _brickAnimal);
+      final repository = AnimalDetailRepositoryImpl(
+        brickStore: brickStore,
+        categoriaBrickStore: _FakeCategoriaBrickStore(),
+        pesajeBrickStore: _FakePesajeBrickStore(),
+        remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
+      );
+
+      final result = await repository.retrySync(_animalId);
+
+      expect(result, const Result<void>.success(null));
+      expect(brickStore.retriedAnimalIds, [_animalId]);
+    });
   });
 }
 
@@ -155,6 +170,7 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
 
   final BrickAnimalModel? localAnimal;
   final List<BrickAnimalModel> cachedAnimals = [];
+  final List<String> retriedAnimalIds = [];
 
   @override
   Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) async {
@@ -191,6 +207,11 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
 
   @override
   Future<void> pullRemoteAnimals(String establishmentId) async {}
+
+  @override
+  Future<void> retryRejectedAnimal(String animalId) async {
+    retriedAnimalIds.add(animalId);
+  }
 
   @override
   Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) async {

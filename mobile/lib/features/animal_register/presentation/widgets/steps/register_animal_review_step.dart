@@ -17,6 +17,7 @@ class RegisterAnimalReviewStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<RegisterAnimalBloc>().state;
     final draft = state.draft;
+    final birthDate = draft.birthDate;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
@@ -64,15 +65,17 @@ class RegisterAnimalReviewStep extends StatelessWidget {
             rows: [
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourBreedLabel,
-                value: draft.breed,
+                value: _requiredValue(draft.breed),
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourSexLabel,
-                value: draft.sex,
+                value: _requiredValue(draft.sex),
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourBirthDateLabel,
-                value: DateDisplayFormatter.shortDate(draft.birthDate),
+                value: birthDate == null
+                    ? AnimalRegisterStrings.stepFourNoDataValue
+                    : DateDisplayFormatter.shortDate(birthDate),
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourCategoryLabel,
@@ -128,6 +131,8 @@ class RegisterAnimalReviewStep extends StatelessWidget {
 
   String _parent(AnimalParent? parent) =>
       parent == null ? AnimalRegisterStrings.stepFourNoDataValue : '${parent.visualTag} · ${parent.breed}';
+
+  String _requiredValue(String value) => value.trim().isEmpty ? AnimalRegisterStrings.stepFourNoDataValue : value;
 
   String _destination(
     String? id,

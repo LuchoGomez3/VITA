@@ -62,6 +62,21 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
     }
   }
 
+  @override
+  Future<Result<void>> retrySync(String animalId) async {
+    try {
+      await _brickStore.retryRejectedAnimal(animalId);
+      return const Result.success(null);
+    } on Object {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudo reintentar la sincronización del animal.',
+          code: DomainErrorCode.offline,
+        ),
+      );
+    }
+  }
+
   /// Refresca datos relacionados y siempre termina leyendo la cache local.
   ///
   /// Los errores del pull no invalidan la ficha: en campo puede no haber red y

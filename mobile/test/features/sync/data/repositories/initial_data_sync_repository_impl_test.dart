@@ -166,6 +166,9 @@ class _FakeAnimalStore implements AnimalBrickStore {
   }
 
   @override
+  Future<void> retryRejectedAnimal(String animalId) async {}
+
+  @override
   Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) async => animal;
 
   @override

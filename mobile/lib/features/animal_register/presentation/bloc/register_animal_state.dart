@@ -25,8 +25,8 @@ sealed class RegisterAnimalDraft with _$RegisterAnimalDraft {
     required String visualTagNumber,
     required String breed,
     required String sex,
-    required DateTime birthDate,
     required String birthWeight,
+    DateTime? birthDate,
     String? categoryId,
     String? categoryName,
     String? establishmentId,
@@ -37,15 +37,18 @@ sealed class RegisterAnimalDraft with _$RegisterAnimalDraft {
   }) = _RegisterAnimalDraft;
 
   /// Creates the initial values currently displayed by the flow.
-  factory RegisterAnimalDraft.initial({String rfid = ''}) => RegisterAnimalDraft(
-    rfid: rfid,
-    visualTagSeries: '',
-    visualTagNumber: '',
-    breed: AnimalRegisterStrings.stepTwoBreedOptions.first,
-    sex: AnimalRegisterStrings.stepTwoFemale,
-    birthDate: DateTime(2025, 3, 14),
-    birthWeight: '',
-  );
+  factory RegisterAnimalDraft.initial({String rfid = ''}) {
+    final now = DateTime.now();
+    return RegisterAnimalDraft(
+      rfid: rfid,
+      visualTagSeries: '',
+      visualTagNumber: '',
+      breed: '',
+      sex: '',
+      birthWeight: '',
+      birthDate: DateTime(now.year, now.month, now.day),
+    );
+  }
 }
 
 /// Immutable state of the complete registration flow.
