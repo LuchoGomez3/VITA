@@ -16,11 +16,11 @@ from sqlalchemy import (
 )
 from sqlmodel import Field
 
-from api.shared.enums import TipoComprador, TipoVenta
+from api.shared.enums import MedioCobro, TipoComprador, TipoVenta
 from database.models import Base, SoftDeleteMixin
 
 
-def _valores_sql(enum: type[TipoVenta] | type[TipoComprador]) -> str:
+def _valores_sql(enum: type[TipoVenta | TipoComprador | MedioCobro]) -> str:
     """Lista los valores del enum para un ``CHECK ... IN`` sin duplicar literales.
 
     Derivarla del enum evita que la restricción de la base y la validación de
@@ -295,6 +295,10 @@ class VentaCobro(Base, SoftDeleteMixin, table=True):
     __tablename__ = "ventas_cobros"
     __table_args__ = (
         CheckConstraint("monto > 0", name="ck_ventas_cobros_monto_positivo"),
+        CheckConstraint(
+            f"medio_cobro in ({_valores_sql(MedioCobro)})",
+            name="ck_ventas_cobros_medio_cobro_valido",
+        ),
         # Lleva ``venta_id`` adelante, así que también sostiene la FK y el cálculo
         # del saldo: un índice solo por ``venta_id`` sería redundante.
         Index("ix_ventas_cobros_sync", "venta_id", "updated_at"),
@@ -306,6 +310,7 @@ class VentaCobro(Base, SoftDeleteMixin, table=True):
     fecha_cobro: date = Field(sa_type=Date, nullable=False, index=True)
     # Sin unicidad por fecha y monto: dos pagos iguales el mismo día son reales.
     monto: Decimal = Field(sa_type=Numeric(14, 2), nullable=False)
+    medio_cobro: MedioCobro = Field(sa_type=String, nullable=False)
     # La identidad siempre proviene del JWT; el cliente nunca puede elegirla.
     registrado_por_id: UUID = Field(foreign_key="usuarios.id", index=True)
     observaciones: str | None = None

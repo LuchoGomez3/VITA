@@ -200,8 +200,9 @@ async def _cobrar(
 ) -> UUID:
     cobro_id = cobro_id or uuid4()
     await conexion.execute(
-        "insert into ventas_cobros (id, venta_id, fecha_cobro, monto, registrado_por_id)"
-        " values ($1, $2, $3, $4, $5)",
+        "insert into ventas_cobros"
+        " (id, venta_id, fecha_cobro, monto, medio_cobro, registrado_por_id)"
+        " values ($1, $2, $3, $4, 'transferencia', $5)",
         cobro_id,
         venta_id,
         fecha_cobro,
@@ -351,6 +352,29 @@ async def test_reintentar_la_sincronizacion_no_duplica_el_cobro(camino):
         with pytest.raises(asyncpg.UniqueViolationError):
             await _cobrar(conexion, "300.00", cobro_id=cobro)
         assert await _cobrado(conexion) == Decimal("300.00")
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+@pytest.mark.parametrize(
+    ("medio", "error"),
+    [
+        ("bitcoin", asyncpg.CheckViolationError),
+        (None, asyncpg.NotNullViolationError),
+    ],
+)
+async def test_medio_de_cobro_invalido_o_ausente(camino, medio, error):
+    async with _base(camino) as (_, conexion):
+        with pytest.raises(error):
+            await conexion.execute(
+                "insert into ventas_cobros"
+                " (id, venta_id, fecha_cobro, monto, medio_cobro, registrado_por_id)"
+                " values ($1, $2, $3, 100.00, $4, $5)",
+                uuid4(),
+                _VENTA,
+                date(2026, 9, 15),
+                medio,
+                _OWNER,
+            )
 
 
 def _hoy_en_cordoba() -> date:

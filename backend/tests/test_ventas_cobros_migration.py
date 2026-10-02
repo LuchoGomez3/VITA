@@ -13,7 +13,7 @@ from alembic.script import ScriptDirectory
 import pytest
 
 from api.modules.ventas import models as ventas_models
-from api.shared.enums import RolUsuario
+from api.shared.enums import MedioCobro, RolUsuario
 
 _BACKEND = Path(__file__).parent.parent
 _MIGRACION = _BACKEND / "alembic/versions/20261001_01_crear_ventas_cobros.py"
@@ -185,3 +185,24 @@ def test_no_hay_borrado_fisico_para_los_clientes(migracion, script, fuente):
         "grant select, insert, update on public.ventas_cobros to authenticated" in texto
     )
     assert "registrado_por_id = auth.uid()" in texto
+
+
+def _valores_del_check(contenido: str) -> set[str]:
+    coincidencia = re.search(r"medio_cobro in \(([^)]+)\)", contenido)
+    assert coincidencia, "No se encontró el CHECK de medio_cobro"
+    return {valor.strip().strip("'\"") for valor in coincidencia.group(1).split(",")}
+
+
+def test_medios_de_cobro_coinciden_entre_modelo_migracion_y_script(script):
+    """El modelo deriva los literales del enum; migración y script los escriben a mano."""
+    esperados = {medio.value for medio in MedioCobro}
+    restriccion = next(
+        r
+        for r in ventas_models.VentaCobro.__table__.constraints
+        if r.name == "ck_ventas_cobros_medio_cobro_valido"
+    )
+
+    assert _valores_del_check(str(restriccion.sqltext)) == esperados
+    assert _valores_del_check(_MIGRACION.read_text(encoding="utf-8")) == esperados
+    assert _valores_del_check(script) == esperados
+    assert "medio_cobro varchar not null" in script

@@ -116,6 +116,7 @@ las ventas ni a sus montos, incluso si intenta escribir directamente mediante Su
 | `venta_id` | `uuid` NOT NULL | FK `ventas`; inmutable |
 | `fecha_cobro` | `date` NOT NULL | cuándo se recibió el dinero; no puede ser futura (hoy en Córdoba) |
 | `monto` | `numeric(14,2)` NOT NULL | `> 0` |
+| `medio_cobro` | `varchar` NOT NULL | `efectivo` \| `transferencia` \| `cheque` \| `tarjeta` |
 | `registrado_por_id` | `uuid` NOT NULL | FK `usuarios`; sale del JWT; inmutable |
 | `observaciones` | `varchar` | |
 | `created_at` / `updated_at` / `deleted_at` | `timestamptz` | anular = soft delete |

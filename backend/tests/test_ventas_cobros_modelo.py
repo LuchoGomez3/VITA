@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 
 from api.modules.establecimientos.models import Establecimiento
 from api.modules.ventas.models import Venta, VentaCobro
-from api.shared.enums import TipoComprador, TipoVenta
+from api.shared.enums import MedioCobro, TipoComprador, TipoVenta
 
 
 @pytest.fixture
@@ -45,6 +45,7 @@ def _cobro(venta: UUID, usuario: UUID, **overrides) -> VentaCobro:
         "venta_id": venta,
         "fecha_cobro": date(2026, 9, 15),
         "monto": Decimal("400.00"),
+        "medio_cobro": MedioCobro.transferencia,
         "registrado_por_id": usuario,
     }
     datos.update(overrides)
@@ -95,7 +96,7 @@ async def test_monto_debe_ser_positivo(session, venta_id, usuario_actual, monto)
 
 @pytest.mark.anyio
 @pytest.mark.parametrize(
-    "campo", ["venta_id", "fecha_cobro", "monto", "registrado_por_id"]
+    "campo", ["venta_id", "fecha_cobro", "monto", "medio_cobro", "registrado_por_id"]
 )
 async def test_campos_obligatorios(session, venta_id, usuario_actual, campo):
     session.add(_cobro(venta_id, usuario_actual.id, **{campo: None}))
@@ -163,3 +164,25 @@ def test_indices_de_consulta_y_sincronizacion():
     }
     # Ninguna unicidad: dos pagos iguales pueden ser operaciones distintas.
     assert not any(i.unique for i in VentaCobro.__table__.indexes)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("medio", list(MedioCobro))
+async def test_se_acepta_cada_medio_de_cobro(session, venta_id, usuario_actual, medio):
+    cobro = _cobro(venta_id, usuario_actual.id, medio_cobro=medio)
+    session.add(cobro)
+    await session.commit()
+
+    guardado = await session.get(VentaCobro, cobro.id)
+    assert guardado.medio_cobro == medio
+
+
+@pytest.mark.anyio
+async def test_se_rechaza_un_medio_de_cobro_fuera_del_enum(
+    session, venta_id, usuario_actual
+):
+    """El CHECK protege las escrituras directas que no pasan por Pydantic."""
+    session.add(_cobro(venta_id, usuario_actual.id, medio_cobro="bitcoin"))
+    with pytest.raises(IntegrityError):
+        await session.commit()
+    await session.rollback()

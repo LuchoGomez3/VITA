@@ -217,9 +217,15 @@ def _crear_tabla() -> None:
         sa.Column("venta_id", sa.Uuid(), nullable=False),
         sa.Column("fecha_cobro", sa.Date(), nullable=False),
         sa.Column("monto", sa.Numeric(precision=14, scale=2), nullable=False),
+        sa.Column("medio_cobro", sa.String(), nullable=False),
         sa.Column("registrado_por_id", sa.Uuid(), nullable=False),
         sa.Column("observaciones", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.CheckConstraint("monto > 0", name="ck_ventas_cobros_monto_positivo"),
+        # La API valida el enum, pero Supabase acepta escrituras directas.
+        sa.CheckConstraint(
+            "medio_cobro in ('efectivo', 'transferencia', 'cheque', 'tarjeta')",
+            name="ck_ventas_cobros_medio_cobro_valido",
+        ),
         sa.ForeignKeyConstraint(["venta_id"], ["ventas.id"]),
         sa.ForeignKeyConstraint(["registrado_por_id"], ["usuarios.id"]),
         sa.PrimaryKeyConstraint("id"),

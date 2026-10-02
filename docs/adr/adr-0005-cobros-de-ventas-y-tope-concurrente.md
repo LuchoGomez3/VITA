@@ -22,6 +22,11 @@ la venta queda sobrepagada.
 - `ventas_cobros` registra cada cobro efectivo como una fila sincronizable: UUID
   generado en el cliente, `created_at`/`updated_at`/`deleted_at`, `monto numeric(14,2)
   > 0`. Anular un cobro es un soft delete.
+- Cada cobro registra su `medio_cobro` obligatorio: `efectivo`, `transferencia`, `cheque`
+  o `tarjeta`. Sigue el mismo mecanismo que los valores cerrados de `ventas`: un `Enum` de
+  Python, una columna `varchar` y un `CHECK` derivado del enum. Un tipo `enum` de Postgres
+  obligaría a hacer `alter type` para sumar un medio. Lo pidió el responsable de producto
+  de ventas en la review del PR #54.
 - El estado de cobro (pendiente, parcial, cobrada) y el saldo **no se almacenan**: se
   calculan desde la suma de los cobros activos.
 - La tabla no tiene `establecimiento_id`: el tenant se resuelve por la venta. Duplicarlo

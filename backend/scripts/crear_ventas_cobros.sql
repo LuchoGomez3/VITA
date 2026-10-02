@@ -11,9 +11,12 @@ create table if not exists public.ventas_cobros (
     venta_id uuid not null references public.ventas(id),
     fecha_cobro date not null,
     monto numeric(14, 2) not null,
+    medio_cobro varchar not null,
     registrado_por_id uuid not null references public.usuarios(id),
     observaciones varchar,
-    constraint ck_ventas_cobros_monto_positivo check (monto > 0)
+    constraint ck_ventas_cobros_monto_positivo check (monto > 0),
+    constraint ck_ventas_cobros_medio_cobro_valido
+        check (medio_cobro in ('efectivo', 'transferencia', 'cheque', 'tarjeta'))
 );
 
 -- Lleva venta_id adelante: sostiene la FK, el saldo y el pull delta.
