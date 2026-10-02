@@ -20,7 +20,7 @@ void main() {
       lookupRepository = _FakeRfidAnimalLookupRepository();
       bloc = RfidScanBloc(
         readingSource: readingSource,
-        validateRfidReadingUseCase: ValidateRfidReadingUseCase(),
+        validateRfidReadingUseCase: const ValidateRfidReadingUseCase(),
         findAnimalByRfidUseCase: FindAnimalByRfidUseCase(lookupRepository),
         establishmentId: 'establishment-id',
       );

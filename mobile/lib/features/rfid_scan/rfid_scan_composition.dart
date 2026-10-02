@@ -15,7 +15,7 @@ RfidScanBloc createRfidScanBloc({
   );
   return RfidScanBloc(
     readingSource: readingSource,
-    validateRfidReadingUseCase: ValidateRfidReadingUseCase(),
+    validateRfidReadingUseCase: const ValidateRfidReadingUseCase(),
     findAnimalByRfidUseCase: FindAnimalByRfidUseCase(repository),
     establishmentId: establishmentId,
   );

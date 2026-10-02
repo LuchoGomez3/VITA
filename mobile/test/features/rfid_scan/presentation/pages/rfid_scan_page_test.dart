@@ -21,7 +21,7 @@ void main() {
           establishmentId: 'establishment-id',
           createBloc: ({required establishmentId}) => RfidScanBloc(
             readingSource: source,
-            validateRfidReadingUseCase: ValidateRfidReadingUseCase(),
+            validateRfidReadingUseCase: const ValidateRfidReadingUseCase(),
             findAnimalByRfidUseCase: FindAnimalByRfidUseCase(
               _FakeRfidAnimalLookupRepository(),
             ),
