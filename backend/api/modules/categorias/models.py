@@ -43,6 +43,12 @@ class Categoria(Base, SoftDeleteMixin, table=True):
 # Cierra el invariante por la otra punta: cambiar las reglas de una categoría no
 # puede dejar animales vivos incompatibles. Misma condición que
 # ``CategoriaRepository.contar_animales_incompatibles``.
+#
+# Es ``security definer``: tiene que contar TODOS los animales de la categoría,
+# también los que quien escribe no ve, o el invariante quedaría abierto. No filtra
+# información porque solo corre en el UPDATE de una categoría, y el RLS ya filtró
+# antes las filas que el cliente puede actualizar. En una fila que el cliente no
+# ve, el trigger nunca se dispara.
 FUNCION_REGLAS_CATEGORIA = """
 create or replace function public.validar_reglas_categoria()
 returns trigger

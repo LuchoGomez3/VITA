@@ -51,6 +51,21 @@ cargadas allí (`550e8400-…`, de dos establecimientos) son datos de prueba.
 
   El primero bloquea la fila de la categoría (`for share`) para que los dos no se crucen
   en escrituras concurrentes.
+- **Los triggers no filtran información entre establecimientos.** Un trigger BEFORE corre
+  antes que el WITH CHECK del RLS, así que su mensaje de error no puede depender de filas
+  que quien escribe no ve. El mismo hallazgo se marcó en la revisión de VITA-172.
+  - `validar_categoria_animal()` es `security invoker`. El backend (rol `postgres`, que
+    no pasa por RLS) valida todo. Un cliente directo solo lee lo que el RLS le muestra:
+    sea la categoría ajena, inexistente o incompatible, recibe siempre el mismo rechazo
+    del RLS (42501). Un test lo fija.
+  - `validar_reglas_categoria()` sigue `security definer`, porque tiene que contar todos
+    los animales de la categoría o el invariante queda abierto. No filtra información:
+    solo corre en el UPDATE de filas que el RLS ya dejó actualizar.
+  - Hoy `categorias` y `animales` tienen RLS activo sin policies, así que un cliente
+    directo no ve ni escribe nada. Si algún día se agrega una policy de INSERT o UPDATE
+    en `animales` para clientes directos, también hay que validar ahí, en la policy, la
+    pertenencia de la categoría. Como invoker, el trigger no ve una categoría ajena y la
+    deja pasar; la FK no lo impide porque no pasa por RLS.
 - **Catálogo global** (decisión de Ernesto, PO de animales, y Lucho, 2026-10-02: "las
   categorías están en el front"). La migración `20261001_02` siembra las seis categorías
   del front como globales (`establecimiento_id` null), con los mismos UUIDs que usa

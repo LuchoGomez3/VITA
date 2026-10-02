@@ -124,7 +124,7 @@ alter table public.animales
 create or replace function public.validar_categoria_animal()
 returns trigger
 language plpgsql
-security definer
+security invoker
 set search_path = public, pg_temp
 as $$
 declare
@@ -148,7 +148,9 @@ begin
      where c.id = new.categoria_id
        for share;
 
-    -- Sin categoría, la FK rechaza la fila.
+    -- Sin categoría visible, la FK o el RLS rechazan la fila. Con security
+    -- invoker, un cliente directo no ve categorías ajenas: el trigger no
+    -- distingue "ajena" de "inexistente" y no revela sus reglas.
     if not found then
         return new;
     end if;

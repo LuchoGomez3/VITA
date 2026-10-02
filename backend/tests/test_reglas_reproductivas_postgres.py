@@ -23,7 +23,14 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
 
 import api.modules  # noqa: F401  -- registra todas las tablas en la metadata
-from tests.postgres_helpers import base_temporal, requiere_postgres, url_sqlalchemy
+from tests.postgres_helpers import (
+    base_temporal,
+    como_usuario,
+    instalar_auth_supabase,
+    requiere_postgres,
+    simular_privilegios_por_defecto,
+    url_sqlalchemy,
+)
 
 pytestmark = [requiere_postgres, pytest.mark.anyio]
 
@@ -646,3 +653,101 @@ async def test_ternera_global_no_admite_condicion(camino):
             await _insertar_animal(
                 conexion, "hembra", _G_TERNERA, estado_reproductivo="vacia"
             )
+
+
+# ---------------------------------------------- sin fuga entre establecimientos
+
+# Estado real de Supabase (consultado el 2026-10-02): ``animales`` y
+# ``categorias`` tienen RLS activo, ninguna policy y todos los grants para
+# ``authenticated``. Un cliente directo no ve ni escribe nada; solo el backend.
+_RLS_SUPABASE_ANIMALES = (
+    "alter table animales enable row level security",
+    "alter table categorias enable row level security",
+)
+
+
+@asynccontextmanager
+async def _base_como_supabase(camino: str):
+    """Como ``_base``, pero con el auth, los privilegios y el RLS de Supabase."""
+    async with base_temporal() as url:
+        conexion = await asyncpg.connect(url)
+        try:
+            await instalar_auth_supabase(conexion)
+            await simular_privilegios_por_defecto(conexion)
+        finally:
+            await conexion.close()
+        await _materializar(url, camino)
+        conexion = await asyncpg.connect(url)
+        try:
+            for sentencia in _RLS_SUPABASE_ANIMALES:
+                await conexion.execute(sentencia)
+            await conexion.execute(
+                "insert into usuarios_establecimientos"
+                " (id, usuario_id, establecimiento_id, rol, activo)"
+                " values ($1, $2, $3, 'owner', true)",
+                uuid4(),
+                _OWNER,
+                _CAMPO,
+            )
+            yield conexion
+        finally:
+            await conexion.close()
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_un_cliente_directo_no_aprende_nada_de_categorias_ajenas(camino):
+    """El trigger corre antes que el RLS: no puede revelar reglas que el RLS oculta.
+
+    Un miembro del campo A da de alta un animal apuntando a categorías que no
+    puede ver. Sea de otro establecimiento, incompatible con el sexo o
+    inexistente, el rechazo tiene que ser siempre el mismo: el del RLS.
+    """
+    async with _base_como_supabase(camino) as conexion:
+        ajena = uuid4()
+        await conexion.execute(
+            "insert into categorias (id, establecimiento_id, nombre,"
+            " sexo_permitido, permite_estado_reproductivo)"
+            " values ($1, $2, 'Ajena', 'hembra', true)",
+            ajena,
+            _CAMPO_AJENO,
+        )
+        destinos = (
+            ("ajena e incompatible", ajena, "macho"),
+            ("ajena y compatible", ajena, "hembra"),
+            ("inexistente", uuid4(), "macho"),
+            ("propia e incompatible", _VACA, "macho"),
+        )
+        errores = {}
+        for nombre, categoria_id, sexo in destinos:
+            async with como_usuario(conexion, _OWNER) as cliente:
+                try:
+                    await _insertar_animal(cliente, sexo, categoria_id)
+                except asyncpg.PostgresError as exc:
+                    errores[nombre] = (exc.sqlstate, str(exc))
+                else:
+                    errores[nombre] = ("sin error", "")
+
+    assert {estado for estado, _ in errores.values()} == {"42501"}, errores
+    assert len({mensaje for _, mensaje in errores.values()}) == 1, errores
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_un_cliente_directo_no_cambia_reglas_ni_sabe_si_hay_animales(camino):
+    """El trigger de reglas es definer, pero solo corre sobre filas que el RLS ya
+    dejó actualizar. Con animales incompatibles o sin ellos, el cliente obtiene lo
+    mismo: cero filas actualizadas y ningún mensaje del trigger."""
+    async with _base_como_supabase(camino) as conexion:
+        await _insertar_animal(conexion, "hembra", _TERNERO)
+        resultados = []
+        for categoria_id in (_TERNERO, _ENGORDE, uuid4()):
+            async with como_usuario(conexion, _OWNER) as cliente:
+                resultados.append(
+                    await cliente.execute(
+                        "update categorias set sexo_permitido = 'macho' where id = $1",
+                        categoria_id,
+                    )
+                )
+        reglas = await _reglas(conexion)
+
+    assert resultados == ["UPDATE 0"] * 3
+    assert reglas[_TERNERO] == ("ambos", False)

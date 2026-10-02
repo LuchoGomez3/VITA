@@ -58,13 +58,18 @@ class Animal(Base, SoftDeleteMixin, table=True):
 # puede ser un CHECK: vive en un trigger porque Supabase acepta escrituras
 # directas que no pasan por el service. ``for share`` bloquea la categoría hasta
 # el commit, de modo que un cambio concurrente de sus reglas espera y luego ve
-# este animal. ``security definer`` evalúa la regla sin depender de qué filas de
-# ``categorias`` le deja ver el RLS a quien escribe.
+# este animal.
+#
+# Es ``security invoker`` a propósito. El trigger corre ANTES que el WITH CHECK
+# del RLS: con ``security definer`` leería categorías que quien escribe no puede
+# ver, y su mensaje de error revelaría que existen y cuáles son sus reglas. Como
+# invoker, el backend (rol ``postgres``, que no pasa por RLS) valida todo, y un
+# cliente directo solo valida contra lo que ya ve; el rechazo es el del RLS.
 FUNCION_CATEGORIA_COMPATIBLE = """
 create or replace function public.validar_categoria_animal()
 returns trigger
 language plpgsql
-security definer
+security invoker
 set search_path = public, pg_temp
 as $$
 declare
@@ -88,7 +93,9 @@ begin
      where c.id = new.categoria_id
        for share;
 
-    -- Sin categoría, la FK rechaza la fila.
+    -- Sin categoría visible, la FK o el RLS rechazan la fila. Con security
+    -- invoker, un cliente directo no ve categorías ajenas: el trigger no
+    -- distingue "ajena" de "inexistente" y no revela sus reglas.
     if not found then
         return new;
     end if;
