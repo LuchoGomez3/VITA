@@ -70,7 +70,7 @@ class AnimalRegistrationOfflineContext implements AnimalRegistrationContext {
       ..clear()
       ..addEntries(
         lots
-            .where((lot) => lot.statusCode == 'active')
+            .where((lot) => lot.statusCode == 'activo')
             .map(
               (lot) => MapEntry(
                 lot.localId,
