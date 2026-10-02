@@ -11,10 +11,6 @@ abstract class AppConfig with _$AppConfig {
     required String environment,
     required String backendBaseUrl,
     @Default(true) bool enableLogs,
-    // TODO(field-sync): habilitar estos flags en builds desplegadas solamente
-    // después de validar ambos contratos REST y sus pruebas de integración.
-    @Default(bool.fromEnvironment('VITA_ENABLE_LOT_REMOTE_SYNC')) bool enableLotRemoteSync,
-    @Default(bool.fromEnvironment('VITA_ENABLE_LOT_MOVEMENT_REMOTE_SYNC')) bool enableLotMovementRemoteSync,
   }) = _AppConfig;
 
   /// Configuración activa de esta build.

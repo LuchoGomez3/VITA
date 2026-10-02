@@ -9,7 +9,9 @@ Future<BrickAnimalLotMovementModel> _$BrickAnimalLotMovementModelFromRest(
   return BrickAnimalLotMovementModel(
     localId: data['id'] as String,
     establishmentId: data['establecimiento_id'] as String,
-    sourceLotId: data['lote_origen_id'] as String,
+    sourceLotId: data['lote_origen_id'] == null
+        ? null
+        : data['lote_origen_id'] as String?,
     destinationLotId: data['lote_destino_id'] as String,
     animalIdsJson: brickMovementAnimalIdsFromBackend(data['animal_ids']),
     occurredAt: DateTime.parse(data['fecha_movimiento'] as String),
@@ -40,7 +42,6 @@ Future<Map<String, dynamic>> _$BrickAnimalLotMovementModelToRest(
     'animal_ids': brickMovementAnimalIdsToBackend(instance.animalIdsJson),
     'fecha_movimiento': instance.occurredAt.toIso8601String(),
     'motivo': instance.reason,
-    'responsable_id': instance.responsibleId,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),
@@ -55,7 +56,9 @@ Future<BrickAnimalLotMovementModel> _$BrickAnimalLotMovementModelFromSqlite(
   return BrickAnimalLotMovementModel(
     localId: data['local_id'] as String,
     establishmentId: data['establishment_id'] as String,
-    sourceLotId: data['source_lot_id'] as String,
+    sourceLotId: data['source_lot_id'] == null
+        ? null
+        : data['source_lot_id'] as String?,
     destinationLotId: data['destination_lot_id'] as String,
     animalIdsJson: data['animal_ids_json'] as String,
     occurredAt: DateTime.parse(data['occurred_at'] as String),
@@ -70,6 +73,10 @@ Future<BrickAnimalLotMovementModel> _$BrickAnimalLotMovementModelFromSqlite(
         : data['deleted_at'] == null
         ? null
         : DateTime.tryParse(data['deleted_at'] as String),
+    syncStatus: brickMovementSyncStatusFromSqlite(data['sync_status']),
+    syncErrorCode: data['sync_error_code'] == null
+        ? null
+        : data['sync_error_code'] as String?,
   )..primaryKey = data['_brick_id'] as int;
 }
 
@@ -90,6 +97,10 @@ Future<Map<String, dynamic>> _$BrickAnimalLotMovementModelToSqlite(
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),
+    'sync_status': BrickAnimalLotMovementSyncStatus.values.indexOf(
+      instance.syncStatus,
+    ),
+    'sync_error_code': instance.syncErrorCode,
   };
 }
 
@@ -173,6 +184,18 @@ class BrickAnimalLotMovementModelAdapter
       columnName: 'deleted_at',
       iterable: false,
       type: DateTime,
+    ),
+    'syncStatus': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'sync_status',
+      iterable: false,
+      type: BrickAnimalLotMovementSyncStatus,
+    ),
+    'syncErrorCode': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'sync_error_code',
+      iterable: false,
+      type: String,
     ),
   };
   @override

@@ -163,6 +163,13 @@ class _LotDetailBody extends StatelessWidget {
           label: FieldStrings.lotStatusLabel,
           value: FieldStrings.statusName(lot.status),
         ),
+        if (lot.syncStatus == LotSyncStatus.rejected) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            FieldStrings.syncErrorMessage(lot.syncErrorCode),
+            style: AppTypography.errorBody,
+          ),
+        ],
         if (state.mutationErrorMessage case final message?) ...[
           const SizedBox(height: AppSpacing.md),
           Text(message, style: AppTypography.errorBody),
@@ -201,11 +208,21 @@ class _LotDetailBody extends StatelessWidget {
               title: Text(
                 animal.visualTag.isEmpty ? animal.rfidTagNumber : animal.visualTag,
               ),
-              subtitle: Text(
-                FieldStrings.animalRfidDetails(
-                  categoryName: animal.categoryName,
-                  rfidTagNumber: animal.rfidTagNumber,
-                ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    FieldStrings.animalRfidDetails(
+                      categoryName: animal.categoryName,
+                      rfidTagNumber: animal.rfidTagNumber,
+                    ),
+                  ),
+                  if (animal.syncErrorCode case final errorCode?)
+                    Text(
+                      FieldStrings.syncErrorMessage(errorCode),
+                      style: AppTypography.errorBody,
+                    ),
+                ],
               ),
             ),
         const SizedBox(height: AppSpacing.md),
