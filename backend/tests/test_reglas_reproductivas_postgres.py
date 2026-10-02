@@ -43,6 +43,22 @@ _VACA = UUID("550e8400-e29b-41d4-a716-446655440032")
 _TORO = UUID("550e8400-e29b-41d4-a716-446655440033")
 _ENGORDE = UUID("550e8400-e29b-41d4-a716-446655440034")
 
+# Catálogo global sembrado por la migración: las categorías del front.
+_G_TERNERA = UUID("d37e62fb-96db-4ff1-a26b-0e3b2c3b36d8")
+_G_TERNERO = UUID("b9a6e57b-20ae-49b1-a7bb-17c71af546f3")
+_G_VAQUILLONA = UUID("b6d6440c-88c6-48cc-9003-0ad2cc05f3d5")
+_G_VACA = UUID("ef69117b-c979-4665-b13f-2b26ff0f19b3")
+_G_NOVILLO = UUID("41da4271-bd25-4ba0-ba34-24dc6586f0f2")
+_G_TORO = UUID("b5e8ea91-9789-4f7e-9dad-10262f1920f4")
+_CATALOGO_GLOBAL = {
+    _G_TERNERA: ("Ternera", "hembra", False),
+    _G_TERNERO: ("Ternero", "macho", False),
+    _G_VAQUILLONA: ("Vaquillona", "hembra", True),
+    _G_VACA: ("Vaca", "hembra", True),
+    _G_NOVILLO: ("Novillo", "macho", False),
+    _G_TORO: ("Toro", "macho", False),
+}
+
 _CAMINOS = ("create_all", "migracion", "script")
 
 # Deshace lo que agrega 20261001_02 para reconstruir el esquema anterior.
@@ -180,6 +196,18 @@ async def _materializar(url: str, camino: str) -> None:
                 _ENGORDE,
                 _CAMPO,
             )
+            # create_all no siembra datos: se cargan a mano para que los tres
+            # caminos partan del mismo catálogo.
+            for categoria_id, (nombre, sexo, permite) in _CATALOGO_GLOBAL.items():
+                await conexion.execute(
+                    "insert into categorias (id, establecimiento_id, nombre,"
+                    " sexo_permitido, permite_estado_reproductivo)"
+                    " values ($1, null, $2, $3, $4)",
+                    categoria_id,
+                    nombre,
+                    sexo,
+                    permite,
+                )
             return
         for sentencia in _A_ESQUEMA_LEGACY:
             await conexion.execute(sentencia)
@@ -225,8 +253,11 @@ async def test_clasifica_las_categorias_de_supabase(camino):
         reglas = await _reglas(conexion)
 
     assert reglas == {
-        # "Ternero" admite ambos sexos (decisión del 2026-10-01): en el campo se
-        # usa para machos y hembras, y hoy tiene hembras asignadas.
+        **{
+            cid: (sexo, permite) for cid, (_, sexo, permite) in _CATALOGO_GLOBAL.items()
+        },
+        # Datos de prueba heredados. El "Ternero" de prueba queda en ambos porque
+        # tiene hembras asignadas; el del catálogo es solo macho.
         _TERNERO: ("ambos", False),
         _NOVILLO: ("macho", False),
         _VACA: ("hembra", True),
@@ -263,8 +294,110 @@ async def test_script_es_reejecutable():
             "update categorias set sexo_permitido = 'ambos' where id = $1", _TORO
         )
         await conexion.execute(_SCRIPT_SQL.read_text(encoding="utf-8"))
-        # No pisa una clasificación posterior.
+        # No pisa una clasificación posterior ni duplica el catálogo.
         assert (await _reglas(conexion))[_TORO] == ("ambos", False)
+        globales = await conexion.fetchval(
+            "select count(*) from categorias where establecimiento_id is null"
+        )
+    assert globales == len(_CATALOGO_GLOBAL)
+
+
+@pytest.mark.parametrize("camino", ("migracion", "script"))
+async def test_siembra_el_catalogo_global_del_front(camino):
+    async with _base(camino) as (_, conexion):
+        filas = await conexion.fetch(
+            "select id, nombre, sexo_permitido, permite_estado_reproductivo,"
+            " deleted_at from categorias where establecimiento_id is null"
+        )
+
+    assert {
+        f["id"]: (f["nombre"], f["sexo_permitido"], f["permite_estado_reproductivo"])
+        for f in filas
+    } == _CATALOGO_GLOBAL
+    assert all(f["deleted_at"] is None for f in filas)
+
+
+@pytest.mark.parametrize("camino", ("migracion", "script"))
+async def test_global_preexistente_se_clasifica_sin_duplicarse(camino):
+    async with base_temporal() as url:
+        await _crear_esquema(url)
+        conexion = await asyncpg.connect(url)
+        try:
+            await _sembrar_base(conexion)
+            for sentencia in _A_ESQUEMA_LEGACY:
+                await conexion.execute(sentencia)
+            await _sembrar_categorias_legacy(conexion)
+            # La Vaca global ya existía, sin reglas y con otro nombre visible.
+            await conexion.execute(
+                "insert into categorias (id, establecimiento_id, nombre)"
+                " values ($1, null, 'Vaca adulta')",
+                _G_VACA,
+            )
+            if camino == "script":
+                await conexion.execute(_SCRIPT_SQL.read_text(encoding="utf-8"))
+        finally:
+            await conexion.close()
+
+        if camino == "migracion":
+            assert _alembic(url, "stamp", _REVISION_PREVIA).returncode == 0
+            resultado = _alembic(url, "upgrade", _REVISION)
+            assert resultado.returncode == 0, resultado.stderr
+
+        conexion = await asyncpg.connect(url)
+        try:
+            fila = await conexion.fetchrow(
+                "select nombre, sexo_permitido, permite_estado_reproductivo"
+                " from categorias where id = $1",
+                _G_VACA,
+            )
+            globales = await conexion.fetchval(
+                "select count(*) from categorias where establecimiento_id is null"
+            )
+        finally:
+            await conexion.close()
+
+    # Conserva su nombre: la siembra no pisa una fila existente.
+    assert tuple(fila) == ("Vaca adulta", "hembra", True)
+    assert globales == len(_CATALOGO_GLOBAL)
+
+
+def _bloque_de_limpieza() -> str:
+    """El paso manual del script, sin los comentarios que lo desactivan."""
+    script = _SCRIPT_SQL.read_text(encoding="utf-8")
+    bloque = script[
+        script.index("-- INICIO LIMPIEZA") : script.index("-- FIN LIMPIEZA")
+    ].splitlines()[1:]
+    return "\n".join(linea.removeprefix("--").removeprefix(" ") for linea in bloque)
+
+
+async def test_limpieza_manual_de_datos_de_prueba():
+    async with _base("script") as (_, conexion):
+        for _ in range(2):  # Idempotente: la segunda pasada no cambia nada.
+            await conexion.execute(_bloque_de_limpieza())
+
+        en_ternero_prueba = await conexion.fetch(
+            "select sexo from animales where categoria_id = $1", _TERNERO
+        )
+        en_ternera = await conexion.fetchval(
+            "select count(*) from animales where categoria_id = $1", _G_TERNERA
+        )
+        engorde = await conexion.fetchval(
+            "select deleted_at from categorias where id = $1", _ENGORDE
+        )
+
+    assert en_ternero_prueba == []
+    assert en_ternera == 2
+    assert engorde is not None
+
+
+async def test_limpieza_no_borra_engorde_si_tiene_animales():
+    async with _base("script") as (_, conexion):
+        await _insertar_animal(conexion, "macho", _ENGORDE)
+        await conexion.execute(_bloque_de_limpieza())
+        engorde = await conexion.fetchval(
+            "select deleted_at from categorias where id = $1", _ENGORDE
+        )
+    assert engorde is None
 
 
 async def test_migracion_aborta_con_una_categoria_sin_clasificar():
@@ -468,4 +601,48 @@ async def test_restaurar_un_animal_revalida_su_categoria():
         with pytest.raises(asyncpg.CheckViolationError, match="no es compatible"):
             await conexion.execute(
                 "update animales set deleted_at = null where id = $1", animal_id
+            )
+
+
+# ------------------------------------------------------- catálogo global
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_ternero_global_es_solo_macho(camino):
+    async with _base(camino) as (_, conexion):
+        await _insertar_animal(conexion, "macho", _G_TERNERO)
+        with pytest.raises(asyncpg.CheckViolationError, match="no es compatible"):
+            await _insertar_animal(conexion, "hembra", _G_TERNERO)
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_macho_en_ternera_se_rechaza(camino):
+    async with _base(camino) as (_, conexion):
+        with pytest.raises(asyncpg.CheckViolationError, match="no es compatible"):
+            await _insertar_animal(conexion, "macho", _G_TERNERA)
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_vaquillona_global_admite_prenada_en_cualquier_establecimiento(camino):
+    async with _base(camino) as (_, conexion):
+        for campo in (_CAMPO, _CAMPO_AJENO):
+            animal_id = await _insertar_animal(
+                conexion,
+                "hembra",
+                _G_VAQUILLONA,
+                estado_reproductivo="prenada",
+                establecimiento_id=campo,
+            )
+            estado = await conexion.fetchval(
+                "select estado_reproductivo from animales where id = $1", animal_id
+            )
+            assert estado == "prenada"
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_ternera_global_no_admite_condicion(camino):
+    async with _base(camino) as (_, conexion):
+        with pytest.raises(asyncpg.CheckViolationError, match="no admite"):
+            await _insertar_animal(
+                conexion, "hembra", _G_TERNERA, estado_reproductivo="vacia"
             )

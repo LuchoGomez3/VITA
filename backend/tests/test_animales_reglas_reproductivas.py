@@ -553,3 +553,32 @@ async def test_los_animales_borrados_no_bloquean_el_cambio_de_reglas(
         json={"sexo_permitido": "macho"},
     )
     assert resp.status_code == 200
+
+
+@pytest.mark.anyio
+async def test_reenviar_una_categoria_global_por_post_se_rechaza_sin_modificarla(
+    auth_client, campo
+):
+    """Mobile nunca upsertea el catálogo global: solo lo usa como categoria_id.
+
+    Reenviarlo responde 403 y no altera las reglas (decisión del 2026-10-02 de
+    no cambiar esta validación de permisos).
+    """
+    resp = await auth_client.post(
+        "/api/v1/categorias",
+        json={
+            "id": str(campo.cat.vaquillona.id),
+            "establecimiento_id": str(campo.id),
+            "nombre": "Vaquillona",
+            "sexo_permitido": "macho",
+            "updated_at": "2030-01-01T00:00:00Z",
+        },
+    )
+
+    assert resp.status_code == 403
+    assert _codigo(resp) == "categoria_global_no_editable"
+    listado = await auth_client.get(
+        "/api/v1/categorias", params={"establecimiento_id": str(campo.id)}
+    )
+    vaquillona = next(c for c in listado.json()["data"] if c["nombre"] == "Vaquillona")
+    assert vaquillona["sexo_permitido"] == "hembra"

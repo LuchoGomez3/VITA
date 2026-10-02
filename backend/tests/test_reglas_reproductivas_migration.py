@@ -88,7 +88,9 @@ def test_script_y_migracion_comparten_restricciones(migracion, script):
         assert nombre in script
     # Transaccional: un abort no deja columnas a medio crear.
     assert "\nbegin;\n" in script
-    assert script.rstrip().endswith("commit;")
+    # La limpieza opcional va después, comentada y fuera de la transacción.
+    principal = script[: script.index("\n-- ----")]
+    assert principal.rstrip().endswith("commit;")
 
 
 def test_valores_validos_coinciden_con_los_enums(migracion):
@@ -104,15 +106,57 @@ def test_script_clasifica_igual_que_la_migracion(migracion, script):
         assert fila in script
 
 
-def test_ternero_admite_ambos_sexos_y_no_habilita_condicion(migracion, script):
-    """Decisión del 2026-10-01: "ternero" nombra a machos y hembras sin destete.
+_CATALOGO_FRONT = {
+    # Mismos UUIDs que animal_registration_offline_context.dart en mobile.
+    "d37e62fb-96db-4ff1-a26b-0e3b2c3b36d8": ("Ternera", "hembra", False),
+    "b9a6e57b-20ae-49b1-a7bb-17c71af546f3": ("Ternero", "macho", False),
+    "b6d6440c-88c6-48cc-9003-0ad2cc05f3d5": ("Vaquillona", "hembra", True),
+    "ef69117b-c979-4665-b13f-2b26ff0f19b3": ("Vaca", "hembra", True),
+    "41da4271-bd25-4ba0-ba34-24dc6586f0f2": ("Novillo", "macho", False),
+    "b5e8ea91-9789-4f7e-9dad-10262f1920f4": ("Toro", "macho", False),
+}
 
-    Hoy la categoría de Supabase tiene 2 hembras: clasificarla como macho haría
-    abortar la migración. Un ternero tampoco se preña.
+
+def test_catalogo_global_es_el_del_front(migracion):
+    """Decisión de Ernesto (PO) y Lucho, 2026-10-02: el catálogo es el del front."""
+    assert {
+        cid: (nombre, sexo, permite)
+        for cid, nombre, sexo, permite in migracion._CATALOGO_GLOBAL
+    } == _CATALOGO_FRONT
+
+
+def test_script_siembra_el_mismo_catalogo_sin_duplicar(migracion, script):
+    for cid, nombre, sexo, permite in migracion._CATALOGO_GLOBAL:
+        fila = (
+            f"('{cid}'::uuid, '{nombre}', '{sexo}', {'true' if permite else 'false'})"
+        )
+        assert fila in script
+    assert "on conflict (id) do nothing" in script
+
+
+def test_datos_de_prueba_heredados_no_cortan_la_migracion(migracion):
+    """El Ternero de prueba tiene 2 hembras: en ``ambos`` la migración no aborta.
+
+    El Ternero del catálogo, en cambio, es solo macho.
     """
     assert migracion._CLASIFICACION[_TERNERO_SUPABASE] == ("ambos", False)
     assert migracion._CLASIFICACION[_ENGORDE_RAPIDO] == ("ambos", False)
-    assert "machos y hembras" in script
+    assert migracion._CLASIFICACION["b9a6e57b-20ae-49b1-a7bb-17c71af546f3"] == (
+        "macho",
+        False,
+    )
+    assert set(migracion._CLASIFICACION_DATOS_PRUEBA).isdisjoint(_CATALOGO_FRONT)
+
+
+def test_limpieza_de_datos_de_prueba_esta_comentada(script):
+    """La limpieza la corre Lucho a mano: nunca se ejecuta con el script."""
+    inicio = script.index("-- INICIO LIMPIEZA")
+    fin = script.index("-- FIN LIMPIEZA")
+    bloque = script[inicio:fin].splitlines()
+    assert all(not linea.strip() or linea.startswith("--") for linea in bloque)
+    assert "update public.animales" in script[inicio:fin]
+    # Fuera del bloque comentado, el script no mueve animales.
+    assert "update public.animales" not in script[:inicio]
 
 
 def test_clasificacion_usa_valores_validos(migracion):

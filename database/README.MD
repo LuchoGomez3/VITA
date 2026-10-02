@@ -97,10 +97,28 @@ crea la migración `20261001_02` (espejo: `backend/scripts/agregar_reglas_reprod
 Sus tests corren contra un Postgres efímero (`VITA_TEST_POSTGRES_URL`, probados con 16;
 Supabase usa 17).
 
-La migración clasifica por id las categorías que ya existían. "Ternero" quedó en `ambos`
-porque en el campo nombra a machos y hembras sin destete, y ya tenía hembras asignadas.
-Ante una categoría sin clasificar o un animal incompatible, la migración se detiene en vez
-de inventar la regla.
+El catálogo real son las seis categorías del front, globales (`establecimiento_id` null)
+y con los mismos UUIDs que usa mobile:
+
+- Ternera, `hembra`.
+- Ternero, `macho`.
+- Vaquillona y Vaca, `hembra`, con condición reproductiva habilitada.
+- Novillo y Toro, `macho`.
+
+La migración las siembra si faltan y las clasifica si ya existían sin reglas. Las globales
+se leen y se asignan desde cualquier establecimiento, pero no se editan ni se borran:
+reenviar una por `POST /categorias` responde 403.
+
+Las cinco categorías `550e8400-…` de Supabase son **datos de prueba heredados**. Se
+clasifican por id para que la migración no se corte: el Ternero de prueba queda en
+`ambos` porque tiene hembras. El script espejo trae al final un paso de limpieza
+**comentado**, que se corre a mano: pasa esas hembras a la Ternera global y borra
+lógicamente Engorde Rápido. Ante cualquier otra categoría sin clasificar, o un animal
+incompatible, la migración se detiene en vez de inventar la regla.
+
+RLS: `categorias` y `animales` tienen RLS activo y ninguna policy, así que solo accede el
+backend. Si algún día un cliente lee directo por PostgREST, va a hacer falta una policy de
+lectura (globales + propias).
 
 ### Observaciones del animal
 
