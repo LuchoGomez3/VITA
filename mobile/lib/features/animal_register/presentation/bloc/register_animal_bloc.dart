@@ -376,7 +376,36 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     if (destinationId == null) {
       return const Result.failure(
         DomainException(
-          message: 'Seleccioná el potrero de destino antes de guardar.',
+          message: AnimalRegisterStrings.destinationRequired,
+          code: DomainErrorCode.validation,
+        ),
+      );
+    }
+
+    final breed = draft.breed.trim();
+    if (breed.isEmpty) {
+      return const Result.failure(
+        DomainException(
+          message: AnimalRegisterStrings.breedRequired,
+          code: DomainErrorCode.validation,
+        ),
+      );
+    }
+
+    if (draft.sex.isEmpty) {
+      return const Result.failure(
+        DomainException(
+          message: AnimalRegisterStrings.sexRequired,
+          code: DomainErrorCode.validation,
+        ),
+      );
+    }
+
+    final birthDate = draft.birthDate;
+    if (birthDate == null) {
+      return const Result.failure(
+        DomainException(
+          message: AnimalRegisterStrings.birthDateRequired,
           code: DomainErrorCode.validation,
         ),
       );
@@ -397,7 +426,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     if (parsedWeight == null || parsedWeight <= 0) {
       return const Result.failure(
         DomainException(
-          message: 'Ingresá un peso válido mayor a 0 kg.',
+          message: AnimalRegisterStrings.invalidBirthWeight,
           code: DomainErrorCode.validation,
         ),
       );
@@ -416,8 +445,8 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
           rfidTagNumber: rfid,
           visualTag: visualTag,
           sex: _mapSex(draft.sex),
-          breed: draft.breed,
-          birthDate: draft.birthDate,
+          breed: breed,
+          birthDate: birthDate,
           lotId: _registrationContext.resolveLotId(destinationId),
           lotName: _registrationContext.resolveLotName(destinationId),
           establishmentId: establishmentId,

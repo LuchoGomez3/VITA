@@ -64,12 +64,10 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
 
     return Column(
       children: [
-        // TODO(agusf): mostrar metodo y fecha reales recibidos del flujo RFID,
-        // OCR o carga manual cuando identificacion entregue esos metadatos.
         AnimalIdentificationSummary(
           rfid: draft.rfid,
           visualTag: _visualTag(draft),
-          readingDescription: AnimalRegisterStrings.stepTwoMockReading,
+          readingDescription: AnimalRegisterStrings.identificationSummary,
         ),
         Expanded(
           child: SingleChildScrollView(

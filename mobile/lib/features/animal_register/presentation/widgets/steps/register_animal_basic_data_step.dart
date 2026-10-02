@@ -32,7 +32,8 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
   @override
   void initState() {
     super.initState();
-    _birthWeightController.text = context.read<RegisterAnimalBloc>().state.draft.birthWeight;
+    final draft = context.read<RegisterAnimalBloc>().state.draft;
+    _birthWeightController.text = draft.birthWeight;
   }
 
   @override
@@ -49,12 +50,10 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
 
     return Column(
       children: [
-        // TODO(agusf): mostrar metodo y fecha reales recibidos del flujo RFID,
-        // OCR o carga manual cuando identificacion entregue esos metadatos.
         AnimalIdentificationSummary(
           rfid: draft.rfid,
           visualTag: _visualTag(draft),
-          readingDescription: AnimalRegisterStrings.stepTwoMockReading,
+          readingDescription: AnimalRegisterStrings.identificationSummary,
         ),
         Expanded(
           child: SingleChildScrollView(
@@ -75,9 +74,7 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                 AppDropdownFormField<String>(
                   title: AnimalRegisterStrings.stepTwoBreedTitle,
                   hintText: AnimalRegisterStrings.stepTwoBreedHint,
-                  initialValue: draft.breed,
-                  // TODO(agusf): reemplazar por el catalogo offline de razas
-                  // cuando backend defina y sincronice esa fuente.
+                  initialValue: draft.breed.isEmpty ? null : draft.breed,
                   options: AnimalRegisterStrings.stepTwoBreedOptions
                       .map(
                         (breed) => AppDropdownOption(
@@ -90,14 +87,13 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                     if (breed == null) {
                       return;
                     }
-
                     _updateDraft(draft.copyWith(breed: breed));
                   },
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 AppSegmentedFormField<String>(
                   title: AnimalRegisterStrings.stepTwoSexTitle,
-                  value: draft.sex,
+                  value: draft.sex.isEmpty ? null : draft.sex,
                   options: const [
                     AppSegmentedOption(
                       value: AnimalRegisterStrings.stepTwoFemale,
