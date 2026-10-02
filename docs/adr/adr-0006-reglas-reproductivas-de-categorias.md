@@ -1,7 +1,7 @@
 # ADR-0006 — Reglas de sexo y condición reproductiva en categorías y animales
 
 - **Estado:** aceptado
-- **Fecha:** 2026-10-01
+- **Fecha:** 2026-10-01, revisado el 2026-10-02 (catálogo global)
 - **Contexto:** VITA-173
 
 ## Contexto
@@ -13,9 +13,13 @@ preñada, vacía o sin determinar, y cambiar la categoría de un animal. Hasta a
 `categorias` solo tenía nombre y descripción, así que nada impedía asignarle `Vaca` a un
 macho.
 
-El nombre de una categoría no alcanza para saber qué admite: cada establecimiento crea
-las suyas y las nombra como quiere ("Engorde Rápido" no dice nada del sexo), y una misma
-palabra se usa distinto según la zona.
+El nombre de una categoría no alcanza para saber qué admite: cada establecimiento puede
+crear las suyas y nombrarlas como quiera, y una misma palabra se usa distinto según la
+zona.
+
+El catálogo real de categorías es el que usa el front: seis categorías con UUIDs fijos,
+hardcodeados en mobile. Esas filas no existían en Supabase. Las cinco categorías
+cargadas allí (`550e8400-…`, de dos establecimientos) son datos de prueba.
 
 ## Decisión
 
@@ -47,21 +51,32 @@ palabra se usa distinto según la zona.
 
   El primero bloquea la fila de la categoría (`for share`) para que los dos no se crucen
   en escrituras concurrentes.
-- Las categorías existentes se clasificaron a mano, por id, en la migración
-  `20261001_02`:
+- **Catálogo global** (decisión de Ernesto, PO de animales, y Lucho, 2026-10-02: "las
+  categorías están en el front"). La migración `20261001_02` siembra las seis categorías
+  del front como globales (`establecimiento_id` null), con los mismos UUIDs que usa
+  mobile. Si alguna ya existe no la duplica; si existe sin reglas, la clasifica:
 
   | Categoría | `sexo_permitido` | `permite_estado_reproductivo` |
   | --- | --- | --- |
-  | Ternero | `ambos` | no |
-  | Novillo | `macho` | no |
+  | Ternera | `hembra` | no |
+  | Ternero | `macho` | no |
+  | Vaquillona | `hembra` | sí |
   | Vaca | `hembra` | sí |
+  | Novillo | `macho` | no |
   | Toro | `macho` | no |
-  | Engorde Rápido | `ambos` | no |
 
-  **Ternero admite ambos sexos** porque en el campo "ternero" nombra a machos y hembras
-  sin destete, y la categoría ya tiene hembras asignadas. No habilita condición
-  reproductiva porque un ternero no se preña. **Engorde Rápido** es una categoría por
-  destino productivo, no por sexo.
+  Las globales se leen y se asignan desde cualquier establecimiento, pero ninguno puede
+  editarlas ni borrarlas.
+- **Datos de prueba heredados.** Las cinco categorías de Supabase se clasifican por id
+  para que la migración no se corte con los datos actuales:
+  - Ternero de prueba (`…440030`): `ambos`, porque tiene 2 hembras asignadas.
+  - Engorde Rápido (`…440034`): `ambos`.
+  - Novillo y Toro de prueba: `macho`.
+  - Vaca de prueba: `hembra`, con condición reproductiva habilitada.
+
+  El script SQL trae un paso de limpieza manual, opcional e idempotente, que viene
+  comentado: mueve las hembras del Ternero de prueba a la Ternera global y borra
+  lógicamente Engorde Rápido si no tiene animales.
 - La migración no asigna `ambos` por defecto. Si encuentra una categoría fuera de la
   tabla de clasificación, o un animal vivo incompatible con ella, se detiene y lista los
   casos para resolverlos a mano.
@@ -80,5 +95,15 @@ palabra se usa distinto según la zona.
   asignarse no traba la edición de otros campos del animal.
 - Un animal borrado no bloquea cambiar las reglas de su categoría, pero restaurarlo
   vuelve a validarlo.
+- Mobile nunca upsertea las categorías globales: solo las usa como `categoria_id`. Si
+  reenviara una por `POST /categorias`, el backend responde 403
+  `categoria_global_no_editable` y no la modifica. Se decidió no relajar esa validación de
+  permisos porque ningún flujo lo necesita.
+- `categorias` y `animales` tienen hoy RLS activo y ninguna policy en Supabase: los
+  clientes directos por PostgREST no ven nada, y solo el backend accede. Este ADR no
+  agrega policies, porque abrirían un acceso que hoy no existe. Si algún cliente llega a
+  leer directo, hará falta una policy de lectura para las globales y las propias.
+- El downgrade de `20261001_02` conserva el catálogo sembrado: puede haber animales que
+  ya lo referencian.
 - La migración tiene que aplicarse **antes** de desplegar el backend: `create_all` no
   agrega columnas a tablas existentes, y el código nuevo las lee.
