@@ -10,36 +10,53 @@ alter table public.categorias
 alter table public.animales
     add column if not exists estado_reproductivo varchar;
 
--- Clasificación revisada a mano de las categorías existentes (decidida por
--- Lucho el 2026-10-01). Nunca se infiere del nombre: se aplica por id y solo a
--- filas todavía sin clasificar.
+-- Catálogo global (establecimiento_id null): las 6 categorías del front, con
+-- los mismos UUIDs que usa mobile. Decisión de Ernesto (PO) y Lucho, 2026-10-02:
+-- "las categorías están en el front". Si ya existen, no se duplican.
+insert into public.categorias
+    (id, establecimiento_id, nombre, sexo_permitido, permite_estado_reproductivo,
+     created_at, updated_at)
+select v.id, null, v.nombre, v.sexo_permitido, v.permite_estado_reproductivo,
+       now(), now()
+  from (values
+    ('d37e62fb-96db-4ff1-a26b-0e3b2c3b36d8'::uuid, 'Ternera', 'hembra', false),
+    ('b9a6e57b-20ae-49b1-a7bb-17c71af546f3'::uuid, 'Ternero', 'macho', false),
+    ('b6d6440c-88c6-48cc-9003-0ad2cc05f3d5'::uuid, 'Vaquillona', 'hembra', true),
+    ('ef69117b-c979-4665-b13f-2b26ff0f19b3'::uuid, 'Vaca', 'hembra', true),
+    ('41da4271-bd25-4ba0-ba34-24dc6586f0f2'::uuid, 'Novillo', 'macho', false),
+    ('b5e8ea91-9789-4f7e-9dad-10262f1920f4'::uuid, 'Toro', 'macho', false)
+  ) as v(id, nombre, sexo_permitido, permite_estado_reproductivo)
+on conflict (id) do nothing;
+
+-- Clasificación revisada a mano, por id. Nunca se infiere del nombre: se aplica
+-- solo a filas todavía sin clasificar. Incluye el catálogo global (por si ya
+-- existía sin reglas) y los datos de prueba heredados que hay en Supabase.
 update public.categorias c
    set sexo_permitido = v.sexo_permitido,
        permite_estado_reproductivo = v.permite_estado_reproductivo
   from (values
-    -- Ternero (Supabase). Admite ambos sexos: en el campo
-    -- "ternero" nombra a machos y hembras sin destete; hoy tiene 2 hembras.
-    ('550e8400-e29b-41d4-a716-446655440030'::uuid, 'ambos', false),
-    -- Novillo
-    ('550e8400-e29b-41d4-a716-446655440031'::uuid, 'macho', false),
-    -- Vaca
-    ('550e8400-e29b-41d4-a716-446655440032'::uuid, 'hembra', true),
-    -- Toro
-    ('550e8400-e29b-41d4-a716-446655440033'::uuid, 'macho', false),
-    -- Engorde Rápido: categoría por destino productivo
-    ('550e8400-e29b-41d4-a716-446655440034'::uuid, 'ambos', false),
-    -- Ternera (catálogo de mobile, hoy inexistente)
+    -- Ternera (catálogo global)
     ('d37e62fb-96db-4ff1-a26b-0e3b2c3b36d8'::uuid, 'hembra', false),
-    -- Ternero (catálogo de mobile, mismo criterio)
-    ('b9a6e57b-20ae-49b1-a7bb-17c71af546f3'::uuid, 'ambos', false),
-    -- Vaquillona (catálogo de mobile)
+    -- Ternero (catálogo global)
+    ('b9a6e57b-20ae-49b1-a7bb-17c71af546f3'::uuid, 'macho', false),
+    -- Vaquillona (catálogo global)
     ('b6d6440c-88c6-48cc-9003-0ad2cc05f3d5'::uuid, 'hembra', true),
-    -- Vaca (catálogo de mobile)
+    -- Vaca (catálogo global)
     ('ef69117b-c979-4665-b13f-2b26ff0f19b3'::uuid, 'hembra', true),
-    -- Novillo (catálogo de mobile)
+    -- Novillo (catálogo global)
     ('41da4271-bd25-4ba0-ba34-24dc6586f0f2'::uuid, 'macho', false),
-    -- Toro (catálogo de mobile)
-    ('b5e8ea91-9789-4f7e-9dad-10262f1920f4'::uuid, 'macho', false)
+    -- Toro (catálogo global)
+    ('b5e8ea91-9789-4f7e-9dad-10262f1920f4'::uuid, 'macho', false),
+    -- Ternero (prueba): ambos, tiene 2 hembras asignadas
+    ('550e8400-e29b-41d4-a716-446655440030'::uuid, 'ambos', false),
+    -- Novillo (prueba)
+    ('550e8400-e29b-41d4-a716-446655440031'::uuid, 'macho', false),
+    -- Vaca (prueba)
+    ('550e8400-e29b-41d4-a716-446655440032'::uuid, 'hembra', true),
+    -- Toro (prueba)
+    ('550e8400-e29b-41d4-a716-446655440033'::uuid, 'macho', false),
+    -- Engorde Rápido (prueba)
+    ('550e8400-e29b-41d4-a716-446655440034'::uuid, 'ambos', false)
   ) as v(id, sexo_permitido, permite_estado_reproductivo)
  where c.id = v.id
    and c.sexo_permitido is null;
@@ -216,3 +233,34 @@ on public.categorias
 for each row execute function public.validar_reglas_categoria();
 
 commit;
+
+-- ---------------------------------------------------------------------------
+-- LIMPIEZA OPCIONAL DE DATOS DE PRUEBA (manual, no la corre Alembic)
+-- ---------------------------------------------------------------------------
+-- Correr a mano, después de aplicar lo anterior, quitando los "-- " del bloque.
+-- Es idempotente: reejecutarlo no cambia nada.
+-- 1. Las hembras del "Ternero" de prueba pasan a la Ternera del catálogo.
+-- 2. "Engorde Rápido" se borra lógicamente, solo si no tiene animales vivos.
+-- INICIO LIMPIEZA
+-- begin;
+--
+-- update public.animales
+--    set categoria_id = 'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8',
+--        updated_at = now()
+--  where categoria_id = '550e8400-e29b-41d4-a716-446655440030'
+--    and sexo = 'hembra'
+--    and deleted_at is null;
+--
+-- update public.categorias
+--    set deleted_at = now(),
+--        updated_at = now()
+--  where id = '550e8400-e29b-41d4-a716-446655440034'
+--    and deleted_at is null
+--    and not exists (
+--        select 1 from public.animales a
+--         where a.categoria_id = '550e8400-e29b-41d4-a716-446655440034'
+--           and a.deleted_at is null
+--    );
+--
+-- commit;
+-- FIN LIMPIEZA

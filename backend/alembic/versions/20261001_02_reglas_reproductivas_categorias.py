@@ -9,10 +9,15 @@
    el animal contra su categoría y el otro impide que cambiar las reglas de una
    categoría deje animales inválidos.
 
-Las categorías existentes se clasifican por ID con la tabla ``_CLASIFICACION``,
-revisada a mano. Si queda alguna sin clasificar o algún animal vivo incompatible
-con la clasificación, la migración se detiene y los lista: no inventa una regla
-ni asigna ``ambos`` por defecto.
+4. Siembra el catálogo global de categorías (``establecimiento_id`` null): las
+   6 que usa el front, con los mismos UUIDs. Decisión de Ernesto (PO) y Lucho,
+   2026-10-02: "las categorías están en el front".
+
+Las categorías se clasifican por ID con tablas revisadas a mano: el catálogo
+global y los datos de prueba heredados que ya existen en Supabase. Si queda
+alguna sin clasificar o algún animal vivo incompatible con la clasificación, la
+migración se detiene y los lista: no inventa una regla ni asigna ``ambos`` por
+defecto.
 
 Revision ID: 20261001_02
 Revises: 20260910_02
@@ -33,31 +38,39 @@ depends_on: str | Sequence[str] | None = None
 
 _TABLAS_REQUERIDAS = ("categorias", "animales")
 
-# Clasificación revisada de las categorías existentes: id -> (sexo_permitido,
-# permite_estado_reproductivo). Solo se aplica a filas todavía sin clasificar,
-# así que reejecutar la migración no pisa un cambio posterior.
-_CLASIFICACION: dict[str, tuple[str, bool]] = {
-    # Categorías cargadas en Supabase (establecimiento e35a810e-…), clasificación
-    # decidida por Lucho el 2026-10-01.
-    # "Ternero" admite ambos sexos: en el campo se usa para machos y hembras
-    # sin destete, y hoy tiene 2 hembras asignadas. No habilita condición
-    # reproductiva: un ternero no se preña.
+# Catálogo global (``establecimiento_id`` null): son las categorías del front,
+# con los mismos UUIDs que usa mobile. Se siembran si no existen; si ya existen
+# sin clasificar, se clasifican. Decisión de Ernesto (PO) y Lucho, 2026-10-02.
+# (id, nombre, sexo_permitido, permite_estado_reproductivo)
+_CATALOGO_GLOBAL: tuple[tuple[str, str, str, bool], ...] = (
+    ("d37e62fb-96db-4ff1-a26b-0e3b2c3b36d8", "Ternera", "hembra", False),
+    ("b9a6e57b-20ae-49b1-a7bb-17c71af546f3", "Ternero", "macho", False),
+    ("b6d6440c-88c6-48cc-9003-0ad2cc05f3d5", "Vaquillona", "hembra", True),
+    ("ef69117b-c979-4665-b13f-2b26ff0f19b3", "Vaca", "hembra", True),
+    ("41da4271-bd25-4ba0-ba34-24dc6586f0f2", "Novillo", "macho", False),
+    ("b5e8ea91-9789-4f7e-9dad-10262f1920f4", "Toro", "macho", False),
+)
+
+# Datos de prueba heredados: categorías propias que se cargaron en Supabase
+# (establecimientos e35a810e-… y 550e8400-…-446655440010) antes de que existiera
+# el catálogo. Se clasifican para que la migración no se corte con los datos
+# actuales; el script SQL trae un paso manual y opcional para limpiarlas.
+# "Ternero" de prueba queda en ``ambos`` porque tiene 2 hembras asignadas; el
+# Ternero del catálogo es solo macho, y las hembras van en Ternera.
+_CLASIFICACION_DATOS_PRUEBA: dict[str, tuple[str, bool]] = {
     "550e8400-e29b-41d4-a716-446655440030": ("ambos", False),  # Ternero
     "550e8400-e29b-41d4-a716-446655440031": ("macho", False),  # Novillo
     "550e8400-e29b-41d4-a716-446655440032": ("hembra", True),  # Vaca
     "550e8400-e29b-41d4-a716-446655440033": ("macho", False),  # Toro
-    # Categoría propia del establecimiento 550e8400-…-446655440010. Es una
-    # categoría por destino productivo, no por sexo ni edad.
     "550e8400-e29b-41d4-a716-446655440034": ("ambos", False),  # Engorde Rápido
-    # Catálogo que mobile tiene hardcodeado. Hoy no existe en la base; si se
-    # siembra antes de migrar, queda clasificado. Si no, estas filas no hacen nada.
-    # "Ternero" sigue el mismo criterio que la categoría de Supabase.
-    "d37e62fb-96db-4ff1-a26b-0e3b2c3b36d8": ("hembra", False),  # Ternera
-    "b9a6e57b-20ae-49b1-a7bb-17c71af546f3": ("ambos", False),  # Ternero
-    "b6d6440c-88c6-48cc-9003-0ad2cc05f3d5": ("hembra", True),  # Vaquillona
-    "ef69117b-c979-4665-b13f-2b26ff0f19b3": ("hembra", True),  # Vaca
-    "41da4271-bd25-4ba0-ba34-24dc6586f0f2": ("macho", False),  # Novillo
-    "b5e8ea91-9789-4f7e-9dad-10262f1920f4": ("macho", False),  # Toro
+}
+
+# id -> (sexo_permitido, permite_estado_reproductivo). Solo se aplica a filas
+# todavía sin clasificar, así que reejecutar la migración no pisa un cambio
+# posterior.
+_CLASIFICACION: dict[str, tuple[str, bool]] = {
+    **{cid: (sexo, permite) for cid, _, sexo, permite in _CATALOGO_GLOBAL},
+    **_CLASIFICACION_DATOS_PRUEBA,
 }
 
 _SEXOS_PERMITIDOS = ("macho", "hembra", "ambos")
@@ -231,6 +244,30 @@ def _agregar_columnas(connection: Connection) -> None:
         )
 
 
+def _sembrar_catalogo_global(connection: Connection) -> None:
+    """Crea las categorías globales que falten, ya clasificadas.
+
+    Las que ya existen no se tocan acá: si están sin clasificar las completa
+    ``_clasificar_categorias``.
+    """
+    for categoria_id, nombre, sexo, permite in _CATALOGO_GLOBAL:
+        existe = connection.execute(
+            sa.text("select 1 from categorias where id = :id"), {"id": categoria_id}
+        ).first()
+        if existe:
+            continue
+        connection.execute(
+            sa.text(
+                "insert into categorias (id, establecimiento_id, nombre,"
+                " sexo_permitido, permite_estado_reproductivo, created_at,"
+                " updated_at)"
+                " values (:id, null, :nombre, :sexo, :permite,"
+                " current_timestamp, current_timestamp)"
+            ),
+            {"id": categoria_id, "nombre": nombre, "sexo": sexo, "permite": permite},
+        )
+
+
 def _clasificar_categorias(connection: Connection) -> None:
     for categoria_id, (sexo, permite) in _CLASIFICACION.items():
         connection.execute(
@@ -337,6 +374,7 @@ def upgrade() -> None:
     connection = op.get_bind()
     _exigir_tablas_previas(connection)
     _agregar_columnas(connection)
+    _sembrar_catalogo_global(connection)
     _clasificar_categorias(connection)
     _exigir_categorias_clasificadas(connection)
     _exigir_animales_compatibles(connection)
@@ -345,6 +383,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    """Quita reglas, triggers y columnas. El catálogo global sembrado se conserva:
+    puede haber animales que ya lo referencian."""
     connection = op.get_bind()
     if connection.dialect.name == "postgresql":
         for sentencia in (
