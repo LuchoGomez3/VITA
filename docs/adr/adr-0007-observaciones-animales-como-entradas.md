@@ -80,5 +80,11 @@ escrituras encoladas offline que van a llegar después del despliegue.
 - Retirar la columna, y con ella el puente, queda para otro ticket, cuando ningún
   cliente en uso la escriba. Hasta entonces el puente debe mantenerse para no perder las
   escrituras encoladas.
+- **Animales borrados lógicamente.** Se decidió dejarlo así:
+  - La API no deja agregar observaciones a un animal borrado (422
+    `animal_no_pertenece_establecimiento`).
+  - Borrar un animal no borra en cascada sus observaciones: se siguen listando y se
+    pueden editar o borrar.
+  - La base no lo exige: ni el trigger ni la policy miran `animales.deleted_at`.
 - El downgrade de `20261001_03` elimina la tabla. Las notas migradas siguen en la
   columna; las creadas después se pierden.
