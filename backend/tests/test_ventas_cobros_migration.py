@@ -82,6 +82,7 @@ def test_todos_los_roles_tienen_una_decision_explicita():
 @pytest.mark.parametrize(
     ("nombre", "constante_modelo", "constante_migracion"),
     [
+        ("validar_fecha_cobro", "FUNCION_FECHA_COBRO", "_FUNCION_FECHA_COBRO"),
         ("validar_tope_cobros_venta", "FUNCION_TOPE_COBROS", "_FUNCION_TOPE_COBROS"),
         (
             "validar_monto_venta_cubre_cobros",
@@ -96,7 +97,9 @@ def test_las_funciones_del_tope_son_identicas_en_los_tres_artefactos(
     del_modelo = _normalizar(getattr(ventas_models, constante_modelo))
     assert _normalizar(getattr(migracion, constante_migracion)) == del_modelo
     assert _bloque_funcion(script, nombre) == del_modelo
-    assert "security definer" in del_modelo
+    # Invoker: un trigger privilegiado leería ventas ajenas antes del RLS.
+    assert "security invoker" in del_modelo
+    assert "security definer" not in del_modelo
 
 
 def test_los_triggers_son_identicos_en_los_tres_artefactos(migracion, script):

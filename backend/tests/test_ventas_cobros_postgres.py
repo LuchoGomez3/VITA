@@ -10,13 +10,14 @@ Se saltean si no está ``VITA_TEST_POSTGRES_URL`` (ver ``tests/postgres_helpers`
 
 import asyncio
 from contextlib import asynccontextmanager
-from datetime import date
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 import os
 from pathlib import Path
 import subprocess
 import sys
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
 
 import asyncpg
 import pytest
@@ -37,6 +38,12 @@ pytestmark = [requiere_postgres, pytest.mark.anyio]
 
 _BACKEND = Path(__file__).parent.parent
 _SCRIPT_SQL = _BACKEND / "scripts/crear_ventas_cobros.sql"
+# ``create_all`` no aplica RLS. Estos scripts dejan ``ventas`` como está en
+# Supabase (20260902_02 + 20260910_01), del que dependen los triggers invoker.
+_SCRIPTS_RLS_VENTAS = (
+    _BACKEND / "scripts/crear_ventas.sql",
+    _BACKEND / "scripts/restringir_ventas_roles_comerciales.sql",
+)
 _REVISION_PREVIA = "20260910_02"
 _REVISION = "20261001_01"
 _TABLA = "ventas_cobros"
@@ -51,6 +58,8 @@ _CAMPO_AJENO = UUID("00000000-0000-0000-0000-0000000000e2")
 _VENTA = UUID("00000000-0000-0000-0000-0000000000f1")
 _VENTA_AJENA = UUID("00000000-0000-0000-0000-0000000000f2")
 _MONTO_VENTA = Decimal("1000.00")
+# El trigger compara contra el día de Córdoba; el CI corre en UTC.
+_ZONA_PRODUCTOR = ZoneInfo("America/Argentina/Cordoba")
 
 
 async def _crear_esquema_sin_cobros(url: str, *, incluir_cobros: bool) -> None:
@@ -95,11 +104,16 @@ async def _materializar(url: str, camino: str) -> None:
     finally:
         await conexion.close()
 
+    await _crear_esquema_sin_cobros(url, incluir_cobros=camino == "create_all")
+    conexion = await asyncpg.connect(url)
+    try:
+        for script in _SCRIPTS_RLS_VENTAS:
+            await conexion.execute(script.read_text(encoding="utf-8"))
+    finally:
+        await conexion.close()
     if camino == "create_all":
-        await _crear_esquema_sin_cobros(url, incluir_cobros=True)
         return
 
-    await _crear_esquema_sin_cobros(url, incluir_cobros=False)
     if camino == "migracion":
         _alembic(url, "stamp", _REVISION_PREVIA)
         _alembic(url, "upgrade", _REVISION)
@@ -182,6 +196,7 @@ async def _cobrar(
     venta_id: UUID = _VENTA,
     autor: UUID = _OWNER,
     cobro_id: UUID | None = None,
+    fecha_cobro: date = date(2026, 9, 15),
 ) -> UUID:
     cobro_id = cobro_id or uuid4()
     await conexion.execute(
@@ -189,7 +204,7 @@ async def _cobrar(
         " values ($1, $2, $3, $4, $5)",
         cobro_id,
         venta_id,
-        date(2026, 9, 15),
+        fecha_cobro,
         Decimal(monto),
         autor,
     )
@@ -265,11 +280,16 @@ async def test_editar_el_monto_respeta_el_tope_sin_contarse_a_si_mismo(camino):
 
 
 @pytest.mark.parametrize("camino", _CAMINOS)
-@pytest.mark.parametrize("columna", ["venta_id", "registrado_por_id"])
-async def test_un_cobro_no_cambia_de_venta_ni_de_autor(camino, columna):
+@pytest.mark.parametrize("columna", ["id", "venta_id", "registrado_por_id"])
+async def test_un_cobro_no_cambia_de_id_ni_de_venta_ni_de_autor(camino, columna):
+    """El id es la clave de idempotencia del sync: cambiarlo duplicaría el cobro."""
     async with _base(camino) as (_, conexion):
         cobro = await _cobrar(conexion, "100.00")
-        nuevo_valor = _VENTA_AJENA if columna == "venta_id" else _ADMIN
+        nuevo_valor = {
+            "id": uuid4(),
+            "venta_id": _VENTA_AJENA,
+            "registrado_por_id": _ADMIN,
+        }[columna]
         with pytest.raises(asyncpg.CheckViolationError, match="no puede cambiar"):
             await conexion.execute(
                 f"update ventas_cobros set {columna} = $1 where id = $2",
@@ -331,6 +351,50 @@ async def test_reintentar_la_sincronizacion_no_duplica_el_cobro(camino):
         with pytest.raises(asyncpg.UniqueViolationError):
             await _cobrar(conexion, "300.00", cobro_id=cobro)
         assert await _cobrado(conexion) == Decimal("300.00")
+
+
+def _hoy_en_cordoba() -> date:
+    return datetime.now(_ZONA_PRODUCTOR).date()
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+@pytest.mark.parametrize("dias", [0, -1, -365])
+async def test_se_aceptan_cobros_de_hoy_y_del_pasado(camino, dias):
+    async with _base(camino) as (_, conexion):
+        fecha = _hoy_en_cordoba() + timedelta(days=dias)
+        await _cobrar(conexion, "100.00", fecha_cobro=fecha)
+        assert await _cobrado(conexion) == Decimal("100.00")
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_se_rechaza_un_cobro_con_fecha_futura(camino):
+    async with _base(camino) as (_, conexion):
+        manana = _hoy_en_cordoba() + timedelta(days=1)
+        with pytest.raises(asyncpg.CheckViolationError, match="fecha de cobro"):
+            await _cobrar(conexion, "100.00", fecha_cobro=manana)
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_no_se_puede_mover_un_cobro_al_futuro(camino):
+    async with _base(camino) as (_, conexion):
+        cobro = await _cobrar(conexion, "100.00")
+        with pytest.raises(asyncpg.CheckViolationError, match="fecha de cobro"):
+            await conexion.execute(
+                "update ventas_cobros set fecha_cobro = $1 where id = $2",
+                _hoy_en_cordoba() + timedelta(days=1),
+                cobro,
+            )
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_el_hoy_es_el_de_cordoba_y_no_el_de_la_sesion(camino):
+    """Una sesión en otra zona horaria no corre el límite del día."""
+    async with _base(camino) as (_, conexion):
+        await conexion.execute("set timezone = 'Pacific/Kiritimati'")  # UTC+14
+        manana = _hoy_en_cordoba() + timedelta(days=1)
+        with pytest.raises(asyncpg.CheckViolationError, match="fecha de cobro"):
+            await _cobrar(conexion, "100.00", fecha_cobro=manana)
+        await _cobrar(conexion, "100.00", fecha_cobro=_hoy_en_cordoba())
 
 
 # --------------------------------------------------------------------------- #
@@ -420,6 +484,37 @@ async def test_bajar_el_monto_y_cobrar_a_la_vez_no_rompe_el_invariante(camino):
         assert await _cobrado(observador) == Decimal("500.00")
 
 
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_cobrar_y_bajar_el_monto_a_la_vez_no_rompe_el_invariante(camino):
+    """Orden inverso: el cobro toma el lock y la reducción espera detrás."""
+    async with _base(camino) as (url, observador):
+        await _cobrar(observador, "500.00")
+        async with _dos_dispositivos(url) as (primero, segundo):
+            transaccion = primero.transaction()
+            await transaccion.start()
+            await _cobrar(primero, "400.00")
+
+            pendiente = asyncio.create_task(
+                segundo.execute(
+                    "update ventas set monto_total = 600.00 where id = $1", _VENTA
+                )
+            )
+            await _esperar_bloqueo(observador, segundo.get_server_pid())
+            assert not pendiente.done()
+
+            await transaccion.commit()
+            with pytest.raises(asyncpg.CheckViolationError, match="por debajo"):
+                await pendiente
+
+        assert await _cobrado(observador) == Decimal("900.00")
+        assert (
+            await observador.fetchval(
+                "select monto_total from ventas where id = $1", _VENTA
+            )
+            == _MONTO_VENTA
+        )
+
+
 # --------------------------------------------------------------------------- #
 # RLS
 # --------------------------------------------------------------------------- #
@@ -497,6 +592,48 @@ async def test_anon_no_accede(camino):
                 await _contar_visibles(conexion)
 
 
+async def _rechazo_de_cobro_ajeno(
+    conexion: asyncpg.Connection, monto: str, venta_id: UUID
+) -> str:
+    async with como_usuario(conexion, _OWNER):
+        with pytest.raises(asyncpg.InsufficientPrivilegeError) as error:
+            await _cobrar(conexion, monto, venta_id=venta_id)
+    return error.value.sqlstate + " " + str(error.value)
+
+
+@pytest.mark.parametrize("camino", _CAMINOS_CON_RLS)
+async def test_cobrar_una_venta_ajena_no_revela_saldo_ni_estado(camino):
+    """Los triggers BEFORE corren antes del WITH CHECK del RLS.
+
+    Si leyeran la venta con privilegios, el error distinguiría sobrepago, venta
+    eliminada o saldo disponible de un tenant ajeno. Todos los intentos tienen
+    que recibir exactamente el mismo rechazo de autorización.
+    """
+    async with _base(camino) as (_, conexion):
+        await _cobrar(conexion, "900.00", venta_id=_VENTA_AJENA, autor=_OWNER_AJENO)
+
+        rechazos = {
+            "sobrepago": await _rechazo_de_cobro_ajeno(
+                conexion, "200.00", _VENTA_AJENA
+            ),
+            "dentro_del_saldo": await _rechazo_de_cobro_ajeno(
+                conexion, "50.00", _VENTA_AJENA
+            ),
+            "venta_inexistente": await _rechazo_de_cobro_ajeno(
+                conexion, "50.00", uuid4()
+            ),
+        }
+        await conexion.execute(
+            "update ventas set deleted_at = now() where id = $1", _VENTA_AJENA
+        )
+        rechazos["venta_eliminada"] = await _rechazo_de_cobro_ajeno(
+            conexion, "50.00", _VENTA_AJENA
+        )
+
+        assert len(set(rechazos.values())) == 1, rechazos
+        assert next(iter(rechazos.values())).startswith("42501 ")
+
+
 # --------------------------------------------------------------------------- #
 # Equivalencia de artefactos y migración sobre base existente
 # --------------------------------------------------------------------------- #
@@ -528,7 +665,8 @@ _CONSULTAS_ESTRUCTURA = {
     """,
     "funciones": """
         select proname, prosrc, prosecdef, proconfig from pg_proc
-         where proname in ('validar_tope_cobros_venta',
+         where proname in ('validar_fecha_cobro',
+                           'validar_tope_cobros_venta',
                            'validar_monto_venta_cubre_cobros')
          order by proname
     """,
@@ -566,8 +704,10 @@ async def test_los_tres_caminos_producen_la_misma_estructura():
 
     assert fotos["migracion"] == fotos["create_all"]
     assert fotos["script"] == fotos["create_all"]
-    assert len(fotos["create_all"]["triggers"]) == 2
-    assert all(seguridad for _, _, seguridad, _ in fotos["create_all"]["funciones"])
+    assert len(fotos["create_all"]["triggers"]) == 3
+    assert len(fotos["create_all"]["funciones"]) == 3
+    # Ninguna función se salta el RLS de quien escribe.
+    assert not any(seguridad for _, _, seguridad, _ in fotos["create_all"]["funciones"])
 
 
 async def test_migracion_y_script_aplican_la_misma_seguridad():
@@ -615,7 +755,9 @@ async def test_downgrade_elimina_tabla_triggers_y_funciones():
             )
             assert (
                 await conexion.fetchval(
-                    "select count(*) from pg_proc where proname like 'validar_%cobros%'"
+                    "select count(*) from pg_proc where proname in"
+                    " ('validar_fecha_cobro', 'validar_tope_cobros_venta',"
+                    " 'validar_monto_venta_cubre_cobros')"
                 )
                 == 0
             )

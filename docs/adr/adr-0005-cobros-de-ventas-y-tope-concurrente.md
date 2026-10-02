@@ -36,8 +36,26 @@ la venta queda sobrepagada.
   una convención de claves y serializa también contra el segundo trigger.
 - Un segundo trigger `BEFORE UPDATE OF monto_total` en `ventas` impide bajar el monto de
   la venta por debajo de lo cobrado. Sin él, el invariante se rompe por la otra punta.
-- Las funciones son `security definer` con `search_path` fijo, para que la suma no
-  dependa de qué filas le deja ver el RLS a quien escribe.
+- Las funciones son `security invoker`, con `search_path` fijo. Los triggers `BEFORE`
+  corren antes del `WITH CHECK` del RLS. Una función `security definer` leería y
+  bloquearía la venta de otro tenant, y su mensaje de error revelaría el saldo o si la
+  venta fue eliminada (observación de la review del PR #54). Se descartó mantener
+  `definer` y agregar un chequeo explícito de membresía, porque duplicaría la regla de
+  autorización en un segundo lugar que habría que mantener alineado con las políticas.
+  Como `invoker`, la función solo ve lo que el usuario ya puede ver:
+  - Una venta ajena o inexistente da `not found`. No se bloquea ni se suma, y el rechazo
+    es siempre el del RLS (SQLSTATE 42501).
+  - La suma es completa para quien sí puede cobrar, porque la misma allowlist
+    `owner`/`admin` que autoriza el insert le da lectura de todos los cobros de la venta.
+  - El backend conecta como dueño de las tablas y no está sujeto a RLS.
+  - Depende de que `ventas` tenga RLS. Si no lo tuviera, la fuga de montos sería directa
+    por `select`, sin pasar por estos triggers.
+- Un trigger aparte (`ventas_cobros_validar_fecha`) rechaza un `fecha_cobro` posterior al
+  día actual en `America/Argentina/Cordoba`. Un cobro es dinero ya recibido. Es trigger y
+  no `CHECK` porque el "hoy" cambia y Postgres exige que un `CHECK` sea inmutable. Usa la
+  zona del productor y no UTC: entre las 21 y las 24 hora local, en UTC ya es el día
+  siguiente.
+- El `id` de un cobro es inmutable: es la clave de idempotencia del sync.
 - Defaults de producto, **pendientes de validación del PO**:
   - Un cobro no cambia de venta ni de autor. Para corregir uno, se anula y se registra
     otro.
@@ -57,5 +75,7 @@ la venta queda sobrepagada.
 - SQLite (tests y cliente) no ejecuta el trigger. Su comportamiento se prueba contra un
   Postgres descartable (`VITA_TEST_POSTGRES_URL`, ver `backend/tests/postgres_helpers.py`).
   Esos tests se saltean en CI mientras el workflow no levante un Postgres.
-- La función vive en tres artefactos: el modelo (para `create_all`), la migración y el
-  script espejo. Un test de contrato exige que los tres textos sean idénticos.
+- Las funciones viven en tres artefactos: el modelo (para `create_all`), la migración y
+  el script espejo. Un test de contrato exige que los tres textos sean idénticos.
+- Un dispositivo con el reloj adelantado puede generar un cobro "de mañana" que la base
+  rechaza. Mobile tiene que mostrar el rechazo.

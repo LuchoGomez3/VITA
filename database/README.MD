@@ -112,9 +112,9 @@ las ventas ni a sus montos, incluso si intenta escribir directamente mediante Su
 
 | Columna | Tipo | Notas |
 | --- | --- | --- |
-| `id` | `uuid` PK | generada en mobile; reintentar el sync no duplica |
+| `id` | `uuid` PK | generada en mobile; reintentar el sync no duplica; inmutable |
 | `venta_id` | `uuid` NOT NULL | FK `ventas`; inmutable |
-| `fecha_cobro` | `date` NOT NULL | cuándo se recibió el dinero |
+| `fecha_cobro` | `date` NOT NULL | cuándo se recibió el dinero; no puede ser futura (hoy en Córdoba) |
 | `monto` | `numeric(14,2)` NOT NULL | `> 0` |
 | `registrado_por_id` | `uuid` NOT NULL | FK `usuarios`; sale del JWT; inmutable |
 | `observaciones` | `varchar` | |
@@ -132,12 +132,17 @@ La base garantiza que la suma de cobros activos nunca supere `monto_total`:
 
 - El trigger `ventas_cobros_validar_tope` bloquea la fila de la venta (`for update`)
   antes de sumar, así dos cobros simultáneos no pueden sobrepagarla. También rechaza
-  cambiar la venta o el autor de un cobro, y los cobros nuevos o reactivados sobre una
-  venta eliminada.
+  cambiar el `id`, la venta o el autor de un cobro, y los cobros nuevos o reactivados
+  sobre una venta eliminada.
+- El trigger `ventas_cobros_validar_fecha` rechaza un `fecha_cobro` posterior al día
+  actual en `America/Argentina/Cordoba`, sin importar la zona horaria de la sesión.
 - El trigger `ventas_validar_monto_cubre_cobros` impide bajar `monto_total` por debajo de
   lo ya cobrado.
 
-Ambos rechazos usan el SQLSTATE `23514` (`check_violation`). Como SQLite no los
+Los tres rechazos usan el SQLSTATE `23514` (`check_violation`). Las funciones son
+`security invoker`: una venta de otro establecimiento les resulta invisible, así que un
+intento no autorizado recibe siempre el mismo rechazo del RLS (`42501`), sin revelar
+saldo ni estado. Como SQLite no los
 ejecuta, se prueban contra Postgres en `backend/tests/test_ventas_cobros_postgres.py`
 cuando está definida `VITA_TEST_POSTGRES_URL`.
 

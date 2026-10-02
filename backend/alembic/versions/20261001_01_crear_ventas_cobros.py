@@ -57,7 +57,7 @@ _FUNCION_TOPE_COBROS = """
 create or replace function public.validar_tope_cobros_venta()
 returns trigger
 language plpgsql
-security definer
+security invoker
 set search_path = public, pg_temp
 as $$
 declare
@@ -66,10 +66,11 @@ declare
     v_cobrado numeric(14, 2);
 begin
     if tg_op = 'UPDATE' and (
-        new.venta_id <> old.venta_id
+        new.id <> old.id
+        or new.venta_id <> old.venta_id
         or new.registrado_por_id <> old.registrado_por_id
     ) then
-        raise exception 'Un cobro no puede cambiar de venta ni de autor'
+        raise exception 'Un cobro no puede cambiar de id, de venta ni de autor'
             using errcode = 'check_violation';
     end if;
 
@@ -112,11 +113,33 @@ end;
 $$
 """
 
+_FUNCION_FECHA_COBRO = """
+create or replace function public.validar_fecha_cobro()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+begin
+    -- Un cobro es dinero ya recibido. Se compara contra el día de Córdoba, no
+    -- el de UTC: entre las 21 y las 24 hora local ya es mañana en UTC.
+    if (tg_op = 'INSERT' or new.fecha_cobro is distinct from old.fecha_cobro)
+       and new.fecha_cobro
+           > cast(now() at time zone 'America/Argentina/Cordoba' as date) then
+        raise exception 'La fecha de cobro no puede ser futura'
+            using errcode = 'check_violation';
+    end if;
+
+    return new;
+end;
+$$
+"""
+
 _FUNCION_MONTO_CUBRE_COBROS = """
 create or replace function public.validar_monto_venta_cubre_cobros()
 returns trigger
 language plpgsql
-security definer
+security invoker
 set search_path = public, pg_temp
 as $$
 declare
@@ -143,6 +166,12 @@ $$
 """
 
 _TRIGGERS = (
+    "drop trigger if exists ventas_cobros_validar_fecha on public.ventas_cobros",
+    """
+create trigger ventas_cobros_validar_fecha
+before insert or update on public.ventas_cobros
+for each row execute function public.validar_fecha_cobro()
+""",
     "drop trigger if exists ventas_cobros_validar_tope on public.ventas_cobros",
     """
 create trigger ventas_cobros_validar_tope
@@ -209,6 +238,7 @@ def _crear_triggers(connection: Connection) -> None:
     if connection.dialect.name != "postgresql":
         return
     for sentencia in (
+        _FUNCION_FECHA_COBRO,
         _FUNCION_TOPE_COBROS,
         _FUNCION_MONTO_CUBRE_COBROS,
         *_TRIGGERS,
@@ -283,13 +313,13 @@ def downgrade() -> None:
                 " on public.ventas"
             )
         )
-    # Las políticas, los índices y el trigger propio se van con la tabla.
+    # Las políticas, los índices y los triggers propios se van con la tabla.
     if sa.inspect(connection).has_table(_TABLA):
         op.drop_table(_TABLA)
     if connection.dialect.name == "postgresql":
-        connection.execute(
-            sa.text("drop function if exists public.validar_tope_cobros_venta()")
-        )
-        connection.execute(
-            sa.text("drop function if exists public.validar_monto_venta_cubre_cobros()")
-        )
+        for funcion in (
+            "validar_fecha_cobro",
+            "validar_tope_cobros_venta",
+            "validar_monto_venta_cubre_cobros",
+        ):
+            connection.execute(sa.text(f"drop function if exists public.{funcion}()"))

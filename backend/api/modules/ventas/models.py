@@ -133,13 +133,20 @@ class VentaDetalle(Base, table=True):
 # Tope de cobros. Vive en la base porque Supabase acepta escrituras directas y
 # porque dos dispositivos pueden sincronizar cobros de la misma venta a la vez:
 # el ``for update`` sobre la venta serializa esas escrituras, y la suma posterior
-# ve lo que la otra transacción ya commiteó. ``security definer`` hace que la
-# suma no dependa de qué filas le deja ver el RLS a quien escribe.
+# ve lo que la otra transacción ya commiteó.
+#
+# Es ``security invoker`` a propósito: los triggers BEFORE corren antes del
+# WITH CHECK del RLS, así que una función privilegiada leería (y bloquearía) la
+# venta de otro tenant y su mensaje de error revelaría saldo o estado. Como
+# invoker, una venta ajena es invisible: no se bloquea, no se suma y el rechazo
+# es siempre el del RLS. La suma es completa porque quien puede insertar un cobro
+# ve, por la misma política, todos los cobros de esa venta. El backend conecta
+# como dueño de las tablas y no está sujeto a RLS.
 FUNCION_TOPE_COBROS = """
 create or replace function public.validar_tope_cobros_venta()
 returns trigger
 language plpgsql
-security definer
+security invoker
 set search_path = public, pg_temp
 as $$
 declare
@@ -148,10 +155,11 @@ declare
     v_cobrado numeric(14, 2);
 begin
     if tg_op = 'UPDATE' and (
-        new.venta_id <> old.venta_id
+        new.id <> old.id
+        or new.venta_id <> old.venta_id
         or new.registrado_por_id <> old.registrado_por_id
     ) then
-        raise exception 'Un cobro no puede cambiar de venta ni de autor'
+        raise exception 'Un cobro no puede cambiar de id, de venta ni de autor'
             using errcode = 'check_violation';
     end if;
 
@@ -200,7 +208,7 @@ FUNCION_MONTO_CUBRE_COBROS = """
 create or replace function public.validar_monto_venta_cubre_cobros()
 returns trigger
 language plpgsql
-security definer
+security invoker
 set search_path = public, pg_temp
 as $$
 declare
@@ -226,7 +234,37 @@ end;
 $$
 """
 
+# Rechaza cobros con fecha futura. Es trigger y no CHECK porque el "hoy" cambia
+# y Postgres exige que un CHECK sea inmutable.
+FUNCION_FECHA_COBRO = """
+create or replace function public.validar_fecha_cobro()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+begin
+    -- Un cobro es dinero ya recibido. Se compara contra el día de Córdoba, no
+    -- el de UTC: entre las 21 y las 24 hora local ya es mañana en UTC.
+    if (tg_op = 'INSERT' or new.fecha_cobro is distinct from old.fecha_cobro)
+       and new.fecha_cobro
+           > cast(now() at time zone 'America/Argentina/Cordoba' as date) then
+        raise exception 'La fecha de cobro no puede ser futura'
+            using errcode = 'check_violation';
+    end if;
+
+    return new;
+end;
+$$
+"""
+
 TRIGGERS_COBROS = (
+    "drop trigger if exists ventas_cobros_validar_fecha on public.ventas_cobros",
+    """
+create trigger ventas_cobros_validar_fecha
+before insert or update on public.ventas_cobros
+for each row execute function public.validar_fecha_cobro()
+""",
     "drop trigger if exists ventas_cobros_validar_tope on public.ventas_cobros",
     """
 create trigger ventas_cobros_validar_tope
@@ -275,7 +313,12 @@ class VentaCobro(Base, SoftDeleteMixin, table=True):
 
 # ``create_all`` (LOCAL contra Postgres) también instala los triggers; SQLite no
 # los soporta en este dialecto y en producción los crea la migración.
-for _sentencia in (FUNCION_TOPE_COBROS, FUNCION_MONTO_CUBRE_COBROS, *TRIGGERS_COBROS):
+for _sentencia in (
+    FUNCION_FECHA_COBRO,
+    FUNCION_TOPE_COBROS,
+    FUNCION_MONTO_CUBRE_COBROS,
+    *TRIGGERS_COBROS,
+):
     event.listen(
         VentaCobro.__table__,
         "after_create",
