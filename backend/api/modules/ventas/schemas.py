@@ -1,7 +1,7 @@
 """DTOs y validaciones del contrato HTTP de ventas de hacienda."""
 
 from datetime import date, datetime, timedelta, timezone
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Self
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from api.shared.enums import (
     CondicionCobro,
     EstadoCobro,
+    MedioCobro,
     TipoComprador,
     TipoVenta,
 )
@@ -22,6 +23,10 @@ except ZoneInfoNotFoundError:
     # Windows puede no incluir la base IANA. Argentina mantiene UTC-03 sin DST.
     ZONA_HORARIA_NEGOCIO = timezone(timedelta(hours=-3))
 
+PRECISION_MONETARIA = Decimal("0.01")
+PRECISION_PESO_KG = Decimal("0.001")
+PRECISION_PRECIO_UNITARIO = Decimal("0.000001")
+
 
 def _normalizar_texto(valor: str) -> str:
     """Quita espacios exteriores y compacta separaciones internas repetidas."""
@@ -31,6 +36,67 @@ def _normalizar_texto(valor: str) -> str:
 def _es_nombre_persona(valor: str) -> bool:
     """Admite letras Unicode y espacios, pero no números ni símbolos."""
     return all(caracter.isalpha() or caracter == " " for caracter in valor)
+
+
+def _normalizar_decimal_positivo(
+    valor: Decimal,
+    precision: Decimal,
+    nombre: str,
+) -> Decimal:
+    """Valida la escala antes de representarla con la precisión de la base."""
+    if not valor.is_finite():
+        raise ValueError(f"{nombre} debe ser un número finito")
+    if valor <= 0:
+        raise ValueError(f"{nombre} debe ser mayor a cero")
+    decimales = max(0, -valor.normalize().as_tuple().exponent)
+    decimales_admitidos = max(0, -precision.as_tuple().exponent)
+    if decimales > decimales_admitidos:
+        raise ValueError(
+            f"{nombre} admite hasta {decimales_admitidos} decimales; "
+            "el valor no se redondeó"
+        )
+    return valor.quantize(precision)
+
+
+class VentaCobroInicialCreate(SyncFields):
+    """Cobro efectivo que nace junto con una venta total o parcial."""
+
+    # Mobile genera esta identidad aun sin conexión para reintentar sin duplicar.
+    id: UUID
+    fecha_cobro: date
+    monto: Decimal
+    medio_cobro: MedioCobro
+    observaciones: str | None = None
+
+    @field_validator("fecha_cobro")
+    @classmethod
+    def validar_fecha_cobro(cls, fecha_cobro: date) -> date:
+        hoy = datetime.now(ZONA_HORARIA_NEGOCIO).date()
+        if fecha_cobro > hoy:
+            raise ValueError("La fecha de cobro no puede ser futura")
+        return fecha_cobro
+
+    @field_validator("monto")
+    @classmethod
+    def validar_monto(cls, monto: Decimal) -> Decimal:
+        return _normalizar_decimal_positivo(
+            monto,
+            PRECISION_MONETARIA,
+            "El monto cobrado",
+        )
+
+    @field_validator("observaciones")
+    @classmethod
+    def normalizar_observaciones(cls, observaciones: str | None) -> str | None:
+        if observaciones is None:
+            return None
+        return _normalizar_texto(observaciones) or None
+
+    @model_validator(mode="after")
+    def validar_cobro_activo(self) -> Self:
+        if self.deleted_at is not None:
+            raise ValueError("El cobro inicial no puede registrarse anulado")
+        return self
 
 
 class VentaCreate(SyncFields):
@@ -52,7 +118,7 @@ class VentaCreate(SyncFields):
     observaciones: str | None = None
     animal_ids: list[UUID] = Field(min_length=1)
     condicion_cobro: CondicionCobro
-    monto_cobrado_inicial: Decimal | None = None
+    cobro_inicial: VentaCobroInicialCreate | None = None
 
     @field_validator("fecha_operacion")
     @classmethod
@@ -91,16 +157,33 @@ class VentaCreate(SyncFields):
     @field_validator("monto_total")
     @classmethod
     def validar_monto_total(cls, monto: Decimal) -> Decimal:
-        if not monto.is_finite() or monto <= 0:
-            raise ValueError("El monto total debe ser mayor a cero")
-        return monto
+        return _normalizar_decimal_positivo(
+            monto,
+            PRECISION_MONETARIA,
+            "El monto total",
+        )
 
-    @field_validator("peso_total_kg", "precio_por_kg", "monto_cobrado_inicial")
+    @field_validator("peso_total_kg")
     @classmethod
-    def validar_decimal_opcional(cls, valor: Decimal | None) -> Decimal | None:
-        if valor is not None and (not valor.is_finite() or valor <= 0):
-            raise ValueError("El valor debe ser mayor a cero")
-        return valor
+    def validar_peso_total(cls, valor: Decimal | None) -> Decimal | None:
+        if valor is None:
+            return None
+        return _normalizar_decimal_positivo(
+            valor,
+            PRECISION_PESO_KG,
+            "El peso total",
+        )
+
+    @field_validator("precio_por_kg")
+    @classmethod
+    def validar_precio_por_kg(cls, valor: Decimal | None) -> Decimal | None:
+        if valor is None:
+            return None
+        return _normalizar_decimal_positivo(
+            valor,
+            PRECISION_PRECIO_UNITARIO,
+            "El precio por kilo",
+        )
 
     @field_validator("animal_ids")
     @classmethod
@@ -150,24 +233,40 @@ class VentaCreate(SyncFields):
 
         if self.peso_total_kg is None or self.precio_por_kg is None:
             raise ValueError("Una venta por kilo requiere peso total y precio por kilo")
+        monto_calculado = (self.peso_total_kg * self.precio_por_kg).quantize(
+            PRECISION_MONETARIA,
+            rounding=ROUND_HALF_UP,
+        )
+        if self.monto_total != monto_calculado:
+            raise ValueError(
+                "El monto total debe coincidir con el peso de venta multiplicado "
+                "por el precio por kilo"
+            )
         return self
 
     @model_validator(mode="after")
     def validar_cobro_inicial(self) -> Self:
-        """El importe manual solo existe cuando el usuario selecciona parcial."""
+        """Relaciona la condición elegida con el dinero realmente recibido."""
+        if self.condicion_cobro == CondicionCobro.total:
+            if self.cobro_inicial is None:
+                raise ValueError("El cobro inicial es obligatorio para un pago total")
+            if self.cobro_inicial.monto != self.monto_total:
+                raise ValueError(
+                    "El monto cobrado debe coincidir con el total de la venta"
+                )
+            return self
+
         if self.condicion_cobro == CondicionCobro.parcial:
-            if self.monto_cobrado_inicial is None:
-                raise ValueError("El monto cobrado es obligatorio para un pago parcial")
-            if self.monto_cobrado_inicial >= self.monto_total:
+            if self.cobro_inicial is None:
+                raise ValueError("El cobro inicial es obligatorio para un pago parcial")
+            if self.cobro_inicial.monto >= self.monto_total:
                 raise ValueError(
                     "El monto parcial debe ser menor que el total de la venta"
                 )
             return self
 
-        if self.monto_cobrado_inicial is not None:
-            raise ValueError(
-                "El monto cobrado manual solo corresponde a un pago parcial"
-            )
+        if self.cobro_inicial is not None:
+            raise ValueError("Una venta pendiente no debe incluir un cobro inicial")
         return self
 
 

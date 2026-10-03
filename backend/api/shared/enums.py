@@ -88,6 +88,8 @@ class EstadoCobro(str, Enum):
     pendiente = "pendiente"
     parcial = "parcial"
     cobrada = "cobrada"
+
+
 class MedioCobro(str, Enum):
     """Instrumento con el que se recibió un cobro de venta."""
 

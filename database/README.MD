@@ -87,7 +87,7 @@ del animal (muerte, baja, traslado externo). Ver `docs/adr/adr-0001-ventas-separ
 | `nro_dte` | `varchar` NOT NULL | se conserva como texto; no vacío |
 | `tipo_venta` | `varchar` NOT NULL | `por_kilo` \| `al_bulto` |
 | `peso_total_kg` | `numeric(10,3)` | obligatorio si `por_kilo` |
-| `precio_por_kg` | `numeric(14,2)` | obligatorio si `por_kilo` |
+| `precio_por_kg` | `numeric(18,6)` | obligatorio si `por_kilo`; conserva el precio pactado sin redondearlo |
 | `monto_total` | `numeric(14,2)` NOT NULL | `> 0` |
 | `observaciones` | `varchar` | |
 | `registrada_por_id` | `uuid` NOT NULL | FK `usuarios`; sale del JWT |

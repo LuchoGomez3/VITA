@@ -1,12 +1,7 @@
-"""Reglas de negocio del agregado base de ventas de hacienda.
-
-La operación pública se completará al incorporar la persistencia de cobros. Por
-ahora este service concentra las reglas independientes de esa tabla: permisos,
-idempotencia comercial, disponibilidad de animales y actualización atómica del
-stock. No debe conectarse a un router hasta integrar el cobro inicial.
-"""
+"""Reglas de negocio del registro atómico de ventas de hacienda."""
 
 from datetime import UTC, datetime
+from decimal import ROUND_HALF_UP, Decimal
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,10 +14,10 @@ from api.modules.ventas.exceptions import (
     AnimalesNoDisponiblesVentaError,
     VentaIdEnConflictoError,
 )
-from api.modules.ventas.models import Venta
+from api.modules.ventas.models import Venta, VentaCobro
 from api.modules.ventas.repository import VentaRepository
-from api.modules.ventas.schemas import VentaCreate
-from api.shared.enums import EstadoAnimal, RolUsuario
+from api.modules.ventas.schemas import PRECISION_MONETARIA, VentaCreate, VentaRead
+from api.shared.enums import EstadoAnimal, EstadoCobro, RolUsuario
 from api.shared.exceptions import EstablecimientoNoAutorizadoError
 from api.shared.sync import as_utc
 
@@ -65,12 +60,12 @@ class VentaService:
             raise AnimalesNoDisponiblesVentaError(invalidos)
         return [por_id[animal_id] for animal_id in datos.animal_ids]
 
-    async def crear_base(self, usuario: Usuario, datos: VentaCreate) -> Venta:
-        """Crea venta, detalles y baja de stock, todavía sin persistir cobros.
+    async def crear(self, usuario: Usuario, datos: VentaCreate) -> VentaRead:
+        """Crea venta, detalles, cobro inicial y baja de stock, todo o nada.
 
-        Este método es una etapa interna del desarrollo: deliberadamente no
-        devuelve ``VentaRead`` ni se publica por HTTP. El futuro método público
-        incorporará el cobro inicial en esta misma transacción antes de responder.
+        Los repositories solo ejecutan ``flush``. El ``commit`` pertenece a la
+        dependencia de sesión al cerrar el request; cualquier excepción provoca
+        el rollback conjunto de todo el agregado.
         """
         await self.exigir_acceso_comercial(usuario, datos.establecimiento_id)
 
@@ -79,9 +74,10 @@ class VentaService:
             # Se controla también el tenant persistido: un UUID conocido nunca
             # permite usar el establecimiento entrante como vía lateral.
             await self.exigir_acceso_comercial(usuario, existente.establecimiento_id)
-            if not await self._coincide_con_existente(existente, datos):
+            coincide = await self._coincide_con_existente(existente, datos)
+            if not coincide or not await self._coincide_cobro_inicial(existente, datos):
                 raise VentaIdEnConflictoError()
-            return existente
+            return await self._to_read(existente)
 
         animales = await self.resolver_animales(datos)
         ahora = datetime.now(UTC)
@@ -106,6 +102,7 @@ class VentaService:
         )
         await self.repository.save(venta)
         await self.repository.add_detalles(venta.id, datos.animal_ids)
+        await self._guardar_cobro_inicial(usuario, venta, datos, ahora)
 
         for animal in animales:
             animal.estado = EstadoAnimal.vendido
@@ -113,7 +110,32 @@ class VentaService:
             # sea histórica o el cliente haya enviado un updated_at antiguo.
             animal.updated_at = ahora
         await self.repository.save_animales(animales)
-        return venta
+        return await self._to_read(venta)
+
+    async def _guardar_cobro_inicial(
+        self,
+        usuario: Usuario,
+        venta: Venta,
+        datos: VentaCreate,
+        ahora: datetime,
+    ) -> None:
+        """Materializa el dinero recibido dentro de la transacción de la venta."""
+        entrada = datos.cobro_inicial
+        if entrada is None:
+            return
+
+        cobro = VentaCobro(
+            id=entrada.id,
+            created_at=as_utc(entrada.created_at) or ahora,
+            updated_at=as_utc(entrada.updated_at) or ahora,
+            venta_id=venta.id,
+            fecha_cobro=entrada.fecha_cobro,
+            monto=entrada.monto,
+            medio_cobro=entrada.medio_cobro,
+            registrado_por_id=usuario.id,
+            observaciones=entrada.observaciones,
+        )
+        await self.repository.save_cobro(cobro)
 
     async def _coincide_con_existente(
         self, existente: Venta, datos: VentaCreate
@@ -134,4 +156,70 @@ class VentaService:
             and existente.monto_total == datos.monto_total
             and existente.observaciones == datos.observaciones
             and set(animal_ids) == set(datos.animal_ids)
+        )
+
+    async def _coincide_cobro_inicial(
+        self, existente: Venta, datos: VentaCreate
+    ) -> bool:
+        """Comprueba el cobro identificable sin confundir cuotas posteriores.
+
+        Una venta originalmente pendiente puede tener cobros agregados después;
+        por eso, si el comando no trae cobro inicial, el reintento se considera
+        idéntico sin exigir que la venta siga sin cobros.
+        """
+        entrada = datos.cobro_inicial
+        if entrada is None:
+            return True
+
+        cobro = await self.repository.get_cobro_including_deleted(entrada.id)
+        return (
+            cobro is not None
+            and cobro.deleted_at is None
+            and cobro.venta_id == existente.id
+            and cobro.fecha_cobro == entrada.fecha_cobro
+            and cobro.monto == entrada.monto
+            and cobro.medio_cobro == entrada.medio_cobro
+            and cobro.observaciones == entrada.observaciones
+        )
+
+    async def _to_read(self, venta: Venta) -> VentaRead:
+        """Construye saldo y estado desde cobros activos, nunca desde un flag."""
+        animal_ids = await self.repository.list_animal_ids(venta.id)
+        monto_cobrado = (await self.repository.get_monto_cobrado(venta.id)).quantize(
+            PRECISION_MONETARIA, rounding=ROUND_HALF_UP
+        )
+        saldo_pendiente = max(
+            venta.monto_total - monto_cobrado,
+            Decimal("0.00"),
+        ).quantize(PRECISION_MONETARIA, rounding=ROUND_HALF_UP)
+
+        if monto_cobrado == 0:
+            estado_cobro = EstadoCobro.pendiente
+        elif saldo_pendiente == 0:
+            estado_cobro = EstadoCobro.cobrada
+        else:
+            estado_cobro = EstadoCobro.parcial
+
+        return VentaRead(
+            id=venta.id,
+            establecimiento_id=venta.establecimiento_id,
+            fecha_operacion=venta.fecha_operacion,
+            tipo_comprador=venta.tipo_comprador,
+            nombre_comprador=venta.nombre_comprador,
+            es_empresa=venta.es_empresa,
+            apellido_comprador=venta.apellido_comprador,
+            nro_dte=venta.nro_dte,
+            tipo_venta=venta.tipo_venta,
+            peso_total_kg=venta.peso_total_kg,
+            precio_por_kg=venta.precio_por_kg,
+            monto_total=venta.monto_total,
+            observaciones=venta.observaciones,
+            registrada_por_id=venta.registrada_por_id,
+            animal_ids=animal_ids,
+            monto_cobrado=monto_cobrado,
+            saldo_pendiente=saldo_pendiente,
+            estado_cobro=estado_cobro,
+            created_at=venta.created_at,
+            updated_at=venta.updated_at,
+            deleted_at=venta.deleted_at,
         )

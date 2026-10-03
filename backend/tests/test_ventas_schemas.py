@@ -8,7 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from api.modules.ventas.schemas import VentaCreate, ZONA_HORARIA_NEGOCIO
-from api.shared.enums import CondicionCobro, EstadoCobro
+from api.shared.enums import CondicionCobro, EstadoCobro, MedioCobro
 
 
 def payload_valido(**overrides):
@@ -25,6 +25,17 @@ def payload_valido(**overrides):
         "monto_total": "4500000.00",
         "animal_ids": [uuid4(), uuid4()],
         "condicion_cobro": "pendiente",
+    }
+    datos.update(overrides)
+    return datos
+
+
+def cobro_valido(**overrides):
+    datos = {
+        "id": uuid4(),
+        "fecha_cobro": datetime.now(ZONA_HORARIA_NEGOCIO).date(),
+        "monto": "4500000.00",
+        "medio_cobro": MedioCobro.transferencia,
     }
     datos.update(overrides)
     return datos
@@ -115,25 +126,84 @@ def test_venta_al_bulto_rechaza_peso_o_precio_por_kilo():
     assert "no debe incluir peso" in mensaje_error(payload_valido(peso_total_kg="1500"))
 
 
-def test_pago_total_no_recibe_casilla_de_monto_parcial():
+def test_venta_por_kilo_acepta_el_total_calculado_con_datos_comerciales():
     venta = VentaCreate.model_validate(
-        payload_valido(condicion_cobro=CondicionCobro.total)
-    )
-    assert venta.monto_cobrado_inicial is None
-
-    assert "solo corresponde a un pago parcial" in mensaje_error(
         payload_valido(
-            condicion_cobro=CondicionCobro.total,
-            monto_cobrado_inicial="1000",
+            tipo_venta="por_kilo",
+            peso_total_kg="10",
+            precio_por_kg="1000",
+            monto_total="10000",
+        )
+    )
+
+    assert venta.peso_total_kg == Decimal("10.000")
+    assert venta.precio_por_kg == Decimal("1000.00")
+    assert venta.monto_total == Decimal("10000.00")
+
+
+def test_venta_por_kilo_rechaza_total_calculado_con_pesos_historicos():
+    assert "peso de venta multiplicado" in mensaje_error(
+        payload_valido(
+            tipo_venta="por_kilo",
+            peso_total_kg="10",
+            precio_por_kg="1000",
+            monto_total="1610000",
         )
     )
 
 
-def test_pago_pendiente_no_admite_monto_cobrado():
-    assert "solo corresponde a un pago parcial" in mensaje_error(
+def test_venta_por_kilo_conserva_precio_y_redondea_solo_el_total():
+    venta = VentaCreate.model_validate(
+        payload_valido(
+            tipo_venta="por_kilo",
+            peso_total_kg="10.125",
+            precio_por_kg="123.456",
+            monto_total="1249.99",
+        )
+    )
+
+    assert venta.peso_total_kg == Decimal("10.125")
+    assert venta.precio_por_kg == Decimal("123.456000")
+    assert venta.monto_total == Decimal("1249.99")
+
+
+def test_precio_por_kilo_con_mas_de_seis_decimales_se_rechaza_sin_redondear():
+    assert "admite hasta 6 decimales" in mensaje_error(
+        payload_valido(
+            tipo_venta="por_kilo",
+            peso_total_kg="10",
+            precio_por_kg="123.4567891",
+            monto_total="1234.57",
+        )
+    )
+
+
+def test_pago_total_requiere_cobro_por_el_monto_completo():
+    assert "obligatorio para un pago total" in mensaje_error(
+        payload_valido(condicion_cobro=CondicionCobro.total)
+    )
+    assert "coincidir con el total" in mensaje_error(
+        payload_valido(
+            condicion_cobro=CondicionCobro.total,
+            cobro_inicial=cobro_valido(monto="1000"),
+        )
+    )
+
+    venta = VentaCreate.model_validate(
+        payload_valido(
+            condicion_cobro=CondicionCobro.total,
+            cobro_inicial=cobro_valido(),
+        )
+    )
+    assert venta.cobro_inicial is not None
+    assert venta.cobro_inicial.monto == venta.monto_total
+
+
+def test_pago_pendiente_no_admite_cobro_inicial():
+    assert "no debe incluir un cobro inicial" in mensaje_error(
         payload_valido(
             condicion_cobro=CondicionCobro.pendiente,
-            monto_cobrado_inicial="1000",
+            cobro_inicial=cobro_valido(),
         )
     )
 
@@ -145,17 +215,37 @@ def test_pago_parcial_requiere_monto_menor_que_total():
     assert "menor que el total" in mensaje_error(
         payload_valido(
             condicion_cobro=CondicionCobro.parcial,
-            monto_cobrado_inicial="4500000.00",
+            cobro_inicial=cobro_valido(),
         )
     )
 
     venta = VentaCreate.model_validate(
         payload_valido(
             condicion_cobro=CondicionCobro.parcial,
-            monto_cobrado_inicial="1500000.00",
+            cobro_inicial=cobro_valido(monto="1500000.00"),
         )
     )
-    assert venta.monto_cobrado_inicial == Decimal("1500000.00")
+    assert venta.cobro_inicial is not None
+    assert venta.cobro_inicial.monto == Decimal("1500000.00")
+
+
+def test_cobro_inicial_requiere_monto_positivo_y_fecha_no_futura():
+    assert "monto cobrado debe ser mayor" in mensaje_error(
+        payload_valido(
+            condicion_cobro=CondicionCobro.parcial,
+            cobro_inicial=cobro_valido(monto="0"),
+        )
+    )
+    manana = datetime.now(ZONA_HORARIA_NEGOCIO).date() + timedelta(days=1)
+    assert "fecha de cobro no puede ser futura" in mensaje_error(
+        payload_valido(
+            condicion_cobro=CondicionCobro.parcial,
+            cobro_inicial=cobro_valido(
+                monto="1500000.00",
+                fecha_cobro=manana,
+            ),
+        )
+    )
 
 
 def test_estado_cobro_expone_valores_estables_para_el_cliente():

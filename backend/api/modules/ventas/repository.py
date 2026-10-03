@@ -1,12 +1,13 @@
 """Acceso a datos de ventas de hacienda, sin reglas de negocio."""
 
+from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.modules.animales.models import Animal
-from api.modules.ventas.models import Venta, VentaDetalle
+from api.modules.ventas.models import Venta, VentaCobro, VentaDetalle
 
 
 class VentaRepository:
@@ -24,6 +25,25 @@ class VentaRepository:
     async def get_including_deleted(self, venta_id: UUID) -> Venta | None:
         """Incluye tombstones para resolver correctamente un reintento offline."""
         return await self.session.get(Venta, venta_id)
+
+    async def save_cobro(self, cobro: VentaCobro) -> VentaCobro:
+        """Inserta el cobro sin cerrar la transacción de la venta."""
+        self.session.add(cobro)
+        await self.session.flush()
+        return cobro
+
+    async def get_cobro_including_deleted(self, cobro_id: UUID) -> VentaCobro | None:
+        """Recupera un cobro para resolver reintentos por UUID offline."""
+        return await self.session.get(VentaCobro, cobro_id)
+
+    async def get_monto_cobrado(self, venta_id: UUID) -> Decimal:
+        """Suma solo cobros vigentes para derivar saldo y estado."""
+        consulta = select(func.coalesce(func.sum(VentaCobro.monto), 0)).where(
+            VentaCobro.venta_id == venta_id,
+            VentaCobro.deleted_at.is_(None),
+        )
+        monto = await self.session.scalar(consulta)
+        return Decimal(str(monto))
 
     async def add_detalles(self, venta_id: UUID, animal_ids: list[UUID]) -> None:
         """Agrega todos los animales de la venta sin ejecutar un commit."""
