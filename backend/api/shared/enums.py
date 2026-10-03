@@ -74,6 +74,15 @@ class TipoComprador(str, Enum):
     particular = "particular"
 
 
+class MedioCobro(str, Enum):
+    """Instrumento con el que se recibió un cobro de venta."""
+
+    efectivo = "efectivo"
+    transferencia = "transferencia"
+    cheque = "cheque"
+    tarjeta = "tarjeta"
+
+
 class TipoEgresoOperativo(str, Enum):
     """Clasificación contable principal de un egreso monetario del campo."""
 
