@@ -5,14 +5,12 @@ import 'package:brick_rest/brick_rest.dart';
 
 const _unchangedLotSyncErrorCode = Object();
 
-/// Configuración REST futura del recurso; la Fase 2 no invoca este endpoint.
+/// Configuración REST del recurso de lotes.
 class BrickLotRequestTransformer extends RestRequestTransformer {
   /// Crea el transformer exigido por el modelo offline-first.
   const BrickLotRequestTransformer(super.query, super.instance);
 
-  /// Ruta reservada para la futura fase de sincronización.
-  // TODO(field-backend): validar con backend ruta, upsert, pull incremental,
-  // tombstones y códigos de rechazo antes de habilitar el feature flag.
+  /// Ruta del contrato acordado con backend.
   static const lotsPath = '/api/v1/lotes';
 
   /// Crea el pull incremental filtrado por tenant.
@@ -31,7 +29,7 @@ class BrickLotRequestTransformer extends RestRequestTransformer {
   RestRequest get upsert => const RestRequest(method: 'POST', url: lotsPath);
 }
 
-/// Lote almacenado exclusivamente en SQLite durante la Fase 2.
+/// Lote persistido en SQLite y sincronizado con backend.
 @ConnectOfflineFirstWithRest(
   restConfig: RestSerializable(
     requestTransformer: BrickLotRequestTransformer.new,
@@ -79,9 +77,7 @@ class BrickLotModel extends OfflineFirstWithRestModel {
   final String boundaryJson;
 
   /// Distingue el esquema local de una geometría geográfica futura.
-  // TODO(field-geo): acordar con backend los modos y la estrategia para lotes
-  // creados en el lienzo local que todavía no tengan coordenadas reales.
-  @Rest(name: 'geometry_mode')
+  @Rest(name: 'modo_geometria')
   final String geometryMode;
 
   /// Superficie productiva exacta; 457 representa 45,7 hectáreas.
