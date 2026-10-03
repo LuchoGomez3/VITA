@@ -19,6 +19,7 @@ from api.modules.animales.repository import AnimalRepository
 from api.modules.animales.schemas import AnimalCreate, AnimalRead, AnimalUpdate
 from api.modules.categorias.models import Categoria
 from api.modules.establecimientos.repository import UsuarioEstablecimientoRepository
+from api.modules.observaciones_animales.service import ObservacionAnimalService
 from api.modules.pesajes.models import Pesaje
 from api.modules.pesajes.repository import PesajeRepository
 from api.modules.usuarios.models import Usuario
@@ -32,6 +33,7 @@ class AnimalService:
         self.repository = AnimalRepository(session)
         self.pesaje_repository = PesajeRepository(session)
         self.membership_repository = UsuarioEstablecimientoRepository(session)
+        self.observaciones = ObservacionAnimalService(session)
 
     async def _exigir_acceso(
         self, current_user: Usuario, establecimiento_id: UUID
@@ -87,6 +89,13 @@ class AnimalService:
         if existente is not None:
             # Re-sync de un alta ya registrada: merge con last-write-wins.
             await self._exigir_acceso(current_user, existente.establecimiento_id)
+            await self.observaciones.registrar_desde_columna_legacy(
+                current_user,
+                existente,
+                data.observaciones,
+                texto_guardado=existente.observaciones,
+                fecha=data.updated_at,
+            )
             await self._merge_alta_lww(existente, data)
             await self.repository.save(existente)
             return AnimalRead.model_validate(existente)
@@ -158,6 +167,14 @@ class AnimalService:
             await self.session.rollback()
             raise CaravanaDuplicadaError(data.nro_caravana_rfid) from exc
 
+        await self.observaciones.registrar_desde_columna_legacy(
+            current_user,
+            animal,
+            data.observaciones,
+            texto_guardado=None,
+            fecha=data.created_at,
+        )
+
         return AnimalRead.model_validate(animal)
 
     async def _merge_alta_lww(self, existente: Animal, data: AnimalCreate) -> None:
@@ -210,6 +227,14 @@ class AnimalService:
         if animal is None:
             raise AnimalNoEncontradoError()
         await self._exigir_acceso(current_user, animal.establecimiento_id)
+
+        await self.observaciones.registrar_desde_columna_legacy(
+            current_user,
+            animal,
+            data.observaciones,
+            texto_guardado=animal.observaciones,
+            fecha=data.updated_at,
+        )
 
         entrante = as_utc(data.updated_at) or datetime.now(UTC)
         if entrante <= as_utc(animal.updated_at):
