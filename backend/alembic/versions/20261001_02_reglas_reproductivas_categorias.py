@@ -20,7 +20,7 @@ migración se detiene y los lista: no inventa una regla ni asigna ``ambos`` por
 defecto.
 
 Revision ID: 20261001_02
-Revises: 20260910_02
+Revises: 20261001_01
 Create Date: 2026-10-01
 """
 
@@ -31,8 +31,7 @@ import sqlalchemy as sa
 from sqlalchemy.engine import Connection
 
 revision: str = "20261001_02"
-# Pasa a "20261001_01" cuando se integre VITA-172.
-down_revision: str | None = "20260910_02"
+down_revision: str | None = "20261001_01"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

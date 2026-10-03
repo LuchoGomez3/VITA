@@ -45,7 +45,8 @@ def _normalizar(sql: str) -> str:
 
 def test_revision_y_encadenamiento(migracion):
     assert migracion.revision == "20261001_02"
-    assert migracion.down_revision in {"20260910_02", "20261001_01"}
+    # Se encadena detrás de los cobros de ventas (VITA-172).
+    assert migracion.down_revision == "20261001_01"
 
 
 def test_triggers_de_la_migracion_son_copia_literal_de_los_modelos(migracion):

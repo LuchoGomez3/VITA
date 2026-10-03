@@ -36,7 +36,7 @@ pytestmark = [requiere_postgres, pytest.mark.anyio]
 
 _BACKEND = Path(__file__).parent.parent
 _SCRIPT_SQL = _BACKEND / "scripts/agregar_reglas_reproductivas_categorias.sql"
-_REVISION_PREVIA = "20260910_02"
+_REVISION_PREVIA = "20261001_01"
 _REVISION = "20261001_02"
 
 _OWNER = UUID("00000000-0000-0000-0000-00000000000a")
