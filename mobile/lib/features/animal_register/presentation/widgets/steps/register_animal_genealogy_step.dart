@@ -50,6 +50,7 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
   Widget build(BuildContext context) {
     final state = context.watch<RegisterAnimalBloc>().state;
     final draft = state.draft;
+    final showErrors = state.showStepValidationErrors;
     if (_lastEstablishmentId != draft.establishmentId) {
       _lastEstablishmentId = draft.establishmentId;
       _motherSearch = '';
@@ -92,6 +93,9 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
                     title: AnimalRegisterStrings.establishmentSelectorLabel,
                     hintText: AnimalRegisterStrings.establishmentSelectorHint,
                     initialValue: draft.establishmentId,
+                    errorText: showErrors && draft.establishmentId == null
+                        ? AnimalRegisterStrings.establishmentRequired
+                        : null,
                     options: [
                       for (final establishment in data)
                         AppDropdownOption(value: establishment.id, label: establishment.name),
@@ -106,6 +110,59 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
                 },
                 const SizedBox(height: AppSpacing.lg),
                 const Text(
+                  AnimalRegisterStrings.stepThreeDestinationTitle,
+                  style: AppTypography.pageTitle,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                const Text(
+                  AnimalRegisterStrings.stepThreeDestinationDescription,
+                  style: AppTypography.pageBodyTitle,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                switch (state.destinationsState) {
+                  Initial() when draft.establishmentId == null => const SizedBox.shrink(),
+                  Initial() || Loading() => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  ResultError(:final error) => Text(
+                    error.message,
+                    style: AppTypography.errorBody,
+                  ),
+                  Data(:final data) when data.isEmpty => const Text(
+                    AnimalRegisterStrings.noActiveLotsMessage,
+                    style: AppTypography.pageBodyTitle,
+                  ),
+                  Data(:final data) => Column(
+                    children: [
+                      for (final destination in data) ...[
+                        DestinationSelectionCard(
+                          destination: destination,
+                          isSelected: draft.destinationId == destination.id,
+                          onTap: () {
+                            _updateDraft(
+                              draft.copyWith(
+                                destinationId: draft.destinationId == destination.id ? null : destination.id,
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                      ],
+                    ],
+                  ),
+                  _ => const SizedBox.shrink(),
+                },
+                if (showErrors && draft.destinationId == null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  const Text(
+                    AnimalRegisterStrings.destinationRequired,
+                    style: AppTypography.formFieldError,
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+                const Divider(color: AppColors.border),
+                const SizedBox(height: AppSpacing.md),
+                const Text(
                   AnimalRegisterStrings.stepThreeGenealogyTitle,
                   style: AppTypography.pageTitle,
                 ),
@@ -115,6 +172,10 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
                   style: AppTypography.pageBodyTitle,
                 ),
                 const SizedBox(height: AppSpacing.md),
+                if (state.parentsState case ResultError(:final error)) ...[
+                  Text(error.message, style: AppTypography.errorBody),
+                  const SizedBox(height: AppSpacing.md),
+                ],
                 GenealogyAnimalSelector(
                   key: ValueKey('mother-${draft.establishmentId}'),
                   title: AnimalRegisterStrings.stepThreeMotherTitle,
@@ -162,56 +223,6 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
                     _updateDraft(draft.copyWith(father: parents.firstWhere((item) => item.id == animal.id)));
                   },
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                const Divider(color: AppColors.border),
-                const SizedBox(height: AppSpacing.md),
-                const Text(
-                  AnimalRegisterStrings.stepThreeDestinationTitle,
-                  style: AppTypography.pageTitle,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                const Text(
-                  AnimalRegisterStrings.stepThreeDestinationDescription,
-                  style: AppTypography.pageBodyTitle,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                if (state.parentsState case ResultError(:final error)) ...[
-                  Text(error.message, style: AppTypography.errorBody),
-                  const SizedBox(height: AppSpacing.md),
-                ],
-                switch (state.destinationsState) {
-                  Initial() when draft.establishmentId == null => const SizedBox.shrink(),
-                  Initial() || Loading() => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  ResultError(:final error) => Text(
-                    error.message,
-                    style: AppTypography.errorBody,
-                  ),
-                  Data(:final data) when data.isEmpty => const Text(
-                    AnimalRegisterStrings.noActiveLotsMessage,
-                    style: AppTypography.pageBodyTitle,
-                  ),
-                  Data(:final data) => Column(
-                    children: [
-                      for (final destination in data) ...[
-                        DestinationSelectionCard(
-                          destination: destination,
-                          isSelected: draft.destinationId == destination.id,
-                          onTap: () {
-                            _updateDraft(
-                              draft.copyWith(
-                                destinationId: draft.destinationId == destination.id ? null : destination.id,
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                      ],
-                    ],
-                  ),
-                  _ => const SizedBox.shrink(),
-                },
               ],
             ),
           ),

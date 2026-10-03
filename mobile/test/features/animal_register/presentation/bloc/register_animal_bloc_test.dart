@@ -257,6 +257,48 @@ void main() {
       expect(bloc.state.currentStep, RegisterAnimalStep.identification);
     });
 
+    test('does not leave basic data while required fields are missing', () async {
+      bloc.add(const RegisterAnimalEvent.stepRequested(RegisterAnimalStep.basicData));
+      await Future<void>.delayed(Duration.zero);
+
+      bloc.add(const RegisterAnimalEvent.nextStepRequested());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.currentStep, RegisterAnimalStep.basicData);
+      expect(bloc.state.showStepValidationErrors, isTrue);
+    });
+
+    test('does not leave destination while establishment or lot is missing', () async {
+      bloc.add(const RegisterAnimalEvent.stepRequested(RegisterAnimalStep.genealogy));
+      await Future<void>.delayed(Duration.zero);
+
+      bloc.add(const RegisterAnimalEvent.nextStepRequested());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.currentStep, RegisterAnimalStep.genealogy);
+      expect(bloc.state.showStepValidationErrors, isTrue);
+    });
+
+    test('advances from destination when establishment and lot are selected', () async {
+      bloc.add(const RegisterAnimalEvent.stepRequested(RegisterAnimalStep.genealogy));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(
+        RegisterAnimalEvent.draftChanged(
+          bloc.state.draft.copyWith(
+            establishmentId: 'establishment-id',
+            destinationId: 'lot-id',
+          ),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      bloc.add(const RegisterAnimalEvent.nextStepRequested());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.currentStep, RegisterAnimalStep.review);
+      expect(bloc.state.showStepValidationErrors, isFalse);
+    });
+
     test('rejects a duplicate RFID when leaving manual identification', () async {
       rfidRepository.registered = true;
       bloc.add(RegisterAnimalEvent.draftChanged(bloc.state.draft.copyWith(rfid: '982000412991416')));

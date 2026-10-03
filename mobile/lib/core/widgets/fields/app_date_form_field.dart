@@ -16,6 +16,7 @@ class AppDateFormField extends StatelessWidget {
     this.lastDate,
     this.enabled = true,
     this.helperText,
+    this.errorText,
   });
 
   /// Fecha seleccionada actualmente.
@@ -48,6 +49,9 @@ class AppDateFormField extends StatelessWidget {
   /// Texto auxiliar opcional que se muestra debajo del campo.
   final String? helperText;
 
+  /// Mensaje de validacion inmediata mostrado debajo del campo.
+  final String? errorText;
+
   @override
   Widget build(BuildContext context) {
     final effectiveTitleStyle = titleStyle ?? AppTypography.secondaryEmphasis;
@@ -72,7 +76,7 @@ class AppDateFormField extends StatelessWidget {
                 isEmpty: field.value == null,
                 decoration: InputDecoration(
                   helperText: helperText,
-                  errorText: field.errorText,
+                  errorText: errorText ?? field.errorText,
                   suffixIcon: const Icon(
                     Icons.calendar_today_outlined,
                     color: AppColors.textPrimary,

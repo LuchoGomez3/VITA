@@ -44,9 +44,9 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
 
   @override
   Widget build(BuildContext context) {
-    final draft = context.select(
-      (RegisterAnimalBloc bloc) => bloc.state.draft,
-    );
+    final state = context.watch<RegisterAnimalBloc>().state;
+    final draft = state.draft;
+    final showErrors = state.showStepValidationErrors;
 
     return Column(
       children: [
@@ -75,6 +75,7 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                   title: AnimalRegisterStrings.stepTwoBreedTitle,
                   hintText: AnimalRegisterStrings.stepTwoBreedHint,
                   initialValue: draft.breed.isEmpty ? null : draft.breed,
+                  errorText: showErrors && draft.breed.trim().isEmpty ? AnimalRegisterStrings.breedRequired : null,
                   options: AnimalRegisterStrings.stepTwoBreedOptions
                       .map(
                         (breed) => AppDropdownOption(
@@ -94,6 +95,7 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                 AppSegmentedFormField<String>(
                   title: AnimalRegisterStrings.stepTwoSexTitle,
                   value: draft.sex.isEmpty ? null : draft.sex,
+                  errorText: showErrors && draft.sex.isEmpty ? AnimalRegisterStrings.sexRequired : null,
                   options: const [
                     AppSegmentedOption(
                       value: AnimalRegisterStrings.stepTwoFemale,
@@ -113,6 +115,7 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                   title: AnimalRegisterStrings.stepTwoBirthDateTitle,
                   hintText: AnimalRegisterStrings.stepTwoBirthDateHint,
                   value: draft.birthDate,
+                  errorText: showErrors && draft.birthDate == null ? AnimalRegisterStrings.birthDateRequired : null,
                   onChanged: (date) {
                     setState(() {
                       _selectedDatePreset = null;
@@ -147,7 +150,7 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                   onChanged: _applyBirthDatePreset,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                switch (context.watch<RegisterAnimalBloc>().state.categoriesState) {
+                switch (state.categoriesState) {
                   Initial() || Loading() => const Center(
                     child: CircularProgressIndicator(),
                   ),
@@ -159,27 +162,39 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                     AnimalRegisterStrings.noCategoriesMessage,
                     style: AppTypography.pageBodyTitle,
                   ),
-                  Data(:final data) => AppChoiceSelector<String>(
-                    title: AnimalRegisterStrings.stepTwoCategoryTitle,
-                    value: draft.categoryId,
-                    options: [
-                      for (final category in data)
-                        AppChoiceOption(
-                          value: category.id,
-                          label: category.name,
+                  Data(:final data) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppChoiceSelector<String>(
+                        title: AnimalRegisterStrings.stepTwoCategoryTitle,
+                        value: draft.categoryId,
+                        options: [
+                          for (final category in data)
+                            AppChoiceOption(
+                              value: category.id,
+                              label: category.name,
+                            ),
+                        ],
+                        onChanged: (categoryId) {
+                          final category = data.firstWhere(
+                            (item) => item.id == categoryId,
+                          );
+                          _updateDraft(
+                            draft.copyWith(
+                              categoryId: category.id,
+                              categoryName: category.name,
+                            ),
+                          );
+                        },
+                      ),
+                      if (showErrors && draft.categoryId == null) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        const Text(
+                          AnimalRegisterStrings.categoryRequired,
+                          style: AppTypography.formFieldError,
                         ),
+                      ],
                     ],
-                    onChanged: (categoryId) {
-                      final category = data.firstWhere(
-                        (item) => item.id == categoryId,
-                      );
-                      _updateDraft(
-                        draft.copyWith(
-                          categoryId: category.id,
-                          categoryName: category.name,
-                        ),
-                      );
-                    },
                   ),
                   _ => const SizedBox.shrink(),
                 },
@@ -196,6 +211,12 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                       RegExp(r'^\d*[,.]?\d{0,2}'),
                     ),
                   ],
+                  validation: showErrors && !_hasValidWeight(draft.birthWeight)
+                      ? AppFieldValidation.invalid
+                      : AppFieldValidation.neutral,
+                  validationMessage: showErrors && !_hasValidWeight(draft.birthWeight)
+                      ? AnimalRegisterStrings.invalidBirthWeight
+                      : null,
                   onChanged: (value) {
                     _updateDraft(draft.copyWith(birthWeight: value));
                   },
@@ -240,6 +261,11 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
 
   String _visualTag(RegisterAnimalDraft draft) {
     return '${draft.visualTagSeries} ${draft.visualTagNumber}'.trim();
+  }
+
+  bool _hasValidWeight(String value) {
+    final parsed = double.tryParse(value.trim().replaceAll(',', '.'));
+    return parsed != null && parsed > 0;
   }
 
   void _updateDraft(RegisterAnimalDraft draft) {

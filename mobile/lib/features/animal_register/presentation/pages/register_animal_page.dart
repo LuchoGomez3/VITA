@@ -7,8 +7,6 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
-import 'package:frontend_mayoral/features/animal_register/presentation/widgets/register_animal_app_bar_title.dart';
-import 'package:frontend_mayoral/features/animal_register/presentation/widgets/register_animal_progress_indicator.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/steps/register_animal_basic_data_step.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/steps/register_animal_genealogy_step.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/steps/register_animal_identification_step.dart';
@@ -96,14 +94,17 @@ class _RegisterAnimalView extends StatelessWidget {
                 onPressed: () => _close(context),
               ),
               actions: const [SizedBox(width: 48)],
-              title: RegisterAnimalAppBarTitle(
-                stepSubtitle: _subtitleFor(state.currentStep),
+              title: const Text(
+                AnimalRegisterStrings.pageTitle,
+                style: AppTypography.appBarTitle,
               ),
             ),
             body: Column(
               children: [
-                RegisterAnimalProgressIndicator(
+                StepProgressBar(
                   currentStep: state.currentStep.index + 1,
+                  totalSteps: RegisterAnimalStep.values.length,
+                  stepTitle: _stepTitle(state.currentStep),
                 ),
                 Expanded(
                   child: IndexedStack(
@@ -132,12 +133,12 @@ class _RegisterAnimalView extends StatelessWidget {
     );
   }
 
-  static String _subtitleFor(RegisterAnimalStep step) {
+  static String _stepTitle(RegisterAnimalStep step) {
     return switch (step) {
-      RegisterAnimalStep.identification => AnimalRegisterStrings.pageStepSubtitle,
-      RegisterAnimalStep.basicData => AnimalRegisterStrings.stepTwoSubtitle,
-      RegisterAnimalStep.genealogy => AnimalRegisterStrings.stepThreeSubtitle,
-      RegisterAnimalStep.review => AnimalRegisterStrings.stepFourSubtitle,
+      RegisterAnimalStep.identification => AnimalRegisterStrings.progressIdentificationTitle,
+      RegisterAnimalStep.basicData => AnimalRegisterStrings.progressBasicDataTitle,
+      RegisterAnimalStep.genealogy => AnimalRegisterStrings.progressDestinationTitle,
+      RegisterAnimalStep.review => AnimalRegisterStrings.progressReviewTitle,
     };
   }
 

@@ -259,7 +259,16 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
       return;
     }
 
+    if (!state.draft.isValidForStep(currentStep)) {
+      emit(state.copyWith(showStepValidationErrors: true));
+      if (currentStep == RegisterAnimalStep.identification) {
+        await _checkRfid(state.draft.rfid.trim(), emit);
+      }
+      return;
+    }
+
     if (currentStep == RegisterAnimalStep.identification && !await _checkRfid(state.draft.rfid.trim(), emit)) {
+      emit(state.copyWith(showStepValidationErrors: true));
       return;
     }
 
@@ -268,6 +277,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     emit(
       state.copyWith(
         currentStep: RegisterAnimalStep.values[currentStep.index + 1],
+        showStepValidationErrors: false,
       ),
     );
   }
@@ -284,6 +294,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     emit(
       state.copyWith(
         currentStep: RegisterAnimalStep.values[state.currentStep.index - 1],
+        showStepValidationErrors: false,
       ),
     );
   }
@@ -293,7 +304,12 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     _StepRequested event,
     Emitter<RegisterAnimalState> emit,
   ) {
-    emit(state.copyWith(currentStep: event.step));
+    emit(
+      state.copyWith(
+        currentStep: event.step,
+        showStepValidationErrors: false,
+      ),
+    );
   }
 
   /// Valida el borrador, construye el request de dominio y lo envia.

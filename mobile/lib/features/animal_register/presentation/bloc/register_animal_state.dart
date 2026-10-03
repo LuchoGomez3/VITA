@@ -66,6 +66,7 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
     @Default(ResultState<List<AnimalParent>>.initial()) ResultState<List<AnimalParent>> parentsState,
     @Default(ResultState<bool>.initial()) ResultState<bool> rfidCheckState,
     @Default(ResultState<RegisteredAnimal>.initial()) ResultState<RegisteredAnimal> submitResult,
+    @Default(false) bool showStepValidationErrors,
   }) = _RegisterAnimalState;
 
   const RegisterAnimalState._();
@@ -87,4 +88,21 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
     Data<List<AnimalCategory>>(:final data) => data,
     _ => const [],
   };
+}
+
+/// Validaciones sincrónicas necesarias para avanzar en el alta.
+extension RegisterAnimalDraftValidation on RegisterAnimalDraft {
+  /// Indica si el borrador contiene los datos obligatorios del [step].
+  bool isValidForStep(RegisterAnimalStep step) => switch (step) {
+    RegisterAnimalStep.identification => RegExp(r'^\d{15}$').hasMatch(rfid.trim()),
+    RegisterAnimalStep.basicData =>
+      breed.trim().isNotEmpty && sex.isNotEmpty && birthDate != null && categoryId != null && _hasValidInitialWeight,
+    RegisterAnimalStep.genealogy => establishmentId != null && destinationId != null,
+    RegisterAnimalStep.review => true,
+  };
+
+  bool get _hasValidInitialWeight {
+    final parsed = double.tryParse(birthWeight.trim().replaceAll(',', '.'));
+    return parsed != null && parsed > 0;
+  }
 }
