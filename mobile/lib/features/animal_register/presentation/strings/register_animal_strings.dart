@@ -26,6 +26,18 @@ class AnimalRegisterStrings {
   /// Titulo de la pagina.
   static const pageTitle = 'Alta de animal';
 
+  /// Titulo corto del primer paso para el header de progreso.
+  static const progressIdentificationTitle = 'Identificación';
+
+  /// Titulo corto del segundo paso para el header de progreso.
+  static const progressBasicDataTitle = 'Datos básicos';
+
+  /// Titulo corto del tercer paso para el header de progreso.
+  static const progressDestinationTitle = 'Destino y genealogía';
+
+  /// Titulo corto del último paso para el header de progreso.
+  static const progressReviewTitle = 'Revisión';
+
   /// Subtitulo de la pagina.
   static const pageStepSubtitle = 'Paso 1 de 4 • Identificación';
 

@@ -42,6 +42,11 @@ void main() {
     await tester.pump();
     await tester.pump();
 
+    expect(
+      tester.getTopLeft(find.text(AnimalRegisterStrings.stepThreeDestinationTitle)).dy,
+      lessThan(tester.getTopLeft(find.text(AnimalRegisterStrings.stepThreeGenealogyTitle)).dy),
+    );
+
     final motherInput = find.byType(TextFormField).first;
     await tester.ensureVisible(motherInput);
     await tester.enterText(motherInput, '999');

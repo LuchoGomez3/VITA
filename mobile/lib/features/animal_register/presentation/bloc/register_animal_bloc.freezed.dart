@@ -1025,7 +1025,7 @@ $AnimalParentCopyWith<$Res>? get father {
 /// @nodoc
 mixin _$RegisterAnimalState {
 
- RegisterAnimalStep get currentStep; RegisterAnimalDraft get draft; ResultState<List<AnimalRegistrationEstablishment>> get establishmentsState; ResultState<List<AnimalRegistrationDestination>> get destinationsState; ResultState<List<AnimalCategory>> get categoriesState; ResultState<List<AnimalParent>> get parentsState; ResultState<bool> get rfidCheckState; ResultState<RegisteredAnimal> get submitResult;
+ RegisterAnimalStep get currentStep; RegisterAnimalDraft get draft; ResultState<List<AnimalRegistrationEstablishment>> get establishmentsState; ResultState<List<AnimalRegistrationDestination>> get destinationsState; ResultState<List<AnimalCategory>> get categoriesState; ResultState<List<AnimalParent>> get parentsState; ResultState<bool> get rfidCheckState; ResultState<RegisteredAnimal> get submitResult; bool get showStepValidationErrors;
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1036,16 +1036,16 @@ $RegisterAnimalStateCopyWith<RegisterAnimalState> get copyWith => _$RegisterAnim
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.establishmentsState, establishmentsState) || other.establishmentsState == establishmentsState)&&(identical(other.destinationsState, destinationsState) || other.destinationsState == destinationsState)&&(identical(other.categoriesState, categoriesState) || other.categoriesState == categoriesState)&&(identical(other.parentsState, parentsState) || other.parentsState == parentsState)&&(identical(other.rfidCheckState, rfidCheckState) || other.rfidCheckState == rfidCheckState)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.establishmentsState, establishmentsState) || other.establishmentsState == establishmentsState)&&(identical(other.destinationsState, destinationsState) || other.destinationsState == destinationsState)&&(identical(other.categoriesState, categoriesState) || other.categoriesState == categoriesState)&&(identical(other.parentsState, parentsState) || other.parentsState == parentsState)&&(identical(other.rfidCheckState, rfidCheckState) || other.rfidCheckState == rfidCheckState)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult)&&(identical(other.showStepValidationErrors, showStepValidationErrors) || other.showStepValidationErrors == showStepValidationErrors));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,currentStep,draft,establishmentsState,destinationsState,categoriesState,parentsState,rfidCheckState,submitResult);
+int get hashCode => Object.hash(runtimeType,currentStep,draft,establishmentsState,destinationsState,categoriesState,parentsState,rfidCheckState,submitResult,showStepValidationErrors);
 
 @override
 String toString() {
-  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, establishmentsState: $establishmentsState, destinationsState: $destinationsState, categoriesState: $categoriesState, parentsState: $parentsState, rfidCheckState: $rfidCheckState, submitResult: $submitResult)';
+  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, establishmentsState: $establishmentsState, destinationsState: $destinationsState, categoriesState: $categoriesState, parentsState: $parentsState, rfidCheckState: $rfidCheckState, submitResult: $submitResult, showStepValidationErrors: $showStepValidationErrors)';
 }
 
 
@@ -1056,7 +1056,7 @@ abstract mixin class $RegisterAnimalStateCopyWith<$Res>  {
   factory $RegisterAnimalStateCopyWith(RegisterAnimalState value, $Res Function(RegisterAnimalState) _then) = _$RegisterAnimalStateCopyWithImpl;
 @useResult
 $Res call({
- RegisterAnimalStep currentStep, RegisterAnimalDraft draft, ResultState<List<AnimalRegistrationEstablishment>> establishmentsState, ResultState<List<AnimalRegistrationDestination>> destinationsState, ResultState<List<AnimalCategory>> categoriesState, ResultState<List<AnimalParent>> parentsState, ResultState<bool> rfidCheckState, ResultState<RegisteredAnimal> submitResult
+ RegisterAnimalStep currentStep, RegisterAnimalDraft draft, ResultState<List<AnimalRegistrationEstablishment>> establishmentsState, ResultState<List<AnimalRegistrationDestination>> destinationsState, ResultState<List<AnimalCategory>> categoriesState, ResultState<List<AnimalParent>> parentsState, ResultState<bool> rfidCheckState, ResultState<RegisteredAnimal> submitResult, bool showStepValidationErrors
 });
 
 
@@ -1073,7 +1073,7 @@ class _$RegisterAnimalStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? currentStep = null,Object? draft = null,Object? establishmentsState = null,Object? destinationsState = null,Object? categoriesState = null,Object? parentsState = null,Object? rfidCheckState = null,Object? submitResult = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? currentStep = null,Object? draft = null,Object? establishmentsState = null,Object? destinationsState = null,Object? categoriesState = null,Object? parentsState = null,Object? rfidCheckState = null,Object? submitResult = null,Object? showStepValidationErrors = null,}) {
   return _then(_self.copyWith(
 currentStep: null == currentStep ? _self.currentStep : currentStep // ignore: cast_nullable_to_non_nullable
 as RegisterAnimalStep,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
@@ -1083,7 +1083,8 @@ as ResultState<List<AnimalRegistrationDestination>>,categoriesState: null == cat
 as ResultState<List<AnimalCategory>>,parentsState: null == parentsState ? _self.parentsState : parentsState // ignore: cast_nullable_to_non_nullable
 as ResultState<List<AnimalParent>>,rfidCheckState: null == rfidCheckState ? _self.rfidCheckState : rfidCheckState // ignore: cast_nullable_to_non_nullable
 as ResultState<bool>,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
-as ResultState<RegisteredAnimal>,
+as ResultState<RegisteredAnimal>,showStepValidationErrors: null == showStepValidationErrors ? _self.showStepValidationErrors : showStepValidationErrors // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 /// Create a copy of RegisterAnimalState
@@ -1228,10 +1229,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<List<AnimalCategory>> categoriesState,  ResultState<List<AnimalParent>> parentsState,  ResultState<bool> rfidCheckState,  ResultState<RegisteredAnimal> submitResult)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<List<AnimalCategory>> categoriesState,  ResultState<List<AnimalParent>> parentsState,  ResultState<bool> rfidCheckState,  ResultState<RegisteredAnimal> submitResult,  bool showStepValidationErrors)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisterAnimalState() when $default != null:
-return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.destinationsState,_that.categoriesState,_that.parentsState,_that.rfidCheckState,_that.submitResult);case _:
+return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.destinationsState,_that.categoriesState,_that.parentsState,_that.rfidCheckState,_that.submitResult,_that.showStepValidationErrors);case _:
   return orElse();
 
 }
@@ -1249,10 +1250,10 @@ return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.de
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<List<AnimalCategory>> categoriesState,  ResultState<List<AnimalParent>> parentsState,  ResultState<bool> rfidCheckState,  ResultState<RegisteredAnimal> submitResult)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<List<AnimalCategory>> categoriesState,  ResultState<List<AnimalParent>> parentsState,  ResultState<bool> rfidCheckState,  ResultState<RegisteredAnimal> submitResult,  bool showStepValidationErrors)  $default,) {final _that = this;
 switch (_that) {
 case _RegisterAnimalState():
-return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.destinationsState,_that.categoriesState,_that.parentsState,_that.rfidCheckState,_that.submitResult);}
+return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.destinationsState,_that.categoriesState,_that.parentsState,_that.rfidCheckState,_that.submitResult,_that.showStepValidationErrors);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1266,10 +1267,10 @@ return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.de
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<List<AnimalCategory>> categoriesState,  ResultState<List<AnimalParent>> parentsState,  ResultState<bool> rfidCheckState,  ResultState<RegisteredAnimal> submitResult)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RegisterAnimalStep currentStep,  RegisterAnimalDraft draft,  ResultState<List<AnimalRegistrationEstablishment>> establishmentsState,  ResultState<List<AnimalRegistrationDestination>> destinationsState,  ResultState<List<AnimalCategory>> categoriesState,  ResultState<List<AnimalParent>> parentsState,  ResultState<bool> rfidCheckState,  ResultState<RegisteredAnimal> submitResult,  bool showStepValidationErrors)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisterAnimalState() when $default != null:
-return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.destinationsState,_that.categoriesState,_that.parentsState,_that.rfidCheckState,_that.submitResult);case _:
+return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.destinationsState,_that.categoriesState,_that.parentsState,_that.rfidCheckState,_that.submitResult,_that.showStepValidationErrors);case _:
   return null;
 
 }
@@ -1281,7 +1282,7 @@ return $default(_that.currentStep,_that.draft,_that.establishmentsState,_that.de
 
 
 class _RegisterAnimalState extends RegisterAnimalState {
-  const _RegisterAnimalState({required this.currentStep, required this.draft, this.establishmentsState = const ResultState<List<AnimalRegistrationEstablishment>>.initial(), this.destinationsState = const ResultState<List<AnimalRegistrationDestination>>.initial(), this.categoriesState = const ResultState<List<AnimalCategory>>.initial(), this.parentsState = const ResultState<List<AnimalParent>>.initial(), this.rfidCheckState = const ResultState<bool>.initial(), this.submitResult = const ResultState<RegisteredAnimal>.initial()}): super._();
+  const _RegisterAnimalState({required this.currentStep, required this.draft, this.establishmentsState = const ResultState<List<AnimalRegistrationEstablishment>>.initial(), this.destinationsState = const ResultState<List<AnimalRegistrationDestination>>.initial(), this.categoriesState = const ResultState<List<AnimalCategory>>.initial(), this.parentsState = const ResultState<List<AnimalParent>>.initial(), this.rfidCheckState = const ResultState<bool>.initial(), this.submitResult = const ResultState<RegisteredAnimal>.initial(), this.showStepValidationErrors = false}): super._();
   
 
 @override final  RegisterAnimalStep currentStep;
@@ -1292,6 +1293,7 @@ class _RegisterAnimalState extends RegisterAnimalState {
 @override@JsonKey() final  ResultState<List<AnimalParent>> parentsState;
 @override@JsonKey() final  ResultState<bool> rfidCheckState;
 @override@JsonKey() final  ResultState<RegisteredAnimal> submitResult;
+@override@JsonKey() final  bool showStepValidationErrors;
 
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
@@ -1303,16 +1305,16 @@ _$RegisterAnimalStateCopyWith<_RegisterAnimalState> get copyWith => __$RegisterA
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.establishmentsState, establishmentsState) || other.establishmentsState == establishmentsState)&&(identical(other.destinationsState, destinationsState) || other.destinationsState == destinationsState)&&(identical(other.categoriesState, categoriesState) || other.categoriesState == categoriesState)&&(identical(other.parentsState, parentsState) || other.parentsState == parentsState)&&(identical(other.rfidCheckState, rfidCheckState) || other.rfidCheckState == rfidCheckState)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterAnimalState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.establishmentsState, establishmentsState) || other.establishmentsState == establishmentsState)&&(identical(other.destinationsState, destinationsState) || other.destinationsState == destinationsState)&&(identical(other.categoriesState, categoriesState) || other.categoriesState == categoriesState)&&(identical(other.parentsState, parentsState) || other.parentsState == parentsState)&&(identical(other.rfidCheckState, rfidCheckState) || other.rfidCheckState == rfidCheckState)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult)&&(identical(other.showStepValidationErrors, showStepValidationErrors) || other.showStepValidationErrors == showStepValidationErrors));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,currentStep,draft,establishmentsState,destinationsState,categoriesState,parentsState,rfidCheckState,submitResult);
+int get hashCode => Object.hash(runtimeType,currentStep,draft,establishmentsState,destinationsState,categoriesState,parentsState,rfidCheckState,submitResult,showStepValidationErrors);
 
 @override
 String toString() {
-  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, establishmentsState: $establishmentsState, destinationsState: $destinationsState, categoriesState: $categoriesState, parentsState: $parentsState, rfidCheckState: $rfidCheckState, submitResult: $submitResult)';
+  return 'RegisterAnimalState(currentStep: $currentStep, draft: $draft, establishmentsState: $establishmentsState, destinationsState: $destinationsState, categoriesState: $categoriesState, parentsState: $parentsState, rfidCheckState: $rfidCheckState, submitResult: $submitResult, showStepValidationErrors: $showStepValidationErrors)';
 }
 
 
@@ -1323,7 +1325,7 @@ abstract mixin class _$RegisterAnimalStateCopyWith<$Res> implements $RegisterAni
   factory _$RegisterAnimalStateCopyWith(_RegisterAnimalState value, $Res Function(_RegisterAnimalState) _then) = __$RegisterAnimalStateCopyWithImpl;
 @override @useResult
 $Res call({
- RegisterAnimalStep currentStep, RegisterAnimalDraft draft, ResultState<List<AnimalRegistrationEstablishment>> establishmentsState, ResultState<List<AnimalRegistrationDestination>> destinationsState, ResultState<List<AnimalCategory>> categoriesState, ResultState<List<AnimalParent>> parentsState, ResultState<bool> rfidCheckState, ResultState<RegisteredAnimal> submitResult
+ RegisterAnimalStep currentStep, RegisterAnimalDraft draft, ResultState<List<AnimalRegistrationEstablishment>> establishmentsState, ResultState<List<AnimalRegistrationDestination>> destinationsState, ResultState<List<AnimalCategory>> categoriesState, ResultState<List<AnimalParent>> parentsState, ResultState<bool> rfidCheckState, ResultState<RegisteredAnimal> submitResult, bool showStepValidationErrors
 });
 
 
@@ -1340,7 +1342,7 @@ class __$RegisterAnimalStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterAnimalState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? currentStep = null,Object? draft = null,Object? establishmentsState = null,Object? destinationsState = null,Object? categoriesState = null,Object? parentsState = null,Object? rfidCheckState = null,Object? submitResult = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? currentStep = null,Object? draft = null,Object? establishmentsState = null,Object? destinationsState = null,Object? categoriesState = null,Object? parentsState = null,Object? rfidCheckState = null,Object? submitResult = null,Object? showStepValidationErrors = null,}) {
   return _then(_RegisterAnimalState(
 currentStep: null == currentStep ? _self.currentStep : currentStep // ignore: cast_nullable_to_non_nullable
 as RegisterAnimalStep,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
@@ -1350,7 +1352,8 @@ as ResultState<List<AnimalRegistrationDestination>>,categoriesState: null == cat
 as ResultState<List<AnimalCategory>>,parentsState: null == parentsState ? _self.parentsState : parentsState // ignore: cast_nullable_to_non_nullable
 as ResultState<List<AnimalParent>>,rfidCheckState: null == rfidCheckState ? _self.rfidCheckState : rfidCheckState // ignore: cast_nullable_to_non_nullable
 as ResultState<bool>,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
-as ResultState<RegisteredAnimal>,
+as ResultState<RegisteredAnimal>,showStepValidationErrors: null == showStepValidationErrors ? _self.showStepValidationErrors : showStepValidationErrors // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
