@@ -67,6 +67,65 @@ Toda entidad que viaje al cliente offline hereda de `Base` y `SoftDeleteMixin`:
 Las tablas hijas de un agregado atómico (por ejemplo `ventas_detalles`) heredan solo de
 `Base`: viajan dentro del payload de su padre y no se sincronizan por separado.
 
+## Animales: categoría y condición reproductiva
+
+Decisiones de fondo en `docs/adr/adr-0006-reglas-reproductivas-de-categorias.md`.
+
+`categorias` lleva dos reglas explícitas, que nunca se infieren del nombre:
+
+| Columna | Tipo | Notas |
+| --- | --- | --- |
+| `sexo_permitido` | `varchar` NOT NULL | `macho` \| `hembra` \| `ambos` |
+| `permite_estado_reproductivo` | `boolean` NOT NULL, default `false` | habilita `vacia`/`prenada` en sus hembras |
+
+`animales.estado_reproductivo` (`varchar`, nullable) vale `sin_determinar`, `vacia`,
+`prenada` o `null`, y es independiente de `estado`. Los CHECK del propio animal fijan los
+valores válidos y que un macho siempre tenga `null`. La compatibilidad con la categoría es
+lógica entre tablas y vive en dos triggers:
+
+- `trg_animales_categoria_compatible` (`validar_categoria_animal()`) valida el animal en
+  el insert y cuando cambian `sexo`, `categoria_id`, `estado_reproductivo` o
+  `deleted_at`. Comprueba que la categoría admita el sexo y, para `vacia`/`prenada`, que
+  esté habilitada. Al **asignar** la categoría rechaza también una borrada o de otro
+  establecimiento.
+- `trg_categorias_reglas_compatibles` (`validar_reglas_categoria()`) rechaza cambiar
+  `sexo_permitido` o `permite_estado_reproductivo` si deja animales vivos incompatibles.
+
+Los triggers BEFORE corren antes que el WITH CHECK del RLS, así que no pueden leer filas
+que quien escribe no ve, porque su mensaje de error las revelaría.
+`validar_categoria_animal()` es `security invoker`: el backend (rol `postgres`, que no
+pasa por RLS) valida todo, y un cliente directo recibe siempre el rechazo del RLS (42501),
+sea la categoría ajena, inexistente o incompatible. `validar_reglas_categoria()` es
+`security definer` porque tiene que contar todos los animales de la categoría. No filtra
+información: solo corre en el UPDATE de filas que el RLS ya dejó actualizar.
+`create_all` las instala en Postgres; en producción las
+crea la migración `20261001_02` (espejo: `backend/scripts/agregar_reglas_reproductivas_categorias.sql`).
+Sus tests corren contra un Postgres efímero (`VITA_TEST_POSTGRES_URL`, probados con 16;
+Supabase usa 17).
+
+El catálogo real son las seis categorías del front, globales (`establecimiento_id` null)
+y con los mismos UUIDs que usa mobile:
+
+- Ternera, `hembra`.
+- Ternero, `macho`.
+- Vaquillona y Vaca, `hembra`, con condición reproductiva habilitada.
+- Novillo y Toro, `macho`.
+
+La migración las siembra si faltan y las clasifica si ya existían sin reglas. Las globales
+se leen y se asignan desde cualquier establecimiento, pero no se editan ni se borran:
+reenviar una por `POST /categorias` responde 403.
+
+Las cinco categorías `550e8400-…` de Supabase son **datos de prueba heredados**. Se
+clasifican por id para que la migración no se corte: el Ternero de prueba queda en
+`ambos` porque tiene hembras. El script espejo trae al final un paso de limpieza
+**comentado**, que se corre a mano: pasa esas hembras a la Ternera global y borra
+lógicamente Engorde Rápido. Ante cualquier otra categoría sin clasificar, o un animal
+incompatible, la migración se detiene en vez de inventar la regla.
+
+RLS: `categorias` y `animales` tienen RLS activo y ninguna policy, así que solo accede el
+backend. Si algún día un cliente lee directo por PostgREST, va a hacer falta una policy de
+lectura (globales + propias).
+
 ## Ventas de hacienda
 
 `ventas` registra la operación comercial y `ventas_detalles` los animales que la componen.

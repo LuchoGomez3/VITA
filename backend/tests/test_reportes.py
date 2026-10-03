@@ -12,7 +12,7 @@ from api.modules.establecimientos.models import (
     UsuarioEstablecimiento,
 )
 from api.reportes.service import _codigo_sexo, _nombre_archivo
-from api.shared.enums import EstadoAnimal, RolUsuario, SexoAnimal
+from api.shared.enums import EstadoAnimal, RolUsuario, SexoAnimal, SexoPermitido
 from tests.factories import crear_lote
 
 CARAVANA_OK = "123456789012345"
@@ -52,7 +52,9 @@ async def datos_reporte(session, usuario_actual):
             activo=True,
         )
     )
-    categoria = Categoria(establecimiento_id=est.id, nombre="Ternero")
+    categoria = Categoria(
+        establecimiento_id=est.id, nombre="Ternero", sexo_permitido=SexoPermitido.ambos
+    )
     lote = crear_lote(est.id, "Lote 1")
     session.add(categoria)
     session.add(lote)

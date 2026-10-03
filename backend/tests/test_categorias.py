@@ -11,7 +11,7 @@ from api.modules.establecimientos.models import (
     Establecimiento,
     UsuarioEstablecimiento,
 )
-from api.shared.enums import EstadoAnimal, RolUsuario, SexoAnimal
+from api.shared.enums import EstadoAnimal, RolUsuario, SexoAnimal, SexoPermitido
 
 
 @pytest.fixture
@@ -44,6 +44,8 @@ async def test_crear_y_listar_categoria_propia(auth_client, establecimiento):
             "establecimiento_id": str(establecimiento.id),
             "nombre": "Vaquillona",
             "descripcion": "Hembra joven",
+            "sexo_permitido": "hembra",
+            "permite_estado_reproductivo": True,
         },
     )
     assert resp.status_code == 201
@@ -59,7 +61,13 @@ async def test_crear_y_listar_categoria_propia(auth_client, establecimiento):
 @pytest.mark.anyio
 async def test_listado_incluye_catalogo_global(auth_client, session, establecimiento):
     """El listado devuelve categorías globales (establecimiento_id null) + propias."""
-    session.add(Categoria(nombre="Ternero", establecimiento_id=None))
+    session.add(
+        Categoria(
+            nombre="Ternero",
+            establecimiento_id=None,
+            sexo_permitido=SexoPermitido.ambos,
+        )
+    )
     await session.commit()
 
     resp = await auth_client.get(
@@ -79,7 +87,13 @@ async def test_no_lista_categorias_de_otro_establecimiento(
     )
     session.add(otro)
     await session.flush()
-    session.add(Categoria(nombre="Ajena", establecimiento_id=otro.id))
+    session.add(
+        Categoria(
+            nombre="Ajena",
+            establecimiento_id=otro.id,
+            sexo_permitido=SexoPermitido.macho,
+        )
+    )
     await session.commit()
 
     resp = await auth_client.get(
@@ -91,12 +105,16 @@ async def test_no_lista_categorias_de_otro_establecimiento(
 
 @pytest.mark.anyio
 async def test_nombre_duplicado_falla(auth_client, establecimiento):
-    payload = {"establecimiento_id": str(establecimiento.id), "nombre": "Novillo"}
+    payload = {
+        "establecimiento_id": str(establecimiento.id),
+        "nombre": "Novillo",
+        "sexo_permitido": "macho",
+    }
     await auth_client.post("/api/v1/categorias", json=payload)
     # Mismo nombre distinto id -> conflicto (case-insensitive).
     resp = await auth_client.post(
         "/api/v1/categorias",
-        json={"establecimiento_id": str(establecimiento.id), "nombre": "novillo"},
+        json={**payload, "nombre": "novillo"},
     )
     assert resp.status_code == 409
     assert resp.json()["errors"][0]["code"] == "categoria_duplicada"
@@ -121,6 +139,7 @@ async def test_actualizar_categoria(auth_client, establecimiento):
             "id": cid,
             "establecimiento_id": str(establecimiento.id),
             "nombre": "Vaca",
+            "sexo_permitido": "hembra",
             "updated_at": "2025-01-01T00:00:00",
         },
     )
@@ -134,7 +153,9 @@ async def test_actualizar_categoria(auth_client, establecimiento):
 
 @pytest.mark.anyio
 async def test_no_editar_categoria_global(auth_client, session, establecimiento):
-    global_cat = Categoria(nombre="Toro", establecimiento_id=None)
+    global_cat = Categoria(
+        nombre="Toro", establecimiento_id=None, sexo_permitido=SexoPermitido.macho
+    )
     session.add(global_cat)
     await session.commit()
     resp = await auth_client.put(
@@ -154,6 +175,7 @@ async def test_borrar_soft_y_pull_include_deleted(auth_client, establecimiento):
             "id": cid,
             "establecimiento_id": str(establecimiento.id),
             "nombre": "Recría",
+            "sexo_permitido": "ambos",
         },
     )
     d = await auth_client.delete(f"/api/v1/categorias/{cid}")
@@ -181,7 +203,12 @@ async def test_no_borrar_categoria_con_animales(auth_client, session, establecim
     """Borrar una categoría con animales asignados se bloquea (409)."""
     cid = uuid4()
     session.add(
-        Categoria(id=cid, nombre="Engorde", establecimiento_id=establecimiento.id)
+        Categoria(
+            id=cid,
+            nombre="Engorde",
+            establecimiento_id=establecimiento.id,
+            sexo_permitido=SexoPermitido.ambos,
+        )
     )
     session.add(
         Animal(

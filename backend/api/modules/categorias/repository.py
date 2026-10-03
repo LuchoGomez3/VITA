@@ -3,11 +3,12 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.modules.animales.models import Animal
 from api.modules.categorias.models import Categoria
+from api.shared.enums import EstadoReproductivo, SexoPermitido
 
 
 class CategoriaRepository:
@@ -63,6 +64,41 @@ class CategoriaRepository:
             )
         )
         return result.first() is not None
+
+    async def contar_animales_incompatibles(
+        self,
+        categoria_id: UUID,
+        *,
+        sexo_permitido: SexoPermitido,
+        permite_estado_reproductivo: bool,
+    ) -> int:
+        """Animales vivos de la categoría que dejarían de cumplir sus reglas.
+
+        Misma condición que el trigger ``trg_categorias_reglas_compatibles``.
+        """
+        incompatibles = []
+        if sexo_permitido != SexoPermitido.ambos:
+            incompatibles.append(Animal.sexo != sexo_permitido.value)
+        if not permite_estado_reproductivo:
+            incompatibles.append(
+                Animal.estado_reproductivo.in_(
+                    [EstadoReproductivo.vacia.value, EstadoReproductivo.prenada.value]
+                )
+            )
+        if not incompatibles:
+            return 0
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(Animal)
+            .where(
+                and_(
+                    Animal.categoria_id == categoria_id,
+                    Animal.deleted_at.is_(None),
+                    or_(*incompatibles),
+                )
+            )
+        )
+        return result.scalar_one()
 
     async def list_visibles(
         self,
