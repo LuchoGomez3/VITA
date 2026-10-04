@@ -19,6 +19,7 @@ from api.modules.animales.repository import AnimalRepository
 from api.modules.animales.schemas import AnimalCreate, AnimalRead, AnimalUpdate
 from api.modules.categorias.models import Categoria
 from api.modules.establecimientos.repository import UsuarioEstablecimientoRepository
+from api.modules.observaciones_animales.service import ObservacionAnimalService
 from api.modules.pesajes.models import Pesaje
 from api.modules.pesajes.repository import PesajeRepository
 from api.modules.usuarios.models import Usuario
@@ -32,6 +33,7 @@ class AnimalService:
         self.repository = AnimalRepository(session)
         self.pesaje_repository = PesajeRepository(session)
         self.membership_repository = UsuarioEstablecimientoRepository(session)
+        self.observaciones = ObservacionAnimalService(session)
 
     async def _exigir_acceso(
         self, current_user: Usuario, establecimiento_id: UUID
@@ -72,6 +74,17 @@ class AnimalService:
         if categoria_id == animal.categoria_id:
             return await self.repository.get_categoria(categoria_id)
         return await self._categoria_asignable(categoria_id, animal.establecimiento_id)
+
+    async def _aplicar_borrado(
+        self, animal: Animal, deleted_at: datetime | None
+    ) -> None:
+        """Cambia el ``deleted_at`` del animal y lo propaga a sus observaciones en
+        la misma transacción (borrado en cascada y restauración, ver adr-0007)."""
+        antes = animal.deleted_at
+        animal.deleted_at = deleted_at
+        await self.observaciones.propagar_borrado_del_animal(
+            animal.id, antes, deleted_at
+        )
 
     async def crear(self, current_user: Usuario, data: AnimalCreate) -> AnimalRead:
         """Alta de animal + pesaje inicial en la misma transacción.
@@ -191,7 +204,7 @@ class AnimalService:
         existente.padre_id = data.padre_id
         existente.pelaje = data.pelaje
         existente.estado_reproductivo = estado_reproductivo
-        existente.deleted_at = data.deleted_at
+        await self._aplicar_borrado(existente, data.deleted_at)
         # Explícito: queda en el SET del UPDATE y el onupdate=func.now() no lo pisa.
         existente.updated_at = entrante
 
@@ -245,7 +258,7 @@ class AnimalService:
         if data.estado is not None:
             animal.estado = data.estado
         if data.deleted_at is not None:
-            animal.deleted_at = data.deleted_at
+            await self._aplicar_borrado(animal, data.deleted_at)
         animal.updated_at = entrante
 
         await self.repository.save(animal)
@@ -267,7 +280,7 @@ class AnimalService:
         await self._exigir_acceso(current_user, animal.establecimiento_id)
 
         ts = as_utc(deleted_at) or datetime.now(UTC)
-        animal.deleted_at = ts
+        await self._aplicar_borrado(animal, ts)
         animal.updated_at = as_utc(updated_at) or ts
         await self.repository.save(animal)
         return AnimalRead.model_validate(animal)

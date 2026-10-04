@@ -223,3 +223,42 @@ class ObservacionAnimalService:
             include_deleted=include_deleted,
         )
         return [ObservacionAnimalRead.model_validate(o) for o in observaciones]
+
+    async def propagar_borrado_del_animal(
+        self,
+        animal_id: UUID,
+        antes: datetime | None,
+        despues: datetime | None,
+    ) -> None:
+        """Acompaña en las observaciones un cambio del ``deleted_at`` del animal.
+
+        - Borrar el animal borra lógicamente sus observaciones vivas, con el mismo
+          ``deleted_at`` (decisión de Ernesto, PO, en #56).
+        - Restaurarlo restaura solo las que se borraron en esa cascada, es decir,
+          las que tienen exactamente ese ``deleted_at``. Las que alguien borró a
+          mano antes siguen borradas.
+        - Si el animal ya estaba borrado y cambia la marca, las de la cascada la
+          acompañan, para que una restauración posterior las encuentre.
+
+        ``updated_at`` toma la hora del servidor, no la del cliente: así el pull
+        delta de los demás dispositivos baja el cambio aunque el emisor haya
+        estado offline con el reloj atrasado. No exige permisos de borrado de
+        observaciones: lo decide quien puede borrar el animal.
+        """
+        antes, despues = as_utc(antes), as_utc(despues)
+        if antes == despues:
+            return
+        ahora = datetime.now(UTC)
+        for observacion in await self.repository.list_by_animal_including_deleted(
+            animal_id
+        ):
+            borrada = as_utc(observacion.deleted_at)
+            if antes is None:
+                if borrada is not None:
+                    continue
+            elif borrada != antes:
+                # Borrada a mano, no por la cascada de este borrado.
+                continue
+            observacion.deleted_at = despues
+            observacion.updated_at = ahora
+            await self.repository.save(observacion)

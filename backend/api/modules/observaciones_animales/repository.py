@@ -35,6 +35,16 @@ class ObservacionAnimalRepository:
         poder encontrarse para reconciliar en sync."""
         return await self.session.get(ObservacionAnimal, observacion_id)
 
+    async def list_by_animal_including_deleted(
+        self, animal_id: UUID
+    ) -> list[ObservacionAnimal]:
+        """Todas las observaciones de un animal, incluidas las borradas: las usa la
+        cascada del borrado y la restauración del animal."""
+        result = await self.session.execute(
+            select(ObservacionAnimal).where(ObservacionAnimal.animal_id == animal_id)
+        )
+        return list(result.scalars().all())
+
     async def list_by_establecimiento(
         self,
         establecimiento_id: UUID,
