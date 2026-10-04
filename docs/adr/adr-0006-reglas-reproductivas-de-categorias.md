@@ -43,6 +43,19 @@ cargadas allí (`550e8400-…`, de dos establecimientos) son datos de prueba.
   resultante. Si es inválida, se rechaza completa, sin cambios parciales y sin corregir
   nada automáticamente: pasar una hembra preñada a una categoría que no admite condición
   exige mandar `estado_reproductivo: null` en la misma solicitud.
+- La compatibilidad con la categoría se exige solo a **animales vivos**. Se revalida
+  cuando un animal se restaura (`deleted_at` pasa de un valor a `null`). Reenviar el
+  borrado de una hembra no puede fallar porque su categoría pasó después de `ambos` a
+  `macho`: el animal sigue borrado y no hay nada incompatible que proteger (review de
+  #55). La pertenencia de la categoría al establecimiento y la prohibición de asignar
+  una borrada se siguen exigiendo siempre, porque son aislamiento y no compatibilidad.
+- Si una escritura concurrente cambia las reglas entre la validación del service y el
+  flush, rechaza el trigger. El service traduce ese rechazo al mismo error de dominio que
+  su propia validación: `categoria_incompatible_con_sexo`, `estado_reproductivo_invalido`,
+  `referencia_invalida` o `reglas_categoria_en_uso`. Lo distingue por SQLSTATE y por el
+  nombre que el trigger informa con `raise ... using constraint`, nunca por el texto del
+  mensaje. `caravana_duplicada` sale solo ante la violación de unicidad real, y un rechazo
+  que no se reconoce se propaga sin disfrazarse.
 - La base replica la regla con dos triggers, porque Supabase acepta escrituras directas
   que no pasan por la API:
   - `trg_animales_categoria_compatible` valida el animal contra su categoría.
@@ -108,8 +121,9 @@ cargadas allí (`550e8400-…`, de dos establecimientos) son datos de prueba.
   corregirla.
 - Asignar una categoría eliminada lógicamente se rechaza. Una que se borró después de
   asignarse no traba la edición de otros campos del animal.
-- Un animal borrado no bloquea cambiar las reglas de su categoría, pero restaurarlo
-  vuelve a validarlo.
+- Un animal borrado no bloquea cambiar las reglas de su categoría, y reescribirlo (por
+  ejemplo, reenviar su borrado) tampoco falla. Restaurarlo sí vuelve a validarlo: si la
+  categoría ya no lo admite, la restauración devuelve 422 y el animal queda borrado.
 - Mobile nunca upsertea las categorías globales: solo las usa como `categoria_id`. Si
   reenviara una por `POST /categorias`, el backend responde 403
   `categoria_global_no_editable` y no la modifica. Se decidió no relajar esa validación de
