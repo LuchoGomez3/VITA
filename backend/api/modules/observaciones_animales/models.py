@@ -68,12 +68,16 @@ begin
         -- autor y nadie las edita. Owner y admin pasan la policy de UPDATE para
         -- poder borrar, así que la distinción por columna se hace acá. Al backend
         -- (rol postgres) se lo exige el service.
-        if current_user = 'authenticated'
-           and (new.texto is distinct from old.texto
+        -- IF anidado a propósito: SQL no garantiza que el AND corte antes, y
+        -- auth.uid() no existe fuera de Supabase. plpgsql prepara el IF interno
+        -- recién cuando lo ejecuta.
+        if current_user = 'authenticated' then
+            if (new.texto is distinct from old.texto
                 or new.fecha is distinct from old.fecha)
-           and new.autor_id is distinct from auth.uid() then
-            raise exception 'Solo el autor puede editar esta observación'
-                using errcode = 'insufficient_privilege';
+               and new.autor_id is distinct from auth.uid() then
+                raise exception 'Solo el autor puede editar esta observación'
+                    using errcode = 'insufficient_privilege';
+            end if;
         end if;
         return new;
     end if;
