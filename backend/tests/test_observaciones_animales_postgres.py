@@ -44,6 +44,10 @@ _TABLA = "observaciones_animales"
 _MIEMBRO = UUID("00000000-0000-0000-0000-00000000000a")
 _AJENO = UUID("00000000-0000-0000-0000-00000000000d")
 _INACTIVO = UUID("00000000-0000-0000-0000-00000000000e")
+# Más miembros del campo, para los permisos de edición y borrado.
+_OTRO_EMPLEADO = UUID("00000000-0000-0000-0000-00000000000f")
+_DUENO = UUID("00000000-0000-0000-0000-000000000010")
+_ADMIN = UUID("00000000-0000-0000-0000-000000000011")
 _CAMPO = UUID("00000000-0000-0000-0000-0000000000e1")
 _CAMPO_AJENO = UUID("00000000-0000-0000-0000-0000000000e2")
 
@@ -98,7 +102,9 @@ def _alembic(url: str, *argumentos: str) -> subprocess.CompletedProcess:
 
 async def _sembrar(conexion: asyncpg.Connection) -> dict[str, UUID]:
     """Usuarios, membresías y animales con todas las variantes de nota legacy."""
-    for indice, usuario in enumerate((_MIEMBRO, _AJENO, _INACTIVO)):
+    for indice, usuario in enumerate(
+        (_MIEMBRO, _AJENO, _INACTIVO, _OTRO_EMPLEADO, _DUENO, _ADMIN)
+    ):
         await conexion.execute(
             "insert into usuarios (id, nombre, apellido, email, is_platform_admin)"
             " values ($1, 'Test', 'Sintético', $2, false)",
@@ -112,18 +118,22 @@ async def _sembrar(conexion: asyncpg.Connection) -> dict[str, UUID]:
             owner,
             f"Campo {campo}",
         )
-    for usuario, campo, activo in (
-        (_MIEMBRO, _CAMPO, True),
-        (_INACTIVO, _CAMPO, False),
-        (_AJENO, _CAMPO_AJENO, True),
+    for usuario, campo, rol, activo in (
+        (_MIEMBRO, _CAMPO, "employee", True),
+        (_INACTIVO, _CAMPO, "employee", False),
+        (_OTRO_EMPLEADO, _CAMPO, "employee", True),
+        (_DUENO, _CAMPO, "owner", True),
+        (_ADMIN, _CAMPO, "admin", True),
+        (_AJENO, _CAMPO_AJENO, "employee", True),
     ):
         await conexion.execute(
             "insert into usuarios_establecimientos"
             " (id, usuario_id, establecimiento_id, rol, activo)"
-            " values ($1, $2, $3, 'employee', $4)",
+            " values ($1, $2, $3, $4, $5)",
             uuid4(),
             usuario,
             campo,
+            rol,
             activo,
         )
 
@@ -367,18 +377,85 @@ async def test_miembro_escribe_como_si_mismo_y_no_en_campo_ajeno(camino):
         assert editadas == "UPDATE 0"
 
 
-@pytest.mark.parametrize("camino", ("migracion", "script"))
-async def test_miembro_edita_una_nota_migrada_y_no_puede_borrar_fisicamente(camino):
-    async with _base(camino) as (_, conexion, ids):
-        async with como_usuario(conexion, _MIEMBRO) as cliente:
-            editadas = await cliente.execute(
-                f"update {_TABLA} set texto = 'Corregida', deleted_at = now()"
-                " where animal_id = $1",
-                ids["con_nota"],
+async def _actualizar(conexion, usuario, observacion_id, asignacion) -> str:
+    """Corre un UPDATE como cliente directo; devuelve el resultado o el SQLSTATE."""
+    async with como_usuario(conexion, usuario) as cliente:
+        try:
+            return await cliente.execute(
+                f"update {_TABLA} set {asignacion} where id = $1", observacion_id
             )
-            assert editadas == "UPDATE 1"
+        except asyncpg.PostgresError as exc:
+            return exc.sqlstate
+
+
+@pytest.mark.parametrize("camino", ("migracion", "script"))
+async def test_rls_solo_el_autor_edita(camino):
+    async with _base(camino) as (_, conexion, ids):
+        nota = await _insertar(conexion, ids["sin_nota"], autor_id=_MIEMBRO)
+        texto = "texto = 'Pisada'"
+        resultados = {
+            # El RLS ni siquiera le muestra la fila para actualizar.
+            "otro employee": await _actualizar(conexion, _OTRO_EMPLEADO, nota, texto),
+            # Owner y admin pueden actualizarla (para borrarla), pero no editarla.
+            "owner": await _actualizar(conexion, _DUENO, nota, texto),
+            "admin": await _actualizar(conexion, _ADMIN, nota, texto),
+            "autor": await _actualizar(conexion, _MIEMBRO, nota, "texto = 'Mía'"),
+        }
+
+    assert resultados == {
+        "otro employee": "UPDATE 0",
+        "owner": "42501",
+        "admin": "42501",
+        "autor": "UPDATE 1",
+    }
+
+
+@pytest.mark.parametrize("camino", ("migracion", "script"))
+async def test_rls_nadie_edita_una_nota_migrada(camino):
+    async with _base(camino) as (_, conexion, ids):
+        migrada = await conexion.fetchval(
+            f"select id from {_TABLA} where animal_id = $1", ids["con_nota"]
+        )
+        resultados = [
+            await _actualizar(conexion, usuario, migrada, "fecha = now()")
+            for usuario in (_MIEMBRO, _DUENO, _ADMIN)
+        ]
+    assert resultados == ["UPDATE 0", "42501", "42501"]
+
+
+@pytest.mark.parametrize("camino", ("migracion", "script"))
+async def test_rls_borrado_logico_por_autor_owner_y_admin(camino):
+    async with _base(camino) as (_, conexion, ids):
+        migrada = await conexion.fetchval(
+            f"select id from {_TABLA} where animal_id = $1", ids["con_nota"]
+        )
+        borrar = "deleted_at = now(), updated_at = now()"
+        notas = [
+            await _insertar(conexion, ids["sin_nota"], autor_id=_MIEMBRO)
+            for _ in range(4)
+        ]
+        resultados = {
+            "otro employee, ajena": await _actualizar(
+                conexion, _OTRO_EMPLEADO, notas[0], borrar
+            ),
+            "employee, migrada": await _actualizar(conexion, _MIEMBRO, migrada, borrar),
+            "autor, propia": await _actualizar(conexion, _MIEMBRO, notas[1], borrar),
+            "owner, ajena": await _actualizar(conexion, _DUENO, notas[2], borrar),
+            "admin, ajena": await _actualizar(conexion, _ADMIN, notas[3], borrar),
+            "owner, migrada": await _actualizar(conexion, _DUENO, migrada, borrar),
+        }
+        async with como_usuario(conexion, _DUENO) as cliente:
             with pytest.raises(asyncpg.InsufficientPrivilegeError):
                 await cliente.execute(f"delete from {_TABLA}")
+
+    assert resultados == {
+        "otro employee, ajena": "UPDATE 0",
+        "employee, migrada": "UPDATE 0",
+        "autor, propia": "UPDATE 1",
+        "owner, ajena": "UPDATE 1",
+        "admin, ajena": "UPDATE 1",
+        "owner, migrada": "UPDATE 1",
+    }
 
 
 @pytest.mark.parametrize("camino", ("migracion", "script"))

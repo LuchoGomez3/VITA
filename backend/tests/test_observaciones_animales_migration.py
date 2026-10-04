@@ -110,3 +110,10 @@ def test_el_trigger_no_lee_animales_con_privilegios_elevados():
     """Corre antes que el RLS: como definer, su error filtraba animales ajenos."""
     assert "security invoker" in models.FUNCION_OBSERVACION_ANIMAL
     assert "security definer" not in models.FUNCION_OBSERVACION_ANIMAL
+
+
+def test_script_y_migracion_comparten_la_policy_de_update(migracion, script):
+    """Autor u owner/admin; nunca "cualquier miembro" (decisión de Ernesto en #56)."""
+    predicado = _normalizar(migracion._PUEDE_ACTUALIZAR)
+    assert _normalizar(script).count(predicado) == 2  # using + with check
+    assert "ue.rol in ('owner', 'admin')" in script

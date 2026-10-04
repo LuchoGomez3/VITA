@@ -64,6 +64,17 @@ begin
             raise exception 'Una observación no puede cambiar de animal, establecimiento ni autor'
                 using errcode = 'check_violation';
         end if;
+        -- Solo el autor edita el texto o la fecha; las notas migradas no tienen
+        -- autor y nadie las edita. Owner y admin pasan la policy de UPDATE para
+        -- poder borrar, así que la distinción por columna se hace acá. Al backend
+        -- (rol postgres) se lo exige el service.
+        if current_user = 'authenticated'
+           and (new.texto is distinct from old.texto
+                or new.fecha is distinct from old.fecha)
+           and new.autor_id is distinct from auth.uid() then
+            raise exception 'Solo el autor puede editar esta observación'
+                using errcode = 'insufficient_privilege';
+        end if;
         return new;
     end if;
 
@@ -138,6 +149,24 @@ _ES_MIEMBRO = """
         where ue.establecimiento_id = observaciones_animales.establecimiento_id
           and ue.usuario_id = auth.uid()
           and ue.activo = true
+    )
+"""
+
+
+# Actualizar (también para el borrado lógico): el autor, sus notas; owner y
+# admin, cualquiera del establecimiento. Qué columnas puede tocar cada uno lo
+# termina de decidir el trigger: solo el autor edita texto y fecha.
+_PUEDE_ACTUALIZAR = """
+    exists (
+        select 1
+        from public.usuarios_establecimientos ue
+        where ue.establecimiento_id = observaciones_animales.establecimiento_id
+          and ue.usuario_id = auth.uid()
+          and ue.activo = true
+          and (
+              observaciones_animales.autor_id = auth.uid()
+              or ue.rol in ('owner', 'admin')
+          )
     )
 """
 
@@ -273,14 +302,14 @@ def _aplicar_rls(connection: Connection) -> None:
         )
         """,
         # El borrado es soft (``deleted_at``), así que se cubre con update y no
-        # se habilita ninguna política de delete. Cualquier miembro activo puede
-        # editar cualquier nota del establecimiento; el autor no cambia (trigger).
+        # se habilita ninguna política de delete. Decisión de Ernesto (PO) en
+        # #56: el autor actualiza las suyas; owner y admin, cualquiera.
         f"drop policy if exists {_TABLA}_update_miembros on public.{_TABLA}",
         f"""
         create policy {_TABLA}_update_miembros on public.{_TABLA}
         for update to authenticated
-        using ({_ES_MIEMBRO})
-        with check ({_ES_MIEMBRO})
+        using ({_PUEDE_ACTUALIZAR})
+        with check ({_PUEDE_ACTUALIZAR})
         """,
         f"revoke all on public.{_TABLA} from anon",
         f"revoke all on public.{_TABLA} from authenticated",

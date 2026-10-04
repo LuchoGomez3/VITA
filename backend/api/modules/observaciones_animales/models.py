@@ -64,6 +64,17 @@ begin
             raise exception 'Una observación no puede cambiar de animal, establecimiento ni autor'
                 using errcode = 'check_violation';
         end if;
+        -- Solo el autor edita el texto o la fecha; las notas migradas no tienen
+        -- autor y nadie las edita. Owner y admin pasan la policy de UPDATE para
+        -- poder borrar, así que la distinción por columna se hace acá. Al backend
+        -- (rol postgres) se lo exige el service.
+        if current_user = 'authenticated'
+           and (new.texto is distinct from old.texto
+                or new.fecha is distinct from old.fecha)
+           and new.autor_id is distinct from auth.uid() then
+            raise exception 'Solo el autor puede editar esta observación'
+                using errcode = 'insufficient_privilege';
+        end if;
         return new;
     end if;
 

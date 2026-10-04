@@ -40,6 +40,17 @@ begin
             raise exception 'Una observación no puede cambiar de animal, establecimiento ni autor'
                 using errcode = 'check_violation';
         end if;
+        -- Solo el autor edita el texto o la fecha; las notas migradas no tienen
+        -- autor y nadie las edita. Owner y admin pasan la policy de UPDATE para
+        -- poder borrar, así que la distinción por columna se hace acá. Al backend
+        -- (rol postgres) se lo exige el service.
+        if current_user = 'authenticated'
+           and (new.texto is distinct from old.texto
+                or new.fecha is distinct from old.fecha)
+           and new.autor_id is distinct from auth.uid() then
+            raise exception 'Solo el autor puede editar esta observación'
+                using errcode = 'insufficient_privilege';
+        end if;
         return new;
     end if;
 
@@ -150,6 +161,9 @@ with check (
 );
 
 -- El borrado es soft (deleted_at): se cubre con update, sin política de delete.
+-- Decisión de Ernesto (PO) en #56: el autor actualiza las suyas; owner y admin,
+-- cualquiera del establecimiento. Solo el autor edita texto y fecha: eso lo
+-- exige el trigger.
 drop policy if exists observaciones_animales_update_miembros on public.observaciones_animales;
 create policy observaciones_animales_update_miembros on public.observaciones_animales
 for update to authenticated
@@ -160,6 +174,10 @@ using (
         where ue.establecimiento_id = observaciones_animales.establecimiento_id
           and ue.usuario_id = auth.uid()
           and ue.activo = true
+          and (
+              observaciones_animales.autor_id = auth.uid()
+              or ue.rol in ('owner', 'admin')
+          )
     )
 )
 with check (
@@ -169,6 +187,10 @@ with check (
         where ue.establecimiento_id = observaciones_animales.establecimiento_id
           and ue.usuario_id = auth.uid()
           and ue.activo = true
+          and (
+              observaciones_animales.autor_id = auth.uid()
+              or ue.rol in ('owner', 'admin')
+          )
     )
 );
 
