@@ -213,3 +213,41 @@ async def test_un_borrado_rancio_del_animal_no_toca_observaciones(auth_client, c
     )
 
     assert set(await _observaciones(auth_client, campo)) == {nota}
+
+
+@pytest.mark.anyio
+async def test_una_restauracion_rechazada_no_restaura_observaciones(
+    auth_client, session, campo
+):
+    """Restaurar revalida el animal. Si la combinación ya no es válida, no vuelve
+    ni el animal ni sus observaciones."""
+    from api.modules.categorias.models import Categoria
+    from api.shared.enums import SexoPermitido
+
+    toro = Categoria(
+        nombre="Toro",
+        establecimiento_id=campo,
+        sexo_permitido=SexoPermitido.macho,
+    )
+    session.add(toro)
+    await session.commit()
+    vaca = await _animal(auth_client, campo)
+    nota = await _nota(auth_client, campo, vaca["id"], "Nota")
+    await auth_client.delete(
+        f"/api/v1/animales/{vaca['id']}",
+        params={"deleted_at": "2026-09-20T12:00:00Z"},
+    )
+
+    resp = await auth_client.post(
+        "/api/v1/animales",
+        json={
+            **vaca,
+            "categoria_id": str(toro.id),
+            "deleted_at": None,
+            "updated_at": "2030-01-01T00:00:00Z",
+        },
+    )
+
+    assert resp.status_code == 422
+    borradas = await _observaciones(auth_client, campo, include_deleted="true")
+    assert borradas[nota]["deleted_at"] is not None

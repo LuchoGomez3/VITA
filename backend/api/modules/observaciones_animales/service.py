@@ -244,14 +244,22 @@ class ObservacionAnimalService:
         delta de los demás dispositivos baja el cambio aunque el emisor haya
         estado offline con el reloj atrasado. No exige permisos de borrado de
         observaciones: lo decide quien puede borrar el animal.
+
+        No hace flush: solo modifica las observaciones en la sesión, y las persiste
+        el ``save`` del animal. Si la base rechaza el animal en ese flush, el
+        rollback revierte también la cascada, y el rechazo llega al handler que
+        lo traduce. Por eso la consulta corre sin autoflush: si no, mandaría el
+        UPDATE pendiente del animal antes de tiempo, fuera de ese handler.
         """
         antes, despues = as_utc(antes), as_utc(despues)
         if antes == despues:
             return
         ahora = datetime.now(UTC)
-        for observacion in await self.repository.list_by_animal_including_deleted(
-            animal_id
-        ):
+        with self.session.no_autoflush:
+            observaciones = await self.repository.list_by_animal_including_deleted(
+                animal_id
+            )
+        for observacion in observaciones:
             borrada = as_utc(observacion.deleted_at)
             if antes is None:
                 if borrada is not None:
@@ -261,4 +269,3 @@ class ObservacionAnimalService:
                 continue
             observacion.deleted_at = despues
             observacion.updated_at = ahora
-            await self.repository.save(observacion)
