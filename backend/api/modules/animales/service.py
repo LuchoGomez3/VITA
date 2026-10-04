@@ -1,6 +1,7 @@
 """Lógica de negocio del módulo animales."""
 
 from datetime import UTC, datetime
+from typing import NoReturn
 from uuid import UUID, uuid4
 
 from sqlalchemy.exc import IntegrityError
@@ -14,6 +15,7 @@ from api.modules.animales.exceptions import (
     LoteNoPerteneceAlEstablecimientoError,
 )
 from api.modules.animales.models import Animal
+from api.modules.animales.rechazos import traducir_rechazo
 from api.modules.animales.reglas_reproductivas import validar_combinacion
 from api.modules.animales.repository import AnimalRepository
 from api.modules.animales.schemas import AnimalCreate, AnimalRead, AnimalUpdate
@@ -41,6 +43,20 @@ class AnimalService:
         )
         if membership is None:
             raise EstablecimientoNoAutorizadoError()
+
+    async def _rechazar(
+        self, exc: IntegrityError, nro_caravana: str | None
+    ) -> NoReturn:
+        """Revierte y traduce un rechazo de la base a su error de dominio.
+
+        Un rechazo que no se reconoce se propaga tal cual: disfrazarlo de otro
+        error escondería un bug.
+        """
+        await self.session.rollback()
+        error = traducir_rechazo(exc, nro_caravana)
+        if error is None:
+            raise exc
+        raise error from exc
 
     async def _categoria_asignable(
         self, categoria_id: UUID, establecimiento_id: UUID
@@ -88,7 +104,10 @@ class AnimalService:
             # Re-sync de un alta ya registrada: merge con last-write-wins.
             await self._exigir_acceso(current_user, existente.establecimiento_id)
             await self._merge_alta_lww(existente, data)
-            await self.repository.save(existente)
+            try:
+                await self.repository.save(existente)
+            except IntegrityError as exc:
+                await self._rechazar(exc, data.nro_caravana_rfid)
             return AnimalRead.model_validate(existente)
 
         # Unicidad GLOBAL de caravana (SENASA 530/2025); excluye el propio id.
@@ -109,7 +128,10 @@ class AnimalService:
             categoria = await self._categoria_asignable(
                 data.categoria_id, data.establecimiento_id
             )
-        validar_combinacion(data.sexo, categoria, data.estado_reproductivo)
+        # Un alta que llega ya borrada (se creó y se borró offline) no se valida
+        # contra su categoría: la compatibilidad se exige a los animales vivos.
+        if data.deleted_at is None:
+            validar_combinacion(data.sexo, categoria, data.estado_reproductivo)
 
         # Madre/padre deben existir y ser del mismo establecimiento.
         for campo, ref_id in (("madre", data.madre_id), ("padre", data.padre_id)):
@@ -155,8 +177,7 @@ class AnimalService:
                 )
             )
         except IntegrityError as exc:
-            await self.session.rollback()
-            raise CaravanaDuplicadaError(data.nro_caravana_rfid) from exc
+            await self._rechazar(exc, data.nro_caravana_rfid)
 
         return AnimalRead.model_validate(animal)
 
@@ -167,6 +188,8 @@ class AnimalService:
 
         El reenvío puede cambiar sexo y categoría, así que valida la combinación
         final antes de tocar nada: si es inválida, el registro queda como estaba.
+        Solo se valida si el animal queda vivo: reenviar un borrado no puede
+        fallar porque la categoría cambió después, y restaurarlo sí revalida.
         """
         entrante = as_utc(data.updated_at) or datetime.now(UTC)
         if entrante <= as_utc(existente.updated_at):
@@ -179,7 +202,8 @@ class AnimalService:
             else existente.estado_reproductivo
         )
         categoria = await self._categoria_final(existente, data.categoria_id)
-        validar_combinacion(data.sexo, categoria, estado_reproductivo)
+        if data.deleted_at is None:
+            validar_combinacion(data.sexo, categoria, estado_reproductivo)
 
         existente.nro_caravana_rfid = data.nro_caravana_rfid
         existente.caravana_visual = data.caravana_visual
@@ -232,7 +256,13 @@ class AnimalService:
             else animal.estado_reproductivo
         )
         categoria = await self._categoria_final(animal, categoria_id)
-        validar_combinacion(SexoAnimal(animal.sexo), categoria, estado_reproductivo)
+        # ``deleted_at`` en None significa "sin cambios", así que esta vía no
+        # restaura: solo valida si el animal sigue vivo.
+        deleted_at_final = (
+            data.deleted_at if data.deleted_at is not None else animal.deleted_at
+        )
+        if deleted_at_final is None:
+            validar_combinacion(SexoAnimal(animal.sexo), categoria, estado_reproductivo)
 
         if data.lote_id is not None:
             animal.lote_id = data.lote_id
@@ -252,7 +282,12 @@ class AnimalService:
             animal.deleted_at = data.deleted_at
         animal.updated_at = entrante
 
-        await self.repository.save(animal)
+        # Se lee antes del flush: si falla, tocar el objeto dispara otro flush.
+        nro_caravana = animal.nro_caravana_rfid
+        try:
+            await self.repository.save(animal)
+        except IntegrityError as exc:
+            await self._rechazar(exc, nro_caravana)
         return AnimalRead.model_validate(animal)
 
     async def borrar(
