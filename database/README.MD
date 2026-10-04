@@ -148,10 +148,15 @@ Decisiones de fondo en `docs/adr/adr-0007-observaciones-animales-como-entradas.m
 El trigger `trg_observaciones_animales_validar` (`security invoker`) exige que el animal
 sea del mismo establecimiento y rechaza cambiar animal, establecimiento o autor.
 
-Las políticas RLS dejan leer, insertar y actualizar a los miembros activos. El insert
-tiene que ser como uno mismo y con un animal del establecimiento, condición que verifica
+Las políticas RLS dejan leer e insertar a los miembros activos. El insert tiene que ser
+como uno mismo y con un animal del establecimiento, condición que verifica
 `animal_pertenece_a_establecimiento()`: es `security definer`, pero solo responde por los
-establecimientos de quien pregunta. No hay política de delete porque el borrado es lógico.
+establecimientos de quien pregunta.
+
+El UPDATE, que también cubre el borrado lógico, se permite al autor sobre sus notas y a
+`owner`/`admin` sobre cualquiera. El trigger completa la regla: solo el autor cambia texto
+o fecha, así que las notas migradas no las edita nadie. No hay política de delete porque
+el borrado es lógico.
 
 Un cliente directo que apunta a un animal ajeno o inexistente recibe siempre el rechazo
 del RLS (42501), sin pistas sobre otros establecimientos.
@@ -164,8 +169,11 @@ convirtió cada `animales.observaciones` no vacío en una entrada:
 - Id determinista `md5('observacion_legacy:' || animal_id)::uuid`, para no duplicar al
   reejecutarse.
 
-La columna vieja se conserva por compatibilidad: una nota nueva que llega por ella genera
-también una entrada.
+La columna vieja queda como legacy de solo lectura: la API ya no la escribe.
+
+Borrar un animal borra lógicamente sus observaciones en la misma transacción. Restaurarlo
+restaura solo las que se borraron en esa cascada. Eso lo hace el service de animales, no
+la base.
 
 ## Ventas de hacienda
 
