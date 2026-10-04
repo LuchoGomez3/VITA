@@ -76,10 +76,17 @@ declare
     v_permite boolean;
     v_borrada timestamptz;
 begin
+    -- La compatibilidad se exige solo a animales vivos. Reenviar el borrado de un
+    -- animal no puede fallar porque su categoría cambió después; restaurarlo
+    -- (deleted_at vuelve a null) lo deja vivo, así que ahí sí se revalida.
+    -- ``constraint`` identifica cada rechazo para que el backend lo traduzca a
+    -- su error de dominio sin depender del texto del mensaje.
     if new.categoria_id is null then
-        if new.estado_reproductivo in ('vacia', 'prenada') then
+        if new.deleted_at is null
+           and new.estado_reproductivo in ('vacia', 'prenada') then
             raise exception 'La condición reproductiva requiere una categoría habilitada'
-                using errcode = 'check_violation';
+                using errcode = 'check_violation',
+                      constraint = 'animales_estado_reproductivo_requiere_categoria';
         end if;
         return new;
     end if;
@@ -99,27 +106,36 @@ begin
     end if;
 
     -- Pertenencia y borrado se exigen solo al asignar: una categoría que se
-    -- borra después no debe trabar la edición de otros campos del animal.
+    -- borra después no debe trabar la edición de otros campos del animal. Vale
+    -- también para animales borrados: es aislamiento, no compatibilidad.
     if tg_op = 'INSERT' or new.categoria_id is distinct from old.categoria_id then
         if v_borrada is not null then
             raise exception 'No se puede asignar una categoría eliminada'
-                using errcode = 'check_violation';
+                using errcode = 'check_violation',
+                      constraint = 'animales_categoria_asignable';
         end if;
         if v_establecimiento_id is not null
            and v_establecimiento_id <> new.establecimiento_id then
             raise exception 'La categoría pertenece a otro establecimiento'
-                using errcode = 'check_violation';
+                using errcode = 'check_violation',
+                      constraint = 'animales_categoria_asignable';
         end if;
+    end if;
+
+    if new.deleted_at is not null then
+        return new;
     end if;
 
     if v_sexo_permitido <> 'ambos' and v_sexo_permitido <> new.sexo then
         raise exception 'La categoría seleccionada no es compatible con el sexo del animal'
-            using errcode = 'check_violation';
+            using errcode = 'check_violation',
+                  constraint = 'animales_categoria_admite_sexo';
     end if;
 
     if new.estado_reproductivo in ('vacia', 'prenada') and not v_permite then
         raise exception 'La categoría del animal no admite condición reproductiva'
-            using errcode = 'check_violation';
+            using errcode = 'check_violation',
+                  constraint = 'animales_categoria_admite_estado_reproductivo';
     end if;
 
     return new;
