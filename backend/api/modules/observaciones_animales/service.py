@@ -9,8 +9,10 @@ from api.modules.animales.repository import AnimalRepository
 from api.modules.establecimientos.repository import UsuarioEstablecimientoRepository
 from api.modules.observaciones_animales.exceptions import (
     AnimalNoPerteneceAlEstablecimientoError,
+    ObservacionBorradoNoPermitidoError,
     ObservacionInmutableError,
     ObservacionNoEncontradaError,
+    ObservacionSoloAutorError,
 )
 from api.modules.observaciones_animales.models import ObservacionAnimal
 from api.modules.observaciones_animales.repository import ObservacionAnimalRepository
@@ -20,8 +22,13 @@ from api.modules.observaciones_animales.schemas import (
     ObservacionAnimalUpdate,
 )
 from api.modules.usuarios.models import Usuario
+from api.shared.enums import RolUsuario
 from api.shared.exceptions import EstablecimientoNoAutorizadoError
 from api.shared.sync import as_utc, gana_el_entrante
+
+# Pueden borrar cualquier observación del establecimiento, incluidas las migradas
+# sin autor (decisión de Ernesto, PO, en #56).
+ROLES_QUE_BORRAN_CUALQUIERA = {RolUsuario.owner, RolUsuario.admin}
 
 
 class ObservacionAnimalService:
@@ -60,6 +67,29 @@ class ObservacionAnimalService:
             raise ObservacionNoEncontradaError()
         return observacion
 
+    def _exigir_autor(
+        self, current_user: Usuario, observacion: ObservacionAnimal
+    ) -> None:
+        """Solo el autor edita. Las notas migradas no tienen autor: nadie las edita."""
+        if observacion.autor_id is None or observacion.autor_id != current_user.id:
+            raise ObservacionSoloAutorError()
+
+    async def _exigir_permiso_de_borrado(
+        self, current_user: Usuario, observacion: ObservacionAnimal
+    ) -> None:
+        """El autor borra las suyas; owner y admin, cualquiera del establecimiento.
+
+        El rol sale de ``usuarios_establecimientos``: un usuario puede tener más de
+        uno en el mismo establecimiento.
+        """
+        if observacion.autor_id is not None and observacion.autor_id == current_user.id:
+            return
+        membresias = await self.membership_repository.get_memberships(
+            current_user.id, observacion.establecimiento_id
+        )
+        if not any(m.rol in ROLES_QUE_BORRAN_CUALQUIERA for m in membresias):
+            raise ObservacionBorradoNoPermitidoError()
+
     async def crear(
         self, current_user: Usuario, data: ObservacionAnimalCreate
     ) -> ObservacionAnimalRead:
@@ -80,6 +110,14 @@ class ObservacionAnimalService:
                 or existente.establecimiento_id != data.establecimiento_id
             ):
                 raise ObservacionInmutableError()
+            # Un reintento idéntico no exige permisos; cambiar el texto o la
+            # fecha es editar, y cambiar ``deleted_at`` es borrar o restaurar.
+            if data.texto != existente.texto or (
+                data.fecha is not None and as_utc(data.fecha) != as_utc(existente.fecha)
+            ):
+                self._exigir_autor(current_user, existente)
+            if as_utc(data.deleted_at) != as_utc(existente.deleted_at):
+                await self._exigir_permiso_de_borrado(current_user, existente)
             self._merge_alta_lww(existente, data)
             await self.repository.save(existente)
             return ObservacionAnimalRead.model_validate(existente)
@@ -121,8 +159,16 @@ class ObservacionAnimalService:
         observacion_id: UUID,
         data: ObservacionAnimalUpdate,
     ) -> ObservacionAnimalRead:
-        """Edita solo la observación indicada, con last-write-wins."""
+        """Edita solo la observación indicada, con last-write-wins.
+
+        Los permisos se exigen antes de resolver el conflicto: un cambio no
+        autorizado se rechaza aunque además sea rancio.
+        """
         observacion = await self._observacion_accesible(current_user, observacion_id)
+        if data.texto is not None or data.fecha is not None:
+            self._exigir_autor(current_user, observacion)
+        if data.deleted_at is not None:
+            await self._exigir_permiso_de_borrado(current_user, observacion)
 
         entrante = as_utc(data.updated_at) or datetime.now(UTC)
         if not gana_el_entrante(entrante, observacion.updated_at):
@@ -151,6 +197,7 @@ class ObservacionAnimalService:
         """Soft delete (set ``deleted_at``) para que el borrado se propague en sync.
         Acepta el timestamp local del cliente; si no viene, usa el del servidor."""
         observacion = await self._observacion_accesible(current_user, observacion_id)
+        await self._exigir_permiso_de_borrado(current_user, observacion)
 
         ts = as_utc(deleted_at) or datetime.now(UTC)
         observacion.deleted_at = ts

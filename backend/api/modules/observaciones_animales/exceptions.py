@@ -1,6 +1,6 @@
 """Excepciones de dominio del módulo observaciones de animales."""
 
-from api.shared.exceptions import NotFoundError, ValidationError
+from api.shared.exceptions import ForbiddenError, NotFoundError, ValidationError
 
 
 class ObservacionNoEncontradaError(NotFoundError):
@@ -23,4 +23,20 @@ class ObservacionInmutableError(ValidationError):
     def __init__(self) -> None:
         super().__init__(
             "Una observación no puede cambiar de animal ni de establecimiento"
+        )
+
+
+class ObservacionSoloAutorError(ForbiddenError):
+    code = "observacion_solo_autor"
+
+    def __init__(self) -> None:
+        super().__init__("Solo el autor puede editar esta observación")
+
+
+class ObservacionBorradoNoPermitidoError(ForbiddenError):
+    code = "observacion_borrado_no_permitido"
+
+    def __init__(self) -> None:
+        super().__init__(
+            "Solo el autor, el dueño o un administrador pueden borrar esta observación"
         )
