@@ -1,7 +1,7 @@
 """DTOs y validaciones del contrato HTTP de ventas de hacienda."""
 
 from datetime import date, datetime, timedelta, timezone
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_DOWN, Decimal
 from typing import Self
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -235,7 +235,7 @@ class VentaCreate(SyncFields):
             raise ValueError("Una venta por kilo requiere peso total y precio por kilo")
         monto_calculado = (self.peso_total_kg * self.precio_por_kg).quantize(
             PRECISION_MONETARIA,
-            rounding=ROUND_HALF_UP,
+            rounding=ROUND_DOWN,
         )
         if self.monto_total != monto_calculado:
             raise ValueError(

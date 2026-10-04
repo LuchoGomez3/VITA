@@ -24,6 +24,7 @@ class RfidScanPage extends StatelessWidget {
     required this.onHidKeyEvent,
     required this.onAnimalDetailRequested,
     required this.onRegisterAnimalRequested,
+    this.onAnimalSelected,
     super.key,
   });
 
@@ -42,6 +43,9 @@ class RfidScanPage extends StatelessWidget {
   /// Navega al alta con [String] como RFID precargado.
   final ValueChanged<String> onRegisterAnimalRequested;
 
+  /// Devuelve la caravana encontrada cuando otra operacion usa el lector.
+  final ValueChanged<String>? onAnimalSelected;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -50,6 +54,7 @@ class RfidScanPage extends StatelessWidget {
         onHidKeyEvent: onHidKeyEvent,
         onAnimalDetailRequested: onAnimalDetailRequested,
         onRegisterAnimalRequested: onRegisterAnimalRequested,
+        onAnimalSelected: onAnimalSelected,
       ),
     );
   }
@@ -60,11 +65,13 @@ class _RfidScanView extends StatelessWidget {
     required this.onHidKeyEvent,
     required this.onAnimalDetailRequested,
     required this.onRegisterAnimalRequested,
+    this.onAnimalSelected,
   });
 
   final ValueChanged<KeyEvent> onHidKeyEvent;
   final ValueChanged<String> onAnimalDetailRequested;
   final ValueChanged<String> onRegisterAnimalRequested;
+  final ValueChanged<String>? onAnimalSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -116,6 +123,7 @@ class _RfidScanView extends StatelessWidget {
                             onCancel: () => context.read<RfidScanBloc>().add(const RfidScanEvent.stopped()),
                             onAnimalDetailRequested: onAnimalDetailRequested,
                             onRegisterAnimalRequested: onRegisterAnimalRequested,
+                            onAnimalSelected: onAnimalSelected,
                           ),
                         ),
                         AnimatedSize(
@@ -152,6 +160,7 @@ class _RfidScanBody extends StatelessWidget {
     required this.onCancel,
     required this.onAnimalDetailRequested,
     required this.onRegisterAnimalRequested,
+    this.onAnimalSelected,
     super.key,
   });
 
@@ -160,6 +169,7 @@ class _RfidScanBody extends StatelessWidget {
   final VoidCallback onCancel;
   final ValueChanged<String> onAnimalDetailRequested;
   final ValueChanged<String> onRegisterAnimalRequested;
+  final ValueChanged<String>? onAnimalSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -190,12 +200,21 @@ class _RfidScanBody extends StatelessWidget {
         animal: animal,
         onDetail: onAnimalDetailRequested,
         onScanAgain: onStart,
+        onSelect: onAnimalSelected,
       ),
-      notFound: (rfid) => _NotFoundContent(
-        rfid: rfid,
-        onRegister: onRegisterAnimalRequested,
-        onScanAgain: onStart,
-      ),
+      notFound: (rfid) => onAnimalSelected == null
+          ? _NotFoundContent(
+              rfid: rfid,
+              onRegister: onRegisterAnimalRequested,
+              onScanAgain: onStart,
+            )
+          : _MessageAction(
+              title: RfidScanStrings.notFoundTitle,
+              description: '${RfidScanStrings.notFoundDescription}\n$rfid',
+              actionLabel: RfidScanStrings.scanAgain,
+              onAction: onStart,
+              icon: Icons.search_off,
+            ),
       timeout: () => _MessageAction(
         title: RfidScanStrings.timeoutTitle,
         description: RfidScanStrings.timeoutDescription,
@@ -353,16 +372,32 @@ class _NotFoundContent extends StatelessWidget {
 }
 
 class _FoundContent extends StatelessWidget {
-  const _FoundContent({required this.animal, required this.onDetail, required this.onScanAgain});
+  const _FoundContent({
+    required this.animal,
+    required this.onDetail,
+    required this.onScanAgain,
+    this.onSelect,
+  });
   final IdentifiedAnimal animal;
   final ValueChanged<String> onDetail;
   final VoidCallback onScanAgain;
+  final ValueChanged<String>? onSelect;
   @override
   Widget build(BuildContext context) => Column(
     children: [
       IdentifiedAnimalCard(animal: animal),
       const SizedBox(height: AppSpacing.lg),
-      AppFilledButton(label: RfidScanStrings.viewDetail, onPressed: () => onDetail(animal.id)),
+      AppFilledButton(
+        label: onSelect == null ? RfidScanStrings.viewDetail : RfidScanStrings.selectForSale,
+        onPressed: () {
+          final select = onSelect;
+          if (select == null) {
+            onDetail(animal.id);
+          } else {
+            select(animal.rfidTagNumber);
+          }
+        },
+      ),
       const SizedBox(height: AppSpacing.sm),
       AppOutlinedButton(label: RfidScanStrings.scanAgain, onPressed: onScanAgain),
     ],

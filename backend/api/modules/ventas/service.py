@@ -1,7 +1,7 @@
 """Reglas de negocio del registro atómico de ventas de hacienda."""
 
 from datetime import UTC, datetime
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_DOWN, Decimal
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -186,12 +186,12 @@ class VentaService:
         """Construye saldo y estado desde cobros activos, nunca desde un flag."""
         animal_ids = await self.repository.list_animal_ids(venta.id)
         monto_cobrado = (await self.repository.get_monto_cobrado(venta.id)).quantize(
-            PRECISION_MONETARIA, rounding=ROUND_HALF_UP
+            PRECISION_MONETARIA, rounding=ROUND_DOWN
         )
         saldo_pendiente = max(
             venta.monto_total - monto_cobrado,
             Decimal("0.00"),
-        ).quantize(PRECISION_MONETARIA, rounding=ROUND_HALF_UP)
+        ).quantize(PRECISION_MONETARIA, rounding=ROUND_DOWN)
 
         if monto_cobrado == 0:
             estado_cobro = EstadoCobro.pendiente

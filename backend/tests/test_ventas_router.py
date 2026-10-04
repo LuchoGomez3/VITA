@@ -106,7 +106,7 @@ async def test_registra_venta_por_kilo_con_cobro_total(
     auth_client, session, escenario_http
 ):
     establecimiento, animales = escenario_http
-    cobro = cobro_inicial("1234.57", medio_cobro="tarjeta")
+    cobro = cobro_inicial("1234.56", medio_cobro="tarjeta")
     respuesta = await auth_client.post(
         BASE,
         json=payload_venta(
@@ -115,7 +115,7 @@ async def test_registra_venta_por_kilo_con_cobro_total(
             tipo_venta="por_kilo",
             peso_total_kg="10",
             precio_por_kg="123.456789",
-            monto_total="1234.57",
+            monto_total="1234.56",
             condicion_cobro="total",
             cobro_inicial=cobro,
         ),
@@ -124,8 +124,8 @@ async def test_registra_venta_por_kilo_con_cobro_total(
     assert respuesta.status_code == 201
     venta = respuesta.json()["data"]
     assert venta["precio_por_kg"] == "123.456789"
-    assert venta["monto_total"] == "1234.57"
-    assert venta["monto_cobrado"] == "1234.57"
+    assert venta["monto_total"] == "1234.56"
+    assert venta["monto_cobrado"] == "1234.56"
     assert venta["saldo_pendiente"] == "0.00"
     assert venta["estado_cobro"] == "cobrada"
 

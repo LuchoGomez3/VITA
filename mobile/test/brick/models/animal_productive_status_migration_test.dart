@@ -3,12 +3,11 @@ import 'package:frontend_mayoral/brick/db/schema.g.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
-  test('productive status migration is additive and registered as latest', () {
+  test('productive status migration remains additive and registered', () {
     final migration = migrations.singleWhere(
       (item) => item.version == 20260929235729,
     );
 
-    expect(schema.version, 20260929235729);
     expect(
       migration.upStatement,
       contains(

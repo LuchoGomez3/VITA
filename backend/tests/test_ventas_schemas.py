@@ -152,7 +152,7 @@ def test_venta_por_kilo_rechaza_total_calculado_con_pesos_historicos():
     )
 
 
-def test_venta_por_kilo_conserva_precio_y_redondea_solo_el_total():
+def test_venta_por_kilo_conserva_precio_y_trunca_solo_el_total():
     venta = VentaCreate.model_validate(
         payload_valido(
             tipo_venta="por_kilo",
@@ -165,6 +165,20 @@ def test_venta_por_kilo_conserva_precio_y_redondea_solo_el_total():
     assert venta.peso_total_kg == Decimal("10.125")
     assert venta.precio_por_kg == Decimal("123.456000")
     assert venta.monto_total == Decimal("1249.99")
+
+
+def test_venta_por_kilo_trunca_hacia_abajo_incluso_desde_medio_centavo():
+    venta = VentaCreate.model_validate(
+        payload_valido(
+            tipo_venta="por_kilo",
+            peso_total_kg="1",
+            precio_por_kg="10.005",
+            monto_total="10.00",
+        )
+    )
+
+    assert venta.precio_por_kg == Decimal("10.005000")
+    assert venta.monto_total == Decimal("10.00")
 
 
 def test_precio_por_kilo_con_mas_de_seis_decimales_se_rechaza_sin_redondear():

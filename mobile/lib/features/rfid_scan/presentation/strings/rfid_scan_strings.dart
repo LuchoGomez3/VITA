@@ -21,6 +21,9 @@ class RfidScanStrings {
   static const notFoundDescription = 'Esta caravana no está disponible en los datos locales del dispositivo.';
   static const registerAnimal = 'Registrar nuevo animal';
   static const foundTitle = 'Animal identificado';
+
+  /// Accion para devolver el animal a una venta en curso.
+  static const selectForSale = 'Agregar a la venta';
   static const viewDetail = 'Ver ficha completa';
   static const scanAgain = 'Leer otra caravana';
   static const timeoutTitle = 'No se recibió una lectura';
