@@ -1,11 +1,10 @@
 """Lógica de negocio del módulo observaciones de animales."""
 
 from datetime import UTC, datetime
-from uuid import UUID, uuid4, uuid5
+from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.modules.animales.models import Animal
 from api.modules.animales.repository import AnimalRepository
 from api.modules.establecimientos.repository import UsuarioEstablecimientoRepository
 from api.modules.observaciones_animales.exceptions import (
@@ -23,11 +22,6 @@ from api.modules.observaciones_animales.schemas import (
 from api.modules.usuarios.models import Usuario
 from api.shared.exceptions import EstablecimientoNoAutorizadoError
 from api.shared.sync import as_utc, gana_el_entrante
-
-# Espacio de nombres de los ids que genera el puente desde
-# ``animales.observaciones``. No cambiarlo: es lo que hace idempotentes los
-# reintentos.
-_NAMESPACE_PUENTE = UUID("6f1d6c2e-3b7a-4d55-9a51-6b0f1c7e2a34")
 
 
 class ObservacionAnimalService:
@@ -182,43 +176,3 @@ class ObservacionAnimalService:
             include_deleted=include_deleted,
         )
         return [ObservacionAnimalRead.model_validate(o) for o in observaciones]
-
-    async def registrar_desde_columna_legacy(
-        self,
-        current_user: Usuario,
-        animal: Animal,
-        texto: str | None,
-        *,
-        texto_guardado: str | None,
-        fecha: datetime | None,
-    ) -> None:
-        """Puente de transición: una nota que llega por ``animales.observaciones``
-        se registra también como entrada (ver adr-0007).
-
-        Los clientes anteriores a ``observaciones_animales`` todavía escriben la
-        columna, y pueden tener escrituras encoladas offline. Para no perder esas
-        notas, cada texto nuevo —no vacío y distinto del guardado— genera una
-        entrada. El id se deriva del animal y del texto, así que reintentar la
-        misma escritura no la duplica. Se registra aunque la escritura del animal
-        pierda por last-write-wins: agregar una nota nunca pisa otra.
-        """
-        if texto is None or not texto.strip() or texto == texto_guardado:
-            return
-        observacion_id = uuid5(_NAMESPACE_PUENTE, f"{animal.id}:{texto}")
-        if await self.repository.get_by_id_including_deleted(observacion_id):
-            return
-        ahora = datetime.now(UTC)
-        await self.repository.create(
-            ObservacionAnimal(
-                id=observacion_id,
-                # Momento de registro en el servidor: así la baja el pull delta
-                # de los demás clientes aunque el reloj del emisor esté atrasado.
-                created_at=ahora,
-                updated_at=ahora,
-                animal_id=animal.id,
-                establecimiento_id=animal.establecimiento_id,
-                texto=texto,
-                fecha=as_utc(fecha) or ahora,
-                autor_id=current_user.id,
-            )
-        )
