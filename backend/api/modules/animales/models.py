@@ -49,8 +49,8 @@ class Animal(Base, SoftDeleteMixin, table=True):
     estado_reproductivo: EstadoReproductivo | None = Field(
         default=None, sa_type=String, nullable=True
     )
-    # Obsoleta: las notas viven en ``observaciones_animales``. Se conserva
-    # mientras haya clientes que la escriben (ver adr-0007).
+    # Legacy: las notas viven en ``observaciones_animales`` y la API ya no
+    # escribe esta columna. Se conserva hasta retirarla en otro ticket (adr-0007).
     observaciones: str | None = None
 
 

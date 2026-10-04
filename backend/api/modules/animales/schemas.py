@@ -41,11 +41,6 @@ class AnimalCreate(SyncFields):
     categoria_id: UUID | None = None
     caravana_visual: str | None = None
     pelaje: str | None = None
-    # Obsoleto: las notas viven en /observaciones_animales. Se acepta mientras
-    # haya clientes que lo envían; una nota nueva genera una entrada (adr-0007).
-    observaciones: str | None = Field(
-        default=None, json_schema_extra={"deprecated": True}
-    )
     # Solo para hembras; ``vacia``/``prenada`` exigen una categoría habilitada.
     # En un reenvío, omitirlo conserva el valor guardado.
     estado_reproductivo: EstadoReproductivo | None = None
@@ -94,11 +89,6 @@ class AnimalUpdate(SyncFields):
     categoria_id: UUID | None = None
     lote_id: UUID | None = None
     pelaje: str | None = None
-    # Obsoleto: las notas viven en /observaciones_animales. Se acepta mientras
-    # haya clientes que lo envían; una nota nueva genera una entrada (adr-0007).
-    observaciones: str | None = Field(
-        default=None, json_schema_extra={"deprecated": True}
-    )
     estado: EstadoAnimal | None = None
     estado_reproductivo: EstadoReproductivo | None = None
 
@@ -120,7 +110,11 @@ class AnimalRead(BaseModel):
     pelaje: str | None = None
     estado: EstadoAnimal
     estado_reproductivo: EstadoReproductivo | None = None
-    observaciones: str | None = None
+    # Columna legacy de solo lectura: la API ya no la escribe. Las notas viven en
+    # /observaciones_animales (adr-0007).
+    observaciones: str | None = Field(
+        default=None, json_schema_extra={"deprecated": True}
+    )
     created_at: datetime
     updated_at: datetime
     # Se expone para la descarga delta: un registro con deleted_at != null le indica

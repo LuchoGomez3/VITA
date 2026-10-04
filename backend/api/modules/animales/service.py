@@ -139,7 +139,6 @@ class AnimalService:
             pelaje=data.pelaje,
             estado=EstadoAnimal.activo,
             estado_reproductivo=data.estado_reproductivo,
-            observaciones=data.observaciones,
         )
 
         try:
@@ -192,7 +191,6 @@ class AnimalService:
         existente.padre_id = data.padre_id
         existente.pelaje = data.pelaje
         existente.estado_reproductivo = estado_reproductivo
-        existente.observaciones = data.observaciones
         existente.deleted_at = data.deleted_at
         # Explícito: queda en el SET del UPDATE y el onupdate=func.now() no lo pisa.
         existente.updated_at = entrante
@@ -244,8 +242,6 @@ class AnimalService:
             animal.fecha_nacimiento = data.fecha_nacimiento
         if data.pelaje is not None:
             animal.pelaje = data.pelaje
-        if data.observaciones is not None:
-            animal.observaciones = data.observaciones
         if data.estado is not None:
             animal.estado = data.estado
         if data.deleted_at is not None:
