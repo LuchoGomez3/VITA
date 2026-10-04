@@ -77,8 +77,12 @@ begin
 
     if v_incompatibles > 0 then
         -- Mensaje concatenado: DDL() de SQLAlchemy interpreta el signo de porcentaje.
+        -- ``detail`` lleva la cantidad para que el backend la informe sin
+        -- interpretar el texto del mensaje.
         raise exception using
             errcode = 'check_violation',
+            constraint = 'categorias_reglas_compatibles',
+            detail = cast(v_incompatibles as text),
             message = 'Hay ' || v_incompatibles
                 || ' animal(es) que quedarían incompatibles con la categoría';
     end if;

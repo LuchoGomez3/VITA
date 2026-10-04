@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.modules.categorias.exceptions import (
@@ -24,6 +25,7 @@ from api.modules.categorias.schemas import (
 from api.modules.establecimientos.repository import UsuarioEstablecimientoRepository
 from api.modules.usuarios.models import Usuario
 from api.shared.enums import SexoPermitido
+from api.shared.rechazos_base import VIOLACION_CHECK, inspeccionar
 
 
 def _as_utc(dt: datetime | None) -> datetime | None:
@@ -70,7 +72,7 @@ class CategoriaService:
                 raise CategoriaGlobalNoEditableError()
             await self._exigir_acceso(current_user, existente.establecimiento_id)
             await self._merge_alta_lww(existente, data)
-            await self.repository.save(existente)
+            await self._guardar(existente)
             return CategoriaRead.model_validate(existente)
 
         if data.sexo_permitido is None:
@@ -91,6 +93,26 @@ class CategoriaService:
         )
         await self.repository.create(categoria)
         return CategoriaRead.model_validate(categoria)
+
+    async def _guardar(self, categoria: Categoria) -> None:
+        """Persiste y traduce el rechazo del trigger de reglas a su error de dominio.
+
+        Si otra escritura asigna un animal entre la validación y el flush, el
+        trigger ``trg_categorias_reglas_compatibles`` rechaza el cambio: tiene
+        que llegar como ``reglas_categoria_en_uso``, no como un 500.
+        """
+        try:
+            await self.repository.save(categoria)
+        except IntegrityError as exc:
+            await self.session.rollback()
+            rechazo = inspeccionar(exc)
+            if (
+                rechazo.sqlstate == VIOLACION_CHECK
+                and rechazo.restriccion == "categorias_reglas_compatibles"
+            ):
+                cantidad = int(rechazo.detalle) if rechazo.detalle else 0
+                raise ReglasCategoriaEnUsoError(cantidad) from exc
+            raise
 
     async def _exigir_reglas_compatibles(
         self,
@@ -170,7 +192,7 @@ class CategoriaService:
             categoria.deleted_at = data.deleted_at
         categoria.updated_at = entrante
 
-        await self.repository.save(categoria)
+        await self._guardar(categoria)
         return CategoriaRead.model_validate(categoria)
 
     async def borrar(

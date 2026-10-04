@@ -86,10 +86,18 @@ lógica entre tablas y vive en dos triggers:
 - `trg_animales_categoria_compatible` (`validar_categoria_animal()`) valida el animal en
   el insert y cuando cambian `sexo`, `categoria_id`, `estado_reproductivo` o
   `deleted_at`. Comprueba que la categoría admita el sexo y, para `vacia`/`prenada`, que
-  esté habilitada. Al **asignar** la categoría rechaza también una borrada o de otro
-  establecimiento.
+  esté habilitada, pero solo si el animal queda vivo: un animal borrado no se valida
+  contra su categoría, y restaurarlo lo revalida. Al **asignar** la categoría rechaza
+  también una borrada o de otro establecimiento, esté vivo o no el animal.
 - `trg_categorias_reglas_compatibles` (`validar_reglas_categoria()`) rechaza cambiar
   `sexo_permitido` o `permite_estado_reproductivo` si deja animales vivos incompatibles.
+
+Cada rechazo usa el SQLSTATE `23514` e informa un nombre estable con `raise ... using
+constraint`: `animales_categoria_admite_sexo`,
+`animales_categoria_admite_estado_reproductivo`,
+`animales_estado_reproductivo_requiere_categoria`, `animales_categoria_asignable` y
+`categorias_reglas_compatibles` (con la cantidad de animales en `detail`). El backend
+traduce por ese nombre (`api/modules/animales/rechazos.py`), no por el mensaje.
 
 Los triggers BEFORE corren antes que el WITH CHECK del RLS, así que no pueden leer filas
 que quien escribe no ve, porque su mensaje de error las revelaría.
