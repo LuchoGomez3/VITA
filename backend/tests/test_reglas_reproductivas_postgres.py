@@ -19,10 +19,21 @@ from uuid import UUID, uuid4
 
 import asyncpg
 import pytest
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel
 
 import api.modules  # noqa: F401  -- registra todas las tablas en la metadata
+from api.modules.animales import service as modulo_animales
+from api.modules.animales.exceptions import (
+    CategoriaIncompatibleConSexoError,
+    EstadoReproductivoInvalidoError,
+)
+from api.modules.animales.schemas import AnimalCreate, AnimalUpdate
+from api.modules.categorias.exceptions import ReglasCategoriaEnUsoError
+from api.modules.categorias.repository import CategoriaRepository
+from api.modules.categorias.schemas import CategoriaUpdate
+from api.modules.categorias.service import CategoriaService
+from api.modules.usuarios.models import Usuario
 from tests.postgres_helpers import (
     base_temporal,
     como_usuario,
@@ -751,3 +762,254 @@ async def test_un_cliente_directo_no_cambia_reglas_ni_sabe_si_hay_animales(camin
 
     assert resultados == ["UPDATE 0"] * 3
     assert reglas[_TERNERO] == ("ambos", False)
+
+
+# ------------------------------------------- animales borrados y restaurados
+
+
+async def _categoria_ambos(conexion: asyncpg.Connection) -> UUID:
+    """Categoría nueva sin animales: la migración ya siembra hembras en Ternero."""
+    categoria_id = uuid4()
+    await conexion.execute(
+        "insert into categorias (id, establecimiento_id, nombre,"
+        " sexo_permitido, permite_estado_reproductivo)"
+        " values ($1, $2, $3, 'ambos', false)",
+        categoria_id,
+        _CAMPO,
+        f"Recría {categoria_id.hex[:6]}",
+    )
+    return categoria_id
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_un_animal_borrado_se_reescribe_aunque_su_categoria_cambio(camino):
+    """Review de #55: reenviar el borrado de una hembra no falla si su categoría
+    pasó después de 'ambos' a 'macho'. La compatibilidad es de animales vivos."""
+    async with _base(camino) as (_, conexion):
+        recria = await _categoria_ambos(conexion)
+        animal_id = await _insertar_animal(conexion, "hembra", recria)
+        await conexion.execute(
+            "update animales set deleted_at = now() where id = $1", animal_id
+        )
+        await conexion.execute(
+            "update categorias set sexo_permitido = 'macho' where id = $1", recria
+        )
+
+        await conexion.execute(
+            "update animales set deleted_at = now() + interval '1 day',"
+            " updated_at = now() + interval '1 day' where id = $1",
+            animal_id,
+        )
+        assert await conexion.fetchval(
+            "select deleted_at is not null from animales where id = $1", animal_id
+        )
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_restaurar_sobre_una_categoria_incompatible_se_rechaza(camino):
+    async with _base(camino) as (_, conexion):
+        recria = await _categoria_ambos(conexion)
+        animal_id = await _insertar_animal(conexion, "hembra", recria)
+        await conexion.execute(
+            "update animales set deleted_at = now() where id = $1", animal_id
+        )
+        await conexion.execute(
+            "update categorias set sexo_permitido = 'macho' where id = $1", recria
+        )
+
+        with pytest.raises(asyncpg.CheckViolationError) as error:
+            await conexion.execute(
+                "update animales set deleted_at = null where id = $1", animal_id
+            )
+        assert error.value.constraint_name == "animales_categoria_admite_sexo"
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_un_animal_borrado_no_puede_tomar_una_categoria_ajena(camino):
+    """Lo que se relaja es la compatibilidad, no el aislamiento entre campos."""
+    async with _base(camino) as (_, conexion):
+        animal_id = await _insertar_animal(conexion, "hembra", _VACA)
+        await conexion.execute(
+            "update animales set deleted_at = now() where id = $1", animal_id
+        )
+        ajena = uuid4()
+        await conexion.execute(
+            "insert into categorias (id, establecimiento_id, nombre,"
+            " sexo_permitido, permite_estado_reproductivo)"
+            " values ($1, $2, 'Ajena', 'hembra', true)",
+            ajena,
+            _CAMPO_AJENO,
+        )
+        with pytest.raises(asyncpg.CheckViolationError) as error:
+            await conexion.execute(
+                "update animales set categoria_id = $1 where id = $2",
+                ajena,
+                animal_id,
+            )
+        assert error.value.constraint_name == "animales_categoria_asignable"
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+@pytest.mark.parametrize(
+    ("sexo", "categoria", "estado", "restriccion"),
+    [
+        ("macho", _VACA, None, "animales_categoria_admite_sexo"),
+        (
+            "hembra",
+            _TERNERO,
+            "prenada",
+            "animales_categoria_admite_estado_reproductivo",
+        ),
+        ("hembra", None, "vacia", "animales_estado_reproductivo_requiere_categoria"),
+    ],
+)
+async def test_cada_rechazo_del_trigger_informa_su_restriccion(
+    camino, sexo, categoria, estado, restriccion
+):
+    """El backend traduce por SQLSTATE y restricción, no por el texto."""
+    async with _base(camino) as (_, conexion):
+        with pytest.raises(asyncpg.CheckViolationError) as error:
+            await _insertar_animal(
+                conexion, sexo, categoria, estado_reproductivo=estado
+            )
+        assert error.value.sqlstate == "23514"
+        assert error.value.constraint_name == restriccion
+
+
+@pytest.mark.parametrize("camino", _CAMINOS)
+async def test_el_rechazo_de_reglas_informa_restriccion_y_cantidad(camino):
+    async with _base(camino) as (_, conexion):
+        recria = await _categoria_ambos(conexion)
+        for _ in range(2):
+            await _insertar_animal(conexion, "hembra", recria)
+        with pytest.raises(asyncpg.CheckViolationError) as error:
+            await conexion.execute(
+                "update categorias set sexo_permitido = 'macho' where id = $1",
+                recria,
+            )
+        assert error.value.constraint_name == "categorias_reglas_compatibles"
+        assert error.value.detail == "2"
+
+
+# ------------------------- el service traduce el rechazo real del trigger
+
+
+@asynccontextmanager
+async def _service_sobre_postgres():
+    """Sesión de SQLAlchemy contra un Postgres con los triggers instalados.
+
+    Los tests desactivan la validación del service para simular que otra
+    escritura cambió las reglas entre la validación y el flush: así el que
+    rechaza es el trigger, con el diagnóstico real de asyncpg.
+    """
+    async with _base("create_all") as (url, conexion):
+        await conexion.execute(
+            "insert into usuarios_establecimientos"
+            " (id, usuario_id, establecimiento_id, rol, activo, created_at, updated_at)"
+            " values ($1, $2, $3, 'owner', true, now(), now())",
+            uuid4(),
+            _OWNER,
+            _CAMPO,
+        )
+        engine = create_async_engine(url_sqlalchemy(url))
+        try:
+            fabrica = async_sessionmaker(
+                engine, class_=AsyncSession, expire_on_commit=False
+            )
+            async with fabrica() as session:
+                usuario = await session.get(Usuario, _OWNER)
+                yield session, usuario, conexion
+        finally:
+            await engine.dispose()
+
+
+def _alta_servicio(**extra):
+    datos = {
+        "nro_caravana_rfid": f"9820{uuid4().int % 10**11:011d}",
+        "sexo": "hembra",
+        "raza": "Angus",
+        "fecha_nacimiento": "2022-03-10",
+        "establecimiento_id": _CAMPO,
+        "peso_inicial": "380",
+    }
+    datos.update(extra)
+    return AnimalCreate(**datos)
+
+
+async def test_alta_traduce_el_rechazo_real_del_trigger(monkeypatch):
+    monkeypatch.setattr(modulo_animales, "validar_combinacion", lambda *_: None)
+    async with _service_sobre_postgres() as (session, usuario, _):
+        with pytest.raises(CategoriaIncompatibleConSexoError):
+            await modulo_animales.AnimalService(session).crear(
+                usuario, _alta_servicio(sexo="macho", categoria_id=_VACA)
+            )
+
+
+async def test_edicion_traduce_el_rechazo_real_del_trigger(monkeypatch):
+    async with _service_sobre_postgres() as (session, usuario, conexion):
+        servicio = modulo_animales.AnimalService(session)
+        creado = await servicio.crear(usuario, _alta_servicio(categoria_id=_TERNERO))
+        await session.commit()
+
+        monkeypatch.setattr(modulo_animales, "validar_combinacion", lambda *_: None)
+        with pytest.raises(EstadoReproductivoInvalidoError):
+            await servicio.actualizar(
+                usuario,
+                creado.id,
+                AnimalUpdate(
+                    estado_reproductivo="prenada",
+                    updated_at="2030-01-01T00:00:00Z",
+                ),
+            )
+        # Sin cambios parciales.
+        assert (
+            await conexion.fetchval(
+                "select estado_reproductivo from animales where id = $1", creado.id
+            )
+            is None
+        )
+
+
+async def test_reenvio_traduce_el_rechazo_real_del_trigger(monkeypatch):
+    async with _service_sobre_postgres() as (session, usuario, conexion):
+        servicio = modulo_animales.AnimalService(session)
+        alta = _alta_servicio(
+            id=uuid4(), categoria_id=_VACA, updated_at="2026-06-01T00:00:00Z"
+        )
+        await servicio.crear(usuario, alta)
+        await session.commit()
+
+        monkeypatch.setattr(modulo_animales, "validar_combinacion", lambda *_: None)
+        reenvio = _alta_servicio(
+            id=alta.id,
+            nro_caravana_rfid=alta.nro_caravana_rfid,
+            sexo="macho",
+            categoria_id=_VACA,
+            updated_at="2030-01-01T00:00:00Z",
+        )
+        with pytest.raises(CategoriaIncompatibleConSexoError):
+            await servicio.crear(usuario, reenvio)
+        assert (
+            await conexion.fetchval("select sexo from animales where id = $1", alta.id)
+            == "hembra"
+        )
+
+
+async def test_categoria_traduce_el_rechazo_real_del_trigger(monkeypatch):
+    async with _service_sobre_postgres() as (session, usuario, _):
+        await modulo_animales.AnimalService(session).crear(
+            usuario, _alta_servicio(categoria_id=_TERNERO)
+        )
+        await session.commit()
+
+        async def _cero(*_, **__):
+            return 0
+
+        monkeypatch.setattr(CategoriaRepository, "contar_animales_incompatibles", _cero)
+        with pytest.raises(ReglasCategoriaEnUsoError) as error:
+            await CategoriaService(session).actualizar(
+                usuario,
+                _TERNERO,
+                CategoriaUpdate(sexo_permitido="macho"),
+            )
+        assert error.value.details == {"animales_incompatibles": 1}
