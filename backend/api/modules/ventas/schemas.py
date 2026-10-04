@@ -2,6 +2,7 @@
 
 from datetime import date, datetime, timedelta, timezone
 from decimal import ROUND_DOWN, Decimal
+import re
 from typing import Self
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -26,6 +27,7 @@ except ZoneInfoNotFoundError:
 PRECISION_MONETARIA = Decimal("0.01")
 PRECISION_PESO_KG = Decimal("0.001")
 PRECISION_PRECIO_UNITARIO = Decimal("0.000001")
+PATRON_NRO_DTE = re.compile(r"^\d+-[0-9A-Z]$")
 
 
 def _normalizar_texto(valor: str) -> str:
@@ -150,9 +152,16 @@ class VentaCreate(SyncFields):
     @field_validator("nro_dte")
     @classmethod
     def validar_nro_dte(cls, nro_dte: str) -> str:
-        if not nro_dte or any(digito not in "0123456789" for digito in nro_dte):
-            raise ValueError("El número de DTe debe contener solamente dígitos")
-        return nro_dte
+        valor = nro_dte.strip().upper()
+        # La longitud del bloque numérico puede variar entre series. Solo se
+        # valida la estructura porque la tabla oficial que convierte ciertos
+        # verificadores de dos dígitos a letras no es de acceso público.
+        if not PATRON_NRO_DTE.fullmatch(valor):
+            raise ValueError(
+                "El número de DTe debe tener números, un guion y un "
+                "verificador numérico o alfabético"
+            )
+        return valor
 
     @field_validator("monto_total")
     @classmethod

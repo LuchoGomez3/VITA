@@ -50,7 +50,7 @@ LivestockSale _sale() {
     buyerName: 'Juan',
     buyerLastName: 'Perez',
     isCompany: false,
-    dteNumber: '00123456789',
+    dteNumber: '001234567-9',
     saleType: LivestockSaleType.bulk,
     totalAmountCents: 1000000,
     animalIds: const ['animal-a'],

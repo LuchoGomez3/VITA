@@ -235,7 +235,7 @@ BrickLivestockSaleModel _sale(String id, List<String> animalIds) {
     buyerName: 'Juan',
     buyerLastName: 'Perez',
     isCompany: false,
-    dteNumber: '00123456789',
+    dteNumber: '001234567-9',
     saleType: 'al_bulto',
     totalAmount: '10000.00',
     animalIdsJson: jsonEncode(animalIds),

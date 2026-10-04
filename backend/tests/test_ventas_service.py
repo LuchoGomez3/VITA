@@ -67,7 +67,7 @@ def crear_datos(establecimiento_id, animal_ids, **overrides) -> VentaCreate:
         "nombre_comprador": "Frigorífico del Centro S.A.",
         "es_empresa": True,
         "apellido_comprador": None,
-        "nro_dte": "0012345678",
+        "nro_dte": "001234567-8",
         "tipo_venta": "al_bulto",
         "monto_total": "4500000.00",
         "animal_ids": animal_ids,

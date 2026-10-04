@@ -25,11 +25,15 @@ class LivestockSaleRepositoryImpl implements LivestockSaleRepository {
   @override
   Future<Result<LivestockSale>> createSale(LivestockSale sale) async {
     try {
+      // El store confirma primero en SQLite y devuelve de inmediato; el envio
+      // remoto queda en la cola offline y no bloquea la respuesta a UI.
       final saved = await _saleStore.saveSale(
         LivestockSaleBrickMapper.toBrick(sale),
       );
       return Result.success(LivestockSaleBrickMapper.fromBrick(saved));
     } on LivestockSaleLocalException catch (error) {
+      // Los errores de integridad del store se traducen a conceptos de dominio
+      // sin filtrar detalles de Brick hacia las capas superiores.
       final reason = switch (error.code) {
         LivestockSaleLocalErrorCode.invalidAnimalIds => LivestockSaleError.invalidAnimals,
         LivestockSaleLocalErrorCode.animalNotFound => LivestockSaleError.animalNotFound,
@@ -61,6 +65,8 @@ class LivestockSaleRepositoryImpl implements LivestockSaleRepository {
     Exception error,
     StackTrace stackTrace,
   ) {
+    // Las fallas tecnicas se registran con stack trace, mientras UI recibe un
+    // error estable que puede explicar sin exponer detalles internos.
     _logger.severe('Expected livestock sale persistence failure: ${reason.name}', error, stackTrace);
     return Result.failure(
       DomainException(

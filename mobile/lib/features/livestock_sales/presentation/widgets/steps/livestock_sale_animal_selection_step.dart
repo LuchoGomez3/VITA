@@ -26,6 +26,8 @@ class LivestockSaleAnimalSelectionStep extends StatefulWidget {
 
 class _LivestockSaleAnimalSelectionStepState extends State<LivestockSaleAnimalSelectionStep> {
   final _rfidController = TextEditingController();
+
+  // Evita abrir dos lecturas RFID mientras la ruta del lector sigue activa.
   bool _isRfidScanOpen = false;
 
   @override
@@ -37,6 +39,8 @@ class _LivestockSaleAnimalSelectionStepState extends State<LivestockSaleAnimalSe
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<LivestockSaleBloc, LivestockSaleState>(
+      // El campo se limpia unicamente cuando el animal fue incorporado; ante un
+      // error queda disponible para que el productor pueda corregirlo.
       listenWhen: (previous, current) {
         return current.selection.animals.length > previous.selection.animals.length;
       },
@@ -57,6 +61,8 @@ class _LivestockSaleAnimalSelectionStepState extends State<LivestockSaleAnimalSe
           ),
           itemCount: animals.isEmpty ? 1 : animals.length + 1,
           itemBuilder: (context, index) {
+            // El encabezado ocupa siempre la primera posicion y la lista de
+            // animales se construye de forma perezosa debajo de el.
             if (index == 0) {
               return _SelectionHeader(
                 controller: _rfidController,
@@ -85,6 +91,7 @@ class _LivestockSaleAnimalSelectionStepState extends State<LivestockSaleAnimalSe
   }
 
   void _addAnimal() {
+    // El caso de uso resolvera la caravana exclusivamente contra SQLite.
     FocusScope.of(context).unfocus();
     context.read<LivestockSaleBloc>().add(
       LivestockSaleEvent.animalAddRequested(_rfidController.text),
@@ -95,6 +102,7 @@ class _LivestockSaleAnimalSelectionStepState extends State<LivestockSaleAnimalSe
     if (_isRfidScanOpen) return;
     setState(() => _isRfidScanOpen = true);
     final reading = await widget.onRfidScanRequested();
+    // La pantalla puede haberse cerrado mientras el lector estaba abierto.
     if (!mounted) return;
     setState(() => _isRfidScanOpen = false);
     if (reading == null || reading.isEmpty) return;
@@ -342,6 +350,8 @@ class _SelectedAnimalCard extends StatelessWidget {
   String get _lot => animal.lotName.trim().isEmpty ? LivestockSaleStrings.unavailableLot : animal.lotName;
 
   String get _tagValue {
+    // Si no existe caravana visual, los ultimos cuatro digitos RFID ofrecen un
+    // identificador compacto sin perder el numero completo mostrado debajo.
     final visualTag = animal.visualTag.trim();
     if (visualTag.isNotEmpty) return visualTag;
     final rfid = animal.rfidTagNumber;

@@ -21,6 +21,8 @@ class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository
     String rfidTagNumber,
   ) async {
     try {
+      // La consulta usa solo SQLite. Incluso sin conectividad puede identificar
+      // si la caravana esta disponible, vendida o pertenece a otro tenant.
       final animals = await _animalBrickStore.getLocalAnimals();
       final animal = _selectLatestAnimal(
         animals: animals,
@@ -31,6 +33,8 @@ class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository
         animal == null ? null : LivestockSaleAnimalMapper.fromBrick(animal),
       );
     } on Object {
+      // El contrato Result evita que una falla local termine cerrando el flujo
+      // de campo y permite mostrar un mensaje recuperable al productor.
       const reason = LivestockSaleSelectionError.localRead;
       return const Result.failure(
         DomainException(

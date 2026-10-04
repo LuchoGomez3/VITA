@@ -23,6 +23,8 @@ class ConfirmLivestockSaleUseCase {
 
   /// Confirma [draft] sin esperar conectividad.
   Future<Result<LivestockSale>> call(LivestockSaleDraft draft) {
+    // Normalizar antes de validar evita persistir diferencias irrelevantes de
+    // espacios y asegura que la validacion opere sobre el dato definitivo.
     final current = _now();
     final normalized = _normalize(draft);
     final validationError = validate(draft: normalized, today: current);
@@ -32,6 +34,9 @@ class ConfirmLivestockSaleUseCase {
 
     final timestamp = current.toUtc();
     final paymentDraft = normalized.initialPayment;
+
+    // Venta y cobro reciben UUID en el dispositivo. Esto permite guardar sin
+    // conexion y reintentar el mismo POST sin crear duplicados en backend.
     final sale = LivestockSale(
       id: _createId(),
       establishmentId: normalized.establishmentId,
@@ -71,6 +76,8 @@ class ConfirmLivestockSaleUseCase {
     required LivestockSaleDraft draft,
     required DateTime today,
   }) {
+    // El orden sigue la disposicion del formulario para que el primer mensaje
+    // lleve al usuario al bloque que debe corregir primero.
     if (draft.establishmentId.trim().isEmpty) {
       return LivestockSaleError.requiredEstablishment;
     }
@@ -94,7 +101,9 @@ class ConfirmLivestockSaleUseCase {
         return LivestockSaleError.invalidBuyerLastName;
       }
     }
-    if (draft.dteNumber.isEmpty || !RegExp(r'^\d+$').hasMatch(draft.dteNumber)) {
+    // No se calcula el verificador: algunas series convierten resultados de
+    // dos dígitos mediante una tabla oficial que la aplicación no conoce.
+    if (!RegExp(r'^\d+-[0-9A-Z]$').hasMatch(draft.dteNumber)) {
       return LivestockSaleError.invalidDteNumber;
     }
     if (draft.animalIds.isEmpty ||
@@ -110,6 +119,8 @@ class ConfirmLivestockSaleUseCase {
     if (saleTypeError != null) return saleTypeError;
 
     final payment = draft.initialPayment;
+    // Cada condicion impone una forma distinta del cobro inicial: inexistente,
+    // igual al total o estrictamente menor al monto de la venta.
     switch (draft.paymentCondition) {
       case LivestockSalePaymentCondition.pending:
         if (payment != null) return LivestockSaleError.pendingWithInitialPayment;
@@ -131,6 +142,8 @@ class ConfirmLivestockSaleUseCase {
   }
 
   LivestockSaleError? _validateSaleType(LivestockSaleDraft draft) {
+    // Las dos modalidades son excluyentes para impedir que datos residuales
+    // cambien la interpretacion comercial de la operacion.
     if (draft.saleType == LivestockSaleType.bulk) {
       return draft.totalWeightGrams == null && draft.pricePerKgMicros == null
           ? null
@@ -146,6 +159,8 @@ class ConfirmLivestockSaleUseCase {
       return LivestockSaleError.invalidPricePerKg;
     }
     try {
+      // Recalcular en dominio impide confiar en un total manipulado desde UI y
+      // aplica la misma regla de truncado que se usa en la previsualizacion.
       final calculated = LivestockSaleAmountCalculator.totalCents(
         totalWeightGrams: weight,
         pricePerKgMicros: price,
@@ -161,7 +176,7 @@ class ConfirmLivestockSaleUseCase {
       establishmentId: draft.establishmentId.trim(),
       buyerName: _normalizeText(draft.buyerName) ?? '',
       buyerLastName: _normalizeText(draft.buyerLastName),
-      dteNumber: draft.dteNumber.trim(),
+      dteNumber: draft.dteNumber.trim().toUpperCase(),
       observations: _normalizeText(draft.observations),
       animalIds: draft.animalIds.map((id) => id.trim()).toList(growable: false),
       initialPayment: draft.initialPayment?.copyWith(

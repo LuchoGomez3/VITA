@@ -28,6 +28,8 @@ class LivestockSalesUseCases {
 
 /// Construye el contrato que consumira el BLoC sin exponer Brick.
 LivestockSalesUseCases createLivestockSalesUseCases() {
+  // Composition es el unico punto que conoce las implementaciones Brick. El
+  // BLoC recibe casos de uso y conserva limpia la frontera de presentation.
   final animalRepository = LivestockSaleAnimalRepositoryImpl(
     animalBrickStore: BrickAnimalStore.instance,
   );

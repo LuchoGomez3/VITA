@@ -180,7 +180,7 @@ LivestockSaleFormDraft _validBulkForm(LivestockSaleFormDraft form) {
   return form.copyWith(
     buyerName: 'Juan',
     buyerLastName: 'Perez',
-    dteNumber: '00123456789',
+    dteNumber: '001234567-9',
     bulkTotalAmount: '10000',
   );
 }

@@ -109,6 +109,33 @@ void main() {
       LivestockSaleError.companyWithLastName,
     );
   });
+
+  test('admite DTe de longitud variable con verificador numerico o letra', () async {
+    for (final dteNumber in ['12345678-9', '123456789-A', '0123456789-B']) {
+      final error = useCase.validate(
+        draft: _bulkDraft().copyWith(dteNumber: dteNumber),
+        today: DateTime(2026, 10, 3),
+      );
+
+      expect(error, isNull);
+    }
+  });
+
+  test('normaliza a mayuscula el verificador alfabetico del DTe', () async {
+    final result = await useCase(_bulkDraft().copyWith(dteNumber: '123456789-a'));
+
+    expect(result.when(success: (_) => true, failure: (_) => false), isTrue);
+    expect(repository.created?.dteNumber, '123456789-A');
+  });
+
+  test('rechaza un DTe sin la estructura completa', () async {
+    final result = await useCase(_bulkDraft().copyWith(dteNumber: '123456789'));
+
+    expect(
+      result.when(success: (_) => null, failure: (error) => error.reason),
+      LivestockSaleError.invalidDteNumber,
+    );
+  });
 }
 
 LivestockSaleDraft _perKilogramDraft() => LivestockSaleDraft(
@@ -118,7 +145,7 @@ LivestockSaleDraft _perKilogramDraft() => LivestockSaleDraft(
   buyerName: 'Juan',
   buyerLastName: 'Perez',
   isCompany: false,
-  dteNumber: '00123456789',
+  dteNumber: '001234567-9',
   saleType: LivestockSaleType.perKilogram,
   totalWeightGrams: 10125,
   pricePerKgMicros: 1000123456,
@@ -139,7 +166,7 @@ LivestockSaleDraft _bulkDraft() => LivestockSaleDraft(
   buyerName: 'Juan',
   buyerLastName: 'Perez',
   isCompany: false,
-  dteNumber: '00123456789',
+  dteNumber: '001234567-9',
   saleType: LivestockSaleType.bulk,
   totalAmountCents: 1000000,
   animalIds: const ['animal-a'],

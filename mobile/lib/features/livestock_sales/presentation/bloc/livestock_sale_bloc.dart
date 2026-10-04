@@ -56,6 +56,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _FormChanged event,
     Emitter<LivestockSaleState> emit,
   ) {
+    // Centralizar la normalizacion aca mantiene iguales los datos aunque el
+    // cambio venga de otro widget o de una futura restauracion del borrador.
     emit(
       state.copyWith(
         form: _normalizeChangedForm(event.form),
@@ -68,6 +70,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _AnimalAddRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
+    // Bloquea lecturas paralelas para que dos respuestas no alteren el orden de
+    // seleccion ni incorporen dos veces la misma caravana.
     if (state.animalSelectionResult is Loading<LivestockSaleSelection>) return;
 
     emit(
@@ -82,6 +86,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
       selection: state.selection,
     );
     switch (result) {
+      // El resultado asincrono se guarda separado del borrador del formulario,
+      // permitiendo que la pantalla muestre carga o error sin perder seleccion.
       case Success<LivestockSaleSelection>(:final data):
         emit(
           state.copyWith(
@@ -123,6 +129,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
   ) {
     if (state.currentStep == LivestockSaleStep.review) return;
 
+    // Cada paso valida solo lo que necesita para avanzar. La operacion completa
+    // se convierte a dominio antes de llegar a la pantalla de resumen.
     final error = switch (state.currentStep) {
       LivestockSaleStep.animals =>
         state.selection.animals.isEmpty ? _validationError(LivestockSaleStrings.requiredAnimals) : null,
@@ -159,6 +167,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _SubmitRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
+    // Confirmar fuera del resumen o repetir el toque durante una escritura se
+    // ignora para conservar una unica venta local idempotente.
     if (state.currentStep != LivestockSaleStep.review || state.submitResult is Loading<LivestockSale>) {
       return;
     }
@@ -191,6 +201,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
   }
 
   DomainException? _validateCompleteDraft() {
+    // Presentation interpreta los textos y dominio aplica las reglas finales;
+    // de ese modo no se duplican validaciones comerciales en los widgets.
     final result = _buildDomainDraft();
     if (result case Failure<LivestockSaleDraft>(:final error)) return error;
     final draft = (result as Success<LivestockSaleDraft>).data;
@@ -204,6 +216,9 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
       int? totalWeightGrams;
       int? pricePerKgMicros;
       late final int totalAmountCents;
+
+      // Todos los decimales se convierten a enteros escalados. No se usa
+      // double porque podria cambiar el precio pactado o el centavo truncado.
       if (form.saleType == LivestockSaleType.bulk) {
         totalAmountCents = ScaledDecimalFormatter.parse(form.bulkTotalAmount, 2);
       } else {
@@ -233,6 +248,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
               observations: form.paymentObservations,
             );
       return Result.success(
+        // El borrador de dominio ya no contiene texto numerico ambiguo y queda
+        // listo para ser validado y persistido por el caso de uso.
         LivestockSaleDraft(
           establishmentId: form.establishmentId,
           operationDate: form.operationDate,
@@ -257,6 +274,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
   }
 
   LivestockSaleFormDraft _normalizeChangedForm(LivestockSaleFormDraft next) {
+    // Al cambiar una opcion excluyente se eliminan valores que ya no deben
+    // enviarse, aunque hayan sido completados previamente por el usuario.
     var normalized = next;
     if (next.isCompany) {
       normalized = normalized.copyWith(buyerLastName: '');
@@ -273,6 +292,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
   }
 
   DomainException _localizedSelectionError(DomainException error) {
+    // Dominio conserva motivos estables y presentation agrega el mensaje en
+    // español que finalmente ve el productor.
     final reason = error.reason;
     if (reason is! LivestockSaleSelectionError) return error;
     return DomainException(

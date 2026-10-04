@@ -9,6 +9,8 @@ import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livest
 abstract final class LivestockSaleBrickMapper {
   /// Serializa la operacion sin introducir aritmetica de punto flotante.
   static BrickLivestockSaleModel toBrick(LivestockSale sale) {
+    // Los enteros escalados de dominio se guardan como decimales canonicos en
+    // texto porque PostgreSQL usa numeric y Brick debe conservar su precision.
     return BrickLivestockSaleModel(
       localId: sale.id,
       establishmentId: sale.establishmentId,
@@ -35,6 +37,8 @@ abstract final class LivestockSaleBrickMapper {
 
   /// Rehidrata una venta guardada localmente.
   static LivestockSale fromBrick(BrickLivestockSaleModel model) {
+    // SQLite almacena la lista como JSON para mantener una unica fila por venta;
+    // se valida su forma antes de exponerla como entidad de dominio.
     final animalIds = jsonDecode(model.animalIdsJson);
     if (animalIds is! List || animalIds.any((id) => id is! String)) {
       throw const FormatException('Invalid stored animal IDs.');
@@ -69,6 +73,9 @@ abstract final class LivestockSaleBrickMapper {
 
   static String? _paymentToJson(LivestockSaleInitialPayment? payment) {
     if (payment == null) return null;
+
+    // El cobro viaja anidado con la venta para que backend confirme el agregado
+    // completo de manera atomica y no deje una venta sin su pago inicial.
     return jsonEncode({
       'id': payment.id,
       'fecha_cobro': _dateToBackend(payment.date),
@@ -107,6 +114,8 @@ abstract final class LivestockSaleBrickMapper {
     String stored,
     String Function(T value) valueOf,
   ) {
+    // Nunca se elige un valor por defecto: un contrato desconocido debe fallar
+    // explicitamente para no reinterpretar datos economicos guardados.
     for (final value in values) {
       if (valueOf(value) == stored) return value;
     }

@@ -24,7 +24,7 @@ void main() {
         buyerType: 'frigorifico',
         buyerName: 'Comprador de prueba SA',
         isCompany: true,
-        dteNumber: '00123456789',
+        dteNumber: '001234567-9',
         saleType: 'por_kilo',
         totalWeightKg: '10.125',
         pricePerKg: '1000.123456',
@@ -78,7 +78,7 @@ void main() {
         buyerName: 'Juan',
         buyerLastName: 'Perez',
         isCompany: false,
-        dteNumber: '00123456789',
+        dteNumber: '001234567-9',
         saleType: 'al_bulto',
         totalAmount: '10000.00',
         animalIdsJson: jsonEncode([

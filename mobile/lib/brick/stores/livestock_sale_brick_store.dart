@@ -78,8 +78,12 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
   Future<BrickLivestockSaleModel> saveSale(
     BrickLivestockSaleModel sale,
   ) async {
+    // La lista se valida antes de abrir la transaccion para no iniciar una
+    // escritura con un agregado incompleto o con animales repetidos.
     final animalIds = _decodeAnimalIds(sale.animalIdsJson);
     final saved = await _repository.runLocalTransaction((transaction) async {
+      // Se toma la version mas reciente de cada animal porque Brick puede
+      // conservar revisiones locales durante la reconciliacion.
       final storedAnimals = await transaction.getLocal<BrickAnimalModel>();
       final animalsById = _latestAnimalsById(storedAnimals);
       final selectedAnimals = <BrickAnimalModel>[];
@@ -111,6 +115,9 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
 
       final storedSales = await transaction.getLocal<BrickLivestockSaleModel>();
       final existingSale = _latestSaleById(storedSales, sale.localId);
+
+      // La venta nace pendiente y reutiliza primaryKey si es un reintento local
+      // del mismo UUID, evitando filas duplicadas en SQLite.
       final pendingSale = sale.copyWith(
         syncStatus: BrickLivestockSaleSyncStatus.pending,
         syncErrorCode: null,
@@ -118,6 +125,8 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
       final savedSale = await transaction.upsert(pendingSale);
 
       for (final animal in selectedAnimals) {
+        // Venta y baja de stock comparten la transaccion: nunca puede quedar la
+        // venta guardada con los animales todavia activos, ni al reves.
         await transaction.upsert(
           animal.copyWith(
             productiveStatus: BrickAnimalProductiveStatus.sold,
@@ -140,6 +149,8 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
 
   /// Aplica la aceptacion o rechazo remoto sobre venta y animales atomicos.
   Future<void> applySyncResult(BackendSyncResult result) async {
+    // El stream es compartido por stores; se ignoran respuestas de cualquier
+    // recurso que no corresponda al endpoint de ventas.
     if (!result.resourcePath.endsWith(
       BrickLivestockSaleRequestTransformer.salesPath,
     )) {
@@ -168,6 +179,8 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
         final animal = animalsById[animalId];
         if (animal == null) continue;
         await transaction.upsert(
+          // Un rechazo no reactiva automaticamente el animal: la operacion y
+          // su stock quedan marcados para conciliacion, sin perder el progreso.
           animal.copyWith(
             productiveStatus: BrickAnimalProductiveStatus.sold,
             syncStatus: result.synchronized ? BrickAnimalSyncStatus.synchronized : BrickAnimalSyncStatus.rejected,
@@ -179,6 +192,8 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
   }
 
   static List<String> _decodeAnimalIds(String encoded) {
+    // Ademas de validar JSON, se exigen IDs no vacios y unicos porque la venta
+    // representa una relacion uno-a-uno con cada baja de stock.
     Object? decoded;
     try {
       decoded = jsonDecode(encoded);

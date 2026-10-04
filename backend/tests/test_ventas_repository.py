@@ -67,7 +67,7 @@ def crear_venta(establecimiento_id: UUID, usuario_id: UUID) -> Venta:
         nombre_comprador="Frigorífico del Centro S.A.",
         es_empresa=True,
         apellido_comprador=None,
-        nro_dte="0012345678",
+        nro_dte="001234567-8",
         tipo_venta=TipoVenta.al_bulto,
         monto_total=Decimal("4500000.00"),
         registrada_por_id=usuario_id,

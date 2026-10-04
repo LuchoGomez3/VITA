@@ -14,7 +14,7 @@ void main() {
       buyerType: LivestockSaleBuyerType.slaughterhouse,
       buyerName: 'Comprador SA',
       isCompany: true,
-      dteNumber: '00123456789',
+      dteNumber: '001234567-9',
       saleType: LivestockSaleType.perKilogram,
       totalWeightGrams: 10125,
       pricePerKgMicros: 1000123456,

@@ -15,8 +15,204 @@ abstract final class LivestockSaleStrings {
   /// Subtitulo del resumen.
   static const reviewStep = 'Paso 3 de 3 · Resumen de la operación';
 
-  /// Texto temporal del contenido que se implementara en el siguiente bloque.
-  static const pendingScreenContent = 'Contenido de la pantalla pendiente';
+  /// Encabezado del bloque de comprador.
+  static const buyerSection = 'COMPRADOR';
+
+  /// Label del canal comercial del comprador.
+  static const buyerType = 'Tipo de comprador';
+
+  /// Opcion de comprador frigorifico.
+  static const slaughterhouse = 'Frigorífico';
+
+  /// Opcion de comprador mediante remate.
+  static const auction = 'Remate';
+
+  /// Opcion de comprador particular.
+  static const privateBuyer = 'Particular';
+
+  /// Label para distinguir una persona de una empresa.
+  static const buyerKind = 'El comprador es';
+
+  /// Opcion para comprador persona.
+  static const person = 'Persona';
+
+  /// Opcion para comprador empresa.
+  static const company = 'Empresa';
+
+  /// Label del nombre de una persona.
+  static const buyerName = 'Nombre *';
+
+  /// Placeholder del nombre de una persona.
+  static const buyerNameHint = 'Ingresá el nombre';
+
+  /// Label del apellido de una persona.
+  static const buyerLastName = 'Apellido *';
+
+  /// Placeholder del apellido de una persona.
+  static const buyerLastNameHint = 'Ingresá el apellido';
+
+  /// Label de la razon social de una empresa.
+  static const businessName = 'Razón social *';
+
+  /// Placeholder de la razon social.
+  static const businessNameHint = 'Ingresá la razón social';
+
+  /// Label del documento de transito electronico.
+  static const dteNumber = 'Nº DTe *';
+
+  /// Placeholder del documento de transito electronico.
+  static const dteNumberHint = '123456789-A';
+
+  /// Ayuda del documento de transito electronico.
+  static const dteNumberHelper =
+      'Ingresá el número completo, incluido el guion y el verificador';
+
+  /// Encabezado de los datos comerciales.
+  static const operationSection = 'DATOS DE LA OPERACIÓN';
+
+  /// Label de la fecha de venta.
+  static const operationDate = 'Fecha de operación';
+
+  /// Placeholder de fecha.
+  static const dateHint = 'Seleccioná una fecha';
+
+  /// Label de la modalidad de venta.
+  static const saleType = 'Tipo de venta';
+
+  /// Venta por un monto total ingresado por el productor.
+  static const bulkSale = 'Al bulto';
+
+  /// Venta calculada con peso total y precio unitario.
+  static const perKilogramSale = 'Por kilo';
+
+  /// Encabezado de precios.
+  static const priceSection = 'PRECIO';
+
+  /// Label del monto de una venta al bulto.
+  static const totalAmount = 'Monto total *';
+
+  /// Label del peso comercial ingresado por el productor.
+  static const totalWeight = 'Kilos totales de la tropa *';
+
+  /// Label del valor unitario exacto.
+  static const pricePerKilogram = 'Precio por kilo *';
+
+  /// Titulo del resultado calculado.
+  static const calculatedTotal = 'Monto total (calculado)';
+
+  /// Unidad monetaria.
+  static const currency = 'ARS';
+
+  /// Unidad de peso.
+  static const kilograms = 'kg';
+
+  /// Unidad del precio por kilo.
+  static const currencyPerKilogram = r'$/kg';
+
+  /// Encabezado de la situacion de cobro.
+  static const paymentStatusSection = 'ESTADO DE COBRO';
+
+  /// Estado cobrado en su totalidad.
+  static const totalPayment = 'Cobro total';
+
+  /// Descripcion del cobro total.
+  static const totalPaymentDescription = 'Pago al contado';
+
+  /// Estado cobrado parcialmente.
+  static const partialPayment = 'Cobro parcial';
+
+  /// Descripcion del cobro parcial.
+  static const partialPaymentDescription = 'Cuotas / señal';
+
+  /// Estado sin cobro inicial.
+  static const pendingPayment = 'A cobrar';
+
+  /// Descripcion del cobro posterior.
+  static const pendingPaymentDescription = 'Pago posterior';
+
+  /// Label del importe recibido al registrar una venta parcial.
+  static const amountToCollectNow = 'Monto a cobrar ahora *';
+
+  /// Label del saldo que queda por cobrar.
+  static const pendingBalance = 'Saldo pendiente';
+
+  /// Encabezado del instrumento de cobro.
+  static const paymentMethodSection = 'FORMA DE COBRO';
+
+  /// Instrumento efectivo.
+  static const cash = 'Efectivo';
+
+  /// Instrumento transferencia bancaria.
+  static const bankTransfer = 'Transferencia';
+
+  /// Instrumento cheque.
+  static const check = 'Cheque';
+
+  /// Instrumento tarjeta.
+  static const card = 'Tarjeta';
+
+  /// Presenta el calculo sin ocultar los valores ingresados.
+  static String amountCalculation(String weight, String price) => '$weight kg × \$$price/kg';
+
+  /// Encabezado del comprador en el resumen.
+  static const summaryBuyerSection = 'COMPRADOR';
+
+  /// Encabezado de animales en el resumen.
+  static const summaryAnimalsSection = 'ANIMALES VENDIDOS';
+
+  /// Encabezado de totales en el resumen.
+  static const summaryTotalsSection = 'TOTALES';
+
+  /// Encabezado del cobro en el resumen.
+  static const summaryPaymentSection = 'COBRO';
+
+  /// Label compacto del DTe en el resumen.
+  static const summaryDte = 'DTe Nº';
+
+  /// Label de cantidad de animales.
+  static const animals = 'Animales';
+
+  /// Label del tipo de venta resumido.
+  static const summarySaleType = 'Tipo de venta';
+
+  /// Label del peso comercial resumido.
+  static const summaryTotalWeight = 'Peso total';
+
+  /// Label del precio unitario resumido.
+  static const summaryPricePerKilogram = 'Precio por kilo';
+
+  /// Label del importe final resumido.
+  static const summaryTotalAmount = 'Monto total';
+
+  /// Label del estado de cobro.
+  static const paymentStatus = 'Estado';
+
+  /// Label del medio de cobro.
+  static const paymentMethod = 'Forma de cobro';
+
+  /// Cobro total expresado para el resumen.
+  static const totalPaymentSummary = 'Cobro total al momento';
+
+  /// Cobro parcial expresado para el resumen.
+  static const partialPaymentSummary = 'Cobro parcial / cuotas';
+
+  /// Cobro pendiente expresado para el resumen.
+  static const pendingPaymentSummary = 'A cobrar posteriormente';
+
+  /// Importe recibido al registrar la venta.
+  static const collectedNow = 'Cobro al momento';
+
+  /// Importe total que queda por cobrar.
+  static const totalToCollect = 'Total a cobrar';
+
+  /// Cantidad de cabezas con pluralizacion.
+  static String headCount(int count) => count == 1 ? '1 cabeza' : '$count cabezas';
+
+  /// Accion para desplegar animales que exceden el limite inicial.
+  static String showRemainingAnimals(int count) => 'Ver $count animales más';
+
+  /// Accion para volver a la lista resumida.
+  static const showFewerAnimals = 'Ver menos';
 
   /// Titulo principal de la seleccion de animales.
   static const animalSelectionTitle = 'Seleccioná los animales vendidos';
@@ -77,6 +273,22 @@ abstract final class LivestockSaleStrings {
 
   /// Accion final del resumen.
   static const confirmSale = 'Confirmar venta';
+
+  /// Titulo mostrado despues de guardar la operacion localmente.
+  static const successTitle = '¡Venta registrada!';
+
+  /// Aclara que la operacion no depende de conectividad inmediata.
+  static const successOfflineMessage = 'La venta quedó guardada en este dispositivo y se sincronizará automáticamente.';
+
+  /// Accion para iniciar un flujo limpio con el mismo establecimiento.
+  static const registerAnotherSale = 'Registrar otra venta';
+
+  /// Accion para abandonar el flujo finalizado.
+  static const backHome = 'Volver al inicio';
+
+  /// Explica cuantas bajas de stock produjo la venta.
+  static String soldAnimalCount(int count) =>
+      count == 1 ? '1 animal fue dado de baja del stock.' : '$count animales fueron dados de baja del stock.';
 
   /// Mensaje cuando la ruta no identifica un establecimiento.
   static const requiredEstablishment = 'Seleccioná un establecimiento para registrar la venta.';

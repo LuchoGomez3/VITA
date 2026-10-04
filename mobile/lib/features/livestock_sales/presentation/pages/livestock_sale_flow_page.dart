@@ -7,7 +7,10 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/livestock_sale_bloc.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
+import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/livestock_sale_success_view.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/steps/livestock_sale_animal_selection_step.dart';
+import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/steps/livestock_sale_operation_step.dart';
+import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/steps/livestock_sale_review_step.dart';
 import 'package:go_router/go_router.dart';
 
 /// Factory del BLoC cuya vida pertenece a la pagina raiz del flujo.
@@ -30,6 +33,8 @@ class LivestockSaleFlowPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // El provider se ubica sobre los tres pasos para conservar un solo borrador
+    // y cerrar automaticamente el BLoC cuando termina el flujo.
     return BlocProvider(
       create: (_) => createBloc(establishmentId: establishmentId),
       child: const _LivestockSaleFlowView(),
@@ -43,6 +48,8 @@ class _LivestockSaleFlowView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocListener<LivestockSaleBloc, LivestockSaleState>(
+      // Solo los cambios que pueden producir feedback disparan el listener;
+      // las ediciones ordinarias del formulario no repiten SnackBars.
       listenWhen: (previous, current) {
         return previous.stepError != current.stepError ||
             previous.animalSelectionResult != current.animalSelectionResult ||
@@ -51,6 +58,27 @@ class _LivestockSaleFlowView extends StatelessWidget {
       listener: _showError,
       child: BlocBuilder<LivestockSaleBloc, LivestockSaleState>(
         builder: (context, state) {
+          // Una escritura local exitosa reemplaza el wizard completo. Asi no se
+          // puede confirmar accidentalmente dos veces el mismo borrador.
+          if (state.submitResult case Data<LivestockSale>(:final data)) {
+            return PopScope(
+              canPop: false,
+              onPopInvokedWithResult: (didPop, result) {
+                if (!didPop) context.go(AppRoutes.home);
+              },
+              child: Scaffold(
+                body: LivestockSaleSuccessView(
+                  sale: data,
+                  onRegisterAnotherSale: () => _startAnotherSale(
+                    context,
+                    state.form.establishmentId,
+                  ),
+                  onBackHome: () => context.go(AppRoutes.home),
+                ),
+              ),
+            );
+          }
+
           return PopScope(
             canPop: state.currentStep == LivestockSaleStep.animals,
             onPopInvokedWithResult: (didPop, result) {
@@ -73,6 +101,8 @@ class _LivestockSaleFlowView extends StatelessWidget {
                 children: [
                   _FlowProgress(currentStep: state.currentStep),
                   Expanded(
+                    // IndexedStack conserva el estado visual de cada paso. Al
+                    // volver, controladores y posicion interna siguen montados.
                     child: IndexedStack(
                       index: state.currentStep.index,
                       children: [
@@ -83,8 +113,8 @@ class _LivestockSaleFlowView extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const _PendingStep(step: LivestockSaleStep.operation),
-                        const _PendingStep(step: LivestockSaleStep.review),
+                        const LivestockSaleOperationStep(),
+                        const LivestockSaleReviewStep(),
                       ],
                     ),
                   ),
@@ -105,6 +135,8 @@ class _LivestockSaleFlowView extends StatelessWidget {
   }
 
   void _showError(BuildContext context, LivestockSaleState state) {
+    // Los errores de paso tienen prioridad sobre los resultados asincronos de
+    // seleccion y persistencia para mostrar el problema mas inmediato.
     final error =
         state.stepError ??
         switch (state.animalSelectionResult) {
@@ -121,6 +153,8 @@ class _LivestockSaleFlowView extends StatelessWidget {
   }
 
   void _goBack(BuildContext context, LivestockSaleStep step) {
+    // Dentro del wizard se retrocede por estado; solo el primer paso abandona
+    // la feature y vuelve a la ruta anterior o al inicio.
     if (step != LivestockSaleStep.animals) {
       context.read<LivestockSaleBloc>().add(
         const LivestockSaleEvent.previousStepRequested(),
@@ -140,6 +174,14 @@ class _LivestockSaleFlowView extends StatelessWidget {
           ? const LivestockSaleEvent.submitRequested()
           : const LivestockSaleEvent.nextStepRequested(),
     );
+  }
+
+  void _startAnotherSale(BuildContext context, String establishmentId) {
+    // Salir de la ruta actual destruye el BLoC confirmado. La nueva ruta crea
+    // otro borrador limpio, pero conserva el establecimiento seleccionado.
+    GoRouter.of(context)
+      ..go(AppRoutes.home)
+      ..push(AppRoutes.livestockSaleForEstablishment(establishmentId));
   }
 }
 
@@ -194,22 +236,6 @@ class _FlowTitle extends StatelessWidget {
           style: Theme.of(context).textTheme.labelSmall,
         ),
       ],
-    );
-  }
-}
-
-class _PendingStep extends StatelessWidget {
-  const _PendingStep({required this.step});
-
-  final LivestockSaleStep step;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        LivestockSaleStrings.pendingScreenContent,
-        key: ValueKey(step),
-      ),
     );
   }
 }

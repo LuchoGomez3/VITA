@@ -23,6 +23,8 @@ class AddAnimalToLivestockSaleSelectionUseCase {
     required String establishmentId,
     required LivestockSaleSelection selection,
   }) async {
+    // Se valida antes de consultar SQLite para evitar una lectura innecesaria
+    // ante caravanas incompletas o mal formadas.
     if (!_rfidTagValidator(rfidTagNumber)) {
       return _failure(
         LivestockSaleSelectionError.invalidRfid,
@@ -46,6 +48,8 @@ class AddAnimalToLivestockSaleSelectionUseCase {
     required String establishmentId,
     required LivestockSaleSelection selection,
   }) {
+    // Estas comprobaciones usan la copia local del inventario: la seleccion no
+    // depende de internet y falla cerrada ante estados desconocidos.
     if (animal == null) {
       return _failure(
         LivestockSaleSelectionError.animalNotFound,
@@ -70,6 +74,7 @@ class AddAnimalToLivestockSaleSelectionUseCase {
       );
     }
 
+    // Freezed devuelve una nueva seleccion sin mutar la que ya posee el BLoC.
     return Result.success(
       selection.copyWith(animals: [...selection.animals, animal]),
     );

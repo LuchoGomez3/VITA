@@ -20,7 +20,7 @@ def payload_valido(**overrides):
         "nombre_comprador": "María José",
         "es_empresa": False,
         "apellido_comprador": "Núñez Acosta",
-        "nro_dte": "0012345678",
+        "nro_dte": "001234567-8",
         "tipo_venta": "al_bulto",
         "monto_total": "4500000.00",
         "animal_ids": [uuid4(), uuid4()],
@@ -52,7 +52,7 @@ def test_admite_persona_fisica_con_nombres_compuestos_y_acentos():
 
     assert venta.nombre_comprador == "María José"
     assert venta.apellido_comprador == "Núñez Acosta"
-    assert venta.nro_dte == "0012345678"
+    assert venta.nro_dte == "001234567-8"
 
 
 @pytest.mark.parametrize("nombre", ["Juan3", "Juan@", "Juan-Pablo"])
@@ -92,9 +92,29 @@ def test_empresa_rechaza_apellido():
     )
 
 
-@pytest.mark.parametrize("nro_dte", ["", "12 34", "DTE123", "123-456"])
-def test_dte_requiere_solamente_digitos(nro_dte):
-    assert "solamente dígitos" in mensaje_error(payload_valido(nro_dte=nro_dte))
+@pytest.mark.parametrize(
+    "nro_dte",
+    ["", "12 34-5", "DTE123-4", "12345678", "12345678-AB", "-4"],
+)
+def test_dte_requiere_bloque_numerico_guion_y_un_verificador(nro_dte):
+    assert "números, un guion" in mensaje_error(payload_valido(nro_dte=nro_dte))
+
+
+@pytest.mark.parametrize(
+    ("nro_dte", "esperado"),
+    [
+        ("12345678-9", "12345678-9"),
+        ("123456789-A", "123456789-A"),
+        ("0123456789-b", "0123456789-B"),
+    ],
+)
+def test_dte_admite_longitud_variable_y_normaliza_el_verificador(
+    nro_dte,
+    esperado,
+):
+    venta = VentaCreate.model_validate(payload_valido(nro_dte=nro_dte))
+
+    assert venta.nro_dte == esperado
 
 
 def test_fecha_futura_es_rechazada():

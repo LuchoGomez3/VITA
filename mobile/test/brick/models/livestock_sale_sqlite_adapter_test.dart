@@ -26,7 +26,7 @@ void main() {
       buyerType: 'frigorifico',
       buyerName: 'Comprador de prueba SA',
       isCompany: true,
-      dteNumber: '00123456789',
+      dteNumber: '001234567-9',
       saleType: 'por_kilo',
       totalWeightKg: '10.125',
       pricePerKg: '1000.123456',
