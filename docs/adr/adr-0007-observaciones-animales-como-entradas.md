@@ -83,6 +83,10 @@ desplegada en un entorno de trabajo real, así que backend y mobile pueden cambi
   - Si un animal ya borrado se vuelve a borrar con otra marca, las de la cascada la
     acompañan, para que una restauración posterior las encuentre.
   - Un borrado que pierde por last-write-wins no dispara la cascada.
+  - La cascada no hace flush propio: modifica las observaciones en la sesión y las
+    persiste el `save` del animal. Si la base rechaza la escritura del animal (el
+    trigger de categoría o la unicidad de caravana), el rechazo se traduce a su error de
+    dominio y el rollback revierte también las observaciones.
   - La API no deja agregar observaciones a un animal borrado (422
     `animal_no_pertenece_establecimiento`).
   - La cascada vive en el service. Un borrado directo en la base no la dispara.
