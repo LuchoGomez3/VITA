@@ -516,7 +516,6 @@ async def test_put_actualiza_multiples_campos(auth_client, establecimiento_con_l
             "raza": "Brangus",
             "fecha_nacimiento": "2023-05-05",
             "pelaje": "colorado",
-            "observaciones": "revisar",
             "estado": "vendido",
             "deleted_at": "2025-06-02T00:00:00",
             "updated_at": "2025-06-01T00:00:00",
@@ -527,6 +526,27 @@ async def test_put_actualiza_multiples_campos(auth_client, establecimiento_con_l
     assert data["raza"] == "Brangus"
     assert data["fecha_nacimiento"] == "2023-05-05"
     assert data["pelaje"] == "colorado"
-    assert data["observaciones"] == "revisar"
     assert data["estado"] == "vendido"
     assert data["deleted_at"] is not None
+
+
+@pytest.mark.anyio
+async def test_la_api_ya_no_escribe_observaciones_en_el_animal(
+    auth_client, establecimiento_con_lote
+):
+    """Las notas viven en /observaciones_animales (adr-0007). Un cliente viejo que
+    todavía manda el campo no falla: se ignora."""
+    est, lote = establecimiento_con_lote
+    cid = str(uuid4())
+    alta = await auth_client.post(
+        "/api/v1/animales",
+        json=_payload(est.id, lote.id, id=cid, observaciones="Llegó flaca"),
+    )
+    edicion = await auth_client.put(
+        f"/api/v1/animales/{cid}", json={"observaciones": "Recuperó estado"}
+    )
+
+    assert alta.status_code == 201
+    assert edicion.status_code == 200
+    assert alta.json()["data"]["observaciones"] is None
+    assert edicion.json()["data"]["observaciones"] is None
