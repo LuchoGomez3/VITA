@@ -210,7 +210,10 @@ class _AnimalDetailLayout extends StatelessWidget {
                       child: AnimalEventHistory(animalDetail: animalDetail),
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    AnimalDetailSyncFooter(animalDetail: animalDetail),
+                    AnimalDetailSyncFooter(
+                      animalDetail: animalDetail,
+                      onRetry: () => context.read<AnimalDetailCubit>().retrySync(animalDetail.id),
+                    ),
                   ],
                 ),
               ),

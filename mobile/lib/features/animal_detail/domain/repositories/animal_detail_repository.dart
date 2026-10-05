@@ -9,4 +9,7 @@ abstract class AnimalDetailRepository {
 
   /// Guarda una edición primero en el dispositivo y devuelve la ficha actualizada.
   Future<Result<AnimalDetail>> applyChange(String animalId, AnimalDetailChange change);
+
+  /// Vuelve a encolar la sincronización de un animal rechazado.
+  Future<Result<void>> retrySync(String animalId);
 }

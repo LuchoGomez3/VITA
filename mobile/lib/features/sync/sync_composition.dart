@@ -35,7 +35,9 @@ PrepareInitialDataSyncUseCase createPrepareInitialDataSyncUseCase({
       weighingStore: BrickPesajeStore.instance,
       syncOperatingExpenseData: operatingExpenseSync.call,
       syncLotMovementData: (establishmentId) async {
+        await BrickLotStore.instance.pushPendingLots(establishmentId);
         await BrickLotStore.instance.pullActiveLots(establishmentId);
+        await BrickAnimalLotMovementStore.instance.recoverPending();
         await BrickAnimalLotMovementStore.instance.pullMovements(establishmentId);
       },
     ),

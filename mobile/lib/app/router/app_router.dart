@@ -50,6 +50,7 @@ import 'package:frontend_mayoral/features/profile/presentation/pages/profile_pag
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
 import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
+import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_capture_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/strings/rfid_scan_strings.dart';
 import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
@@ -191,6 +192,7 @@ class AppRouter {
           builder: (context, state) => RegisterAnimalPage(
             createBloc: createRegisterAnimalBloc,
             initialRfid: state.uri.queryParameters['rfid'] ?? '',
+            initialEstablishmentId: state.uri.queryParameters['establecimientoId'],
           ),
         ),
         GoRoute(
@@ -313,7 +315,23 @@ class AppRouter {
               ),
               onHidKeyEvent: readingSource.handleKeyEvent,
               onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
-              onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
+              onRegisterAnimalRequested: (rfid) => context.push(
+                AppRoutes.animalRegisterWithRfid(
+                  rfidTagNumber: rfid,
+                  establishmentId: establishmentId,
+                ),
+              ),
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.rfidCapture,
+          builder: (context, state) {
+            final readingSource = HidRfidReadingSource();
+            return RfidCapturePage(
+              createBloc: () => createRfidCaptureBloc(readingSource: readingSource),
+              onHidKeyEvent: readingSource.handleKeyEvent,
+              onCaptured: (rfid) => context.pop(rfid),
             );
           },
         ),

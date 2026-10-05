@@ -50,4 +50,7 @@ class MemoryAnimalDetailRepository implements AnimalDetailRepository {
     if (change is UndoAnimalDeath) detail = detail.copyWith(status: change.previousStatus);
     return Result.success(detail);
   }
+
+  @override
+  Future<Result<void>> retrySync(String animalId) async => const Result.success(null);
 }

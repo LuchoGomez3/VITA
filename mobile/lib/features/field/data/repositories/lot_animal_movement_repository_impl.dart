@@ -16,14 +16,14 @@ class LotAnimalMovementRepositoryImpl implements LotAnimalMovementRepository {
   const LotAnimalMovementRepositoryImpl({
     required AnimalBrickStore animalStore,
     required LotBrickStore lotStore,
-    required BrickAnimalLotMovementStore movementStore,
+    required AnimalLotMovementBrickStore movementStore,
   }) : _animalStore = animalStore,
        _lotStore = lotStore,
        _movementStore = movementStore;
 
   final AnimalBrickStore _animalStore;
   final LotBrickStore _lotStore;
-  final BrickAnimalLotMovementStore _movementStore;
+  final AnimalLotMovementBrickStore _movementStore;
   static final _logger = Logger('LotAnimalMovementRepository');
 
   @override

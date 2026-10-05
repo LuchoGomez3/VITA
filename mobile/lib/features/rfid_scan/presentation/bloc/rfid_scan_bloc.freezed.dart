@@ -652,7 +652,7 @@ extension RfidScanStatePatterns on RfidScanState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Inactive value)?  inactive,TResult Function( _Listening value)?  listening,TResult Function( _Invalid value)?  invalid,TResult Function( _Found value)?  found,TResult Function( _NotFound value)?  notFound,TResult Function( _Timeout value)?  timeout,TResult Function( _Error value)?  error,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Inactive value)?  inactive,TResult Function( _Listening value)?  listening,TResult Function( _Invalid value)?  invalid,TResult Function( _Found value)?  found,TResult Function( _NotFound value)?  notFound,TResult Function( _Captured value)?  captured,TResult Function( _Timeout value)?  timeout,TResult Function( _Error value)?  error,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Inactive() when inactive != null:
@@ -660,7 +660,8 @@ return inactive(_that);case _Listening() when listening != null:
 return listening(_that);case _Invalid() when invalid != null:
 return invalid(_that);case _Found() when found != null:
 return found(_that);case _NotFound() when notFound != null:
-return notFound(_that);case _Timeout() when timeout != null:
+return notFound(_that);case _Captured() when captured != null:
+return captured(_that);case _Timeout() when timeout != null:
 return timeout(_that);case _Error() when error != null:
 return error(_that);case _:
   return orElse();
@@ -680,7 +681,7 @@ return error(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Inactive value)  inactive,required TResult Function( _Listening value)  listening,required TResult Function( _Invalid value)  invalid,required TResult Function( _Found value)  found,required TResult Function( _NotFound value)  notFound,required TResult Function( _Timeout value)  timeout,required TResult Function( _Error value)  error,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Inactive value)  inactive,required TResult Function( _Listening value)  listening,required TResult Function( _Invalid value)  invalid,required TResult Function( _Found value)  found,required TResult Function( _NotFound value)  notFound,required TResult Function( _Captured value)  captured,required TResult Function( _Timeout value)  timeout,required TResult Function( _Error value)  error,}){
 final _that = this;
 switch (_that) {
 case _Inactive():
@@ -688,7 +689,8 @@ return inactive(_that);case _Listening():
 return listening(_that);case _Invalid():
 return invalid(_that);case _Found():
 return found(_that);case _NotFound():
-return notFound(_that);case _Timeout():
+return notFound(_that);case _Captured():
+return captured(_that);case _Timeout():
 return timeout(_that);case _Error():
 return error(_that);}
 }
@@ -704,7 +706,7 @@ return error(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Inactive value)?  inactive,TResult? Function( _Listening value)?  listening,TResult? Function( _Invalid value)?  invalid,TResult? Function( _Found value)?  found,TResult? Function( _NotFound value)?  notFound,TResult? Function( _Timeout value)?  timeout,TResult? Function( _Error value)?  error,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Inactive value)?  inactive,TResult? Function( _Listening value)?  listening,TResult? Function( _Invalid value)?  invalid,TResult? Function( _Found value)?  found,TResult? Function( _NotFound value)?  notFound,TResult? Function( _Captured value)?  captured,TResult? Function( _Timeout value)?  timeout,TResult? Function( _Error value)?  error,}){
 final _that = this;
 switch (_that) {
 case _Inactive() when inactive != null:
@@ -712,7 +714,8 @@ return inactive(_that);case _Listening() when listening != null:
 return listening(_that);case _Invalid() when invalid != null:
 return invalid(_that);case _Found() when found != null:
 return found(_that);case _NotFound() when notFound != null:
-return notFound(_that);case _Timeout() when timeout != null:
+return notFound(_that);case _Captured() when captured != null:
+return captured(_that);case _Timeout() when timeout != null:
 return timeout(_that);case _Error() when error != null:
 return error(_that);case _:
   return null;
@@ -731,14 +734,15 @@ return error(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  inactive,TResult Function()?  listening,TResult Function( String reading)?  invalid,TResult Function( IdentifiedAnimal animal)?  found,TResult Function( String rfid)?  notFound,TResult Function()?  timeout,TResult Function()?  error,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  inactive,TResult Function()?  listening,TResult Function( String reading)?  invalid,TResult Function( IdentifiedAnimal animal)?  found,TResult Function( String rfid)?  notFound,TResult Function( String rfid)?  captured,TResult Function()?  timeout,TResult Function()?  error,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Inactive() when inactive != null:
 return inactive();case _Listening() when listening != null:
 return listening();case _Invalid() when invalid != null:
 return invalid(_that.reading);case _Found() when found != null:
 return found(_that.animal);case _NotFound() when notFound != null:
-return notFound(_that.rfid);case _Timeout() when timeout != null:
+return notFound(_that.rfid);case _Captured() when captured != null:
+return captured(_that.rfid);case _Timeout() when timeout != null:
 return timeout();case _Error() when error != null:
 return error();case _:
   return orElse();
@@ -758,14 +762,15 @@ return error();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  inactive,required TResult Function()  listening,required TResult Function( String reading)  invalid,required TResult Function( IdentifiedAnimal animal)  found,required TResult Function( String rfid)  notFound,required TResult Function()  timeout,required TResult Function()  error,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  inactive,required TResult Function()  listening,required TResult Function( String reading)  invalid,required TResult Function( IdentifiedAnimal animal)  found,required TResult Function( String rfid)  notFound,required TResult Function( String rfid)  captured,required TResult Function()  timeout,required TResult Function()  error,}) {final _that = this;
 switch (_that) {
 case _Inactive():
 return inactive();case _Listening():
 return listening();case _Invalid():
 return invalid(_that.reading);case _Found():
 return found(_that.animal);case _NotFound():
-return notFound(_that.rfid);case _Timeout():
+return notFound(_that.rfid);case _Captured():
+return captured(_that.rfid);case _Timeout():
 return timeout();case _Error():
 return error();}
 }
@@ -781,14 +786,15 @@ return error();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  inactive,TResult? Function()?  listening,TResult? Function( String reading)?  invalid,TResult? Function( IdentifiedAnimal animal)?  found,TResult? Function( String rfid)?  notFound,TResult? Function()?  timeout,TResult? Function()?  error,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  inactive,TResult? Function()?  listening,TResult? Function( String reading)?  invalid,TResult? Function( IdentifiedAnimal animal)?  found,TResult? Function( String rfid)?  notFound,TResult? Function( String rfid)?  captured,TResult? Function()?  timeout,TResult? Function()?  error,}) {final _that = this;
 switch (_that) {
 case _Inactive() when inactive != null:
 return inactive();case _Listening() when listening != null:
 return listening();case _Invalid() when invalid != null:
 return invalid(_that.reading);case _Found() when found != null:
 return found(_that.animal);case _NotFound() when notFound != null:
-return notFound(_that.rfid);case _Timeout() when timeout != null:
+return notFound(_that.rfid);case _Captured() when captured != null:
+return captured(_that.rfid);case _Timeout() when timeout != null:
 return timeout();case _Error() when error != null:
 return error();case _:
   return null;
@@ -1061,6 +1067,72 @@ class __$NotFoundCopyWithImpl<$Res>
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') $Res call({Object? rfid = null,}) {
   return _then(_NotFound(
+rfid: null == rfid ? _self.rfid : rfid // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class _Captured implements RfidScanState {
+  const _Captured({required this.rfid});
+  
+
+ final  String rfid;
+
+/// Create a copy of RfidScanState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$CapturedCopyWith<_Captured> get copyWith => __$CapturedCopyWithImpl<_Captured>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Captured&&(identical(other.rfid, rfid) || other.rfid == rfid));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,rfid);
+
+@override
+String toString() {
+  return 'RfidScanState.captured(rfid: $rfid)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$CapturedCopyWith<$Res> implements $RfidScanStateCopyWith<$Res> {
+  factory _$CapturedCopyWith(_Captured value, $Res Function(_Captured) _then) = __$CapturedCopyWithImpl;
+@useResult
+$Res call({
+ String rfid
+});
+
+
+
+
+}
+/// @nodoc
+class __$CapturedCopyWithImpl<$Res>
+    implements _$CapturedCopyWith<$Res> {
+  __$CapturedCopyWithImpl(this._self, this._then);
+
+  final _Captured _self;
+  final $Res Function(_Captured) _then;
+
+/// Create a copy of RfidScanState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? rfid = null,}) {
+  return _then(_Captured(
 rfid: null == rfid ? _self.rfid : rfid // ignore: cast_nullable_to_non_nullable
 as String,
   ));

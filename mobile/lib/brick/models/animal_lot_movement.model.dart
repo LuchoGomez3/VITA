@@ -18,6 +18,12 @@ class BrickAnimalLotMovementRequestTransformer extends RestRequestTransformer {
     topLevelKey: 'data',
   );
 
+  /// Alias conservado para los consumidores del sync inicial existente.
+  static RestRequest listByEstablishmentRequest(String establishmentId) => listRequest(establishmentId);
+
+  /// Indica si un resultado HTTP pertenece al recurso de movimientos.
+  static bool matchesMovementResource(String resourcePath) => resourcePath.endsWith(movementsPath);
+
   @override
   RestRequest get get => const RestRequest(
     url: movementsPath,
@@ -92,15 +98,15 @@ class BrickAnimalLotMovementModel extends OfflineFirstWithRestModel {
   final String? responsibleId;
 
   /// Auditoría offline-first.
-  @Rest(name: 'created_at', ignoreTo: true)
+  @Rest(name: 'created_at')
   final DateTime createdAt;
 
   /// Auditoría para resolución LWW futura.
-  @Rest(name: 'updated_at', ignoreTo: true)
+  @Rest(name: 'updated_at')
   final DateTime updatedAt;
 
   /// Tombstone sincronizable.
-  @Rest(name: 'deleted_at', ignoreTo: true)
+  @Rest(name: 'deleted_at')
   final DateTime? deletedAt;
 
   /// Estado del movimiento independiente de las ediciones del animal.
@@ -142,6 +148,9 @@ enum BrickMovementSyncStatus {
   /// Rechazado; conserva el payload para revisión y reintento explícito.
   rejected,
 }
+
+/// Nombre histórico conservado para no romper consumidores existentes.
+typedef BrickAnimalLotMovementSyncStatus = BrickMovementSyncStatus;
 
 /// Las filas previas a la migración todavía no tienen un estado de sync.
 BrickMovementSyncStatus brickMovementStatusFromSqlite(Object? value) =>
