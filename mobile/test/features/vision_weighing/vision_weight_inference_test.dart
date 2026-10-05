@@ -30,6 +30,7 @@ class _WeightRepository implements VisionWeightEstimatorRepository, VisionWeight
   int saves = 0;
   String? savedAnimalId;
   double? savedWeight;
+  Uint8List? savedPhoto;
 
   @override
   Future<VisionWeightEstimate> estimateWeight(Uint8List jpegBytes) async => VisionWeightEstimate(
@@ -40,10 +41,11 @@ class _WeightRepository implements VisionWeightEstimatorRepository, VisionWeight
   );
 
   @override
-  Future<void> saveEstimate({required String animalId, required double weightKg}) async {
+  Future<void> saveEstimate({required String animalId, required double weightKg, required Uint8List jpegBytes}) async {
     saves++;
     savedAnimalId = animalId;
     savedWeight = weightKg;
+    savedPhoto = jpegBytes;
   }
 }
 
@@ -97,6 +99,7 @@ void main() {
     expect(repository.saves, 1);
     expect(repository.savedAnimalId, 'animal-1');
     expect(repository.savedWeight, 390);
+    expect(repository.savedPhoto, isNotEmpty);
     expect((cubit.state as Data<VisionCaptureViewData>).data.saved, isTrue);
   });
 

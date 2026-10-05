@@ -1,8 +1,12 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
+import 'package:frontend_mayoral/core/storage/animal_photo_store.dart';
 import 'package:frontend_mayoral/features/vision_weighing/data/repositories/brick_vision_weight_repository.dart';
 
 class _Animals extends Fake implements AnimalBrickStore {
@@ -45,15 +49,30 @@ BrickAnimalModel _animal(String id, String establishmentId) {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late Directory directory;
+  late AnimalPhotoStore photoStore;
+  setUp(() async {
+    directory = await Directory.systemTemp.createTemp('vision-photo-test');
+    photoStore = AnimalPhotoStore(directoryProvider: () async => directory);
+  });
+  tearDown(() async {
+    await directory.delete(recursive: true);
+  });
+
   test('guarda el peso en el animal local con método IA y estado estimado', () async {
     final animals = _Animals()..animals = [_animal('animal-id', 'farm-id')];
     final weighings = _Weighings();
-    final repository = BrickVisionWeightRepository(animals, weighings);
+    final repository = BrickVisionWeightRepository(animals, weighings, photoStore: photoStore);
 
     final beforeSave = DateTime.now().toUtc();
-    await repository.saveEstimate(animalId: 'animal-id', weightKg: 390);
+    await repository.saveEstimate(animalId: 'animal-id', weightKg: 390, jpegBytes: Uint8List.fromList([1, 2, 3]));
     final afterSave = DateTime.now().toUtc();
 
+    final reopened = AnimalPhotoStore(directoryProvider: () async => directory);
+    final path = await reopened.findPhoto(establishmentId: 'farm-id', animalId: 'animal-id');
+    expect(await File(path!).readAsBytes(), [1, 2, 3]);
+    expect(await reopened.findPhoto(establishmentId: 'other-farm', animalId: 'animal-id'), isNull);
     expect(weighings.saved?.animalId, 'animal-id');
     expect(weighings.saved?.establishmentId, 'farm-id');
     expect(weighings.saved?.weightKg, 390);
@@ -70,11 +89,14 @@ void main() {
   test('no guarda un animal ausente y distingue IDs con igual RFID', () async {
     final animals = _Animals();
     final weighings = _Weighings();
-    final repository = BrickVisionWeightRepository(animals, weighings);
+    final repository = BrickVisionWeightRepository(animals, weighings, photoStore: photoStore);
 
-    await expectLater(repository.saveEstimate(animalId: 'missing', weightKg: 390), throwsException);
+    await expectLater(
+      repository.saveEstimate(animalId: 'missing', weightKg: 390, jpegBytes: Uint8List.fromList([1, 2, 3])),
+      throwsException,
+    );
     animals.animals = [_animal('one', 'farm-a'), _animal('two', 'farm-b')];
-    await repository.saveEstimate(animalId: 'two', weightKg: 390);
+    await repository.saveEstimate(animalId: 'two', weightKg: 390, jpegBytes: Uint8List.fromList([1, 2, 3]));
     expect(weighings.saved?.animalId, 'two');
     expect(weighings.saved?.establishmentId, 'farm-b');
   });

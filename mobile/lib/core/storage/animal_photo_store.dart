@@ -52,6 +52,24 @@ class AnimalPhotoStore {
     return destination.path;
   }
 
+  /// Guarda el JPEG revisado por pesaje IA sin crear un archivo de cámara.
+  ///
+  /// Escribe primero en un archivo auxiliar para conservar la foto anterior si
+  /// la escritura falla. La ruta coincide con la que consulta visualizar animal.
+  Future<String> savePhotoBytes({
+    required String establishmentId,
+    required String animalId,
+    required Uint8List jpegBytes,
+  }) async {
+    final destination = await _photoFile(establishmentId, animalId);
+    await destination.parent.create(recursive: true);
+    final temporary = File('${destination.path}.tmp');
+    await temporary.writeAsBytes(jpegBytes, flush: true);
+    await temporary.rename(destination.path);
+    await FileImage(destination).evict();
+    return destination.path;
+  }
+
   /// Devuelve la ruta local o null cuando no hay foto o no se puede leer.
   ///
   /// La foto es opcional: un fallo de acceso al disco no invalida la ficha.

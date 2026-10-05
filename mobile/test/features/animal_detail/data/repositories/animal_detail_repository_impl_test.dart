@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
@@ -17,6 +20,7 @@ import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_d
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('AnimalDetailRepositoryImpl', () {
     test('saves weights and independent notes offline without rewriting the animal', () async {
       final animals = _FakeAnimalBrickStore(localAnimal: _brickAnimal);
@@ -154,6 +158,8 @@ void main() {
 
     test('muestra la fecha y el origen IA del pesaje local más reciente', () async {
       final repository = AnimalDetailRepositoryImpl(
+        observationStore: _FakeObservationStore(),
+        photoStore: _FakeAnimalPhotoStore(),
         brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(pesajes: [_firstPesaje, _aiPesaje]),
@@ -190,6 +196,33 @@ void main() {
       final detail = (result as Success<AnimalDetail>).data;
       expect(detail.categoryName, 'Novillito');
       expect(detail.weightHistory.single.weightKg, 210);
+    });
+
+    test('la ficha recupera del disco el JPEG guardado por pesaje IA sin red', () async {
+      final directory = await Directory.systemTemp.createTemp('detail-vision-photo');
+      addTearDown(() => directory.delete(recursive: true));
+      final store = AnimalPhotoStore(directoryProvider: () async => directory);
+      final path = await store.savePhotoBytes(
+        establishmentId: _brickAnimal.establishmentId,
+        animalId: _animalId,
+        jpegBytes: Uint8List.fromList([1, 2, 3]),
+      );
+      final repository = AnimalDetailRepositoryImpl(
+        observationStore: _FakeObservationStore(),
+        photoStore: AnimalPhotoStore(directoryProvider: () async => directory),
+        brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
+        categoriaBrickStore: _FakeCategoriaBrickStore(failPull: true),
+        pesajeBrickStore: _FakePesajeBrickStore(pesajes: [_aiPesaje], failPull: true),
+        remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
+      );
+
+      final result = await repository.getById(_animalId);
+
+      final detail = (result as Success<AnimalDetail>).data;
+      expect(detail.localPhotoPath, path);
+      expect(detail.photoAssetPath, isNull);
+      expect(await File(detail.localPhotoPath!).readAsBytes(), [1, 2, 3]);
+      expect(detail.weighingMethod, AnimalWeighingMethod.artificialIntelligence);
     });
 
     test('reads the private photo independently of remote weighing URLs', () async {

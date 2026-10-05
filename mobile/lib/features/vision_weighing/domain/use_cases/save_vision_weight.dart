@@ -15,6 +15,10 @@ class SaveVisionWeight {
     if (animalId.trim().isEmpty || weightKg == null || !weightKg.isFinite || weightKg <= 0) {
       throw const InvalidVisionWeightSaveException();
     }
-    return _repository.saveEstimate(animalId: animalId.trim(), weightKg: weightKg);
+    return _repository.saveEstimate(
+      animalId: animalId.trim(),
+      weightKg: weightKg,
+      jpegBytes: reviewedCapture.capture.jpegBytes,
+    );
   }
 }

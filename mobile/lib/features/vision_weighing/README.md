@@ -117,3 +117,8 @@ Prueba manual pendiente en Android/iOS físico: permisos aceptados/denegados,
 rotaciones, background/resume, captura sin señal, animal quieto/en movimiento,
 animal cortado o frontal, luz de manga y calibración con teclado abierto.
 Los tests no sustituyen esta validación ni acreditan el límite de tres segundos.
+
+Al guardar un pesaje IA confirmado, su JPEG se conserva exclusivamente en el
+almacenamiento privado de AnimalPhotoStore. Visualizar animal consulta ese
+mismo archivo por establecimiento y animal; una nueva captura reemplaza la
+foto anterior. La imagen no se incorpora a Brick ni se envía al backend.

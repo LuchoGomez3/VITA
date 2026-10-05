@@ -49,6 +49,24 @@ void main() {
     expect(await store.findPhoto(establishmentId: 'farm', animalId: 'animal'), isNull);
   });
 
+  test('persiste bytes de pesaje y reemplaza la foto que consulta la ficha', () async {
+    final firstPath = await store.savePhotoBytes(
+      establishmentId: 'farm',
+      animalId: 'animal',
+      jpegBytes: Uint8List.fromList([1, 2, 3]),
+    );
+    await store.savePhotoBytes(
+      establishmentId: 'farm',
+      animalId: 'animal',
+      jpegBytes: Uint8List.fromList([4, 5]),
+    );
+    final reopened = AnimalPhotoStore(directoryProvider: () async => directory);
+    final path = await reopened.findPhoto(establishmentId: 'farm', animalId: 'animal');
+    expect(path, firstPath);
+    expect(await File(path!).readAsBytes(), [4, 5]);
+    expect(await reopened.findPhoto(establishmentId: 'other-farm', animalId: 'animal'), isNull);
+  });
+
   test('matches the visual tag without spaces and preserves leading zeroes', () async {
     final bundledStore = AnimalPhotoStore(
       assetBundle: _PhotoAssetBundle([

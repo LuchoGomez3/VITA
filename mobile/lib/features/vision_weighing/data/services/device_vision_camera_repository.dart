@@ -32,8 +32,11 @@ class DeviceVisionCameraRepository implements VisionCameraRepository {
     final result = Completer<VisionCameraInfo>();
     _cameraOperation = _cameraOperation.then((_) async {
       try {
-        await _controller?.dispose();
+        // Retira la referencia antes de esperar al cierre nativo para que una
+        // reconstrucción no cree CameraPreview con un controlador descartado.
+        final previousController = _controller;
         _controller = null;
+        await previousController?.dispose();
         final cameras = await availableCameras();
         final rear = cameras.where((camera) => camera.lensDirection == CameraLensDirection.back).firstOrNull;
         if (rear == null) throw const VisionDeviceException();
@@ -68,8 +71,11 @@ class DeviceVisionCameraRepository implements VisionCameraRepository {
     final result = Completer<void>();
     _cameraOperation = _cameraOperation.then((_) async {
       try {
-        await _controller?.dispose();
+        // Retira la referencia antes de esperar al cierre nativo para que una
+        // reconstrucción no cree CameraPreview con un controlador descartado.
+        final previousController = _controller;
         _controller = null;
+        await previousController?.dispose();
         result.complete();
       } on Exception catch (error, stack) {
         result.completeError(VisionDeviceException(cause: error), stack);

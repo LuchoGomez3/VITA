@@ -332,6 +332,8 @@ class AppRouter {
               ),
               onHidKeyEvent: readingSource.handleKeyEvent,
               onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
+              // El alta conserva el establecimiento del lector; la selección IA
+              // devuelve el animal a la revisión de la captura sin abrir su ficha.
               onRegisterAnimalRequested: (rfid) => context.push(
                 AppRoutes.animalRegisterWithRfid(
                   rfidTagNumber: rfid,

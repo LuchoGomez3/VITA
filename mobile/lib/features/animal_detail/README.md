@@ -22,32 +22,18 @@ la proporción original. No se muestra un título debajo de la foto; su etiqueta
 se conserva únicamente para lectores de pantalla. Las superficies son blancas
 y el verde destaca solo la fuente de pesaje «Estimación por IA».
 
-## Integración con la rama de pesaje después del merge
+## Integración con pesaje IA
 
-Después de confirmar el pesaje, copiar la captura al almacenamiento privado
-antes de eliminar el archivo temporal de cámara:
+Al confirmar y guardar el pesaje, su repositorio de data entrega el JPEG
+revisado a `AnimalPhotoStore.savePhotoBytes`. La escritura usa un archivo
+auxiliar y reemplaza la foto privada anterior una vez completada. También
+invalida la caché de `FileImage` para mostrar la captura nueva al volver a la
+ficha. Si el guardado falla, el flujo conserva la revisión para reintentar.
 
-```dart
-await const AnimalPhotoStore().savePhoto(
-  establishmentId: establishmentId,
-  animalId: animalId,
-  sourcePath: capturedPhotoPath,
-);
-```
-
-Importar el store compartido desde la capa data de pesaje; no importar internos
-de la feature de detalle. La copia debe completarse antes de abrir nuevamente
-la ficha. Si falla, el flujo de pesaje debe informar el error de guardado de foto
-sin confundirlo con el resultado del pesaje.
-
-La ruta se resuelve en cada lectura desde `getApplicationSupportDirectory()`.
-No guardar la ruta temporal de cámara ni una ruta local en `photoUrl`/`foto_url`:
-esos campos pertenecen al contrato remoto y no intervienen en esta funcionalidad.
+El detalle consulta ese mismo store por establecimiento y animal. La ruta se
+resuelve desde `getApplicationSupportDirectory()` en cada lectura; no se guarda
+en `photoUrl` ni en `foto_url`. La imagen no entra en Brick ni en la cola REST.
 No se agregan endpoints, migraciones ni dependencias nuevas.
-
-Esta rama prepara la lectura y el almacenamiento; la llamada desde la captura
-se integra en la rama de pesaje cuando esté disponible. Hasta entonces, o en
-animales sin foto local ni foto de ejemplo, se conserva el avatar actual.
 
 ## Fotos de ejemplo por caravana
 
