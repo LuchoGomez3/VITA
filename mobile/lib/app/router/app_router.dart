@@ -4,11 +4,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_case.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
 import 'package:frontend_mayoral/core/navigation/camera_reveal_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
+import 'package:frontend_mayoral/core/storage/storage.dart';
+import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
@@ -40,6 +44,7 @@ import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
+import 'package:frontend_mayoral/features/livestock/presentation/strings/livestock_strings.dart';
 import 'package:frontend_mayoral/features/lot_movement/lot_movement_composition.dart';
 import 'package:frontend_mayoral/features/lot_movement/presentation/pages/lot_movement_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
@@ -142,7 +147,9 @@ class AppRouter {
               routes: [
                 GoRoute(
                   path: AppRoutes.livestock,
-                  builder: (context, state) => const LivestockPage(),
+                  builder: (context, state) => LivestockPage(
+                    onIdentifyAnimal: () => _openLivestockReader(context),
+                  ),
                 ),
               ],
             ),
@@ -606,5 +613,75 @@ class AuthRouterRefreshNotifier extends ChangeNotifier {
   void dispose() {
     unawaited(_subscription.cancel());
     super.dispose();
+  }
+}
+
+/// Resuelve el alcance del lector sin acoplar Hacienda al estado de Inicio.
+/// Con un único establecimiento se abre directamente; con varios se pide elegir
+/// para evitar consultar o registrar animales en un campo equivocado.
+Future<void> _openLivestockReader(BuildContext context) async {
+  final List<EstablishmentMembership> memberships;
+  try {
+    memberships = await const EstablishmentCatalog(
+      secureStorage: FlutterSecureStorageService(),
+    ).getMemberships();
+  } on Object {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(LivestockStrings.establishmentsError)),
+      );
+    }
+    return;
+  }
+  if (!context.mounted) return;
+  if (memberships.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text(LivestockStrings.noEstablishments)),
+    );
+    return;
+  }
+  final establishmentId = memberships.length == 1
+      ? memberships.single.id
+      : await showModalBottomSheet<String>(
+          context: context,
+          showDragHandle: true,
+          useSafeArea: true,
+          builder: (context) => _ReaderEstablishmentPicker(memberships: memberships),
+        );
+  if (context.mounted && establishmentId != null) {
+    await context.push<void>(AppRoutes.rfidScanForEstablishment(establishmentId));
+  }
+}
+
+/// Selector desplazable para que todos los establecimientos sean accesibles.
+class _ReaderEstablishmentPicker extends StatelessWidget {
+  const _ReaderEstablishmentPicker({required this.memberships});
+
+  final List<EstablishmentMembership> memberships;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Text(
+              LivestockStrings.selectEstablishment,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
+          for (final membership in memberships)
+            ListTile(
+              leading: const Icon(Icons.agriculture_outlined),
+              title: Text(membership.name),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).pop(membership.id),
+            ),
+        ],
+      ),
+    );
   }
 }
