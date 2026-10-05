@@ -1,7 +1,7 @@
 """Conserva hasta seis decimales del precio por kilo de una venta.
 
 Revision ID: 20261003_01
-Revises: 20261001_01
+Revises: 20261001_03
 Create Date: 2026-10-03
 """
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.engine import Connection
 
 revision: str = "20261003_01"
-down_revision: str | None = "20261001_01"
+down_revision: str | None = "20261001_03"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

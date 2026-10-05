@@ -24,4 +24,4 @@ def test_migracion_y_script_declaran_la_misma_precision():
 
     assert "sa.Numeric(precision=18, scale=6)" in migracion
     assert "numeric(18, 6)" in script
-    assert 'down_revision: str | None = "20261001_01"' in migracion
+    assert 'down_revision: str | None = "20261001_03"' in migracion

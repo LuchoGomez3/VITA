@@ -81,7 +81,7 @@ class BrickLotModel extends OfflineFirstWithRestModel {
   /// Distingue el esquema local de una geometría geográfica futura.
   // TODO(field-geo): acordar con backend los modos y la estrategia para lotes
   // creados en el lienzo local que todavía no tengan coordenadas reales.
-  @Rest(name: 'geometry_mode')
+  @Rest(name: 'modo_geometria')
   final String geometryMode;
 
   /// Superficie productiva exacta; 457 representa 45,7 hectáreas.
