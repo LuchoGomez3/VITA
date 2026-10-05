@@ -28,6 +28,7 @@ class AppSegmentedFormField<T> extends StatelessWidget {
     this.titleStyle,
     this.validator,
     this.enabled = true,
+    this.errorText,
   });
 
   /// Opciones que componen el selector.
@@ -50,6 +51,9 @@ class AppSegmentedFormField<T> extends StatelessWidget {
 
   /// Indica si el usuario puede cambiar la seleccion.
   final bool enabled;
+
+  /// Mensaje de validacion inmediata mostrado debajo del selector.
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +102,7 @@ class AppSegmentedFormField<T> extends StatelessWidget {
                           }
                         : null,
                     style: ButtonStyle(
+                      animationDuration: const Duration(milliseconds: 220),
                       backgroundColor: WidgetStateProperty.resolveWith(
                         (states) => states.contains(WidgetState.selected) ? AppColors.primary : AppColors.background,
                       ),
@@ -117,13 +122,11 @@ class AppSegmentedFormField<T> extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (field.errorText != null) ...[
+                if (errorText != null || field.errorText != null) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    field.errorText!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+                    errorText ?? field.errorText!,
+                    style: AppTypography.formFieldError,
                   ),
                 ],
               ],

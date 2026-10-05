@@ -2,6 +2,23 @@ import 'package:frontend_mayoral/features/field/domain/entities/lot_status.dart'
 
 /// Textos centralizados del flujo de campo y potreros.
 abstract final class FieldStrings {
+  /// Encabezado para un cambio rechazado por backend.
+  static const syncRejectedTitle = 'No se pudo sincronizar este cambio.';
+
+  /// Traduce los códigos funcionales del backend a mensajes accionables.
+  static String syncErrorMessage(String? code) => switch (code) {
+    'nombre_lote_duplicado' => 'Ya existe un lote con ese nombre.',
+    'geometria_lote_invalida' => 'La delimitación del lote no es válida.',
+    'lotes_superpuestos' => 'La delimitación se superpone con otro lote.',
+    'lote_con_animales' => 'Mové los animales antes de inactivar o eliminar el lote.',
+    'lote_destino_no_disponible' => 'El lote de destino ya no está disponible.',
+    'lote_origen_no_disponible' => 'El lote de origen ya no está disponible.',
+    'animales_no_pertenecen_lote_origen' => 'Uno o más animales ya no pertenecen al lote de origen.',
+    'movimiento_lote_invalido' => 'El movimiento ya no es válido.',
+    'establecimiento_no_autorizado' => 'No tenés permisos para modificar este establecimiento.',
+    _ => syncRejectedTitle,
+  };
+
   /// Título del establecimiento mostrado en el header.
   static const establishmentTitle = 'La Sirena';
 

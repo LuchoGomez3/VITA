@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
-import 'package:frontend_mayoral/features/animal_register/presentation/widgets/ear_tag_color_selector.dart';
 
 /// Identification form shown in the first step of animal registration.
 class RegisterAnimalIdentificationStep extends StatefulWidget {
@@ -45,9 +46,19 @@ class _RegisterAnimalIdentificationStepState extends State<RegisterAnimalIdentif
 
   @override
   Widget build(BuildContext context) {
-    final draft = context.select(
-      (RegisterAnimalBloc bloc) => bloc.state.draft,
-    );
+    final state = context.watch<RegisterAnimalBloc>().state;
+    final draft = state.draft;
+    if (_rfidController.text != draft.rfid) {
+      _rfidController.value = TextEditingValue(
+        text: draft.rfid,
+        selection: TextSelection.collapsed(offset: draft.rfid.length),
+      );
+    }
+    final rfidError = switch (state.rfidCheckState) {
+      Data<bool>(data: true) => AnimalRegisterStrings.rfidAlreadyRegistered,
+      ResultError<bool>(:final error) => error.message,
+      _ => null,
+    };
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -75,7 +86,13 @@ class _RegisterAnimalIdentificationStepState extends State<RegisterAnimalIdentif
               title: AnimalRegisterStrings.rfidFieldTitle,
               hintText: AnimalRegisterStrings.rfidFieldHint,
               keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(15),
+              ],
               helperText: ' ',
+              validation: rfidError == null ? AppFieldValidation.neutral : AppFieldValidation.invalid,
+              validationMessage: rfidError,
               onChanged: (value) {
                 _updateDraft(draft.copyWith(rfid: value));
               },
@@ -109,26 +126,16 @@ class _RegisterAnimalIdentificationStepState extends State<RegisterAnimalIdentif
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
-            const Text(
-              AnimalRegisterStrings.earTagColorTitle,
-              style: AppTypography.secondaryEmphasis,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            EarTagColorSelector(
-              options: AnimalRegisterStrings.earTagColorOptions,
-              selectedColor: AnimalRegisterStrings.earTagColorOptions[draft.earTagColorIndex].color,
-              onChanged: (color) {
-                final colorIndex = AnimalRegisterStrings.earTagColorOptions.indexWhere(
-                  (option) => option.color == color,
-                );
-                _updateDraft(draft.copyWith(earTagColorIndex: colorIndex));
-              },
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            AppOutlinedButton(
-              label: AnimalRegisterStrings.bluetoothButtonLabel,
-              icon: const Icon(Icons.bluetooth),
-              onPressed: widget.onBluetoothRequested,
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.earTagBlue.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: AppOutlinedButton(
+                label: AnimalRegisterStrings.bluetoothButtonLabel,
+                icon: const Icon(Icons.bluetooth, color: AppColors.textPrimary),
+                onPressed: widget.onBluetoothRequested,
+              ),
             ),
           ],
         ),

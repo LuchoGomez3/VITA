@@ -10,6 +10,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     this.headline,
     this.actions,
     this.titleWidget,
+    this.onBackPressed,
   });
 
   /// Titulo que identifica la seccion actual.
@@ -24,6 +25,9 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   /// Contenido opcional que reemplaza la presentación estándar del título.
   final Widget? titleWidget;
 
+  /// Permite resolver el regreso cuando la sección se abre desde un enlace directo.
+  final VoidCallback? onBackPressed;
+
   @override
   Size get preferredSize => Size.fromHeight(headline == null ? 70 : 86);
 
@@ -32,6 +36,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     final visibleHeadline = headline;
 
     return AppBar(
+      leading: onBackPressed == null ? null : IconButton(icon: const Icon(Icons.arrow_back), onPressed: onBackPressed),
       toolbarHeight: preferredSize.height,
       backgroundColor: AppColors.backgroundTertiary,
       shape: const RoundedRectangleBorder(

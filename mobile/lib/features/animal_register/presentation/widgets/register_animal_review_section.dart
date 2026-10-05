@@ -13,7 +13,7 @@ class RegisterAnimalReviewRow {
   /// Nombre del campo revisado.
   final String label;
 
-  /// Valor mock o cargado para el campo.
+  /// Valor cargado para el campo.
   final String value;
 }
 
@@ -85,7 +85,6 @@ class RegisterAnimalReviewSection extends StatelessWidget {
                 ),
               ),
               InkWell(
-                // TODO(agus): navegar al paso correspondiente para editar.
                 onTap: onEdit,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
                 child: Padding(
@@ -132,29 +131,36 @@ class _ReviewRows extends StatelessWidget {
           .map(
             (row) => Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      row.label,
-                      style: AppTypography.mediumEmphasis.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
+              child: row.label.isEmpty
+                  ? Text(
                       row.value,
                       style: AppTypography.mediumEmphasis.copyWith(
                         color: AppColors.textPrimary,
                       ),
-                      textAlign: TextAlign.end,
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            row.label,
+                            style: AppTypography.mediumEmphasis.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            row.value,
+                            style: AppTypography.mediumEmphasis.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
+                            textAlign: TextAlign.end,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
           )
           .toList(),

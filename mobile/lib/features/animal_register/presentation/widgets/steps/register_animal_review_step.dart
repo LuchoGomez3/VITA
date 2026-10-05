@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_parent.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
@@ -16,6 +17,7 @@ class RegisterAnimalReviewStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<RegisterAnimalBloc>().state;
     final draft = state.draft;
+    final birthDate = draft.birthDate;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
@@ -41,18 +43,10 @@ class RegisterAnimalReviewStep extends StatelessWidget {
             order: 1,
             title: AnimalRegisterStrings.stepFourIdentificationTitle,
             onEdit: () => _edit(context, RegisterAnimalStep.identification),
-            leading: _ReviewEarTag(
-              visualTag: _visualTag(draft),
-              color: AnimalRegisterStrings.earTagColorOptions[draft.earTagColorIndex].color,
-            ),
             rows: [
               RegisterAnimalReviewRow(
                 label: '',
                 value: draft.rfid,
-              ),
-              RegisterAnimalReviewRow(
-                label: '',
-                value: _visualTag(draft),
               ),
             ],
           ),
@@ -64,19 +58,21 @@ class RegisterAnimalReviewStep extends StatelessWidget {
             rows: [
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourBreedLabel,
-                value: draft.breed,
+                value: _requiredValue(draft.breed),
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourSexLabel,
-                value: draft.sex,
+                value: _requiredValue(draft.sex),
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourBirthDateLabel,
-                value: DateDisplayFormatter.shortDate(draft.birthDate),
+                value: birthDate == null
+                    ? AnimalRegisterStrings.stepFourNoDataValue
+                    : DateDisplayFormatter.shortDate(birthDate),
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourCategoryLabel,
-                value: draft.category,
+                value: draft.categoryName ?? AnimalRegisterStrings.stepFourNoDataValue,
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourBirthWeightLabel,
@@ -91,12 +87,16 @@ class RegisterAnimalReviewStep extends StatelessWidget {
             onEdit: () => _edit(context, RegisterAnimalStep.genealogy),
             rows: [
               RegisterAnimalReviewRow(
+                label: AnimalRegisterStrings.stepFourEstablishmentLabel,
+                value: draft.establishmentName ?? AnimalRegisterStrings.stepFourNoDataValue,
+              ),
+              RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourMotherLabel,
-                value: _mother(draft.motherId),
+                value: _parent(draft.mother),
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourFatherLabel,
-                value: _father(draft.fatherId),
+                value: _parent(draft.father),
               ),
               RegisterAnimalReviewRow(
                 label: AnimalRegisterStrings.stepFourDestinationLabel,
@@ -118,28 +118,10 @@ class RegisterAnimalReviewStep extends StatelessWidget {
     );
   }
 
-  String _visualTag(RegisterAnimalDraft draft) {
-    return '${draft.visualTagSeries} ${draft.visualTagNumber}'.trim();
-  }
+  String _parent(AnimalParent? parent) =>
+      parent == null ? AnimalRegisterStrings.stepFourNoDataValue : '${parent.visualTag} · ${parent.breed}';
 
-  String _mother(String? id) {
-    // TODO(agusf): resolver el nombre desde los animales cargados en el BLoC
-    // cuando la genealogia deje de utilizar opciones estaticas.
-    return id == 'mother-003-0421'
-        ? AnimalRegisterStrings.stepFourMotherValue
-        : AnimalRegisterStrings.stepFourNoDataValue;
-  }
-
-  String _father(String? id) {
-    // TODO(agusf): resolver el nombre desde los animales cargados en el BLoC
-    // cuando la genealogia deje de utilizar opciones estaticas.
-    return switch (id) {
-      'father-003-0820' => AnimalRegisterStrings.stepThreeMockFatherOneName,
-      'father-003-0612' => AnimalRegisterStrings.stepThreeMockFatherTwoName,
-      'father-002-0118' => AnimalRegisterStrings.stepThreeMockFatherThreeName,
-      _ => AnimalRegisterStrings.stepFourNoDataValue,
-    };
-  }
+  String _requiredValue(String value) => value.trim().isEmpty ? AnimalRegisterStrings.stepFourNoDataValue : value;
 
   String _destination(
     String? id,
@@ -151,38 +133,5 @@ class RegisterAnimalReviewStep extends StatelessWidget {
       }
     }
     return AnimalRegisterStrings.stepFourNoDataValue;
-  }
-}
-
-class _ReviewEarTag extends StatelessWidget {
-  const _ReviewEarTag({
-    required this.visualTag,
-    required this.color,
-  });
-
-  final String visualTag;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 62,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-      ),
-      child: Text(
-        visualTag.replaceFirst(' ', '\n'),
-        style: AppTypography.smallEmphasis.copyWith(
-          color: AppColors.textPrimary,
-          height: 1,
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
   }
 }

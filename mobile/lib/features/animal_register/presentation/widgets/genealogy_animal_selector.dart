@@ -8,33 +8,21 @@ class GenealogyAnimalOption {
   const GenealogyAnimalOption({
     required this.id,
     required this.visualTag,
-    required this.name,
     required this.breed,
-    required this.tagColor,
-    this.badge,
-    this.rfid,
+    required this.rfid,
   });
 
-  /// Identificador temporal de la opcion.
+  /// UUID real del animal.
   final String id;
 
   /// Numero visual de la caravana.
   final String visualTag;
 
-  /// Nombre visible del animal.
-  final String name;
-
   /// Raza visible del animal.
   final String breed;
 
-  /// Color usado para representar la caravana.
-  final Color tagColor;
-
-  /// Etiqueta adicional, por ejemplo el rol "Toro".
-  final String? badge;
-
-  /// RFID opcional mostrado para animales ya seleccionados.
-  final String? rfid;
+  /// RFID del animal.
+  final String rfid;
 }
 
 /// Selector reutilizable de un animal dentro de la genealogia.
@@ -49,6 +37,8 @@ class GenealogyAnimalSelector extends StatelessWidget {
     this.selectedAnimal,
     this.onClear,
     this.onSearchChanged,
+    this.validationMessage,
+    this.enabled = true,
   });
 
   /// Titulo del vinculo genealogico.
@@ -72,6 +62,12 @@ class GenealogyAnimalSelector extends StatelessWidget {
   /// Callback que informa cambios en el texto de busqueda.
   final ValueChanged<String>? onSearchChanged;
 
+  /// Mensaje de búsqueda sin resultados.
+  final String? validationMessage;
+
+  /// Solo permite buscar luego de seleccionar un establecimiento.
+  final bool enabled;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -87,13 +83,12 @@ class GenealogyAnimalSelector extends StatelessWidget {
         else ...[
           AppTextFormField(
             hintText: searchHint,
+            enabled: enabled,
+            validation: validationMessage == null ? AppFieldValidation.neutral : AppFieldValidation.invalid,
+            validationMessage: validationMessage,
             prefixIcon: const Icon(
               Icons.search,
               color: AppColors.textSecondary,
-            ),
-            suffixIcon: const Icon(
-              Icons.bluetooth,
-              color: AppColors.primary,
             ),
             onChanged: onSearchChanged,
           ),
@@ -130,31 +125,20 @@ class _SelectedGenealogyAnimal extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _EarTagPreview(
-            visualTag: animal.visualTag,
-            color: animal.tagColor,
-          ),
+          _EarTagPreview(visualTag: animal.visualTag),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  animal.breed.isEmpty ? animal.name : '${animal.name} · ${animal.breed}',
+                  '${animal.visualTag} · ${animal.breed}',
                   style: AppTypography.secondaryEmphasis.copyWith(
                     color: AppColors.textPrimary,
                   ),
                 ),
-                if (animal.rfid != null) ...[
-                  const SizedBox(height: AppSpacing.xxs),
-                  Text(
-                    animal.rfid!,
-                    style: AppTypography.smallEmphasis.copyWith(
-                      color: AppColors.textHint,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
+                const SizedBox(height: AppSpacing.xxs),
+                Text(animal.rfid, style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint)),
               ],
             ),
           ),
@@ -228,36 +212,16 @@ class _GenealogyResultTile extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.sm),
         child: Row(
           children: [
-            _EarTagPreview(
-              visualTag: animal.visualTag,
-              color: animal.tagColor,
-            ),
+            _EarTagPreview(visualTag: animal.visualTag),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
-                '${animal.name} · ${animal.breed}',
+                '${animal.visualTag} · ${animal.breed} · ${animal.rfid}',
                 style: AppTypography.secondaryEmphasis.copyWith(
                   color: AppColors.textPrimary,
                 ),
               ),
             ),
-            if (animal.badge != null)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.xxs,
-                ),
-                decoration: const ShapeDecoration(
-                  color: AppColors.backgroundSecondary,
-                  shape: StadiumBorder(),
-                ),
-                child: Text(
-                  animal.badge!,
-                  style: AppTypography.mediumEmphasis.copyWith(
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -268,11 +232,9 @@ class _GenealogyResultTile extends StatelessWidget {
 class _EarTagPreview extends StatelessWidget {
   const _EarTagPreview({
     required this.visualTag,
-    required this.color,
   });
 
   final String visualTag;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -283,7 +245,7 @@ class _EarTagPreview extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: color,
+        color: AppColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(

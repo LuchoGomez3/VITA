@@ -35,3 +35,57 @@ enum AnimalSyncStatus {
   /// Rechazado por el backend y pendiente de revision del usuario.
   rejected,
 }
+
+/// Estado de negocio del animal, separado de su estado de sincronización.
+enum AnimalStatus {
+  /// Animal disponible para operaciones productivas.
+  active,
+
+  /// Animal comercializado.
+  sold,
+
+  /// Baja por muerte, reversible como corrección desde la ficha.
+  dead,
+
+  /// Otra baja administrativa.
+  inactive,
+}
+
+/// Condición reproductiva validada según sexo y reglas de categoría.
+enum AnimalReproductiveStatus {
+  /// Todavía no se registró una condición conocida.
+  undetermined,
+
+  /// Hembra confirmada sin preñez.
+  empty,
+
+  /// Hembra confirmada preñada.
+  pregnant,
+}
+
+/// Motivos de validación que presentation traduce a mensajes para el usuario.
+enum AnimalDetailEditFailure {
+  /// Peso no finito o no positivo.
+  invalidWeight,
+
+  /// Nota sin contenido.
+  emptyObservation,
+
+  /// Operación productiva sobre un animal dado de baja o vendido.
+  inactiveAnimal,
+
+  /// Categoría que no pertenece al catálogo o no admite el sexo.
+  incompatibleCategory,
+
+  /// Condición incompatible con el sexo o las reglas de categoría.
+  reproductionNotAllowed,
+
+  /// Animal ausente de la caché tras la carga de la ficha.
+  animalNotFound,
+
+  /// La baja ya cambió y no corresponde sobrescribirla con un deshacer viejo.
+  staleUndo,
+
+  /// Error al guardar el cambio local.
+  saveFailed,
+}

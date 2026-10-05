@@ -19,6 +19,8 @@ class WeightGainChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppSurfaceCard(
+      elevation: 4,
+      shadowColor: AppColors.textPrimary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -2,6 +2,16 @@
 
 Esta carpeta concentra la infraestructura offline-first del mobile.
 
+La [auditoría de sincronización de toda la app](sync/README.md) registra el estado
+de cada módulo, hallazgos priorizados, archivos involucrados y pruebas pendientes
+para la rama de integración general. Es un análisis del código, no una declaración
+de que esos problemas ya estén corregidos.
+
+Pendiente para la integración general: [sesión y cola offline](auth/README.md).
+Documenta la conservación de envíos al vencer o cerrar sesión y su reanudación
+al iniciar sesión, incluyendo el aislamiento entre cuentas. Todavía no está
+implementado.
+
 Brick es la capa que conecta tres mundos:
 
 - SQLite local, para que la app funcione sin internet.
@@ -78,7 +88,9 @@ restaurar la app offline, hidrata `SessionBackendAccessTokenProvider`. Brick no
 lee secure storage ni guarda JWT en SQLite: solo pide un token vigente a este
 contrato antes de enviar requests REST. Si el access token vencio, el provider
 intenta renovarlo mediante un callback configurado por auth; si no puede,
-devuelve `null` y evita enviar un Bearer viejo.
+informa una falla transitoria de red o de autenticación según el caso. Sin
+sesión devuelve `null`. El tratamiento de esos resultados por la cola tiene
+pendientes documentados en [auth/README.md](auth/README.md).
 
 `authenticated_backend_client.dart` envuelve el cliente HTTP usado por Brick:
 
@@ -92,6 +104,9 @@ No debe tener `if animal`, `if lote` o reglas por feature.
 ### `sync/`
 
 Contiene tipos genericos del mecanismo de sincronizacion.
+
+Su [README de auditoría](sync/README.md) reúne los pendientes de sincronización
+de toda la app y el orden propuesto para implementarlos.
 
 `backend_sync_result.dart` representa el resultado de una request sync-able. No
 pertenece a una feature concreta: incluye `resourcePath`, `localId`,
@@ -188,8 +203,8 @@ El alta es offline-first:
 
 ## Flujo local de lotes y movimientos
 
-La gestión de lotes utiliza SQLite como fuente de verdad mientras backend
-termina y valida su contrato:
+La gestión de lotes utiliza SQLite como fuente de verdad y los movimientos
+reutilizan el contrato batch validado del backend:
 
 ```txt
 Field UI
@@ -209,15 +224,18 @@ El movimiento entre lotes actualiza la ubicación de los animales y guarda un
 Ambas escrituras se ejecutan dentro de una única transacción SQLite para no
 dejar un traslado parcial si alguna operación falla.
 
-Los contratos REST están preparados, pero se encuentran apagados por defecto:
+Los movimientos ya usan el contrato batch confirmado de
+`/api/v1/movimientos_lotes` y se sincronizan por defecto. Admiten origen `null`,
+separan el sync de ubicación del resto de ediciones del animal y conservan
+rechazos en SQLite. El movimiento pendiente funciona como outbox para recuperar
+jobs ausentes en la cola separada tras un cierre de la app.
 
-- `VITA_ENABLE_LOT_REMOTE_SYNC=true` habilita `/api/v1/lotes`.
-- `VITA_ENABLE_LOT_MOVEMENT_REMOTE_SYNC=true` habilita
-  `/api/v1/movimientos_lotes`.
-
-No deben activarse hasta que ambos contratos sean revisados con backend. Con
-los flags apagados no se crean requests ni entradas nuevas en la cola REST para
-estas dos entidades.
+El flujo y sus límites se documentan en
+[asignación y traslado entre lotes](../features/lot_movement/README.md).
+La lectura de destinos activos funciona sin flags. El alta/edición remota de
+lotes mantiene `VITA_ENABLE_LOT_REMOTE_SYNC=true`; ya no existe el flag de
+movimientos. El historial de la ficha del animal incluye los movimientos
+locales y remotos, con su resultado de sincronización.
 
 ## Codigo generado
 
@@ -245,3 +263,28 @@ Archivos generados habituales:
   `SessionBackendAccessTokenProvider` en memoria.
 - Cada entidad sync-able debe usar UUID generado por el cliente y timestamps
   `created_at`, `updated_at`, `deleted_at` cuando aplique.
+
+## Edición de animales y notas
+
+`BrickAnimalStore.updateAnimal` persiste la ficha y encola un
+`BrickAnimalUpdateModel` para PUT. Este modelo es un sobre del comando HTTP:
+no se inserta en su tabla SQLite; el estado local pertenece a BrickAnimalModel
+y la persistencia del envío a la cola de Brick. Su payload acotado evita
+sobrescribir datos ausentes en una caché anterior. El cliente HTTP observa
+POST y PUT, e informa updated_at para que el store ignore respuestas de versiones
+anteriores (por ejemplo, una baja seguida de Deshacer).
+
+`BrickAnimalObservationStore` maneja entradas independientes y su POST, GET
+filtrado y estado local de sincronización. El pull conserva notas pendientes o
+rechazadas y respeta las bajas lógicas recibidas. El autor se lee del backend,
+pero nunca se envía desde mobile. Las columnas nuevas del animal y categoría
+usan deserialización tolerante a null para instalaciones con filas anteriores
+a la migración.
+
+## Compatibilidad de categorías después del merge
+
+La migración 20261005193219 restaura columnas que una rama había retirado.
+Las instalaciones de la otra rama ya las conservan. Antes de inicializar Brick,
+`resolveCompatibleMigrations` consulta el esquema local y adapta únicamente esa
+migración para agregar las columnas faltantes. Se mantiene su versión y los
+registros existentes; no se borran bases ni se modifica el código generado.

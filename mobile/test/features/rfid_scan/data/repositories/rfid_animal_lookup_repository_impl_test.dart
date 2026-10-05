@@ -81,6 +81,9 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   bool throwOnLookup = false;
 
   @override
+  Future<BrickAnimalModel> updateAnimal(BrickAnimalModel animal) => upsertAnimal(animal);
+
+  @override
   Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) async => animal;
 
   @override
@@ -103,6 +106,9 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
 
   @override
   Future<void> pullRemoteAnimals(String establishmentId) async {}
+
+  @override
+  Future<void> retryRejectedAnimal(String animalId) async {}
 
   @override
   Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) async => animal;
