@@ -5,6 +5,9 @@ class AnimalDetailStrings {
   /// Titulo del app bar.
   static const pageTitle = 'Detalle de animal';
 
+  /// Identifica la fotografía tanto visualmente como para lectores de pantalla.
+  static const animalPhotoLabel = 'Foto del animal';
+
   /// Etiqueta del identificador principal.
   static const animalIdLabel = 'Caravana / ID';
 
@@ -49,6 +52,31 @@ class AnimalDetailStrings {
 
   /// Etiqueta de observaciones.
   static const observationsLabel = 'Observaciones';
+
+  /// Acciones visuales pendientes de conectar a sus casos de uso.
+  static const enterWeightAction = 'Ingresar peso';
+  /// Acceso a la futura edición de categoría.
+  static const changeCategoryAction = 'Cambiar categoría';
+  /// Acceso al futuro cambio de estado reproductivo en hembras.
+  static const changePregnancyAction = 'Cambiar preñez';
+  /// Acceso a la vista previa de baja por muerte.
+  static const deathAction = 'Baja por muerte';
+  /// Acceso a la futura creación de observaciones.
+  static const newObservationAction = 'Nueva entrada';
+
+  /// Textos del ensayo de confirmación; no se registra una baja real.
+  static const deathConfirmationTitle = '¿Dar de baja por muerte?';
+  /// Explica la confirmación y el carácter visual de la maqueta.
+  static const deathConfirmationMessage =
+      'Esta acción dará de baja al animal y permitirá deshacerla. Por ahora es una vista previa y no modifica datos.';
+  /// Avisa que confirmar no afectó ningún registro.
+  static const deathPreviewMessage = 'Vista previa de baja por muerte. No se modificaron datos.';
+  /// Cierra la confirmación sin continuar la vista previa.
+  static const cancelAction = 'Cancelar';
+  /// Continúa la vista previa de la confirmación.
+  static const confirmAction = 'Confirmar';
+  /// Descarta el aviso visual sin una operación de reversión real.
+  static const undoAction = 'Deshacer';
 
   /// Metodo de pesaje manual.
   static const manualWeighingMethod = 'Manual';

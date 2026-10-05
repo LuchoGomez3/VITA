@@ -9,28 +9,34 @@ class AnimalDetailHeader extends StatelessWidget {
   const AnimalDetailHeader({
     required this.animalDetail,
     super.key,
+    this.showAvatar = true,
   });
 
   /// Datos del animal mostrados en el encabezado.
   final AnimalDetail animalDetail;
 
+  /// Conserva el círculo original si la foto grande no pudo mostrarse.
+  final bool showAvatar;
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            shape: BoxShape.circle,
+        if (showAvatar) ...[
+          const DecoratedBox(
+            decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+            child: SizedBox.square(dimension: 48),
           ),
-          child: SizedBox.square(dimension: 48),
-        ),
-        const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: AppSpacing.md),
+        ],
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(animalDetail.displayIdentifier, style: AppTypography.appBarTitle),
+              Text(
+                animalDetail.displayIdentifier,
+                style: AppTypography.appBarTitle,
+              ),
               Text(
                 AnimalDetailStrings.animalIdLabel,
                 style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),

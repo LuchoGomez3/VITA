@@ -4,6 +4,7 @@ import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/storage/animal_photo_store.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/mappers/animal_detail_mapper.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
@@ -13,15 +14,18 @@ import 'package:frontend_mayoral/features/animal_detail/domain/repositories/anim
 class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
   /// Crea el repository con cache Brick y fuente remota.
   const AnimalDetailRepositoryImpl({
+    required AnimalPhotoStore photoStore,
     required AnimalBrickStore brickStore,
     required CategoriaBrickStore categoriaBrickStore,
     required PesajeBrickStore pesajeBrickStore,
     required AnimalDetailRemoteDataSource remoteDataSource,
-  }) : _brickStore = brickStore,
+  }) : _photoStore = photoStore,
+       _brickStore = brickStore,
        _categoriaBrickStore = categoriaBrickStore,
        _pesajeBrickStore = pesajeBrickStore,
        _remoteDataSource = remoteDataSource;
 
+  final AnimalPhotoStore _photoStore;
   final AnimalBrickStore _brickStore;
   final CategoriaBrickStore _categoriaBrickStore;
   final PesajeBrickStore _pesajeBrickStore;
@@ -95,7 +99,16 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
     final latestWeight = weightHistory.lastOrNull;
     final categoryName = localCategorias.where((category) => category.localId == detail.categoryId).firstOrNull?.name;
 
+    final localPhotoPath = await _photoStore.findPhoto(
+      establishmentId: detail.establishmentId,
+      animalId: detail.id,
+    );
+    // Las capturas del dispositivo tienen prioridad sobre las fotos de ejemplo.
+    final photoAssetPath = localPhotoPath == null ? await _photoStore.findBundledPhoto(detail.visualTag) : null;
+
     return detail.copyWith(
+      localPhotoPath: localPhotoPath,
+      photoAssetPath: photoAssetPath,
       categoryName: categoryName ?? detail.categoryName,
       weightHistory: weightHistory,
       currentWeight: latestWeight?.weightKg ?? detail.currentWeight,
