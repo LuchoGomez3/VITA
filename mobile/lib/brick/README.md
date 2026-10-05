@@ -280,3 +280,11 @@ rechazadas y respeta las bajas lógicas recibidas. El autor se lee del backend,
 pero nunca se envía desde mobile. Las columnas nuevas del animal y categoría
 usan deserialización tolerante a null para instalaciones con filas anteriores
 a la migración.
+
+## Compatibilidad de categorías después del merge
+
+La migración 20261005193219 restaura columnas que una rama había retirado.
+Las instalaciones de la otra rama ya las conservan. Antes de inicializar Brick,
+`resolveCompatibleMigrations` consulta el esquema local y adapta únicamente esa
+migración para agregar las columnas faltantes. Se mantiene su versión y los
+registros existentes; no se borran bases ni se modifica el código generado.

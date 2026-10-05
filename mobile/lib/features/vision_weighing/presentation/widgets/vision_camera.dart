@@ -110,10 +110,10 @@ class _VisionCameraState extends State<VisionCamera> with WidgetsBindingObserver
   Future<void> _openCamera(int generation) async {
     try {
       final info = await widget.dependencies.initialize();
-      if (!mounted || generation != _generation) {
-        await widget.dependencies.dispose();
-        return;
-      }
+      // Los cambios de actividad y dispose() ya programan el cierre en orden.
+      // Una apertura vieja solo descarta su resultado: cerrar aquí podría
+      // liberar el controlador que pertenece a una apertura más reciente.
+      if (!mounted || generation != _generation) return;
       setState(() {
         _cameraInfo = info;
         _error = null;
