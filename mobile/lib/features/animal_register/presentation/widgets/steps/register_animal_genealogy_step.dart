@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_parent.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/animal_identification_summary.dart';
@@ -18,71 +21,54 @@ class RegisterAnimalGenealogyStep extends StatefulWidget {
 }
 
 class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogyStep> {
-  // TODO(agusf): reemplazar madre y padres estaticos por animales elegibles
-  // consultados offline desde BrickAnimalStore para el establecimiento activo.
-  static const _mother = GenealogyAnimalOption(
-    id: 'mother-003-0421',
-    visualTag: AnimalRegisterStrings.stepThreeMockMotherTag,
-    name: AnimalRegisterStrings.stepThreeMockMotherName,
-    breed: '',
-    rfid: AnimalRegisterStrings.stepThreeMockMotherRfid,
-    tagColor: AppColors.earTagYellow,
-  );
-
-  static const _fatherOptions = [
-    GenealogyAnimalOption(
-      id: 'father-003-0820',
-      visualTag: AnimalRegisterStrings.stepThreeMockFatherOneTag,
-      name: AnimalRegisterStrings.stepThreeMockFatherOneName,
-      breed: AnimalRegisterStrings.stepThreeMockFatherOneBreed,
-      badge: AnimalRegisterStrings.stepThreeBullBadge,
-      tagColor: AppColors.earTagBlue,
-    ),
-    GenealogyAnimalOption(
-      id: 'father-003-0612',
-      visualTag: AnimalRegisterStrings.stepThreeMockFatherTwoTag,
-      name: AnimalRegisterStrings.stepThreeMockFatherTwoName,
-      breed: AnimalRegisterStrings.stepThreeMockFatherTwoBreed,
-      badge: AnimalRegisterStrings.stepThreeBullBadge,
-      tagColor: AppColors.earTagBlue,
-    ),
-    GenealogyAnimalOption(
-      id: 'father-002-0118',
-      visualTag: AnimalRegisterStrings.stepThreeMockFatherThreeTag,
-      name: AnimalRegisterStrings.stepThreeMockFatherThreeName,
-      breed: AnimalRegisterStrings.stepThreeMockFatherThreeBreed,
-      badge: AnimalRegisterStrings.stepThreeBullBadge,
-      tagColor: AppColors.earTagBlue,
-    ),
-  ];
-
+  String _motherSearch = '';
   String _fatherSearch = '';
+  String? _lastEstablishmentId;
 
-  List<GenealogyAnimalOption> get _filteredFatherOptions {
-    final query = _fatherSearch.trim().toLowerCase();
-    if (query.isEmpty) {
-      return _fatherOptions;
-    }
-
-    return _fatherOptions.where((animal) {
-      final searchableText = '${animal.visualTag} ${animal.name} ${animal.breed}'.toLowerCase();
-      return searchableText.contains(query);
-    }).toList();
+  List<GenealogyAnimalOption> _matches(List<AnimalParent> parents, AnimalSex sex, String text) {
+    final query = text.replaceAll(RegExp(r'\s+'), '').toLowerCase();
+    if (query.isEmpty) return const [];
+    return parents
+        .where(
+          (animal) =>
+              animal.sex == sex &&
+              (animal.visualTag.replaceAll(RegExp(r'\s+'), '').toLowerCase().contains(query) ||
+                  animal.rfid.replaceAll(RegExp(r'\s+'), '').toLowerCase().contains(query)),
+        )
+        .map(_option)
+        .toList(growable: false);
   }
+
+  GenealogyAnimalOption _option(AnimalParent animal) => GenealogyAnimalOption(
+    id: animal.id,
+    visualTag: animal.visualTag,
+    rfid: animal.rfid,
+    breed: animal.breed,
+  );
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<RegisterAnimalBloc>().state;
     final draft = state.draft;
+    final showErrors = state.showStepValidationErrors;
+    if (_lastEstablishmentId != draft.establishmentId) {
+      _lastEstablishmentId = draft.establishmentId;
+      _motherSearch = '';
+      _fatherSearch = '';
+    }
+    final parents = switch (state.parentsState) {
+      Data<List<AnimalParent>>(:final data) => data,
+      _ => <AnimalParent>[],
+    };
+    final motherMatches = _matches(parents, AnimalSex.female, _motherSearch);
+    final fatherMatches = _matches(parents, AnimalSex.male, _fatherSearch);
 
     return Column(
       children: [
-        // TODO(agusf): mostrar metodo y fecha reales recibidos del flujo RFID,
-        // OCR o carga manual cuando identificacion entregue esos metadatos.
         AnimalIdentificationSummary(
           rfid: draft.rfid,
           visualTag: _visualTag(draft),
-          readingDescription: AnimalRegisterStrings.stepTwoMockReading,
+          readingDescription: AnimalRegisterStrings.identificationSummary,
         ),
         Expanded(
           child: SingleChildScrollView(
@@ -95,47 +81,34 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  AnimalRegisterStrings.stepThreeGenealogyTitle,
-                  style: AppTypography.pageTitle,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                const Text(
-                  AnimalRegisterStrings.stepThreeGenealogyDescription,
-                  style: AppTypography.pageBodyTitle,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                GenealogyAnimalSelector(
-                  title: AnimalRegisterStrings.stepThreeMotherTitle,
-                  searchHint: AnimalRegisterStrings.stepThreeSearchHint,
-                  selectedAnimal: draft.motherId == _mother.id ? _mother : null,
-                  options: const [_mother],
-                  onClear: () {
-                    _updateDraft(draft.copyWith(motherId: null));
-                  },
-                  onSelected: (animal) {
-                    _updateDraft(draft.copyWith(motherId: animal.id));
-                  },
-                ),
-                const SizedBox(height: AppSpacing.md),
-                GenealogyAnimalSelector(
-                  title: AnimalRegisterStrings.stepThreeFatherTitle,
-                  searchHint: AnimalRegisterStrings.stepThreeSearchHint,
-                  selectedAnimal: _fatherById(draft.fatherId),
-                  options: _filteredFatherOptions,
-                  onSearchChanged: (value) {
-                    setState(() => _fatherSearch = value);
-                  },
-                  onClear: () {
-                    _updateDraft(draft.copyWith(fatherId: null));
-                  },
-                  onSelected: (animal) {
-                    _updateDraft(draft.copyWith(fatherId: animal.id));
-                  },
-                ),
+                switch (state.establishmentsState) {
+                  Initial() || Loading() => const Center(child: CircularProgressIndicator()),
+                  ResultError(:final error) => Text(error.message, style: AppTypography.errorBody),
+                  Data(:final data) when data.isEmpty => const Text(
+                    AnimalRegisterStrings.noEstablishmentsMessage,
+                    style: AppTypography.pageBodyTitle,
+                  ),
+                  Data(:final data) => AppDropdownFormField<String>(
+                    key: ValueKey(draft.establishmentId),
+                    title: AnimalRegisterStrings.establishmentSelectorLabel,
+                    hintText: AnimalRegisterStrings.establishmentSelectorHint,
+                    initialValue: draft.establishmentId,
+                    errorText: showErrors && draft.establishmentId == null
+                        ? AnimalRegisterStrings.establishmentRequired
+                        : null,
+                    options: [
+                      for (final establishment in data)
+                        AppDropdownOption(value: establishment.id, label: establishment.name),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        context.read<RegisterAnimalBloc>().add(RegisterAnimalEvent.establishmentSelected(value));
+                      }
+                    },
+                  ),
+                  _ => const SizedBox.shrink(),
+                },
                 const SizedBox(height: AppSpacing.lg),
-                const Divider(color: AppColors.border),
-                const SizedBox(height: AppSpacing.md),
                 const Text(
                   AnimalRegisterStrings.stepThreeDestinationTitle,
                   style: AppTypography.pageTitle,
@@ -147,6 +120,7 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
                 ),
                 const SizedBox(height: AppSpacing.md),
                 switch (state.destinationsState) {
+                  Initial() when draft.establishmentId == null => const SizedBox.shrink(),
                   Initial() || Loading() => const Center(
                     child: CircularProgressIndicator(),
                   ),
@@ -178,21 +152,83 @@ class _RegisterAnimalGenealogyStepState extends State<RegisterAnimalGenealogySte
                   ),
                   _ => const SizedBox.shrink(),
                 },
+                if (showErrors && draft.destinationId == null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  const Text(
+                    AnimalRegisterStrings.destinationRequired,
+                    style: AppTypography.formFieldError,
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+                const Divider(color: AppColors.border),
+                const SizedBox(height: AppSpacing.md),
+                const Text(
+                  AnimalRegisterStrings.stepThreeGenealogyTitle,
+                  style: AppTypography.pageTitle,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                const Text(
+                  AnimalRegisterStrings.stepThreeGenealogyDescription,
+                  style: AppTypography.pageBodyTitle,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                if (state.parentsState case ResultError(:final error)) ...[
+                  Text(error.message, style: AppTypography.errorBody),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+                GenealogyAnimalSelector(
+                  key: ValueKey('mother-${draft.establishmentId}'),
+                  title: AnimalRegisterStrings.stepThreeMotherTitle,
+                  searchHint: AnimalRegisterStrings.stepThreeSearchHint,
+                  selectedAnimal: draft.mother == null ? null : _option(draft.mother!),
+                  options: motherMatches,
+                  enabled: draft.establishmentId != null && state.parentsState is Data<List<AnimalParent>>,
+                  validationMessage:
+                      _motherSearch.trim().isNotEmpty &&
+                          state.parentsState is Data<List<AnimalParent>> &&
+                          motherMatches.isEmpty
+                      ? AnimalRegisterStrings.parentNotFound
+                      : null,
+                  onSearchChanged: (value) => setState(() => _motherSearch = value),
+                  onClear: () {
+                    setState(() => _motherSearch = '');
+                    _updateDraft(draft.copyWith(mother: null));
+                  },
+                  onSelected: (animal) {
+                    _updateDraft(draft.copyWith(mother: parents.firstWhere((item) => item.id == animal.id)));
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
+                GenealogyAnimalSelector(
+                  key: ValueKey('father-${draft.establishmentId}'),
+                  title: AnimalRegisterStrings.stepThreeFatherTitle,
+                  searchHint: AnimalRegisterStrings.stepThreeSearchHint,
+                  selectedAnimal: draft.father == null ? null : _option(draft.father!),
+                  options: fatherMatches,
+                  enabled: draft.establishmentId != null && state.parentsState is Data<List<AnimalParent>>,
+                  validationMessage:
+                      _fatherSearch.trim().isNotEmpty &&
+                          state.parentsState is Data<List<AnimalParent>> &&
+                          fatherMatches.isEmpty
+                      ? AnimalRegisterStrings.parentNotFound
+                      : null,
+                  onSearchChanged: (value) {
+                    setState(() => _fatherSearch = value);
+                  },
+                  onClear: () {
+                    setState(() => _fatherSearch = '');
+                    _updateDraft(draft.copyWith(father: null));
+                  },
+                  onSelected: (animal) {
+                    _updateDraft(draft.copyWith(father: parents.firstWhere((item) => item.id == animal.id)));
+                  },
+                ),
               ],
             ),
           ),
         ),
       ],
     );
-  }
-
-  GenealogyAnimalOption? _fatherById(String? fatherId) {
-    for (final father in _fatherOptions) {
-      if (father.id == fatherId) {
-        return father;
-      }
-    }
-    return null;
   }
 
   String _visualTag(RegisterAnimalDraft draft) {

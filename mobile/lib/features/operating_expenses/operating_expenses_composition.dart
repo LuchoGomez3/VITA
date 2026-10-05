@@ -63,4 +63,5 @@ OperatingExpenseRepositoryImpl _createRepository() => OperatingExpenseRepository
       tokenProvider: SessionBackendAccessTokenProvider.instance,
     ),
   ),
+  remoteEnabled: !AppConfig.demoMode,
 );

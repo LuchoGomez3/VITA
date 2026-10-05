@@ -1,14 +1,18 @@
 import 'package:frontend_mayoral/app/config/config.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
+import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
+import 'package:frontend_mayoral/demo/demo_auth_repository.dart';
+import 'package:frontend_mayoral/demo/demo_bootstrap.dart';
 import 'package:frontend_mayoral/features/auth/data/datasources/auth_local_data_source.dart';
 import 'package:frontend_mayoral/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:frontend_mayoral/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
+import 'package:frontend_mayoral/features/auth/domain/repositories/auth_repository.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/get_current_user_use_case.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/register_user_use_case.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/restore_session_use_case.dart';
@@ -44,12 +48,12 @@ bool _tokenRefreshConfigured = false;
 /// decidir si muestra auth o la experiencia interna.
 AuthSessionCubit createAuthSessionCubit() {
   final client = http.Client();
-  final repository = _createAuthRepository(client);
+  final repository = _createRepository(client);
 
   return AuthSessionCubit(
     restoreSessionUseCase: RestoreSessionUseCase(repository),
     signOutUseCase: SignOutUseCase(repository),
-    authRejections: AppBrickRepository.instance.authRejections,
+    authRejections: AppConfig.demoMode ? const Stream<void>.empty() : AppBrickRepository.instance.authRejections,
     onClose: client.close,
   );
 }
@@ -60,13 +64,17 @@ AuthSessionCubit createAuthSessionCubit() {
 /// el token provider de Brick y despues ejecuta la preparacion compartida.
 LoginBloc createLoginBloc() {
   final client = http.Client();
-  final repository = _createAuthRepository(client);
+  final repository = _createRepository(client);
 
   return LoginBloc(
     signInUseCase: SignInUseCase(repository),
-    preparePostAuthentication: createPrepareInitialDataSyncUseCase(
-      client: client,
-    ).call,
+    preparePostAuthentication: AppConfig.demoMode
+        ? () async => Result.success(
+            PostAuthenticationSummary(
+              establishmentIds: const [DemoIds.establishment],
+            ),
+          )
+        : createPrepareInitialDataSyncUseCase(client: client).call,
     onClose: client.close,
   );
 }
@@ -77,7 +85,7 @@ LoginBloc createLoginBloc() {
 /// La preparacion de datos offline queda reservada para el login manual.
 SignUpBloc createSignUpBloc() {
   final client = http.Client();
-  final repository = _createAuthRepository(client);
+  final repository = _createRepository(client);
 
   return SignUpBloc(
     registerUserUseCase: RegisterUserUseCase(repository),
@@ -91,7 +99,7 @@ SignUpBloc createSignUpBloc() {
 /// que sirve para probar que la app puede abrir offline con sesion restaurada.
 Future<Result<String>> verifyAuthenticatedUser() async {
   final client = http.Client();
-  final repository = _createAuthRepository(client);
+  final repository = _createRepository(client);
 
   try {
     final result = await GetCurrentUserUseCase(repository)();
@@ -113,7 +121,7 @@ Future<Result<String>> verifyAuthenticatedUser() async {
 /// Cierra la sesion actual en storage seguro y memoria.
 Future<void> signOutAuthenticatedUser() async {
   final client = http.Client();
-  final repository = _createAuthRepository(client);
+  final repository = _createRepository(client);
 
   try {
     await SignOutUseCase(repository)();
@@ -135,6 +143,9 @@ AuthRepositoryImpl _createAuthRepository(http.Client client) {
     tokenProvider: SessionBackendAccessTokenProvider.instance,
   );
 }
+
+AuthRepository _createRepository(http.Client client) =>
+    AppConfig.demoMode ? const DemoAuthRepository() : _createAuthRepository(client);
 
 /// Configura el callback que Brick usa para renovar access tokens vencidos.
 ///

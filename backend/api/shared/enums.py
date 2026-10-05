@@ -74,6 +74,15 @@ class TipoComprador(str, Enum):
     particular = "particular"
 
 
+class MedioCobro(str, Enum):
+    """Instrumento con el que se recibió un cobro de venta."""
+
+    efectivo = "efectivo"
+    transferencia = "transferencia"
+    cheque = "cheque"
+    tarjeta = "tarjeta"
+
+
 class TipoEgresoOperativo(str, Enum):
     """Clasificación contable principal de un egreso monetario del campo."""
 
@@ -90,3 +99,52 @@ class CategoriaEgresoOperativo(str, Enum):
     combustible = "combustible"
     estructura = "estructura"
     honorarios = "honorarios"
+
+
+class EstadoLote(str, Enum):
+    """Estado operativo de un lote (potrero).
+
+    Los cuatro estados ocupan espacio en el lienzo del establecimiento: un lote
+    en descanso o mantenimiento sigue siendo una división física y no puede
+    superponerse con otro. Solo ``activo`` admite el ingreso de animales.
+    """
+
+    activo = "activo"
+    descanso = "descanso"
+    mantenimiento = "mantenimiento"
+    inactivo = "inactivo"
+
+
+class RecursoForrajero(str, Enum):
+    """Recurso forrajero predominante del lote.
+
+    Es un catálogo de códigos estables, no una etiqueta visible: la traducción a
+    texto para el usuario la resuelve el cliente.
+    """
+
+    pasto_natural = "pasto_natural"
+    alfalfa = "alfalfa"
+    sorgo = "sorgo"
+    maiz = "maiz"
+    avena = "avena"
+    otro = "otro"
+
+
+class EstadoReproductivo(str, Enum):
+    """Condición reproductiva de una hembra, independiente de ``EstadoAnimal``.
+
+    Un animal puede estar ``activo`` y ``prenada`` a la vez. ``null`` en la columna
+    significa que no corresponde (por ejemplo, un macho).
+    """
+
+    sin_determinar = "sin_determinar"
+    vacia = "vacia"
+    prenada = "prenada"
+
+
+class SexoPermitido(str, Enum):
+    """Sexo de los animales que admite una categoría."""
+
+    macho = "macho"
+    hembra = "hembra"
+    ambos = "ambos"

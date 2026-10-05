@@ -57,3 +57,16 @@ class ValidationError(DomainException):
 class ForbiddenError(DomainException):
     status_code = 403
     code = "forbidden"
+
+
+class EstablecimientoNoAutorizadoError(ForbiddenError):
+    """El usuario autenticado no tiene membresía activa en el establecimiento.
+
+    Vive acá y no en un módulo de dominio porque el aislamiento multi-tenant lo
+    aplica *todo* service que toca datos de un establecimiento.
+    """
+
+    code = "establecimiento_no_autorizado"
+
+    def __init__(self) -> None:
+        super().__init__("No tiene acceso al establecimiento indicado")

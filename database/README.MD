@@ -67,6 +67,122 @@ Toda entidad que viaje al cliente offline hereda de `Base` y `SoftDeleteMixin`:
 Las tablas hijas de un agregado atómico (por ejemplo `ventas_detalles`) heredan solo de
 `Base`: viajan dentro del payload de su padre y no se sincronizan por separado.
 
+## Animales: categoría y condición reproductiva
+
+Decisiones de fondo en `docs/adr/adr-0006-reglas-reproductivas-de-categorias.md`.
+
+`categorias` lleva dos reglas explícitas, que nunca se infieren del nombre:
+
+| Columna | Tipo | Notas |
+| --- | --- | --- |
+| `sexo_permitido` | `varchar` NOT NULL | `macho` \| `hembra` \| `ambos` |
+| `permite_estado_reproductivo` | `boolean` NOT NULL, default `false` | habilita `vacia`/`prenada` en sus hembras |
+
+`animales.estado_reproductivo` (`varchar`, nullable) vale `sin_determinar`, `vacia`,
+`prenada` o `null`, y es independiente de `estado`. Los CHECK del propio animal fijan los
+valores válidos y que un macho siempre tenga `null`. La compatibilidad con la categoría es
+lógica entre tablas y vive en dos triggers:
+
+- `trg_animales_categoria_compatible` (`validar_categoria_animal()`) valida el animal en
+  el insert y cuando cambian `sexo`, `categoria_id`, `estado_reproductivo` o
+  `deleted_at`. Comprueba que la categoría admita el sexo y, para `vacia`/`prenada`, que
+  esté habilitada, pero solo si el animal queda vivo: un animal borrado no se valida
+  contra su categoría, y restaurarlo lo revalida. Al **asignar** la categoría rechaza
+  también una borrada o de otro establecimiento, esté vivo o no el animal.
+- `trg_categorias_reglas_compatibles` (`validar_reglas_categoria()`) rechaza cambiar
+  `sexo_permitido` o `permite_estado_reproductivo` si deja animales vivos incompatibles.
+
+Cada rechazo usa el SQLSTATE `23514` e informa un nombre estable con `raise ... using
+constraint`: `animales_categoria_admite_sexo`,
+`animales_categoria_admite_estado_reproductivo`,
+`animales_estado_reproductivo_requiere_categoria`, `animales_categoria_asignable` y
+`categorias_reglas_compatibles` (con la cantidad de animales en `detail`). El backend
+traduce por ese nombre (`api/modules/animales/rechazos.py`), no por el mensaje.
+
+Los triggers BEFORE corren antes que el WITH CHECK del RLS, así que no pueden leer filas
+que quien escribe no ve, porque su mensaje de error las revelaría.
+`validar_categoria_animal()` es `security invoker`: el backend (rol `postgres`, que no
+pasa por RLS) valida todo, y un cliente directo recibe siempre el rechazo del RLS (42501),
+sea la categoría ajena, inexistente o incompatible. `validar_reglas_categoria()` es
+`security definer` porque tiene que contar todos los animales de la categoría. No filtra
+información: solo corre en el UPDATE de filas que el RLS ya dejó actualizar.
+`create_all` las instala en Postgres; en producción las
+crea la migración `20261001_02` (espejo: `backend/scripts/agregar_reglas_reproductivas_categorias.sql`).
+Sus tests corren contra un Postgres efímero (`VITA_TEST_POSTGRES_URL`, probados con 16;
+Supabase usa 17).
+
+El catálogo real son las seis categorías del front, globales (`establecimiento_id` null)
+y con los mismos UUIDs que usa mobile:
+
+- Ternera, `hembra`.
+- Ternero, `macho`.
+- Vaquillona y Vaca, `hembra`, con condición reproductiva habilitada.
+- Novillo y Toro, `macho`.
+
+La migración las siembra si faltan y las clasifica si ya existían sin reglas. Las globales
+se leen y se asignan desde cualquier establecimiento, pero no se editan ni se borran:
+reenviar una por `POST /categorias` responde 403.
+
+Las cinco categorías `550e8400-…` de Supabase son **datos de prueba heredados**. Se
+clasifican por id para que la migración no se corte: el Ternero de prueba queda en
+`ambos` porque tiene hembras. El script espejo trae al final un paso de limpieza
+**comentado**, que se corre a mano: pasa esas hembras a la Ternera global y borra
+lógicamente Engorde Rápido. Ante cualquier otra categoría sin clasificar, o un animal
+incompatible, la migración se detiene en vez de inventar la regla.
+
+RLS: `categorias` y `animales` tienen RLS activo y ninguna policy, así que solo accede el
+backend. Si algún día un cliente lee directo por PostgREST, va a hacer falta una policy de
+lectura (globales + propias).
+
+### Observaciones del animal
+
+Decisiones de fondo en `docs/adr/adr-0007-observaciones-animales-como-entradas.md`.
+
+`observaciones_animales` es sincronizable y guarda una fila por nota:
+
+| Columna | Tipo | Notas |
+| --- | --- | --- |
+| `id` | `uuid` PK | generada en mobile |
+| `animal_id` | `uuid` NOT NULL | FK `animales`; inmutable |
+| `establecimiento_id` | `uuid` NOT NULL | FK `establecimientos`; igual al del animal; inmutable |
+| `texto` | `text` NOT NULL | `trim(texto) <> ''` |
+| `fecha` | `timestamptz` NOT NULL | cuándo se hizo la observación |
+| `autor_id` | `uuid` | FK `usuarios`; sale del JWT; inmutable; null solo en notas migradas |
+| `created_at` / `updated_at` / `deleted_at` | `timestamptz` | |
+
+Índices: `ix_observaciones_animales_fecha (animal_id, fecha)` para el historial y
+`ix_observaciones_animales_sync (establecimiento_id, updated_at)` para el pull delta.
+
+El trigger `trg_observaciones_animales_validar` (`security invoker`) exige que el animal
+sea del mismo establecimiento y rechaza cambiar animal, establecimiento o autor.
+
+Las políticas RLS dejan leer e insertar a los miembros activos. El insert tiene que ser
+como uno mismo y con un animal del establecimiento, condición que verifica
+`animal_pertenece_a_establecimiento()`: es `security definer`, pero solo responde por los
+establecimientos de quien pregunta.
+
+El UPDATE, que también cubre el borrado lógico, se permite al autor sobre sus notas y a
+`owner`/`admin` sobre cualquiera. El trigger completa la regla: solo el autor cambia texto
+o fecha, así que las notas migradas no las edita nadie. No hay política de delete porque
+el borrado es lógico.
+
+Un cliente directo que apunta a un animal ajeno o inexistente recibe siempre el rechazo
+del RLS (42501), sin pistas sobre otros establecimientos.
+
+La migración `20261001_03` (espejo: `backend/scripts/crear_observaciones_animales.sql`)
+convirtió cada `animales.observaciones` no vacío en una entrada:
+
+- Autor en null.
+- `fecha = animales.created_at`.
+- Id determinista `md5('observacion_legacy:' || animal_id)::uuid`, para no duplicar al
+  reejecutarse.
+
+La columna vieja queda como legacy de solo lectura: la API ya no la escribe.
+
+Borrar un animal borra lógicamente sus observaciones en la misma transacción. Restaurarlo
+restaura solo las que se borraron en esa cascada. Eso lo hace el service de animales, no
+la base.
+
 ## Ventas de hacienda
 
 `ventas` registra la operación comercial y `ventas_detalles` los animales que la componen.
@@ -82,8 +198,9 @@ del animal (muerte, baja, traslado externo). Ver `docs/adr/adr-0001-ventas-separ
 | `fecha_operacion` | `date` NOT NULL | |
 | `tipo_comprador` | `varchar` NOT NULL | `frigorifico` \| `remate` \| `particular` |
 | `nombre_comprador` | `varchar` NOT NULL | razón social o nombre de pila; no vacío |
-| `apellido_comprador` | `varchar` | solo para persona física |
-| `nro_dte` | `varchar` | **nullable**: SENASA lo emite después del trato |
+| `es_empresa` | `boolean` NOT NULL | distingue persona jurídica de persona física |
+| `apellido_comprador` | `varchar` | obligatorio si no es empresa; debe ser `NULL` si es empresa |
+| `nro_dte` | `varchar` NOT NULL | se conserva como texto; no vacío |
 | `tipo_venta` | `varchar` NOT NULL | `por_kilo` \| `al_bulto` |
 | `peso_total_kg` | `numeric(10,3)` | obligatorio si `por_kilo` |
 | `precio_por_kg` | `numeric(14,2)` | obligatorio si `por_kilo` |
@@ -97,3 +214,109 @@ del animal (muerte, baja, traslado externo). Ver `docs/adr/adr-0001-ventas-separ
 
 Un mismo animal puede aparecer en ventas distintas (reingresó al stock y se revendió);
 lo que no puede es repetirse dentro de la misma venta.
+
+Las políticas RLS de ambas tablas permiten consultar y registrar información comercial
+solo a membresías activas con rol `owner` o `admin`. El rol `employee` no puede acceder a
+las ventas ni a sus montos, incluso si intenta escribir directamente mediante Supabase.
+
+### Cobros de ventas
+
+`ventas_cobros` registra cada pago efectivamente recibido por una venta. Decisiones en
+`docs/adr/adr-0005-cobros-de-ventas-y-tope-concurrente.md`.
+
+`ventas_cobros` — sincronizable:
+
+| Columna | Tipo | Notas |
+| --- | --- | --- |
+| `id` | `uuid` PK | generada en mobile; reintentar el sync no duplica; inmutable |
+| `venta_id` | `uuid` NOT NULL | FK `ventas`; inmutable |
+| `fecha_cobro` | `date` NOT NULL | cuándo se recibió el dinero; no puede ser futura (hoy en Córdoba) |
+| `monto` | `numeric(14,2)` NOT NULL | `> 0` |
+| `medio_cobro` | `varchar` NOT NULL | `efectivo` \| `transferencia` \| `cheque` \| `tarjeta` |
+| `registrado_por_id` | `uuid` NOT NULL | FK `usuarios`; sale del JWT; inmutable |
+| `observaciones` | `varchar` | |
+| `created_at` / `updated_at` / `deleted_at` | `timestamptz` | anular = soft delete |
+
+Índices: `ix_ventas_cobros_sync (venta_id, updated_at)`, que también sostiene la FK y el
+cálculo del saldo, más `fecha_cobro`, `registrado_por_id` y `updated_at`. No hay
+unicidad por fecha y monto, porque dos pagos iguales pueden ser operaciones distintas.
+
+El estado de cobro y el saldo **no se guardan**: se calculan sumando los cobros con
+`deleted_at is null`. Si la suma da 0, la venta está pendiente; si es menor que
+`monto_total`, parcial; si es igual, cobrada. El saldo es `monto_total` menos esa suma.
+
+La base garantiza que la suma de cobros activos nunca supere `monto_total`:
+
+- El trigger `ventas_cobros_validar_tope` bloquea la fila de la venta (`for update`)
+  antes de sumar, así dos cobros simultáneos no pueden sobrepagarla. También rechaza
+  cambiar el `id`, la venta o el autor de un cobro, y los cobros nuevos o reactivados
+  sobre una venta eliminada.
+- El trigger `ventas_cobros_validar_fecha` rechaza un `fecha_cobro` posterior al día
+  actual en `America/Argentina/Cordoba`, sin importar la zona horaria de la sesión.
+- El trigger `ventas_validar_monto_cubre_cobros` impide bajar `monto_total` por debajo de
+  lo ya cobrado.
+
+Los tres rechazos usan el SQLSTATE `23514` (`check_violation`). Las funciones son
+`security invoker`: una venta de otro establecimiento les resulta invisible, así que un
+intento no autorizado recibe siempre el mismo rechazo del RLS (`42501`), sin revelar
+saldo ni estado. Como SQLite no los
+ejecuta, se prueban contra Postgres en `backend/tests/test_ventas_cobros_postgres.py`
+cuando está definida `VITA_TEST_POSTGRES_URL`.
+
+El RLS resuelve el establecimiento por la venta y permite `select`, `insert` y `update`
+solo a membresías activas `owner`/`admin`. `employee` no ve importes cobrados. No hay
+política ni permiso de `delete`.
+
+## Lotes y movimientos entre lotes
+
+`lotes` es la división física del establecimiento donde pastorea un rodeo. Decisiones de
+fondo en `docs/adr/adr-0002-geometria-y-movimientos-de-lotes.md`; contrato con mobile en
+`docs/contrato-lotes-movimientos.md`.
+
+`lotes` — sincronizable:
+
+| Columna | Tipo | Notas |
+| --- | --- | --- |
+| `id` | `uuid` PK | generada en mobile |
+| `establecimiento_id` | `uuid` NOT NULL | FK `establecimientos` |
+| `nombre` | `varchar` NOT NULL | no vacío; único normalizado por establecimiento |
+| `geometria_local` | `jsonb` NOT NULL | polígono esquemático, **no** geografía (ver abajo) |
+| `modo_geometria` | `varchar` NOT NULL | hoy solo `local_schematic` |
+| `superficie_ha` | `numeric(12,2)` NOT NULL | `> 0`, autoritativa a **un decimal** |
+| `recurso_forrajero_codigo` | `varchar` | `pasto_natural` \| `alfalfa` \| `sorgo` \| `maiz` \| `avena` \| `otro` |
+| `tiene_agua` | `boolean` NOT NULL | |
+| `estado` | `varchar` NOT NULL | `activo` \| `descanso` \| `mantenimiento` \| `inactivo` |
+| `plan_alimenticio_id` | `uuid` | FK `planes_alimenticios`; concepto distinto del forraje |
+| `created_at` / `updated_at` / `deleted_at` | `timestamptz` | |
+
+La unicidad de nombre es un índice de expresión **parcial**:
+`unique (establecimiento_id, lower(btrim(nombre))) where deleted_at is null`. Normalizado
+para que " potrero bajo " colisione con "Potrero Bajo", y parcial para que borrar un lote
+libere su nombre. Está excluido de la comparación de `alembic check` (ver `alembic/env.py`):
+Postgres y SQLite escriben la expresión distinto y autogenerate no puede compararla.
+
+### La geometría no es geográfica
+
+`geometria_local` guarda un polígono en un plano cartesiano común a los lotes del
+establecimiento, de extensión lógica 1000×1000. **No es lat/long ni GeoJSON WGS84**, y no
+hay transformación definida hacia el mundo real. Es lo que permite dibujar el campo sin
+mapa, sin GPS y sin señal. La geometría geográfica real será una columna nullable aparte
+cuando exista vista aérea; esta seguirá siendo el fallback. **No se usa PostGIS**: área,
+auto-intersección y superposición se calculan con `shapely` en CPU.
+
+Dos lotes pueden compartir vértice, borde o adyacencia —un campo dividido en potreros es
+exactamente eso—; lo que no pueden es solaparse con área positiva.
+
+### El movimiento es un agregado
+
+`movimientos_lotes` (cabecera, sincronizable) + `movimientos_lotes_animales` (detalle,
+solo `Base`, con `UNIQUE (movimiento_lote_id, animal_id)`).
+
+Mobile crea *una* operación con N animales y le asigna *un* UUID, que es su clave de
+idempotencia; ese UUID tiene que ser PK de una sola fila. La tabla anterior
+`movimientos_lote` guardaba una fila por animal y no podía sostenerlo: se descartó en la
+migración `20260905_03` (estaba vacía).
+
+La cabecera lleva `lote_origen_id` (nullable en la base, obligatorio en la API V1),
+`lote_destino_id`, `fecha_movimiento`, `motivo` y `responsable_id`, que **siempre** sale
+del JWT.

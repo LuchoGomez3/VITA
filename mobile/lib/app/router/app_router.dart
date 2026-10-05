@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
@@ -41,6 +40,8 @@ import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
+import 'package:frontend_mayoral/features/lot_movement/lot_movement_composition.dart';
+import 'package:frontend_mayoral/features/lot_movement/presentation/pages/lot_movement_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/financial_access_denied_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expense_history_page.dart';
@@ -50,6 +51,7 @@ import 'package:frontend_mayoral/features/profile/presentation/pages/profile_pag
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
 import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
+import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_capture_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/strings/rfid_scan_strings.dart';
 import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
@@ -193,6 +195,7 @@ class AppRouter {
           builder: (context, state) => RegisterAnimalPage(
             createBloc: createRegisterAnimalBloc,
             initialRfid: state.uri.queryParameters['rfid'] ?? '',
+            initialEstablishmentId: state.uri.queryParameters['establecimientoId'],
           ),
         ),
         GoRoute(
@@ -222,6 +225,16 @@ class AppRouter {
             final registeredAnimal = state.extra! as RegisteredAnimal;
             return RegistrarAnimalSuccessPage(registeredAnimal: registeredAnimal);
           },
+        ),
+        GoRoute(
+          path: AppRoutes.lotMovement,
+          builder: (context, state) => LotMovementPage(
+            createCubit: () => createLotMovementCubit(
+              establishmentId: state.uri.queryParameters['establecimientoId'] ?? '',
+              animalId: state.uri.queryParameters['animalId'],
+              sourceLotId: state.uri.queryParameters['loteOrigenId'],
+            ),
+          ),
         ),
         GoRoute(
           path: AppRoutes.animalDetail,
@@ -319,8 +332,24 @@ class AppRouter {
               ),
               onHidKeyEvent: readingSource.handleKeyEvent,
               onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
-              onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
+              onRegisterAnimalRequested: (rfid) => context.push(
+                AppRoutes.animalRegisterWithRfid(
+                  rfidTagNumber: rfid,
+                  establishmentId: establishmentId,
+                ),
+              ),
               onAnimalSelected: selectingForVision ? (animalId) => context.pop(animalId) : null,
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.rfidCapture,
+          builder: (context, state) {
+            final readingSource = HidRfidReadingSource();
+            return RfidCapturePage(
+              createBloc: () => createRfidCaptureBloc(readingSource: readingSource),
+              onHidKeyEvent: readingSource.handleKeyEvent,
+              onCaptured: (rfid) => context.pop(rfid),
             );
           },
         ),
@@ -344,6 +373,7 @@ class AppRouter {
               );
             }
             return LotEditorPage(
+              showSatelliteMap: data.showSatelliteMap,
               createBloc: () => createLotEditorBloc(
                 establishmentId: data.establishmentId,
                 existingLots: data.existingLots,

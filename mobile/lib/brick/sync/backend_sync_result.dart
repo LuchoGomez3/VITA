@@ -10,6 +10,8 @@ class BackendSyncResult {
     required this.localId,
     required this.synchronized,
     this.errorCode,
+    this.responseData,
+    this.updatedAt,
   });
 
   /// Path del recurso sincronizado, por ejemplo `/api/v1/animales`.
@@ -23,6 +25,12 @@ class BackendSyncResult {
 
   /// Codigo funcional del backend cuando el sync fue rechazado.
   final String? errorCode;
+
+  /// Representación autoritativa incluida en `StandardResponse.data`.
+  final Map<String, dynamic>? responseData;
+
+  /// Versión enviada; permite ignorar respuestas de una edición anterior.
+  final DateTime? updatedAt;
 }
 
 /// Callback invocado despues de que el backend responde una request sync-able.

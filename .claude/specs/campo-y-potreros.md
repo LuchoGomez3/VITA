@@ -110,10 +110,22 @@ _A completar en `feature/pantalla-campos` cuando se maqueten las 3 pantallas._
 
 ## Pendiente para Etapas 2 y 3
 
-- Backend: no existe todavía un módulo `potreros`/`lotes` — CLAUDE.md marca
-  PostGIS y geolocalización de lote como **Release 2**, fuera del alcance
-  actual del backend.
-- Validaciones: ninguna prevista hasta que haya un formulario real (alta de
-  potrero, movimiento entre potreros).
-- Offline: probablemente offline-first (dato productivo de campo, igual
-  criterio que pesajes/sanidad), a confirmar cuando exista el módulo backend.
+- Backend: **el módulo `lotes` ya existe** (`/api/v1/lotes` y
+  `/api/v1/movimientos_lotes`), con geometría esquemática, sync offline-first y
+  movimiento batch de animales. Ver
+  [`docs/contrato-lotes-movimientos.md`](../../docs/contrato-lotes-movimientos.md)
+  y [`ADR-0002`](../../docs/adr/adr-0002-geometria-y-movimientos-de-lotes.md).
+  Esta sección decía que no existía y que PostGIS era Release 2; ambas cosas
+  quedaron desactualizadas. PostGIS **sigue** fuera de alcance, pero no bloquea
+  nada: la geometría del lote es un polígono esquemático local, no geografía.
+- Offline: **confirmado offline-first**. Mobile ya persiste lotes y movimientos
+  en SQLite y tiene la cola Brick cableada, apagada con
+  `VITA_ENABLE_LOT_REMOTE_SYNC` y `VITA_ENABLE_LOT_MOVEMENT_REMOTE_SYNC` hasta
+  aplicar los cinco ajustes de contrato que lista el documento de arriba.
+- Validaciones: las autoritativas ya están en el backend (nombre único
+  normalizado, superficie positiva, geometría válida, no superposición con área
+  positiva, no inactivar ni borrar un lote con animales). Falta el formulario
+  real que las consuma en estas tres pantallas.
+- El CTA "Mover animales a otro potrero" ya tiene backend
+  (`POST /api/v1/movimientos_lotes`, batch y atómico); sigue faltando el diseño
+  de la pantalla.

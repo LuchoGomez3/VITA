@@ -19,6 +19,9 @@ abstract class LotBrickStore {
 
   /// Descarga cambios remotos cuando la integración está habilitada.
   Future<void> pullRemoteLots(String establishmentId);
+
+  /// Envía los lotes pendientes del establecimiento.
+  Future<void> pushPendingLots(String establishmentId);
 }
 
 /// Implementación Brick de persistencia durable local.
@@ -119,22 +122,76 @@ class BrickLotStore implements LotBrickStore {
     }
   }
 
+  @override
+  Future<void> pushPendingLots(String establishmentId) async {
+    if (!_enableRemoteSync) return;
+    final lots = await _repository.getLocal<BrickLotModel>();
+    final pending = lots.where(
+      (lot) => lot.establishmentId == establishmentId && lot.syncStatus == BrickLotSyncStatus.pending,
+    );
+    for (final lot in pending) {
+      await _repository.enqueueRemoteUpsert<BrickLotModel>(lot);
+    }
+  }
+
+  /// Descarga destinos activos aunque la edición remota de lotes siga apagada.
+  /// Los lotes confirmados que dejaron de aparecer se retiran de los destinos;
+  /// los borradores locales se conservan para que el usuario vea su estado.
+  Future<void> pullActiveLots(String establishmentId) async {
+    final remote = await _repository.remoteProvider.get<BrickLotModel>(
+      repository: _repository,
+      query: Query(
+        forProviders: [RestProviderQuery(request: BrickLotRequestTransformer.activeLotsRequest(establishmentId))],
+      ),
+    );
+    await _repository.runLocalTransaction((transaction) async {
+      final local = await transaction.getLocal<BrickLotModel>();
+      final ids = remote.map((lot) => lot.localId).toSet();
+      for (final lot in local.where(
+        (lot) =>
+            lot.establishmentId == establishmentId &&
+            lot.syncStatus == BrickLotSyncStatus.synchronized &&
+            !ids.contains(lot.localId),
+      )) {
+        await transaction.upsert(lot.copyWith(statusCode: 'inactivo'));
+      }
+      for (final lot in remote) {
+        final existing = local.where((item) => item.localId == lot.localId).firstOrNull;
+        if (existing != null && existing.syncStatus != BrickLotSyncStatus.synchronized) continue;
+        lot.primaryKey = existing?.primaryKey;
+        await transaction.upsert(lot.copyWith(syncStatus: BrickLotSyncStatus.synchronized));
+      }
+    });
+  }
+
   /// Aplica confirmaciones o rechazos publicados por el cliente HTTP.
   Future<void> applyLotSyncResult(BackendSyncResult result) async {
     // TODO(field-sync): mapear los códigos autoritativos de nombre duplicado,
     // geometría inválida y superposición al flujo de reconciliación mobile.
-    if (!_enableRemoteSync || !BrickLotRequestTransformer.matchesLotResource(result.resourcePath)) {
+    if (!BrickLotRequestTransformer.matchesLotResource(result.resourcePath)) {
       return;
     }
     final lots = await _repository.getLocal<BrickLotModel>();
     for (final lot in lots) {
       if (lot.localId != result.localId) continue;
-      await _repository.upsertLocal<BrickLotModel>(
-        lot.copyWith(
-          syncStatus: result.synchronized ? BrickLotSyncStatus.synchronized : BrickLotSyncStatus.rejected,
-          syncErrorCode: result.errorCode,
-        ),
-      );
+      final responseData = result.responseData;
+      if (result.synchronized && responseData != null) {
+        final authoritative = await _repository.modelFromRemoteData<BrickLotModel>(responseData);
+        authoritative.primaryKey = lot.primaryKey;
+        await _repository.upsertLocal<BrickLotModel>(
+          authoritative.copyWith(
+            syncStatus: BrickLotSyncStatus.synchronized,
+            syncErrorCode: null,
+          ),
+        );
+      } else {
+        await _repository.upsertLocal<BrickLotModel>(
+          lot.copyWith(
+            syncStatus: result.synchronized ? BrickLotSyncStatus.synchronized : BrickLotSyncStatus.rejected,
+            syncErrorCode: result.errorCode,
+          ),
+        );
+      }
       return;
     }
   }

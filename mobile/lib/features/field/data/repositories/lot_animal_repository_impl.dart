@@ -23,6 +23,7 @@ class LotAnimalRepositoryImpl implements LotAnimalRepository {
       return Result.success([
         for (final animal in animals)
           if (animal.deletedAt == null &&
+              animal.status == 'activo' &&
               animal.establishmentId == establishmentId &&
               (lotId == null || animal.lotId == lotId))
             LotAnimalSummary(
@@ -32,6 +33,7 @@ class LotAnimalRepositoryImpl implements LotAnimalRepository {
               rfidTagNumber: animal.rfidTagNumber,
               visualTag: animal.visualTag,
               categoryName: animal.categoryName,
+              syncErrorCode: animal.syncErrorCode,
             ),
       ]);
     } on Object catch (error, stackTrace) {

@@ -22,6 +22,46 @@ sealed class AnimalWeightRecord with _$AnimalWeightRecord {
   }) = _AnimalWeightRecord;
 }
 
+/// Categoría del catálogo con las restricciones que necesita la edición.
+@freezed
+sealed class AnimalDetailCategory with _$AnimalDetailCategory {
+  /// Crea una opción; allowedSex null significa que admite ambos sexos.
+  const factory AnimalDetailCategory({
+    required String id,
+    required String name,
+    required bool allowsReproductiveStatus,
+    AnimalSex? allowedSex,
+  }) = _AnimalDetailCategory;
+}
+
+/// Entrada independiente del historial de observaciones del animal.
+@freezed
+sealed class AnimalDetailObservation with _$AnimalDetailObservation {
+  /// Crea una nota con fecha y su resultado local de sincronización.
+  const factory AnimalDetailObservation({
+    required String id,
+    required String text,
+    required DateTime date,
+    required AnimalSyncStatus syncStatus,
+    String? syncErrorCode,
+  }) = _AnimalDetailObservation;
+}
+
+/// Asignación o traslado que forma parte de la trazabilidad del animal.
+@freezed
+sealed class AnimalLotMovementEvent with _$AnimalLotMovementEvent {
+  /// Proyección del historial compartido, independiente de los modelos Brick.
+  const factory AnimalLotMovementEvent({
+    required String id,
+    required DateTime date,
+    required String destinationName,
+    required String reason,
+    required AnimalSyncStatus syncStatus,
+    String? sourceName,
+    String? syncErrorCode,
+  }) = _AnimalLotMovementEvent;
+}
+
 /// Informacion de negocio que necesita la ficha de un animal.
 ///
 /// Se mantiene independiente de Brick y del shape REST para que presentation no
@@ -81,6 +121,21 @@ sealed class AnimalDetail with _$AnimalDetail {
     /// Historial real de pesajes ordenado desde el mas antiguo al mas reciente.
     required List<AnimalWeightRecord> weightHistory,
 
+    /// Estado productivo del animal; una muerte no implica borrado lógico.
+    @Default(AnimalStatus.active) AnimalStatus status,
+
+    /// Condición reproductiva opcional leída del backend o del cambio local.
+    AnimalReproductiveStatus? reproductiveStatus,
+
+    /// Catálogo del establecimiento disponible también sin conexión.
+    @Default(<AnimalDetailCategory>[]) List<AnimalDetailCategory> categories,
+
+    /// Entradas independientes; no reemplazan el texto legacy del alta.
+    @Default(<AnimalDetailObservation>[]) List<AnimalDetailObservation> observationHistory,
+
+    /// Movimientos locales y remotos; incluye pendientes y rechazos visibles.
+    @Default(<AnimalLotMovementEvent>[]) List<AnimalLotMovementEvent> lotMovementHistory,
+
     /// ID backend de la madre, si existe.
     String? motherId,
 
@@ -92,6 +147,12 @@ sealed class AnimalDetail with _$AnimalDetail {
 
     /// Observaciones libres.
     String? observations,
+
+    /// Ruta de la foto guardada en los datos privados de esta instalación.
+    String? localPhotoPath,
+
+    /// Foto incluida en la app por caravana, usada si no hay captura local.
+    String? photoAssetPath,
 
     /// Codigo de rechazo de sync guardado localmente.
     String? syncErrorCode,

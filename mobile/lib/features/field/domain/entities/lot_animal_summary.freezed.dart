@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LotAnimalSummary {
 
- String get id; String get establishmentId; String get lotId; String get rfidTagNumber; String get visualTag; String get categoryName;
+ String get id; String get establishmentId; String get lotId; String get rfidTagNumber; String get visualTag; String get categoryName; String? get syncErrorCode;
 /// Create a copy of LotAnimalSummary
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $LotAnimalSummaryCopyWith<LotAnimalSummary> get copyWith => _$LotAnimalSummaryCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LotAnimalSummary&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LotAnimalSummary&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,establishmentId,lotId,rfidTagNumber,visualTag,categoryName);
+int get hashCode => Object.hash(runtimeType,id,establishmentId,lotId,rfidTagNumber,visualTag,categoryName,syncErrorCode);
 
 @override
 String toString() {
-  return 'LotAnimalSummary(id: $id, establishmentId: $establishmentId, lotId: $lotId, rfidTagNumber: $rfidTagNumber, visualTag: $visualTag, categoryName: $categoryName)';
+  return 'LotAnimalSummary(id: $id, establishmentId: $establishmentId, lotId: $lotId, rfidTagNumber: $rfidTagNumber, visualTag: $visualTag, categoryName: $categoryName, syncErrorCode: $syncErrorCode)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $LotAnimalSummaryCopyWith<$Res>  {
   factory $LotAnimalSummaryCopyWith(LotAnimalSummary value, $Res Function(LotAnimalSummary) _then) = _$LotAnimalSummaryCopyWithImpl;
 @useResult
 $Res call({
- String id, String establishmentId, String lotId, String rfidTagNumber, String visualTag, String categoryName
+ String id, String establishmentId, String lotId, String rfidTagNumber, String visualTag, String categoryName, String? syncErrorCode
 });
 
 
@@ -62,7 +62,7 @@ class _$LotAnimalSummaryCopyWithImpl<$Res>
 
 /// Create a copy of LotAnimalSummary
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? establishmentId = null,Object? lotId = null,Object? rfidTagNumber = null,Object? visualTag = null,Object? categoryName = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? establishmentId = null,Object? lotId = null,Object? rfidTagNumber = null,Object? visualTag = null,Object? categoryName = null,Object? syncErrorCode = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
@@ -70,7 +70,8 @@ as String,lotId: null == lotId ? _self.lotId : lotId // ignore: cast_nullable_to
 as String,rfidTagNumber: null == rfidTagNumber ? _self.rfidTagNumber : rfidTagNumber // ignore: cast_nullable_to_non_nullable
 as String,visualTag: null == visualTag ? _self.visualTag : visualTag // ignore: cast_nullable_to_non_nullable
 as String,categoryName: null == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
-as String,
+as String,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -152,10 +153,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String lotId,  String rfidTagNumber,  String visualTag,  String categoryName)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String lotId,  String rfidTagNumber,  String visualTag,  String categoryName,  String? syncErrorCode)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LotAnimalSummary() when $default != null:
-return $default(_that.id,_that.establishmentId,_that.lotId,_that.rfidTagNumber,_that.visualTag,_that.categoryName);case _:
+return $default(_that.id,_that.establishmentId,_that.lotId,_that.rfidTagNumber,_that.visualTag,_that.categoryName,_that.syncErrorCode);case _:
   return orElse();
 
 }
@@ -173,10 +174,10 @@ return $default(_that.id,_that.establishmentId,_that.lotId,_that.rfidTagNumber,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String lotId,  String rfidTagNumber,  String visualTag,  String categoryName)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String lotId,  String rfidTagNumber,  String visualTag,  String categoryName,  String? syncErrorCode)  $default,) {final _that = this;
 switch (_that) {
 case _LotAnimalSummary():
-return $default(_that.id,_that.establishmentId,_that.lotId,_that.rfidTagNumber,_that.visualTag,_that.categoryName);}
+return $default(_that.id,_that.establishmentId,_that.lotId,_that.rfidTagNumber,_that.visualTag,_that.categoryName,_that.syncErrorCode);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -190,10 +191,10 @@ return $default(_that.id,_that.establishmentId,_that.lotId,_that.rfidTagNumber,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String establishmentId,  String lotId,  String rfidTagNumber,  String visualTag,  String categoryName)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String establishmentId,  String lotId,  String rfidTagNumber,  String visualTag,  String categoryName,  String? syncErrorCode)?  $default,) {final _that = this;
 switch (_that) {
 case _LotAnimalSummary() when $default != null:
-return $default(_that.id,_that.establishmentId,_that.lotId,_that.rfidTagNumber,_that.visualTag,_that.categoryName);case _:
+return $default(_that.id,_that.establishmentId,_that.lotId,_that.rfidTagNumber,_that.visualTag,_that.categoryName,_that.syncErrorCode);case _:
   return null;
 
 }
@@ -205,7 +206,7 @@ return $default(_that.id,_that.establishmentId,_that.lotId,_that.rfidTagNumber,_
 
 
 class _LotAnimalSummary implements LotAnimalSummary {
-  const _LotAnimalSummary({required this.id, required this.establishmentId, required this.lotId, required this.rfidTagNumber, required this.visualTag, required this.categoryName});
+  const _LotAnimalSummary({required this.id, required this.establishmentId, required this.lotId, required this.rfidTagNumber, required this.visualTag, required this.categoryName, this.syncErrorCode});
   
 
 @override final  String id;
@@ -214,6 +215,7 @@ class _LotAnimalSummary implements LotAnimalSummary {
 @override final  String rfidTagNumber;
 @override final  String visualTag;
 @override final  String categoryName;
+@override final  String? syncErrorCode;
 
 /// Create a copy of LotAnimalSummary
 /// with the given fields replaced by the non-null parameter values.
@@ -225,16 +227,16 @@ _$LotAnimalSummaryCopyWith<_LotAnimalSummary> get copyWith => __$LotAnimalSummar
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LotAnimalSummary&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LotAnimalSummary&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,establishmentId,lotId,rfidTagNumber,visualTag,categoryName);
+int get hashCode => Object.hash(runtimeType,id,establishmentId,lotId,rfidTagNumber,visualTag,categoryName,syncErrorCode);
 
 @override
 String toString() {
-  return 'LotAnimalSummary(id: $id, establishmentId: $establishmentId, lotId: $lotId, rfidTagNumber: $rfidTagNumber, visualTag: $visualTag, categoryName: $categoryName)';
+  return 'LotAnimalSummary(id: $id, establishmentId: $establishmentId, lotId: $lotId, rfidTagNumber: $rfidTagNumber, visualTag: $visualTag, categoryName: $categoryName, syncErrorCode: $syncErrorCode)';
 }
 
 
@@ -245,7 +247,7 @@ abstract mixin class _$LotAnimalSummaryCopyWith<$Res> implements $LotAnimalSumma
   factory _$LotAnimalSummaryCopyWith(_LotAnimalSummary value, $Res Function(_LotAnimalSummary) _then) = __$LotAnimalSummaryCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String establishmentId, String lotId, String rfidTagNumber, String visualTag, String categoryName
+ String id, String establishmentId, String lotId, String rfidTagNumber, String visualTag, String categoryName, String? syncErrorCode
 });
 
 
@@ -262,7 +264,7 @@ class __$LotAnimalSummaryCopyWithImpl<$Res>
 
 /// Create a copy of LotAnimalSummary
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? establishmentId = null,Object? lotId = null,Object? rfidTagNumber = null,Object? visualTag = null,Object? categoryName = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? establishmentId = null,Object? lotId = null,Object? rfidTagNumber = null,Object? visualTag = null,Object? categoryName = null,Object? syncErrorCode = freezed,}) {
   return _then(_LotAnimalSummary(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
@@ -270,7 +272,8 @@ as String,lotId: null == lotId ? _self.lotId : lotId // ignore: cast_nullable_to
 as String,rfidTagNumber: null == rfidTagNumber ? _self.rfidTagNumber : rfidTagNumber // ignore: cast_nullable_to_non_nullable
 as String,visualTag: null == visualTag ? _self.visualTag : visualTag // ignore: cast_nullable_to_non_nullable
 as String,categoryName: null == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
-as String,
+as String,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

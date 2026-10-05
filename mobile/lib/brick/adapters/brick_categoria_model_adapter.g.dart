@@ -15,6 +15,9 @@ Future<BrickCategoriaModel> _$BrickCategoriaModelFromRest(
     description: data['descripcion'] == null
         ? null
         : data['descripcion'] as String?,
+    allowedSex: (data['sexo_permitido'] as String?) ?? 'ambos',
+    allowsReproductiveStatus:
+        (data['permite_estado_reproductivo'] as bool?) ?? false,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -35,6 +38,8 @@ Future<Map<String, dynamic>> _$BrickCategoriaModelToRest(
     'establecimiento_id': instance.establishmentId,
     'nombre': instance.name,
     'descripcion': instance.description,
+    'sexo_permitido': instance.allowedSex,
+    'permite_estado_reproductivo': instance.allowsReproductiveStatus,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),
@@ -55,6 +60,8 @@ Future<BrickCategoriaModel> _$BrickCategoriaModelFromSqlite(
     description: data['description'] == null
         ? null
         : data['description'] as String?,
+    allowedSex: (data['allowed_sex'] as String?) ?? 'ambos',
+    allowsReproductiveStatus: data['allows_reproductive_status'] == 1,
     syncStatus: BrickCategoriaSyncStatus.values[data['sync_status'] as int],
     syncErrorCode: data['sync_error_code'] == null
         ? null
@@ -79,6 +86,8 @@ Future<Map<String, dynamic>> _$BrickCategoriaModelToSqlite(
     'establishment_id': instance.establishmentId,
     'name': instance.name,
     'description': instance.description,
+    'allowed_sex': instance.allowedSex,
+    'allows_reproductive_status': instance.allowsReproductiveStatus ? 1 : 0,
     'sync_status': BrickCategoriaSyncStatus.values.indexOf(instance.syncStatus),
     'sync_error_code': instance.syncErrorCode,
     'created_at': instance.createdAt.toIso8601String(),
@@ -125,6 +134,18 @@ class BrickCategoriaModelAdapter
       columnName: 'description',
       iterable: false,
       type: String,
+    ),
+    'allowedSex': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'allowed_sex',
+      iterable: false,
+      type: String,
+    ),
+    'allowsReproductiveStatus': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'allows_reproductive_status',
+      iterable: false,
+      type: bool,
     ),
     'syncStatus': const RuntimeSqliteColumnDefinition(
       association: false,

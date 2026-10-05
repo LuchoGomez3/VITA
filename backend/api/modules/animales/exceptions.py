@@ -2,10 +2,22 @@
 
 from api.shared.exceptions import (
     ConflictError,
-    ForbiddenError,
+    EstablecimientoNoAutorizadoError,
     NotFoundError,
     ValidationError,
 )
+
+# Se re-exporta para no romper los imports existentes: la excepción se promovió a
+# ``api.shared.exceptions`` cuando lotes y movimientos también la necesitaron.
+__all__ = [
+    "AnimalNoEncontradoError",
+    "AnimalReferenciaInvalidaError",
+    "CaravanaDuplicadaError",
+    "CategoriaIncompatibleConSexoError",
+    "EstablecimientoNoAutorizadoError",
+    "EstadoReproductivoInvalidoError",
+    "LoteNoPerteneceAlEstablecimientoError",
+]
 
 
 class CaravanaDuplicadaError(ConflictError):
@@ -33,15 +45,21 @@ class AnimalReferenciaInvalidaError(ValidationError):
         )
 
 
-class EstablecimientoNoAutorizadoError(ForbiddenError):
-    code = "establecimiento_no_autorizado"
-
-    def __init__(self) -> None:
-        super().__init__("No tiene acceso al establecimiento indicado")
-
-
 class AnimalNoEncontradoError(NotFoundError):
     code = "animal_no_encontrado"
 
     def __init__(self) -> None:
         super().__init__("Animal no encontrado o sin acceso")
+
+
+class CategoriaIncompatibleConSexoError(ValidationError):
+    code = "categoria_incompatible_con_sexo"
+
+    def __init__(self) -> None:
+        super().__init__(
+            "La categoría seleccionada no es compatible con el sexo del animal"
+        )
+
+
+class EstadoReproductivoInvalidoError(ValidationError):
+    code = "estado_reproductivo_invalido"

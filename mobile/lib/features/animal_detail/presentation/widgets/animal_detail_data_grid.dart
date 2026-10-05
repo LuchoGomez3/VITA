@@ -54,6 +54,24 @@ class AnimalDetailDataGrid extends StatelessWidget {
           children: [
             Expanded(
               child: AppInfoCell(
+                label: AnimalDetailStrings.animalStatusLabel,
+                value: AnimalDetailStrings.statusLabel(animalDetail.status),
+              ),
+            ),
+            if (animalDetail.sex == AnimalSex.female)
+              Expanded(
+                child: AppInfoCell(
+                  label: AnimalDetailStrings.reproductiveStatusLabel,
+                  value: AnimalDetailStrings.reproductionLabel(animalDetail.reproductiveStatus),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: AppInfoCell(
                 label: AnimalDetailStrings.birthDateLabel,
                 value: DateDisplayFormatter.shortDate(animalDetail.birthDate),
               ),
@@ -80,6 +98,13 @@ class AnimalDetailDataGrid extends StatelessWidget {
                 label: AnimalDetailStrings.lastWeightSourceLabel,
                 value: animalDetail.weighingMethod.label,
                 isHighlighted: true,
+                // El verde identifica únicamente los pesajes estimados por IA.
+                highlightColor: animalDetail.weighingMethod == AnimalWeighingMethod.artificialIntelligence
+                    ? AppColors.primary
+                    : null,
+                highlightBackgroundColor: animalDetail.weighingMethod == AnimalWeighingMethod.artificialIntelligence
+                    ? AppColors.backgroundSecondaryLight
+                    : null,
               ),
             ),
           ],
