@@ -134,6 +134,55 @@ RLS: `categorias` y `animales` tienen RLS activo y ninguna policy, así que solo
 backend. Si algún día un cliente lee directo por PostgREST, va a hacer falta una policy de
 lectura (globales + propias).
 
+### Observaciones del animal
+
+Decisiones de fondo en `docs/adr/adr-0007-observaciones-animales-como-entradas.md`.
+
+`observaciones_animales` es sincronizable y guarda una fila por nota:
+
+| Columna | Tipo | Notas |
+| --- | --- | --- |
+| `id` | `uuid` PK | generada en mobile |
+| `animal_id` | `uuid` NOT NULL | FK `animales`; inmutable |
+| `establecimiento_id` | `uuid` NOT NULL | FK `establecimientos`; igual al del animal; inmutable |
+| `texto` | `text` NOT NULL | `trim(texto) <> ''` |
+| `fecha` | `timestamptz` NOT NULL | cuándo se hizo la observación |
+| `autor_id` | `uuid` | FK `usuarios`; sale del JWT; inmutable; null solo en notas migradas |
+| `created_at` / `updated_at` / `deleted_at` | `timestamptz` | |
+
+Índices: `ix_observaciones_animales_fecha (animal_id, fecha)` para el historial y
+`ix_observaciones_animales_sync (establecimiento_id, updated_at)` para el pull delta.
+
+El trigger `trg_observaciones_animales_validar` (`security invoker`) exige que el animal
+sea del mismo establecimiento y rechaza cambiar animal, establecimiento o autor.
+
+Las políticas RLS dejan leer e insertar a los miembros activos. El insert tiene que ser
+como uno mismo y con un animal del establecimiento, condición que verifica
+`animal_pertenece_a_establecimiento()`: es `security definer`, pero solo responde por los
+establecimientos de quien pregunta.
+
+El UPDATE, que también cubre el borrado lógico, se permite al autor sobre sus notas y a
+`owner`/`admin` sobre cualquiera. El trigger completa la regla: solo el autor cambia texto
+o fecha, así que las notas migradas no las edita nadie. No hay política de delete porque
+el borrado es lógico.
+
+Un cliente directo que apunta a un animal ajeno o inexistente recibe siempre el rechazo
+del RLS (42501), sin pistas sobre otros establecimientos.
+
+La migración `20261001_03` (espejo: `backend/scripts/crear_observaciones_animales.sql`)
+convirtió cada `animales.observaciones` no vacío en una entrada:
+
+- Autor en null.
+- `fecha = animales.created_at`.
+- Id determinista `md5('observacion_legacy:' || animal_id)::uuid`, para no duplicar al
+  reejecutarse.
+
+La columna vieja queda como legacy de solo lectura: la API ya no la escribe.
+
+Borrar un animal borra lógicamente sus observaciones en la misma transacción. Restaurarlo
+restaura solo las que se borraron en esa cascada. Eso lo hace el service de animales, no
+la base.
+
 ## Ventas de hacienda
 
 `ventas` registra la operación comercial y `ventas_detalles` los animales que la componen.
