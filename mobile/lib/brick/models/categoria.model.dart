@@ -1,5 +1,6 @@
 import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart';
 import 'package:brick_rest/brick_rest.dart';
+import 'package:brick_sqlite/brick_sqlite.dart';
 
 const _unchangedSyncErrorCode = Object();
 
@@ -102,6 +103,8 @@ class BrickCategoriaModel extends OfflineFirstWithRestModel {
     required this.updatedAt,
     this.establishmentId,
     this.description,
+    this.allowedSex = 'ambos',
+    this.allowsReproductiveStatus = false,
     this.deletedAt,
     this.syncStatus = BrickCategoriaSyncStatus.pending,
     this.syncErrorCode,
@@ -125,6 +128,16 @@ class BrickCategoriaModel extends OfflineFirstWithRestModel {
   /// Descripcion opcional de la categoria.
   @Rest(name: 'descripcion')
   final String? description;
+
+  /// Sexo permitido por las reglas del catálogo remoto: macho, hembra o ambos.
+  @Rest(name: 'sexo_permitido', fromGenerator: "(%DATA_PROPERTY% as String?) ?? 'ambos'")
+  @Sqlite(fromGenerator: "(%DATA_PROPERTY% as String?) ?? 'ambos'")
+  final String allowedSex;
+
+  /// Habilita registrar vacía o preñada para hembras de esta categoría.
+  @Rest(name: 'permite_estado_reproductivo', fromGenerator: '(%DATA_PROPERTY% as bool?) ?? false')
+  @Sqlite(defaultValue: 'false')
+  final bool allowsReproductiveStatus;
 
   /// Estado local de sincronizacion. No se envia al backend.
   @Rest(ignore: true)
@@ -161,6 +174,8 @@ class BrickCategoriaModel extends OfflineFirstWithRestModel {
       establishmentId: establishmentId,
       name: name,
       description: description,
+      allowedSex: allowedSex,
+      allowsReproductiveStatus: allowsReproductiveStatus,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt,

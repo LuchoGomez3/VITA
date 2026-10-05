@@ -1,0 +1,10 @@
+{
+  "modelo": "modelo_pesaje_con_intervalo.keras",
+  "sha256_modelo": "4d44ee390fd9a0ec1683514ea641458a0fb38521680e57c6123f91c6ad47b33b",
+  "cobertura_objetivo": 0.9,
+  "margen_kg": 111.0491943359375,
+  "animales_calibracion": 94,
+  "fotos_calibracion": 422,
+  "semilla": 137,
+  "metodo": "cuantil_del_error_maximo_por_animal"
+}

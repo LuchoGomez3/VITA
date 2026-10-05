@@ -2,8 +2,10 @@ import 'package:frontend_mayoral/app/config/config.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
+import 'package:frontend_mayoral/demo/demo_establishment_registration_repository.dart';
 import 'package:frontend_mayoral/features/establishment_register/data/datasources/establishment_registration_remote_data_source.dart';
 import 'package:frontend_mayoral/features/establishment_register/data/repositories/establishment_registration_repository_impl.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/repositories/establishment_registration_repository.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/use_cases/register_establishment_use_case.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
 import 'package:http/http.dart' as http;
@@ -19,16 +21,17 @@ RegisterEstablishmentBloc createRegisterEstablishmentBloc({
   RegisterEstablishmentStep initialStep = RegisterEstablishmentStep.identification,
 }) {
   final client = http.Client();
-  final repository = EstablishmentRegistrationRepositoryImpl(
-    establishmentCatalog: const EstablishmentCatalog(
-      secureStorage: FlutterSecureStorageService(),
-    ),
-    remoteDataSource: EstablishmentRegistrationRemoteDataSource(
-      backendBaseUrl: AppConfig.current.backendBaseUrl,
-      tokenProvider: SessionBackendAccessTokenProvider.instance,
-      client: client,
-    ),
-  );
+  const catalog = EstablishmentCatalog(secureStorage: FlutterSecureStorageService());
+  final EstablishmentRegistrationRepository repository = AppConfig.demoMode
+      ? const DemoEstablishmentRegistrationRepository(catalog: catalog)
+      : EstablishmentRegistrationRepositoryImpl(
+          establishmentCatalog: catalog,
+          remoteDataSource: EstablishmentRegistrationRemoteDataSource(
+            backendBaseUrl: AppConfig.current.backendBaseUrl,
+            tokenProvider: SessionBackendAccessTokenProvider.instance,
+            client: client,
+          ),
+        );
 
   return RegisterEstablishmentBloc(
     initialStep: initialStep,

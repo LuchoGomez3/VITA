@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
@@ -9,7 +10,6 @@ import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/presentation/cubit/lot_detail_cubit.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_edit_dialog.dart';
-import 'package:frontend_mayoral/features/field/presentation/widgets/lot_movement_dialog.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_overview_canvas.dart';
 import 'package:go_router/go_router.dart';
 
@@ -163,6 +163,13 @@ class _LotDetailBody extends StatelessWidget {
           label: FieldStrings.lotStatusLabel,
           value: FieldStrings.statusName(lot.status),
         ),
+        if (lot.syncStatus == LotSyncStatus.rejected) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            FieldStrings.syncErrorMessage(lot.syncErrorCode),
+            style: AppTypography.errorBody,
+          ),
+        ],
         if (state.mutationErrorMessage case final message?) ...[
           const SizedBox(height: AppSpacing.md),
           Text(message, style: AppTypography.errorBody),
@@ -201,11 +208,21 @@ class _LotDetailBody extends StatelessWidget {
               title: Text(
                 animal.visualTag.isEmpty ? animal.rfidTagNumber : animal.visualTag,
               ),
-              subtitle: Text(
-                FieldStrings.animalRfidDetails(
-                  categoryName: animal.categoryName,
-                  rfidTagNumber: animal.rfidTagNumber,
-                ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    FieldStrings.animalRfidDetails(
+                      categoryName: animal.categoryName,
+                      rfidTagNumber: animal.rfidTagNumber,
+                    ),
+                  ),
+                  if (animal.syncErrorCode case final errorCode?)
+                    Text(
+                      FieldStrings.syncErrorMessage(errorCode),
+                      style: AppTypography.errorBody,
+                    ),
+                ],
               ),
             ),
         const SizedBox(height: AppSpacing.md),
@@ -222,21 +239,11 @@ class _LotDetailBody extends StatelessWidget {
     );
   }
 
+  /// El flujo compartido conserva confirmación, historial y sync del traslado.
   Future<void> _moveAnimals(BuildContext context) async {
-    final input = await showDialog<LotMovementInput>(
-      context: context,
-      builder: (_) => LotMovementDialog(
-        animals: state.animals,
-        destinations: state.availableDestinations,
-      ),
-    );
-    if (input == null || !context.mounted) return;
-    await context.read<LotDetailCubit>().moveAnimals(
-      animalIds: input.animalIds,
-      destinationLotId: input.destinationLotId,
-      occurredAt: input.occurredAt,
-      reason: input.reason,
-    );
+    final lot = state.lot!;
+    await context.push<void>(AppRoutes.lotMovementFor(establishmentId: lot.establishmentId, sourceLotId: lot.id));
+    if (context.mounted) await context.read<LotDetailCubit>().load();
   }
 }
 

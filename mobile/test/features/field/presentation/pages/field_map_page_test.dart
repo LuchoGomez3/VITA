@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/local_point.dart';
@@ -14,9 +15,36 @@ import 'package:frontend_mayoral/features/field/domain/use_cases/get_lots_use_ca
 import 'package:frontend_mayoral/features/field/presentation/cubit/lot_overview_cubit.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/field_map_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/field_satellite_layer.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/lot_overview_canvas.dart';
 import 'package:go_router/go_router.dart';
 
 void main() {
+  testWidgets('retira el fondo satelital al cambiar de San Nicolás a otro establecimiento', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FieldMapPage(
+          createCubit: () => LotOverviewCubit(
+            getEstablishments: const GetFieldEstablishmentsUseCase(
+              _EstablishmentRepository(names: {'est-1': 'San Nicolás', 'est-2': 'La Sirena'}),
+            ),
+            getLots: GetLotsUseCase(_MutableLotRepository([])),
+            getAnimalCounts: const GetLotAnimalCountsUseCase(_AnimalRepository()),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final canvas = find.byType(LotOverviewCanvas);
+    final cubit = tester.element(canvas).read<LotOverviewCubit>();
+    await cubit.selectEstablishment('est-1');
+    await tester.pumpAndSettle();
+    expect(find.byType(FieldSatelliteLayer), findsOneWidget);
+    await cubit.selectEstablishment('est-2');
+    await tester.pumpAndSettle();
+    expect(find.byType(FieldSatelliteLayer), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('recarga SQLite al volver de eliminar un lote', (tester) async {
     final lots = _MutableLotRepository([_lot()]);
     final router = GoRouter(
@@ -89,10 +117,12 @@ Lot _lot() => Lot(
 );
 
 class _EstablishmentRepository implements FieldEstablishmentRepository {
-  const _EstablishmentRepository();
+  const _EstablishmentRepository({this.names = const {'est-1': 'Establecimiento'}});
+
+  final Map<String, String> names;
 
   @override
-  Future<Result<Map<String, String>>> getEstablishments() async => const Result.success({'est-1': 'Establecimiento'});
+  Future<Result<Map<String, String>>> getEstablishments() async => Result.success(names);
 }
 
 class _AnimalRepository implements LotAnimalRepository {

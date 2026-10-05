@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
@@ -8,6 +7,7 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_case.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
+import 'package:frontend_mayoral/core/navigation/camera_reveal_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
 import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
@@ -40,6 +40,8 @@ import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
+import 'package:frontend_mayoral/features/lot_movement/lot_movement_composition.dart';
+import 'package:frontend_mayoral/features/lot_movement/presentation/pages/lot_movement_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/financial_access_denied_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expense_history_page.dart';
@@ -49,6 +51,7 @@ import 'package:frontend_mayoral/features/profile/presentation/pages/profile_pag
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
 import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
+import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_capture_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/strings/rfid_scan_strings.dart';
 import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
@@ -59,6 +62,8 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senas
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/vision_weighing_page.dart';
+import 'package:frontend_mayoral/features/vision_weighing/vision_weighing_composition.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion central de rutas y proteccion de sesion de la aplicacion.
@@ -190,6 +195,7 @@ class AppRouter {
           builder: (context, state) => RegisterAnimalPage(
             createBloc: createRegisterAnimalBloc,
             initialRfid: state.uri.queryParameters['rfid'] ?? '',
+            initialEstablishmentId: state.uri.queryParameters['establecimientoId'],
           ),
         ),
         GoRoute(
@@ -219,6 +225,16 @@ class AppRouter {
             final registeredAnimal = state.extra! as RegisteredAnimal;
             return RegistrarAnimalSuccessPage(registeredAnimal: registeredAnimal);
           },
+        ),
+        GoRoute(
+          path: AppRoutes.lotMovement,
+          builder: (context, state) => LotMovementPage(
+            createCubit: () => createLotMovementCubit(
+              establishmentId: state.uri.queryParameters['establecimientoId'] ?? '',
+              animalId: state.uri.queryParameters['animalId'],
+              sourceLotId: state.uri.queryParameters['loteOrigenId'],
+            ),
+          ),
         ),
         GoRoute(
           path: AppRoutes.animalDetail,
@@ -283,6 +299,19 @@ class AppRouter {
             );
           },
         ),
+        // La cámara usa su propia transición fuera de la navegación con navbar.
+        GoRoute(
+          path: AppRoutes.visionWeighing,
+          pageBuilder: (context, state) => CameraRevealPage(
+            state: state,
+            child: VisionWeighingPage(
+              createCubit: createVisionCaptureCubit,
+              getAnimalOptions: createVisionAnimalOptionsUseCase(),
+              pickPhoto: createPickVisionPhotoUseCase(),
+              cameraDependencies: createVisionCameraDependencies(),
+            ),
+          ),
+        ),
         GoRoute(
           path: AppRoutes.rfidScan,
           builder: (context, state) {
@@ -294,6 +323,7 @@ class AppRouter {
             }
 
             final readingSource = HidRfidReadingSource();
+            final selectingForVision = state.uri.queryParameters['seleccionarParaPesajeIA'] == 'true';
             return RfidScanPage(
               establishmentId: establishmentId,
               createBloc: ({required establishmentId}) => createRfidScanBloc(
@@ -302,7 +332,26 @@ class AppRouter {
               ),
               onHidKeyEvent: readingSource.handleKeyEvent,
               onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
-              onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
+              // El alta conserva el establecimiento del lector; la selección IA
+              // devuelve el animal a la revisión de la captura sin abrir su ficha.
+              onRegisterAnimalRequested: (rfid) => context.push(
+                AppRoutes.animalRegisterWithRfid(
+                  rfidTagNumber: rfid,
+                  establishmentId: establishmentId,
+                ),
+              ),
+              onAnimalSelected: selectingForVision ? (animalId) => context.pop(animalId) : null,
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.rfidCapture,
+          builder: (context, state) {
+            final readingSource = HidRfidReadingSource();
+            return RfidCapturePage(
+              createBloc: () => createRfidCaptureBloc(readingSource: readingSource),
+              onHidKeyEvent: readingSource.handleKeyEvent,
+              onCaptured: (rfid) => context.pop(rfid),
             );
           },
         ),
@@ -326,6 +375,7 @@ class AppRouter {
               );
             }
             return LotEditorPage(
+              showSatelliteMap: data.showSatelliteMap,
               createBloc: () => createLotEditorBloc(
                 establishmentId: data.establishmentId,
                 existingLots: data.existingLots,

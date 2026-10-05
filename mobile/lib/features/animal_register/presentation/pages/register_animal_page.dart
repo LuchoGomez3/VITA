@@ -7,8 +7,6 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
-import 'package:frontend_mayoral/features/animal_register/presentation/widgets/register_animal_app_bar_title.dart';
-import 'package:frontend_mayoral/features/animal_register/presentation/widgets/register_animal_progress_indicator.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/steps/register_animal_basic_data_step.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/steps/register_animal_genealogy_step.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/steps/register_animal_identification_step.dart';
@@ -20,6 +18,7 @@ typedef RegisterAnimalBlocFactory =
     RegisterAnimalBloc Function({
       RegisterAnimalStep initialStep,
       String initialRfid,
+      String? initialEstablishmentId,
     });
 
 /// Hosts the complete animal registration flow.
@@ -29,6 +28,7 @@ class RegisterAnimalPage extends StatelessWidget {
     required this.createBloc,
     this.initialStep = RegisterAnimalStep.identification,
     this.initialRfid = '',
+    this.initialEstablishmentId,
     super.key,
   });
 
@@ -41,10 +41,17 @@ class RegisterAnimalPage extends StatelessWidget {
   /// RFID opcional recibido desde una lectura de identificacion.
   final String initialRfid;
 
+  /// Establecimiento opcional recibido desde el flujo que inicia el alta.
+  final String? initialEstablishmentId;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => createBloc(initialStep: initialStep, initialRfid: initialRfid),
+      create: (_) => createBloc(
+        initialStep: initialStep,
+        initialRfid: initialRfid,
+        initialEstablishmentId: initialEstablishmentId,
+      ),
       child: const _RegisterAnimalView(),
     );
   }
@@ -87,25 +94,28 @@ class _RegisterAnimalView extends StatelessWidget {
                 onPressed: () => _close(context),
               ),
               actions: const [SizedBox(width: 48)],
-              title: RegisterAnimalAppBarTitle(
-                stepSubtitle: _subtitleFor(state.currentStep),
+              title: const Text(
+                AnimalRegisterStrings.pageTitle,
+                style: AppTypography.appBarTitle,
               ),
             ),
             body: Column(
               children: [
-                RegisterAnimalProgressIndicator(
+                StepProgressBar(
                   currentStep: state.currentStep.index + 1,
+                  totalSteps: RegisterAnimalStep.values.length,
+                  stepTitle: _stepTitle(state.currentStep),
                 ),
                 Expanded(
                   child: IndexedStack(
                     index: state.currentStep.index,
-                    children: const [
+                    children: [
                       RegisterAnimalIdentificationStep(
-                        onBluetoothRequested: _requestBluetoothReading,
+                        onBluetoothRequested: () => _requestBluetoothReading(context),
                       ),
-                      RegisterAnimalBasicDataStep(),
-                      RegisterAnimalGenealogyStep(),
-                      RegisterAnimalReviewStep(),
+                      const RegisterAnimalBasicDataStep(),
+                      const RegisterAnimalGenealogyStep(),
+                      const RegisterAnimalReviewStep(),
                     ],
                   ),
                 ),
@@ -123,16 +133,20 @@ class _RegisterAnimalView extends StatelessWidget {
     );
   }
 
-  static String _subtitleFor(RegisterAnimalStep step) {
+  static String _stepTitle(RegisterAnimalStep step) {
     return switch (step) {
-      RegisterAnimalStep.identification => AnimalRegisterStrings.pageStepSubtitle,
-      RegisterAnimalStep.basicData => AnimalRegisterStrings.stepTwoSubtitle,
-      RegisterAnimalStep.genealogy => AnimalRegisterStrings.stepThreeSubtitle,
-      RegisterAnimalStep.review => AnimalRegisterStrings.stepFourSubtitle,
+      RegisterAnimalStep.identification => AnimalRegisterStrings.progressIdentificationTitle,
+      RegisterAnimalStep.basicData => AnimalRegisterStrings.progressBasicDataTitle,
+      RegisterAnimalStep.genealogy => AnimalRegisterStrings.progressDestinationTitle,
+      RegisterAnimalStep.review => AnimalRegisterStrings.progressReviewTitle,
     };
   }
 
-  static void _requestBluetoothReading() {}
+  Future<void> _requestBluetoothReading(BuildContext context) async {
+    final rfid = await context.push<String>(AppRoutes.rfidCapture);
+    if (!context.mounted || rfid == null) return;
+    context.read<RegisterAnimalBloc>().add(RegisterAnimalEvent.rfidCaptured(rfid));
+  }
 
   void _goBack(BuildContext context, RegisterAnimalStep currentStep) {
     if (currentStep == RegisterAnimalStep.identification) {

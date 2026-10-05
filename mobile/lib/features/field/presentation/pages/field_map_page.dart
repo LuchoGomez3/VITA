@@ -9,6 +9,7 @@ import 'package:frontend_mayoral/features/field/presentation/cubit/lot_overview_
 import 'package:frontend_mayoral/features/field/presentation/navigation/lot_editor_route_data.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/field_paddock_card.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/field_satellite_layer.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/field_view_toggle.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_overview_canvas.dart';
 import 'package:go_router/go_router.dart';
@@ -120,12 +121,19 @@ class _FieldMapView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          // TODO(field-map): reemplazar el fondo esquemático por un proveedor
-          // real sólo cuando se definan permisos, tiles, caché y conversión de
-          // geometrías; este lienzo seguirá siendo el fallback offline.
+          AppOutlinedButton(
+            label: FieldStrings.moveAnimalsCta,
+            icon: const Icon(Icons.swap_horiz),
+            onPressed: () => _openMovement(context, state.selectedEstablishmentId!),
+          ),
+          const SizedBox(height: AppSpacing.sm),
           Expanded(
             child: state.view == LotOverviewView.schematic
                 ? LotOverviewCanvas(
+                    key: ValueKey(state.selectedEstablishmentId),
+                    showSatelliteMap: FieldSatelliteMap.supportsEstablishment(
+                      state.establishments[state.selectedEstablishmentId],
+                    ),
                     lots: state.lots,
                     onLotSelected: (lotId) => _openLotDetail(context, lotId),
                   )
@@ -153,12 +161,19 @@ class _FieldMapView extends StatelessWidget {
     );
   }
 
+  /// También permite asignar varios animales que todavía no tienen lote.
+  Future<void> _openMovement(BuildContext context, String establishmentId) async {
+    await context.push<void>(AppRoutes.lotMovementFor(establishmentId: establishmentId));
+    if (context.mounted) await context.read<LotOverviewCubit>().refresh();
+  }
+
   Future<void> _createLot(BuildContext context, LotOverviewState state) async {
     final establishmentId = state.selectedEstablishmentId;
     if (establishmentId == null) return;
     final saved = await context.push<Lot>(
       AppRoutes.lotRegister,
       extra: LotEditorRouteData(
+        showSatelliteMap: FieldSatelliteMap.supportsEstablishment(state.establishments[establishmentId]),
         establishmentId: establishmentId,
         existingLots: state.lots,
       ),
