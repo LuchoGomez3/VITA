@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Lot {
 
- String get id; String get establishmentId; String get name; LotBoundary get boundary; int get surfaceTenths; bool get hasWater; DateTime get createdAt; DateTime get updatedAt; LotStatus get status; String? get forageResourceCode; DateTime? get deletedAt;
+ String get id; String get establishmentId; String get name; LotBoundary get boundary; int get surfaceTenths; bool get hasWater; DateTime get createdAt; DateTime get updatedAt; LotStatus get status; LotSyncStatus get syncStatus; String? get forageResourceCode; String? get syncErrorCode; DateTime? get deletedAt;
 /// Create a copy of Lot
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $LotCopyWith<Lot> get copyWith => _$LotCopyWithImpl<Lot>(this as Lot, _$identity
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Lot&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.name, name) || other.name == name)&&(identical(other.boundary, boundary) || other.boundary == boundary)&&(identical(other.surfaceTenths, surfaceTenths) || other.surfaceTenths == surfaceTenths)&&(identical(other.hasWater, hasWater) || other.hasWater == hasWater)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.status, status) || other.status == status)&&(identical(other.forageResourceCode, forageResourceCode) || other.forageResourceCode == forageResourceCode)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Lot&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.name, name) || other.name == name)&&(identical(other.boundary, boundary) || other.boundary == boundary)&&(identical(other.surfaceTenths, surfaceTenths) || other.surfaceTenths == surfaceTenths)&&(identical(other.hasWater, hasWater) || other.hasWater == hasWater)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.status, status) || other.status == status)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.forageResourceCode, forageResourceCode) || other.forageResourceCode == forageResourceCode)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,establishmentId,name,boundary,surfaceTenths,hasWater,createdAt,updatedAt,status,forageResourceCode,deletedAt);
+int get hashCode => Object.hash(runtimeType,id,establishmentId,name,boundary,surfaceTenths,hasWater,createdAt,updatedAt,status,syncStatus,forageResourceCode,syncErrorCode,deletedAt);
 
 @override
 String toString() {
-  return 'Lot(id: $id, establishmentId: $establishmentId, name: $name, boundary: $boundary, surfaceTenths: $surfaceTenths, hasWater: $hasWater, createdAt: $createdAt, updatedAt: $updatedAt, status: $status, forageResourceCode: $forageResourceCode, deletedAt: $deletedAt)';
+  return 'Lot(id: $id, establishmentId: $establishmentId, name: $name, boundary: $boundary, surfaceTenths: $surfaceTenths, hasWater: $hasWater, createdAt: $createdAt, updatedAt: $updatedAt, status: $status, syncStatus: $syncStatus, forageResourceCode: $forageResourceCode, syncErrorCode: $syncErrorCode, deletedAt: $deletedAt)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $LotCopyWith<$Res>  {
   factory $LotCopyWith(Lot value, $Res Function(Lot) _then) = _$LotCopyWithImpl;
 @useResult
 $Res call({
- String id, String establishmentId, String name, LotBoundary boundary, int surfaceTenths, bool hasWater, DateTime createdAt, DateTime updatedAt, LotStatus status, String? forageResourceCode, DateTime? deletedAt
+ String id, String establishmentId, String name, LotBoundary boundary, int surfaceTenths, bool hasWater, DateTime createdAt, DateTime updatedAt, LotStatus status, LotSyncStatus syncStatus, String? forageResourceCode, String? syncErrorCode, DateTime? deletedAt
 });
 
 
@@ -62,7 +62,7 @@ class _$LotCopyWithImpl<$Res>
 
 /// Create a copy of Lot
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? establishmentId = null,Object? name = null,Object? boundary = null,Object? surfaceTenths = null,Object? hasWater = null,Object? createdAt = null,Object? updatedAt = null,Object? status = null,Object? forageResourceCode = freezed,Object? deletedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? establishmentId = null,Object? name = null,Object? boundary = null,Object? surfaceTenths = null,Object? hasWater = null,Object? createdAt = null,Object? updatedAt = null,Object? status = null,Object? syncStatus = null,Object? forageResourceCode = freezed,Object? syncErrorCode = freezed,Object? deletedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
@@ -73,7 +73,9 @@ as int,hasWater: null == hasWater ? _self.hasWater : hasWater // ignore: cast_nu
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as LotStatus,forageResourceCode: freezed == forageResourceCode ? _self.forageResourceCode : forageResourceCode // ignore: cast_nullable_to_non_nullable
+as LotStatus,syncStatus: null == syncStatus ? _self.syncStatus : syncStatus // ignore: cast_nullable_to_non_nullable
+as LotSyncStatus,forageResourceCode: freezed == forageResourceCode ? _self.forageResourceCode : forageResourceCode // ignore: cast_nullable_to_non_nullable
+as String?,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
 as String?,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
@@ -166,10 +168,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String name,  LotBoundary boundary,  int surfaceTenths,  bool hasWater,  DateTime createdAt,  DateTime updatedAt,  LotStatus status,  String? forageResourceCode,  DateTime? deletedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String name,  LotBoundary boundary,  int surfaceTenths,  bool hasWater,  DateTime createdAt,  DateTime updatedAt,  LotStatus status,  LotSyncStatus syncStatus,  String? forageResourceCode,  String? syncErrorCode,  DateTime? deletedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Lot() when $default != null:
-return $default(_that.id,_that.establishmentId,_that.name,_that.boundary,_that.surfaceTenths,_that.hasWater,_that.createdAt,_that.updatedAt,_that.status,_that.forageResourceCode,_that.deletedAt);case _:
+return $default(_that.id,_that.establishmentId,_that.name,_that.boundary,_that.surfaceTenths,_that.hasWater,_that.createdAt,_that.updatedAt,_that.status,_that.syncStatus,_that.forageResourceCode,_that.syncErrorCode,_that.deletedAt);case _:
   return orElse();
 
 }
@@ -187,10 +189,10 @@ return $default(_that.id,_that.establishmentId,_that.name,_that.boundary,_that.s
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String name,  LotBoundary boundary,  int surfaceTenths,  bool hasWater,  DateTime createdAt,  DateTime updatedAt,  LotStatus status,  String? forageResourceCode,  DateTime? deletedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String name,  LotBoundary boundary,  int surfaceTenths,  bool hasWater,  DateTime createdAt,  DateTime updatedAt,  LotStatus status,  LotSyncStatus syncStatus,  String? forageResourceCode,  String? syncErrorCode,  DateTime? deletedAt)  $default,) {final _that = this;
 switch (_that) {
 case _Lot():
-return $default(_that.id,_that.establishmentId,_that.name,_that.boundary,_that.surfaceTenths,_that.hasWater,_that.createdAt,_that.updatedAt,_that.status,_that.forageResourceCode,_that.deletedAt);}
+return $default(_that.id,_that.establishmentId,_that.name,_that.boundary,_that.surfaceTenths,_that.hasWater,_that.createdAt,_that.updatedAt,_that.status,_that.syncStatus,_that.forageResourceCode,_that.syncErrorCode,_that.deletedAt);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -204,10 +206,10 @@ return $default(_that.id,_that.establishmentId,_that.name,_that.boundary,_that.s
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String establishmentId,  String name,  LotBoundary boundary,  int surfaceTenths,  bool hasWater,  DateTime createdAt,  DateTime updatedAt,  LotStatus status,  String? forageResourceCode,  DateTime? deletedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String establishmentId,  String name,  LotBoundary boundary,  int surfaceTenths,  bool hasWater,  DateTime createdAt,  DateTime updatedAt,  LotStatus status,  LotSyncStatus syncStatus,  String? forageResourceCode,  String? syncErrorCode,  DateTime? deletedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Lot() when $default != null:
-return $default(_that.id,_that.establishmentId,_that.name,_that.boundary,_that.surfaceTenths,_that.hasWater,_that.createdAt,_that.updatedAt,_that.status,_that.forageResourceCode,_that.deletedAt);case _:
+return $default(_that.id,_that.establishmentId,_that.name,_that.boundary,_that.surfaceTenths,_that.hasWater,_that.createdAt,_that.updatedAt,_that.status,_that.syncStatus,_that.forageResourceCode,_that.syncErrorCode,_that.deletedAt);case _:
   return null;
 
 }
@@ -219,7 +221,7 @@ return $default(_that.id,_that.establishmentId,_that.name,_that.boundary,_that.s
 
 
 class _Lot extends Lot {
-  const _Lot({required this.id, required this.establishmentId, required this.name, required this.boundary, required this.surfaceTenths, required this.hasWater, required this.createdAt, required this.updatedAt, this.status = LotStatus.active, this.forageResourceCode, this.deletedAt}): super._();
+  const _Lot({required this.id, required this.establishmentId, required this.name, required this.boundary, required this.surfaceTenths, required this.hasWater, required this.createdAt, required this.updatedAt, this.status = LotStatus.active, this.syncStatus = LotSyncStatus.pending, this.forageResourceCode, this.syncErrorCode, this.deletedAt}): super._();
   
 
 @override final  String id;
@@ -231,7 +233,9 @@ class _Lot extends Lot {
 @override final  DateTime createdAt;
 @override final  DateTime updatedAt;
 @override@JsonKey() final  LotStatus status;
+@override@JsonKey() final  LotSyncStatus syncStatus;
 @override final  String? forageResourceCode;
+@override final  String? syncErrorCode;
 @override final  DateTime? deletedAt;
 
 /// Create a copy of Lot
@@ -244,16 +248,16 @@ _$LotCopyWith<_Lot> get copyWith => __$LotCopyWithImpl<_Lot>(this, _$identity);
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Lot&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.name, name) || other.name == name)&&(identical(other.boundary, boundary) || other.boundary == boundary)&&(identical(other.surfaceTenths, surfaceTenths) || other.surfaceTenths == surfaceTenths)&&(identical(other.hasWater, hasWater) || other.hasWater == hasWater)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.status, status) || other.status == status)&&(identical(other.forageResourceCode, forageResourceCode) || other.forageResourceCode == forageResourceCode)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Lot&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.name, name) || other.name == name)&&(identical(other.boundary, boundary) || other.boundary == boundary)&&(identical(other.surfaceTenths, surfaceTenths) || other.surfaceTenths == surfaceTenths)&&(identical(other.hasWater, hasWater) || other.hasWater == hasWater)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.status, status) || other.status == status)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.forageResourceCode, forageResourceCode) || other.forageResourceCode == forageResourceCode)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,establishmentId,name,boundary,surfaceTenths,hasWater,createdAt,updatedAt,status,forageResourceCode,deletedAt);
+int get hashCode => Object.hash(runtimeType,id,establishmentId,name,boundary,surfaceTenths,hasWater,createdAt,updatedAt,status,syncStatus,forageResourceCode,syncErrorCode,deletedAt);
 
 @override
 String toString() {
-  return 'Lot(id: $id, establishmentId: $establishmentId, name: $name, boundary: $boundary, surfaceTenths: $surfaceTenths, hasWater: $hasWater, createdAt: $createdAt, updatedAt: $updatedAt, status: $status, forageResourceCode: $forageResourceCode, deletedAt: $deletedAt)';
+  return 'Lot(id: $id, establishmentId: $establishmentId, name: $name, boundary: $boundary, surfaceTenths: $surfaceTenths, hasWater: $hasWater, createdAt: $createdAt, updatedAt: $updatedAt, status: $status, syncStatus: $syncStatus, forageResourceCode: $forageResourceCode, syncErrorCode: $syncErrorCode, deletedAt: $deletedAt)';
 }
 
 
@@ -264,7 +268,7 @@ abstract mixin class _$LotCopyWith<$Res> implements $LotCopyWith<$Res> {
   factory _$LotCopyWith(_Lot value, $Res Function(_Lot) _then) = __$LotCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String establishmentId, String name, LotBoundary boundary, int surfaceTenths, bool hasWater, DateTime createdAt, DateTime updatedAt, LotStatus status, String? forageResourceCode, DateTime? deletedAt
+ String id, String establishmentId, String name, LotBoundary boundary, int surfaceTenths, bool hasWater, DateTime createdAt, DateTime updatedAt, LotStatus status, LotSyncStatus syncStatus, String? forageResourceCode, String? syncErrorCode, DateTime? deletedAt
 });
 
 
@@ -281,7 +285,7 @@ class __$LotCopyWithImpl<$Res>
 
 /// Create a copy of Lot
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? establishmentId = null,Object? name = null,Object? boundary = null,Object? surfaceTenths = null,Object? hasWater = null,Object? createdAt = null,Object? updatedAt = null,Object? status = null,Object? forageResourceCode = freezed,Object? deletedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? establishmentId = null,Object? name = null,Object? boundary = null,Object? surfaceTenths = null,Object? hasWater = null,Object? createdAt = null,Object? updatedAt = null,Object? status = null,Object? syncStatus = null,Object? forageResourceCode = freezed,Object? syncErrorCode = freezed,Object? deletedAt = freezed,}) {
   return _then(_Lot(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
@@ -292,7 +296,9 @@ as int,hasWater: null == hasWater ? _self.hasWater : hasWater // ignore: cast_nu
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as LotStatus,forageResourceCode: freezed == forageResourceCode ? _self.forageResourceCode : forageResourceCode // ignore: cast_nullable_to_non_nullable
+as LotStatus,syncStatus: null == syncStatus ? _self.syncStatus : syncStatus // ignore: cast_nullable_to_non_nullable
+as LotSyncStatus,forageResourceCode: freezed == forageResourceCode ? _self.forageResourceCode : forageResourceCode // ignore: cast_nullable_to_non_nullable
+as String?,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
 as String?,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));

@@ -9,6 +9,7 @@ import 'package:frontend_mayoral/core/storage/animal_photo_store.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_detail_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_detail_use_case.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/retry_animal_sync_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/save_animal_detail_change_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
 
@@ -33,5 +34,6 @@ AnimalDetailCubit createAnimalDetailCubit() {
   return AnimalDetailCubit(
     getAnimalDetailUseCase: GetAnimalDetailUseCase(repository),
     saveChangeUseCase: SaveAnimalDetailChangeUseCase(repository),
+    retryAnimalSyncUseCase: RetryAnimalSyncUseCase(repository),
   );
 }

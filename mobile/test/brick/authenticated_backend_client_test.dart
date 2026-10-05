@@ -74,6 +74,7 @@ void main() {
       expect(results.single.resourcePath, '/api/v1/animales');
       expect(results.single.synchronized, isTrue);
       expect(results.single.errorCode, isNull);
+      expect(results.single.responseData?['id'], _requestBody['id']);
     });
 
     test('reports functional backend errors as rejected sync results', () async {

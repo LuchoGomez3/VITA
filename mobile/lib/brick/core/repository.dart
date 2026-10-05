@@ -209,6 +209,19 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     }
   }
 
+  /// Deserializa la representación autoritativa devuelta por backend.
+  Future<TModel> modelFromRemoteData<TModel extends OfflineFirstWithRestModel>(
+    Map<String, dynamic> data,
+  ) async {
+    final adapter = remoteProvider.modelDictionary.adapterFor[TModel]!;
+    final model = await adapter.fromRest(
+      data,
+      provider: remoteProvider,
+      repository: this,
+    );
+    return model as TModel;
+  }
+
   /// Persiste un comando en la cola sin esperar red ni enviarlo por otra vía.
   ///
   /// La cola usa una base separada: el store conserva su operación como outbox

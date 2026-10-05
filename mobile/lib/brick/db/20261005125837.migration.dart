@@ -12,17 +12,13 @@ part of 'schema.g.dart';
 const List<MigrationCommand> _migration_20261005125837_up = [
   InsertColumn('lot_movement_id', Column.varchar, onTable: 'BrickAnimalModel'),
   InsertColumn('lot_sync_status', Column.integer, onTable: 'BrickAnimalModel'),
-  InsertColumn('lot_sync_error_code', Column.varchar, onTable: 'BrickAnimalModel'),
-  InsertColumn('sync_status', Column.integer, onTable: 'BrickAnimalLotMovementModel'),
-  InsertColumn('sync_error_code', Column.varchar, onTable: 'BrickAnimalLotMovementModel')
+  InsertColumn('lot_sync_error_code', Column.varchar, onTable: 'BrickAnimalModel')
 ];
 
 const List<MigrationCommand> _migration_20261005125837_down = [
   DropColumn('lot_movement_id', onTable: 'BrickAnimalModel'),
   DropColumn('lot_sync_status', onTable: 'BrickAnimalModel'),
-  DropColumn('lot_sync_error_code', onTable: 'BrickAnimalModel'),
-  DropColumn('sync_status', onTable: 'BrickAnimalLotMovementModel'),
-  DropColumn('sync_error_code', onTable: 'BrickAnimalLotMovementModel')
+  DropColumn('lot_sync_error_code', onTable: 'BrickAnimalModel')
 ];
 
 //

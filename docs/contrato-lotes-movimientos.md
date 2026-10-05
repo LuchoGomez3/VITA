@@ -1,12 +1,12 @@
 # Contrato de lotes y movimientos — respuesta de backend a mobile
 
 Fecha: 2026-09-05
-Estado: implementado en backend, pendiente de ajuste en mobile
+Estado: implementado e integrado entre backend y mobile
 Responde a: [`plan-backend-integracion-gestion-lotes.md`](./plan-backend-integracion-gestion-lotes.md)
 Decisiones de fondo: [`adr/adr-0002-geometria-y-movimientos-de-lotes.md`](./adr/adr-0002-geometria-y-movimientos-de-lotes.md)
 
 Backend implementó los dos módulos. Este documento cierra las doce decisiones abiertas de
-la sección 15 del plan y lista lo que mobile tiene que ajustar antes de encender los flags.
+la sección 15 del plan y registra el contrato aplicado por mobile.
 
 ## 1. Respuesta a las decisiones abiertas
 
@@ -25,9 +25,10 @@ la sección 15 del plan y lista lo que mobile tiene que ajustar antes de encende
 | Responsable | Nullable temporalmente | **Sale del JWT.** El `responsable_id` del cliente se ignora. |
 | Errores | Códigos propuestos | **Aceptados casi todos**, con dos agregados y un renombre (ver §4). |
 
-## 2. Cambios que mobile debe hacer
+## 2. Cambios aplicados en mobile
 
-Cinco, todos en el modelo Brick y su store. Hasta que estén, **no encender los flags**.
+Los siguientes cambios forman parte del contrato vigente. La sincronización ya no usa
+feature flags.
 
 **a) `LotStatus` a códigos en español.** El backend rechaza cualquier otro valor con
 `CHECK`:
@@ -49,8 +50,8 @@ solo el nombre del campo:
 **c) `superficie_ha` la redondea el servidor.** Un `52.25` vuelve como `52.3`. El cliente
 debe tomar el valor de la respuesta como autoridad, no conservar el local.
 
-**d) Dejar de enviar `responsable_id`.** Se puede seguir mandando `null`; el backend lo
-ignora y usa el usuario del JWT.
+**d) Dejar de enviar `responsable_id`.** Mobile no lo incluye en el POST; backend lo
+deriva del JWT y lo devuelve en las lecturas.
 
 **e) Mapear los códigos de error de §4** en `lot_brick_store.dart`. Ojo con esto: el
 cliente solo reintenta 500-504, así que **todo 4xx es un rechazo definitivo**. Es la

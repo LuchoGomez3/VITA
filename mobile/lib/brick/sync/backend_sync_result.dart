@@ -10,6 +10,7 @@ class BackendSyncResult {
     required this.localId,
     required this.synchronized,
     this.errorCode,
+    this.responseData,
     this.updatedAt,
   });
 
@@ -24,6 +25,9 @@ class BackendSyncResult {
 
   /// Codigo funcional del backend cuando el sync fue rechazado.
   final String? errorCode;
+
+  /// Representación autoritativa incluida en `StandardResponse.data`.
+  final Map<String, dynamic>? responseData;
 
   /// Versión enviada; permite ignorar respuestas de una edición anterior.
   final DateTime? updatedAt;

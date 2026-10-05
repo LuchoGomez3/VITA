@@ -97,10 +97,16 @@ void main() {
         'animal_ids',
         'fecha_movimiento',
         'motivo',
+        'created_at',
+        'updated_at',
+        'deleted_at',
       ]),
     );
     expect(body['lote_origen_id'], isNull);
     expect(body['animal_ids'], ['initial']);
+    expect(body['created_at'], _date.toIso8601String());
+    expect(body['updated_at'], _date.toIso8601String());
+    expect(body['deleted_at'], isNull);
     expect(job['url'], 'http://localhost:8000/api/v1/movimientos_lotes');
     expect(job['request_method'], 'POST');
   });

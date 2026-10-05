@@ -57,7 +57,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
                 )
                 .toList();
       final weighings = await _pesajeStore.getLocalPesajes();
-      final categories = await _getCategoriesForAnimals(animals);
+      final categories = await _categoryStore.getLocalCategorias();
       final expenses = await _expensesFor(establishmentIds);
       return Result.success(_calculateDashboard(animals, weighings, categories, expenses));
     } on Object {
@@ -232,17 +232,6 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
             return _sortNullableNames(a.name, b.name);
           });
     return metrics;
-  }
-
-  Future<List<BrickCategoriaModel>> _getCategoriesForAnimals(
-    List<BrickAnimalModel> animals,
-  ) async {
-    final establishmentIds = animals.map((animal) => animal.establishmentId).toSet();
-    final categoriesByEstablishment = await Future.wait(
-      establishmentIds.map(_categoryStore.getLocalCategorias),
-    );
-
-    return categoriesByEstablishment.expand((categories) => categories).toList();
   }
 
   String? _categoryName(

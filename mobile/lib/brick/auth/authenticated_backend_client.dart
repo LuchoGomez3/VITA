@@ -113,6 +113,7 @@ class AuthenticatedBackendClient extends http.BaseClient {
           updatedAt: syncRequest.updatedAt,
           synchronized: bufferedResponse.statusCode >= 200 && bufferedResponse.statusCode < 300,
           errorCode: _errorCodeFromResponse(bufferedResponse),
+          responseData: _responseDataFromResponse(bufferedResponse),
         ),
       );
     }
@@ -341,6 +342,14 @@ class AuthenticatedBackendClient extends http.BaseClient {
     }
 
     return 'sync_failed';
+  }
+
+  Map<String, dynamic>? _responseDataFromResponse(http.Response response) {
+    if (response.statusCode < 200 || response.statusCode >= 300) return null;
+    final decoded = _decodeJson(response.body);
+    if (decoded is! Map<String, dynamic>) return null;
+    final data = decoded['data'];
+    return data is Map<String, dynamic> ? data : null;
   }
 
   /// Intenta decodificar JSON sin romper el flujo si el body no es JSON.

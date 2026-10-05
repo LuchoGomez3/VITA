@@ -4,6 +4,7 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_change.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_detail_use_case.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/retry_animal_sync_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/save_animal_detail_change_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_state.dart';
 
@@ -13,12 +14,15 @@ class AnimalDetailCubit extends Cubit<AnimalDetailState> {
   AnimalDetailCubit({
     required GetAnimalDetailUseCase getAnimalDetailUseCase,
     required SaveAnimalDetailChangeUseCase saveChangeUseCase,
+    RetryAnimalSyncUseCase? retryAnimalSyncUseCase,
   }) : _getAnimalDetailUseCase = getAnimalDetailUseCase,
        _saveChangeUseCase = saveChangeUseCase,
+       _retryAnimalSyncUseCase = retryAnimalSyncUseCase,
        super(const AnimalDetailState());
 
   final GetAnimalDetailUseCase _getAnimalDetailUseCase;
   final SaveAnimalDetailChangeUseCase _saveChangeUseCase;
+  final RetryAnimalSyncUseCase? _retryAnimalSyncUseCase;
 
   /// Carga la ficha; una edición en curso conserva la propiedad del estado.
   Future<void> loadAnimalData(String animalId) async {
@@ -70,5 +74,20 @@ class AnimalDetailCubit extends Cubit<AnimalDetailState> {
     final version = state.deathVersion;
     if (previousStatus == null || version == null) return;
     await save(AnimalDetailChange.undoDeath(previousStatus: previousStatus, deathUpdatedAt: version));
+  }
+
+  /// Vuelve a encolar un alta rechazada y refresca su estado local.
+  Future<void> retrySync(String animalId) async {
+    final retry = _retryAnimalSyncUseCase;
+    if (retry == null) return;
+    emit(state.copyWith(detail: const ResultState.loading()));
+    final result = await retry(animalId);
+    if (isClosed) return;
+    switch (result) {
+      case Success<void>():
+        await loadAnimalData(animalId);
+      case Failure<void>(:final error):
+        emit(state.copyWith(detail: ResultState.error(error)));
+    }
   }
 }
