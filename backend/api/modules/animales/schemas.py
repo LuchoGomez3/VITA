@@ -4,9 +4,14 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from api.shared.enums import EstadoAnimal, MetodoPesaje, SexoAnimal
+from api.shared.enums import (
+    EstadoAnimal,
+    EstadoReproductivo,
+    MetodoPesaje,
+    SexoAnimal,
+)
 from api.shared.schemas import SyncFields
 
 
@@ -36,7 +41,9 @@ class AnimalCreate(SyncFields):
     categoria_id: UUID | None = None
     caravana_visual: str | None = None
     pelaje: str | None = None
-    observaciones: str | None = None
+    # Solo para hembras; ``vacia``/``prenada`` exigen una categoría habilitada.
+    # En un reenvío, omitirlo conserva el valor guardado.
+    estado_reproductivo: EstadoReproductivo | None = None
 
     # Pesaje inicial
     peso_inicial: Decimal
@@ -71,15 +78,19 @@ class AnimalCreate(SyncFields):
 
 class AnimalUpdate(SyncFields):
     """Edición de un animal. Hereda ``SyncFields``: ``updated_at`` es el que dirime
-    el conflicto (last-write-wins) y ``deleted_at`` permite propagar un soft delete."""
+    el conflicto (last-write-wins) y ``deleted_at`` permite propagar un soft delete.
+
+    Los campos omitidos no se tocan. ``estado_reproductivo`` es la excepción a
+    "``None`` = sin cambios": enviarlo en ``null`` explícito lo limpia.
+    """
 
     raza: str | None = None
     fecha_nacimiento: date | None = None
     categoria_id: UUID | None = None
     lote_id: UUID | None = None
     pelaje: str | None = None
-    observaciones: str | None = None
     estado: EstadoAnimal | None = None
+    estado_reproductivo: EstadoReproductivo | None = None
 
 
 class AnimalRead(BaseModel):
@@ -98,7 +109,12 @@ class AnimalRead(BaseModel):
     madre_id: UUID | None = None
     pelaje: str | None = None
     estado: EstadoAnimal
-    observaciones: str | None = None
+    estado_reproductivo: EstadoReproductivo | None = None
+    # Columna legacy de solo lectura: la API ya no la escribe. Las notas viven en
+    # /observaciones_animales (adr-0007).
+    observaciones: str | None = Field(
+        default=None, json_schema_extra={"deprecated": True}
+    )
     created_at: datetime
     updated_at: datetime
     # Se expone para la descarga delta: un registro con deleted_at != null le indica
