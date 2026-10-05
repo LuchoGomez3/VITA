@@ -119,6 +119,36 @@ class BrickLotStore implements LotBrickStore {
     }
   }
 
+  /// Descarga destinos activos aunque la edición remota de lotes siga apagada.
+  /// Los lotes confirmados que dejaron de aparecer se retiran de los destinos;
+  /// los borradores locales se conservan para que el usuario vea su estado.
+  Future<void> pullActiveLots(String establishmentId) async {
+    final remote = await _repository.remoteProvider.get<BrickLotModel>(
+      repository: _repository,
+      query: Query(
+        forProviders: [RestProviderQuery(request: BrickLotRequestTransformer.activeLotsRequest(establishmentId))],
+      ),
+    );
+    await _repository.runLocalTransaction((transaction) async {
+      final local = await transaction.getLocal<BrickLotModel>();
+      final ids = remote.map((lot) => lot.localId).toSet();
+      for (final lot in local.where(
+        (lot) =>
+            lot.establishmentId == establishmentId &&
+            lot.syncStatus == BrickLotSyncStatus.synchronized &&
+            !ids.contains(lot.localId),
+      )) {
+        await transaction.upsert(lot.copyWith(statusCode: 'inactivo'));
+      }
+      for (final lot in remote) {
+        final existing = local.where((item) => item.localId == lot.localId).firstOrNull;
+        if (existing != null && existing.syncStatus != BrickLotSyncStatus.synchronized) continue;
+        lot.primaryKey = existing?.primaryKey;
+        await transaction.upsert(lot.copyWith(syncStatus: BrickLotSyncStatus.synchronized));
+      }
+    });
+  }
+
   /// Aplica confirmaciones o rechazos publicados por el cliente HTTP.
   Future<void> applyLotSyncResult(BackendSyncResult result) async {
     // TODO(field-sync): mapear los códigos autoritativos de nombre duplicado,

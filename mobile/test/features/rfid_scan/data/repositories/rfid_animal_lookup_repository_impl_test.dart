@@ -81,6 +81,9 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   bool throwOnLookup = false;
 
   @override
+  Future<BrickAnimalModel> updateAnimal(BrickAnimalModel animal) => upsertAnimal(animal);
+
+  @override
   Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) async => animal;
 
   @override

@@ -126,6 +126,9 @@ class _FakeAnimalStore implements AnimalBrickStore {
   }
 
   @override
+  Future<BrickAnimalModel> updateAnimal(BrickAnimalModel animal) => upsertAnimal(animal);
+
+  @override
   Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) async => animal;
 
   @override

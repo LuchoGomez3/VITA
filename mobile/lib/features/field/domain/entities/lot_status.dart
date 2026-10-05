@@ -24,7 +24,15 @@ enum LotStatus {
 
   /// Recupera un estado sin impedir la lectura de códigos futuros.
   static LotStatus fromCode(String code) => LotStatus.values.firstWhere(
-    (status) => status.code == code,
+    (status) =>
+        status.code ==
+        switch (code) {
+          'activo' => 'active',
+          'descanso' => 'resting',
+          'mantenimiento' => 'maintenance',
+          'inactivo' => 'inactive',
+          _ => code,
+        },
     orElse: () => LotStatus.unknown,
   );
 

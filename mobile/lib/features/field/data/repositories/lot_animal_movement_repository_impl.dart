@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
@@ -60,19 +59,8 @@ class LotAnimalMovementRepositoryImpl implements LotAnimalMovementRepository {
         );
       }
 
-      final movedAnimals = [
-        for (final animal in selected)
-          animal.copyWith(
-            lotId: destination.localId,
-            lotName: destination.name,
-            updatedAt: movement.updatedAt,
-            syncStatus: BrickAnimalSyncStatus.pending,
-            syncErrorCode: null,
-          ),
-      ];
-      await _movementStore.saveWithAnimals(
-        animals: movedAnimals,
-        movement: BrickAnimalLotMovementModel(
+      await _movementStore.moveAnimals(
+        BrickAnimalLotMovementModel(
           localId: movement.id,
           establishmentId: movement.establishmentId,
           sourceLotId: movement.sourceLotId,
@@ -80,13 +68,13 @@ class LotAnimalMovementRepositoryImpl implements LotAnimalMovementRepository {
           animalIdsJson: jsonEncode(movement.animalIds),
           occurredAt: movement.occurredAt,
           reason: movement.reason,
-          responsibleId: movement.responsibleId,
           createdAt: movement.createdAt,
           updatedAt: movement.updatedAt,
-          deletedAt: movement.deletedAt,
         ),
       );
       return Result.success(movement);
+    } on DomainException catch (error) {
+      return Result.failure(error);
     } on Object catch (error, stackTrace) {
       _logger.severe('No se pudo completar el movimiento local.', error, stackTrace);
       return const Result.failure(
