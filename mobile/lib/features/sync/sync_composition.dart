@@ -32,10 +32,14 @@ PrepareInitialDataSyncUseCase createPrepareInitialDataSyncUseCase({
       ),
       animalStore: BrickAnimalStore.instance,
       categoryStore: BrickCategoriaStore.instance,
-      lotStore: BrickLotStore.instance,
       weighingStore: BrickPesajeStore.instance,
-      movementStore: BrickAnimalLotMovementStore.instance,
       syncOperatingExpenseData: operatingExpenseSync.call,
+      syncLotMovementData: (establishmentId) async {
+        await BrickLotStore.instance.pushPendingLots(establishmentId);
+        await BrickLotStore.instance.pullActiveLots(establishmentId);
+        await BrickAnimalLotMovementStore.instance.recoverPending();
+        await BrickAnimalLotMovementStore.instance.pullMovements(establishmentId);
+      },
     ),
   );
 }

@@ -4,23 +4,24 @@ import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart
 import 'package:brick_rest/brick_rest.dart';
 import 'package:brick_sqlite/brick_sqlite.dart';
 
-const _unchangedMovementSyncErrorCode = Object();
-
-/// Contrato REST de movimientos de hacienda entre lotes.
+/// Contrato REST batch de asignación inicial y traslado entre lotes.
 class BrickAnimalLotMovementRequestTransformer extends RestRequestTransformer {
   /// Crea el transformer exigido por Brick.
   const BrickAnimalLotMovementRequestTransformer(super.query, super.instance);
 
-  /// Endpoint acordado con backend.
+  /// Endpoint batch atómico e idempotente por UUID del cliente.
   static const movementsPath = '/api/v1/movimientos_lotes';
 
-  /// Crea el pull filtrado por establecimiento e incluyendo tombstones.
-  static RestRequest listByEstablishmentRequest(String establishmentId) => RestRequest(
+  /// Descarga el historial del establecimiento, incluidos tombstones.
+  static RestRequest listRequest(String establishmentId) => RestRequest(
     url: '$movementsPath?establecimiento_id=${Uri.encodeQueryComponent(establishmentId)}&include_deleted=true',
     topLevelKey: 'data',
   );
 
-  /// Identifica resultados de sincronización de movimientos.
+  /// Alias conservado para los consumidores del sync inicial existente.
+  static RestRequest listByEstablishmentRequest(String establishmentId) => listRequest(establishmentId);
+
+  /// Indica si un resultado HTTP pertenece al recurso de movimientos.
   static bool matchesMovementResource(String resourcePath) => resourcePath.endsWith(movementsPath);
 
   @override
@@ -56,7 +57,7 @@ class BrickAnimalLotMovementModel extends OfflineFirstWithRestModel {
     required this.updatedAt,
     this.responsibleId,
     this.deletedAt,
-    this.syncStatus = BrickAnimalLotMovementSyncStatus.pending,
+    this.syncStatus = BrickMovementSyncStatus.pending,
     this.syncErrorCode,
   });
 
@@ -92,7 +93,7 @@ class BrickAnimalLotMovementModel extends OfflineFirstWithRestModel {
   @Rest(name: 'motivo')
   final String reason;
 
-  /// Usuario responsable devuelto por backend a partir del JWT.
+  /// Auditoría recibida del servidor: jamás se envía un responsable desde mobile.
   @Rest(name: 'responsable_id', ignoreTo: true)
   final String? responsibleId;
 
@@ -108,69 +109,52 @@ class BrickAnimalLotMovementModel extends OfflineFirstWithRestModel {
   @Rest(name: 'deleted_at')
   final DateTime? deletedAt;
 
-  /// Estado local de sincronización del agregado.
+  /// Estado del movimiento independiente de las ediciones del animal.
   @Rest(ignore: true)
-  @Sqlite(
-    fromGenerator: 'brickMovementSyncStatusFromSqlite(%DATA_PROPERTY%)',
-    toGenerator: 'BrickAnimalLotMovementSyncStatus.values.indexOf(%INSTANCE_PROPERTY%)',
-  )
-  final BrickAnimalLotMovementSyncStatus syncStatus;
+  @Sqlite(fromGenerator: 'brickMovementStatusFromSqlite(%DATA_PROPERTY%)')
+  final BrickMovementSyncStatus syncStatus;
 
-  /// Código funcional del último rechazo remoto.
+  /// Rechazo durable que permite mostrar y reintentar la misma operación.
   @Rest(ignore: true)
   final String? syncErrorCode;
 
-  /// Crea una copia reconciliada conservando la fila SQLite.
-  BrickAnimalLotMovementModel copyWith({
-    BrickAnimalLotMovementSyncStatus? syncStatus,
-    Object? syncErrorCode = _unchangedMovementSyncErrorCode,
-  }) {
-    final nextSyncErrorCode =
-        identical(
-          syncErrorCode,
-          _unchangedMovementSyncErrorCode,
-        )
-        ? this.syncErrorCode
-        : syncErrorCode as String?;
-    return BrickAnimalLotMovementModel(
-      localId: localId,
-      establishmentId: establishmentId,
-      sourceLotId: sourceLotId,
-      destinationLotId: destinationLotId,
-      animalIdsJson: animalIdsJson,
-      occurredAt: occurredAt,
-      reason: reason,
-      responsibleId: responsibleId,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
-      deletedAt: deletedAt,
-      syncStatus: syncStatus ?? this.syncStatus,
-      syncErrorCode: nextSyncErrorCode,
-    )..primaryKey = primaryKey;
-  }
+  /// Cambia el resultado técnico conservando UUID, payload y fila SQLite.
+  BrickAnimalLotMovementModel withSync(BrickMovementSyncStatus status, {String? errorCode}) =>
+      BrickAnimalLotMovementModel(
+        localId: localId,
+        establishmentId: establishmentId,
+        sourceLotId: sourceLotId,
+        destinationLotId: destinationLotId,
+        animalIdsJson: animalIdsJson,
+        occurredAt: occurredAt,
+        reason: reason,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        responsibleId: responsibleId,
+        deletedAt: deletedAt,
+        syncStatus: status,
+        syncErrorCode: errorCode,
+      )..primaryKey = primaryKey;
 }
 
-/// Estado técnico de sincronización de un movimiento.
-enum BrickAnimalLotMovementSyncStatus {
-  /// Existe localmente y espera confirmación remota.
+/// Resultado durable del envío del movimiento.
+enum BrickMovementSyncStatus {
+  /// Guardado localmente y todavía no confirmado.
   pending,
 
-  /// Backend confirmó el movimiento atómico.
+  /// Confirmado por el servidor.
   synchronized,
 
-  /// Backend rechazó el movimiento por una regla autoritativa.
+  /// Rechazado; conserva el payload para revisión y reintento explícito.
   rejected,
 }
 
-/// Interpreta como pendiente una fila creada antes de incorporar el estado.
-BrickAnimalLotMovementSyncStatus brickMovementSyncStatusFromSqlite(
-  Object? value,
-) {
-  if (value is int && value >= 0 && value < BrickAnimalLotMovementSyncStatus.values.length) {
-    return BrickAnimalLotMovementSyncStatus.values[value];
-  }
-  return BrickAnimalLotMovementSyncStatus.pending;
-}
+/// Nombre histórico conservado para no romper consumidores existentes.
+typedef BrickAnimalLotMovementSyncStatus = BrickMovementSyncStatus;
+
+/// Las filas previas a la migración todavía no tienen un estado de sync.
+BrickMovementSyncStatus brickMovementStatusFromSqlite(Object? value) =>
+    BrickMovementSyncStatus.values[(value as int?) ?? 0];
 
 /// Convierte la representación SQLite a la lista esperada por REST.
 Object brickMovementAnimalIdsToBackend(String encoded) => jsonDecode(encoded) as Object;

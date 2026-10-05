@@ -6,7 +6,7 @@ import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
 
-/// Acceso offline-first a lotes con sincronización remota.
+/// Acceso local a lotes sin encolar requests remotos en la Fase 2.
 abstract class LotBrickStore {
   /// Inserta o actualiza el lote solamente en SQLite.
   Future<BrickLotModel> upsertLocalLot(BrickLotModel lot);
@@ -17,29 +17,36 @@ abstract class LotBrickStore {
   /// Busca un lote local vigente por UUID.
   Future<BrickLotModel?> getLocalLot(String lotId);
 
-  /// Descarga los lotes remotos del establecimiento.
+  /// Descarga cambios remotos cuando la integración está habilitada.
   Future<void> pullRemoteLots(String establishmentId);
 
-  /// Envía las operaciones locales pendientes del establecimiento.
+  /// Envía los lotes pendientes del establecimiento.
   Future<void> pushPendingLots(String establishmentId);
 }
 
 /// Implementación Brick de persistencia durable local.
 class BrickLotStore implements LotBrickStore {
-  BrickLotStore._(this._repository) {
+  BrickLotStore._(this._repository, {required bool enableRemoteSync}) : _enableRemoteSync = enableRemoteSync {
     _syncSubscription = _repository.syncResults.listen(applyLotSyncResult);
   }
 
   static BrickLotStore? _instance;
   final AppBrickRepository _repository;
+  final bool _enableRemoteSync;
   late final StreamSubscription<BackendSyncResult> _syncSubscription;
 
   /// Instancia configurada durante el bootstrap.
   static BrickLotStore get instance => _instance ?? (throw StateError('BrickLotStore has not been initialized yet.'));
 
   /// Registra el repositorio Brick compartido.
-  static void configure(AppBrickRepository repository) {
-    _instance ??= BrickLotStore._(repository);
+  static void configure(
+    AppBrickRepository repository, {
+    bool enableRemoteSync = false,
+  }) {
+    _instance ??= BrickLotStore._(
+      repository,
+      enableRemoteSync: enableRemoteSync,
+    );
   }
 
   @override
@@ -50,7 +57,9 @@ class BrickLotStore implements LotBrickStore {
       lot.primaryKey = existing?.primaryKey;
     }
     final saved = await _repository.upsertLocal(lot);
-    unawaited(_repository.enqueueRemoteUpsert<BrickLotModel>(saved));
+    if (_enableRemoteSync) {
+      unawaited(_repository.enqueueRemoteUpsert<BrickLotModel>(saved));
+    }
     return saved;
   }
 
@@ -84,6 +93,9 @@ class BrickLotStore implements LotBrickStore {
 
   @override
   Future<void> pullRemoteLots(String establishmentId) async {
+    // TODO(field-sync): invocar este pull desde el coordinador global de sync
+    // por cada establecimiento y acordar cursor/LWW con backend.
+    if (!_enableRemoteSync) return;
     final remoteLots = await _repository.remoteProvider.get<BrickLotModel>(
       repository: _repository,
       query: Query(
@@ -112,6 +124,7 @@ class BrickLotStore implements LotBrickStore {
 
   @override
   Future<void> pushPendingLots(String establishmentId) async {
+    if (!_enableRemoteSync) return;
     final lots = await _repository.getLocal<BrickLotModel>();
     final pending = lots.where(
       (lot) => lot.establishmentId == establishmentId && lot.syncStatus == BrickLotSyncStatus.pending,
@@ -121,8 +134,40 @@ class BrickLotStore implements LotBrickStore {
     }
   }
 
+  /// Descarga destinos activos aunque la edición remota de lotes siga apagada.
+  /// Los lotes confirmados que dejaron de aparecer se retiran de los destinos;
+  /// los borradores locales se conservan para que el usuario vea su estado.
+  Future<void> pullActiveLots(String establishmentId) async {
+    final remote = await _repository.remoteProvider.get<BrickLotModel>(
+      repository: _repository,
+      query: Query(
+        forProviders: [RestProviderQuery(request: BrickLotRequestTransformer.activeLotsRequest(establishmentId))],
+      ),
+    );
+    await _repository.runLocalTransaction((transaction) async {
+      final local = await transaction.getLocal<BrickLotModel>();
+      final ids = remote.map((lot) => lot.localId).toSet();
+      for (final lot in local.where(
+        (lot) =>
+            lot.establishmentId == establishmentId &&
+            lot.syncStatus == BrickLotSyncStatus.synchronized &&
+            !ids.contains(lot.localId),
+      )) {
+        await transaction.upsert(lot.copyWith(statusCode: 'inactivo'));
+      }
+      for (final lot in remote) {
+        final existing = local.where((item) => item.localId == lot.localId).firstOrNull;
+        if (existing != null && existing.syncStatus != BrickLotSyncStatus.synchronized) continue;
+        lot.primaryKey = existing?.primaryKey;
+        await transaction.upsert(lot.copyWith(syncStatus: BrickLotSyncStatus.synchronized));
+      }
+    });
+  }
+
   /// Aplica confirmaciones o rechazos publicados por el cliente HTTP.
   Future<void> applyLotSyncResult(BackendSyncResult result) async {
+    // TODO(field-sync): mapear los códigos autoritativos de nombre duplicado,
+    // geometría inválida y superposición al flujo de reconciliación mobile.
     if (!BrickLotRequestTransformer.matchesLotResource(result.resourcePath)) {
       return;
     }
@@ -131,9 +176,7 @@ class BrickLotStore implements LotBrickStore {
       if (lot.localId != result.localId) continue;
       final responseData = result.responseData;
       if (result.synchronized && responseData != null) {
-        final authoritative = await _repository.modelFromRemoteData<BrickLotModel>(
-          responseData,
-        );
+        final authoritative = await _repository.modelFromRemoteData<BrickLotModel>(responseData);
         authoritative.primaryKey = lot.primaryKey;
         await _repository.upsertLocal<BrickLotModel>(
           authoritative.copyWith(
@@ -141,14 +184,14 @@ class BrickLotStore implements LotBrickStore {
             syncErrorCode: null,
           ),
         );
-        return;
+      } else {
+        await _repository.upsertLocal<BrickLotModel>(
+          lot.copyWith(
+            syncStatus: result.synchronized ? BrickLotSyncStatus.synchronized : BrickLotSyncStatus.rejected,
+            syncErrorCode: result.errorCode,
+          ),
+        );
       }
-      await _repository.upsertLocal<BrickLotModel>(
-        lot.copyWith(
-          syncStatus: result.synchronized ? BrickLotSyncStatus.synchronized : BrickLotSyncStatus.rejected,
-          syncErrorCode: result.errorCode,
-        ),
-      );
       return;
     }
   }

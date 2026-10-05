@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
@@ -40,6 +39,8 @@ import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
+import 'package:frontend_mayoral/features/lot_movement/lot_movement_composition.dart';
+import 'package:frontend_mayoral/features/lot_movement/presentation/pages/lot_movement_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/financial_access_denied_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expense_history_page.dart';
@@ -223,6 +224,16 @@ class AppRouter {
           },
         ),
         GoRoute(
+          path: AppRoutes.lotMovement,
+          builder: (context, state) => LotMovementPage(
+            createCubit: () => createLotMovementCubit(
+              establishmentId: state.uri.queryParameters['establecimientoId'] ?? '',
+              animalId: state.uri.queryParameters['animalId'],
+              sourceLotId: state.uri.queryParameters['loteOrigenId'],
+            ),
+          ),
+        ),
+        GoRoute(
           path: AppRoutes.animalDetail,
           builder: (context, state) {
             final animalId = state.pathParameters['animalId']!;
@@ -344,6 +355,7 @@ class AppRouter {
               );
             }
             return LotEditorPage(
+              showSatelliteMap: data.showSatelliteMap,
               createBloc: () => createLotEditorBloc(
                 establishmentId: data.establishmentId,
                 existingLots: data.existingLots,

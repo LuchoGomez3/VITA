@@ -8,10 +8,16 @@ Future<BrickCategoriaModel> _$BrickCategoriaModelFromRest(
 }) async {
   return BrickCategoriaModel(
     localId: data['id'] as String,
+    establishmentId: data['establecimiento_id'] == null
+        ? null
+        : data['establecimiento_id'] as String?,
     name: data['nombre'] as String,
     description: data['descripcion'] == null
         ? null
         : data['descripcion'] as String?,
+    allowedSex: (data['sexo_permitido'] as String?) ?? 'ambos',
+    allowsReproductiveStatus:
+        (data['permite_estado_reproductivo'] as bool?) ?? false,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -29,8 +35,11 @@ Future<Map<String, dynamic>> _$BrickCategoriaModelToRest(
 }) async {
   return {
     'id': instance.localId,
+    'establecimiento_id': instance.establishmentId,
     'nombre': instance.name,
     'descripcion': instance.description,
+    'sexo_permitido': instance.allowedSex,
+    'permite_estado_reproductivo': instance.allowsReproductiveStatus,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),
@@ -44,10 +53,19 @@ Future<BrickCategoriaModel> _$BrickCategoriaModelFromSqlite(
 }) async {
   return BrickCategoriaModel(
     localId: data['local_id'] as String,
+    establishmentId: data['establishment_id'] == null
+        ? null
+        : data['establishment_id'] as String?,
     name: data['name'] as String,
     description: data['description'] == null
         ? null
         : data['description'] as String?,
+    allowedSex: (data['allowed_sex'] as String?) ?? 'ambos',
+    allowsReproductiveStatus: data['allows_reproductive_status'] == 1,
+    syncStatus: BrickCategoriaSyncStatus.values[data['sync_status'] as int],
+    syncErrorCode: data['sync_error_code'] == null
+        ? null
+        : data['sync_error_code'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -65,8 +83,13 @@ Future<Map<String, dynamic>> _$BrickCategoriaModelToSqlite(
 }) async {
   return {
     'local_id': instance.localId,
+    'establishment_id': instance.establishmentId,
     'name': instance.name,
     'description': instance.description,
+    'allowed_sex': instance.allowedSex,
+    'allows_reproductive_status': instance.allowsReproductiveStatus ? 1 : 0,
+    'sync_status': BrickCategoriaSyncStatus.values.indexOf(instance.syncStatus),
+    'sync_error_code': instance.syncErrorCode,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),
@@ -94,6 +117,12 @@ class BrickCategoriaModelAdapter
       iterable: false,
       type: String,
     ),
+    'establishmentId': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'establishment_id',
+      iterable: false,
+      type: String,
+    ),
     'name': const RuntimeSqliteColumnDefinition(
       association: false,
       columnName: 'name',
@@ -103,6 +132,30 @@ class BrickCategoriaModelAdapter
     'description': const RuntimeSqliteColumnDefinition(
       association: false,
       columnName: 'description',
+      iterable: false,
+      type: String,
+    ),
+    'allowedSex': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'allowed_sex',
+      iterable: false,
+      type: String,
+    ),
+    'allowsReproductiveStatus': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'allows_reproductive_status',
+      iterable: false,
+      type: bool,
+    ),
+    'syncStatus': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'sync_status',
+      iterable: false,
+      type: BrickCategoriaSyncStatus,
+    ),
+    'syncErrorCode': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'sync_error_code',
       iterable: false,
       type: String,
     ),

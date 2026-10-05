@@ -50,6 +50,19 @@ class AppRoutes {
   /// Ruta de la pantalla de detalle de animal.
   static const animalDetail = '/animals/:animalId';
 
+  /// Flujo compartido de asignación y traslado de animales entre lotes.
+  static const lotMovement = '/movimientos-lotes';
+
+  /// Acceso desde una ficha o lote sin importar pantallas de otra feature.
+  static String lotMovementFor({required String establishmentId, String? animalId, String? sourceLotId}) => Uri(
+    path: lotMovement,
+    queryParameters: {
+      'establecimientoId': establishmentId,
+      if (animalId != null) 'animalId': animalId,
+      if (sourceLotId != null) 'loteOrigenId': sourceLotId,
+    },
+  ).toString();
+
   /// Ruta de identificacion de animales mediante caravana RFID.
   static const rfidScan = '/identificar-animal';
 

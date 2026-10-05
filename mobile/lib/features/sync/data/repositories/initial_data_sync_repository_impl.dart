@@ -4,9 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
-import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
-import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
@@ -19,6 +17,9 @@ import 'package:http/http.dart' as http;
 
 /// Sincroniza los datos financieros de un establecimiento habilitado.
 typedef SyncOperatingExpenseData = Future<void> Function(String establishmentId);
+
+/// Descarga destinos e historial del establecimiento para el próximo uso offline.
+typedef SyncLotMovementData = Future<void> Function(String establishmentId);
 
 /// Implementacion que descarga datos iniciales a SQLite para uso offline.
 ///
@@ -35,27 +36,24 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     required EstablishmentRemoteDataSource establishmentRemoteDataSource,
     required AnimalBrickStore animalStore,
     required CategoriaBrickStore categoryStore,
-    required LotBrickStore lotStore,
     required PesajeBrickStore weighingStore,
-    required AnimalLotMovementBrickStore movementStore,
     required SyncOperatingExpenseData syncOperatingExpenseData,
+    SyncLotMovementData? syncLotMovementData,
   }) : _secureStorage = secureStorage,
        _establishmentRemoteDataSource = establishmentRemoteDataSource,
        _animalStore = animalStore,
        _categoryStore = categoryStore,
-       _lotStore = lotStore,
        _weighingStore = weighingStore,
-       _movementStore = movementStore,
-       _syncOperatingExpenseData = syncOperatingExpenseData;
+       _syncOperatingExpenseData = syncOperatingExpenseData,
+       _syncLotMovementData = syncLotMovementData;
 
   final SecureStorageService _secureStorage;
   final EstablishmentRemoteDataSource _establishmentRemoteDataSource;
   final AnimalBrickStore _animalStore;
   final CategoriaBrickStore _categoryStore;
-  final LotBrickStore _lotStore;
   final PesajeBrickStore _weighingStore;
-  final AnimalLotMovementBrickStore _movementStore;
   final SyncOperatingExpenseData _syncOperatingExpenseData;
+  final SyncLotMovementData? _syncLotMovementData;
 
   @override
   Future<Result<PostAuthenticationSummary>> sync() async {
@@ -68,28 +66,21 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
         ),
       );
       _logInitialSyncStep('establishments=${establishments.length}');
-      _logInitialSyncStep('pulling global animal categories');
-      await _categoryStore.pullRemoteCategorias();
       for (final establishment in establishments) {
         final establishmentId = establishment.id;
+
+        // El catalogo se cachea antes que los animales para que sus referencias
+        // de categoria ya esten disponibles en los flujos offline.
         _logInitialSyncStep(
-          'pushing pending lots for establishment=$establishmentId',
+          'pulling categories for establishment=$establishmentId',
         );
-        await _lotStore.pushPendingLots(establishmentId);
-        _logInitialSyncStep('pulling lots for establishment=$establishmentId');
-        await _lotStore.pullRemoteLots(establishmentId);
+        await _categoryStore.pullRemoteCategorias(establishmentId);
         _logInitialSyncStep(
           'pulling animals for establishment=$establishmentId',
         );
         await _animalStore.pullRemoteAnimals(establishmentId);
-        _logInitialSyncStep(
-          'pushing pending lot movements for establishment=$establishmentId',
-        );
-        await _movementStore.pushPendingMovements(establishmentId);
-        _logInitialSyncStep(
-          'pulling lot movements for establishment=$establishmentId',
-        );
-        await _movementStore.pullRemoteMovements(establishmentId);
+        // Lotes e historial quedan disponibles antes del próximo trabajo offline.
+        await _syncLotMovementData?.call(establishmentId);
         _logInitialSyncStep(
           'pulling weighings for establishment=$establishmentId',
         );

@@ -12,6 +12,10 @@ part '20260830204306.migration.dart';
 part '20260910133325.migration.dart';
 part '20260917120957.migration.dart';
 part '20261002183516.migration.dart';
+part '20261005112458.migration.dart';
+part '20261005113732.migration.dart';
+part '20261005125837.migration.dart';
+part '20261005193219.migration.dart';
 
 /// All intelligently-generated migrations from all `@Migratable` classes on disk
 final migrations = <Migration>{
@@ -26,11 +30,15 @@ final migrations = <Migration>{
   const Migration20260910133325(),
   const Migration20260917120957(),
   const Migration20261002183516(),
+  const Migration20261005112458(),
+  const Migration20261005113732(),
+  const Migration20261005125837(),
+  const Migration20261005193219(),
 };
 
 /// A consumable database structure including the latest generated migration.
 final schema = Schema(
-  20261002183516,
+  20261005193219,
   generatorVersion: 1,
   tables: <SchemaTable>{
     SchemaTable(
@@ -61,8 +69,13 @@ final schema = Schema(
         SchemaColumn('father_id', Column.varchar),
         SchemaColumn('coat', Column.varchar),
         SchemaColumn('observations', Column.varchar),
+        SchemaColumn('status', Column.varchar),
+        SchemaColumn('reproductive_status', Column.varchar),
         SchemaColumn('sync_status', Column.integer),
         SchemaColumn('sync_error_code', Column.varchar),
+        SchemaColumn('lot_movement_id', Column.varchar),
+        SchemaColumn('lot_sync_status', Column.integer),
+        SchemaColumn('lot_sync_error_code', Column.varchar),
         SchemaColumn('created_at', Column.datetime),
         SchemaColumn('updated_at', Column.datetime),
         SchemaColumn('deleted_at', Column.datetime),
@@ -96,6 +109,48 @@ final schema = Schema(
       indices: <SchemaIndex>{},
     ),
     SchemaTable(
+      'BrickAnimalObservationModel',
+      columns: <SchemaColumn>{
+        SchemaColumn(
+          '_brick_id',
+          Column.integer,
+          autoincrement: true,
+          nullable: false,
+          isPrimaryKey: true,
+        ),
+        SchemaColumn('local_id', Column.varchar),
+        SchemaColumn('establishment_id', Column.varchar),
+        SchemaColumn('animal_id', Column.varchar),
+        SchemaColumn('text', Column.varchar),
+        SchemaColumn('date', Column.datetime),
+        SchemaColumn('author_id', Column.varchar),
+        SchemaColumn('sync_status', Column.integer),
+        SchemaColumn('sync_error_code', Column.varchar),
+        SchemaColumn('created_at', Column.datetime),
+        SchemaColumn('updated_at', Column.datetime),
+        SchemaColumn('deleted_at', Column.datetime),
+      },
+      indices: <SchemaIndex>{},
+    ),
+    SchemaTable(
+      'BrickAnimalUpdateModel',
+      columns: <SchemaColumn>{
+        SchemaColumn(
+          '_brick_id',
+          Column.integer,
+          autoincrement: true,
+          nullable: false,
+          isPrimaryKey: true,
+        ),
+        SchemaColumn('local_id', Column.varchar),
+        SchemaColumn('category_id', Column.varchar),
+        SchemaColumn('status', Column.varchar),
+        SchemaColumn('reproductive_status', Column.varchar),
+        SchemaColumn('updated_at', Column.datetime),
+      },
+      indices: <SchemaIndex>{},
+    ),
+    SchemaTable(
       'BrickCategoriaModel',
       columns: <SchemaColumn>{
         SchemaColumn(
@@ -106,8 +161,13 @@ final schema = Schema(
           isPrimaryKey: true,
         ),
         SchemaColumn('local_id', Column.varchar),
+        SchemaColumn('establishment_id', Column.varchar),
         SchemaColumn('name', Column.varchar),
         SchemaColumn('description', Column.varchar),
+        SchemaColumn('allowed_sex', Column.varchar),
+        SchemaColumn('allows_reproductive_status', Column.boolean),
+        SchemaColumn('sync_status', Column.integer),
+        SchemaColumn('sync_error_code', Column.varchar),
         SchemaColumn('created_at', Column.datetime),
         SchemaColumn('updated_at', Column.datetime),
         SchemaColumn('deleted_at', Column.datetime),

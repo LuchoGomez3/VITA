@@ -11,6 +11,9 @@ abstract class AppConfig with _$AppConfig {
     required String environment,
     required String backendBaseUrl,
     @Default(true) bool enableLogs,
+    // Las altas y ediciones de lotes se envían por defecto mediante Brick.
+    // El define permite desactivar la integración en builds de pruebas locales.
+    @Default(bool.fromEnvironment('VITA_ENABLE_LOT_REMOTE_SYNC', defaultValue: true)) bool enableLotRemoteSync,
   }) = _AppConfig;
 
   /// Configuración activa de esta build.

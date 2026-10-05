@@ -73,7 +73,7 @@ Future<BrickAnimalLotMovementModel> _$BrickAnimalLotMovementModelFromSqlite(
         : data['deleted_at'] == null
         ? null
         : DateTime.tryParse(data['deleted_at'] as String),
-    syncStatus: brickMovementSyncStatusFromSqlite(data['sync_status']),
+    syncStatus: brickMovementStatusFromSqlite(data['sync_status']),
     syncErrorCode: data['sync_error_code'] == null
         ? null
         : data['sync_error_code'] as String?,
@@ -97,9 +97,7 @@ Future<Map<String, dynamic>> _$BrickAnimalLotMovementModelToSqlite(
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),
-    'sync_status': BrickAnimalLotMovementSyncStatus.values.indexOf(
-      instance.syncStatus,
-    ),
+    'sync_status': BrickMovementSyncStatus.values.indexOf(instance.syncStatus),
     'sync_error_code': instance.syncErrorCode,
   };
 }
@@ -189,7 +187,7 @@ class BrickAnimalLotMovementModelAdapter
       association: false,
       columnName: 'sync_status',
       iterable: false,
-      type: BrickAnimalLotMovementSyncStatus,
+      type: BrickMovementSyncStatus,
     ),
     'syncErrorCode': const RuntimeSqliteColumnDefinition(
       association: false,

@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:brick_offline_first/brick_offline_first.dart';
 import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart';
+import 'package:brick_offline_first_with_rest/offline_queue.dart';
 import 'package:brick_rest/brick_rest.dart';
 import 'package:brick_sqlite/brick_sqlite.dart';
 import 'package:frontend_mayoral/app/config/app_config.dart';
@@ -11,6 +13,7 @@ import 'package:frontend_mayoral/brick/brick.g.dart';
 import 'package:frontend_mayoral/brick/db/schema.g.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
 import 'package:http/http.dart' as http;
+import 'package:meta/meta.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// Repositorio Brick compartido por toda la app.
@@ -60,6 +63,10 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   /// Por ejemplo, `BrickAnimalStore` escucha este stream y solo procesa eventos
   /// cuyo [BackendSyncResult.resourcePath] corresponde a `/api/v1/animales`.
   Stream<BackendSyncResult> get syncResults => _syncResults.stream;
+
+  /// Acceso a la cola real para pruebas de persistencia, recuperación y HTTP.
+  @visibleForTesting
+  RestOfflineRequestQueue get offlineQueueForTesting => offlineRequestQueue;
 
   /// Notifica que el backend rechazo una sesion previamente autenticada.
   ///
@@ -215,6 +222,52 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     return model as TModel;
   }
 
+  /// Persiste un comando en la cola sin esperar red ni enviarlo por otra vía.
+  ///
+  /// La cola usa una base separada: el store conserva su operación como outbox
+  /// en la base principal y puede reconstruir este request si la app se cierra
+  /// entre ambas escrituras. La comparación del cuerpo evita duplicar jobs,
+  /// incluso cuando el procesador ya tiene uno bloqueado para transmitirlo.
+  Future<void> queueRemoteUpsert<TModel extends OfflineFirstWithRestModel>(TModel model) async {
+    final adapter = remoteProvider.modelDictionary.adapterFor[TModel]!;
+    final request = adapter.restRequest!(const Query(), model).upsert!;
+    final body = await adapter.toRest(model, provider: remoteProvider, repository: this);
+    final httpRequest =
+        http.Request(request.method ?? 'POST', Uri.parse('${remoteProvider.baseEndpoint}${request.url}'))
+          ..headers['content-type'] = 'application/json'
+          ..body = jsonEncode(body);
+    final cache = RestRequestSqliteCache(httpRequest);
+    final manager = offlineRequestQueue.client.requestManager;
+    final db = await manager.getDb();
+    await db.transaction((transaction) async {
+      final rows = await transaction.query(
+        manager.tableName,
+        where: 'request_method = ? AND url = ? AND body = ?',
+        whereArgs: [httpRequest.method, httpRequest.url.toString(), httpRequest.body],
+      );
+      if (rows.isEmpty) await transaction.insert(manager.tableName, cache.toSqlite());
+    });
+  }
+
+  /// Retira un comando rechazado sólo si la cola no lo está transmitiendo.
+  /// La consulta y el borrado comparten transacción con el bloqueo de Brick;
+  /// un request en vuelo debe terminar antes de liberar su efecto local.
+  Future<bool> removeQueuedUpsert<TModel extends OfflineFirstWithRestModel>(TModel model) async {
+    final adapter = remoteProvider.modelDictionary.adapterFor[TModel]!;
+    final request = adapter.restRequest!(const Query(), model).upsert!;
+    final body = await adapter.toRest(model, provider: remoteProvider, repository: this);
+    final manager = offlineRequestQueue.client.requestManager;
+    final db = await manager.getDb();
+    return db.transaction((transaction) async {
+      const where = 'request_method = ? AND url = ? AND body = ?';
+      final arguments = [request.method ?? 'POST', '${remoteProvider.baseEndpoint}${request.url}', jsonEncode(body)];
+      final rows = await transaction.query(manager.tableName, where: where, whereArgs: arguments);
+      if (rows.any((row) => row[manager.lockedColumn] == 1)) return false;
+      await transaction.delete(manager.tableName, where: where, whereArgs: arguments);
+      return true;
+    });
+  }
+
   /// Lee modelos solo desde SQLite, sin hidratar desde backend.
   Future<List<TModel>> getLocal<TModel extends OfflineFirstWithRestModel>() {
     return get<TModel>(
@@ -236,6 +289,16 @@ class AppBrickTransaction {
   final AppBrickRepository _repository;
   final Transaction _transaction;
   final List<Future<void> Function()> _afterCommit;
+
+  /// Lee dentro de la misma transacción que valida y modifica los modelos.
+  /// Así dos operaciones concurrentes no validan una ubicación ya desactualizada.
+  Future<List<TModel>> getLocal<TModel extends OfflineFirstWithRestModel>() async {
+    final adapter = _repository.sqliteProvider.modelDictionary.adapterFor[TModel]! as SqliteAdapter<TModel>;
+    final rows = await _transaction.query(adapter.tableName);
+    return Future.wait([
+      for (final row in rows) adapter.fromSqlite(row, provider: _repository.sqliteProvider, repository: _repository),
+    ]);
+  }
 
   /// Inserta o actualiza [model] usando el adapter generado por Brick.
   Future<TModel> upsert<TModel extends OfflineFirstWithRestModel>(

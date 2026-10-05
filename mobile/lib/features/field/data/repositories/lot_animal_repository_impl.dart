@@ -23,6 +23,7 @@ class LotAnimalRepositoryImpl implements LotAnimalRepository {
       return Result.success([
         for (final animal in animals)
           if (animal.deletedAt == null &&
+              animal.status == 'activo' &&
               animal.establishmentId == establishmentId &&
               (lotId == null || animal.lotId == lotId))
             LotAnimalSummary(

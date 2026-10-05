@@ -71,7 +71,9 @@ class _FakeCategoriaBrickStore implements CategoriaBrickStore {
   final Object? readError;
 
   @override
-  Future<List<BrickCategoriaModel>> getLocalCategorias() async {
+  Future<List<BrickCategoriaModel>> getLocalCategorias([
+    String? establishmentId,
+  ]) async {
     if (readError case final Object error) {
       Error.throwWithStackTrace(error, StackTrace.current);
     }
@@ -79,5 +81,10 @@ class _FakeCategoriaBrickStore implements CategoriaBrickStore {
   }
 
   @override
-  Future<void> pullRemoteCategorias() async {}
+  Future<void> pullRemoteCategorias([String? establishmentId]) async {}
+
+  @override
+  Future<BrickCategoriaModel> upsertCategoria(
+    BrickCategoriaModel categoria,
+  ) async => categoria;
 }
