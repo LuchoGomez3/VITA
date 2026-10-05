@@ -15,14 +15,14 @@ abstract class CategoriaBrickStore {
   Future<BrickCategoriaModel> upsertCategoria(BrickCategoriaModel categoria);
 
   /// Descarga el catalogo (global + propias) de [establishmentId] y lo cachea.
-  Future<void> pullRemoteCategorias(String establishmentId);
+  Future<void> pullRemoteCategorias([String? establishmentId]);
 
   /// Lee desde SQLite las categorias visibles para [establishmentId].
   ///
   /// Devuelve el catalogo global (`establishmentId` null) mas las propias del
   /// establecimiento, excluyendo las borradas. Es la fuente del selector de
   /// categoria del alta de animal, disponible aun sin conexion.
-  Future<List<BrickCategoriaModel>> getLocalCategorias(String establishmentId);
+  Future<List<BrickCategoriaModel>> getLocalCategorias([String? establishmentId]);
 }
 
 /// Store Brick especifico para operaciones de categorias.
@@ -79,15 +79,17 @@ class BrickCategoriaStore implements CategoriaBrickStore {
   }
 
   @override
-  Future<void> pullRemoteCategorias(String establishmentId) async {
+  Future<void> pullRemoteCategorias([String? establishmentId]) async {
     final remoteCategorias = await _repository.remoteProvider.get<BrickCategoriaModel>(
       repository: _repository,
       query: Query(
         forProviders: [
           RestProviderQuery(
-            request: BrickCategoriaRequestTransformer.listByEstablishmentRequest(
-              establishmentId,
-            ),
+            request: establishmentId == null
+                ? BrickCategoriaRequestTransformer.listRequest
+                : BrickCategoriaRequestTransformer.listByEstablishmentRequest(
+                    establishmentId,
+                  ),
           ),
         ],
       ),
@@ -124,9 +126,9 @@ class BrickCategoriaStore implements CategoriaBrickStore {
   }
 
   @override
-  Future<List<BrickCategoriaModel>> getLocalCategorias(
-    String establishmentId,
-  ) async {
+  Future<List<BrickCategoriaModel>> getLocalCategorias([
+    String? establishmentId,
+  ]) async {
     final categorias = await _repository.getLocal<BrickCategoriaModel>();
     final categoriasById = <String, BrickCategoriaModel>{};
 

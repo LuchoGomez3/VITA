@@ -198,6 +198,21 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
     }
   }
 
+  @override
+  Future<Result<void>> retrySync(String animalId) async {
+    try {
+      await _brickStore.retryRejectedAnimal(animalId);
+      return const Result.success(null);
+    } on Object {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudo reintentar la sincronización del animal.',
+          code: DomainErrorCode.offline,
+        ),
+      );
+    }
+  }
+
   String? _reproductionCode(AnimalReproductiveStatus? status) => switch (status) {
     null => null,
     AnimalReproductiveStatus.undetermined => 'sin_determinar',

@@ -154,7 +154,7 @@ void main() {
     await tester.tap(first);
     await tester.pumpAndSettle();
     expect(tester.widget<CheckboxListTile>(first).value, isTrue);
-    final dropdown = find.byType(DropdownButtonFormField<String>).last;
+    final dropdown = find.byType(DropdownMenu<String>).last;
     await Scrollable.ensureVisible(tester.element(dropdown), alignment: 0.5);
     await tester.pumpAndSettle();
     await tester.tap(dropdown);
@@ -203,9 +203,11 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    final field = tester.widget<DropdownButtonFormField<String>>(find.byType(DropdownButtonFormField<String>).first);
-    expect(field.initialValue, source);
-    expect(find.text(source), findsOneWidget);
+    final field = tester.widget<DropdownMenu<String>>(
+      find.byType(DropdownMenu<String>).first,
+    );
+    expect(field.initialSelection, source);
+    expect(find.text(source), findsWidgets);
     expect(find.text(LotMovementStrings.noAnimals), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });

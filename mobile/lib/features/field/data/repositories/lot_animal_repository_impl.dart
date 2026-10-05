@@ -33,6 +33,7 @@ class LotAnimalRepositoryImpl implements LotAnimalRepository {
               rfidTagNumber: animal.rfidTagNumber,
               visualTag: animal.visualTag,
               categoryName: animal.categoryName,
+              syncErrorCode: animal.syncErrorCode,
             ),
       ]);
     } on Object catch (error, stackTrace) {

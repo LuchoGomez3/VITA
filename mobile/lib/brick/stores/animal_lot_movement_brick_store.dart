@@ -12,8 +12,31 @@ import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:logging/logging.dart';
 
+/// Contrato usado por la sincronización inicial y las features de lotes.
+abstract class AnimalLotMovementBrickStore {
+  /// Guarda un movimiento local.
+  Future<BrickAnimalLotMovementModel> save(BrickAnimalLotMovementModel movement);
+
+  /// Guarda animales y movimiento en una única transacción local.
+  Future<BrickAnimalLotMovementModel> saveWithAnimals({
+    required List<BrickAnimalModel> animals,
+    required BrickAnimalLotMovementModel movement,
+  });
+
+  /// Descarga el historial remoto del establecimiento.
+  Future<void> pullRemoteMovements(String establishmentId);
+
+  /// Reconstruye y envía movimientos pendientes del establecimiento.
+  Future<void> pushPendingMovements(String establishmentId);
+
+  /// Mueve todos los animales o ninguno y registra el historial local.
+  Future<BrickAnimalLotMovementModel> moveAnimals(
+    BrickAnimalLotMovementModel movement,
+  );
+}
+
 /// Transacción de ubicación, historial durable y outbox sobre la cola de Brick.
-class BrickAnimalLotMovementStore {
+class BrickAnimalLotMovementStore implements AnimalLotMovementBrickStore {
   BrickAnimalLotMovementStore._(this._repository, {required bool enableRemoteSync})
     : _enableRemoteSync = enableRemoteSync {
     _subscription = _repository.syncResults.listen((result) {
@@ -63,6 +86,7 @@ class BrickAnimalLotMovementStore {
   }
 
   /// Conserva una operación local antes de persistir su request en la cola.
+  @override
   Future<BrickAnimalLotMovementModel> save(BrickAnimalLotMovementModel movement) async {
     final saved = await _repository.upsertLocal(movement);
     _changes.add(null);
@@ -71,6 +95,7 @@ class BrickAnimalLotMovementStore {
   }
 
   /// Compatibilidad con escrituras compuestas existentes; no dispara PUT de animales.
+  @override
   Future<BrickAnimalLotMovementModel> saveWithAnimals({
     required List<BrickAnimalModel> animals,
     required BrickAnimalLotMovementModel movement,
@@ -86,12 +111,50 @@ class BrickAnimalLotMovementStore {
     return saved;
   }
 
+  @override
+  Future<void> pushPendingMovements(String establishmentId) async {
+    if (!_enableRemoteSync) return;
+    await recoverPending();
+  }
+
+  @override
+  Future<void> pullRemoteMovements(String establishmentId) => pullMovements(establishmentId);
+
+  /// Alias compatible con el flujo de sync previo al movimiento batch.
+  Future<void> applyMovementSyncResult(BackendSyncResult result) async {
+    await applySyncResult(result);
+    if (!BrickAnimalLotMovementRequestTransformer.matchesMovementResource(
+      result.resourcePath,
+    )) {
+      return;
+    }
+    final movements = await _repository.getLocal<BrickAnimalLotMovementModel>();
+    final movement = movements.where((item) => item.localId == result.localId).firstOrNull;
+    if (movement == null) return;
+    final animalIds = (jsonDecode(movement.animalIdsJson) as List<dynamic>).cast<String>().toSet();
+    final animals = await _repository.getLocal<BrickAnimalModel>();
+    for (final animal in animals.where(
+      (item) =>
+          animalIds.contains(item.localId) &&
+          item.lotId == movement.destinationLotId &&
+          item.updatedAt.isAtSameMomentAs(movement.updatedAt),
+    )) {
+      await _repository.upsertLocal(
+        animal.copyWith(
+          syncStatus: result.synchronized ? BrickAnimalSyncStatus.synchronized : BrickAnimalSyncStatus.rejected,
+          syncErrorCode: result.errorCode,
+        ),
+      );
+    }
+  }
+
   /// Revalida origen y destino dentro de SQLite y mueve todos los animales o ninguno.
   ///
   /// El UUID es estable. Repetir esta llamada devuelve la misma operación, sin
   /// aplicar otra vez la ubicación. Se bloquea un nuevo movimiento de animales
   /// cuya ubicación anterior sigue pendiente o rechazada, evitando cadenas que
   /// dependan de un origen que el servidor todavía no confirmó.
+  @override
   Future<BrickAnimalLotMovementModel> moveAnimals(BrickAnimalLotMovementModel movement) async {
     final saved = await _repository.runLocalTransaction((transaction) async {
       final movements = await transaction.getLocal<BrickAnimalLotMovementModel>();
@@ -221,13 +284,19 @@ class BrickAnimalLotMovementStore {
   /// Persiste confirmación o rechazo y sólo modifica el sync de ubicación.
   Future<void> applySyncResult(BackendSyncResult result) async {
     if (result.resourcePath != BrickAnimalLotMovementRequestTransformer.movementsPath) return;
+    BrickAnimalLotMovementModel? authoritative;
+    final responseData = result.responseData;
+    if (result.synchronized && responseData != null && responseData.isNotEmpty) {
+      authoritative = await _repository.modelFromRemoteData<BrickAnimalLotMovementModel>(responseData);
+    }
     await _repository.runLocalTransaction((transaction) async {
       final stored = await transaction.getLocal<BrickAnimalLotMovementModel>();
       final movement = stored.where((m) => m.localId == result.localId).firstOrNull;
       if (movement == null || movement.syncStatus == BrickMovementSyncStatus.synchronized) return;
       if (movement.syncErrorCode?.startsWith(releasedDestinationPrefix) ?? false) return;
+      authoritative?.primaryKey = movement.primaryKey;
       await transaction.upsert(
-        movement.withSync(
+        (authoritative ?? movement).withSync(
           result.synchronized ? BrickMovementSyncStatus.synchronized : BrickMovementSyncStatus.rejected,
           errorCode: result.errorCode,
         ),

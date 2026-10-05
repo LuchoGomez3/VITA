@@ -129,6 +129,9 @@ class _FakeAnimalStore implements AnimalBrickStore {
   Future<BrickAnimalModel> updateAnimal(BrickAnimalModel animal) => upsertAnimal(animal);
 
   @override
+  Future<void> retryRejectedAnimal(String animalId) async {}
+
+  @override
   Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) async => animal;
 
   @override
@@ -151,14 +154,14 @@ class _FakeCategoryStore implements CategoriaBrickStore {
   final List<String> pulls = [];
 
   @override
-  Future<void> pullRemoteCategorias(String establishmentId) async {
-    pulls.add(establishmentId);
+  Future<void> pullRemoteCategorias([String? establishmentId]) async {
+    if (establishmentId != null) pulls.add(establishmentId);
   }
 
   @override
-  Future<List<BrickCategoriaModel>> getLocalCategorias(
-    String establishmentId,
-  ) async => [];
+  Future<List<BrickCategoriaModel>> getLocalCategorias([
+    String? establishmentId,
+  ]) async => [];
 
   @override
   Future<BrickCategoriaModel> upsertCategoria(

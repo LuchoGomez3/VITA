@@ -3,6 +3,9 @@ class RfidScanStrings {
   const RfidScanStrings._();
 
   static const pageTitle = 'Identificar animal';
+
+  /// Título de la captura que devuelve una lectura a otro formulario.
+  static const captureTitle = 'Leer caravana RFID';
   static const requiredEstablishment = 'Seleccioná un establecimiento para identificar animales.';
   static const methodQuestion = '¿Cómo querés identificarlo?';
   static const methodDescription = 'Usá el bastón RFID o ingresá la caravana manualmente.';

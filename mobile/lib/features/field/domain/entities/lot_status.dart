@@ -3,16 +3,16 @@
 // y migrar a catálogo sincronizado si Producto decide que sean configurables.
 enum LotStatus {
   /// Disponible para recibir animales.
-  active('active'),
+  active('activo'),
 
   /// Reservado para recuperación de la pastura.
-  resting('resting'),
+  resting('descanso'),
 
   /// Temporalmente afectado por tareas de mantenimiento.
-  maintenance('maintenance'),
+  maintenance('mantenimiento'),
 
   /// Conserva su espacio físico, pero no admite animales.
-  inactive('inactive'),
+  inactive('inactivo'),
 
   /// Valor recibido de una versión futura del contrato.
   unknown('unknown');
@@ -24,15 +24,7 @@ enum LotStatus {
 
   /// Recupera un estado sin impedir la lectura de códigos futuros.
   static LotStatus fromCode(String code) => LotStatus.values.firstWhere(
-    (status) =>
-        status.code ==
-        switch (code) {
-          'activo' => 'active',
-          'descanso' => 'resting',
-          'mantenimiento' => 'maintenance',
-          'inactivo' => 'inactive',
-          _ => code,
-        },
+    (status) => status.code == code,
     orElse: () => LotStatus.unknown,
   );
 

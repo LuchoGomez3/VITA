@@ -42,6 +42,9 @@ Future<Map<String, dynamic>> _$BrickAnimalLotMovementModelToRest(
     'animal_ids': brickMovementAnimalIdsToBackend(instance.animalIdsJson),
     'fecha_movimiento': instance.occurredAt.toIso8601String(),
     'motivo': instance.reason,
+    'created_at': instance.createdAt.toIso8601String(),
+    'updated_at': instance.updatedAt.toIso8601String(),
+    'deleted_at': instance.deletedAt?.toIso8601String(),
   };
 }
 

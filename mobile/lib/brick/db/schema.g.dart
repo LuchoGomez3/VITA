@@ -9,9 +9,13 @@ part '20260828160014.migration.dart';
 part '20260830200557.migration.dart';
 part '20260830203237.migration.dart';
 part '20260830204306.migration.dart';
+part '20260910133325.migration.dart';
+part '20260917120957.migration.dart';
+part '20261002183516.migration.dart';
 part '20261005112458.migration.dart';
 part '20261005113732.migration.dart';
 part '20261005125837.migration.dart';
+part '20261005193219.migration.dart';
 
 /// All intelligently-generated migrations from all `@Migratable` classes on disk
 final migrations = <Migration>{
@@ -23,14 +27,18 @@ final migrations = <Migration>{
   const Migration20260830200557(),
   const Migration20260830203237(),
   const Migration20260830204306(),
+  const Migration20260910133325(),
+  const Migration20260917120957(),
+  const Migration20261002183516(),
   const Migration20261005112458(),
   const Migration20261005113732(),
   const Migration20261005125837(),
+  const Migration20261005193219(),
 };
 
 /// A consumable database structure including the latest generated migration.
 final schema = Schema(
-  20261005125837,
+  20261005193219,
   generatorVersion: 1,
   tables: <SchemaTable>{
     SchemaTable(
