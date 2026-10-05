@@ -1,6 +1,9 @@
 import 'package:frontend_mayoral/app/config/app_config.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
+import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
+import 'package:frontend_mayoral/demo/demo_senasa_report_repository.dart';
 import 'package:frontend_mayoral/features/senasa_report/data/datasources/senasa_establishment_local_data_source.dart';
 import 'package:frontend_mayoral/features/senasa_report/data/datasources/senasa_report_remote_data_source.dart';
 import 'package:frontend_mayoral/features/senasa_report/data/repositories/senasa_report_repository_impl.dart';
@@ -44,6 +47,12 @@ SenasaReportGenerationCubit createSenasaReportGenerationCubit() {
 }
 
 SenasaReportRepository _createSenasaReportRepository() {
+  if (AppConfig.demoMode) {
+    return DemoSenasaReportRepository(
+      animalStore: BrickAnimalStore.instance,
+      catalog: const EstablishmentCatalog(secureStorage: FlutterSecureStorageService()),
+    );
+  }
   final service = SenasaReportApiService(
     baseUrl: AppConfig.current.backendBaseUrl,
     tokenProvider: SessionBackendAccessTokenProvider.instance,

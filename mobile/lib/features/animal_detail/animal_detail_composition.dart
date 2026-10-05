@@ -1,4 +1,5 @@
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
+import 'package:frontend_mayoral/app/config/app_config.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_observation_brick_store.dart';
@@ -29,6 +30,7 @@ AnimalDetailCubit createAnimalDetailCubit() {
     remoteDataSource: AnimalDetailRemoteDataSource(
       tokenProvider: SessionBackendAccessTokenProvider.instance,
     ),
+    remoteEnabled: !AppConfig.demoMode,
   );
 
   return AnimalDetailCubit(

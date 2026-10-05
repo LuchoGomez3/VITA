@@ -137,7 +137,7 @@ class _SignUpFormState extends State<SignUpForm> {
   }
 }
 
-class _SignUpNameField extends StatelessWidget {
+class _SignUpNameField extends StatefulWidget {
   const _SignUpNameField({
     required this.controller,
     required this.onValidityChanged,
@@ -148,22 +148,36 @@ class _SignUpNameField extends StatelessWidget {
   final ValueChanged<bool> onValidityChanged;
   final String title;
 
+  @override
+  State<_SignUpNameField> createState() => _SignUpNameFieldState();
+}
+
+class _SignUpNameFieldState extends State<_SignUpNameField> {
   static const _maxCharacters = 50;
+  late bool _hasInput;
+
+  @override
+  void initState() {
+    super.initState();
+    _hasInput = widget.controller.text.trim().isNotEmpty;
+  }
 
   void _handleValueChanged(String value) {
-    onValidityChanged(value.trim().isNotEmpty);
+    final hasInput = value.trim().isNotEmpty;
+    if (_hasInput != hasInput) setState(() => _hasInput = hasInput);
+    widget.onValidityChanged(hasInput);
   }
 
   @override
   Widget build(BuildContext context) {
     return AppTextFormField(
-      controller: controller,
-      title: title,
+      controller: widget.controller,
+      title: widget.title,
       hintText: SignUpStrings.emptyInputHint,
       maxCharacters: _maxCharacters,
       inputFormatters: [NameInputFormatter()],
       onChanged: _handleValueChanged,
-      validation: AppFieldValidation.valid,
+      validation: _hasInput ? AppFieldValidation.valid : AppFieldValidation.neutral,
     );
   }
 }
@@ -183,20 +197,24 @@ class _SignUpEmailField extends StatefulWidget {
 
 class _SignUpEmailFieldState extends State<_SignUpEmailField> {
   late bool _isValid;
+  late bool _hasInput;
 
   @override
   void initState() {
     super.initState();
     _isValid = FormValidators.isEmailValid(widget.controller.text);
+    _hasInput = widget.controller.text.trim().isNotEmpty;
   }
 
   void _validateEmail(String value) {
     final isValid = FormValidators.isEmailValid(value);
-    if (_isValid == isValid) {
+    final hasInput = value.trim().isNotEmpty;
+    if (_isValid == isValid && _hasInput == hasInput) {
       return;
     }
     setState(() {
       _isValid = isValid;
+      _hasInput = hasInput;
     });
     widget.onValidityChanged(isValid);
   }
@@ -209,8 +227,16 @@ class _SignUpEmailFieldState extends State<_SignUpEmailField> {
       hintText: SignUpStrings.emailHint,
       keyboardType: TextInputType.emailAddress,
       onChanged: _validateEmail,
-      validation: _isValid ? AppFieldValidation.valid : AppFieldValidation.invalid,
-      validationMessage: _isValid ? SignUpStrings.emailValidFormatMessage : SignUpStrings.emailInvalidFormatMessage,
+      validation: !_hasInput
+          ? AppFieldValidation.neutral
+          : _isValid
+          ? AppFieldValidation.valid
+          : AppFieldValidation.invalid,
+      validationMessage: !_hasInput
+          ? null
+          : _isValid
+          ? SignUpStrings.emailValidFormatMessage
+          : SignUpStrings.emailInvalidFormatMessage,
     );
   }
 }
@@ -230,6 +256,7 @@ class _SignUpCuitField extends StatefulWidget {
 
 class _SignUpCuitFieldState extends State<_SignUpCuitField> {
   late CuitValidationError? _validationError;
+  late bool _hasInput;
 
   @override
   void initState() {
@@ -237,6 +264,7 @@ class _SignUpCuitFieldState extends State<_SignUpCuitField> {
     _validationError = CuitInputFormatter.validationError(
       widget.controller.text,
     );
+    _hasInput = widget.controller.text.isNotEmpty;
   }
 
   void _updateValidation(CuitValidationError? error) {
@@ -254,9 +282,11 @@ class _SignUpCuitFieldState extends State<_SignUpCuitField> {
 
   void _handleValueChanged(String value) {
     final error = CuitInputFormatter.validationError(value);
-    if (_validationError != error) {
+    final hasInput = value.isNotEmpty;
+    if (_validationError != error || _hasInput != hasInput) {
       setState(() {
         _validationError = error;
+        _hasInput = hasInput;
       });
     }
     widget.onValidityChanged(error == null);
@@ -290,8 +320,12 @@ class _SignUpCuitFieldState extends State<_SignUpCuitField> {
         CuitInputFormatter(onValidationChanged: _updateValidation),
       ],
       onChanged: _handleValueChanged,
-      validation: _validationError == null ? AppFieldValidation.valid : AppFieldValidation.invalid,
-      validationMessage: _validationMessage,
+      validation: !_hasInput
+          ? AppFieldValidation.neutral
+          : _validationError == null
+          ? AppFieldValidation.valid
+          : AppFieldValidation.invalid,
+      validationMessage: _hasInput ? _validationMessage : null,
     );
   }
 }
@@ -352,7 +386,11 @@ class _SignUpPasswordFieldState extends State<_SignUpPasswordField> {
           enableSuggestions: false,
           maxCharacters: _maxCharacters,
           onChanged: _validatePassword,
-          validation: _validation.isValid ? AppFieldValidation.valid : AppFieldValidation.invalid,
+          validation: !_hasInput
+              ? AppFieldValidation.neutral
+              : _validation.isValid
+              ? AppFieldValidation.valid
+              : AppFieldValidation.invalid,
           suffixIcon: IconButton(
             onPressed: _togglePasswordVisibility,
             icon: SvgPicture.asset(
@@ -366,22 +404,22 @@ class _SignUpPasswordFieldState extends State<_SignUpPasswordField> {
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        _PasswordRequirement(
-          isMet: _validation.hasMinimumLength,
-          label: SignUpStrings.passwordLengthRequirement,
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        _PasswordRequirement(
-          isMet: _validation.hasUppercase,
-          label: SignUpStrings.passwordUppercaseRequirement,
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        _PasswordRequirement(
-          isMet: _validation.hasNumber,
-          label: SignUpStrings.passwordNumberRequirement,
-        ),
         if (_hasInput) ...[
+          const SizedBox(height: AppSpacing.sm),
+          _PasswordRequirement(
+            isMet: _validation.hasMinimumLength,
+            label: SignUpStrings.passwordLengthRequirement,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          _PasswordRequirement(
+            isMet: _validation.hasUppercase,
+            label: SignUpStrings.passwordUppercaseRequirement,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          _PasswordRequirement(
+            isMet: _validation.hasNumber,
+            label: SignUpStrings.passwordNumberRequirement,
+          ),
           const SizedBox(height: AppSpacing.sm),
           _PasswordStrengthIndicator(strength: _validation.strength),
         ],

@@ -27,4 +27,10 @@ abstract class AppConfig with _$AppConfig {
       defaultValue: 'http://10.0.2.2:8000',
     ),
   );
+
+  /// Activa la experiencia temporal de la rama de presentación.
+  static const demoMode = bool.fromEnvironment('DEMO_MODE', defaultValue: true);
+
+  /// Borra SQLite demo antes de volver a sembrar los fixtures sintéticos.
+  static const resetDemoData = bool.fromEnvironment('DEMO_RESET');
 }
