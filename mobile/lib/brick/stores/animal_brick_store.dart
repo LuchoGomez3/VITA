@@ -4,6 +4,7 @@ import 'package:brick_offline_first/brick_offline_first.dart';
 import 'package:brick_rest/brick_rest.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/models/animal_update.model.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
 import 'package:meta/meta.dart';
 
@@ -14,6 +15,9 @@ import 'package:meta/meta.dart';
 abstract class AnimalBrickStore {
   /// Guarda [animal] localmente y lo deja listo para sincronizacion remota.
   Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal);
+
+  /// Guarda una edición y encola PUT al animal existente, sin recrear su alta.
+  Future<BrickAnimalModel> updateAnimal(BrickAnimalModel animal);
 
   /// Guarda datos remotos en SQLite sin generar una request de sincronizacion.
   Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal);
@@ -79,6 +83,23 @@ class BrickAnimalStore implements AnimalBrickStore {
     // plano para que la UX siga siendo offline-first y no espere al backend.
     unawaited(_repository.enqueueRemoteUpsert<BrickAnimalModel>(savedAnimal));
 
+    return savedAnimal;
+  }
+
+  @override
+  Future<BrickAnimalModel> updateAnimal(BrickAnimalModel animal) async {
+    final savedAnimal = await _repository.upsertLocal<BrickAnimalModel>(animal);
+    unawaited(
+      _repository.enqueueRemoteUpsert<BrickAnimalUpdateModel>(
+        BrickAnimalUpdateModel(
+          localId: savedAnimal.localId,
+          categoryId: savedAnimal.categoryId.isEmpty ? null : savedAnimal.categoryId,
+          status: savedAnimal.status,
+          reproductiveStatus: savedAnimal.reproductiveStatus,
+          updatedAt: savedAnimal.updatedAt,
+        ),
+      ),
+    );
     return savedAnimal;
   }
 
@@ -172,29 +193,32 @@ class BrickAnimalStore implements AnimalBrickStore {
         ],
       ),
     );
-    final localAnimals = await _repository.getLocal<BrickAnimalModel>();
-    final localAnimalsById = {
-      for (final animal in localAnimals) animal.localId: animal,
-    };
-    final protectedLocalIds = localAnimals
-        .where(
-          (animal) =>
-              animal.syncStatus == BrickAnimalSyncStatus.pending || animal.syncStatus == BrickAnimalSyncStatus.rejected,
-        )
-        .map((animal) => animal.localId)
-        .toSet();
-
-    for (final animal in remoteAnimals) {
-      if (protectedLocalIds.contains(animal.localId)) {
-        continue;
+    // El merge comparte la transacción con la lectura local. Un movimiento
+    // guardado mientras llegaba el GET conserva su destino y su propio sync.
+    await _repository.runLocalTransaction<void>((transaction) async {
+      final localAnimals = await transaction.getLocal<BrickAnimalModel>();
+      final localAnimalsById = <String, BrickAnimalModel>{};
+      for (final local in localAnimals) {
+        final current = localAnimalsById[local.localId];
+        localAnimalsById[local.localId] = current == null ? local : _preferredAnimal(current, local);
       }
-
-      final synchronizedAnimal = animal.copyWith(
-        syncStatus: BrickAnimalSyncStatus.synchronized,
-        syncErrorCode: null,
-      )..primaryKey = localAnimalsById[animal.localId]?.primaryKey;
-      await _repository.upsertLocal<BrickAnimalModel>(synchronizedAnimal);
-    }
+      for (final animal in remoteAnimals) {
+        final local = localAnimalsById[animal.localId];
+        if (local != null && local.syncStatus != BrickAnimalSyncStatus.synchronized) continue;
+        var synchronized = animal.copyWith(syncStatus: BrickAnimalSyncStatus.synchronized, syncErrorCode: null)
+          ..primaryKey = local?.primaryKey;
+        if (local != null && local.lotSyncStatus != BrickAnimalSyncStatus.synchronized) {
+          synchronized = synchronized.copyWith(
+            lotId: local.lotId,
+            lotName: local.lotName,
+            lotMovementId: local.lotMovementId,
+            lotSyncStatus: local.lotSyncStatus,
+            lotSyncErrorCode: local.lotSyncErrorCode,
+          );
+        }
+        await transaction.upsert(synchronized);
+      }
+    });
   }
 
   BrickAnimalModel _preferredAnimal(
@@ -224,20 +248,24 @@ class BrickAnimalStore implements AnimalBrickStore {
       return;
     }
 
-    final storedAnimals = await _repository.getLocal<BrickAnimalModel>();
-
-    for (final animal in storedAnimals) {
-      if (animal.localId != result.localId) {
-        continue;
+    // La respuesta confirma sólo la edición del animal. Leer y escribir dentro
+    // de la misma transacción evita restaurar por accidente un lotSyncStatus
+    // viejo cuando el traslado se confirma al mismo tiempo.
+    await _repository.runLocalTransaction<void>((transaction) async {
+      final storedAnimals = await transaction.getLocal<BrickAnimalModel>();
+      for (final animal in storedAnimals) {
+        if (animal.localId != result.localId) continue;
+        // Una respuesta de la baja no debe confirmar el deshacer más reciente.
+        if (result.updatedAt != null && result.updatedAt!.isBefore(animal.updatedAt)) continue;
+        await transaction.upsert(
+          animal.copyWith(
+            syncStatus: result.synchronized ? BrickAnimalSyncStatus.synchronized : BrickAnimalSyncStatus.rejected,
+            syncErrorCode: result.errorCode,
+          ),
+        );
+        return;
       }
-
-      final updatedAnimal = animal.copyWith(
-        syncStatus: result.synchronized ? BrickAnimalSyncStatus.synchronized : BrickAnimalSyncStatus.rejected,
-        syncErrorCode: result.errorCode,
-      );
-      await _repository.upsertLocal<BrickAnimalModel>(updatedAnimal);
-      return;
-    }
+    });
   }
 
   /// Libera la subscription interna del store.

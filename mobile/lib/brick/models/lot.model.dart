@@ -5,19 +5,23 @@ import 'package:brick_rest/brick_rest.dart';
 
 const _unchangedLotSyncErrorCode = Object();
 
-/// Configuración REST futura del recurso; la Fase 2 no invoca este endpoint.
+/// Contrato REST de alta, edición y lectura de lotes.
 class BrickLotRequestTransformer extends RestRequestTransformer {
   /// Crea el transformer exigido por el modelo offline-first.
   const BrickLotRequestTransformer(super.query, super.instance);
 
-  /// Ruta reservada para la futura fase de sincronización.
-  // TODO(field-backend): validar con backend ruta, upsert, pull incremental,
-  // tombstones y códigos de rechazo antes de habilitar el feature flag.
+  /// Endpoint de upsert idempotente por UUID y lectura por establecimiento.
   static const lotsPath = '/api/v1/lotes';
 
   /// Crea el pull incremental filtrado por tenant.
   static RestRequest listByEstablishmentRequest(String establishmentId) => RestRequest(
     url: '$lotsPath?establecimiento_id=${Uri.encodeQueryComponent(establishmentId)}&include_deleted=true',
+    topLevelKey: 'data',
+  );
+
+  /// Destinos activos exigidos por el contrato de movimientos.
+  static RestRequest activeLotsRequest(String establishmentId) => RestRequest(
+    url: '$lotsPath?establecimiento_id=${Uri.encodeQueryComponent(establishmentId)}&estado=activo',
     topLevelKey: 'data',
   );
 
@@ -31,7 +35,7 @@ class BrickLotRequestTransformer extends RestRequestTransformer {
   RestRequest get upsert => const RestRequest(method: 'POST', url: lotsPath);
 }
 
-/// Lote almacenado exclusivamente en SQLite durante la Fase 2.
+/// Lote persistido en SQLite y sincronizado mediante el contrato REST.
 @ConnectOfflineFirstWithRest(
   restConfig: RestSerializable(
     requestTransformer: BrickLotRequestTransformer.new,
@@ -81,7 +85,7 @@ class BrickLotModel extends OfflineFirstWithRestModel {
   /// Distingue el esquema local de una geometría geográfica futura.
   // TODO(field-geo): acordar con backend los modos y la estrategia para lotes
   // creados en el lienzo local que todavía no tengan coordenadas reales.
-  @Rest(name: 'geometry_mode')
+  @Rest(name: 'modo_geometria', fromGenerator: "(%DATA_PROPERTY% as String?) ?? 'local_schematic'")
   final String geometryMode;
 
   /// Superficie productiva exacta; 457 representa 45,7 hectáreas.
@@ -101,7 +105,7 @@ class BrickLotModel extends OfflineFirstWithRestModel {
   final bool hasWater;
 
   /// Estado operativo persistido como código para tolerar versiones futuras.
-  @Rest(name: 'estado')
+  @Rest(name: 'estado', toGenerator: 'brickLotStatusToBackend(%INSTANCE_PROPERTY%)')
   final String statusCode;
 
   /// Momento de creación generado en el dispositivo.
@@ -127,6 +131,7 @@ class BrickLotModel extends OfflineFirstWithRestModel {
   /// Crea una copia reconciliada conservando la fila SQLite.
   BrickLotModel copyWith({
     BrickLotSyncStatus? syncStatus,
+    String? statusCode,
     Object? syncErrorCode = _unchangedLotSyncErrorCode,
   }) {
     final nextSyncErrorCode =
@@ -145,7 +150,7 @@ class BrickLotModel extends OfflineFirstWithRestModel {
       surfaceTenths: surfaceTenths,
       forageResourceCode: forageResourceCode,
       hasWater: hasWater,
-      statusCode: statusCode,
+      statusCode: statusCode ?? this.statusCode,
       createdAt: createdAt,
       updatedAt: updatedAt,
       deletedAt: deletedAt,
@@ -166,6 +171,16 @@ enum BrickLotSyncStatus {
   /// Rechazado por una regla autoritativa de backend.
   rejected,
 }
+
+/// Traduce los códigos locales históricos al enum que valida el backend.
+/// Los códigos remotos en español se conservan al reenviar un lote descargado.
+String brickLotStatusToBackend(String code) => switch (code) {
+  'active' => 'activo',
+  'resting' => 'descanso',
+  'maintenance' => 'mantenimiento',
+  'inactive' => 'inactivo',
+  _ => code,
+};
 
 /// Serializa décimas exactas como decimal de hectáreas.
 double brickLotSurfaceToBackend(int tenths) => tenths / 10;

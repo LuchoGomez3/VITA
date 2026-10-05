@@ -11,7 +11,7 @@ Future<BrickLotModel> _$BrickLotModelFromRest(
     establishmentId: data['establecimiento_id'] as String,
     name: data['nombre'] as String,
     boundaryJson: brickLotGeometryFromBackend(data['geometria_local']),
-    geometryMode: data['geometry_mode'] as String,
+    geometryMode: (data['modo_geometria'] as String?) ?? 'local_schematic',
     surfaceTenths: brickLotSurfaceFromBackend(data['superficie_ha']),
     forageResourceCode: data['recurso_forrajero_codigo'] == null
         ? null
@@ -38,11 +38,11 @@ Future<Map<String, dynamic>> _$BrickLotModelToRest(
     'establecimiento_id': instance.establishmentId,
     'nombre': instance.name,
     'geometria_local': brickLotGeometryToBackend(instance.boundaryJson),
-    'geometry_mode': instance.geometryMode,
+    'modo_geometria': instance.geometryMode,
     'superficie_ha': brickLotSurfaceToBackend(instance.surfaceTenths),
     'recurso_forrajero_codigo': instance.forageResourceCode,
     'tiene_agua': instance.hasWater,
-    'estado': instance.statusCode,
+    'estado': brickLotStatusToBackend(instance.statusCode),
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),

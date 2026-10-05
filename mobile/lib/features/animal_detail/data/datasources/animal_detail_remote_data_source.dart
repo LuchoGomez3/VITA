@@ -108,12 +108,16 @@ class AnimalDetailBackendDto {
     required this.observations,
     required this.createdAt,
     required this.updatedAt,
+    this.status = 'activo',
+    this.reproductiveStatus,
   });
 
   /// Crea el DTO desde el `data` del `StandardResponse`.
   factory AnimalDetailBackendDto.fromJson(Map<String, dynamic> json) {
     return AnimalDetailBackendDto(
       id: json['id'] as String,
+      status: json['estado'] as String? ?? 'activo',
+      reproductiveStatus: json['estado_reproductivo'] as String?,
       establishmentId: json['establecimiento_id'] as String,
       rfidTagNumber: json['nro_caravana_rfid'] as String? ?? '',
       visualTag: json['caravana_visual'] as String? ?? '',
@@ -130,6 +134,12 @@ class AnimalDetailBackendDto {
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
+
+  /// Estado de negocio que permite mostrar una baja sin ocultar su ficha.
+  final String status;
+
+  /// Condición reproductiva que puede estar ausente en animales no aplicables.
+  final String? reproductiveStatus;
 
   /// UUID backend/mobile.
   final String id;

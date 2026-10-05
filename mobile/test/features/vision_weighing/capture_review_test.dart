@@ -47,7 +47,7 @@ class _WeightRepository implements VisionWeightEstimatorRepository, VisionWeight
   );
 
   @override
-  Future<void> saveEstimate({required String animalId, required double weightKg}) async {
+  Future<void> saveEstimate({required String animalId, required double weightKg, required Uint8List jpegBytes}) async {
     savedAnimalId = animalId;
   }
 }

@@ -110,6 +110,7 @@ class AuthenticatedBackendClient extends http.BaseClient {
         BackendSyncResult(
           resourcePath: syncRequest.resourcePath,
           localId: syncRequest.localId,
+          updatedAt: syncRequest.updatedAt,
           synchronized: bufferedResponse.statusCode >= 200 && bufferedResponse.statusCode < 300,
           errorCode: _errorCodeFromResponse(bufferedResponse),
         ),
@@ -187,6 +188,7 @@ class AuthenticatedBackendClient extends http.BaseClient {
           BackendSyncResult(
             resourcePath: syncRequest.resourcePath,
             localId: syncRequest.localId,
+            updatedAt: syncRequest.updatedAt,
             synchronized: false,
             errorCode: _errorCodeFromResponse(response),
           ),
@@ -259,10 +261,10 @@ class AuthenticatedBackendClient extends http.BaseClient {
 
   /// Detecta si una request puede generar un resultado de sync local.
   ///
-  /// Por ahora observamos `POST` con un `id` en el body, que es el caso del alta
+  /// Observamos `POST` y `PUT` con un `id` en el body, tanto altas como ediciones
   /// offline-first. El path queda generico para que cada store filtre su recurso.
   _ObservedSyncRequest? _syncRequestFrom(http.BaseRequest request) {
-    if (request.method != 'POST') {
+    if (request.method != 'POST' && request.method != 'PUT') {
       return null;
     }
 
@@ -274,6 +276,7 @@ class AuthenticatedBackendClient extends http.BaseClient {
     return _ObservedSyncRequest(
       resourcePath: request.url.path,
       localId: localId,
+      updatedAt: request is http.Request ? _updatedAtFromBody(request.body) : null,
     );
   }
 
@@ -293,6 +296,14 @@ class AuthenticatedBackendClient extends http.BaseClient {
 
     final id = decoded['id'];
     return id is String && id.isNotEmpty ? id : null;
+  }
+
+  /// Lee la versión del payload sin interpretar campos de una entidad concreta.
+  DateTime? _updatedAtFromBody(String body) {
+    final decoded = _decodeJson(body);
+    if (decoded is! Map<String, dynamic>) return null;
+    final value = decoded['updated_at'];
+    return value is String ? DateTime.tryParse(value) : null;
   }
 
   /// Normaliza errores del backend a un codigo simple para guardar localmente.
@@ -359,8 +370,10 @@ class _ObservedSyncRequest {
   const _ObservedSyncRequest({
     required this.resourcePath,
     required this.localId,
+    required this.updatedAt,
   });
 
   final String resourcePath;
   final String localId;
+  final DateTime? updatedAt;
 }

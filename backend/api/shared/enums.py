@@ -74,6 +74,15 @@ class TipoComprador(str, Enum):
     particular = "particular"
 
 
+class MedioCobro(str, Enum):
+    """Instrumento con el que se recibió un cobro de venta."""
+
+    efectivo = "efectivo"
+    transferencia = "transferencia"
+    cheque = "cheque"
+    tarjeta = "tarjeta"
+
+
 class TipoEgresoOperativo(str, Enum):
     """Clasificación contable principal de un egreso monetario del campo."""
 
@@ -119,3 +128,23 @@ class RecursoForrajero(str, Enum):
     maiz = "maiz"
     avena = "avena"
     otro = "otro"
+
+
+class EstadoReproductivo(str, Enum):
+    """Condición reproductiva de una hembra, independiente de ``EstadoAnimal``.
+
+    Un animal puede estar ``activo`` y ``prenada`` a la vez. ``null`` en la columna
+    significa que no corresponde (por ejemplo, un macho).
+    """
+
+    sin_determinar = "sin_determinar"
+    vacia = "vacia"
+    prenada = "prenada"
+
+
+class SexoPermitido(str, Enum):
+    """Sexo de los animales que admite una categoría."""
+
+    macho = "macho"
+    hembra = "hembra"
+    ambos = "ambos"
