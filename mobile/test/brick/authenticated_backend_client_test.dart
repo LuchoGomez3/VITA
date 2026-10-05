@@ -10,6 +10,29 @@ import 'package:http/testing.dart';
 
 void main() {
   group('AuthenticatedBackendClient', () {
+    test('reports PUT resource and submitted version for safe undo', () async {
+      final results = <BackendSyncResult>[];
+      final timestamp = DateTime.utc(2026, 10, 5);
+      final client = AuthenticatedBackendClient(
+        tokenProvider: const _FakeTokenProvider('jwt-token'),
+        onSyncResult: (result) async => results.add(result),
+        inner: MockClient((request) async => http.Response(_successBody, 200)),
+      );
+      await client.put(
+        Uri.parse('http://localhost:8000/api/v1/animales/animal-id'),
+        body: jsonEncode({
+          'id': 'animal-id',
+          'estado': 'muerto',
+          'updated_at': timestamp.toIso8601String(),
+        }),
+      );
+      expect(results.single.resourcePath, '/api/v1/animales/animal-id');
+      expect(results.single.localId, 'animal-id');
+      expect(results.single.updatedAt, timestamp);
+      expect(results.single.synchronized, isTrue);
+      client.close();
+    });
+
     tearDown(() {
       SessionBackendAccessTokenProvider.instance
         ..refreshCallback = null

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/formatters/formatters.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_change.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_state.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_actions.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_data_grid.dart';
@@ -59,12 +63,42 @@ class _AnimalDetailView extends StatelessWidget {
         title: AnimalDetailStrings.pageTitle,
         onBackPressed: () => _close(context),
       ),
-      body: BlocBuilder<AnimalDetailCubit, ResultState<AnimalDetail>>(
+      body: BlocConsumer<AnimalDetailCubit, AnimalDetailState>(
+        listenWhen: (previous, current) => previous.saving != current.saving,
+        listener: (context, state) {
+          final saving = state.saving;
+          if (saving is Loading<AnimalDetail> || saving is Initial<AnimalDetail>) return;
+          final isDeath = state.lastChange is RecordAnimalDeath;
+          final message = saving is ResultError<AnimalDetail>
+              ? AnimalDetailStrings.editError(saving.error)
+              : isDeath
+              ? AnimalDetailStrings.deathSavedMessage
+              : state.lastChange is UndoAnimalDeath
+              ? AnimalDetailStrings.deathUndoneMessage
+              : AnimalDetailStrings.changeSavedMessage;
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(message),
+                duration: Duration(seconds: isDeath ? 10 : 4),
+                action: isDeath && saving is Data<AnimalDetail>
+                    ? SnackBarAction(
+                        label: AnimalDetailStrings.undoAction,
+                        onPressed: () => context.read<AnimalDetailCubit>().undoDeath(),
+                      )
+                    : null,
+              ),
+            );
+        },
         builder: (context, state) {
-          return switch (state) {
+          return switch (state.detail) {
             Loading<AnimalDetail>() => const Center(child: CircularProgressIndicator()),
             ResultError<AnimalDetail>(:final error) => Center(child: Text(error.message)),
-            Data<AnimalDetail>(:final data) => _AnimalDetailContent(animalDetail: data),
+            Data<AnimalDetail>(:final data) => RefreshIndicator(
+              onRefresh: () => context.read<AnimalDetailCubit>().loadAnimalData(animalId),
+              child: _AnimalDetailContent(animalDetail: data),
+            ),
             _ => const SizedBox.shrink(),
           };
         },
@@ -109,6 +143,7 @@ class _AnimalDetailLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final headerHeight =
@@ -116,9 +151,9 @@ class _AnimalDetailLayout extends StatelessWidget {
               const AppHeader(title: AnimalDetailStrings.pageTitle).preferredSize.height;
           final photoTop = headerHeight - AppRadius.lg;
           // La foto 4:3 queda detrás; los últimos 40 px reciben la ficha.
-          // Sin foto, se conservan los márgenes y el círculo del diseño original.
+          // Sin foto, se deja aire entre el header y la ficha con el círculo.
           final contentTop = photo == null
-              ? headerHeight + AppSpacing.lg
+              ? headerHeight + AppSpacing.xl
               : photoTop + constraints.maxWidth * 3 / 4 - (AppSpacing.lg + AppSpacing.md);
           return Stack(
             children: [
@@ -140,7 +175,7 @@ class _AnimalDetailLayout extends StatelessWidget {
                           const SizedBox(height: AppSpacing.md),
                           const Divider(color: AppColors.border),
                           const SizedBox(height: AppSpacing.sm),
-                          AnimalDetailActions(sex: animalDetail.sex),
+                          AnimalDetailActions(animalDetail: animalDetail),
                         ],
                       ),
                     ),
@@ -157,14 +192,11 @@ class _AnimalDetailLayout extends StatelessWidget {
                             style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),
                           ),
                           const SizedBox(height: AppSpacing.sm),
-                          Text(
-                            animalDetail.observations ?? AnimalDetailStrings.noDataValue,
-                            style: AppTypography.mediumEmphasis,
-                          ),
+                          _ObservationHistory(animalDetail: animalDetail),
                           const SizedBox(height: AppSpacing.sm),
-                          const Align(
+                          Align(
                             alignment: Alignment.centerRight,
-                            child: AnimalObservationEntryButton(),
+                            child: AnimalObservationEntryButton(animalDetail: animalDetail),
                           ),
                         ],
                       ),
@@ -186,6 +218,40 @@ class _AnimalDetailLayout extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Conserva el texto legacy cuando no está ya migrado al historial de entradas.
+class _ObservationHistory extends StatelessWidget {
+  const _ObservationHistory({required this.animalDetail});
+  final AnimalDetail animalDetail;
+
+  @override
+  Widget build(BuildContext context) {
+    final notes = animalDetail.observationHistory;
+    final legacy = animalDetail.observations;
+    final showLegacy = legacy != null && legacy.isNotEmpty && !notes.any((note) => note.text == legacy);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (showLegacy) Text(legacy, style: AppTypography.mediumEmphasis),
+        if (!showLegacy && notes.isEmpty) const Text(AnimalDetailStrings.noDataValue),
+        for (final note in notes) ...[
+          if (showLegacy || note != notes.first) const SizedBox(height: AppSpacing.md),
+          Text(DateDisplayFormatter.shortDate(note.date), style: AppTypography.smallEmphasis),
+          Text(note.text, style: AppTypography.mediumEmphasis),
+          if (note.syncStatus != AnimalSyncStatus.synchronized)
+            Text(
+              note.syncStatus == AnimalSyncStatus.rejected
+                  ? AnimalDetailStrings.noteRejected
+                  : AnimalDetailStrings.notePending,
+              style: AppTypography.smallEmphasis.copyWith(
+                color: note.syncStatus == AnimalSyncStatus.rejected ? AppColors.error : AppColors.textHint,
+              ),
+            ),
+        ],
+      ],
     );
   }
 }

@@ -19,10 +19,13 @@ typedef LotEditorBlocFactory = LotEditorBloc Function();
 /// Pantalla de Fase 1 para delimitar un lote sin persistencia ni mapa base.
 class LotEditorPage extends StatelessWidget {
   /// Crea la pantalla con sus dependencias resueltas fuera de presentation.
-  const LotEditorPage({required this.createBloc, super.key});
+  const LotEditorPage({required this.createBloc, this.showSatelliteMap = false, super.key});
 
   /// Crea el BLoC cuando la ruta abre la pantalla.
   final LotEditorBlocFactory createBloc;
+
+  /// Fondo offline seleccionado por la ruta del establecimiento.
+  final bool showSatelliteMap;
 
   @override
   Widget build(BuildContext context) {
@@ -34,14 +37,16 @@ class LotEditorPage extends StatelessWidget {
           final saved = state.savedLot;
           if (saved != null) context.pop<Lot>(saved);
         },
-        child: const _LotEditorView(),
+        child: _LotEditorView(showSatelliteMap: showSatelliteMap),
       ),
     );
   }
 }
 
 class _LotEditorView extends StatelessWidget {
-  const _LotEditorView();
+  const _LotEditorView({required this.showSatelliteMap});
+
+  final bool showSatelliteMap;
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +72,7 @@ class _LotEditorView extends StatelessWidget {
                       0,
                     ),
                     child: GeographicLotEditor(
+                      showSatelliteMap: showSatelliteMap,
                       state: state,
                       existingLots: state.existingLots,
                       onVertexAdded: (point) => bloc.add(

@@ -81,15 +81,48 @@ redondeadas. El contenido contempla la altura del header y la barra de estado;
 sin foto, la ficha permanece debajo del encabezado. Las tarjetas de datos,
 observaciones, gráfico e historial tienen elevación 4 y sombra uniforme.
 
-## Acciones visuales pendientes de integrar
+## Acciones conectadas al backend
 
-La ficha ofrece ingresar peso, cambiar categoría y baja por muerte. Cambiar
-preñez aparece únicamente para hembras; no se inventa un estado reproductivo.
-Observaciones incluye «Nueva entrada» con un lápiz. Estos accesos son maquetas:
-no invocan casos de uso, no navegan a otras features y no escriben en disco,
-Brick ni backend.
+Los botones recogen la intención en un formulario y ejecutan
+`SaveAnimalDetailChangeUseCase`. El dominio valida peso positivo, texto no vacío,
+sexo permitido por categoría y condición reproductiva. Preñada y vacía solo se
+ofrecen para hembras cuya categoría las admite; sin determinar está disponible
+para las demás hembras. No se borra una preñez conocida al cambiar de categoría.
 
-La baja muestra únicamente una confirmación y, al confirmar, un snackbar de
-vista previa con «Deshacer». Ninguno modifica datos. Al integrar la rama de
-edición, reemplazar los callbacks de maqueta por casos de uso y conectar tanto
-la baja como su reversión, además de sustituir los textos de vista previa.
+| Acción | Contrato |
+| --- | --- |
+| Ingresar peso | `POST /api/v1/pesajes`: UUID, establecimiento, animal, peso_kg, fecha, metodo manual y timestamps |
+| Cambiar categoría | `PUT /api/v1/animales/{id}` con categoria_id |
+| Condición reproductiva | El mismo PUT con estado_reproductivo; null explícito elimina la condición |
+| Baja por muerte | El mismo PUT con estado muerto; conserva la ficha y su historial |
+| Deshacer baja | El mismo PUT con el estado anterior y updated_at posterior |
+| Nueva observación | `POST /api/v1/observaciones_animales`: UUID, establecimiento, animal, texto, fecha y timestamps; autor resuelto por backend |
+
+El PUT lleva una instantánea acotada de categoría, estado y condición reproductiva
+junto con id y updated_at. No reenvía raza, nacimiento, lote ni peso inicial.
+Cada escritura guarda primero en SQLite y luego encola su request HTTP mediante
+Brick. La UI confirma el guardado local; el footer y las notas indican la
+sincronización. Un rechazo funcional se conserva como rechazado, sin anunciar
+que backend lo aceptó. Deslizar hacia abajo refresca pesajes, catálogo y notas
+con sus GET filtrados por establecimiento y animal; sin conexión usa la caché.
+
+La confirmación de muerte ofrece Deshacer durante diez segundos. Solo revierte
+la versión que se confirmó en esta ficha, evitando pisar cambios posteriores.
+Los resultados HTTP contienen la versión enviada: una respuesta anterior al
+deshacer no cambia su estado local de sincronización. Los animales muertos,
+vendidos o dados de baja dejan de integrar el stock activo del home y los lotes.
+Se pueden seguir leyendo y agregando observaciones; las acciones productivas
+quedan deshabilitadas. Las observaciones legacy se mantienen visibles junto
+con las entradas nuevas, sin sobrescribirlas.
+
+La foto sigue siendo privada y local; estos requests no suben imágenes.
+
+## Movimientos en la ficha
+
+**Cambiar de lote** abre el flujo compartido por rutas y queda junto a
+**Baja por muerte**. El texto del estado productivo sigue siendo **Muerto**.
+Al volver se lee la ubicación local; el Historial de Eventos incluye asignaciones
+y traslados con fecha, origen, destino, motivo y estado de sincronización.
+Los rechazos conservan el código del backend y no se muestran como confirmados.
+Ver [asignación y traslado entre lotes](../lot_movement/README.md) para el contrato,
+la persistencia offline, los reintentos y los límites de reconciliación.

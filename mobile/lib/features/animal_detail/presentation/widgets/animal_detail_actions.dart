@@ -1,58 +1,74 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_edit_dialogs.dart';
+import 'package:go_router/go_router.dart';
 
-/// Acciones de la ficha preparadas visualmente, todavía sin operaciones reales.
+/// Accesos que recogen una edición y la entregan al Cubit de la ficha.
 class AnimalDetailActions extends StatelessWidget {
-  /// Usa el sexo para ofrecer la edición de preñez solo a hembras.
-  const AnimalDetailActions({required this.sex, super.key});
+  /// Recibe la ficha vigente para filtrar los cambios válidos del animal.
+  const AnimalDetailActions({required this.animalDetail, super.key});
 
-  /// Sexo registrado; no se infiere ni se modifica el estado reproductivo.
-  final AnimalSex sex;
+  /// Datos de negocio usados por los formularios, sin infraestructura de persistencia.
+  final AnimalDetail animalDetail;
 
   @override
   Widget build(BuildContext context) {
+    final canEdit =
+        animalDetail.status == AnimalStatus.active &&
+        context.read<AnimalDetailCubit>().state.saving is! Loading<AnimalDetail>;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final buttonWidth = (constraints.maxWidth - AppSpacing.sm) / 2;
+        final width = (constraints.maxWidth - AppSpacing.sm) / 2;
         return Wrap(
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
           children: [
-            SizedBox(
-              width: buttonWidth,
-              child: const AppOutlinedButton(
-                label: AnimalDetailStrings.enterWeightAction,
-                icon: Icon(Icons.monitor_weight_outlined),
-                onPressed: _previewOnly,
-              ),
+            _ActionButton(
+              width: width,
+              label: AnimalDetailStrings.enterWeightAction,
+              icon: Icons.monitor_weight_outlined,
+              onPressed: canEdit ? () => _edit(context, AnimalDetailAction.weight) : null,
             ),
-            SizedBox(
-              width: buttonWidth,
-              child: const AppOutlinedButton(
-                label: AnimalDetailStrings.changeCategoryAction,
-                icon: Icon(Icons.category_outlined),
-                onPressed: _previewOnly,
-              ),
+            _ActionButton(
+              width: width,
+              label: AnimalDetailStrings.changeCategoryAction,
+              icon: Icons.category_outlined,
+              onPressed: canEdit ? () => _edit(context, AnimalDetailAction.category) : null,
             ),
-            if (sex == AnimalSex.female)
-              SizedBox(
-                width: buttonWidth,
-                child: const AppOutlinedButton(
-                  label: AnimalDetailStrings.changePregnancyAction,
-                  icon: Icon(Icons.edit_outlined),
-                  onPressed: _previewOnly,
-                ),
+            if (animalDetail.sex == AnimalSex.female)
+              _ActionButton(
+                width: width,
+                label: AnimalDetailStrings.changePregnancyAction,
+                icon: Icons.edit_outlined,
+                onPressed: canEdit ? () => _edit(context, AnimalDetailAction.reproduction) : null,
               ),
             SizedBox(
-              width: buttonWidth,
-              child: AppOutlinedButton(
-                label: AnimalDetailStrings.deathAction,
-                icon: const Icon(Icons.remove_circle_outline, color: AppColors.error),
-                textStyle: AppTypography.smallEmphasis.copyWith(color: AppColors.error),
-                onPressed: () => _previewDeath(context),
+              width: constraints.maxWidth,
+              child: Row(
+                children: [
+                  _ActionButton(
+                    width: width,
+                    label: AnimalDetailStrings.deathAction,
+                    icon: Icons.remove_circle_outline,
+                    isDestructive: true,
+                    onPressed: canEdit ? () => _edit(context, AnimalDetailAction.death) : null,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  _ActionButton(
+                    width: width,
+                    label: AnimalDetailStrings.changeLotAction,
+                    icon: Icons.swap_horiz,
+                    onPressed: canEdit ? () => _changeLot(context) : null,
+                  ),
+                ],
               ),
             ),
           ],
@@ -61,69 +77,69 @@ class AnimalDetailActions extends StatelessWidget {
     );
   }
 
-  /// Ensaya confirmación y deshacer sin alterar el animal ni crear eventos.
-  Future<void> _previewDeath(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => const _DeathConfirmationDialog(),
+  /// La ruta es dueña de la operación; al volver se lee la ubicación guardada.
+  Future<void> _changeLot(BuildContext context) async {
+    await context.push<void>(
+      AppRoutes.lotMovementFor(establishmentId: animalDetail.establishmentId, animalId: animalDetail.id),
     );
-    if (confirmed != true || !context.mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(
-          content: Text(AnimalDetailStrings.deathPreviewMessage),
-          duration: Duration(seconds: 8),
-          action: SnackBarAction(
-            label: AnimalDetailStrings.undoAction,
-            onPressed: _previewOnly,
-          ),
-        ),
-      );
+    if (context.mounted) await context.read<AnimalDetailCubit>().loadAnimalData(animalDetail.id);
+  }
+
+  Future<void> _edit(BuildContext context, AnimalDetailAction action) async {
+    final change = await showAnimalDetailChangeDialog(context, animalDetail, action);
+    if (change == null || !context.mounted) return;
+    await context.read<AnimalDetailCubit>().save(change);
   }
 }
 
-/// Entrada visual para observaciones; no abre formularios ni guarda texto aún.
+/// Mantiene el mismo tamaño y estilo para acciones productivas y la baja.
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.width,
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.isDestructive = false,
+  });
+  final double width;
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final bool isDestructive;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: width,
+    child: AppOutlinedButton(
+      label: label,
+      icon: Icon(icon, color: isDestructive ? AppColors.error : null),
+      onPressed: onPressed,
+      textStyle: isDestructive ? AppTypography.smallEmphasis.copyWith(color: AppColors.error) : null,
+    ),
+  );
+}
+
+/// Agrega una nota independiente, sin sustituir las observaciones existentes.
 class AnimalObservationEntryButton extends StatelessWidget {
-  /// Crea el acceso con lápiz que se integrará con la edición de observaciones.
-  const AnimalObservationEntryButton({super.key});
+  /// Recibe la ficha para asociar la entrada al animal que se está visualizando.
+  const AnimalObservationEntryButton({required this.animalDetail, super.key});
+
+  /// Animal que recibirá la nota al confirmar el formulario.
+  final AnimalDetail animalDetail;
 
   @override
   Widget build(BuildContext context) {
+    final saving = context.read<AnimalDetailCubit>().state.saving is Loading<AnimalDetail>;
     return TextButton.icon(
-      onPressed: _previewOnly,
+      onPressed: saving ? null : () => _addObservation(context),
       icon: const Icon(Icons.edit_outlined),
       label: const Text(AnimalDetailStrings.newObservationAction),
     );
   }
-}
 
-/// Confirmación visual: aclara que esta rama no registra bajas todavía.
-class _DeathConfirmationDialog extends StatelessWidget {
-  const _DeathConfirmationDialog();
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      icon: const Icon(Icons.warning_amber_rounded, color: AppColors.error),
-      title: const Text(AnimalDetailStrings.deathConfirmationTitle),
-      content: const Text(AnimalDetailStrings.deathConfirmationMessage),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text(AnimalDetailStrings.cancelAction),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          style: TextButton.styleFrom(foregroundColor: AppColors.error),
-          child: const Text(AnimalDetailStrings.confirmAction),
-        ),
-      ],
-    );
+  Future<void> _addObservation(BuildContext context) async {
+    final change = await showAnimalDetailChangeDialog(context, animalDetail, AnimalDetailAction.observation);
+    if (change == null || !context.mounted) return;
+    await context.read<AnimalDetailCubit>().save(change);
   }
-}
-
-/// Mantiene los botones sin cambios de datos, navegación ni estado de negocio.
-void _previewOnly() {
-  // TODO(equipo): Conectar casos de uso al integrar la rama de edición.
 }

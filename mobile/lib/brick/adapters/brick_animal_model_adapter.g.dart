@@ -29,6 +29,10 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromRest(
     observations: data['observaciones'] == null
         ? null
         : data['observaciones'] as String?,
+    status: (data['estado'] as String?) ?? 'activo',
+    reproductiveStatus: data['estado_reproductivo'] == null
+        ? null
+        : data['estado_reproductivo'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -63,6 +67,8 @@ Future<Map<String, dynamic>> _$BrickAnimalModelToRest(
     'padre_id': instance.fatherId,
     'pelaje': instance.coat,
     'observaciones': instance.observations,
+    'estado': instance.status,
+    'estado_reproductivo': instance.reproductiveStatus,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),
@@ -98,10 +104,21 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromSqlite(
     observations: data['observations'] == null
         ? null
         : data['observations'] as String?,
+    status: (data['status'] as String?) ?? 'activo',
+    reproductiveStatus: data['reproductive_status'] == null
+        ? null
+        : data['reproductive_status'] as String?,
     syncStatus: BrickAnimalSyncStatus.values[data['sync_status'] as int],
     syncErrorCode: data['sync_error_code'] == null
         ? null
         : data['sync_error_code'] as String?,
+    lotMovementId: data['lot_movement_id'] == null
+        ? null
+        : data['lot_movement_id'] as String?,
+    lotSyncStatus: brickAnimalLotStatusFromSqlite(data['lot_sync_status']),
+    lotSyncErrorCode: data['lot_sync_error_code'] == null
+        ? null
+        : data['lot_sync_error_code'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -138,8 +155,15 @@ Future<Map<String, dynamic>> _$BrickAnimalModelToSqlite(
     'father_id': instance.fatherId,
     'coat': instance.coat,
     'observations': instance.observations,
+    'status': instance.status,
+    'reproductive_status': instance.reproductiveStatus,
     'sync_status': BrickAnimalSyncStatus.values.indexOf(instance.syncStatus),
     'sync_error_code': instance.syncErrorCode,
+    'lot_movement_id': instance.lotMovementId,
+    'lot_sync_status': BrickAnimalSyncStatus.values.indexOf(
+      instance.lotSyncStatus,
+    ),
+    'lot_sync_error_code': instance.lotSyncErrorCode,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),
@@ -269,6 +293,18 @@ class BrickAnimalModelAdapter
       iterable: false,
       type: String,
     ),
+    'status': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'status',
+      iterable: false,
+      type: String,
+    ),
+    'reproductiveStatus': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'reproductive_status',
+      iterable: false,
+      type: String,
+    ),
     'syncStatus': const RuntimeSqliteColumnDefinition(
       association: false,
       columnName: 'sync_status',
@@ -278,6 +314,24 @@ class BrickAnimalModelAdapter
     'syncErrorCode': const RuntimeSqliteColumnDefinition(
       association: false,
       columnName: 'sync_error_code',
+      iterable: false,
+      type: String,
+    ),
+    'lotMovementId': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'lot_movement_id',
+      iterable: false,
+      type: String,
+    ),
+    'lotSyncStatus': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'lot_sync_status',
+      iterable: false,
+      type: BrickAnimalSyncStatus,
+    ),
+    'lotSyncErrorCode': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'lot_sync_error_code',
       iterable: false,
       type: String,
     ),

@@ -18,6 +18,9 @@ import 'package:http/http.dart' as http;
 /// Sincroniza los datos financieros de un establecimiento habilitado.
 typedef SyncOperatingExpenseData = Future<void> Function(String establishmentId);
 
+/// Descarga destinos e historial del establecimiento para el próximo uso offline.
+typedef SyncLotMovementData = Future<void> Function(String establishmentId);
+
 /// Implementacion que descarga datos iniciales a SQLite para uso offline.
 ///
 /// Esta clase es infraestructura de sync: puede usar secure storage, data
@@ -35,12 +38,14 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     required CategoriaBrickStore categoryStore,
     required PesajeBrickStore weighingStore,
     required SyncOperatingExpenseData syncOperatingExpenseData,
+    SyncLotMovementData? syncLotMovementData,
   }) : _secureStorage = secureStorage,
        _establishmentRemoteDataSource = establishmentRemoteDataSource,
        _animalStore = animalStore,
        _categoryStore = categoryStore,
        _weighingStore = weighingStore,
-       _syncOperatingExpenseData = syncOperatingExpenseData;
+       _syncOperatingExpenseData = syncOperatingExpenseData,
+       _syncLotMovementData = syncLotMovementData;
 
   final SecureStorageService _secureStorage;
   final EstablishmentRemoteDataSource _establishmentRemoteDataSource;
@@ -48,6 +53,7 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
   final CategoriaBrickStore _categoryStore;
   final PesajeBrickStore _weighingStore;
   final SyncOperatingExpenseData _syncOperatingExpenseData;
+  final SyncLotMovementData? _syncLotMovementData;
 
   @override
   Future<Result<PostAuthenticationSummary>> sync() async {
@@ -73,6 +79,8 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
           'pulling animals for establishment=$establishmentId',
         );
         await _animalStore.pullRemoteAnimals(establishmentId);
+        // Lotes e historial quedan disponibles antes del próximo trabajo offline.
+        await _syncLotMovementData?.call(establishmentId);
         _logInitialSyncStep(
           'pulling weighings for establishment=$establishmentId',
         );

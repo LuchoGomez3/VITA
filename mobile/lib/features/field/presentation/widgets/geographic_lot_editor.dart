@@ -7,6 +7,7 @@ import 'package:frontend_mayoral/features/field/presentation/bloc/lot_editor_blo
 import 'package:frontend_mayoral/features/field/presentation/geometry/local_canvas_projection.dart';
 import 'package:frontend_mayoral/features/field/presentation/geometry/local_lot_placement_resolver.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/field_satellite_layer.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_vertex_marker.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -20,6 +21,7 @@ class GeographicLotEditor extends StatefulWidget {
     required this.onVertexMoveStarted,
     required this.onVertexMoved,
     this.existingLots = const [],
+    this.showSatelliteMap = false,
     super.key,
   });
 
@@ -40,6 +42,9 @@ class GeographicLotEditor extends StatefulWidget {
 
   /// Lotes locales mostrados como referencia no editable.
   final List<Lot> existingLots;
+
+  /// Muestra la imagen sólo cuando la ruta proviene del campo configurado.
+  final bool showSatelliteMap;
 
   @override
   State<GeographicLotEditor> createState() => _GeographicLotEditorState();
@@ -78,7 +83,7 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
             options: MapOptions(
               crs: const CrsSimple(),
               initialCameraFit: CameraFit.bounds(
-                bounds: _canvasBounds,
+                bounds: widget.showSatelliteMap ? FieldSatelliteMap.bounds : _canvasBounds,
                 padding: const EdgeInsets.all(AppSpacing.md),
                 minZoom: -8,
               ),
@@ -103,6 +108,7 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
               },
             ),
             children: [
+              if (widget.showSatelliteMap) const FieldSatelliteLayer(),
               if (widget.existingLots.isNotEmpty)
                 PolygonLayer(
                   polygons: [
