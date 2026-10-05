@@ -46,6 +46,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   /// filtra los recursos que le corresponden y actualiza su estado local.
   final StreamController<BackendSyncResult> _syncResults;
   final StreamController<void> _authRejections;
+  static bool _remoteSyncEnabled = true;
 
   /// Instancia unica configurada durante el arranque de la app.
   ///
@@ -91,11 +92,13 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     BackendAccessTokenProvider? tokenProvider,
     http.Client? client,
     DatabaseFactory? localDatabaseFactory,
+    bool remoteSyncEnabled = true,
   }) async {
     if (_instance != null) {
       return;
     }
 
+    _remoteSyncEnabled = remoteSyncEnabled;
     // Provider local: Brick lo usa para leer/escribir modelos en SQLite.
     final sqliteProvider = SqliteProvider(
       sqlitePath,
@@ -109,7 +112,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     final authRejections = StreamController<void>.broadcast();
     final restClient = AuthenticatedBackendClient(
       tokenProvider: tokenProvider ?? SessionBackendAccessTokenProvider.instance,
-      inner: client,
+      inner: remoteSyncEnabled ? client : _OfflineOnlyHttpClient(),
       onSyncResult: (result) {
         syncResults.add(result);
         return Future<void>.value();
@@ -199,6 +202,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   Future<void> enqueueRemoteUpsert<TModel extends OfflineFirstWithRestModel>(
     TModel model,
   ) async {
+    if (!_remoteSyncEnabled) return;
     try {
       await remoteProvider.upsert<TModel>(
         model,
@@ -229,6 +233,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   /// entre ambas escrituras. La comparación del cuerpo evita duplicar jobs,
   /// incluso cuando el procesador ya tiene uno bloqueado para transmitirlo.
   Future<void> queueRemoteUpsert<TModel extends OfflineFirstWithRestModel>(TModel model) async {
+    if (!_remoteSyncEnabled) return;
     final adapter = remoteProvider.modelDictionary.adapterFor[TModel]!;
     final request = adapter.restRequest!(const Query(), model).upsert!;
     final body = await adapter.toRest(model, provider: remoteProvider, repository: this);
@@ -274,6 +279,22 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
       policy: OfflineFirstGetPolicy.localOnly,
     );
   }
+
+  /// Elimina todas las filas locales de un modelo para restaurar fixtures demo.
+  Future<void> deleteAllLocal<TModel extends OfflineFirstWithRestModel>() async {
+    final models = await getLocal<TModel>();
+    for (final model in models) {
+      await sqliteProvider.delete<TModel>(model, repository: this);
+    }
+    await _notifyLocalSubscribers<TModel>();
+  }
+}
+
+/// Transporte de seguridad: en demo ninguna request puede alcanzar un socket.
+class _OfflineOnlyHttpClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) =>
+      throw http.ClientException('Remote access is disabled in demo mode.', request.url);
 }
 
 /// Contexto restringido para escribir modelos Brick en una transaccion local.

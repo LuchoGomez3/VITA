@@ -35,6 +35,7 @@ class BrickBootstrap {
     await AppBrickRepository.configure(
       sqlitePath: sqlitePath,
       offlineQueuePath: offlineQueuePath,
+      remoteSyncEnabled: !AppConfig.demoMode,
     );
 
     // Stores por entidad. A medida que sumemos modelos Brick, aca se registran

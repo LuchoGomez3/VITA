@@ -34,6 +34,7 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
     required AnimalDetailRemoteDataSource remoteDataSource,
     BrickAnimalLotMovementStore? movementStore,
     LotBrickStore? lotStore,
+    bool remoteEnabled = true,
   }) : _movementStore = movementStore,
        _lotStore = lotStore,
        _observationStore = observationStore,
@@ -41,7 +42,8 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
        _brickStore = brickStore,
        _categoriaBrickStore = categoriaBrickStore,
        _pesajeBrickStore = pesajeBrickStore,
-       _remoteDataSource = remoteDataSource;
+       _remoteDataSource = remoteDataSource,
+       _remoteEnabled = remoteEnabled;
 
   static final _logger = Logger('AnimalDetailRepository');
   final AnimalObservationBrickStore _observationStore;
@@ -52,9 +54,11 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
   final CategoriaBrickStore _categoriaBrickStore;
   final PesajeBrickStore _pesajeBrickStore;
   final AnimalDetailRemoteDataSource _remoteDataSource;
+  final bool _remoteEnabled;
 
   @override
   Future<Result<AnimalDetail>> getById(String animalId, {bool refreshRemote = true}) async {
+    refreshRemote = refreshRemote && _remoteEnabled;
     try {
       final localAnimal = await _brickStore.getAnimalById(animalId);
       if (localAnimal != null) {
