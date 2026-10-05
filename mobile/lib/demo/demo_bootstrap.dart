@@ -15,8 +15,13 @@ import 'package:frontend_mayoral/core/storage/storage.dart';
 abstract final class DemoIds {
   static const user = '10000000-0000-4000-8000-000000000001';
   static const establishment = '20000000-0000-4000-8000-000000000001';
-  static const calfCategory = '30000000-0000-4000-8000-000000000001';
-  static const steerCategory = '30000000-0000-4000-8000-000000000002';
+  static const calfCategory = 'b9a6e57b-20ae-49b1-a7bb-17c71af546f3';
+  static const steerCategory = '41da4271-bd25-4ba0-ba34-24dc6586f0f2';
+  static const cowCategory = 'ef69117b-c979-4665-b13f-2b26ff0f19b3';
+  static const bullCategory = 'b5e8ea91-9789-4f7e-9dad-10262f1920f4';
+  static const heiferCategory = 'b6d6440c-88c6-48cc-9003-0ad2cc05f3d5';
+  static const femaleCalfCategory = 'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8';
+  static const fastFatteningCategory = '550e8400-e29b-41d4-a716-446655440034';
   static const northLot = '40000000-0000-4000-8000-000000000001';
   static const southLot = '40000000-0000-4000-8000-000000000002';
   static const reserveLot = '40000000-0000-4000-8000-000000000003';
@@ -50,12 +55,17 @@ class DemoBootstrap {
     value: jsonEncode([
       {
         'id': DemoIds.establishment,
+        'owner_id': DemoIds.user,
         'name': 'Establecimiento La Esperanza',
         'role': 'owner',
         'renspa_number': '04.001.0.00001/00',
+        'cuit': '20-00000000-0',
+        'area_hectares': 79.3,
         'province': 'Córdoba',
         'department': 'Río Cuarto',
         'locality': 'Las Higueras',
+        'created_at': '2026-01-01T00:00:00.000Z',
+        'updated_at': '2026-10-05T00:00:00.000Z',
       },
     ]),
   );
@@ -74,21 +84,42 @@ class DemoBootstrap {
   static final _categories = [
     BrickCategoriaModel(
       localId: DemoIds.calfCategory,
-      name: 'Terneros',
-      description: 'Animales en recría',
+      name: 'Ternero',
+      description: 'Animal macho menor a un año',
+      allowedSex: 'macho',
       createdAt: DateTime.utc(2026, 1),
       updatedAt: DateTime.utc(2026, 1),
       syncStatus: BrickCategoriaSyncStatus.synchronized,
     ),
     BrickCategoriaModel(
       localId: DemoIds.steerCategory,
-      name: 'Novillos',
-      description: 'Animales en terminación',
+      name: 'Novillo',
+      allowedSex: 'macho',
       createdAt: DateTime.utc(2026, 1),
       updatedAt: DateTime.utc(2026, 1),
       syncStatus: BrickCategoriaSyncStatus.synchronized,
     ),
+    _category(DemoIds.cowCategory, 'Vaca', 'hembra', allowsReproductiveStatus: true),
+    _category(DemoIds.bullCategory, 'Toro', 'macho'),
+    _category(DemoIds.heiferCategory, 'Vaquillona', 'hembra', allowsReproductiveStatus: true),
+    _category(DemoIds.femaleCalfCategory, 'Ternera', 'hembra'),
+    _category(DemoIds.fastFatteningCategory, 'Engorde Rápido', 'ambos'),
   ];
+
+  static BrickCategoriaModel _category(
+    String id,
+    String name,
+    String allowedSex, {
+    bool allowsReproductiveStatus = false,
+  }) => BrickCategoriaModel(
+    localId: id,
+    name: name,
+    allowedSex: allowedSex,
+    allowsReproductiveStatus: allowsReproductiveStatus,
+    createdAt: DateTime.utc(2026, 10, 5),
+    updatedAt: DateTime.utc(2026, 10, 5),
+    syncStatus: BrickCategoriaSyncStatus.synchronized,
+  );
 
   static final _lots = [
     _lot(DemoIds.northLot, 'Potrero Norte', 325, 'alfalfa', 80, 80, 450, 380),
@@ -131,11 +162,103 @@ class DemoBootstrap {
   );
 
   static final _animals = [
-    _animal(DemoIds.animalOne, 'AR-DEMO-0001', '001', BrickAnimalSex.male, DemoIds.steerCategory, 'Novillos', DemoIds.southLot, 'Potrero Sur', 302),
-    _animal(DemoIds.animalTwo, 'AR-DEMO-0002', '002', BrickAnimalSex.female, DemoIds.calfCategory, 'Terneros', DemoIds.northLot, 'Potrero Norte', 188),
-    _animal(DemoIds.animalThree, 'AR-DEMO-0003', '003', BrickAnimalSex.male, DemoIds.steerCategory, 'Novillos', DemoIds.southLot, 'Potrero Sur', 315),
-    _animal(DemoIds.animalFour, 'AR-DEMO-0004', '004', BrickAnimalSex.female, DemoIds.calfCategory, 'Terneros', DemoIds.northLot, 'Potrero Norte', 176),
+    _animal(DemoIds.animalOne, '999000000000001', '001', BrickAnimalSex.male, DemoIds.steerCategory, 'Novillo', DemoIds.southLot, 'Potrero Sur', 302),
+    _animal(DemoIds.animalTwo, '999000000000002', '002', BrickAnimalSex.female, DemoIds.femaleCalfCategory, 'Ternera', DemoIds.northLot, 'Potrero Norte', 188),
+    _animal(DemoIds.animalThree, '999000000000003', '003', BrickAnimalSex.male, DemoIds.steerCategory, 'Novillo', DemoIds.southLot, 'Potrero Sur', 315),
+    _animal(DemoIds.animalFour, '999000000000004', '004', BrickAnimalSex.female, DemoIds.femaleCalfCategory, 'Ternera', DemoIds.northLot, 'Potrero Norte', 176),
+    _csvAnimal(
+      id: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+      rfid: '123123123123124',
+      visualTag: '1829319823',
+      sex: BrickAnimalSex.male,
+      breed: 'Wagyu',
+      birthDate: DateTime.utc(2026, 7, 4),
+      categoryId: DemoIds.calfCategory,
+      categoryName: 'Ternero',
+      lotId: DemoIds.reserveLot,
+      lotName: 'Reserva',
+      coat: 'Overo',
+      status: 'muerto',
+    ),
+    _csvAnimal(
+      id: '550e8400-e29b-41d4-a716-446655440059',
+      rfid: '123123123123123',
+      visualTag: '012',
+      sex: BrickAnimalSex.male,
+      breed: 'Hereford',
+      birthDate: DateTime.utc(2026, 1, 19),
+      categoryId: DemoIds.bullCategory,
+      categoryName: 'Toro',
+      lotId: DemoIds.southLot,
+      lotName: 'Potrero Sur',
+      coat: 'Pintas',
+      observations: 'Toro nuevo',
+    ),
+    _csvAnimal(
+      id: '550e8400-e29b-41d4-a716-446655440060',
+      rfid: '123123123123125',
+      visualTag: '013',
+      sex: BrickAnimalSex.female,
+      breed: 'Angus',
+      birthDate: DateTime.utc(2025, 10, 7),
+      categoryId: DemoIds.cowCategory,
+      categoryName: 'Vaca',
+      lotId: DemoIds.northLot,
+      lotName: 'Potrero Norte',
+      coat: 'Rojo',
+    ),
+    _csvAnimal(
+      id: '550e8400-e29b-41d4-a716-446655440061',
+      rfid: '123123123123126',
+      visualTag: '',
+      sex: BrickAnimalSex.male,
+      breed: '',
+      birthDate: DateTime.utc(2026, 7, 10),
+      categoryId: DemoIds.bullCategory,
+      categoryName: 'Toro',
+      lotId: DemoIds.reserveLot,
+      lotName: 'Reserva',
+      coat: 'Pintas',
+      observations: 'Novillo nuevo',
+    ),
   ];
+
+  static BrickAnimalModel _csvAnimal({
+    required String id,
+    required String rfid,
+    required String visualTag,
+    required BrickAnimalSex sex,
+    required String breed,
+    required DateTime birthDate,
+    required String categoryId,
+    required String categoryName,
+    required String lotId,
+    required String lotName,
+    required String coat,
+    String status = 'activo',
+    String? observations,
+  }) => BrickAnimalModel(
+    localId: id,
+    rfidTagNumber: rfid,
+    visualTag: visualTag,
+    sex: sex,
+    breed: breed,
+    birthDate: birthDate,
+    categoryId: categoryId,
+    categoryName: categoryName,
+    lotId: lotId,
+    lotName: lotName,
+    establishmentId: DemoIds.establishment,
+    initialWeight: null,
+    weighingMethod: BrickAnimalWeighingMethod.manual,
+    weighingDate: DateTime.utc(2026, 10, 5),
+    coat: coat,
+    observations: observations,
+    status: status,
+    createdAt: DateTime.utc(2026, 10, 5),
+    updatedAt: DateTime.utc(2026, 10, 5),
+    syncStatus: BrickAnimalSyncStatus.synchronized,
+  );
 
   static BrickAnimalModel _animal(
     String id,
