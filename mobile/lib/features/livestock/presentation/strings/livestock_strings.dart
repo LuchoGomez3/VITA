@@ -12,6 +12,24 @@ abstract final class LivestockStrings {
   /// Boton para abrir el registro.
   static const animalRegisterButton = 'Registrar animal';
 
+  /// Titulo del acceso al registro de ventas.
+  static const saleRegisterTitle = 'Registrar venta';
+
+  /// Descripcion del registro comercial de animales.
+  static const saleRegisterDescription = 'Seleccioná animales y registrá los datos de la operación.';
+
+  /// Boton para iniciar una venta.
+  static const saleRegisterButton = 'Registrar venta';
+
+  /// Titulo del selector cuando hay mas de un establecimiento habilitado.
+  static const saleEstablishmentSelectionTitle = 'Seleccioná el establecimiento';
+
+  /// Mensaje mostrado cuando no se puede consultar el catalogo local.
+  static const saleAccessError = 'No se pudo verificar el acceso al registro de ventas.';
+
+  /// Accion para volver a consultar el catalogo local.
+  static const retry = 'Reintentar';
+
   /// Titulo del acceso al detalle de ejemplo.
   static const animalDetailTitle = 'Consultar animal';
 

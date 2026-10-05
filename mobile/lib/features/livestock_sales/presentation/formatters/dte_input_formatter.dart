@@ -6,6 +6,12 @@ class DteInputFormatter extends TextInputFormatter {
   const DteInputFormatter();
 
   static final _allowedCharacters = RegExp('[0-9A-Za-z-]');
+  static final _completeDte = RegExp(r'^\d+-[0-9A-Z]$');
+
+  /// Indica si el texto contiene el numero y el verificador completos.
+  static bool isValid(String value) {
+    return _completeDte.hasMatch(value.trim().toUpperCase());
+  }
 
   @override
   TextEditingValue formatEditUpdate(

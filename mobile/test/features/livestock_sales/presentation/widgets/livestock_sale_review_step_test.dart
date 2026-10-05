@@ -74,6 +74,22 @@ void main() {
     expect(find.text(r'$ 6.000,00'), findsOneWidget);
   });
 
+  testWidgets('tolera un cobro parcial incompleto antes de validarlo', (
+    tester,
+  ) async {
+    final bloc = await _createReviewBloc(
+      animalCount: 1,
+      form: _form(
+        paymentCondition: LivestockSalePaymentCondition.partial,
+      ),
+    );
+    addTearDown(bloc.close);
+
+    await tester.pumpWidget(_TestApp(bloc: bloc));
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('muestra diez animales y permite desplegar los restantes', (
     tester,
   ) async {

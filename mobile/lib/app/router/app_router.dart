@@ -39,6 +39,7 @@ import 'package:frontend_mayoral/features/field/presentation/strings/field_strin
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
+import 'package:frontend_mayoral/features/livestock/livestock_composition.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
 import 'package:frontend_mayoral/features/livestock_sales/livestock_sales_composition.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/pages/livestock_sale_flow_page.dart';
@@ -140,7 +141,9 @@ class AppRouter {
               routes: [
                 GoRoute(
                   path: AppRoutes.livestock,
-                  builder: (context, state) => const LivestockPage(),
+                  builder: (context, state) => const LivestockPage(
+                    createAccessCubit: createLivestockAccessCubit,
+                  ),
                 ),
               ],
             ),

@@ -12,6 +12,30 @@ enum LivestockSaleStep {
   review,
 }
 
+/// Campo del segundo paso al que debe dirigirse una validacion.
+enum LivestockSaleFormField {
+  /// Nombre de persona o razon social.
+  buyerName,
+
+  /// Apellido de una persona.
+  buyerLastName,
+
+  /// Documento de Transito Electronico.
+  dteNumber,
+
+  /// Monto pactado para una venta al bulto.
+  bulkTotalAmount,
+
+  /// Peso total comercial de una venta por kilo.
+  totalWeight,
+
+  /// Precio unitario de una venta por kilo.
+  pricePerKilogram,
+
+  /// Importe recibido al registrar un cobro parcial.
+  amountToCollect,
+}
+
 /// Campos editables que deben sobrevivir al avanzar y retroceder.
 @freezed
 sealed class LivestockSaleFormDraft with _$LivestockSaleFormDraft {

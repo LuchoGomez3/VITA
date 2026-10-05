@@ -10,26 +10,31 @@ import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/live
 abstract final class LivestockSaleFormAmounts {
   /// Obtiene el total en centavos para cualquiera de las dos modalidades.
   static int? totalCents(LivestockSaleFormDraft form) {
-    try {
-      if (form.saleType == LivestockSaleType.bulk) {
-        final cents = ScaledDecimalFormatter.parse(
-          form.bulkTotalAmount,
-          2,
-        );
-        return cents > 0 ? cents : null;
-      }
+    if (form.saleType == LivestockSaleType.bulk) {
+      final cents = ScaledDecimalFormatter.tryParse(
+        form.bulkTotalAmount,
+        2,
+      );
+      return cents != null && cents > 0 ? cents : null;
+    }
 
-      // Peso y precio se convierten a enteros escalados para que la vista use
-      // exactamente el mismo truncado que dominio, sin pasar por double.
-      final totalWeightGrams = ScaledDecimalFormatter.parse(
-        form.totalWeight,
-        3,
-      );
-      final pricePerKilogramMicros = ScaledDecimalFormatter.parse(
-        form.pricePerKg,
-        6,
-      );
-      if (totalWeightGrams <= 0 || pricePerKilogramMicros <= 0) return null;
+    // Peso y precio se convierten a enteros escalados para que la vista use
+    // exactamente el mismo truncado que dominio, sin pasar por double.
+    final totalWeightGrams = ScaledDecimalFormatter.tryParse(
+      form.totalWeight,
+      3,
+    );
+    final pricePerKilogramMicros = ScaledDecimalFormatter.tryParse(
+      form.pricePerKg,
+      6,
+    );
+    if (totalWeightGrams == null ||
+        totalWeightGrams <= 0 ||
+        pricePerKilogramMicros == null ||
+        pricePerKilogramMicros <= 0) {
+      return null;
+    }
+    try {
       return LivestockSaleAmountCalculator.totalCents(
         totalWeightGrams: totalWeightGrams,
         pricePerKgMicros: pricePerKilogramMicros,
@@ -45,15 +50,12 @@ abstract final class LivestockSaleFormAmounts {
     required String amountToCollect,
   }) {
     if (totalCents == null) return null;
-    try {
-      final collectedCents = ScaledDecimalFormatter.parse(
-        amountToCollect,
-        2,
-      );
-      final pendingCents = totalCents - collectedCents;
-      return pendingCents >= 0 ? pendingCents : null;
-    } on FormatException {
-      return null;
-    }
+    final collectedCents = ScaledDecimalFormatter.tryParse(
+      amountToCollect,
+      2,
+    );
+    if (collectedCents == null) return null;
+    final pendingCents = totalCents - collectedCents;
+    return pendingCents >= 0 ? pendingCents : null;
   }
 }

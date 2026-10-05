@@ -78,6 +78,44 @@ void main() {
     );
   });
 
+  test('el cobro parcial debe ser positivo', () async {
+    final result = await useCase(
+      _bulkDraft().copyWith(
+        paymentCondition: LivestockSalePaymentCondition.partial,
+        initialPayment: LivestockSaleInitialPaymentDraft(
+          date: DateTime(2026, 10, 3),
+          amountCents: 0,
+          method: LivestockSalePaymentMethod.bankTransfer,
+        ),
+      ),
+    );
+
+    expect(
+      result.when(success: (_) => null, failure: (error) => error.reason),
+      LivestockSaleError.nonPositiveInitialPaymentAmount,
+    );
+  });
+
+  test('el cobro parcial debe ser menor que el total', () async {
+    for (final amountCents in [1000000, 1000001]) {
+      final result = await useCase(
+        _bulkDraft().copyWith(
+          paymentCondition: LivestockSalePaymentCondition.partial,
+          initialPayment: LivestockSaleInitialPaymentDraft(
+            date: DateTime(2026, 10, 3),
+            amountCents: amountCents,
+            method: LivestockSalePaymentMethod.bankTransfer,
+          ),
+        ),
+      );
+
+      expect(
+        result.when(success: (_) => null, failure: (error) => error.reason),
+        LivestockSaleError.initialPaymentNotLessThanTotal,
+      );
+    }
+  });
+
   test('una venta pendiente no admite cobro inicial', () async {
     final result = await useCase(
       _bulkDraft().copyWith(

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/app/theme/app_theme.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_selection.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/repositories/livestock_sale_animal_repository.dart';
@@ -35,6 +37,11 @@ void main() {
       find.text(LivestockSaleStrings.selectedAnimalCount(0)),
       findsOneWidget,
     );
+    final searchIcon = tester.widget<SvgPicture>(
+      find.byKey(const Key('livestockSaleSearchIcon')),
+    );
+    expect(searchIcon.width, AppSpacing.lg);
+    expect(searchIcon.height, AppSpacing.lg);
   });
 
   testWidgets('agrega desde SQLite, limpia el campo y permite quitar', (

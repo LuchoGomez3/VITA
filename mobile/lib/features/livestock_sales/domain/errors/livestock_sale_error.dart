@@ -60,6 +60,12 @@ enum LivestockSaleError {
   /// El importe cobrado no respeta la condicion seleccionada.
   invalidInitialPaymentAmount,
 
+  /// El importe de un cobro parcial no es positivo.
+  nonPositiveInitialPaymentAmount,
+
+  /// El importe parcial no deja saldo pendiente.
+  initialPaymentNotLessThanTotal,
+
   /// La fecha del cobro es futura.
   futureInitialPaymentDate,
 

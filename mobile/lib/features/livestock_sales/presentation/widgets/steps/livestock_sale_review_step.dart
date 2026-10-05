@@ -496,10 +496,12 @@ class _SummaryRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
+            flex: 2,
             child: Text(label, style: AppTypography.formFieldHelper),
           ),
           const SizedBox(width: AppSpacing.sm),
-          Flexible(
+          Expanded(
+            flex: 3,
             child: Text(
               value,
               textAlign: TextAlign.end,
@@ -631,9 +633,18 @@ String _paymentMethodLabel(LivestockSalePaymentMethod method) {
 int _initialPaymentCents(LivestockSaleFormDraft form, int totalCents) {
   return switch (form.paymentCondition) {
     LivestockSalePaymentCondition.total => totalCents,
-    LivestockSalePaymentCondition.partial => ScaledDecimalFormatter.parse(form.amountToCollect, 2),
+    LivestockSalePaymentCondition.partial => _partialPaymentCents(
+      form.amountToCollect,
+    ),
     LivestockSalePaymentCondition.pending => 0,
   };
+}
+
+int _partialPaymentCents(String amount) {
+  // IndexedStack mantiene el resumen montado mientras se edita el paso dos.
+  // Un importe todavia vacio se representa como cero hasta que dominio lo
+  // valide al intentar avanzar, sin lanzar excepciones durante el render.
+  return ScaledDecimalFormatter.tryParse(amount, 2) ?? 0;
 }
 
 /// Aplica el texto alternativo cuando SQLite no tiene categoria local.

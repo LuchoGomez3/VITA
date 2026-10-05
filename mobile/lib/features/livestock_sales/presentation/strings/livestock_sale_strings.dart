@@ -63,9 +63,8 @@ abstract final class LivestockSaleStrings {
   /// Placeholder del documento de transito electronico.
   static const dteNumberHint = '123456789-A';
 
-  /// Ayuda del documento de transito electronico.
-  static const dteNumberHelper =
-      'Ingresá el número completo, incluido el guion y el verificador';
+  /// Mensaje breve para un documento de transito electronico incompleto.
+  static const invalidDteNumberFormat = 'Formato inválido. Ej.: 123456789-A';
 
   /// Encabezado de los datos comerciales.
   static const operationSection = 'DATOS DE LA OPERACIÓN';
@@ -102,6 +101,9 @@ abstract final class LivestockSaleStrings {
 
   /// Unidad monetaria.
   static const currency = 'ARS';
+
+  /// Simbolo monetario mostrado dentro de los campos de importe.
+  static const currencySymbol = r'$';
 
   /// Unidad de peso.
   static const kilograms = 'kg';
@@ -296,8 +298,14 @@ abstract final class LivestockSaleStrings {
   /// Error del primer paso sin animales.
   static const requiredAnimals = 'Agregá al menos un animal antes de continuar.';
 
-  /// Error para numeros vacios, invalidos o con demasiados decimales.
-  static const invalidNumber = 'Revisá los importes y cantidades ingresados.';
+  /// Error comun cuando falta completar al menos un campo requerido.
+  static const missingRequiredFields = 'Faltan campos obligatorios por completar.';
+
+  /// Error cuando el cobro parcial no representa un ingreso positivo.
+  static const nonPositiveInitialPayment = r'El monto a cobrar ahora debe ser mayor que $0.';
+
+  /// Error cuando el cobro parcial alcanza o supera el total de la venta.
+  static const initialPaymentNotLessThanTotal = 'El monto a cobrar ahora debe ser menor que el monto total.';
 
   /// Traduce errores funcionales de la venta a mensajes para el formulario.
   static String saleError(LivestockSaleError error) => switch (error) {
@@ -308,7 +316,7 @@ abstract final class LivestockSaleStrings {
     LivestockSaleError.invalidBuyerName => 'El nombre del comprador admite solamente letras.',
     LivestockSaleError.invalidBuyerLastName => 'El apellido del comprador admite solamente letras.',
     LivestockSaleError.companyWithLastName => 'Una empresa debe registrarse mediante su razón social.',
-    LivestockSaleError.invalidDteNumber => 'Ingresá un número de DTe válido.',
+    LivestockSaleError.invalidDteNumber => invalidDteNumberFormat,
     LivestockSaleError.invalidAnimals => requiredAnimals,
     LivestockSaleError.invalidTotalAmount => 'Ingresá un monto total válido.',
     LivestockSaleError.bulkWithUnitValues => 'La venta al bulto no utiliza peso ni precio por kilo.',
@@ -319,6 +327,8 @@ abstract final class LivestockSaleStrings {
     LivestockSaleError.pendingWithInitialPayment =>
       'Una venta a cobrar posteriormente no debe registrar un cobro inicial.',
     LivestockSaleError.invalidInitialPaymentAmount => 'Revisá el monto que se cobra ahora.',
+    LivestockSaleError.nonPositiveInitialPaymentAmount => nonPositiveInitialPayment,
+    LivestockSaleError.initialPaymentNotLessThanTotal => initialPaymentNotLessThanTotal,
     LivestockSaleError.futureInitialPaymentDate => 'La fecha de cobro no puede ser futura.',
     LivestockSaleError.invalidStoredData => 'No se pudieron interpretar los datos guardados.',
     LivestockSaleError.animalNotFound => 'Uno de los animales ya no está disponible.',

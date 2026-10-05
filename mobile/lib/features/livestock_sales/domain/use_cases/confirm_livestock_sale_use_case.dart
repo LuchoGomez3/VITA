@@ -131,8 +131,11 @@ class ConfirmLivestockSaleUseCase {
         }
       case LivestockSalePaymentCondition.partial:
         if (payment == null) return LivestockSaleError.requiredInitialPayment;
-        if (payment.amountCents <= 0 || payment.amountCents >= draft.totalAmountCents) {
-          return LivestockSaleError.invalidInitialPaymentAmount;
+        if (payment.amountCents <= 0) {
+          return LivestockSaleError.nonPositiveInitialPaymentAmount;
+        }
+        if (payment.amountCents >= draft.totalAmountCents) {
+          return LivestockSaleError.initialPaymentNotLessThanTotal;
         }
     }
     if (payment != null && _dateOnly(payment.date).isAfter(_dateOnly(today))) {

@@ -18,4 +18,13 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test('tryParse devuelve null para una entrada parcial o fuera de rango', () {
+    expect(ScaledDecimalFormatter.tryParse('', 2), isNull);
+    expect(ScaledDecimalFormatter.tryParse('.', 2), isNull);
+    expect(
+      ScaledDecimalFormatter.tryParse('999999999999999999999999', 2),
+      isNull,
+    );
+  });
 }

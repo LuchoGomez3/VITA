@@ -138,7 +138,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
       LivestockSaleStep.review => null,
     };
     if (error != null) {
-      emit(state.copyWith(stepError: error));
+      _emitStepError(emit, error);
       return;
     }
 
@@ -175,7 +175,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
 
     final draftResult = _buildDomainDraft();
     if (draftResult case Failure<LivestockSaleDraft>(:final error)) {
-      emit(state.copyWith(stepError: error));
+      _emitStepError(emit, error);
       return;
     }
 
@@ -203,6 +203,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
   DomainException? _validateCompleteDraft() {
     // Presentation interpreta los textos y dominio aplica las reglas finales;
     // de ese modo no se duplican validaciones comerciales en los widgets.
+    final requiredFieldError = _validateRequiredFields();
+    if (requiredFieldError != null) return requiredFieldError;
     final result = _buildDomainDraft();
     if (result case Failure<LivestockSaleDraft>(:final error)) return error;
     final draft = (result as Success<LivestockSaleDraft>).data;
@@ -220,13 +222,48 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
       // Todos los decimales se convierten a enteros escalados. No se usa
       // double porque podria cambiar el precio pactado o el centavo truncado.
       if (form.saleType == LivestockSaleType.bulk) {
-        totalAmountCents = ScaledDecimalFormatter.parse(form.bulkTotalAmount, 2);
-      } else {
-        totalWeightGrams = ScaledDecimalFormatter.parse(form.totalWeight, 3);
-        pricePerKgMicros = ScaledDecimalFormatter.parse(form.pricePerKg, 6);
-        if (totalWeightGrams <= 0 || pricePerKgMicros <= 0) {
+        final parsedTotal = ScaledDecimalFormatter.tryParse(
+          form.bulkTotalAmount,
+          2,
+        );
+        if (parsedTotal == null) {
           return Result.failure(
-            _validationError(LivestockSaleStrings.invalidNumber),
+            _fieldValidationError(
+              LivestockSaleFormField.bulkTotalAmount,
+              LivestockSaleStrings.saleError(
+                LivestockSaleError.invalidTotalAmount,
+              ),
+            ),
+          );
+        }
+        totalAmountCents = parsedTotal;
+      } else {
+        totalWeightGrams = ScaledDecimalFormatter.tryParse(
+          form.totalWeight,
+          3,
+        );
+        pricePerKgMicros = ScaledDecimalFormatter.tryParse(
+          form.pricePerKg,
+          6,
+        );
+        if (totalWeightGrams == null || totalWeightGrams <= 0) {
+          return Result.failure(
+            _fieldValidationError(
+              LivestockSaleFormField.totalWeight,
+              LivestockSaleStrings.saleError(
+                LivestockSaleError.invalidTotalWeight,
+              ),
+            ),
+          );
+        }
+        if (pricePerKgMicros == null || pricePerKgMicros <= 0) {
+          return Result.failure(
+            _fieldValidationError(
+              LivestockSaleFormField.pricePerKilogram,
+              LivestockSaleStrings.saleError(
+                LivestockSaleError.invalidPricePerKg,
+              ),
+            ),
           );
         }
         totalAmountCents = LivestockSaleAmountCalculator.totalCents(
@@ -234,11 +271,28 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
           pricePerKgMicros: pricePerKgMicros,
         );
       }
-      final paymentAmountCents = switch (form.paymentCondition) {
-        LivestockSalePaymentCondition.total => totalAmountCents,
-        LivestockSalePaymentCondition.partial => ScaledDecimalFormatter.parse(form.amountToCollect, 2),
-        LivestockSalePaymentCondition.pending => null,
-      };
+      int? paymentAmountCents;
+      switch (form.paymentCondition) {
+        case LivestockSalePaymentCondition.total:
+          paymentAmountCents = totalAmountCents;
+        case LivestockSalePaymentCondition.partial:
+          paymentAmountCents = ScaledDecimalFormatter.tryParse(
+            form.amountToCollect,
+            2,
+          );
+          if (paymentAmountCents == null) {
+            return Result.failure(
+              _fieldValidationError(
+                LivestockSaleFormField.amountToCollect,
+                LivestockSaleStrings.saleError(
+                  LivestockSaleError.invalidInitialPaymentAmount,
+                ),
+              ),
+            );
+          }
+        case LivestockSalePaymentCondition.pending:
+          paymentAmountCents = null;
+      }
       final payment = paymentAmountCents == null
           ? null
           : LivestockSaleInitialPaymentDraft(
@@ -269,8 +323,58 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
         ),
       );
     } on FormatException catch (_) {
-      return Result.failure(_validationError(LivestockSaleStrings.invalidNumber));
+      final field = state.form.saleType == LivestockSaleType.bulk
+          ? LivestockSaleFormField.bulkTotalAmount
+          : LivestockSaleFormField.pricePerKilogram;
+      return Result.failure(
+        _fieldValidationError(
+          field,
+          LivestockSaleStrings.saleError(
+            LivestockSaleError.invalidTotalAmount,
+          ),
+        ),
+      );
     }
+  }
+
+  DomainException? _validateRequiredFields() {
+    final form = state.form;
+    if (form.buyerName.trim().isEmpty) {
+      return _requiredFieldError(LivestockSaleFormField.buyerName);
+    }
+    if (!form.isCompany && form.buyerLastName.trim().isEmpty) {
+      return _requiredFieldError(LivestockSaleFormField.buyerLastName);
+    }
+    if (form.dteNumber.trim().isEmpty) {
+      return _requiredFieldError(LivestockSaleFormField.dteNumber);
+    }
+    if (form.saleType == LivestockSaleType.bulk && form.bulkTotalAmount.trim().isEmpty) {
+      return _requiredFieldError(LivestockSaleFormField.bulkTotalAmount);
+    }
+    if (form.saleType == LivestockSaleType.perKilogram) {
+      if (form.totalWeight.trim().isEmpty) {
+        return _requiredFieldError(LivestockSaleFormField.totalWeight);
+      }
+      if (form.pricePerKg.trim().isEmpty) {
+        return _requiredFieldError(LivestockSaleFormField.pricePerKilogram);
+      }
+    }
+    if (form.paymentCondition == LivestockSalePaymentCondition.partial && form.amountToCollect.trim().isEmpty) {
+      return _requiredFieldError(LivestockSaleFormField.amountToCollect);
+    }
+    return null;
+  }
+
+  void _emitStepError(
+    Emitter<LivestockSaleState> emit,
+    DomainException error,
+  ) {
+    // Freezed compara los errores por valor. Limpiar el anterior garantiza que
+    // cada nuevo intento invalido vuelva a producir feedback visible.
+    if (state.stepError == error) {
+      emit(state.copyWith(stepError: null));
+    }
+    emit(state.copyWith(stepError: error));
   }
 
   LivestockSaleFormDraft _normalizeChangedForm(LivestockSaleFormDraft next) {
@@ -323,5 +427,23 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
 
   DomainException _validationError(String message) {
     return DomainException(message: message, code: DomainErrorCode.validation);
+  }
+
+  DomainException _requiredFieldError(LivestockSaleFormField field) {
+    return _fieldValidationError(
+      field,
+      LivestockSaleStrings.missingRequiredFields,
+    );
+  }
+
+  DomainException _fieldValidationError(
+    LivestockSaleFormField field,
+    String message,
+  ) {
+    return DomainException(
+      message: message,
+      code: DomainErrorCode.validation,
+      reason: field,
+    );
   }
 }

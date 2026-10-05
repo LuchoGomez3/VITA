@@ -187,9 +187,12 @@ class _SelectionHeader extends StatelessWidget {
                 enabled: !isLoading,
                 textInputAction: TextInputAction.done,
                 prefixIcon: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   child: SvgPicture.asset(
                     'assets/icons/search.svg',
+                    key: const Key('livestockSaleSearchIcon'),
+                    width: AppSpacing.lg,
+                    height: AppSpacing.lg,
                     colorFilter: const ColorFilter.mode(
                       AppColors.textSecondary,
                       BlendMode.srcIn,

@@ -15,6 +15,26 @@ import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/l
 import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/steps/livestock_sale_operation_step.dart';
 
 void main() {
+  testWidgets('enfoca el primer campo obligatorio incompleto', (tester) async {
+    final bloc = _createBloc();
+    addTearDown(bloc.close);
+    await _openOperationStep(bloc);
+    await tester.pumpWidget(_TestApp(bloc: bloc));
+
+    bloc.add(const LivestockSaleEvent.nextStepRequested());
+    await tester.pumpAndSettle();
+
+    final nameField = find.byKey(const Key('livestockSaleBuyerName'));
+    final editableText = tester.widget<EditableText>(
+      find.descendant(of: nameField, matching: find.byType(EditableText)),
+    );
+    expect(editableText.focusNode.hasFocus, isTrue);
+    expect(
+      bloc.state.stepError?.message,
+      LivestockSaleStrings.missingRequiredFields,
+    );
+  });
+
   testWidgets('al elegir empresa solicita razon social y elimina el apellido', (
     tester,
   ) async {
@@ -46,11 +66,7 @@ void main() {
     await tester.pumpWidget(_TestApp(bloc: bloc));
 
     final perKilogram = find.text(LivestockSaleStrings.perKilogramSale);
-    await tester.scrollUntilVisible(
-      perKilogram,
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _scrollToCenter(tester, perKilogram);
     await tester.tap(perKilogram);
     await tester.pumpAndSettle();
     final weight = find.byKey(const Key('livestockSaleTotalWeight'));
@@ -58,13 +74,13 @@ void main() {
     await tester.scrollUntilVisible(
       weight,
       300,
-      scrollable: find.byType(Scrollable).first,
+      scrollable: _operationScrollable,
     );
     await tester.enterText(weight, '10');
     await tester.scrollUntilVisible(
       price,
       300,
-      scrollable: find.byType(Scrollable).first,
+      scrollable: _operationScrollable,
     );
     await tester.enterText(price, '1000.123456');
     await tester.pumpAndSettle();
@@ -98,6 +114,125 @@ void main() {
     expect(editableText.controller.text, '123456789-A');
   });
 
+  testWidgets('muestra el error del DTe solo despues de una entrada invalida', (
+    tester,
+  ) async {
+    final bloc = _createBloc();
+    addTearDown(bloc.close);
+    await tester.pumpWidget(_TestApp(bloc: bloc));
+
+    expect(
+      find.text(LivestockSaleStrings.invalidDteNumberFormat),
+      findsNothing,
+    );
+
+    final dteField = find.byKey(const Key('livestockSaleDteNumber'));
+    await tester.enterText(dteField, '12345');
+    await tester.tap(find.byKey(const Key('livestockSaleBuyerName')));
+    await tester.pump();
+
+    expect(
+      find.text(LivestockSaleStrings.invalidDteNumberFormat),
+      findsOneWidget,
+    );
+
+    await tester.enterText(dteField, '123456789-A');
+    await tester.pump();
+
+    expect(
+      find.text(LivestockSaleStrings.invalidDteNumberFormat),
+      findsNothing,
+    );
+  });
+
+  testWidgets(
+    'persona acepta letras y espacios pero descarta otros caracteres',
+    (tester) async {
+      final bloc = _createBloc();
+      addTearDown(bloc.close);
+      await tester.pumpWidget(_TestApp(bloc: bloc));
+
+      await tester.enterText(
+        find.byKey(const Key('livestockSaleBuyerName')),
+        'Ju4a@n Pérez!',
+      );
+      await tester.enterText(
+        find.byKey(const Key('livestockSaleBuyerLastName')),
+        'G0ómez del S#ur',
+      );
+      await tester.pump();
+
+      expect(bloc.state.form.buyerName, 'Juan Pérez');
+      expect(bloc.state.form.buyerLastName, 'Gómez del Sur');
+    },
+  );
+
+  testWidgets('mantiene visible el simbolo pesos sin enfocar los importes', (
+    tester,
+  ) async {
+    final bloc = _createBloc();
+    addTearDown(bloc.close);
+    await tester.pumpWidget(_TestApp(bloc: bloc));
+
+    final bulkTotal = find.byKey(const Key('livestockSaleBulkTotal'));
+    await tester.scrollUntilVisible(
+      bulkTotal,
+      300,
+      scrollable: _operationScrollable,
+    );
+    expect(
+      find.descendant(
+        of: bulkTotal,
+        matching: find.text(LivestockSaleStrings.currencySymbol),
+      ),
+      findsOneWidget,
+    );
+
+    final perKilogram = find.text(LivestockSaleStrings.perKilogramSale);
+    await _scrollToCenter(tester, perKilogram);
+    await tester.tap(perKilogram);
+    await tester.pumpAndSettle();
+
+    final price = find.byKey(const Key('livestockSalePricePerKilogram'));
+    await tester.scrollUntilVisible(
+      price,
+      300,
+      scrollable: _operationScrollable,
+    );
+    expect(
+      find.descendant(
+        of: price,
+        matching: find.text(LivestockSaleStrings.currencySymbol),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('cobro parcial puede seleccionarse aunque el monto este vacio', (
+    tester,
+  ) async {
+    final bloc = _createBloc();
+    addTearDown(bloc.close);
+    await tester.pumpWidget(_TestApp(bloc: bloc));
+
+    final partial = find.byKey(
+      const ValueKey('livestockSalePaymentCondition-partial'),
+    );
+    await _scrollToCenter(tester, partial);
+    await tester.tap(partial);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('livestockSaleAmountToCollect')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('livestockSalePendingBalance')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('muestra saldo parcial y permite elegir tarjeta', (
     tester,
   ) async {
@@ -109,24 +244,20 @@ void main() {
     await tester.scrollUntilVisible(
       total,
       300,
-      scrollable: find.byType(Scrollable).first,
+      scrollable: _operationScrollable,
     );
     await tester.enterText(total, '10000');
     final partial = find.byKey(
       const ValueKey('livestockSalePaymentCondition-partial'),
     );
-    await tester.scrollUntilVisible(
-      partial,
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _scrollToCenter(tester, partial);
     await tester.tap(partial);
     await tester.pumpAndSettle();
     final collected = find.byKey(const Key('livestockSaleAmountToCollect'));
     await tester.scrollUntilVisible(
       collected,
       300,
-      scrollable: find.byType(Scrollable).first,
+      scrollable: _operationScrollable,
     );
     await tester.enterText(collected, '4000');
     await tester.pumpAndSettle();
@@ -135,11 +266,7 @@ void main() {
     final card = find.byKey(
       const ValueKey('livestockSalePaymentMethod-card'),
     );
-    await tester.scrollUntilVisible(
-      card,
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _scrollToCenter(tester, card);
     await tester.tap(card);
     await tester.pumpAndSettle();
 
@@ -152,6 +279,28 @@ void main() {
       LivestockSalePaymentMethod.card,
     );
   });
+}
+
+final Finder _operationScrollable = find
+    .descendant(
+      of: find.byKey(const Key('livestockSaleOperationStep')),
+      matching: find.byType(Scrollable),
+    )
+    .first;
+
+Future<void> _scrollToCenter(WidgetTester tester, Finder target) async {
+  // `scrollUntilVisible` puede detenerse cuando apenas aparece un borde. El
+  // segundo paso centra el control para que el toque represente al usuario.
+  await tester.scrollUntilVisible(
+    target,
+    300,
+    scrollable: _operationScrollable,
+  );
+  await Scrollable.ensureVisible(
+    tester.element(target),
+    alignment: 0.5,
+  );
+  await tester.pumpAndSettle();
 }
 
 LivestockSaleBloc _createBloc() {
@@ -192,8 +341,29 @@ class _AnimalRepository implements LivestockSaleAnimalRepository {
   Future<Result<LivestockSaleAnimal?>> findLocalByRfidTagNumber(
     String rfidTagNumber,
   ) async {
-    return const Result.success(null);
+    return Result.success(
+      LivestockSaleAnimal(
+        id: 'animal-id',
+        establishmentId: 'establishment-id',
+        rfidTagNumber: rfidTagNumber,
+        visualTag: '1295',
+        categoryName: 'Novillo',
+        lotName: 'Lote Norte',
+        status: LivestockSaleAnimalStatus.active,
+      ),
+    );
   }
+}
+
+Future<void> _openOperationStep(LivestockSaleBloc bloc) async {
+  bloc.add(
+    const LivestockSaleEvent.animalAddRequested('982000000001295'),
+  );
+  await bloc.stream.firstWhere((state) => state.selection.animals.isNotEmpty);
+  bloc.add(const LivestockSaleEvent.nextStepRequested());
+  await bloc.stream.firstWhere(
+    (state) => state.currentStep == LivestockSaleStep.operation,
+  );
 }
 
 class _SaleRepository implements LivestockSaleRepository {

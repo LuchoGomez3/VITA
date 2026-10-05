@@ -15,11 +15,20 @@ class ScaledDecimalFormatter {
 
   /// Parsea un decimal con hasta [scale] posiciones sin truncar ni redondear.
   static int parse(String value, int scale) {
+    final parsed = tryParse(value, scale);
+    if (parsed == null) {
+      throw const FormatException('Invalid decimal precision or range.');
+    }
+    return parsed;
+  }
+
+  /// Intenta parsear un decimal sin lanzar excepciones por entradas parciales.
+  static int? tryParse(String value, int scale) {
     if (scale < 0) throw ArgumentError.value(scale, 'scale');
     final normalized = value.trim().replaceAll(',', '.');
     final pattern = RegExp(scale == 0 ? r'^-?\d+$' : '^[-]?\\d+(?:\\.\\d{1,$scale})?\$');
     if (!pattern.hasMatch(normalized)) {
-      throw const FormatException('Invalid decimal precision.');
+      return null;
     }
 
     final negative = normalized.startsWith('-');
@@ -30,7 +39,7 @@ class ScaledDecimalFormatter {
     final parsed = BigInt.parse(digits);
     final signed = negative ? -parsed : parsed;
     if (signed < BigInt.from(_minInt64) || signed > BigInt.from(_maxInt64)) {
-      throw const FormatException('Decimal is outside the supported range.');
+      return null;
     }
     return signed.toInt();
   }
