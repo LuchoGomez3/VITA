@@ -279,6 +279,6 @@ class AnimalRegisterStrings {
   static String successDescription(String visualTag) =>
       'La caravana $visualTag quedó guardada en este dispositivo y espera sincronización.';
 
-  /// Construye la accion de acceso a la ficha con datos reales.
-  static String viewAnimalDetails(String visualTag) => 'Ver ficha de $visualTag';
+  /// Acción de acceso a la ficha recién creada.
+  static const viewAnimalDetails = 'Ver ficha';
 }

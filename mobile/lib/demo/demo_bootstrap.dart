@@ -210,7 +210,7 @@ class DemoBootstrap {
     _csvAnimal(
       id: '550e8400-e29b-41d4-a716-446655440061',
       rfid: '123123123123126',
-      visualTag: '',
+      visualTag: '014',
       sex: BrickAnimalSex.male,
       breed: '',
       birthDate: DateTime.utc(2026, 7, 10),

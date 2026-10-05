@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/config/config.dart';
 import 'package:frontend_mayoral/app/router/app_router.dart';
@@ -8,6 +9,7 @@ import 'package:frontend_mayoral/app/theme/app_theme.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_case.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
+import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/auth/auth_composition.dart' as auth_composition;
 import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
 import 'package:go_router/go_router.dart';
@@ -64,11 +66,18 @@ class _FrontendMayoralAppState extends State<FrontendMayoralApp> {
   Widget build(BuildContext context) {
     return BlocProvider<AuthSessionCubit>.value(
       value: _authSessionCubit,
-      child: MaterialApp.router(
-        title: AppConfig.current.appName,
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
-        routerConfig: _router,
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: const SystemUiOverlayStyle(
+          systemNavigationBarColor: AppColors.background,
+          systemNavigationBarDividerColor: AppColors.border,
+          systemNavigationBarIconBrightness: Brightness.dark,
+        ),
+        child: MaterialApp.router(
+          title: AppConfig.current.appName,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light(),
+          routerConfig: _router,
+        ),
       ),
     );
   }

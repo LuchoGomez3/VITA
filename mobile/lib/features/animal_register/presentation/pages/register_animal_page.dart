@@ -98,6 +98,10 @@ class _RegisterAnimalView extends StatelessWidget {
                 AnimalRegisterStrings.pageTitle,
                 style: AppTypography.appBarTitle,
               ),
+              bottom: const PreferredSize(
+                preferredSize: Size.fromHeight(1),
+                child: Divider(height: 1, color: AppColors.border),
+              ),
             ),
             body: Column(
               children: [

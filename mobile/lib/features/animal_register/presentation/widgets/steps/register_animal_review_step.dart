@@ -43,17 +43,10 @@ class RegisterAnimalReviewStep extends StatelessWidget {
             order: 1,
             title: AnimalRegisterStrings.stepFourIdentificationTitle,
             onEdit: () => _edit(context, RegisterAnimalStep.identification),
-            leading: _ReviewEarTag(
-              visualTag: _visualTag(draft),
-            ),
             rows: [
               RegisterAnimalReviewRow(
                 label: '',
                 value: draft.rfid,
-              ),
-              RegisterAnimalReviewRow(
-                label: '',
-                value: _visualTag(draft),
               ),
             ],
           ),
@@ -125,10 +118,6 @@ class RegisterAnimalReviewStep extends StatelessWidget {
     );
   }
 
-  String _visualTag(RegisterAnimalDraft draft) {
-    return '${draft.visualTagSeries} ${draft.visualTagNumber}'.trim();
-  }
-
   String _parent(AnimalParent? parent) =>
       parent == null ? AnimalRegisterStrings.stepFourNoDataValue : '${parent.visualTag} · ${parent.breed}';
 
@@ -144,36 +133,5 @@ class RegisterAnimalReviewStep extends StatelessWidget {
       }
     }
     return AnimalRegisterStrings.stepFourNoDataValue;
-  }
-}
-
-class _ReviewEarTag extends StatelessWidget {
-  const _ReviewEarTag({
-    required this.visualTag,
-  });
-
-  final String visualTag;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 62,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-      ),
-      child: Text(
-        visualTag.replaceFirst(' ', '\n'),
-        style: AppTypography.smallEmphasis.copyWith(
-          color: AppColors.textPrimary,
-          height: 1,
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
   }
 }

@@ -54,9 +54,11 @@ class _OperatingExpenseFormState extends State<OperatingExpenseForm> {
   Widget build(BuildContext context) {
     return BlocBuilder<OperatingExpenseCubit, OperatingExpenseState>(
       builder: (context, state) {
-        return Form(
-          key: _formKey,
-          child: Column(
+        return SafeArea(
+          top: false,
+          child: Form(
+            key: _formKey,
+            child: Column(
             children: [
               Expanded(
                 child: ListView(
@@ -97,6 +99,7 @@ class _OperatingExpenseFormState extends State<OperatingExpenseForm> {
                 onSave: _save,
               ),
             ],
+            ),
           ),
         );
       },

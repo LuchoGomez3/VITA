@@ -64,7 +64,9 @@ class _TextEntryDialogState extends State<_TextEntryDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final dialogWidth = MediaQuery.sizeOf(context).width * 0.9;
     return AlertDialog(
+      constraints: BoxConstraints(minWidth: dialogWidth, maxWidth: dialogWidth),
       title: Text(widget.isWeight ? AnimalDetailStrings.enterWeightAction : AnimalDetailStrings.newObservationAction),
       content: SingleChildScrollView(
         child: Form(

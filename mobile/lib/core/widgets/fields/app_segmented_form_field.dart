@@ -102,6 +102,7 @@ class AppSegmentedFormField<T> extends StatelessWidget {
                           }
                         : null,
                     style: ButtonStyle(
+                      animationDuration: const Duration(milliseconds: 220),
                       backgroundColor: WidgetStateProperty.resolveWith(
                         (states) => states.contains(WidgetState.selected) ? AppColors.primary : AppColors.background,
                       ),

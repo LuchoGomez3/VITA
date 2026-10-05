@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
@@ -85,6 +86,10 @@ class _RegisterAnimalIdentificationStepState extends State<RegisterAnimalIdentif
               title: AnimalRegisterStrings.rfidFieldTitle,
               hintText: AnimalRegisterStrings.rfidFieldHint,
               keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(15),
+              ],
               helperText: ' ',
               validation: rfidError == null ? AppFieldValidation.neutral : AppFieldValidation.invalid,
               validationMessage: rfidError,
@@ -121,10 +126,16 @@ class _RegisterAnimalIdentificationStepState extends State<RegisterAnimalIdentif
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
-            AppOutlinedButton(
-              label: AnimalRegisterStrings.bluetoothButtonLabel,
-              icon: const Icon(Icons.bluetooth),
-              onPressed: widget.onBluetoothRequested,
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.earTagBlue.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: AppOutlinedButton(
+                label: AnimalRegisterStrings.bluetoothButtonLabel,
+                icon: const Icon(Icons.bluetooth, color: AppColors.textPrimary),
+                onPressed: widget.onBluetoothRequested,
+              ),
             ),
           ],
         ),

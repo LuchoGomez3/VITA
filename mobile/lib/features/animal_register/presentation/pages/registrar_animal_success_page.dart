@@ -57,7 +57,7 @@ class RegistrarAnimalSuccessPage extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               AppOutlinedButton(
-                label: AnimalRegisterStrings.viewAnimalDetails(registration.visualTag),
+                label: AnimalRegisterStrings.viewAnimalDetails,
                 icon: const Icon(Icons.visibility_outlined),
                 onPressed: () => context.push(AppRoutes.animalDetailById(registeredAnimal.id)),
               ),

@@ -63,7 +63,9 @@ class _AnimalDetailView extends StatelessWidget {
         title: AnimalDetailStrings.pageTitle,
         onBackPressed: () => _close(context),
       ),
-      body: BlocConsumer<AnimalDetailCubit, AnimalDetailState>(
+      body: SafeArea(
+        top: false,
+        child: BlocConsumer<AnimalDetailCubit, AnimalDetailState>(
         listenWhen: (previous, current) => previous.saving != current.saving,
         listener: (context, state) {
           final saving = state.saving;
@@ -102,6 +104,7 @@ class _AnimalDetailView extends StatelessWidget {
             _ => const SizedBox.shrink(),
           };
         },
+        ),
       ),
     );
   }
