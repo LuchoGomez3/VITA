@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import Date, Numeric, String, UniqueConstraint
+from sqlalchemy import Date, Index, Numeric, String, UniqueConstraint
 from sqlmodel import Field
 
 from api.shared.enums import TipoEgresoOperativo
@@ -15,6 +15,9 @@ class EgresoOperativo(Base, SoftDeleteMixin, table=True):
     """Movimiento de caja negativo asociado obligatoriamente a un establecimiento."""
 
     __tablename__ = "egresos_operativos"
+    __table_args__ = (
+        Index("ix_egresos_operativos_sync", "establecimiento_id", "updated_at"),
+    )
 
     establecimiento_id: UUID = Field(foreign_key="establecimientos.id", index=True)
     monto: Decimal = Field(sa_type=Numeric(14, 2), nullable=False)
