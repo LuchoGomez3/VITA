@@ -13,7 +13,9 @@ __all__ = [
     "AnimalNoEncontradoError",
     "AnimalReferenciaInvalidaError",
     "CaravanaDuplicadaError",
+    "CategoriaIncompatibleConSexoError",
     "EstablecimientoNoAutorizadoError",
+    "EstadoReproductivoInvalidoError",
     "LoteNoPerteneceAlEstablecimientoError",
 ]
 
@@ -48,3 +50,16 @@ class AnimalNoEncontradoError(NotFoundError):
 
     def __init__(self) -> None:
         super().__init__("Animal no encontrado o sin acceso")
+
+
+class CategoriaIncompatibleConSexoError(ValidationError):
+    code = "categoria_incompatible_con_sexo"
+
+    def __init__(self) -> None:
+        super().__init__(
+            "La categoría seleccionada no es compatible con el sexo del animal"
+        )
+
+
+class EstadoReproductivoInvalidoError(ValidationError):
+    code = "estado_reproductivo_invalido"
