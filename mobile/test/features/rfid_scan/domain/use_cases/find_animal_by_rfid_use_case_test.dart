@@ -32,4 +32,10 @@ class _FakeRfidAnimalLookupRepository implements RfidAnimalLookupRepository {
     this.establishmentId = establishmentId;
     return const Result.success(null);
   }
+
+  @override
+  Future<Result<List<IdentifiedAnimal>>> findByRfidPrefix({
+    required String rfidPrefix,
+    required String establishmentId,
+  }) async => const Result.success(<IdentifiedAnimal>[]);
 }

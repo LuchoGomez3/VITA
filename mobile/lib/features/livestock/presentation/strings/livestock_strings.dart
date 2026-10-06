@@ -9,6 +9,21 @@ abstract final class LivestockStrings {
   /// Explica los caminos disponibles después de identificar la caravana.
   static const readTagDescription = 'Leé la caravana con el bastón para consultar un animal o registrar uno nuevo.';
 
+  /// Titulo del acceso al registro de ventas.
+  static const saleRegisterTitle = 'Registrar venta';
+
+  /// Descripcion del registro comercial de animales.
+  static const saleRegisterDescription = 'Seleccioná animales y registrá los datos de la operación.';
+
+  /// Titulo del selector cuando hay mas de un establecimiento habilitado.
+  static const saleEstablishmentSelectionTitle = 'Seleccioná el establecimiento';
+
+  /// Mensaje mostrado cuando no se puede consultar el catalogo local.
+  static const saleAccessError = 'No se pudo verificar el acceso al registro de ventas.';
+
+  /// Accion para volver a consultar el catalogo local.
+  static const retry = 'Reintentar';
+
   /// Título del acceso al mapa.
   static const fieldTitle = 'Campo y potreros';
 

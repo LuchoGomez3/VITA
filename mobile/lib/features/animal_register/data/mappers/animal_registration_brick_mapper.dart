@@ -44,6 +44,7 @@ class AnimalRegistrationBrickMapper {
       fatherId: registration.fatherId,
       coat: registration.coat,
       observations: registration.observations,
+      status: 'activo',
       createdAt: timestamp,
       updatedAt: timestamp,
     );

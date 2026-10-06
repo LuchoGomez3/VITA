@@ -93,9 +93,8 @@ class BrickLotStore implements LotBrickStore {
 
   @override
   Future<void> pullRemoteLots(String establishmentId) async {
-    // TODO(field-sync): invocar este pull desde el coordinador global de sync
-    // por cada establecimiento y acordar cursor/LWW con backend.
-    if (!_enableRemoteSync) return;
+    // La lectura remota mantiene disponible el catalogo offline aunque las
+    // escrituras de lotes continuen protegidas por el feature flag.
     final remoteLots = await _repository.remoteProvider.get<BrickLotModel>(
       repository: _repository,
       query: Query(

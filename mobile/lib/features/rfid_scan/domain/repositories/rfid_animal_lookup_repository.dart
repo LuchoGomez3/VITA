@@ -11,4 +11,10 @@ abstract class RfidAnimalLookupRepository {
     required String rfidTagNumber,
     required String establishmentId,
   });
+
+  /// Busca animales cuyas caravanas comienzan con [rfidPrefix].
+  Future<Result<List<IdentifiedAnimal>>> findByRfidPrefix({
+    required String rfidPrefix,
+    required String establishmentId,
+  });
 }

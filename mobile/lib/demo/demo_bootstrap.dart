@@ -155,7 +155,7 @@ class DemoBootstrap {
     surfaceTenths: surface,
     forageResourceCode: forage,
     hasWater: true,
-    statusCode: 'active',
+    statusCode: 'activo',
     createdAt: DateTime.utc(2026, 1),
     updatedAt: DateTime.utc(2026, 9, 20),
     syncStatus: BrickLotSyncStatus.synchronized,

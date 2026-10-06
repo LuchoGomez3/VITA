@@ -312,14 +312,24 @@ class AppBrickTransaction {
   final Transaction _transaction;
   final List<Future<void> Function()> _afterCommit;
 
-  /// Lee dentro de la misma transacción que valida y modifica los modelos.
-  /// Así dos operaciones concurrentes no validan una ubicación ya desactualizada.
+  /// Lee todos los registros de [TModel] usando la misma transaccion SQLite.
+  ///
+  /// Las operaciones compuestas deben validar el estado que van a modificar
+  /// dentro del mismo limite transaccional. Leer antes de abrir la transaccion
+  /// dejaria una ventana para confirmar una venta con datos locales obsoletos.
   Future<List<TModel>> getLocal<TModel extends OfflineFirstWithRestModel>() async {
-    final adapter = _repository.sqliteProvider.modelDictionary.adapterFor[TModel]! as SqliteAdapter<TModel>;
+    final adapter = _repository.sqliteProvider.modelDictionary.adapterFor[TModel]!;
     final rows = await _transaction.query(adapter.tableName);
-    return Future.wait([
-      for (final row in rows) adapter.fromSqlite(row, provider: _repository.sqliteProvider, repository: _repository),
-    ]);
+    final models = <TModel>[];
+    for (final row in rows) {
+      final model = await adapter.fromSqlite(
+        row,
+        provider: _repository.sqliteProvider,
+        repository: _repository,
+      );
+      models.add(model as TModel);
+    }
+    return models;
   }
 
   /// Inserta o actualiza [model] usando el adapter generado por Brick.

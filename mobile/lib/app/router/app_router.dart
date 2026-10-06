@@ -43,7 +43,11 @@ import 'package:frontend_mayoral/features/field/presentation/strings/field_strin
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
+import 'package:frontend_mayoral/features/livestock/livestock_composition.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
+import 'package:frontend_mayoral/features/livestock_sales/livestock_sales_composition.dart';
+import 'package:frontend_mayoral/features/livestock_sales/presentation/pages/livestock_sale_flow_page.dart';
+import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/strings/livestock_strings.dart';
 import 'package:frontend_mayoral/features/lot_movement/lot_movement_composition.dart';
 import 'package:frontend_mayoral/features/lot_movement/presentation/pages/lot_movement_page.dart';
@@ -148,6 +152,7 @@ class AppRouter {
                 GoRoute(
                   path: AppRoutes.livestock,
                   builder: (context, state) => LivestockPage(
+                    createAccessCubit: createLivestockAccessCubit,
                     onIdentifyAnimal: () => _openLivestockReader(context),
                   ),
                 ),
@@ -330,6 +335,7 @@ class AppRouter {
             }
 
             final readingSource = HidRfidReadingSource();
+            final selectsForSale = state.uri.queryParameters['modo'] == AppRoutes.rfidSaleSelectionMode;
             final selectingForVision = state.uri.queryParameters['seleccionarParaPesajeIA'] == 'true';
             return RfidScanPage(
               establishmentId: establishmentId,
@@ -347,7 +353,8 @@ class AppRouter {
                   establishmentId: establishmentId,
                 ),
               ),
-              onAnimalSelected: selectingForVision ? (animalId) => context.pop(animalId) : null,
+              onAnimalSelected: selectsForSale || selectingForVision ? (identifier) => context.pop(identifier) : null,
+              returnRfidOnSelection: selectsForSale,
             );
           },
         ),
@@ -420,6 +427,25 @@ class AppRouter {
           builder: (context, state) => const ShellPlaceholderPage(
             title: HomeStrings.registerIncome,
           ),
+        ),
+        GoRoute(
+          path: AppRoutes.livestockSaleRegister,
+          builder: (context, state) {
+            final establishmentId = state.uri.queryParameters['establecimientoId'];
+            if (establishmentId == null || establishmentId.trim().isEmpty) {
+              return const ShellPlaceholderPage(
+                title: LivestockSaleStrings.requiredEstablishment,
+              );
+            }
+            return FinancialRouteGuard(
+              establishmentId: establishmentId,
+              getEstablishmentRole: getEstablishmentRole,
+              child: LivestockSaleFlowPage(
+                establishmentId: establishmentId,
+                createBloc: createLivestockSaleBloc,
+              ),
+            );
+          },
         ),
         GoRoute(
           path: AppRoutes.senasaReport,

@@ -48,6 +48,7 @@ class LotAnimalMovementRepositoryImpl implements LotAnimalMovementRepository {
           selected.any(
             (animal) =>
                 animal.deletedAt != null ||
+                animal.status != 'activo' ||
                 animal.establishmentId != movement.establishmentId ||
                 animal.lotId != movement.sourceLotId,
           )) {

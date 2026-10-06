@@ -36,6 +36,7 @@ void main() {
       expect(model.localId, 'local-id');
       expect(model.sex, BrickAnimalSex.female);
       expect(model.weighingMethod, BrickAnimalWeighingMethod.bluetoothScale);
+      expect(model.status, 'activo');
       expect(model.syncStatus, BrickAnimalSyncStatus.pending);
       expect(model.createdAt, now);
       expect(model.updatedAt, now);
@@ -110,6 +111,7 @@ void main() {
       expect(payload['lote_id'], 'lot-id');
       expect(payload['establecimiento_id'], 'establishment-id');
       expect(payload['metodo_pesaje'], 'balanza_bluetooth');
+      expect(payload, isNot(contains('estado')));
     });
   });
 }

@@ -24,4 +24,11 @@ void main() {
     expect(UserRole.employee.canViewFinancialInformation, isFalse);
     expect(UserRole.unknown.canViewFinancialInformation, isFalse);
   });
+
+  test('grants livestock sale access only to admin and owner', () {
+    expect(UserRole.admin.canRegisterLivestockSale, isTrue);
+    expect(UserRole.owner.canRegisterLivestockSale, isTrue);
+    expect(UserRole.employee.canRegisterLivestockSale, isFalse);
+    expect(UserRole.unknown.canRegisterLivestockSale, isFalse);
+  });
 }

@@ -24,6 +24,7 @@ import '../brick/models/animal_lot_movement.model.dart';
 import '../brick/models/animal_observation.model.dart';
 import '../brick/models/animal_update.model.dart';
 import '../brick/models/categoria.model.dart';
+import '../brick/models/livestock_sale.model.dart';
 import '../brick/models/lot.model.dart';
 import '../brick/models/operating_expense.model.dart';
 import '../brick/models/operating_expense_category.model.dart';
@@ -34,6 +35,7 @@ part 'adapters/brick_animal_lot_movement_model_adapter.g.dart';
 part 'adapters/brick_animal_observation_model_adapter.g.dart';
 part 'adapters/brick_animal_update_model_adapter.g.dart';
 part 'adapters/brick_categoria_model_adapter.g.dart';
+part 'adapters/brick_livestock_sale_model_adapter.g.dart';
 part 'adapters/brick_lot_model_adapter.g.dart';
 part 'adapters/brick_operating_expense_model_adapter.g.dart';
 part 'adapters/brick_operating_expense_category_model_adapter.g.dart';
@@ -46,6 +48,7 @@ final Map<Type, RestAdapter<RestModel>> restMappings = {
   BrickAnimalObservationModel: BrickAnimalObservationModelAdapter(),
   BrickAnimalUpdateModel: BrickAnimalUpdateModelAdapter(),
   BrickCategoriaModel: BrickCategoriaModelAdapter(),
+  BrickLivestockSaleModel: BrickLivestockSaleModelAdapter(),
   BrickLotModel: BrickLotModelAdapter(),
   BrickOperatingExpenseModel: BrickOperatingExpenseModelAdapter(),
   BrickOperatingExpenseCategoryModel: BrickOperatingExpenseCategoryModelAdapter(),
@@ -60,6 +63,7 @@ final Map<Type, SqliteAdapter<SqliteModel>> sqliteMappings = {
   BrickAnimalObservationModel: BrickAnimalObservationModelAdapter(),
   BrickAnimalUpdateModel: BrickAnimalUpdateModelAdapter(),
   BrickCategoriaModel: BrickCategoriaModelAdapter(),
+  BrickLivestockSaleModel: BrickLivestockSaleModelAdapter(),
   BrickLotModel: BrickLotModelAdapter(),
   BrickOperatingExpenseModel: BrickOperatingExpenseModelAdapter(),
   BrickOperatingExpenseCategoryModel: BrickOperatingExpenseCategoryModelAdapter(),
