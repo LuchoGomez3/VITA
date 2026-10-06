@@ -11,6 +11,7 @@ import 'package:frontend_mayoral/features/livestock_sales/domain/repositories/li
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/add_animal_to_livestock_sale_selection_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/confirm_livestock_sale_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/remove_animal_from_livestock_sale_selection_use_case.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/search_livestock_sale_animals_by_rfid_prefix_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/livestock_sale_bloc.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
 
@@ -70,6 +71,57 @@ void main() {
       await _waitUntil(bloc, (state) => state.selection.animals.isEmpty);
 
       expect(bloc.state.animalSelectionResult, isA<Data<LivestockSaleSelection>>());
+    });
+
+    test('oculta animales seleccionados, vendidos y muertos en sugerencias', () async {
+      animalRepository.suggestions = const [
+        LivestockSaleAnimal(
+          id: 'animal-id',
+          establishmentId: 'establishment-id',
+          rfidTagNumber: _rfid,
+          visualTag: '1295',
+          categoryName: 'Novillo',
+          lotName: 'Lote Norte',
+          status: LivestockSaleAnimalStatus.active,
+        ),
+        LivestockSaleAnimal(
+          id: 'available-animal',
+          establishmentId: 'establishment-id',
+          rfidTagNumber: '982000000001296',
+          visualTag: '1296',
+          categoryName: 'Novillo',
+          lotName: 'Lote Norte',
+          status: LivestockSaleAnimalStatus.active,
+        ),
+        LivestockSaleAnimal(
+          id: 'sold-animal',
+          establishmentId: 'establishment-id',
+          rfidTagNumber: '982000000001297',
+          visualTag: '1297',
+          categoryName: 'Novillo',
+          lotName: 'Lote Norte',
+          status: LivestockSaleAnimalStatus.sold,
+        ),
+        LivestockSaleAnimal(
+          id: 'dead-animal',
+          establishmentId: 'establishment-id',
+          rfidTagNumber: '982000000001298',
+          visualTag: '1298',
+          categoryName: 'Novillo',
+          lotName: 'Lote Norte',
+          status: LivestockSaleAnimalStatus.dead,
+        ),
+      ];
+      await _addAnimal(bloc);
+
+      bloc.add(const LivestockSaleEvent.rfidPrefixChanged('982'));
+      await _waitUntil(
+        bloc,
+        (state) => state.rfidSuggestions is Data<List<LivestockSaleAnimal>>,
+      );
+
+      final suggestions = (bloc.state.rfidSuggestions as Data<List<LivestockSaleAnimal>>).data;
+      expect(suggestions.map((animal) => animal.id), ['available-animal']);
     });
 
     test('conserva todos los campos al avanzar y retroceder', () async {
@@ -279,6 +331,9 @@ LivestockSaleBloc _createBloc({
     addAnimal: AddAnimalToLivestockSaleSelectionUseCase(
       repository: animalRepository,
     ),
+    searchAnimalsByRfidPrefix: SearchLivestockSaleAnimalsByRfidPrefixUseCase(
+      repository: animalRepository,
+    ),
     removeAnimal: const RemoveAnimalFromLivestockSaleSelectionUseCase(),
     confirmSale: ConfirmLivestockSaleUseCase(
       repository: saleRepository,
@@ -318,6 +373,13 @@ Future<void> _waitUntil(
 }
 
 class _AnimalRepository implements LivestockSaleAnimalRepository {
+  List<LivestockSaleAnimal> suggestions = const [];
+
+  @override
+  Future<Result<List<LivestockSaleAnimal>>> findLocalByRfidPrefix(
+    String prefix,
+  ) async => Result.success(suggestions);
+
   @override
   Future<Result<LivestockSaleAnimal?>> findLocalByRfidTagNumber(
     String rfidTagNumber,

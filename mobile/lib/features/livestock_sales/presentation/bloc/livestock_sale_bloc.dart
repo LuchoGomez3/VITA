@@ -12,6 +12,7 @@ import 'package:frontend_mayoral/features/livestock_sales/domain/services/livest
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/add_animal_to_livestock_sale_selection_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/confirm_livestock_sale_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/remove_animal_from_livestock_sale_selection_use_case.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/search_livestock_sale_animals_by_rfid_prefix_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
 
 part 'livestock_sale_bloc.freezed.dart';
@@ -24,10 +25,12 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
   LivestockSaleBloc({
     required String establishmentId,
     required AddAnimalToLivestockSaleSelectionUseCase addAnimal,
+    required SearchLivestockSaleAnimalsByRfidPrefixUseCase searchAnimalsByRfidPrefix,
     required RemoveAnimalFromLivestockSaleSelectionUseCase removeAnimal,
     required ConfirmLivestockSaleUseCase confirmSale,
     DateTime Function()? now,
   }) : _addAnimal = addAnimal,
+       _searchAnimalsByRfidPrefix = searchAnimalsByRfidPrefix,
        _removeAnimal = removeAnimal,
        _confirmSale = confirmSale,
        _now = now ?? DateTime.now,
@@ -41,6 +44,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
        ) {
     on<_FormChanged>(_onFormChanged);
     on<_AnimalAddRequested>(_onAnimalAddRequested);
+    on<_RfidPrefixChanged>(_onRfidPrefixChanged);
     on<_AnimalRemoveRequested>(_onAnimalRemoveRequested);
     on<_NextStepRequested>(_onNextStepRequested);
     on<_PreviousStepRequested>(_onPreviousStepRequested);
@@ -48,6 +52,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
   }
 
   final AddAnimalToLivestockSaleSelectionUseCase _addAnimal;
+  final SearchLivestockSaleAnimalsByRfidPrefixUseCase _searchAnimalsByRfidPrefix;
   final RemoveAnimalFromLivestockSaleSelectionUseCase _removeAnimal;
   final ConfirmLivestockSaleUseCase _confirmSale;
   final DateTime Function() _now;
@@ -93,6 +98,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
           state.copyWith(
             selection: data,
             animalSelectionResult: ResultState.data(data),
+            rfidPrefix: '',
+            rfidSuggestions: const ResultState.initial(),
           ),
         );
       case Failure<LivestockSaleSelection>(:final error):
@@ -103,6 +110,50 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
             ),
           ),
         );
+    }
+  }
+
+  Future<void> _onRfidPrefixChanged(
+    _RfidPrefixChanged event,
+    Emitter<LivestockSaleState> emit,
+  ) async {
+    final prefix = event.prefix.trim();
+    if (prefix.isEmpty) {
+      emit(
+        state.copyWith(
+          rfidPrefix: '',
+          rfidSuggestions: const ResultState.initial(),
+        ),
+      );
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        rfidPrefix: prefix,
+      ),
+    );
+    final result = await _searchAnimalsByRfidPrefix(prefix);
+
+    // Una respuesta lenta de un prefijo anterior no debe reemplazar a la
+    // búsqueda que el productor está viendo actualmente.
+    if (state.rfidPrefix != prefix) return;
+
+    switch (result) {
+      case Success<List<LivestockSaleAnimal>>(:final data):
+        final selectedAnimalIds = state.selection.animals.map((animal) => animal.id).toSet();
+        final availableAnimals = data
+            .where(
+              (animal) => animal.status == LivestockSaleAnimalStatus.active && !selectedAnimalIds.contains(animal.id),
+            )
+            .toList(growable: false);
+        emit(
+          state.copyWith(
+            rfidSuggestions: ResultState.data(availableAnimals),
+          ),
+        );
+      case Failure<List<LivestockSaleAnimal>>(:final error):
+        emit(state.copyWith(rfidSuggestions: ResultState.error(error)));
     }
   }
 

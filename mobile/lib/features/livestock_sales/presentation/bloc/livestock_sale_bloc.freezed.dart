@@ -55,12 +55,13 @@ extension LivestockSaleEventPatterns on LivestockSaleEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _FormChanged value)?  formChanged,TResult Function( _AnimalAddRequested value)?  animalAddRequested,TResult Function( _AnimalRemoveRequested value)?  animalRemoveRequested,TResult Function( _NextStepRequested value)?  nextStepRequested,TResult Function( _PreviousStepRequested value)?  previousStepRequested,TResult Function( _SubmitRequested value)?  submitRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _FormChanged value)?  formChanged,TResult Function( _AnimalAddRequested value)?  animalAddRequested,TResult Function( _RfidPrefixChanged value)?  rfidPrefixChanged,TResult Function( _AnimalRemoveRequested value)?  animalRemoveRequested,TResult Function( _NextStepRequested value)?  nextStepRequested,TResult Function( _PreviousStepRequested value)?  previousStepRequested,TResult Function( _SubmitRequested value)?  submitRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _FormChanged() when formChanged != null:
 return formChanged(_that);case _AnimalAddRequested() when animalAddRequested != null:
-return animalAddRequested(_that);case _AnimalRemoveRequested() when animalRemoveRequested != null:
+return animalAddRequested(_that);case _RfidPrefixChanged() when rfidPrefixChanged != null:
+return rfidPrefixChanged(_that);case _AnimalRemoveRequested() when animalRemoveRequested != null:
 return animalRemoveRequested(_that);case _NextStepRequested() when nextStepRequested != null:
 return nextStepRequested(_that);case _PreviousStepRequested() when previousStepRequested != null:
 return previousStepRequested(_that);case _SubmitRequested() when submitRequested != null:
@@ -82,12 +83,13 @@ return submitRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _FormChanged value)  formChanged,required TResult Function( _AnimalAddRequested value)  animalAddRequested,required TResult Function( _AnimalRemoveRequested value)  animalRemoveRequested,required TResult Function( _NextStepRequested value)  nextStepRequested,required TResult Function( _PreviousStepRequested value)  previousStepRequested,required TResult Function( _SubmitRequested value)  submitRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _FormChanged value)  formChanged,required TResult Function( _AnimalAddRequested value)  animalAddRequested,required TResult Function( _RfidPrefixChanged value)  rfidPrefixChanged,required TResult Function( _AnimalRemoveRequested value)  animalRemoveRequested,required TResult Function( _NextStepRequested value)  nextStepRequested,required TResult Function( _PreviousStepRequested value)  previousStepRequested,required TResult Function( _SubmitRequested value)  submitRequested,}){
 final _that = this;
 switch (_that) {
 case _FormChanged():
 return formChanged(_that);case _AnimalAddRequested():
-return animalAddRequested(_that);case _AnimalRemoveRequested():
+return animalAddRequested(_that);case _RfidPrefixChanged():
+return rfidPrefixChanged(_that);case _AnimalRemoveRequested():
 return animalRemoveRequested(_that);case _NextStepRequested():
 return nextStepRequested(_that);case _PreviousStepRequested():
 return previousStepRequested(_that);case _SubmitRequested():
@@ -105,12 +107,13 @@ return submitRequested(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _FormChanged value)?  formChanged,TResult? Function( _AnimalAddRequested value)?  animalAddRequested,TResult? Function( _AnimalRemoveRequested value)?  animalRemoveRequested,TResult? Function( _NextStepRequested value)?  nextStepRequested,TResult? Function( _PreviousStepRequested value)?  previousStepRequested,TResult? Function( _SubmitRequested value)?  submitRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _FormChanged value)?  formChanged,TResult? Function( _AnimalAddRequested value)?  animalAddRequested,TResult? Function( _RfidPrefixChanged value)?  rfidPrefixChanged,TResult? Function( _AnimalRemoveRequested value)?  animalRemoveRequested,TResult? Function( _NextStepRequested value)?  nextStepRequested,TResult? Function( _PreviousStepRequested value)?  previousStepRequested,TResult? Function( _SubmitRequested value)?  submitRequested,}){
 final _that = this;
 switch (_that) {
 case _FormChanged() when formChanged != null:
 return formChanged(_that);case _AnimalAddRequested() when animalAddRequested != null:
-return animalAddRequested(_that);case _AnimalRemoveRequested() when animalRemoveRequested != null:
+return animalAddRequested(_that);case _RfidPrefixChanged() when rfidPrefixChanged != null:
+return rfidPrefixChanged(_that);case _AnimalRemoveRequested() when animalRemoveRequested != null:
 return animalRemoveRequested(_that);case _NextStepRequested() when nextStepRequested != null:
 return nextStepRequested(_that);case _PreviousStepRequested() when previousStepRequested != null:
 return previousStepRequested(_that);case _SubmitRequested() when submitRequested != null:
@@ -131,11 +134,12 @@ return submitRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( LivestockSaleFormDraft form)?  formChanged,TResult Function( String rfidTagNumber)?  animalAddRequested,TResult Function( String animalId)?  animalRemoveRequested,TResult Function()?  nextStepRequested,TResult Function()?  previousStepRequested,TResult Function()?  submitRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( LivestockSaleFormDraft form)?  formChanged,TResult Function( String rfidTagNumber)?  animalAddRequested,TResult Function( String prefix)?  rfidPrefixChanged,TResult Function( String animalId)?  animalRemoveRequested,TResult Function()?  nextStepRequested,TResult Function()?  previousStepRequested,TResult Function()?  submitRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _FormChanged() when formChanged != null:
 return formChanged(_that.form);case _AnimalAddRequested() when animalAddRequested != null:
-return animalAddRequested(_that.rfidTagNumber);case _AnimalRemoveRequested() when animalRemoveRequested != null:
+return animalAddRequested(_that.rfidTagNumber);case _RfidPrefixChanged() when rfidPrefixChanged != null:
+return rfidPrefixChanged(_that.prefix);case _AnimalRemoveRequested() when animalRemoveRequested != null:
 return animalRemoveRequested(_that.animalId);case _NextStepRequested() when nextStepRequested != null:
 return nextStepRequested();case _PreviousStepRequested() when previousStepRequested != null:
 return previousStepRequested();case _SubmitRequested() when submitRequested != null:
@@ -157,11 +161,12 @@ return submitRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( LivestockSaleFormDraft form)  formChanged,required TResult Function( String rfidTagNumber)  animalAddRequested,required TResult Function( String animalId)  animalRemoveRequested,required TResult Function()  nextStepRequested,required TResult Function()  previousStepRequested,required TResult Function()  submitRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( LivestockSaleFormDraft form)  formChanged,required TResult Function( String rfidTagNumber)  animalAddRequested,required TResult Function( String prefix)  rfidPrefixChanged,required TResult Function( String animalId)  animalRemoveRequested,required TResult Function()  nextStepRequested,required TResult Function()  previousStepRequested,required TResult Function()  submitRequested,}) {final _that = this;
 switch (_that) {
 case _FormChanged():
 return formChanged(_that.form);case _AnimalAddRequested():
-return animalAddRequested(_that.rfidTagNumber);case _AnimalRemoveRequested():
+return animalAddRequested(_that.rfidTagNumber);case _RfidPrefixChanged():
+return rfidPrefixChanged(_that.prefix);case _AnimalRemoveRequested():
 return animalRemoveRequested(_that.animalId);case _NextStepRequested():
 return nextStepRequested();case _PreviousStepRequested():
 return previousStepRequested();case _SubmitRequested():
@@ -179,11 +184,12 @@ return submitRequested();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( LivestockSaleFormDraft form)?  formChanged,TResult? Function( String rfidTagNumber)?  animalAddRequested,TResult? Function( String animalId)?  animalRemoveRequested,TResult? Function()?  nextStepRequested,TResult? Function()?  previousStepRequested,TResult? Function()?  submitRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( LivestockSaleFormDraft form)?  formChanged,TResult? Function( String rfidTagNumber)?  animalAddRequested,TResult? Function( String prefix)?  rfidPrefixChanged,TResult? Function( String animalId)?  animalRemoveRequested,TResult? Function()?  nextStepRequested,TResult? Function()?  previousStepRequested,TResult? Function()?  submitRequested,}) {final _that = this;
 switch (_that) {
 case _FormChanged() when formChanged != null:
 return formChanged(_that.form);case _AnimalAddRequested() when animalAddRequested != null:
-return animalAddRequested(_that.rfidTagNumber);case _AnimalRemoveRequested() when animalRemoveRequested != null:
+return animalAddRequested(_that.rfidTagNumber);case _RfidPrefixChanged() when rfidPrefixChanged != null:
+return rfidPrefixChanged(_that.prefix);case _AnimalRemoveRequested() when animalRemoveRequested != null:
 return animalRemoveRequested(_that.animalId);case _NextStepRequested() when nextStepRequested != null:
 return nextStepRequested();case _PreviousStepRequested() when previousStepRequested != null:
 return previousStepRequested();case _SubmitRequested() when submitRequested != null:
@@ -329,6 +335,72 @@ class __$AnimalAddRequestedCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') $Res call({Object? rfidTagNumber = null,}) {
   return _then(_AnimalAddRequested(
 null == rfidTagNumber ? _self.rfidTagNumber : rfidTagNumber // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class _RfidPrefixChanged implements LivestockSaleEvent {
+  const _RfidPrefixChanged(this.prefix);
+  
+
+ final  String prefix;
+
+/// Create a copy of LivestockSaleEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$RfidPrefixChangedCopyWith<_RfidPrefixChanged> get copyWith => __$RfidPrefixChangedCopyWithImpl<_RfidPrefixChanged>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RfidPrefixChanged&&(identical(other.prefix, prefix) || other.prefix == prefix));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,prefix);
+
+@override
+String toString() {
+  return 'LivestockSaleEvent.rfidPrefixChanged(prefix: $prefix)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$RfidPrefixChangedCopyWith<$Res> implements $LivestockSaleEventCopyWith<$Res> {
+  factory _$RfidPrefixChangedCopyWith(_RfidPrefixChanged value, $Res Function(_RfidPrefixChanged) _then) = __$RfidPrefixChangedCopyWithImpl;
+@useResult
+$Res call({
+ String prefix
+});
+
+
+
+
+}
+/// @nodoc
+class __$RfidPrefixChangedCopyWithImpl<$Res>
+    implements _$RfidPrefixChangedCopyWith<$Res> {
+  __$RfidPrefixChangedCopyWithImpl(this._self, this._then);
+
+  final _RfidPrefixChanged _self;
+  final $Res Function(_RfidPrefixChanged) _then;
+
+/// Create a copy of LivestockSaleEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? prefix = null,}) {
+  return _then(_RfidPrefixChanged(
+null == prefix ? _self.prefix : prefix // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
@@ -800,7 +872,7 @@ as String,
 /// @nodoc
 mixin _$LivestockSaleState {
 
- LivestockSaleFormDraft get form; LivestockSaleStep get currentStep; LivestockSaleSelection get selection; ResultState<LivestockSaleSelection> get animalSelectionResult; ResultState<LivestockSale> get submitResult; DomainException? get stepError;
+ LivestockSaleFormDraft get form; LivestockSaleStep get currentStep; LivestockSaleSelection get selection; ResultState<LivestockSaleSelection> get animalSelectionResult; ResultState<List<LivestockSaleAnimal>> get rfidSuggestions; String get rfidPrefix; ResultState<LivestockSale> get submitResult; DomainException? get stepError;
 /// Create a copy of LivestockSaleState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -811,16 +883,16 @@ $LivestockSaleStateCopyWith<LivestockSaleState> get copyWith => _$LivestockSaleS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LivestockSaleState&&(identical(other.form, form) || other.form == form)&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.selection, selection) || other.selection == selection)&&(identical(other.animalSelectionResult, animalSelectionResult) || other.animalSelectionResult == animalSelectionResult)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult)&&(identical(other.stepError, stepError) || other.stepError == stepError));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LivestockSaleState&&(identical(other.form, form) || other.form == form)&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.selection, selection) || other.selection == selection)&&(identical(other.animalSelectionResult, animalSelectionResult) || other.animalSelectionResult == animalSelectionResult)&&(identical(other.rfidSuggestions, rfidSuggestions) || other.rfidSuggestions == rfidSuggestions)&&(identical(other.rfidPrefix, rfidPrefix) || other.rfidPrefix == rfidPrefix)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult)&&(identical(other.stepError, stepError) || other.stepError == stepError));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,form,currentStep,selection,animalSelectionResult,submitResult,stepError);
+int get hashCode => Object.hash(runtimeType,form,currentStep,selection,animalSelectionResult,rfidSuggestions,rfidPrefix,submitResult,stepError);
 
 @override
 String toString() {
-  return 'LivestockSaleState(form: $form, currentStep: $currentStep, selection: $selection, animalSelectionResult: $animalSelectionResult, submitResult: $submitResult, stepError: $stepError)';
+  return 'LivestockSaleState(form: $form, currentStep: $currentStep, selection: $selection, animalSelectionResult: $animalSelectionResult, rfidSuggestions: $rfidSuggestions, rfidPrefix: $rfidPrefix, submitResult: $submitResult, stepError: $stepError)';
 }
 
 
@@ -831,11 +903,11 @@ abstract mixin class $LivestockSaleStateCopyWith<$Res>  {
   factory $LivestockSaleStateCopyWith(LivestockSaleState value, $Res Function(LivestockSaleState) _then) = _$LivestockSaleStateCopyWithImpl;
 @useResult
 $Res call({
- LivestockSaleFormDraft form, LivestockSaleStep currentStep, LivestockSaleSelection selection, ResultState<LivestockSaleSelection> animalSelectionResult, ResultState<LivestockSale> submitResult, DomainException? stepError
+ LivestockSaleFormDraft form, LivestockSaleStep currentStep, LivestockSaleSelection selection, ResultState<LivestockSaleSelection> animalSelectionResult, ResultState<List<LivestockSaleAnimal>> rfidSuggestions, String rfidPrefix, ResultState<LivestockSale> submitResult, DomainException? stepError
 });
 
 
-$LivestockSaleFormDraftCopyWith<$Res> get form;$LivestockSaleSelectionCopyWith<$Res> get selection;$ResultStateCopyWith<LivestockSaleSelection, $Res> get animalSelectionResult;$ResultStateCopyWith<LivestockSale, $Res> get submitResult;$DomainExceptionCopyWith<$Res>? get stepError;
+$LivestockSaleFormDraftCopyWith<$Res> get form;$LivestockSaleSelectionCopyWith<$Res> get selection;$ResultStateCopyWith<LivestockSaleSelection, $Res> get animalSelectionResult;$ResultStateCopyWith<List<LivestockSaleAnimal>, $Res> get rfidSuggestions;$ResultStateCopyWith<LivestockSale, $Res> get submitResult;$DomainExceptionCopyWith<$Res>? get stepError;
 
 }
 /// @nodoc
@@ -848,13 +920,15 @@ class _$LivestockSaleStateCopyWithImpl<$Res>
 
 /// Create a copy of LivestockSaleState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? form = null,Object? currentStep = null,Object? selection = null,Object? animalSelectionResult = null,Object? submitResult = null,Object? stepError = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? form = null,Object? currentStep = null,Object? selection = null,Object? animalSelectionResult = null,Object? rfidSuggestions = null,Object? rfidPrefix = null,Object? submitResult = null,Object? stepError = freezed,}) {
   return _then(_self.copyWith(
 form: null == form ? _self.form : form // ignore: cast_nullable_to_non_nullable
 as LivestockSaleFormDraft,currentStep: null == currentStep ? _self.currentStep : currentStep // ignore: cast_nullable_to_non_nullable
 as LivestockSaleStep,selection: null == selection ? _self.selection : selection // ignore: cast_nullable_to_non_nullable
 as LivestockSaleSelection,animalSelectionResult: null == animalSelectionResult ? _self.animalSelectionResult : animalSelectionResult // ignore: cast_nullable_to_non_nullable
-as ResultState<LivestockSaleSelection>,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
+as ResultState<LivestockSaleSelection>,rfidSuggestions: null == rfidSuggestions ? _self.rfidSuggestions : rfidSuggestions // ignore: cast_nullable_to_non_nullable
+as ResultState<List<LivestockSaleAnimal>>,rfidPrefix: null == rfidPrefix ? _self.rfidPrefix : rfidPrefix // ignore: cast_nullable_to_non_nullable
+as String,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
 as ResultState<LivestockSale>,stepError: freezed == stepError ? _self.stepError : stepError // ignore: cast_nullable_to_non_nullable
 as DomainException?,
   ));
@@ -885,6 +959,15 @@ $ResultStateCopyWith<LivestockSaleSelection, $Res> get animalSelectionResult {
   
   return $ResultStateCopyWith<LivestockSaleSelection, $Res>(_self.animalSelectionResult, (value) {
     return _then(_self.copyWith(animalSelectionResult: value));
+  });
+}/// Create a copy of LivestockSaleState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<List<LivestockSaleAnimal>, $Res> get rfidSuggestions {
+  
+  return $ResultStateCopyWith<List<LivestockSaleAnimal>, $Res>(_self.rfidSuggestions, (value) {
+    return _then(_self.copyWith(rfidSuggestions: value));
   });
 }/// Create a copy of LivestockSaleState
 /// with the given fields replaced by the non-null parameter values.
@@ -986,10 +1069,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LivestockSaleFormDraft form,  LivestockSaleStep currentStep,  LivestockSaleSelection selection,  ResultState<LivestockSaleSelection> animalSelectionResult,  ResultState<LivestockSale> submitResult,  DomainException? stepError)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LivestockSaleFormDraft form,  LivestockSaleStep currentStep,  LivestockSaleSelection selection,  ResultState<LivestockSaleSelection> animalSelectionResult,  ResultState<List<LivestockSaleAnimal>> rfidSuggestions,  String rfidPrefix,  ResultState<LivestockSale> submitResult,  DomainException? stepError)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LivestockSaleState() when $default != null:
-return $default(_that.form,_that.currentStep,_that.selection,_that.animalSelectionResult,_that.submitResult,_that.stepError);case _:
+return $default(_that.form,_that.currentStep,_that.selection,_that.animalSelectionResult,_that.rfidSuggestions,_that.rfidPrefix,_that.submitResult,_that.stepError);case _:
   return orElse();
 
 }
@@ -1007,10 +1090,10 @@ return $default(_that.form,_that.currentStep,_that.selection,_that.animalSelecti
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LivestockSaleFormDraft form,  LivestockSaleStep currentStep,  LivestockSaleSelection selection,  ResultState<LivestockSaleSelection> animalSelectionResult,  ResultState<LivestockSale> submitResult,  DomainException? stepError)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LivestockSaleFormDraft form,  LivestockSaleStep currentStep,  LivestockSaleSelection selection,  ResultState<LivestockSaleSelection> animalSelectionResult,  ResultState<List<LivestockSaleAnimal>> rfidSuggestions,  String rfidPrefix,  ResultState<LivestockSale> submitResult,  DomainException? stepError)  $default,) {final _that = this;
 switch (_that) {
 case _LivestockSaleState():
-return $default(_that.form,_that.currentStep,_that.selection,_that.animalSelectionResult,_that.submitResult,_that.stepError);}
+return $default(_that.form,_that.currentStep,_that.selection,_that.animalSelectionResult,_that.rfidSuggestions,_that.rfidPrefix,_that.submitResult,_that.stepError);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1024,10 +1107,10 @@ return $default(_that.form,_that.currentStep,_that.selection,_that.animalSelecti
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LivestockSaleFormDraft form,  LivestockSaleStep currentStep,  LivestockSaleSelection selection,  ResultState<LivestockSaleSelection> animalSelectionResult,  ResultState<LivestockSale> submitResult,  DomainException? stepError)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LivestockSaleFormDraft form,  LivestockSaleStep currentStep,  LivestockSaleSelection selection,  ResultState<LivestockSaleSelection> animalSelectionResult,  ResultState<List<LivestockSaleAnimal>> rfidSuggestions,  String rfidPrefix,  ResultState<LivestockSale> submitResult,  DomainException? stepError)?  $default,) {final _that = this;
 switch (_that) {
 case _LivestockSaleState() when $default != null:
-return $default(_that.form,_that.currentStep,_that.selection,_that.animalSelectionResult,_that.submitResult,_that.stepError);case _:
+return $default(_that.form,_that.currentStep,_that.selection,_that.animalSelectionResult,_that.rfidSuggestions,_that.rfidPrefix,_that.submitResult,_that.stepError);case _:
   return null;
 
 }
@@ -1039,13 +1122,15 @@ return $default(_that.form,_that.currentStep,_that.selection,_that.animalSelecti
 
 
 class _LivestockSaleState implements LivestockSaleState {
-  const _LivestockSaleState({required this.form, this.currentStep = LivestockSaleStep.animals, this.selection = const LivestockSaleSelection(), this.animalSelectionResult = const ResultState<LivestockSaleSelection>.initial(), this.submitResult = const ResultState<LivestockSale>.initial(), this.stepError});
+  const _LivestockSaleState({required this.form, this.currentStep = LivestockSaleStep.animals, this.selection = const LivestockSaleSelection(), this.animalSelectionResult = const ResultState<LivestockSaleSelection>.initial(), this.rfidSuggestions = const ResultState<List<LivestockSaleAnimal>>.initial(), this.rfidPrefix = '', this.submitResult = const ResultState<LivestockSale>.initial(), this.stepError});
   
 
 @override final  LivestockSaleFormDraft form;
 @override@JsonKey() final  LivestockSaleStep currentStep;
 @override@JsonKey() final  LivestockSaleSelection selection;
 @override@JsonKey() final  ResultState<LivestockSaleSelection> animalSelectionResult;
+@override@JsonKey() final  ResultState<List<LivestockSaleAnimal>> rfidSuggestions;
+@override@JsonKey() final  String rfidPrefix;
 @override@JsonKey() final  ResultState<LivestockSale> submitResult;
 @override final  DomainException? stepError;
 
@@ -1059,16 +1144,16 @@ _$LivestockSaleStateCopyWith<_LivestockSaleState> get copyWith => __$LivestockSa
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LivestockSaleState&&(identical(other.form, form) || other.form == form)&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.selection, selection) || other.selection == selection)&&(identical(other.animalSelectionResult, animalSelectionResult) || other.animalSelectionResult == animalSelectionResult)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult)&&(identical(other.stepError, stepError) || other.stepError == stepError));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LivestockSaleState&&(identical(other.form, form) || other.form == form)&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.selection, selection) || other.selection == selection)&&(identical(other.animalSelectionResult, animalSelectionResult) || other.animalSelectionResult == animalSelectionResult)&&(identical(other.rfidSuggestions, rfidSuggestions) || other.rfidSuggestions == rfidSuggestions)&&(identical(other.rfidPrefix, rfidPrefix) || other.rfidPrefix == rfidPrefix)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult)&&(identical(other.stepError, stepError) || other.stepError == stepError));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,form,currentStep,selection,animalSelectionResult,submitResult,stepError);
+int get hashCode => Object.hash(runtimeType,form,currentStep,selection,animalSelectionResult,rfidSuggestions,rfidPrefix,submitResult,stepError);
 
 @override
 String toString() {
-  return 'LivestockSaleState(form: $form, currentStep: $currentStep, selection: $selection, animalSelectionResult: $animalSelectionResult, submitResult: $submitResult, stepError: $stepError)';
+  return 'LivestockSaleState(form: $form, currentStep: $currentStep, selection: $selection, animalSelectionResult: $animalSelectionResult, rfidSuggestions: $rfidSuggestions, rfidPrefix: $rfidPrefix, submitResult: $submitResult, stepError: $stepError)';
 }
 
 
@@ -1079,11 +1164,11 @@ abstract mixin class _$LivestockSaleStateCopyWith<$Res> implements $LivestockSal
   factory _$LivestockSaleStateCopyWith(_LivestockSaleState value, $Res Function(_LivestockSaleState) _then) = __$LivestockSaleStateCopyWithImpl;
 @override @useResult
 $Res call({
- LivestockSaleFormDraft form, LivestockSaleStep currentStep, LivestockSaleSelection selection, ResultState<LivestockSaleSelection> animalSelectionResult, ResultState<LivestockSale> submitResult, DomainException? stepError
+ LivestockSaleFormDraft form, LivestockSaleStep currentStep, LivestockSaleSelection selection, ResultState<LivestockSaleSelection> animalSelectionResult, ResultState<List<LivestockSaleAnimal>> rfidSuggestions, String rfidPrefix, ResultState<LivestockSale> submitResult, DomainException? stepError
 });
 
 
-@override $LivestockSaleFormDraftCopyWith<$Res> get form;@override $LivestockSaleSelectionCopyWith<$Res> get selection;@override $ResultStateCopyWith<LivestockSaleSelection, $Res> get animalSelectionResult;@override $ResultStateCopyWith<LivestockSale, $Res> get submitResult;@override $DomainExceptionCopyWith<$Res>? get stepError;
+@override $LivestockSaleFormDraftCopyWith<$Res> get form;@override $LivestockSaleSelectionCopyWith<$Res> get selection;@override $ResultStateCopyWith<LivestockSaleSelection, $Res> get animalSelectionResult;@override $ResultStateCopyWith<List<LivestockSaleAnimal>, $Res> get rfidSuggestions;@override $ResultStateCopyWith<LivestockSale, $Res> get submitResult;@override $DomainExceptionCopyWith<$Res>? get stepError;
 
 }
 /// @nodoc
@@ -1096,13 +1181,15 @@ class __$LivestockSaleStateCopyWithImpl<$Res>
 
 /// Create a copy of LivestockSaleState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? form = null,Object? currentStep = null,Object? selection = null,Object? animalSelectionResult = null,Object? submitResult = null,Object? stepError = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? form = null,Object? currentStep = null,Object? selection = null,Object? animalSelectionResult = null,Object? rfidSuggestions = null,Object? rfidPrefix = null,Object? submitResult = null,Object? stepError = freezed,}) {
   return _then(_LivestockSaleState(
 form: null == form ? _self.form : form // ignore: cast_nullable_to_non_nullable
 as LivestockSaleFormDraft,currentStep: null == currentStep ? _self.currentStep : currentStep // ignore: cast_nullable_to_non_nullable
 as LivestockSaleStep,selection: null == selection ? _self.selection : selection // ignore: cast_nullable_to_non_nullable
 as LivestockSaleSelection,animalSelectionResult: null == animalSelectionResult ? _self.animalSelectionResult : animalSelectionResult // ignore: cast_nullable_to_non_nullable
-as ResultState<LivestockSaleSelection>,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
+as ResultState<LivestockSaleSelection>,rfidSuggestions: null == rfidSuggestions ? _self.rfidSuggestions : rfidSuggestions // ignore: cast_nullable_to_non_nullable
+as ResultState<List<LivestockSaleAnimal>>,rfidPrefix: null == rfidPrefix ? _self.rfidPrefix : rfidPrefix // ignore: cast_nullable_to_non_nullable
+as String,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
 as ResultState<LivestockSale>,stepError: freezed == stepError ? _self.stepError : stepError // ignore: cast_nullable_to_non_nullable
 as DomainException?,
   ));
@@ -1134,6 +1221,15 @@ $ResultStateCopyWith<LivestockSaleSelection, $Res> get animalSelectionResult {
   
   return $ResultStateCopyWith<LivestockSaleSelection, $Res>(_self.animalSelectionResult, (value) {
     return _then(_self.copyWith(animalSelectionResult: value));
+  });
+}/// Create a copy of LivestockSaleState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<List<LivestockSaleAnimal>, $Res> get rfidSuggestions {
+  
+  return $ResultStateCopyWith<List<LivestockSaleAnimal>, $Res>(_self.rfidSuggestions, (value) {
+    return _then(_self.copyWith(rfidSuggestions: value));
   });
 }/// Create a copy of LivestockSaleState
 /// with the given fields replaced by the non-null parameter values.

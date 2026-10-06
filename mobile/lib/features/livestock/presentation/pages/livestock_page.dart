@@ -123,12 +123,14 @@ class _ManagementCard extends StatelessWidget {
     required this.title,
     required this.description,
     required this.icon,
+    this.interactionKey,
     this.onTap,
   });
 
   final String title;
   final String description;
   final IconData icon;
+  final Key? interactionKey;
   final VoidCallback? onTap;
 
   @override
@@ -138,6 +140,7 @@ class _ManagementCard extends StatelessWidget {
     shadowColor: AppColors.cardShadow,
     clipBehavior: Clip.antiAlias,
     child: InkWell(
+      key: interactionKey,
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -205,24 +208,12 @@ class _SaleRegistrationCard extends StatelessWidget {
   final List<EstablishmentMembership> establishments;
 
   @override
-  Widget build(BuildContext context) => AppSurfaceCard(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          LivestockStrings.saleRegisterTitle,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        const Text(LivestockStrings.saleRegisterDescription),
-        const SizedBox(height: AppSpacing.md),
-        AppFilledButton(
-          key: const Key('livestockSaleRegisterButton'),
-          label: LivestockStrings.saleRegisterButton,
-          onPressed: () => _openSaleRegistration(context),
-        ),
-      ],
-    ),
+  Widget build(BuildContext context) => _ManagementCard(
+    title: LivestockStrings.saleRegisterTitle,
+    description: LivestockStrings.saleRegisterDescription,
+    icon: Icons.attach_money,
+    interactionKey: const Key('livestockSaleRegisterButton'),
+    onTap: () => _openSaleRegistration(context),
   );
 
   Future<void> _openSaleRegistration(BuildContext context) async {

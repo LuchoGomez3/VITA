@@ -12,6 +12,7 @@ import 'package:frontend_mayoral/features/livestock_sales/domain/repositories/li
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/add_animal_to_livestock_sale_selection_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/confirm_livestock_sale_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/remove_animal_from_livestock_sale_selection_use_case.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/search_livestock_sale_animals_by_rfid_prefix_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/livestock_sale_bloc.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/steps/livestock_sale_animal_selection_step.dart';
@@ -130,15 +131,50 @@ void main() {
     );
     expect(find.text(LivestockSaleStrings.animalRfid(_rfid)), findsOneWidget);
   });
+
+  testWidgets('muestra coincidencias mientras se ingresa un prefijo RFID', (
+    tester,
+  ) async {
+    const suggestion = LivestockSaleAnimal(
+      id: 'suggestion-id',
+      establishmentId: 'establishment-id',
+      rfidTagNumber: _rfid,
+      visualTag: '1295',
+      categoryName: 'Novillo',
+      lotName: 'Lote Norte',
+      status: LivestockSaleAnimalStatus.active,
+    );
+    final bloc = _createBloc(suggestions: const [suggestion]);
+    addTearDown(bloc.close);
+    await tester.pumpWidget(_TestApp(bloc: bloc));
+
+    await tester.enterText(
+      find.byKey(const Key('livestockSaleRfidInput')),
+      '982',
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('livestockSaleRfidSuggestion-suggestion-id')),
+      findsOneWidget,
+    );
+    expect(find.text(LivestockSaleStrings.rfidSuggestionsTitle), findsOneWidget);
+  });
 }
 
 const _rfid = '982000000001295';
 
-LivestockSaleBloc _createBloc() {
+LivestockSaleBloc _createBloc({
+  List<LivestockSaleAnimal> suggestions = const [],
+}) {
+  final repository = _AnimalRepository(suggestions: suggestions);
   return LivestockSaleBloc(
     establishmentId: 'establishment-id',
-    addAnimal: const AddAnimalToLivestockSaleSelectionUseCase(
-      repository: _AnimalRepository(),
+    addAnimal: AddAnimalToLivestockSaleSelectionUseCase(
+      repository: repository,
+    ),
+    searchAnimalsByRfidPrefix: SearchLivestockSaleAnimalsByRfidPrefixUseCase(
+      repository: repository,
     ),
     removeAnimal: const RemoveAnimalFromLivestockSaleSelectionUseCase(),
     confirmSale: ConfirmLivestockSaleUseCase(
@@ -175,7 +211,14 @@ class _TestApp extends StatelessWidget {
 Future<String?> _emptyRfidScan() async => null;
 
 class _AnimalRepository implements LivestockSaleAnimalRepository {
-  const _AnimalRepository();
+  const _AnimalRepository({this.suggestions = const []});
+
+  final List<LivestockSaleAnimal> suggestions;
+
+  @override
+  Future<Result<List<LivestockSaleAnimal>>> findLocalByRfidPrefix(
+    String prefix,
+  ) async => Result.success(suggestions);
 
   @override
   Future<Result<LivestockSaleAnimal?>> findLocalByRfidTagNumber(

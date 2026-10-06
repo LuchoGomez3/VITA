@@ -165,6 +165,11 @@ class _FakeLivestockSaleAnimalRepository implements LivestockSaleAnimalRepositor
   int calls = 0;
 
   @override
+  Future<Result<List<LivestockSaleAnimal>>> findLocalByRfidPrefix(
+    String prefix,
+  ) async => const Result.success([]);
+
+  @override
   Future<Result<LivestockSaleAnimal?>> findLocalByRfidTagNumber(
     String rfidTagNumber,
   ) async {

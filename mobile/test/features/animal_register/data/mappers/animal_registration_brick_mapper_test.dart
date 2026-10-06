@@ -36,7 +36,7 @@ void main() {
       expect(model.localId, 'local-id');
       expect(model.sex, BrickAnimalSex.female);
       expect(model.weighingMethod, BrickAnimalWeighingMethod.bluetoothScale);
-      expect(model.productiveStatus, BrickAnimalProductiveStatus.active);
+      expect(model.status, 'activo');
       expect(model.syncStatus, BrickAnimalSyncStatus.pending);
       expect(model.createdAt, now);
       expect(model.updatedAt, now);

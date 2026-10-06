@@ -237,6 +237,9 @@ abstract final class LivestockSaleStrings {
   /// Placeholder del campo RFID.
   static const rfidFieldHint = 'Ingresá los 15 dígitos';
 
+  /// Encabezado de las coincidencias RFID encontradas localmente.
+  static const rfidSuggestionsTitle = 'Coincidencias';
+
   /// Accion para incorporar el animal encontrado.
   static const addAnimal = 'Agregar';
 

@@ -8,7 +8,7 @@ void main() {
     final provider = _FakeSqliteProvider();
     final adapter = BrickAnimalModelAdapter();
     final row = await adapter.toSqlite(
-      _animal(BrickAnimalProductiveStatus.sold),
+      _animal('vendido'),
       provider: provider,
     );
 
@@ -17,8 +17,8 @@ void main() {
       provider: provider,
     );
 
-    expect(row['productive_status'], 'sold');
-    expect(restored.productiveStatus, BrickAnimalProductiveStatus.sold);
+    expect(row['status'], 'vendido');
+    expect(restored.status, 'vendido');
   });
 
   test('SQLite reads pre-migration rows as active', () async {
@@ -26,35 +26,35 @@ void main() {
     final adapter = BrickAnimalModelAdapter();
     final row =
         await adapter.toSqlite(
-            _animal(BrickAnimalProductiveStatus.active),
+            _animal('activo'),
             provider: provider,
           )
-          ..remove('productive_status');
+          ..remove('status');
 
     final restored = await adapter.fromSqlite(
       {...row, '_brick_id': 2},
       provider: provider,
     );
 
-    expect(restored.productiveStatus, BrickAnimalProductiveStatus.active);
+    expect(restored.status, 'activo');
   });
 
   test('copyWith preserves or explicitly changes productive status', () {
-    final sold = _animal(BrickAnimalProductiveStatus.sold);
+    final sold = _animal('vendido');
 
-    expect(sold.copyWith().productiveStatus, BrickAnimalProductiveStatus.sold);
+    expect(sold.copyWith().status, 'vendido');
     expect(
       sold
           .copyWith(
-            productiveStatus: BrickAnimalProductiveStatus.active,
+            status: 'activo',
           )
-          .productiveStatus,
-      BrickAnimalProductiveStatus.active,
+          .status,
+      'activo',
     );
   });
 }
 
-BrickAnimalModel _animal(BrickAnimalProductiveStatus status) {
+BrickAnimalModel _animal(String status) {
   final timestamp = DateTime.utc(2026, 9, 29);
   return BrickAnimalModel(
     localId: 'animal-id',
@@ -69,7 +69,7 @@ BrickAnimalModel _animal(BrickAnimalProductiveStatus status) {
     initialWeight: 32.5,
     weighingMethod: BrickAnimalWeighingMethod.manual,
     weighingDate: timestamp,
-    productiveStatus: status,
+    status: status,
     createdAt: timestamp,
     updatedAt: timestamp,
   );

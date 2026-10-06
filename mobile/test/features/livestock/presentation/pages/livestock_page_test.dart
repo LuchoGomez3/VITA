@@ -102,6 +102,7 @@ GoRouter _router(List<EstablishmentMembership> establishments) {
       GoRoute(
         path: AppRoutes.livestock,
         builder: (context, state) => LivestockPage(
+          onIdentifyAnimal: () {},
           createAccessCubit: () => LivestockAccessCubit(
             getSaleEstablishments: GetLivestockSaleEstablishmentsUseCase(
               _EstablishmentRepository(establishments),

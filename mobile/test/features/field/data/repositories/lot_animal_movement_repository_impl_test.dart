@@ -47,12 +47,12 @@ void main() {
   });
 
   for (final status in [
-    BrickAnimalProductiveStatus.sold,
-    BrickAnimalProductiveStatus.dead,
-    BrickAnimalProductiveStatus.removed,
-    BrickAnimalProductiveStatus.unknown,
+    'vendido',
+    'muerto',
+    'baja',
+    'desconocido',
   ]) {
-    test('rejects moving an animal with status ${status.name}', () async {
+    test('rejects moving an animal with status $status', () async {
       final repository = LotAnimalMovementRepositoryImpl(
         animalStore: _FakeAnimalStore(_animal(status)),
         lotStore: const _FakeLotStore(),
@@ -66,7 +66,7 @@ void main() {
   }
 }
 
-BrickAnimalModel _animal(BrickAnimalProductiveStatus status) {
+BrickAnimalModel _animal(String status) {
   final timestamp = DateTime.utc(2026, 9, 29);
   return BrickAnimalModel(
     localId: 'animal-id',
@@ -81,7 +81,7 @@ BrickAnimalModel _animal(BrickAnimalProductiveStatus status) {
     initialWeight: 300,
     weighingMethod: BrickAnimalWeighingMethod.manual,
     weighingDate: timestamp,
-    productiveStatus: status,
+    status: status,
     createdAt: timestamp,
     updatedAt: timestamp,
   );

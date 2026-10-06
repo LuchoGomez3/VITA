@@ -94,6 +94,8 @@ sealed class LivestockSaleState with _$LivestockSaleState {
     @Default(LivestockSaleStep.animals) LivestockSaleStep currentStep,
     @Default(LivestockSaleSelection()) LivestockSaleSelection selection,
     @Default(ResultState<LivestockSaleSelection>.initial()) ResultState<LivestockSaleSelection> animalSelectionResult,
+    @Default(ResultState<List<LivestockSaleAnimal>>.initial()) ResultState<List<LivestockSaleAnimal>> rfidSuggestions,
+    @Default('') String rfidPrefix,
     @Default(ResultState<LivestockSale>.initial()) ResultState<LivestockSale> submitResult,
     DomainException? stepError,
   }) = _LivestockSaleState;

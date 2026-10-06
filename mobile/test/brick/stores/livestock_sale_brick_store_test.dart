@@ -82,9 +82,7 @@ void main() {
     );
     expect(
       sold.every(
-        (animal) =>
-            animal.productiveStatus == BrickAnimalProductiveStatus.sold &&
-            animal.syncStatus == BrickAnimalSyncStatus.pending,
+        (animal) => animal.status == 'vendido' && animal.syncStatus == BrickAnimalSyncStatus.pending,
       ),
       isTrue,
     );
@@ -161,9 +159,7 @@ void main() {
     );
     expect(
       animals.every(
-        (animal) =>
-            animal.productiveStatus == BrickAnimalProductiveStatus.sold &&
-            animal.syncStatus == BrickAnimalSyncStatus.synchronized,
+        (animal) => animal.status == 'vendido' && animal.syncStatus == BrickAnimalSyncStatus.synchronized,
       ),
       isTrue,
     );
@@ -194,7 +190,7 @@ void main() {
     final animal = animals.singleWhere(
       (item) => item.localId == 'animal-rejected',
     );
-    expect(animal.productiveStatus, BrickAnimalProductiveStatus.sold);
+    expect(animal.status, 'vendido');
     expect(animal.syncStatus, BrickAnimalSyncStatus.rejected);
     expect(animal.syncErrorCode, 'animal_already_sold');
   });
@@ -218,7 +214,6 @@ BrickAnimalModel _animal(
     initialWeight: 320,
     weighingMethod: BrickAnimalWeighingMethod.manual,
     weighingDate: timestamp,
-    productiveStatus: BrickAnimalProductiveStatus.active,
     syncStatus: BrickAnimalSyncStatus.synchronized,
     createdAt: timestamp,
     updatedAt: timestamp,

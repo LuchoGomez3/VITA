@@ -75,6 +75,58 @@ class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository
     }
   }
 
+  @override
+  Future<Result<List<LivestockSaleAnimal>>> findLocalByRfidPrefix(
+    String prefix,
+  ) async {
+    try {
+      final normalizedPrefix = prefix.trim();
+      if (normalizedPrefix.isEmpty) {
+        return const Result.success(<LivestockSaleAnimal>[]);
+      }
+      final animals = await _animalBrickStore.getLocalAnimals();
+      final latestByRfid = <String, BrickAnimalModel>{};
+
+      // Las sugerencias solo muestran stock vendible del establecimiento actual.
+      // La validación completa sigue ocurriendo al agregar el animal elegido.
+      for (final animal in animals) {
+        if (animal.establishmentId != _establishmentId ||
+            animal.status != 'activo' ||
+            animal.deletedAt != null ||
+            !animal.rfidTagNumber.startsWith(normalizedPrefix)) {
+          continue;
+        }
+        final previous = latestByRfid[animal.rfidTagNumber];
+        if (previous == null || animal.updatedAt.isAfter(previous.updatedAt)) {
+          latestByRfid[animal.rfidTagNumber] = animal;
+        }
+      }
+
+      final categories = await _categoryBrickStore.getLocalCategorias(
+        _establishmentId,
+      );
+      final lots = await _lotBrickStore.getLocalLots(_establishmentId);
+      final matches = latestByRfid.values.map((animal) {
+        final mapped = LivestockSaleAnimalMapper.fromBrick(animal);
+        return mapped.copyWith(
+          categoryName: _categoryName(categories, animal.categoryId) ?? mapped.categoryName,
+          lotName: _lotName(lots, animal.lotId) ?? mapped.lotName,
+        );
+      }).toList()..sort((first, second) => first.rfidTagNumber.compareTo(second.rfidTagNumber));
+
+      return Result.success(matches.take(10).toList(growable: false));
+    } on Object {
+      const reason = LivestockSaleSelectionError.localRead;
+      return const Result.failure(
+        DomainException(
+          message: 'localRead',
+          code: DomainErrorCode.offline,
+          reason: reason,
+        ),
+      );
+    }
+  }
+
   Future<void> _refreshInventoryOnce() async {
     if (_refreshAttempted) return;
     _refreshAttempted = true;

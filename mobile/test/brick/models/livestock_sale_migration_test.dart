@@ -3,12 +3,11 @@ import 'package:frontend_mayoral/brick/db/schema.g.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
-  test('la migracion de ventas queda registrada como la mas reciente', () {
+  test('la migracion de ventas permanece registrada en el esquema', () {
     final migration = migrations.singleWhere(
       (item) => item.version == 20261003184650,
     );
 
-    expect(schema.version, 20261003184650);
     expect(
       migration.upStatement,
       allOf(

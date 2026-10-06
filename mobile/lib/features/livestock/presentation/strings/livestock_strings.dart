@@ -15,9 +15,6 @@ abstract final class LivestockStrings {
   /// Descripcion del registro comercial de animales.
   static const saleRegisterDescription = 'Seleccioná animales y registrá los datos de la operación.';
 
-  /// Boton para iniciar una venta.
-  static const saleRegisterButton = 'Registrar venta';
-
   /// Titulo del selector cuando hay mas de un establecimiento habilitado.
   static const saleEstablishmentSelectionTitle = 'Seleccioná el establecimiento';
 

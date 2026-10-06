@@ -47,11 +47,16 @@ class _LivestockSaleAnimalSelectionStepState extends State<LivestockSaleAnimalSe
       listener: (_, _) => _rfidController.clear(),
       buildWhen: (previous, current) {
         return previous.selection != current.selection ||
-            previous.animalSelectionResult != current.animalSelectionResult;
+            previous.animalSelectionResult != current.animalSelectionResult ||
+            previous.rfidSuggestions != current.rfidSuggestions;
       },
       builder: (context, state) {
         final animals = state.selection.animals;
         final isLoading = state.animalSelectionResult is Loading<LivestockSaleSelection>;
+        final suggestions = switch (state.rfidSuggestions) {
+          Data<List<LivestockSaleAnimal>>(:final data) => data,
+          _ => const <LivestockSaleAnimal>[],
+        };
         return ListView.builder(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
@@ -70,6 +75,11 @@ class _LivestockSaleAnimalSelectionStepState extends State<LivestockSaleAnimalSe
                 isLoading: isLoading,
                 onAdd: _addAnimal,
                 onScan: _scanAnimal,
+                onRfidChanged: (value) => context.read<LivestockSaleBloc>().add(
+                  LivestockSaleEvent.rfidPrefixChanged(value),
+                ),
+                suggestions: suggestions,
+                onSuggestionSelected: _addSuggestedAnimal,
                 isScanning: _isRfidScanOpen,
                 showEmptyState: animals.isEmpty,
               );
@@ -98,6 +108,14 @@ class _LivestockSaleAnimalSelectionStepState extends State<LivestockSaleAnimalSe
     );
   }
 
+  void _addSuggestedAnimal(LivestockSaleAnimal animal) {
+    _rfidController.clear();
+    FocusScope.of(context).unfocus();
+    context.read<LivestockSaleBloc>()
+      ..add(const LivestockSaleEvent.rfidPrefixChanged(''))
+      ..add(LivestockSaleEvent.animalAddRequested(animal.rfidTagNumber));
+  }
+
   Future<void> _scanAnimal() async {
     if (_isRfidScanOpen) return;
     setState(() => _isRfidScanOpen = true);
@@ -119,6 +137,9 @@ class _SelectionHeader extends StatelessWidget {
     required this.isLoading,
     required this.onAdd,
     required this.onScan,
+    required this.onRfidChanged,
+    required this.suggestions,
+    required this.onSuggestionSelected,
     required this.isScanning,
     required this.showEmptyState,
   });
@@ -128,6 +149,9 @@ class _SelectionHeader extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onAdd;
   final VoidCallback onScan;
+  final ValueChanged<String> onRfidChanged;
+  final List<LivestockSaleAnimal> suggestions;
+  final ValueChanged<LivestockSaleAnimal> onSuggestionSelected;
   final bool isScanning;
   final bool showEmptyState;
 
@@ -185,6 +209,7 @@ class _SelectionHeader extends StatelessWidget {
                 inputFormatters: [RfidInputFormatter()],
                 maxCharacters: 15,
                 enabled: !isLoading,
+                onChanged: onRfidChanged,
                 textInputAction: TextInputAction.done,
                 prefixIcon: Padding(
                   padding: const EdgeInsets.all(AppSpacing.sm),
@@ -200,6 +225,13 @@ class _SelectionHeader extends StatelessWidget {
                   ),
                 ),
               ),
+              if (suggestions.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                _RfidSuggestions(
+                  animals: suggestions,
+                  onSelected: onSuggestionSelected,
+                ),
+              ],
               const SizedBox(height: AppSpacing.sm),
               AppFilledButton(
                 key: const Key('livestockSaleAddAnimalButton'),
@@ -221,6 +253,114 @@ class _SelectionHeader extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Lista compacta de animales locales que coinciden con el prefijo ingresado.
+class _RfidSuggestions extends StatelessWidget {
+  const _RfidSuggestions({
+    required this.animals,
+    required this.onSelected,
+  });
+
+  final List<LivestockSaleAnimal> animals;
+  final ValueChanged<LivestockSaleAnimal> onSelected;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        LivestockSaleStrings.rfidSuggestionsTitle,
+        style: AppTypography.smallEmphasis,
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      Container(
+        decoration: BoxDecoration(
+          color: AppColors.onPrimary,
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        child: Column(
+          children: [
+            for (var index = 0; index < animals.length; index++) ...[
+              _RfidSuggestionTile(
+                animal: animals[index],
+                onTap: () => onSelected(animals[index]),
+              ),
+              if (index < animals.length - 1) const Divider(height: 1, color: AppColors.border),
+            ],
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+class _RfidSuggestionTile extends StatelessWidget {
+  const _RfidSuggestionTile({required this.animal, required this.onTap});
+
+  final LivestockSaleAnimal animal;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    key: ValueKey('livestockSaleRfidSuggestion-${animal.id}'),
+    onTap: onTap,
+    child: Padding(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      child: Row(
+        children: [
+          _SaleEarTagPreview(visualTag: animal.visualTag),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              _description,
+              style: AppTypography.secondaryEmphasis.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  String get _description {
+    final category = animal.categoryName.trim();
+    final lot = animal.lotName.trim();
+    return [
+      animal.rfidTagNumber,
+      if (category.isNotEmpty) category,
+      if (lot.isNotEmpty) lot,
+    ].join(' · ');
+  }
+}
+
+class _SaleEarTagPreview extends StatelessWidget {
+  const _SaleEarTagPreview({required this.visualTag});
+
+  final String visualTag;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 52,
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.xxs,
+      vertical: AppSpacing.xs,
+    ),
+    decoration: BoxDecoration(
+      color: AppColors.backgroundSecondary,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+    ),
+    child: Text(
+      visualTag.replaceFirst(' ', '\n'),
+      style: AppTypography.smallEmphasis.copyWith(
+        color: AppColors.textPrimary,
+        height: 1,
+      ),
+      textAlign: TextAlign.center,
+    ),
+  );
 }
 
 class _SelectedAnimalsHeader extends StatelessWidget {

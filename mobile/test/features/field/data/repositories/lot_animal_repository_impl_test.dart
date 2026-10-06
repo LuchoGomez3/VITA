@@ -9,14 +9,14 @@ void main() {
   test('lists only productively active animals from the selected tenant', () async {
     final repository = LotAnimalRepositoryImpl(
       store: _FakeAnimalStore([
-        _animal('active', BrickAnimalProductiveStatus.active),
-        _animal('sold', BrickAnimalProductiveStatus.sold),
-        _animal('dead', BrickAnimalProductiveStatus.dead),
-        _animal('removed', BrickAnimalProductiveStatus.removed),
-        _animal('unknown', BrickAnimalProductiveStatus.unknown),
+        _animal('active', 'activo'),
+        _animal('sold', 'vendido'),
+        _animal('dead', 'muerto'),
+        _animal('removed', 'baja'),
+        _animal('unknown', 'desconocido'),
         _animal(
           'other-tenant',
-          BrickAnimalProductiveStatus.active,
+          'activo',
           establishmentId: 'other-establishment',
         ),
       ]),
@@ -34,7 +34,7 @@ void main() {
 
 BrickAnimalModel _animal(
   String id,
-  BrickAnimalProductiveStatus status, {
+  String status, {
   String establishmentId = 'establishment-id',
 }) {
   final timestamp = DateTime.utc(2026, 9, 29);
@@ -52,7 +52,7 @@ BrickAnimalModel _animal(
     initialWeight: 300,
     weighingMethod: BrickAnimalWeighingMethod.manual,
     weighingDate: timestamp,
-    productiveStatus: status,
+    status: status,
     createdAt: timestamp,
     updatedAt: timestamp,
   );

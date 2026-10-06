@@ -10,6 +10,7 @@ import 'package:frontend_mayoral/features/livestock_sales/domain/repositories/li
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/add_animal_to_livestock_sale_selection_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/confirm_livestock_sale_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/remove_animal_from_livestock_sale_selection_use_case.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/search_livestock_sale_animals_by_rfid_prefix_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/livestock_sale_bloc.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/steps/livestock_sale_review_step.dart';
@@ -181,6 +182,9 @@ Future<LivestockSaleBloc> _createReviewBloc({
     addAnimal: const AddAnimalToLivestockSaleSelectionUseCase(
       repository: _AnimalRepository(),
     ),
+    searchAnimalsByRfidPrefix: const SearchLivestockSaleAnimalsByRfidPrefixUseCase(
+      repository: _AnimalRepository(),
+    ),
     removeAnimal: const RemoveAnimalFromLivestockSaleSelectionUseCase(),
     confirmSale: ConfirmLivestockSaleUseCase(
       repository: const _SaleRepository(),
@@ -251,6 +255,11 @@ class _TestApp extends StatelessWidget {
 
 class _AnimalRepository implements LivestockSaleAnimalRepository {
   const _AnimalRepository();
+
+  @override
+  Future<Result<List<LivestockSaleAnimal>>> findLocalByRfidPrefix(
+    String prefix,
+  ) async => const Result.success([]);
 
   @override
   Future<Result<LivestockSaleAnimal?>> findLocalByRfidTagNumber(

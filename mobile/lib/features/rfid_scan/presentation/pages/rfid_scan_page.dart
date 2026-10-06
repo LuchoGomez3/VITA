@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -84,78 +82,69 @@ class _RfidScanView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text(RfidScanStrings.pageTitle)),
-      body: BlocListener<RfidScanBloc, RfidScanState>(
-        listenWhen: (previous, current) {
-          return previous != current && current.maybeWhen(found: (_) => true, orElse: () => false);
-        },
-        listener: (_, _) {
-          unawaited(HapticFeedback.mediumImpact());
-        },
-        child: BlocBuilder<RfidScanBloc, RfidScanState>(
-          builder: (context, state) {
-            final isListening = state.maybeWhen(
-              listening: () => true,
-              orElse: () => false,
-            );
-            return HidRfidKeyboardListener(
-              isListening: isListening,
-              onKeyEvent: onHidKeyEvent,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const _ScanMethodsHeader(),
-                        const SizedBox(height: AppSpacing.md),
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 260),
-                          switchInCurve: Curves.easeOutCubic,
-                          switchOutCurve: Curves.easeInCubic,
-                          transitionBuilder: (child, animation) {
-                            final offset = Tween<Offset>(
-                              begin: const Offset(0, 0.06),
-                              end: Offset.zero,
-                            ).animate(animation);
-                            return FadeTransition(
-                              opacity: animation,
-                              child: SlideTransition(position: offset, child: child),
-                            );
-                          },
-                          child: _RfidScanBody(
-                            key: ValueKey(state.runtimeType),
-                            state: state,
-                            onStart: () => context.read<RfidScanBloc>().add(const RfidScanEvent.listeningRequested()),
-                            onCancel: () => context.read<RfidScanBloc>().add(const RfidScanEvent.stopped()),
-                            onAnimalDetailRequested: onAnimalDetailRequested,
-                            onRegisterAnimalRequested: onRegisterAnimalRequested,
-                            onAnimalSelected: onAnimalSelected,
-                            returnRfidOnSelection: returnRfidOnSelection,
-                          ),
-                        ),
-                        AnimatedSize(
-                          duration: const Duration(milliseconds: 220),
-                          curve: Curves.easeOutCubic,
-                          child: isListening
-                              ? const SizedBox.shrink()
-                              : Padding(
-                                  padding: const EdgeInsets.only(top: AppSpacing.md),
-                                  child: ManualRfidEntry(
-                                    onSubmitted: (reading) => context.read<RfidScanBloc>().add(
-                                      RfidScanEvent.readingReceived(reading: reading),
+      body: BlocBuilder<RfidScanBloc, RfidScanState>(
+        builder: (context, state) {
+          final isListening = state.maybeWhen(
+            listening: () => true,
+            orElse: () => false,
+          );
+          final suggestions = state.maybeWhen(
+            inactive: (_, suggestions) => suggestions,
+            orElse: () => const <IdentifiedAnimal>[],
+          );
+          return HidRfidKeyboardListener(
+            isListening: isListening,
+            onKeyEvent: onHidKeyEvent,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const _ScanMethodsHeader(),
+                      const SizedBox(height: AppSpacing.md),
+                      _RfidScanBody(
+                        state: state,
+                        onStart: () => context.read<RfidScanBloc>().add(const RfidScanEvent.listeningRequested()),
+                        onCancel: () => context.read<RfidScanBloc>().add(const RfidScanEvent.stopped()),
+                        onAnimalDetailRequested: onAnimalDetailRequested,
+                        onRegisterAnimalRequested: onRegisterAnimalRequested,
+                        onAnimalSelected: onAnimalSelected,
+                        returnRfidOnSelection: returnRfidOnSelection,
+                      ),
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        child: isListening
+                            ? const SizedBox.shrink()
+                            : Padding(
+                                padding: const EdgeInsets.only(top: AppSpacing.md),
+                                child: ManualRfidEntry(
+                                  suggestions: suggestions,
+                                  onChanged: (prefix) => context.read<RfidScanBloc>().add(
+                                    RfidScanEvent.rfidPrefixChanged(
+                                      prefix: prefix,
                                     ),
                                   ),
+                                  onSuggestionSelected: (animal) => context.read<RfidScanBloc>().add(
+                                    RfidScanEvent.readingReceived(
+                                      reading: animal.rfidTagNumber,
+                                    ),
+                                  ),
+                                  onSubmitted: (reading) => context.read<RfidScanBloc>().add(
+                                    RfidScanEvent.readingReceived(reading: reading),
+                                  ),
                                 ),
-                        ),
-                      ],
-                    ),
+                              ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -184,7 +173,7 @@ class _RfidScanBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return state.when(
-      inactive: () => _MessageAction(
+      inactive: (_, _) => _MessageAction(
         title: RfidScanStrings.idleTitle,
         description: RfidScanStrings.idleDescription,
         actionLabel: RfidScanStrings.startReading,
@@ -209,7 +198,11 @@ class _RfidScanBody extends StatelessWidget {
       found: (animal) => _FoundContent(
         animal: animal,
         onDetail: onAnimalSelected ?? onAnimalDetailRequested,
-        actionLabel: onAnimalSelected == null ? RfidScanStrings.viewDetail : RfidScanStrings.useAnimal,
+        actionLabel: onAnimalSelected == null
+            ? RfidScanStrings.viewDetail
+            : returnRfidOnSelection
+            ? RfidScanStrings.selectForSale
+            : RfidScanStrings.useAnimal,
         onScanAgain: onStart,
         onSelect: onAnimalSelected,
         returnRfidOnSelection: returnRfidOnSelection,

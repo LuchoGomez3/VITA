@@ -54,12 +54,44 @@ void main() {
 
       expect(result, isA<Failure<IdentifiedAnimal?>>());
     });
+
+    test('returns local animals whose RFID starts with the prefix', () async {
+      animalBrickStore.animals = [
+        _brickAnimal,
+        _createBrickAnimal(
+          localId: 'another-animal',
+          rfidTagNumber: '982000499999999',
+        ),
+        _createBrickAnimal(
+          localId: 'other-establishment',
+          establishmentId: 'other-establishment',
+        ),
+      ];
+
+      final result = await repository.findByRfidPrefix(
+        rfidPrefix: '9820004',
+        establishmentId: establishmentId,
+      );
+
+      expect(result, isA<Success<List<IdentifiedAnimal>>>());
+      final animals = (result as Success<List<IdentifiedAnimal>>).data;
+      expect(animals.map((animal) => animal.id), [
+        'animal-id',
+        'another-animal',
+      ]);
+    });
   });
 }
 
-final _brickAnimal = BrickAnimalModel(
-  localId: 'animal-id',
-  rfidTagNumber: '982000412991416',
+final _brickAnimal = _createBrickAnimal();
+
+BrickAnimalModel _createBrickAnimal({
+  String localId = 'animal-id',
+  String rfidTagNumber = '982000412991416',
+  String establishmentId = 'establishment-id',
+}) => BrickAnimalModel(
+  localId: localId,
+  rfidTagNumber: rfidTagNumber,
   visualTag: '003 1295',
   sex: BrickAnimalSex.female,
   breed: 'Aberdeen Angus',
@@ -68,7 +100,7 @@ final _brickAnimal = BrickAnimalModel(
   categoryName: 'Ternera',
   lotId: 'lot-id',
   lotName: 'La Cumbre',
-  establishmentId: 'establishment-id',
+  establishmentId: establishmentId,
   initialWeight: 32.5,
   weighingMethod: BrickAnimalWeighingMethod.manual,
   weighingDate: DateTime(2025, 3, 14),
@@ -78,6 +110,7 @@ final _brickAnimal = BrickAnimalModel(
 
 class _FakeAnimalBrickStore implements AnimalBrickStore {
   BrickAnimalModel? animal;
+  List<BrickAnimalModel> animals = const [];
   bool throwOnLookup = false;
 
   @override
@@ -102,7 +135,7 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   }
 
   @override
-  Future<List<BrickAnimalModel>> getLocalAnimals() async => const [];
+  Future<List<BrickAnimalModel>> getLocalAnimals() async => animals;
 
   @override
   Future<void> pullRemoteAnimals(String establishmentId) async {}

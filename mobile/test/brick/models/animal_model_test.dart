@@ -31,50 +31,5 @@ void main() {
       expect(brickNullableDoubleFromBackend(null), isNull);
       expect(brickNullableDoubleFromBackend('185.500'), 185.5);
     });
-
-    test('maps every productive status and fails closed for unknown values', () {
-      expect(
-        brickAnimalProductiveStatusFromBackend('activo'),
-        BrickAnimalProductiveStatus.active,
-      );
-      expect(
-        brickAnimalProductiveStatusFromBackend('vendido'),
-        BrickAnimalProductiveStatus.sold,
-      );
-      expect(
-        brickAnimalProductiveStatusFromBackend('muerto'),
-        BrickAnimalProductiveStatus.dead,
-      );
-      expect(
-        brickAnimalProductiveStatusFromBackend('baja'),
-        BrickAnimalProductiveStatus.removed,
-      );
-      expect(
-        brickAnimalProductiveStatusFromBackend('future_status'),
-        BrickAnimalProductiveStatus.unknown,
-      );
-      expect(
-        brickAnimalProductiveStatusFromBackend(null),
-        BrickAnimalProductiveStatus.unknown,
-      );
-    });
-
-    test('treats missing legacy SQLite values as active', () {
-      expect(
-        brickAnimalProductiveStatusFromSqlite(null),
-        BrickAnimalProductiveStatus.active,
-      );
-    });
-
-    test('fails closed for invalid SQLite values', () {
-      expect(
-        brickAnimalProductiveStatusFromSqlite('invalid'),
-        BrickAnimalProductiveStatus.unknown,
-      );
-      expect(
-        brickAnimalProductiveStatusFromSqlite('sold'),
-        BrickAnimalProductiveStatus.sold,
-      );
-    });
   });
 }

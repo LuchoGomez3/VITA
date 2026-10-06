@@ -16,11 +16,11 @@ void main() {
   test('stock metrics include only active animals', () async {
     final repository = HomeDashboardRepositoryImpl(
       animalStore: _FakeAnimalStore([
-        _animal('active', BrickAnimalProductiveStatus.active),
-        _animal('sold', BrickAnimalProductiveStatus.sold),
-        _animal('dead', BrickAnimalProductiveStatus.dead),
-        _animal('removed', BrickAnimalProductiveStatus.removed),
-        _animal('unknown', BrickAnimalProductiveStatus.unknown),
+        _animal('active', 'activo'),
+        _animal('sold', 'vendido'),
+        _animal('dead', 'muerto'),
+        _animal('removed', 'baja'),
+        _animal('unknown', 'desconocido'),
       ]),
       categoryStore: const _FakeCategoryStore(),
       pesajeStore: const _FakeWeighingStore(),
@@ -43,7 +43,7 @@ void main() {
 
 BrickAnimalModel _animal(
   String id,
-  BrickAnimalProductiveStatus status,
+  String status,
 ) {
   final timestamp = DateTime.utc(2026, 8);
   return BrickAnimalModel(
@@ -61,7 +61,7 @@ BrickAnimalModel _animal(
     initialWeight: 300,
     weighingMethod: BrickAnimalWeighingMethod.manual,
     weighingDate: timestamp,
-    productiveStatus: status,
+    status: status,
     createdAt: timestamp,
     updatedAt: timestamp,
   );
@@ -83,9 +83,9 @@ class _FakeCategoryStore implements CategoriaBrickStore {
   const _FakeCategoryStore();
 
   @override
-  Future<List<BrickCategoriaModel>> getLocalCategorias(
-    String establishmentId,
-  ) async => const [];
+  Future<List<BrickCategoriaModel>> getLocalCategorias([
+    String? establishmentId,
+  ]) async => const [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

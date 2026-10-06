@@ -36,7 +36,7 @@ void main() {
       _animal(
         id: 'new',
         updatedAt: DateTime(2025, 2),
-        status: BrickAnimalProductiveStatus.sold,
+        status: 'vendido',
       ),
     ];
 
@@ -54,6 +54,20 @@ void main() {
     final result = await repository.findLocalByRfidTagNumber(rfid);
 
     expect(result, const Result<LivestockSaleAnimal?>.success(null));
+  });
+
+  test('lists only active local animals that match an RFID prefix', () async {
+    store.animals = [
+      _animal(id: 'first', rfid: '982000412991416'),
+      _animal(id: 'second', rfid: '982000412991417'),
+      _animal(id: 'sold', rfid: '982000412991418', status: 'vendido'),
+      _animal(id: 'other', rfid: '982000512991419'),
+    ];
+
+    final result = await repository.findLocalByRfidPrefix('9820004');
+
+    final matches = (result as Success<List<LivestockSaleAnimal>>).data;
+    expect(matches.map((animal) => animal.id), ['first', 'second']);
   });
 
   test('resolves category and lot names from local catalogs', () async {
@@ -76,7 +90,7 @@ void main() {
       ..remoteAnimals = [
         _animal(
           id: 'animal-id',
-          status: BrickAnimalProductiveStatus.dead,
+          status: 'muerto',
         ),
       ];
 
@@ -102,7 +116,7 @@ BrickAnimalModel _animal({
   String rfid = '982000412991416',
   DateTime? updatedAt,
   DateTime? deletedAt,
-  BrickAnimalProductiveStatus status = BrickAnimalProductiveStatus.active,
+  String status = 'activo',
   String categoryName = 'Ternera',
   String lotName = 'La Cumbre',
 }) {
@@ -125,7 +139,7 @@ BrickAnimalModel _animal({
     createdAt: timestamp,
     updatedAt: timestamp,
     deletedAt: deletedAt,
-    productiveStatus: status,
+    status: status,
   );
 }
 
@@ -185,18 +199,24 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
 
   @override
   Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) async => animal;
+
+  @override
+  Future<BrickAnimalModel> updateAnimal(BrickAnimalModel animal) async => animal;
+
+  @override
+  Future<void> retryRejectedAnimal(String animalId) async {}
 }
 
 class _FakeCategoriaBrickStore implements CategoriaBrickStore {
   List<BrickCategoriaModel> categories = [];
 
   @override
-  Future<List<BrickCategoriaModel>> getLocalCategorias(
-    String establishmentId,
-  ) async => categories;
+  Future<List<BrickCategoriaModel>> getLocalCategorias([
+    String? establishmentId,
+  ]) async => categories;
 
   @override
-  Future<void> pullRemoteCategorias(String establishmentId) async {}
+  Future<void> pullRemoteCategorias([String? establishmentId]) async {}
 
   @override
   Future<BrickCategoriaModel> upsertCategoria(
@@ -218,4 +238,7 @@ class _FakeLotBrickStore implements LotBrickStore {
 
   @override
   Future<BrickLotModel> upsertLocalLot(BrickLotModel lot) async => lot;
+
+  @override
+  Future<void> pushPendingLots(String establishmentId) async {}
 }

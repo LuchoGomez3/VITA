@@ -13,6 +13,9 @@ sealed class LivestockSaleEvent with _$LivestockSaleEvent {
     String rfidTagNumber,
   ) = _AnimalAddRequested;
 
+  /// Actualiza las sugerencias locales para el prefijo RFID ingresado.
+  const factory LivestockSaleEvent.rfidPrefixChanged(String prefix) = _RfidPrefixChanged;
+
   /// Quita un animal de la seleccion actual.
   const factory LivestockSaleEvent.animalRemoveRequested(
     String animalId,

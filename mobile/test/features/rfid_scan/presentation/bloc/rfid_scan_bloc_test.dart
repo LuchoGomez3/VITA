@@ -179,6 +179,12 @@ class _FakeRfidAnimalLookupRepository implements RfidAnimalLookupRepository {
     required String rfidTagNumber,
     required String establishmentId,
   }) async => Result.success(animal);
+
+  @override
+  Future<Result<List<IdentifiedAnimal>>> findByRfidPrefix({
+    required String rfidPrefix,
+    required String establishmentId,
+  }) async => const Result.success(<IdentifiedAnimal>[]);
 }
 
 class _FakeRfidReadingSource implements RfidReadingSource {

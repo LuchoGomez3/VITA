@@ -1,4 +1,3 @@
-import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';

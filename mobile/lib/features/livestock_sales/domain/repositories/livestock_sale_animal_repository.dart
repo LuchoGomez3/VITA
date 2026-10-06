@@ -10,4 +10,9 @@ abstract class LivestockSaleAnimalRepository {
   Future<Result<LivestockSaleAnimal?>> findLocalByRfidTagNumber(
     String rfidTagNumber,
   );
+
+  /// Lista animales activos del establecimiento cuyo RFID comienza con [prefix].
+  Future<Result<List<LivestockSaleAnimal>>> findLocalByRfidPrefix(
+    String prefix,
+  );
 }
