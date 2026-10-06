@@ -46,11 +46,26 @@ class AnimalEventHistory extends StatelessWidget {
           iconColor: AppColors.primary,
         ),
       ),
+      for (final movement in animalDetail.lotMovementHistory)
+        _AnimalTimelineEvent(
+          date: movement.date,
+          item: AppTimelineItem(
+            date: DateDisplayFormatter.shortDate(movement.date.toLocal()),
+            title: movement.sourceName == null
+                ? AnimalDetailStrings.initialLotAssignmentTitle
+                : AnimalDetailStrings.lotTransferTitle,
+            description: AnimalDetailStrings.lotMovementEventDescription(movement),
+            icon: Icons.swap_horiz,
+            iconColor: movement.syncStatus == AnimalSyncStatus.rejected ? AppColors.error : AppColors.primary,
+          ),
+        ),
       for (final weightRecord in animalDetail.weightHistory)
         _AnimalTimelineEvent(
           date: weightRecord.date,
           item: AppTimelineItem(
-            date: DateDisplayFormatter.shortDate(weightRecord.date),
+            // Brick guarda el instante en UTC; la ficha muestra el día local
+            // del operario para que coincida con la fecha de la captura.
+            date: DateDisplayFormatter.shortDate(weightRecord.date.toLocal()),
             title: AnimalDetailStrings.weighingEventTitle,
             description: AnimalDetailStrings.weighingEventDescription(
               weight: weightRecord.weightKg.displayWeight,

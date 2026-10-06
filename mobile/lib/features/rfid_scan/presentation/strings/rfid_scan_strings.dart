@@ -3,6 +3,9 @@ class RfidScanStrings {
   const RfidScanStrings._();
 
   static const pageTitle = 'Identificar animal';
+
+  /// Título de la captura que devuelve una lectura a otro formulario.
+  static const captureTitle = 'Leer caravana RFID';
   static const requiredEstablishment = 'Seleccioná un establecimiento para identificar animales.';
   static const methodQuestion = '¿Cómo querés identificarlo?';
   static const methodDescription = 'Usá el bastón RFID o ingresá la caravana manualmente.';
@@ -25,6 +28,8 @@ class RfidScanStrings {
   /// Accion para devolver el animal a una venta en curso.
   static const selectForSale = 'Agregar a la venta';
   static const viewDetail = 'Ver ficha completa';
+  /// Acción para devolver el animal a la pantalla que abrió el lector.
+  static const useAnimal = 'Usar este animal';
   static const scanAgain = 'Leer otra caravana';
   static const timeoutTitle = 'No se recibió una lectura';
   static const timeoutDescription = 'Revisá que el bastón esté conectado e intentá nuevamente.';

@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:brick_offline_first/brick_offline_first.dart';
 import 'package:brick_rest/brick_rest.dart';
@@ -29,17 +31,20 @@ class OperatingExpenseRepositoryImpl implements OperatingExpenseRepository {
     required OperatingExpenseRemoteDataSource remoteDataSource,
     DateTime Function()? now,
     String Function()? createId,
+    bool remoteEnabled = true,
   }) : _expenseStore = expenseStore,
        _categoryStore = categoryStore,
        _remoteDataSource = remoteDataSource,
        _now = now ?? DateTime.now,
-       _createId = createId ?? generateUuidV4;
+       _createId = createId ?? generateUuidV4,
+       _remoteEnabled = remoteEnabled;
 
   final OperatingExpenseBrickStore _expenseStore;
   final OperatingExpenseCategoryBrickStore _categoryStore;
   final OperatingExpenseRemoteDataSource _remoteDataSource;
   final DateTime Function() _now;
   final String Function() _createId;
+  final bool _remoteEnabled;
   static final Logger _logger = Logger('OperatingExpenseRepository');
 
   @override
@@ -157,6 +162,9 @@ class OperatingExpenseRepositoryImpl implements OperatingExpenseRepository {
     required String establishmentId,
     required OperatingExpenseFilters filters,
   }) async {
+    if (!_remoteEnabled) {
+      return getLocalHistory(establishmentId: establishmentId, filters: filters);
+    }
     try {
       final page = await _remoteDataSource.getExpenses(
         establishmentId,
@@ -199,6 +207,12 @@ class OperatingExpenseRepositoryImpl implements OperatingExpenseRepository {
 
   @override
   Future<Result<List<OperatingExpenseCategory>>> refreshCategories({required String establishmentId}) async {
+    if (!_remoteEnabled) {
+      final local = await Future.wait(
+        OperatingExpenseType.values.map((type) => _allCategories(establishmentId, type)),
+      );
+      return Result.success(local.expand((items) => items).toList(growable: false));
+    }
     try {
       final groups = await _remoteDataSource.getCatalog(establishmentId);
       final timestamp = _now().toUtc();
@@ -237,6 +251,27 @@ class OperatingExpenseRepositoryImpl implements OperatingExpenseRepository {
     required String establishmentId,
     required OperatingExpenseFilters filters,
   }) async {
+    if (!_remoteEnabled) {
+      final expenses = await _filteredLocalExpenses(establishmentId, filters);
+      final rows = <String>['fecha,tipo,categoria,insumo,monto,estado'];
+      for (final expense in expenses) {
+        rows.add([
+          expense.date.toIso8601String().split('T').first,
+          expense.type.value,
+          expense.category,
+          _csvCell(expense.supply),
+          (expense.amountCents / 100).toStringAsFixed(2),
+          expense.syncStatus.name,
+        ].join(','));
+      }
+      return Result.success(
+        OperatingExpenseExport(
+          bytes: Uint8List.fromList(utf8.encode(rows.join('\n'))),
+          filename: 'egresos_demo.csv',
+          mediaType: 'text/csv',
+        ),
+      );
+    }
     try {
       return Result.success(await _remoteDataSource.export(establishmentId, filters));
     } on DomainException catch (error) {
@@ -353,4 +388,6 @@ class OperatingExpenseRepositoryImpl implements OperatingExpenseRepository {
       .replaceAll('ñ', 'n')
       .replaceAll(RegExp('[^a-z0-9]+'), ' ')
       .trim();
+
+  static String _csvCell(String value) => '"${value.replaceAll('"', '""')}"';
 }

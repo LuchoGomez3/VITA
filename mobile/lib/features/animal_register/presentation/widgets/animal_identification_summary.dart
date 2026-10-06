@@ -42,7 +42,7 @@ class AnimalIdentificationSummary extends StatelessWidget {
                 vertical: AppSpacing.xxs,
               ),
               decoration: BoxDecoration(
-                color: AppColors.earTagYellow,
+                color: AppColors.backgroundSecondary,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Text(

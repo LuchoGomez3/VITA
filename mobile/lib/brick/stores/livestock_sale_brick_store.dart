@@ -104,7 +104,7 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
             animalId: animalId,
           );
         }
-        if (animal.productiveStatus != BrickAnimalProductiveStatus.active) {
+        if (animal.status != 'activo') {
           throw LivestockSaleLocalException(
             LivestockSaleLocalErrorCode.animalNotActive,
             animalId: animalId,
@@ -129,7 +129,7 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
         // venta guardada con los animales todavia activos, ni al reves.
         await transaction.upsert(
           animal.copyWith(
-            productiveStatus: BrickAnimalProductiveStatus.sold,
+            status: 'vendido',
             syncStatus: BrickAnimalSyncStatus.pending,
             syncErrorCode: null,
             updatedAt: sale.updatedAt,
@@ -182,7 +182,7 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
           // Un rechazo no reactiva automaticamente el animal: la operacion y
           // su stock quedan marcados para conciliacion, sin perder el progreso.
           animal.copyWith(
-            productiveStatus: BrickAnimalProductiveStatus.sold,
+            status: 'vendido',
             syncStatus: result.synchronized ? BrickAnimalSyncStatus.synchronized : BrickAnimalSyncStatus.rejected,
             syncErrorCode: result.errorCode,
           ),

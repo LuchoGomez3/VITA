@@ -29,7 +29,7 @@ class RegistrarAnimalSuccessPage extends StatelessWidget {
           child: Column(
             children: [
               const Spacer(),
-              const _SuccessAssetPlaceholder(),
+              const _SuccessIcon(),
               const SizedBox(height: AppSpacing.md),
               const Text(
                 AnimalRegisterStrings.successTitle,
@@ -38,7 +38,7 @@ class RegistrarAnimalSuccessPage extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'La caravana ${registration.visualTag} quedó guardada en este dispositivo y espera sincronización.',
+                AnimalRegisterStrings.successDescription(registration.visualTag),
                 style: AppTypography.secondaryEmphasis,
                 textAlign: TextAlign.center,
               ),
@@ -57,10 +57,9 @@ class RegistrarAnimalSuccessPage extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               AppOutlinedButton(
-                label: 'Ver ficha de ${registration.visualTag}',
+                label: AnimalRegisterStrings.viewAnimalDetails,
                 icon: const Icon(Icons.visibility_outlined),
-                // TODO(agus): navegar a la ficha del animal cuando exista.
-                onPressed: () {},
+                onPressed: () => context.push(AppRoutes.animalDetailById(registeredAnimal.id)),
               ),
               const SizedBox(height: AppSpacing.lg),
               TextButton(
@@ -84,13 +83,11 @@ class RegistrarAnimalSuccessPage extends StatelessWidget {
   }
 }
 
-/// Asset de exito placeholder.
-class _SuccessAssetPlaceholder extends StatelessWidget {
-  const _SuccessAssetPlaceholder();
+class _SuccessIcon extends StatelessWidget {
+  const _SuccessIcon();
 
   @override
   Widget build(BuildContext context) {
-    // TODO(agusf): reemplazar por el asset final de exito.
     return Container(
       width: 116,
       height: 116,

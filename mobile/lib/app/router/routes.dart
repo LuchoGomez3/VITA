@@ -50,11 +50,30 @@ class AppRoutes {
   /// Ruta de la pantalla de detalle de animal.
   static const animalDetail = '/animals/:animalId';
 
+  /// Cámara lateral y revisión de capturas para pesaje por visión.
+  static const visionWeighing = '/pesar-por-vision';
+
+  /// Flujo compartido de asignación y traslado de animales entre lotes.
+  static const lotMovement = '/movimientos-lotes';
+
+  /// Acceso desde una ficha o lote sin importar pantallas de otra feature.
+  static String lotMovementFor({required String establishmentId, String? animalId, String? sourceLotId}) => Uri(
+    path: lotMovement,
+    queryParameters: {
+      'establecimientoId': establishmentId,
+      if (animalId != null) 'animalId': animalId,
+      if (sourceLotId != null) 'loteOrigenId': sourceLotId,
+    },
+  ).toString();
+
   /// Ruta de identificacion de animales mediante caravana RFID.
   static const rfidScan = '/identificar-animal';
 
   /// Valor de ruta que solicita devolver el RFID a una venta en curso.
   static const rfidSaleSelectionMode = 'seleccion_venta';
+
+  /// Captura RFID para completar un formulario existente.
+  static const rfidCapture = '/capturar-rfid';
 
   /// Ruta de la seccion de registros de gastos.
   static const expenseRecords = '/registros-de-gastos';
@@ -147,9 +166,18 @@ class AppRoutes {
         '&modo=$rfidSaleSelectionMode';
   }
 
+  /// Abre el lector en modo selección y devuelve el ID del animal encontrado.
+  static String rfidScanForVisionWeighing(String establishmentId) {
+    return '${rfidScanForEstablishment(establishmentId)}&seleccionarParaPesajeIA=true';
+  }
+
   /// Construye la ruta de alta con una caravana RFID ya leida.
-  static String animalRegisterWithRfid(String rfidTagNumber) {
-    return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}';
+  static String animalRegisterWithRfid({
+    required String rfidTagNumber,
+    required String establishmentId,
+  }) {
+    return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}'
+        '&establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
   }
 
   /// Obtiene la ruta de detalle de un lote por su id.

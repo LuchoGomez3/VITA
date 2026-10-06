@@ -12,107 +12,171 @@ import 'package:go_router/go_router.dart';
 /// Crea el cubit cuyo ciclo de vida pertenece a la pestaña Hacienda.
 typedef LivestockAccessCubitFactory = LivestockAccessCubit Function();
 
-/// Pantalla principal para la gestion y consulta de la hacienda.
+/// Organiza la lectura de caravanas y los accesos de gestión de hacienda.
 class LivestockPage extends StatelessWidget {
-  /// Crea la pantalla de accesos ganaderos.
-  const LivestockPage({required this.createAccessCubit, super.key});
+  /// Crea la pantalla y consulta los establecimientos habilitados para vender.
+  const LivestockPage({
+    required this.createAccessCubit,
+    required this.onIdentifyAnimal,
+    super.key,
+  });
 
   /// Construye la consulta offline de establecimientos autorizados.
   final LivestockAccessCubitFactory createAccessCubit;
 
+  /// Resuelve el establecimiento antes de abrir el lector compartido.
+  final VoidCallback onIdentifyAnimal;
+
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => createAccessCubit()..load(),
-      child: const _LivestockView(),
-    );
-  }
+  Widget build(BuildContext context) => BlocProvider(
+    create: (_) => createAccessCubit()..load(),
+    child: _LivestockView(onIdentifyAnimal: onIdentifyAnimal),
+  );
 }
 
 class _LivestockView extends StatelessWidget {
-  const _LivestockView();
+  const _LivestockView({required this.onIdentifyAnimal});
+
+  final VoidCallback onIdentifyAnimal;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const AppHeader(title: LivestockStrings.title),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.lg,
-            AppSpacing.lg,
-            AppSpacing.xl,
-          ),
-          child: Column(
-            children: [
-              AppSurfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      LivestockStrings.animalRegisterTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    const Text(LivestockStrings.animalRegisterDescription),
-                    const SizedBox(height: AppSpacing.md),
-                    AppFilledButton(
-                      label: LivestockStrings.animalRegisterButton,
-                      onPressed: () => context.push(AppRoutes.animalRegisterStep1),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              const _SaleRegistrationAccess(),
-              AppSurfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      LivestockStrings.animalDetailTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    const Text(LivestockStrings.animalDetailDescription),
-                    const SizedBox(height: AppSpacing.md),
-                    AppFilledButton(
-                      label: LivestockStrings.animalDetailButton,
-                      onPressed: () => context.go(
-                        AppRoutes.animalDetailById(
-                          '550e8400-e29b-41d4-a716-446655440059',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppSurfaceCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      LivestockStrings.fieldTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    const Text(LivestockStrings.fieldDescription),
-                    const SizedBox(height: AppSpacing.md),
-                    AppFilledButton(
-                      label: LivestockStrings.fieldButton,
-                      onPressed: () => context.push(AppRoutes.field),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+  Widget build(BuildContext context) => Scaffold(
+    appBar: const AppHeader(title: LivestockStrings.title),
+    body: SafeArea(
+      bottom: false,
+      child: SingleChildScrollView(
+        // Desplaza el espacio seguro con el contenido para conservar la
+        // separación final respecto de la barra de navegación.
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.xl + MediaQuery.paddingOf(context).bottom,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _ReadingCard(onPressed: onIdentifyAnimal),
+            const SizedBox(height: AppSpacing.sm),
+            const _SaleRegistrationAccess(),
+            _ManagementCard(
+              title: LivestockStrings.fieldTitle,
+              description: LivestockStrings.fieldDescription,
+              icon: Icons.map_outlined,
+              onTap: () => context.push(AppRoutes.field),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            const _ManagementCard(
+              title: LivestockStrings.healthEventsTitle,
+              description: LivestockStrings.healthEventsDescription,
+              icon: Icons.medical_services_outlined,
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+class _ReadingCard extends StatelessWidget {
+  const _ReadingCard({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => AppSurfaceCard(
+    color: AppColors.backgroundSecondaryLight,
+    elevation: 3,
+    shadowColor: AppColors.cardShadow,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const CircleAvatar(
+          radius: AppSpacing.xl,
+          backgroundColor: AppColors.surface,
+          child: Icon(
+            Icons.bluetooth_searching,
+            color: AppColors.primary,
+            size: 32,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Text(
+          LivestockStrings.readTagTitle,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        const Text(LivestockStrings.readTagDescription),
+        const SizedBox(height: AppSpacing.lg),
+        AppFilledButton(
+          label: LivestockStrings.readTagTitle,
+          icon: const Icon(Icons.bluetooth),
+          onPressed: onPressed,
+        ),
+      ],
+    ),
+  );
+}
+
+class _ManagementCard extends StatelessWidget {
+  const _ManagementCard({
+    required this.title,
+    required this.description,
+    required this.icon,
+    this.onTap,
+  });
+
+  final String title;
+  final String description;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => AppSurfaceCard(
+    padding: EdgeInsets.zero,
+    elevation: 3,
+    shadowColor: AppColors.cardShadow,
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: AppColors.backgroundTertiary,
+              child: Icon(icon, color: AppColors.textSecondary),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    onTap == null ? LivestockStrings.comingSoon : description,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Visibility(
+              visible: onTap != null,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: const Icon(
+                Icons.chevron_right,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 /// Resuelve permisos y establecimiento antes de abrir el flujo comercial.
@@ -120,21 +184,19 @@ class _SaleRegistrationAccess extends StatelessWidget {
   const _SaleRegistrationAccess();
 
   @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<LivestockAccessCubit, ResultState<List<EstablishmentMembership>>>(
-      builder: (context, state) => switch (state) {
-        Data<List<EstablishmentMembership>>(:final data) when data.isNotEmpty => Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.md),
-          child: _SaleRegistrationCard(establishments: data),
-        ),
-        ResultError<List<EstablishmentMembership>>() => const Padding(
-          padding: EdgeInsets.only(bottom: AppSpacing.md),
-          child: _SaleAccessErrorCard(),
-        ),
-        _ => const SizedBox.shrink(),
-      },
-    );
-  }
+  Widget build(BuildContext context) => BlocBuilder<LivestockAccessCubit, ResultState<List<EstablishmentMembership>>>(
+    builder: (context, state) => switch (state) {
+      Data<List<EstablishmentMembership>>(:final data) when data.isNotEmpty => Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: _SaleRegistrationCard(establishments: data),
+      ),
+      ResultError<List<EstablishmentMembership>>() => const Padding(
+        padding: EdgeInsets.only(bottom: AppSpacing.sm),
+        child: _SaleAccessErrorCard(),
+      ),
+      _ => const SizedBox.shrink(),
+    },
+  );
 }
 
 class _SaleRegistrationCard extends StatelessWidget {
@@ -143,27 +205,25 @@ class _SaleRegistrationCard extends StatelessWidget {
   final List<EstablishmentMembership> establishments;
 
   @override
-  Widget build(BuildContext context) {
-    return AppSurfaceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            LivestockStrings.saleRegisterTitle,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          const Text(LivestockStrings.saleRegisterDescription),
-          const SizedBox(height: AppSpacing.md),
-          AppFilledButton(
-            key: const Key('livestockSaleRegisterButton'),
-            label: LivestockStrings.saleRegisterButton,
-            onPressed: () => _openSaleRegistration(context),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AppSurfaceCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          LivestockStrings.saleRegisterTitle,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        const Text(LivestockStrings.saleRegisterDescription),
+        const SizedBox(height: AppSpacing.md),
+        AppFilledButton(
+          key: const Key('livestockSaleRegisterButton'),
+          label: LivestockStrings.saleRegisterButton,
+          onPressed: () => _openSaleRegistration(context),
+        ),
+      ],
+    ),
+  );
 
   Future<void> _openSaleRegistration(BuildContext context) async {
     final establishmentId = establishments.length == 1
@@ -196,19 +256,17 @@ class _SaleAccessErrorCard extends StatelessWidget {
   const _SaleAccessErrorCard();
 
   @override
-  Widget build(BuildContext context) {
-    return AppSurfaceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(LivestockStrings.saleAccessError),
-          const SizedBox(height: AppSpacing.md),
-          AppOutlinedButton(
-            label: LivestockStrings.retry,
-            onPressed: context.read<LivestockAccessCubit>().load,
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AppSurfaceCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(LivestockStrings.saleAccessError),
+        const SizedBox(height: AppSpacing.md),
+        AppOutlinedButton(
+          label: LivestockStrings.retry,
+          onPressed: context.read<LivestockAccessCubit>().load,
+        ),
+      ],
+    ),
+  );
 }

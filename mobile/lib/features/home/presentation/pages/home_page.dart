@@ -144,6 +144,8 @@ class _HomeDashboardBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
+      // El tablero puede desplazarse por detrás de la barra inferior.
+      bottom: false,
       child: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
         builder: (context, state) {
           final dashboardState = state.dashboardState;

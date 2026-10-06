@@ -5,6 +5,7 @@ import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/presentation/geometry/local_canvas_projection.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
 import 'package:frontend_mayoral/features/field/presentation/theme/lot_status_visuals.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/field_satellite_layer.dart';
 import 'package:latlong2/latlong.dart';
 
 /// Lienzo cartesiano que representa todos los lotes locales del establecimiento.
@@ -13,6 +14,7 @@ class LotOverviewCanvas extends StatefulWidget {
   const LotOverviewCanvas({
     required this.lots,
     required this.onLotSelected,
+    this.showSatelliteMap = false,
     super.key,
   });
 
@@ -21,6 +23,9 @@ class LotOverviewCanvas extends StatefulWidget {
 
   /// Notifica el UUID del polígono tocado.
   final ValueChanged<String> onLotSelected;
+
+  /// Habilita el fondo asignado al establecimiento seleccionado.
+  final bool showSatelliteMap;
 
   @override
   State<LotOverviewCanvas> createState() => _LotOverviewCanvasState();
@@ -52,7 +57,7 @@ class _LotOverviewCanvasState extends State<LotOverviewCanvas> {
             options: MapOptions(
               crs: const CrsSimple(),
               initialCameraFit: CameraFit.bounds(
-                bounds: _bounds,
+                bounds: widget.showSatelliteMap ? FieldSatelliteMap.bounds : _bounds,
                 padding: const EdgeInsets.all(AppSpacing.md),
                 minZoom: -8,
               ),
@@ -61,6 +66,7 @@ class _LotOverviewCanvasState extends State<LotOverviewCanvas> {
               backgroundColor: AppColors.backgroundSecondary,
             ),
             children: [
+              if (widget.showSatelliteMap) const FieldSatelliteLayer(),
               GestureDetector(
                 onTap: () {
                   final values = _hitNotifier.value?.hitValues;

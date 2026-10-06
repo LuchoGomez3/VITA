@@ -36,7 +36,9 @@ _OperatingExpenseRemoteDto _$OperatingExpenseRemoteDtoFromJson(
       loadedById: $checkedConvert('cargado_por_id', (v) => v as String?),
       loadedBy: $checkedConvert(
         'cargado_por',
-        (v) => v == null ? null : OperatingExpenseRemoteUserDto.fromJson(v as Map<String, dynamic>),
+        (v) => v == null
+            ? null
+            : OperatingExpenseRemoteUserDto.fromJson(v as Map<String, dynamic>),
       ),
       deletedAt: $checkedConvert(
         'deleted_at',

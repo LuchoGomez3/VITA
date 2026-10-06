@@ -1,7 +1,8 @@
 // GENERATED CODE DO NOT EDIT
 part of '../brick.g.dart';
 
-Future<BrickOperatingExpenseCategoryModel> _$BrickOperatingExpenseCategoryModelFromRest(
+Future<BrickOperatingExpenseCategoryModel>
+_$BrickOperatingExpenseCategoryModelFromRest(
   Map<String, dynamic> data, {
   required RestProvider provider,
   OfflineFirstWithRestRepository? repository,
@@ -38,7 +39,8 @@ Future<Map<String, dynamic>> _$BrickOperatingExpenseCategoryModelToRest(
   };
 }
 
-Future<BrickOperatingExpenseCategoryModel> _$BrickOperatingExpenseCategoryModelFromSqlite(
+Future<BrickOperatingExpenseCategoryModel>
+_$BrickOperatingExpenseCategoryModelFromSqlite(
   Map<String, dynamic> data, {
   required SqliteProvider provider,
   OfflineFirstWithRestRepository? repository,
@@ -56,8 +58,11 @@ Future<BrickOperatingExpenseCategoryModel> _$BrickOperatingExpenseCategoryModelF
         : data['deleted_at'] == null
         ? null
         : DateTime.tryParse(data['deleted_at'] as String),
-    syncStatus: BrickOperatingExpenseCategorySyncStatus.values[data['sync_status'] as int],
-    syncErrorCode: data['sync_error_code'] == null ? null : data['sync_error_code'] as String?,
+    syncStatus: BrickOperatingExpenseCategorySyncStatus
+        .values[data['sync_status'] as int],
+    syncErrorCode: data['sync_error_code'] == null
+        ? null
+        : data['sync_error_code'] as String?,
   )..primaryKey = data['_brick_id'] as int;
 }
 

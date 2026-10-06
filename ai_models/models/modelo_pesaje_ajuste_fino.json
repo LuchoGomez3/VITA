@@ -1,0 +1,14 @@
+{
+  "modelo": "modelo_pesaje_ajuste_fino.keras",
+  "sha256_modelo": "a690111bed00d293a32c51edaee696ce068bd4bc1a69316b78f92c037d8d2c87",
+  "cobertura_objetivo": 0.9,
+  "margen_kg": 85.26577758789062,
+  "animales_calibracion": 94,
+  "fotos_calibracion": 422,
+  "semilla": 137,
+  "metodo": "cuantil_del_error_maximo_por_animal",
+  "modelo_base": "modelo_pesaje_con_intervalo.keras",
+  "capas_visuales_ajustables": 19,
+  "epocas_ajuste": 4,
+  "tasa_aprendizaje": 1e-05
+}

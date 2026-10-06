@@ -20,3 +20,10 @@ RfidScanBloc createRfidScanBloc({
     establishmentId: establishmentId,
   );
 }
+
+/// Reutiliza el mismo ciclo de lectura sin identificar un animal existente.
+RfidScanBloc createRfidCaptureBloc({required RfidReadingSource readingSource}) => RfidScanBloc(
+  readingSource: readingSource,
+  validateRfidReadingUseCase: ValidateRfidReadingUseCase(),
+  mode: RfidScanMode.capture,
+);

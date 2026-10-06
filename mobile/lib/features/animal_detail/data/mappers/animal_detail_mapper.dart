@@ -1,4 +1,6 @@
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/models/animal_observation.model.dart';
+import 'package:frontend_mayoral/brick/models/categoria.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
@@ -8,10 +10,52 @@ import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_d
 class AnimalDetailMapper {
   const AnimalDetailMapper._();
 
+  /// Traduce códigos del backend a enums del dominio sin filtrar estados reales.
+  static AnimalStatus statusFromBackend(String value) => switch (value) {
+    'activo' => AnimalStatus.active,
+    'vendido' => AnimalStatus.sold,
+    'muerto' => AnimalStatus.dead,
+    'baja' => AnimalStatus.inactive,
+    _ => throw const FormatException('Estado de animal inválido'),
+  };
+
+  /// Traduce condiciones opcionales, incluyendo el valor explícito sin determinar.
+  static AnimalReproductiveStatus? reproductionFromBackend(String? value) => switch (value) {
+    null => null,
+    'sin_determinar' => AnimalReproductiveStatus.undetermined,
+    'vacia' => AnimalReproductiveStatus.empty,
+    'prenada' => AnimalReproductiveStatus.pregnant,
+    _ => throw const FormatException('Condición reproductiva inválida'),
+  };
+
+  /// Obtiene la regla del catálogo para filtrar categorías y opciones de preñez.
+  static AnimalDetailCategory categoryFromBrick(BrickCategoriaModel category) => AnimalDetailCategory(
+    id: category.localId,
+    name: category.name,
+    allowedSex: switch (category.allowedSex) {
+      'macho' => AnimalSex.male,
+      'hembra' => AnimalSex.female,
+      'ambos' => null,
+      _ => throw const FormatException('Sexo permitido inválido'),
+    },
+    allowsReproductiveStatus: category.allowsReproductiveStatus,
+  );
+
+  /// Mantiene cada nota separada y su resultado de sincronización visible.
+  static AnimalDetailObservation observationFromBrick(BrickAnimalObservationModel note) => AnimalDetailObservation(
+    id: note.localId,
+    text: note.text,
+    date: note.date,
+    syncStatus: note.syncStatus.toDomain(),
+    syncErrorCode: note.syncErrorCode,
+  );
+
   /// Convierte el modelo Brick cacheado en dominio.
   static AnimalDetail fromBrick(BrickAnimalModel model) {
     return AnimalDetail(
       id: model.localId,
+      status: statusFromBackend(model.status),
+      reproductiveStatus: reproductionFromBackend(model.reproductiveStatus),
       rfidTagNumber: model.rfidTagNumber,
       visualTag: model.visualTag,
       sex: model.sex.toDomain(),
@@ -26,8 +70,13 @@ class AnimalDetailMapper {
       currentWeight: model.initialWeight ?? 0,
       weighingMethod: model.weighingMethod.toDomain(),
       weighingDate: model.weighingDate,
-      syncStatus: model.syncStatus.toDomain(),
-      syncErrorCode: model.syncErrorCode,
+      syncStatus:
+          model.syncStatus == BrickAnimalSyncStatus.rejected || model.lotSyncStatus == BrickAnimalSyncStatus.rejected
+          ? AnimalSyncStatus.rejected
+          : model.syncStatus == BrickAnimalSyncStatus.pending || model.lotSyncStatus == BrickAnimalSyncStatus.pending
+          ? AnimalSyncStatus.pending
+          : AnimalSyncStatus.synchronized,
+      syncErrorCode: model.syncErrorCode ?? model.lotSyncErrorCode,
       updatedAt: model.updatedAt,
       weightHistory: const [],
       motherId: model.motherId,
@@ -50,6 +99,8 @@ class AnimalDetailMapper {
   static BrickAnimalModel toBrickCache(AnimalDetailBackendDto dto) {
     return BrickAnimalModel(
       localId: dto.id,
+      status: dto.status,
+      reproductiveStatus: dto.reproductiveStatus,
       rfidTagNumber: dto.rfidTagNumber,
       visualTag: dto.visualTag,
       sex: dto.sex.toBrickSex(),
@@ -67,9 +118,6 @@ class AnimalDetailMapper {
       fatherId: dto.fatherId,
       coat: dto.coat,
       observations: dto.observations,
-      productiveStatus: brickAnimalProductiveStatusFromBackend(
-        dto.productiveStatus,
-      ),
       syncStatus: BrickAnimalSyncStatus.synchronized,
     );
   }

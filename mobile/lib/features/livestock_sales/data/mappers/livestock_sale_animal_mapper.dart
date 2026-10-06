@@ -12,19 +12,19 @@ abstract final class LivestockSaleAnimalMapper {
       visualTag: animal.visualTag,
       categoryName: animal.categoryName,
       lotName: animal.lotName,
-      status: _statusFromBrick(animal.productiveStatus),
+      status: _statusFromBrick(animal.status),
     );
   }
 
   static LivestockSaleAnimalStatus _statusFromBrick(
-    BrickAnimalProductiveStatus status,
+    String status,
   ) {
     return switch (status) {
-      BrickAnimalProductiveStatus.active => LivestockSaleAnimalStatus.active,
-      BrickAnimalProductiveStatus.sold => LivestockSaleAnimalStatus.sold,
-      BrickAnimalProductiveStatus.dead => LivestockSaleAnimalStatus.dead,
-      BrickAnimalProductiveStatus.removed => LivestockSaleAnimalStatus.removed,
-      BrickAnimalProductiveStatus.unknown => LivestockSaleAnimalStatus.unknown,
+      'activo' => LivestockSaleAnimalStatus.active,
+      'vendido' => LivestockSaleAnimalStatus.sold,
+      'muerto' => LivestockSaleAnimalStatus.dead,
+      'baja' => LivestockSaleAnimalStatus.removed,
+      _ => LivestockSaleAnimalStatus.unknown,
     };
   }
 }

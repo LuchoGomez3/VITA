@@ -2,16 +2,27 @@ import 'dart:convert';
 
 import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart';
 import 'package:brick_rest/brick_rest.dart';
+import 'package:brick_sqlite/brick_sqlite.dart';
 
-/// Contrato REST preparado para movimientos de hacienda entre lotes.
+/// Contrato REST batch de asignación inicial y traslado entre lotes.
 class BrickAnimalLotMovementRequestTransformer extends RestRequestTransformer {
   /// Crea el transformer exigido por Brick.
   const BrickAnimalLotMovementRequestTransformer(super.query, super.instance);
 
-  /// Endpoint acordado provisionalmente con backend.
-  // TODO(field-backend): validar el contrato batch, la atomicidad y los códigos
-  // de conflicto antes de habilitar la sincronización de movimientos.
+  /// Endpoint batch atómico e idempotente por UUID del cliente.
   static const movementsPath = '/api/v1/movimientos_lotes';
+
+  /// Descarga el historial del establecimiento, incluidos tombstones.
+  static RestRequest listRequest(String establishmentId) => RestRequest(
+    url: '$movementsPath?establecimiento_id=${Uri.encodeQueryComponent(establishmentId)}&include_deleted=true',
+    topLevelKey: 'data',
+  );
+
+  /// Alias conservado para los consumidores del sync inicial existente.
+  static RestRequest listByEstablishmentRequest(String establishmentId) => listRequest(establishmentId);
+
+  /// Indica si un resultado HTTP pertenece al recurso de movimientos.
+  static bool matchesMovementResource(String resourcePath) => resourcePath.endsWith(movementsPath);
 
   @override
   RestRequest get get => const RestRequest(
@@ -46,6 +57,8 @@ class BrickAnimalLotMovementModel extends OfflineFirstWithRestModel {
     required this.updatedAt,
     this.responsibleId,
     this.deletedAt,
+    this.syncStatus = BrickMovementSyncStatus.pending,
+    this.syncErrorCode,
   });
 
   /// UUID generado por mobile.
@@ -58,7 +71,7 @@ class BrickAnimalLotMovementModel extends OfflineFirstWithRestModel {
 
   /// Lote de procedencia.
   @Rest(name: 'lote_origen_id')
-  final String sourceLotId;
+  final String? sourceLotId;
 
   /// Lote de destino.
   @Rest(name: 'lote_destino_id')
@@ -80,10 +93,8 @@ class BrickAnimalLotMovementModel extends OfflineFirstWithRestModel {
   @Rest(name: 'motivo')
   final String reason;
 
-  /// Usuario responsable; queda opcional hasta alinear roles/sesión.
-  // TODO(field-auth): completar siempre este UUID desde la sesión autenticada
-  // cuando se cierre el modelo definitivo de roles y auditoría.
-  @Rest(name: 'responsable_id')
+  /// Auditoría recibida del servidor: jamás se envía un responsable desde mobile.
+  @Rest(name: 'responsable_id', ignoreTo: true)
   final String? responsibleId;
 
   /// Auditoría offline-first.
@@ -97,7 +108,53 @@ class BrickAnimalLotMovementModel extends OfflineFirstWithRestModel {
   /// Tombstone sincronizable.
   @Rest(name: 'deleted_at')
   final DateTime? deletedAt;
+
+  /// Estado del movimiento independiente de las ediciones del animal.
+  @Rest(ignore: true)
+  @Sqlite(fromGenerator: 'brickMovementStatusFromSqlite(%DATA_PROPERTY%)')
+  final BrickMovementSyncStatus syncStatus;
+
+  /// Rechazo durable que permite mostrar y reintentar la misma operación.
+  @Rest(ignore: true)
+  final String? syncErrorCode;
+
+  /// Cambia el resultado técnico conservando UUID, payload y fila SQLite.
+  BrickAnimalLotMovementModel withSync(BrickMovementSyncStatus status, {String? errorCode}) =>
+      BrickAnimalLotMovementModel(
+        localId: localId,
+        establishmentId: establishmentId,
+        sourceLotId: sourceLotId,
+        destinationLotId: destinationLotId,
+        animalIdsJson: animalIdsJson,
+        occurredAt: occurredAt,
+        reason: reason,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        responsibleId: responsibleId,
+        deletedAt: deletedAt,
+        syncStatus: status,
+        syncErrorCode: errorCode,
+      )..primaryKey = primaryKey;
 }
+
+/// Resultado durable del envío del movimiento.
+enum BrickMovementSyncStatus {
+  /// Guardado localmente y todavía no confirmado.
+  pending,
+
+  /// Confirmado por el servidor.
+  synchronized,
+
+  /// Rechazado; conserva el payload para revisión y reintento explícito.
+  rejected,
+}
+
+/// Nombre histórico conservado para no romper consumidores existentes.
+typedef BrickAnimalLotMovementSyncStatus = BrickMovementSyncStatus;
+
+/// Las filas previas a la migración todavía no tienen un estado de sync.
+BrickMovementSyncStatus brickMovementStatusFromSqlite(Object? value) =>
+    BrickMovementSyncStatus.values[(value as int?) ?? 0];
 
 /// Convierte la representación SQLite a la lista esperada por REST.
 Object brickMovementAnimalIdsToBackend(String encoded) => jsonDecode(encoded) as Object;

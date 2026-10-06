@@ -18,35 +18,34 @@ class HomeDailyGainCard extends StatelessWidget {
     final dailyGain = dashboard.averageDailyGainKg;
 
     return AppSurfaceCard(
-      child: Row(
+      // Mantiene la misma profundidad visual que las tarjetas de gastos.
+      elevation: 3,
+      shadowColor: AppColors.cardShadow,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const HomeAssetIcon(
             assetPath: 'assets/icons/arrow_right_alt.svg',
-            size: 32,
           ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  HomeStrings.averageDailyGain,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(
-                  dailyGain == null ? HomeStrings.noData : '${dailyGain.toStringAsFixed(2)} kg/día',
-                  style: AppTypography.bigTitle,
-                ),
-                Text(
-                  '${dashboard.animalsWithDailyGain} '
-                  '${HomeStrings.animalsWithHistory}',
-                  style: AppTypography.smallEmphasis.copyWith(
-                    color: AppColors.textHint,
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            dailyGain == null ? HomeStrings.noData : dailyGain.toStringAsFixed(2),
+            style: AppTypography.bigTitle,
+          ),
+          const Text(
+            HomeStrings.averageDailyGain,
+            style: AppTypography.mediumEmphasis,
+          ),
+          const Text(
+            HomeStrings.dailyGainUnit,
+            style: AppTypography.smallEmphasis,
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            '${dashboard.animalsWithDailyGain} ${HomeStrings.animalsWithHistory}',
+            style: AppTypography.smallEmphasis.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),

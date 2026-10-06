@@ -15,14 +15,21 @@ class HomeCategoryMetricsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppSurfaceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      // Mantiene la misma profundidad visual que las tarjetas de gastos.
+      elevation: 3,
+      shadowColor: AppColors.cardShadow,
+      padding: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      // La expansión queda en el widget y conserva su estado durante el scroll.
+      child: ExpansionTile(
+        key: const PageStorageKey('home-category-metrics'),
+        title: const Text(HomeStrings.categoryDistribution),
+        tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        childrenPadding: const EdgeInsets.all(AppSpacing.md),
+        expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+        shape: const Border(),
+        collapsedShape: const Border(),
         children: [
-          Text(
-            HomeStrings.categoryDistribution,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: AppSpacing.md),
           if (categories.isEmpty)
             const Text(HomeStrings.noAnimals)
           else
