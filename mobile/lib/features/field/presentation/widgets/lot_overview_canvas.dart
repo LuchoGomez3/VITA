@@ -49,67 +49,68 @@ class _LotOverviewCanvasState extends State<LotOverviewCanvas> {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: Stack(
-        children: [
-          FlutterMap(
-            options: MapOptions(
-              crs: const CrsSimple(),
-              initialCameraFit: CameraFit.bounds(
-                bounds: widget.showSatelliteMap ? FieldSatelliteMap.bounds : _bounds,
-                padding: const EdgeInsets.all(AppSpacing.md),
+    return FieldRasterBuilder(
+      showSatelliteMap: widget.showSatelliteMap,
+      builder: (context, geometry) => ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Stack(
+          children: [
+            FlutterMap(
+              options: MapOptions(
+                crs: const CrsSimple(),
+                initialCameraFit: geometry == null
+                    ? CameraFit.bounds(bounds: _bounds, padding: const EdgeInsets.all(AppSpacing.md), minZoom: -8)
+                    : CameraFit.insideBounds(bounds: geometry.coverBounds, minZoom: -8),
                 minZoom: -8,
+                maxZoom: 3,
+                backgroundColor: AppColors.backgroundSecondary,
               ),
-              minZoom: -8,
-              maxZoom: 3,
-              backgroundColor: AppColors.backgroundSecondary,
+              children: [
+                if (geometry != null) FieldSatelliteLayer(geometry: geometry),
+                GestureDetector(
+                  onTap: () {
+                    final values = _hitNotifier.value?.hitValues;
+                    if (values != null && values.isNotEmpty) {
+                      widget.onLotSelected(values.first);
+                    }
+                  },
+                  child: PolygonLayer<String>(
+                    hitNotifier: _hitNotifier,
+                    simplificationTolerance: 0,
+                    polygons: [
+                      for (final lot in widget.lots)
+                        Polygon<String>(
+                          points: [
+                            for (final vertex in lot.boundary.vertices) LocalCanvasProjection.toViewport(vertex),
+                          ],
+                          color: lot.status.color.withValues(alpha: 0.28),
+                          borderColor: lot.status.color,
+                          borderStrokeWidth: 3,
+                          label: lot.name,
+                          labelStyle: AppTypography.smallEmphasis,
+                          hitValue: lot.id,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            children: [
-              if (widget.showSatelliteMap) const FieldSatelliteLayer(),
-              GestureDetector(
-                onTap: () {
-                  final values = _hitNotifier.value?.hitValues;
-                  if (values != null && values.isNotEmpty) {
-                    widget.onLotSelected(values.first);
-                  }
-                },
-                child: PolygonLayer<String>(
-                  hitNotifier: _hitNotifier,
-                  simplificationTolerance: 0,
-                  polygons: [
-                    for (final lot in widget.lots)
-                      Polygon<String>(
-                        points: [
-                          for (final vertex in lot.boundary.vertices) LocalCanvasProjection.toViewport(vertex),
-                        ],
-                        color: lot.status.color.withValues(alpha: 0.28),
-                        borderColor: lot.status.color,
-                        borderStrokeWidth: 3,
-                        label: lot.name,
-                        labelStyle: AppTypography.smallEmphasis,
-                        hitValue: lot.id,
-                      ),
-                  ],
+            if (widget.lots.isEmpty)
+              const Center(
+                child: Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppSpacing.md),
+                    child: Text(FieldStrings.noLocalLotsMessage),
+                  ),
                 ),
               ),
-            ],
-          ),
-          if (widget.lots.isEmpty)
-            const Center(
-              child: Card(
-                child: Padding(
-                  padding: EdgeInsets.all(AppSpacing.md),
-                  child: Text(FieldStrings.noLocalLotsMessage),
-                ),
-              ),
+            const Positioned(
+              bottom: AppSpacing.sm,
+              left: AppSpacing.sm,
+              child: _LocalOnlyBadge(),
             ),
-          const Positioned(
-            bottom: AppSpacing.sm,
-            left: AppSpacing.sm,
-            child: _LocalOnlyBadge(),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

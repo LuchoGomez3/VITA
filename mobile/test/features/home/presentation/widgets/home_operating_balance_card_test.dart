@@ -5,33 +5,36 @@ import 'package:frontend_mayoral/features/home/presentation/strings/home_strings
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_operating_balance_card.dart';
 
 void main() {
-  testWidgets('muestra gastos reales sin inventar un balance ni valor de stock', (tester) async {
+  testWidgets('muestra ventas menos gastos como balance operativo', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: HomeOperatingBalanceCard(
             dashboard: _dashboard,
             onRegisterExpense: () {},
-            onRegisterIncome: () {},
+            onRegisterSale: () {},
             onViewMovements: () {},
           ),
         ),
       ),
     );
 
-    expect(find.text(HomeStrings.noData), findsNWidgets(2));
-    expect(find.text(r'- $ 1.230,45'), findsOneWidget);
+    expect(find.text(r'$ 691.900,00'), findsOneWidget);
+    expect(find.text(r'$ 1.200.000,00'), findsOneWidget);
+    expect(find.text(HomeStrings.salesRevenue), findsOneWidget);
+    expect(find.text(r'- $ 508.100,00'), findsOneWidget);
   });
 
   testWidgets('delega las acciones mediante callbacks', (tester) async {
     var expenseRequests = 0;
+    var saleRequests = 0;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: HomeOperatingBalanceCard(
             dashboard: _dashboard,
             onRegisterExpense: () => expenseRequests++,
-            onRegisterIncome: () {},
+            onRegisterSale: () => saleRequests++,
             onViewMovements: () {},
           ),
         ),
@@ -40,7 +43,9 @@ void main() {
 
     await tester.tap(find.text(HomeStrings.registerExpense));
 
+    await tester.tap(find.text(HomeStrings.registerSale));
     expect(expenseRequests, 1);
+    expect(saleRequests, 1);
   });
 }
 
@@ -53,5 +58,6 @@ const _dashboard = HomeDashboard(
   animalsWithDailyGain: 0,
   categories: [],
   lots: [],
-  operatingExpensesCents: 123045,
+  operatingExpensesCents: 50810000,
+  salesRevenueCents: 120000000,
 );

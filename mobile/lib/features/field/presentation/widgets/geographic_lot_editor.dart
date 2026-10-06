@@ -74,125 +74,126 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
       for (final vertex in vertices) LocalCanvasProjection.toViewport(vertex),
     ];
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: Stack(
-        children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              crs: const CrsSimple(),
-              initialCameraFit: CameraFit.bounds(
-                bounds: widget.showSatelliteMap ? FieldSatelliteMap.bounds : _canvasBounds,
-                padding: const EdgeInsets.all(AppSpacing.md),
+    return FieldRasterBuilder(
+      showSatelliteMap: widget.showSatelliteMap,
+      builder: (context, geometry) => ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Stack(
+          children: [
+            FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                crs: const CrsSimple(),
+                initialCameraFit: geometry == null
+                    ? CameraFit.bounds(bounds: _canvasBounds, padding: const EdgeInsets.all(AppSpacing.md), minZoom: -8)
+                    : CameraFit.insideBounds(bounds: geometry.coverBounds, minZoom: -8),
                 minZoom: -8,
+                maxZoom: 3,
+                backgroundColor: AppColors.backgroundSecondary,
+                interactionOptions: InteractionOptions(
+                  flags: _isInteractingWithVertex ? InteractiveFlag.none : InteractiveFlag.all,
+                ),
+                onTap: (_, point) {
+                  if (widget.state.isClosed) {
+                    return;
+                  }
+                  final placement = _resolvePlacement(
+                    LocalCanvasProjection.fromViewport(point),
+                  );
+                  if (placement.isBlocked) {
+                    _showBlockedPlacementMessage();
+                    return;
+                  }
+                  widget.onVertexAdded(placement.point);
+                },
               ),
-              minZoom: -8,
-              maxZoom: 3,
-              backgroundColor: AppColors.backgroundSecondary,
-              interactionOptions: InteractionOptions(
-                flags: _isInteractingWithVertex ? InteractiveFlag.none : InteractiveFlag.all,
-              ),
-              onTap: (_, point) {
-                if (widget.state.isClosed) {
-                  return;
-                }
-                final placement = _resolvePlacement(
-                  LocalCanvasProjection.fromViewport(point),
-                );
-                if (placement.isBlocked) {
-                  _showBlockedPlacementMessage();
-                  return;
-                }
-                widget.onVertexAdded(placement.point);
-              },
-            ),
-            children: [
-              if (widget.showSatelliteMap) const FieldSatelliteLayer(),
-              if (widget.existingLots.isNotEmpty)
-                PolygonLayer(
-                  polygons: [
-                    for (final lot in widget.existingLots)
+              children: [
+                if (geometry != null) FieldSatelliteLayer(geometry: geometry),
+                if (widget.existingLots.isNotEmpty)
+                  PolygonLayer(
+                    polygons: [
+                      for (final lot in widget.existingLots)
+                        Polygon(
+                          points: [
+                            for (final vertex in lot.boundary.vertices) LocalCanvasProjection.toViewport(vertex),
+                          ],
+                          color: AppColors.textHint.withValues(alpha: 0.20),
+                          borderColor: AppColors.textHint,
+                          borderStrokeWidth: 2,
+                          label: lot.name,
+                          labelStyle: AppTypography.smallEmphasis,
+                        ),
+                    ],
+                  ),
+                if (mapPoints.length >= 3)
+                  PolygonLayer(
+                    polygons: [
                       Polygon(
-                        points: [
-                          for (final vertex in lot.boundary.vertices) LocalCanvasProjection.toViewport(vertex),
-                        ],
-                        color: AppColors.textHint.withValues(alpha: 0.20),
-                        borderColor: AppColors.textHint,
-                        borderStrokeWidth: 2,
-                        label: lot.name,
-                        labelStyle: AppTypography.smallEmphasis,
+                        points: mapPoints,
+                        color: AppColors.primary.withValues(
+                          alpha: widget.state.isClosed ? 0.30 : 0.18,
+                        ),
+                        borderColor: AppColors.primary,
+                        borderStrokeWidth: widget.state.isClosed ? 3 : 2,
+                      ),
+                    ],
+                  ),
+                if (mapPoints.length >= 2 && !widget.state.isClosed)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: mapPoints,
+                        color: AppColors.primary,
+                        strokeWidth: 3,
+                      ),
+                    ],
+                  ),
+                MarkerLayer(
+                  markers: [
+                    for (var index = 0; index < vertices.length; index++)
+                      Marker(
+                        point: mapPoints[index],
+                        width: 48,
+                        height: 48,
+                        child: LotVertexMarker(
+                          index: index,
+                          point: vertices[index],
+                          mapController: _mapController,
+                          isSelected: widget.state.selectedVertexIndex == index,
+                          onSelected: () => widget.onVertexSelected(index),
+                          onInteractionStarted: _lockMapGestures,
+                          onInteractionEnded: _unlockMapGestures,
+                          onMoveStarted: () => widget.onVertexMoveStarted(index),
+                          onMoved: (point) {
+                            final placement = _resolvePlacement(point);
+                            if (!placement.isBlocked) {
+                              widget.onVertexMoved(index, placement.point);
+                            }
+                          },
+                        ),
                       ),
                   ],
                 ),
-              if (mapPoints.length >= 3)
-                PolygonLayer(
-                  polygons: [
-                    Polygon(
-                      points: mapPoints,
-                      color: AppColors.primary.withValues(
-                        alpha: widget.state.isClosed ? 0.30 : 0.18,
-                      ),
-                      borderColor: AppColors.primary,
-                      borderStrokeWidth: widget.state.isClosed ? 3 : 2,
-                    ),
-                  ],
-                ),
-              if (mapPoints.length >= 2 && !widget.state.isClosed)
-                PolylineLayer(
-                  polylines: [
-                    Polyline(
-                      points: mapPoints,
-                      color: AppColors.primary,
-                      strokeWidth: 3,
-                    ),
-                  ],
-                ),
-              MarkerLayer(
-                markers: [
-                  for (var index = 0; index < vertices.length; index++)
-                    Marker(
-                      point: mapPoints[index],
-                      width: 48,
-                      height: 48,
-                      child: LotVertexMarker(
-                        index: index,
-                        point: vertices[index],
-                        mapController: _mapController,
-                        isSelected: widget.state.selectedVertexIndex == index,
-                        onSelected: () => widget.onVertexSelected(index),
-                        onInteractionStarted: _lockMapGestures,
-                        onInteractionEnded: _unlockMapGestures,
-                        onMoveStarted: () => widget.onVertexMoveStarted(index),
-                        onMoved: (point) {
-                          final placement = _resolvePlacement(point);
-                          if (!placement.isBlocked) {
-                            widget.onVertexMoved(index, placement.point);
-                          }
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-          Positioned(
-            top: AppSpacing.sm,
-            left: AppSpacing.sm,
-            right: 52,
-            child: _EditorHint(state: widget.state),
-          ),
-          const Positioned(
-            top: AppSpacing.sm,
-            right: AppSpacing.sm,
-            child: _NorthIndicator(),
-          ),
-          const Positioned(
-            bottom: AppSpacing.sm,
-            left: AppSpacing.sm,
-            child: _LocalDraftBadge(),
-          ),
-        ],
+              ],
+            ),
+            Positioned(
+              top: AppSpacing.sm,
+              left: AppSpacing.sm,
+              right: 52,
+              child: _EditorHint(state: widget.state),
+            ),
+            const Positioned(
+              top: AppSpacing.sm,
+              right: AppSpacing.sm,
+              child: _NorthIndicator(),
+            ),
+            const Positioned(
+              bottom: AppSpacing.sm,
+              left: AppSpacing.sm,
+              child: _LocalDraftBadge(),
+            ),
+          ],
+        ),
       ),
     );
   }

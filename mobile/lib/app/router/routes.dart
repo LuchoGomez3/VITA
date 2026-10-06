@@ -181,7 +181,7 @@ class AppRoutes {
   }
 
   /// Obtiene la ruta de detalle de un lote por su id.
-  static String fieldDetailById(String lotId) {
-    return '/campo/$lotId';
+  static String fieldDetailById(String lotId, {bool showSatelliteMap = false}) {
+    return '/campo/$lotId${showSatelliteMap ? '?mapaSatelital=true' : ''}';
   }
 }

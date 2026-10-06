@@ -1,3 +1,5 @@
+import 'package:frontend_mayoral/core/constants/financial_movement_strings.dart';
+
 /// Textos centralizados de la pantalla de hacienda.
 abstract final class LivestockStrings {
   /// Título de la pantalla.
@@ -10,7 +12,7 @@ abstract final class LivestockStrings {
   static const readTagDescription = 'Leé la caravana con el bastón para consultar un animal o registrar uno nuevo.';
 
   /// Titulo del acceso al registro de ventas.
-  static const saleRegisterTitle = 'Registrar venta';
+  static const String saleRegisterTitle = FinancialMovementStrings.registerSale;
 
   /// Descripcion del registro comercial de animales.
   static const saleRegisterDescription = 'Seleccioná animales y registrá los datos de la operación.';

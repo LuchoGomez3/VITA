@@ -2,10 +2,12 @@ import 'dart:math' as math;
 
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
+import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/operating_expense_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
@@ -26,6 +28,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     required PesajeBrickStore pesajeStore,
     required SecureStorageService secureStorage,
     required OperatingExpenseBrickStore operatingExpenseStore,
+    required LivestockSaleHistoryBrickStore saleStore,
     DateTime Function()? now,
   }) : _animalStore = animalStore,
        _categoryStore = categoryStore,
@@ -34,6 +37,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
          secureStorage: secureStorage,
        ),
        _operatingExpenseStore = operatingExpenseStore,
+       _saleStore = saleStore,
        _now = now ?? DateTime.now;
 
   final AnimalBrickStore _animalStore;
@@ -41,6 +45,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
   final PesajeBrickStore _pesajeStore;
   final EstablishmentCatalog _establishmentCatalog;
   final OperatingExpenseBrickStore _operatingExpenseStore;
+  final LivestockSaleHistoryBrickStore _saleStore;
   final DateTime Function() _now;
 
   @override
@@ -59,7 +64,8 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
       final weighings = await _pesajeStore.getLocalPesajes();
       final categories = await _categoryStore.getLocalCategorias();
       final expenses = await _expensesFor(establishmentIds);
-      return Result.success(_calculateDashboard(animals, weighings, categories, expenses));
+      final sales = await _salesFor(establishmentIds);
+      return Result.success(_calculateDashboard(animals, weighings, categories, expenses, sales));
     } on Object {
       return const Result.failure(
         DomainException(
@@ -90,6 +96,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     List<BrickPesajeModel> weighings,
     List<BrickCategoriaModel> categories,
     int operatingExpensesCents,
+    int salesRevenueCents,
   ) {
     // El tablero trabaja únicamente con animales vigentes. Las altas y bajas
     // mensuales sí se calculan sobre el historial completo para no perder los
@@ -125,6 +132,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
       categories: _categoryMetrics(activeAnimals, categories),
       lots: _lotMetrics(activeAnimals, currentWeights),
       operatingExpensesCents: operatingExpensesCents,
+      salesRevenueCents: salesRevenueCents,
     );
   }
 
@@ -142,6 +150,22 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
   int _sumExpenses(Iterable<BrickOperatingExpenseModel> expenses) => expenses.fold(
     0,
     (total, expense) => total + DecimalAmountFormatter.decimalToCents(expense.amount),
+  );
+
+  Future<int> _salesFor(Set<String>? establishmentIds) async {
+    if (establishmentIds == null) return _sumSales(await _saleStore.getSales(null));
+    var total = 0;
+    for (final id in establishmentIds) {
+      total += _sumSales(await _saleStore.getSales(id));
+    }
+    return total;
+  }
+
+  // El store ya excluye bajas y revisiones duplicadas. El KPI usa el precio
+  // pactado, no el cobro inicial: recibir un pago no genera una segunda venta.
+  int _sumSales(Iterable<BrickLivestockSaleModel> sales) => sales.fold(
+    0,
+    (total, sale) => total + DecimalAmountFormatter.decimalToCents(sale.totalAmount),
   );
 
   Map<String, List<BrickPesajeModel>> _groupWeighingsByAnimal(

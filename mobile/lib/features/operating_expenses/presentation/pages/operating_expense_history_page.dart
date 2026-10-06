@@ -28,6 +28,7 @@ class OperatingExpenseHistoryPage extends StatelessWidget {
   const OperatingExpenseHistoryPage({
     required this.establishmentName,
     required this.createCubit,
+    required this.onSalesSelected,
     super.key,
   });
 
@@ -37,19 +38,23 @@ class OperatingExpenseHistoryPage extends StatelessWidget {
   /// Construye el cubit con dependencias de composition.
   final OperatingExpenseHistoryCubitFactory createCubit;
 
+  /// Abre la sección de ventas mediante la navegación compuesta por la app.
+  final VoidCallback onSalesSelected;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => createCubit()..load(),
-      child: _OperatingExpenseHistoryView(establishmentName: establishmentName),
+      child: _OperatingExpenseHistoryView(establishmentName: establishmentName, onSalesSelected: onSalesSelected),
     );
   }
 }
 
 class _OperatingExpenseHistoryView extends StatefulWidget {
-  const _OperatingExpenseHistoryView({required this.establishmentName});
+  const _OperatingExpenseHistoryView({required this.establishmentName, required this.onSalesSelected});
 
   final String establishmentName;
+  final VoidCallback onSalesSelected;
 
   @override
   State<_OperatingExpenseHistoryView> createState() => _OperatingExpenseHistoryViewState();
@@ -132,10 +137,7 @@ class _OperatingExpenseHistoryViewState extends State<_OperatingExpenseHistoryVi
                     opacity: _compactHeader ? 0 : 1,
                     duration: const Duration(milliseconds: 180),
                     child: OperatingExpenseMovementSelector(
-                      onIncomeSelected: () => _showMessage(
-                        context,
-                        OperatingExpenseStrings.incomeComingSoon,
-                      ),
+                      onSalesSelected: widget.onSalesSelected,
                     ),
                   ),
                 ),

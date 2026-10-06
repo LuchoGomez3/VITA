@@ -22,6 +22,9 @@ abstract final class FieldStrings {
   /// Título del establecimiento mostrado en el header.
   static const establishmentTitle = 'La Sirena';
 
+  /// Error visible si los archivos offline de la imagen no pueden leerse.
+  static const satelliteMapLoadError = 'No se pudo cargar la imagen del campo.';
+
   /// Título de la pantalla de mapa y de lista.
   static const title = 'Campo';
 

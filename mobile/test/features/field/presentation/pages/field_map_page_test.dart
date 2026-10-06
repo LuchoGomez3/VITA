@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/local_point.dart';
@@ -20,7 +21,7 @@ import 'package:frontend_mayoral/features/field/presentation/widgets/lot_overvie
 import 'package:go_router/go_router.dart';
 
 void main() {
-  testWidgets('retira el fondo satelital al cambiar de San Nicolás a otro establecimiento', (tester) async {
+  testWidgets('la demo conserva el fondo satelital al cambiar de establecimiento', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: FieldMapPage(
@@ -40,9 +41,18 @@ void main() {
     await cubit.selectEstablishment('est-1');
     await tester.pumpAndSettle();
     expect(find.byType(FieldSatelliteLayer), findsOneWidget);
+    // El visor debe quedar dentro del raster para evitar franjas vacías en
+    // cualquier proporción de pantalla, conservando la imagen sin estirarla.
+    // La proyección redondea posiciones a píxeles; se admite ese margen mínimo.
+    final geometry = tester.widget<FieldSatelliteLayer>(find.byType(FieldSatelliteLayer)).geometry;
+    final camera = MapCamera.of(tester.element(find.byType(FieldSatelliteLayer)));
+    expect(camera.visibleBounds.west, greaterThanOrEqualTo(geometry.coverBounds.west - 0.1));
+    expect(camera.visibleBounds.east, lessThanOrEqualTo(geometry.coverBounds.east + 0.1));
+    expect(camera.visibleBounds.south, greaterThanOrEqualTo(geometry.coverBounds.south - 0.1));
+    expect(camera.visibleBounds.north, lessThanOrEqualTo(geometry.coverBounds.north + 0.1));
     await cubit.selectEstablishment('est-2');
     await tester.pumpAndSettle();
-    expect(find.byType(FieldSatelliteLayer), findsNothing);
+    expect(find.byType(FieldSatelliteLayer), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
   testWidgets('recarga SQLite al volver de eliminar un lote', (tester) async {

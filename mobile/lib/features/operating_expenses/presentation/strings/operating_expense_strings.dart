@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/core/constants/financial_movement_strings.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
@@ -43,13 +44,22 @@ class OperatingExpenseStrings {
   static const saveError = 'No se pudo guardar el egreso en el dispositivo.';
   static const saveCategoryError = 'No se pudo guardar la categoría en el dispositivo.';
   static const loadCategoriesError = 'No se pudieron leer las categorías disponibles.';
-  static const historyTitle = 'Movimientos';
-  static const expensesTab = 'Egresos';
-  static const incomeTab = 'Ingresos';
-  static const incomeComingSoon = 'Los ingresos operativos se implementarán en una próxima etapa.';
+
+  /// Título compartido del historial financiero.
+  static const String historyTitle = FinancialMovementStrings.title;
+
+  /// Etiqueta de la sección de gastos.
+  static const String expensesTab = FinancialMovementStrings.expenses;
+
+  /// Etiqueta de la sección de ventas de hacienda.
+  static const String salesTab = FinancialMovementStrings.sales;
   static const totalExpenses = 'Total';
-  static const records = 'registros encontrados';
-  static const oneRecord = 'registro encontrado';
+
+  /// Descripción compartida de varios movimientos visibles.
+  static const String records = FinancialMovementStrings.records;
+
+  /// Descripción compartida de un único movimiento visible.
+  static const String oneRecord = FinancialMovementStrings.oneRecord;
   static const exportCsv = 'Exportar CSV';
   static const exportSuccess = 'Archivo listo para guardar o compartir.';
   static const exportError = 'No se pudo exportar el archivo. Reintentá cuando tengas conexión.';

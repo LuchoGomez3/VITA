@@ -1,3 +1,5 @@
+import 'package:frontend_mayoral/core/constants/financial_movement_strings.dart';
+
 /// Textos centralizados del tablero de Inicio.
 abstract final class HomeStrings {
   /// Titulo del app bar.
@@ -44,6 +46,9 @@ abstract final class HomeStrings {
   /// Titulo del resumen economico operativo.
   static const operatingBalance = 'Balance operativo';
 
+  /// Total pactado de las operaciones comerciales de hacienda.
+  static const String salesRevenue = FinancialMovementStrings.sales;
+
   /// Etiqueta del valor estimado del stock.
   static const estimatedStock = 'Stock estimado';
 
@@ -65,8 +70,8 @@ abstract final class HomeStrings {
   /// Accion para iniciar el registro de un egreso.
   static const registerExpense = 'Registrar egreso';
 
-  /// Accion para iniciar el registro de un ingreso.
-  static const registerIncome = 'Registrar ingreso';
+  /// Acción para iniciar el registro de una venta de hacienda.
+  static const String registerSale = FinancialMovementStrings.registerSale;
 
   /// Accion para consultar ingresos y egresos.
   static const movements = 'Movimientos';

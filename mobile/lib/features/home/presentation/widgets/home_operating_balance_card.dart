@@ -8,14 +8,13 @@ import 'package:frontend_mayoral/features/home/presentation/widgets/home_asset_i
 
 /// Resume el balance operativo y ofrece accesos a sus movimientos.
 ///
-/// Los importes son temporales hasta que stock, ingresos y egresos cuenten con
-/// sus fuentes de datos definitivas.
+/// Calcula el balance con ventas y gastos locales del alcance seleccionado.
 class HomeOperatingBalanceCard extends StatelessWidget {
   /// Crea el bloque superior del balance operativo.
   const HomeOperatingBalanceCard({
     required this.dashboard,
     required this.onRegisterExpense,
-    required this.onRegisterIncome,
+    required this.onRegisterSale,
     required this.onViewMovements,
     super.key,
   });
@@ -26,8 +25,8 @@ class HomeOperatingBalanceCard extends StatelessWidget {
   /// Abre el alta de un egreso.
   final VoidCallback onRegisterExpense;
 
-  /// Abre el alta de un ingreso.
-  final VoidCallback onRegisterIncome;
+  /// Abre el registro de una venta de hacienda.
+  final VoidCallback onRegisterSale;
 
   /// Abre el historial de movimientos.
   final VoidCallback onViewMovements;
@@ -45,14 +44,14 @@ class HomeOperatingBalanceCard extends StatelessWidget {
             HomeStrings.operatingBalance,
             style: AppTypography.pageTitle,
           ),
-          const Text(
-            HomeStrings.noData,
+          Text(
+            ArgentineCurrencyInputFormatter.formatCents(dashboard.operatingBalanceCents),
             style: AppTypography.balanceValue,
           ),
           const SizedBox(height: AppSpacing.md),
-          const _BalanceRow(
-            label: HomeStrings.estimatedStock,
-            value: HomeStrings.noData,
+          _BalanceRow(
+            label: HomeStrings.salesRevenue,
+            value: ArgentineCurrencyInputFormatter.formatCents(dashboard.salesRevenueCents),
           ),
           const SizedBox(height: AppSpacing.sm),
           _BalanceRow(
@@ -62,7 +61,7 @@ class HomeOperatingBalanceCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           _OperatingActions(
             onRegisterExpense: onRegisterExpense,
-            onRegisterIncome: onRegisterIncome,
+            onRegisterSale: onRegisterSale,
             onViewMovements: onViewMovements,
           ),
         ],
@@ -71,16 +70,16 @@ class HomeOperatingBalanceCard extends StatelessWidget {
   }
 }
 
-/// Distribuye los accesos compactos de ingreso, egreso y movimientos.
+/// Distribuye los accesos a ventas, gastos y movimientos.
 class _OperatingActions extends StatelessWidget {
   const _OperatingActions({
     required this.onRegisterExpense,
-    required this.onRegisterIncome,
+    required this.onRegisterSale,
     required this.onViewMovements,
   });
 
   final VoidCallback onRegisterExpense;
-  final VoidCallback onRegisterIncome;
+  final VoidCallback onRegisterSale;
   final VoidCallback onViewMovements;
 
   @override
@@ -102,9 +101,9 @@ class _OperatingActions extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
             _OperatingActionButton(
               size: buttonSize,
-              label: HomeStrings.registerIncome,
+              label: HomeStrings.registerSale,
               assetPath: 'assets/icons/money_receive.svg',
-              onPressed: onRegisterIncome,
+              onPressed: onRegisterSale,
             ),
             const SizedBox(width: AppSpacing.md),
             _OperatingActionButton(

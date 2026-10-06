@@ -5,6 +5,7 @@ import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
 import 'package:frontend_mayoral/brick/models/animal_observation.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
+import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
 import 'package:frontend_mayoral/brick/models/operating_expense_category.model.dart';
@@ -29,6 +30,12 @@ abstract final class DemoIds {
   static const animalTwo = '50000000-0000-4000-8000-000000000002';
   static const animalThree = '50000000-0000-4000-8000-000000000003';
   static const animalFour = '50000000-0000-4000-8000-000000000004';
+
+  /// Venta sintética restaurada en cada inicio para mostrar el historial.
+  static const sale = '90000000-0000-4000-8000-000000000001';
+
+  /// Cobro completo de la venta sintética, sin datos de un productor real.
+  static const salePayment = '90000000-0000-4000-8000-000000000002';
 }
 
 /// Siembra SQLite y el catálogo local sin leer datos reales ni usar red.
@@ -40,6 +47,9 @@ class DemoBootstrap {
 
   /// Restaura opcionalmente la base y luego aplica fixtures idempotentes.
   static Future<void> initialize({required bool reset}) async {
+    // Los animales se restauran en cada inicio de la presentación. Borrar sus
+    // ventas evita conservar operaciones sobre animales que vuelven al stock.
+    await _repository.deleteAllLocal<BrickLivestockSaleModel>();
     if (reset) await _clearLocalData();
     await _seedEstablishment();
     for (final model in _categories) await _repository.upsertLocal(model);
@@ -48,6 +58,47 @@ class DemoBootstrap {
     for (final model in _weighings) await _repository.upsertLocal(model);
     for (final model in _movements) await _repository.upsertLocal(model);
     for (final model in _expenses) await _repository.upsertLocal(model);
+    await _seedSale();
+  }
+
+  /// Restaura una venta cobrada y su baja de stock de forma atómica y sin red.
+  static Future<void> _seedSale() async {
+    final date = DateTime.utc(2026, 10, 5);
+    // Un único importe mantiene consistente el precio pactado y su cobro total.
+    const totalAmount = '1200000.00';
+    await _repository.runLocalTransaction((transaction) async {
+      final animals = await transaction.getLocal<BrickAnimalModel>();
+      final animal = animals.firstWhere((animal) => animal.localId == DemoIds.animalFour);
+      // Los fixtures se escriben directamente en SQLite: no representan altas
+      // reales que deban enviarse al backend ni dependen de su disponibilidad.
+      await transaction.upsert(
+        BrickLivestockSaleModel(
+          localId: DemoIds.sale,
+          establishmentId: DemoIds.establishment,
+          operationDate: date,
+          buyerType: 'frigorifico',
+          buyerName: 'Frigorífico Demo',
+          isCompany: true,
+          dteNumber: '12345678-9',
+          saleType: 'al_bulto',
+          totalAmount: totalAmount,
+          animalIdsJson: jsonEncode([DemoIds.animalFour]),
+          paymentCondition: 'total',
+          initialPaymentJson: jsonEncode({
+            'id': DemoIds.salePayment,
+            'fecha_cobro': brickLivestockSaleDateToBackend(date),
+            'monto': totalAmount,
+            'medio_cobro': 'transferencia',
+            'created_at': date.toIso8601String(),
+            'updated_at': date.toIso8601String(),
+          }),
+          createdAt: date,
+          updatedAt: date,
+          syncStatus: BrickLivestockSaleSyncStatus.synchronized,
+        ),
+      );
+      await transaction.upsert(animal.copyWith(status: 'vendido', updatedAt: date));
+    });
   }
 
   static Future<void> _seedEstablishment() => _storage.write(
@@ -121,21 +172,39 @@ class DemoBootstrap {
     syncStatus: BrickCategoriaSyncStatus.synchronized,
   );
 
-  static final _lots = [
-    _lot(DemoIds.northLot, 'Potrero Norte', 325, 'alfalfa', 80, 80, 450, 380),
-    _lot(DemoIds.southLot, 'Potrero Sur', 278, 'pasto_natural', 500, 100, 880, 410),
-    _lot(DemoIds.reserveLot, 'Reserva', 190, 'sorgo', 250, 520, 680, 850),
+  // Esquinas marcadas por el equipo sobre campo.png (5052 × 2846).
+  // Los puntos ya incluyen la transformación del PGW y la conversión al
+  // lienzo 0..1000: así el perímetro acompaña la foto rotada en todos los visores.
+  // Se restauran al iniciar la demo, manteniendo los identificadores de los
+  // lotes para conservar las referencias de animales y movimientos.
+  static final List<BrickLotModel> _lots = [
+    _lot(DemoIds.northLot, 'Potrero Norte', 325, 'alfalfa', [
+      (x: 119.015, y: 756.815),
+      (x: 242.048, y: 729.698),
+      (x: 213.312, y: 525.987),
+      (x: 90.279, y: 553.105),
+    ]),
+    _lot(DemoIds.southLot, 'Potrero Sur', 278, 'pasto_natural', [
+      (x: 186.427, y: 530.196),
+      (x: 312.569, y: 502.393),
+      (x: 288.610, y: 332.542),
+      (x: 162.468, y: 360.345),
+    ]),
+    _lot(DemoIds.reserveLot, 'Reserva', 190, 'sorgo', [
+      (x: 355.874, y: 770.427),
+      (x: 627.257, y: 710.612),
+      (x: 590.065, y: 446.954),
+      (x: 318.682, y: 506.769),
+    ]),
   ];
 
+  /// Construye cada lote con su perímetro local, sin limitarlo a un rectángulo.
   static BrickLotModel _lot(
     String id,
     String name,
     int surface,
     String forage,
-    int left,
-    int top,
-    int right,
-    int bottom,
+    List<({double x, double y})> vertices,
   ) => BrickLotModel(
     localId: id,
     establishmentId: DemoIds.establishment,
@@ -146,10 +215,7 @@ class DemoBootstrap {
       'version': 1,
       'extent': {'width': 1000, 'height': 1000},
       'vertices': [
-        {'x': left, 'y': top},
-        {'x': right, 'y': top},
-        {'x': right, 'y': bottom},
-        {'x': left, 'y': bottom},
+        for (final point in vertices) {'x': point.x, 'y': point.y},
       ],
     }),
     surfaceTenths: surface,
@@ -162,10 +228,50 @@ class DemoBootstrap {
   );
 
   static final _animals = [
-    _animal(DemoIds.animalOne, '999000000000001', '001', BrickAnimalSex.male, DemoIds.steerCategory, 'Novillo', DemoIds.southLot, 'Potrero Sur', 302),
-    _animal(DemoIds.animalTwo, '999000000000002', '002', BrickAnimalSex.female, DemoIds.femaleCalfCategory, 'Ternera', DemoIds.northLot, 'Potrero Norte', 188),
-    _animal(DemoIds.animalThree, '999000000000003', '003', BrickAnimalSex.male, DemoIds.steerCategory, 'Novillo', DemoIds.southLot, 'Potrero Sur', 315),
-    _animal(DemoIds.animalFour, '999000000000004', '004', BrickAnimalSex.female, DemoIds.femaleCalfCategory, 'Ternera', DemoIds.northLot, 'Potrero Norte', 176),
+    _animal(
+      DemoIds.animalOne,
+      '999000000000001',
+      '001',
+      BrickAnimalSex.male,
+      DemoIds.steerCategory,
+      'Novillo',
+      DemoIds.southLot,
+      'Potrero Sur',
+      302,
+    ),
+    _animal(
+      DemoIds.animalTwo,
+      '999000000000002',
+      '002',
+      BrickAnimalSex.female,
+      DemoIds.femaleCalfCategory,
+      'Ternera',
+      DemoIds.northLot,
+      'Potrero Norte',
+      188,
+    ),
+    _animal(
+      DemoIds.animalThree,
+      '999000000000003',
+      '003',
+      BrickAnimalSex.male,
+      DemoIds.steerCategory,
+      'Novillo',
+      DemoIds.southLot,
+      'Potrero Sur',
+      315,
+    ),
+    _animal(
+      DemoIds.animalFour,
+      '999000000000004',
+      '004',
+      BrickAnimalSex.female,
+      DemoIds.femaleCalfCategory,
+      'Ternera',
+      DemoIds.northLot,
+      'Potrero Norte',
+      176,
+    ),
     _csvAnimal(
       id: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
       rfid: '123123123123124',
@@ -327,9 +433,30 @@ class DemoBootstrap {
   ];
 
   static final _expenses = [
-    _expense('80000000-0000-4000-8000-000000000001', '125000.00', 'costo_produccion', 'sanidad', 'Vacunas reproductivas', DateTime.utc(2026, 10, 2)),
-    _expense('80000000-0000-4000-8000-000000000002', '284500.00', 'costo_produccion', 'alimentacion', 'Suplemento mineral', DateTime.utc(2026, 9, 22)),
-    _expense('80000000-0000-4000-8000-000000000003', '98600.00', 'gasto_administrativo', 'combustible', 'Gasoil', DateTime.utc(2026, 9, 10)),
+    _expense(
+      '80000000-0000-4000-8000-000000000001',
+      '125000.00',
+      'costo_produccion',
+      'sanidad',
+      'Vacunas reproductivas',
+      DateTime.utc(2026, 10, 2),
+    ),
+    _expense(
+      '80000000-0000-4000-8000-000000000002',
+      '284500.00',
+      'costo_produccion',
+      'alimentacion',
+      'Suplemento mineral',
+      DateTime.utc(2026, 9, 22),
+    ),
+    _expense(
+      '80000000-0000-4000-8000-000000000003',
+      '98600.00',
+      'gasto_administrativo',
+      'combustible',
+      'Gasoil',
+      DateTime.utc(2026, 9, 10),
+    ),
   ];
 
   static BrickOperatingExpenseModel _expense(

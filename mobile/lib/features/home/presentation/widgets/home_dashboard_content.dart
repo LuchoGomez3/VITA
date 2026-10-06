@@ -50,7 +50,7 @@ class HomeDashboardContent extends StatelessWidget {
             HomeOperatingBalanceCard(
               dashboard: dashboard,
               onRegisterExpense: () => _openExpenses(context, AppRoutes.expenseRegister),
-              onRegisterIncome: () => context.push(AppRoutes.incomeRegister),
+              onRegisterSale: () => _openSale(context),
               onViewMovements: () => _openExpenses(context, AppRoutes.expenseRecords),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -71,19 +71,36 @@ class HomeDashboardContent extends StatelessWidget {
     );
   }
 
-  void _openExpenses(BuildContext context, String path) {
-    final state = context.read<HomeDashboardCubit>().state;
+  // El registro recibe el establecimiento elegido; sin selección se abre el
+  // selector del Home antes de navegar. Al volver se recalcula el balance.
+  Future<void> _openSale(BuildContext context) async {
+    final cubit = context.read<HomeDashboardCubit>();
+    final id = cubit.state.selectedEstablishmentId;
+    if (id == null) {
+      onEstablishmentSelectionRequested();
+      return;
+    }
+    await context.push<void>(AppRoutes.livestockSaleForEstablishment(id));
+    if (!cubit.isClosed) await cubit.load();
+  }
+
+  Future<void> _openExpenses(BuildContext context, String path) async {
+    final cubit = context.read<HomeDashboardCubit>();
+    final state = cubit.state;
     final id = state.selectedEstablishmentId;
     if (id == null) {
       onEstablishmentSelectionRequested();
       return;
     }
-    context.push(
+    await context.push<void>(
       AppRoutes.expensesForEstablishment(
         path: path,
         establishmentId: id,
         establishmentName: state.establishments[id]?.name ?? id,
       ),
     );
+    // Al volver de gastos o ventas se consultan los importes persistidos;
+    // el balance no debe conservar los valores de antes de abrir Movimientos.
+    if (!cubit.isClosed) await cubit.load();
   }
 }

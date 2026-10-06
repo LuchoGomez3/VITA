@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/app/config/app_config.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -45,10 +46,11 @@ import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/livestock/livestock_composition.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
+import 'package:frontend_mayoral/features/livestock/presentation/strings/livestock_strings.dart';
 import 'package:frontend_mayoral/features/livestock_sales/livestock_sales_composition.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/pages/livestock_sale_flow_page.dart';
+import 'package:frontend_mayoral/features/livestock_sales/presentation/pages/livestock_sale_history_page.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
-import 'package:frontend_mayoral/features/livestock/presentation/strings/livestock_strings.dart';
 import 'package:frontend_mayoral/features/lot_movement/lot_movement_composition.dart';
 import 'package:frontend_mayoral/features/lot_movement/presentation/pages/lot_movement_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
@@ -402,6 +404,7 @@ class AppRouter {
           builder: (context, state) {
             final lotId = state.pathParameters['loteId']!;
             return FieldDetailPage(
+              showSatelliteMap: AppConfig.demoMode || state.uri.queryParameters['mapaSatelital'] == 'true',
               createCubit: () => createLotDetailCubit(lotId),
             );
           },
@@ -425,7 +428,7 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.incomeRegister,
           builder: (context, state) => const ShellPlaceholderPage(
-            title: HomeStrings.registerIncome,
+            title: HomeStrings.registerSale,
           ),
         ),
         GoRoute(
@@ -530,15 +533,27 @@ class AppRouter {
         establishmentName.trim().isEmpty) {
       return const ShellPlaceholderPage(title: OperatingExpenseStrings.requiredEstablishment);
     }
+    final movementsRoute = AppRoutes.expensesForEstablishment(
+      path: AppRoutes.expenseRecords,
+      establishmentId: establishmentId,
+      establishmentName: establishmentName,
+    );
     return FinancialRouteGuard(
       establishmentId: establishmentId,
       getEstablishmentRole: getEstablishmentRole,
-      child: OperatingExpenseHistoryPage(
-        establishmentName: establishmentName,
-        createCubit: () => createOperatingExpenseHistoryCubit(
-          establishmentId: establishmentId,
-        ),
-      ),
+      child: state.uri.queryParameters['seccion'] == 'ventas'
+          ? LivestockSaleHistoryPage(
+              establishmentName: establishmentName,
+              createCubit: () => createLivestockSaleHistoryCubit(establishmentId: establishmentId),
+              onExpensesSelected: () => context.replace(movementsRoute),
+            )
+          : OperatingExpenseHistoryPage(
+              establishmentName: establishmentName,
+              onSalesSelected: () => context.replace('$movementsRoute&seccion=ventas'),
+              createCubit: () => createOperatingExpenseHistoryCubit(
+                establishmentId: establishmentId,
+              ),
+            ),
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/operating_expense_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -16,6 +17,7 @@ HomeDashboardCubit createHomeDashboardCubit() {
     pesajeStore: BrickPesajeStore.instance,
     secureStorage: const FlutterSecureStorageService(),
     operatingExpenseStore: BrickOperatingExpenseStore.instance,
+    saleStore: BrickLivestockSaleStore.instance,
   );
   return HomeDashboardCubit(
     getHomeDashboardUseCase: GetHomeDashboardUseCase(repository),

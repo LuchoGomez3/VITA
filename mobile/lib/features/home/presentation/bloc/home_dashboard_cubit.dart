@@ -33,7 +33,10 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
     final establishmentsResult = await _getHomeEstablishmentsUseCase();
     switch (establishmentsResult) {
       case Success<Map<String, EstablishmentMembership>>(:final data):
-        emit(state.copyWith(establishments: data));
+        // Si hay un solo establecimiento, Inicio puede mostrar sus KPIs
+        // económicos desde el arranque sin exigir una selección redundante.
+        final selectedId = state.selectedEstablishmentId ?? (data.length == 1 ? data.keys.single : null);
+        emit(state.copyWith(establishments: data, selectedEstablishmentId: selectedId));
       case Failure<Map<String, EstablishmentMembership>>(:final error):
         emit(
           state.copyWith(

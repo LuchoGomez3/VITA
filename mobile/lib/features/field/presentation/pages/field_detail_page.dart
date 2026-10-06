@@ -19,10 +19,13 @@ typedef LotDetailCubitFactory = LotDetailCubit Function();
 /// Ficha offline de un lote y sus animales actuales.
 class FieldDetailPage extends StatelessWidget {
   /// Crea la pantalla con sus dependencias resueltas en composición.
-  const FieldDetailPage({required this.createCubit, super.key});
+  const FieldDetailPage({required this.createCubit, this.showSatelliteMap = false, super.key});
 
   /// Construye el Cubit propietario de la ficha.
   final LotDetailCubitFactory createCubit;
+
+  /// Conserva el fondo del establecimiento desde el visor hasta la ficha.
+  final bool showSatelliteMap;
 
   @override
   Widget build(BuildContext context) {
@@ -31,14 +34,16 @@ class FieldDetailPage extends StatelessWidget {
       child: BlocListener<LotDetailCubit, LotDetailState>(
         listenWhen: (previous, current) => previous.isDeleted != current.isDeleted && current.isDeleted,
         listener: (context, _) => context.pop(true),
-        child: const _FieldDetailView(),
+        child: _FieldDetailView(showSatelliteMap: showSatelliteMap),
       ),
     );
   }
 }
 
 class _FieldDetailView extends StatelessWidget {
-  const _FieldDetailView();
+  const _FieldDetailView({required this.showSatelliteMap});
+
+  final bool showSatelliteMap;
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +72,10 @@ class _FieldDetailView extends StatelessWidget {
             child: switch (state.loadState) {
               Initial<void>() || Loading<void>() => const Center(child: CircularProgressIndicator()),
               ResultError<void>(:final error) => _ErrorBody(message: error.message),
-              Data<void>() => state.isDeleted ? const SizedBox.shrink() : _LotDetailBody(state: state),
+              Data<void>() =>
+                state.isDeleted
+                    ? const SizedBox.shrink()
+                    : _LotDetailBody(state: state, showSatelliteMap: showSatelliteMap),
               _ => const SizedBox.shrink(),
             },
           ),
@@ -116,7 +124,9 @@ class _FieldDetailView extends StatelessWidget {
 }
 
 class _LotDetailBody extends StatelessWidget {
-  const _LotDetailBody({required this.state});
+  const _LotDetailBody({required this.state, required this.showSatelliteMap});
+
+  final bool showSatelliteMap;
 
   final LotDetailState state;
 
@@ -128,7 +138,7 @@ class _LotDetailBody extends StatelessWidget {
       children: [
         SizedBox(
           height: 260,
-          child: LotOverviewCanvas(lots: [lot], onLotSelected: (_) {}),
+          child: LotOverviewCanvas(lots: [lot], showSatelliteMap: showSatelliteMap, onLotSelected: (_) {}),
         ),
         const SizedBox(height: AppSpacing.md),
         Row(

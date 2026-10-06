@@ -16,8 +16,19 @@ sealed class HomeDashboard with _$HomeDashboard {
     required List<CategoryInventoryMetric> categories,
     required List<LotWeightMetric> lots,
     @Default(0) int operatingExpensesCents,
+
+    /// Importe pactado de las ventas vigentes, incluidas las pendientes de cobro.
+    @Default(0) int salesRevenueCents,
     double? averageDailyGainKg,
   }) = _HomeDashboard;
+
+  const HomeDashboard._();
+
+  /// Balance de operaciones registradas: ventas menos gastos, en centavos.
+  ///
+  /// No representa caja disponible: una venta pendiente ya integra el ingreso
+  /// comercial, aunque todavía no se haya recibido su dinero.
+  int get operatingBalanceCents => salesRevenueCents - operatingExpensesCents;
 }
 
 /// Distribucion del inventario activo para una categoria productiva.

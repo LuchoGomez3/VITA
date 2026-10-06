@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
@@ -9,12 +10,16 @@ import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
+import 'package:frontend_mayoral/demo/demo_bootstrap.dart';
+import 'package:frontend_mayoral/features/livestock_sales/data/mappers/livestock_sale_brick_mapper.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale.dart';
 import 'package:http/http.dart';
 import 'package:http/testing.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late Directory testDirectory;
   late String sqlitePath;
   late String queuePath;
@@ -193,6 +198,62 @@ void main() {
     expect(animal.status, 'vendido');
     expect(animal.syncStatus, BrickAnimalSyncStatus.rejected);
     expect(animal.syncErrorCode, 'animal_already_sold');
+  });
+
+  test('el historial aísla establecimientos y cobrar no vuelve a modificar stock', () async {
+    final sales = await store.getSales('establishment-id');
+    expect(sales, isNotEmpty);
+    expect(await store.getSales('another-establishment'), isEmpty);
+    final current = LivestockSaleBrickMapper.fromBrick(sales.first);
+    final collected = LivestockSaleBrickMapper.toBrick(
+      current.copyWith(
+        paymentCondition: LivestockSalePaymentCondition.total,
+        initialPayment: LivestockSaleInitialPayment(
+          id: 'payment-id',
+          date: DateTime(2026, 10, 6),
+          amountCents: current.totalAmountCents,
+          method: LivestockSalePaymentMethod.cash,
+          createdAt: DateTime.utc(2026, 10, 6),
+          updatedAt: DateTime.utc(2026, 10, 6),
+        ),
+        updatedAt: DateTime.utc(2026, 10, 6),
+      ),
+    );
+    final saved = await store.collectUnpaidSale(collected);
+    expect(saved.paymentCondition, 'total');
+    final stored = await store.getSales('establishment-id');
+    expect(stored.where((sale) => sale.localId == current.id), hasLength(1));
+    final animals = await repository.getLocal<BrickAnimalModel>();
+    expect(
+      animals
+          .where((animal) => current.animalIds.contains(animal.localId))
+          .every((animal) => animal.status == 'vendido'),
+      isTrue,
+    );
+    await expectLater(store.collectUnpaidSale(collected), throwsA(isA<LivestockSaleCollectionException>()));
+  });
+
+  test('iniciar la demo reemplaza ventas anteriores por una venta sintética', () async {
+    const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      channel,
+      (_) async => null,
+    );
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null),
+    );
+    expect(await store.getSales('establishment-id'), isNotEmpty);
+    await DemoBootstrap.initialize(reset: false);
+    final sales = await repository.getLocal<BrickLivestockSaleModel>();
+    expect(sales, hasLength(1));
+    expect(sales.single.localId, DemoIds.sale);
+    expect(sales.single.totalAmount, '1200000.00');
+    expect(sales.single.paymentCondition, 'total');
+    final animals = await repository.getLocal<BrickAnimalModel>();
+    expect(animals.singleWhere((animal) => animal.localId == DemoIds.animalOne).status, 'activo');
+    expect(animals.singleWhere((animal) => animal.localId == DemoIds.animalFour).status, 'vendido');
+    await DemoBootstrap.initialize(reset: false);
+    expect(await repository.getLocal<BrickLivestockSaleModel>(), hasLength(1));
   });
 }
 

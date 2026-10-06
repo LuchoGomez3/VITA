@@ -1,23 +1,31 @@
-# Fondo de San Nicolás
+# Fondo offline del campo
 
-`campo.png` es la imagen exportada por el usuario desde QGIS (5052 × 2846).
-`campo.pgw` conserva su transformación de píxeles a coordenadas del proyecto,
-incluida la rotación. Falta registrar el EPSG de origen para usarla como mapa
-geográfico; un world file no identifica por sí mismo el sistema de referencia.
+`campo.png` es la imagen exportada desde QGIS. `campo.pgw` contiene la
+transformación afín del centro de sus píxeles a coordenadas del proyecto:
+escala, rotación y origen. El world file no identifica el CRS; falta registrar
+el EPSG para transformar esas coordenadas a ubicaciones GPS reales.
 
-La app muestra el PNG offline debajo de los lotes en el visor y al crear un lote
-desde San Nicolás. La selección usa el nombre exacto del establecimiento,
-ignorando mayúsculas, espacios externos y la tilde de Nicolás. Otros nombres
-mantienen el fondo esquemático. Si el establecimiento cambia de nombre, deja
-de seleccionarse esta imagen. Para una configuración permanente conviene
-asociar este asset al UUID confirmado del establecimiento.
+La app lee el ancho y alto de la cabecera PNG y las seis líneas del PGW. Usa
+la misma escala en ambos ejes y dibuja las esquinas con `RotatedOverlayImage`:
+respeta la proporción y la rotación sin deformar el raster. Traslada y normaliza
+las coordenadas del proyecto al lienzo local de `flutter_map`. Estos valores
+siguen siendo técnicos, no latitud/longitud.
 
-La imagen conserva su proporción y se mueve con el zoom del lienzo local.
-No se interpreta el PGW ni se cambian las coordenadas existentes de los lotes:
-los polígonos previos no se alinean automáticamente con límites reales.
-La captura sirve como referencia visual para dibujar. No calcula superficies
-geográficas ni habilita navegación GPS. La resolución original limita el detalle
-al acercarse, aunque el visor permita más zoom.
+La geometría se carga una sola vez desde los assets, sin red, antes de
+inicializar cada cámara. El encuadre inicial utiliza un rectángulo interior del
+raster rotado y `CameraFit.insideBounds`, para que la imagen cubra todo el visor.
+Se recorta parte de la imagen según la proporción de la pantalla; se puede
+explorar el resto desplazándose y haciendo zoom.
 
-Al reemplazar la imagen por otra de diferente tamaño hay que actualizar su
-proporción en `FieldSatelliteMap` y conservar juntos PNG, world file y EPSG.
+En modo demo se habilita en el visor, el editor y la ficha de cada lote de
+La Esperanza. Fuera de la demo conserva la selección temporal por el nombre
+exacto San Nicolás, ignorando mayúsculas, espacios externos y la tilde.
+La navegación transmite esa elección desde el visor a la ficha del lote.
+Para una configuración permanente conviene asociar los assets al UUID del
+establecimiento, en lugar de seleccionarlos por nombre.
+
+Los lotes existentes conservan sus coordenadas cartesianas `0..1000`: esta
+capa no los transforma ni los alinea automáticamente con límites reales.
+Tampoco calcula superficies geográficas ni habilita navegación GPS. Para
+reemplazar el fondo deben conservarse juntos PNG, PGW y su EPSG de origen;
+las dimensiones de una imagen nueva se leen automáticamente.

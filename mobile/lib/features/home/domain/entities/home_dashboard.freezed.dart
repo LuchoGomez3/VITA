@@ -14,7 +14,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$HomeDashboard {
 
- int get activeAnimals; int get monthlyAdditions; int get monthlyRemovals; double get knownLiveWeightKg; int get animalsWithCurrentWeight; int get animalsWithDailyGain; List<CategoryInventoryMetric> get categories; List<LotWeightMetric> get lots; int get operatingExpensesCents; double? get averageDailyGainKg;
+ int get activeAnimals; int get monthlyAdditions; int get monthlyRemovals; double get knownLiveWeightKg; int get animalsWithCurrentWeight; int get animalsWithDailyGain; List<CategoryInventoryMetric> get categories; List<LotWeightMetric> get lots; int get operatingExpensesCents;/// Importe pactado de las ventas vigentes, incluidas las pendientes de cobro.
+ int get salesRevenueCents; double? get averageDailyGainKg;
 /// Create a copy of HomeDashboard
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +26,16 @@ $HomeDashboardCopyWith<HomeDashboard> get copyWith => _$HomeDashboardCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is HomeDashboard&&(identical(other.activeAnimals, activeAnimals) || other.activeAnimals == activeAnimals)&&(identical(other.monthlyAdditions, monthlyAdditions) || other.monthlyAdditions == monthlyAdditions)&&(identical(other.monthlyRemovals, monthlyRemovals) || other.monthlyRemovals == monthlyRemovals)&&(identical(other.knownLiveWeightKg, knownLiveWeightKg) || other.knownLiveWeightKg == knownLiveWeightKg)&&(identical(other.animalsWithCurrentWeight, animalsWithCurrentWeight) || other.animalsWithCurrentWeight == animalsWithCurrentWeight)&&(identical(other.animalsWithDailyGain, animalsWithDailyGain) || other.animalsWithDailyGain == animalsWithDailyGain)&&const DeepCollectionEquality().equals(other.categories, categories)&&const DeepCollectionEquality().equals(other.lots, lots)&&(identical(other.operatingExpensesCents, operatingExpensesCents) || other.operatingExpensesCents == operatingExpensesCents)&&(identical(other.averageDailyGainKg, averageDailyGainKg) || other.averageDailyGainKg == averageDailyGainKg));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is HomeDashboard&&(identical(other.activeAnimals, activeAnimals) || other.activeAnimals == activeAnimals)&&(identical(other.monthlyAdditions, monthlyAdditions) || other.monthlyAdditions == monthlyAdditions)&&(identical(other.monthlyRemovals, monthlyRemovals) || other.monthlyRemovals == monthlyRemovals)&&(identical(other.knownLiveWeightKg, knownLiveWeightKg) || other.knownLiveWeightKg == knownLiveWeightKg)&&(identical(other.animalsWithCurrentWeight, animalsWithCurrentWeight) || other.animalsWithCurrentWeight == animalsWithCurrentWeight)&&(identical(other.animalsWithDailyGain, animalsWithDailyGain) || other.animalsWithDailyGain == animalsWithDailyGain)&&const DeepCollectionEquality().equals(other.categories, categories)&&const DeepCollectionEquality().equals(other.lots, lots)&&(identical(other.operatingExpensesCents, operatingExpensesCents) || other.operatingExpensesCents == operatingExpensesCents)&&(identical(other.salesRevenueCents, salesRevenueCents) || other.salesRevenueCents == salesRevenueCents)&&(identical(other.averageDailyGainKg, averageDailyGainKg) || other.averageDailyGainKg == averageDailyGainKg));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,activeAnimals,monthlyAdditions,monthlyRemovals,knownLiveWeightKg,animalsWithCurrentWeight,animalsWithDailyGain,const DeepCollectionEquality().hash(categories),const DeepCollectionEquality().hash(lots),operatingExpensesCents,averageDailyGainKg);
+int get hashCode => Object.hash(runtimeType,activeAnimals,monthlyAdditions,monthlyRemovals,knownLiveWeightKg,animalsWithCurrentWeight,animalsWithDailyGain,const DeepCollectionEquality().hash(categories),const DeepCollectionEquality().hash(lots),operatingExpensesCents,salesRevenueCents,averageDailyGainKg);
 
 @override
 String toString() {
-  return 'HomeDashboard(activeAnimals: $activeAnimals, monthlyAdditions: $monthlyAdditions, monthlyRemovals: $monthlyRemovals, knownLiveWeightKg: $knownLiveWeightKg, animalsWithCurrentWeight: $animalsWithCurrentWeight, animalsWithDailyGain: $animalsWithDailyGain, categories: $categories, lots: $lots, operatingExpensesCents: $operatingExpensesCents, averageDailyGainKg: $averageDailyGainKg)';
+  return 'HomeDashboard(activeAnimals: $activeAnimals, monthlyAdditions: $monthlyAdditions, monthlyRemovals: $monthlyRemovals, knownLiveWeightKg: $knownLiveWeightKg, animalsWithCurrentWeight: $animalsWithCurrentWeight, animalsWithDailyGain: $animalsWithDailyGain, categories: $categories, lots: $lots, operatingExpensesCents: $operatingExpensesCents, salesRevenueCents: $salesRevenueCents, averageDailyGainKg: $averageDailyGainKg)';
 }
 
 
@@ -45,7 +46,7 @@ abstract mixin class $HomeDashboardCopyWith<$Res>  {
   factory $HomeDashboardCopyWith(HomeDashboard value, $Res Function(HomeDashboard) _then) = _$HomeDashboardCopyWithImpl;
 @useResult
 $Res call({
- int activeAnimals, int monthlyAdditions, int monthlyRemovals, double knownLiveWeightKg, int animalsWithCurrentWeight, int animalsWithDailyGain, List<CategoryInventoryMetric> categories, List<LotWeightMetric> lots, int operatingExpensesCents, double? averageDailyGainKg
+ int activeAnimals, int monthlyAdditions, int monthlyRemovals, double knownLiveWeightKg, int animalsWithCurrentWeight, int animalsWithDailyGain, List<CategoryInventoryMetric> categories, List<LotWeightMetric> lots, int operatingExpensesCents, int salesRevenueCents, double? averageDailyGainKg
 });
 
 
@@ -62,7 +63,7 @@ class _$HomeDashboardCopyWithImpl<$Res>
 
 /// Create a copy of HomeDashboard
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? activeAnimals = null,Object? monthlyAdditions = null,Object? monthlyRemovals = null,Object? knownLiveWeightKg = null,Object? animalsWithCurrentWeight = null,Object? animalsWithDailyGain = null,Object? categories = null,Object? lots = null,Object? operatingExpensesCents = null,Object? averageDailyGainKg = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? activeAnimals = null,Object? monthlyAdditions = null,Object? monthlyRemovals = null,Object? knownLiveWeightKg = null,Object? animalsWithCurrentWeight = null,Object? animalsWithDailyGain = null,Object? categories = null,Object? lots = null,Object? operatingExpensesCents = null,Object? salesRevenueCents = null,Object? averageDailyGainKg = freezed,}) {
   return _then(_self.copyWith(
 activeAnimals: null == activeAnimals ? _self.activeAnimals : activeAnimals // ignore: cast_nullable_to_non_nullable
 as int,monthlyAdditions: null == monthlyAdditions ? _self.monthlyAdditions : monthlyAdditions // ignore: cast_nullable_to_non_nullable
@@ -73,6 +74,7 @@ as int,animalsWithDailyGain: null == animalsWithDailyGain ? _self.animalsWithDai
 as int,categories: null == categories ? _self.categories : categories // ignore: cast_nullable_to_non_nullable
 as List<CategoryInventoryMetric>,lots: null == lots ? _self.lots : lots // ignore: cast_nullable_to_non_nullable
 as List<LotWeightMetric>,operatingExpensesCents: null == operatingExpensesCents ? _self.operatingExpensesCents : operatingExpensesCents // ignore: cast_nullable_to_non_nullable
+as int,salesRevenueCents: null == salesRevenueCents ? _self.salesRevenueCents : salesRevenueCents // ignore: cast_nullable_to_non_nullable
 as int,averageDailyGainKg: freezed == averageDailyGainKg ? _self.averageDailyGainKg : averageDailyGainKg // ignore: cast_nullable_to_non_nullable
 as double?,
   ));
@@ -156,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int activeAnimals,  int monthlyAdditions,  int monthlyRemovals,  double knownLiveWeightKg,  int animalsWithCurrentWeight,  int animalsWithDailyGain,  List<CategoryInventoryMetric> categories,  List<LotWeightMetric> lots,  int operatingExpensesCents,  double? averageDailyGainKg)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int activeAnimals,  int monthlyAdditions,  int monthlyRemovals,  double knownLiveWeightKg,  int animalsWithCurrentWeight,  int animalsWithDailyGain,  List<CategoryInventoryMetric> categories,  List<LotWeightMetric> lots,  int operatingExpensesCents,  int salesRevenueCents,  double? averageDailyGainKg)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _HomeDashboard() when $default != null:
-return $default(_that.activeAnimals,_that.monthlyAdditions,_that.monthlyRemovals,_that.knownLiveWeightKg,_that.animalsWithCurrentWeight,_that.animalsWithDailyGain,_that.categories,_that.lots,_that.operatingExpensesCents,_that.averageDailyGainKg);case _:
+return $default(_that.activeAnimals,_that.monthlyAdditions,_that.monthlyRemovals,_that.knownLiveWeightKg,_that.animalsWithCurrentWeight,_that.animalsWithDailyGain,_that.categories,_that.lots,_that.operatingExpensesCents,_that.salesRevenueCents,_that.averageDailyGainKg);case _:
   return orElse();
 
 }
@@ -177,10 +179,10 @@ return $default(_that.activeAnimals,_that.monthlyAdditions,_that.monthlyRemovals
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int activeAnimals,  int monthlyAdditions,  int monthlyRemovals,  double knownLiveWeightKg,  int animalsWithCurrentWeight,  int animalsWithDailyGain,  List<CategoryInventoryMetric> categories,  List<LotWeightMetric> lots,  int operatingExpensesCents,  double? averageDailyGainKg)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int activeAnimals,  int monthlyAdditions,  int monthlyRemovals,  double knownLiveWeightKg,  int animalsWithCurrentWeight,  int animalsWithDailyGain,  List<CategoryInventoryMetric> categories,  List<LotWeightMetric> lots,  int operatingExpensesCents,  int salesRevenueCents,  double? averageDailyGainKg)  $default,) {final _that = this;
 switch (_that) {
 case _HomeDashboard():
-return $default(_that.activeAnimals,_that.monthlyAdditions,_that.monthlyRemovals,_that.knownLiveWeightKg,_that.animalsWithCurrentWeight,_that.animalsWithDailyGain,_that.categories,_that.lots,_that.operatingExpensesCents,_that.averageDailyGainKg);}
+return $default(_that.activeAnimals,_that.monthlyAdditions,_that.monthlyRemovals,_that.knownLiveWeightKg,_that.animalsWithCurrentWeight,_that.animalsWithDailyGain,_that.categories,_that.lots,_that.operatingExpensesCents,_that.salesRevenueCents,_that.averageDailyGainKg);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -194,10 +196,10 @@ return $default(_that.activeAnimals,_that.monthlyAdditions,_that.monthlyRemovals
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int activeAnimals,  int monthlyAdditions,  int monthlyRemovals,  double knownLiveWeightKg,  int animalsWithCurrentWeight,  int animalsWithDailyGain,  List<CategoryInventoryMetric> categories,  List<LotWeightMetric> lots,  int operatingExpensesCents,  double? averageDailyGainKg)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int activeAnimals,  int monthlyAdditions,  int monthlyRemovals,  double knownLiveWeightKg,  int animalsWithCurrentWeight,  int animalsWithDailyGain,  List<CategoryInventoryMetric> categories,  List<LotWeightMetric> lots,  int operatingExpensesCents,  int salesRevenueCents,  double? averageDailyGainKg)?  $default,) {final _that = this;
 switch (_that) {
 case _HomeDashboard() when $default != null:
-return $default(_that.activeAnimals,_that.monthlyAdditions,_that.monthlyRemovals,_that.knownLiveWeightKg,_that.animalsWithCurrentWeight,_that.animalsWithDailyGain,_that.categories,_that.lots,_that.operatingExpensesCents,_that.averageDailyGainKg);case _:
+return $default(_that.activeAnimals,_that.monthlyAdditions,_that.monthlyRemovals,_that.knownLiveWeightKg,_that.animalsWithCurrentWeight,_that.animalsWithDailyGain,_that.categories,_that.lots,_that.operatingExpensesCents,_that.salesRevenueCents,_that.averageDailyGainKg);case _:
   return null;
 
 }
@@ -208,8 +210,8 @@ return $default(_that.activeAnimals,_that.monthlyAdditions,_that.monthlyRemovals
 /// @nodoc
 
 
-class _HomeDashboard implements HomeDashboard {
-  const _HomeDashboard({required this.activeAnimals, required this.monthlyAdditions, required this.monthlyRemovals, required this.knownLiveWeightKg, required this.animalsWithCurrentWeight, required this.animalsWithDailyGain, required final  List<CategoryInventoryMetric> categories, required final  List<LotWeightMetric> lots, this.operatingExpensesCents = 0, this.averageDailyGainKg}): _categories = categories,_lots = lots;
+class _HomeDashboard extends HomeDashboard {
+  const _HomeDashboard({required this.activeAnimals, required this.monthlyAdditions, required this.monthlyRemovals, required this.knownLiveWeightKg, required this.animalsWithCurrentWeight, required this.animalsWithDailyGain, required final  List<CategoryInventoryMetric> categories, required final  List<LotWeightMetric> lots, this.operatingExpensesCents = 0, this.salesRevenueCents = 0, this.averageDailyGainKg}): _categories = categories,_lots = lots,super._();
   
 
 @override final  int activeAnimals;
@@ -233,6 +235,8 @@ class _HomeDashboard implements HomeDashboard {
 }
 
 @override@JsonKey() final  int operatingExpensesCents;
+/// Importe pactado de las ventas vigentes, incluidas las pendientes de cobro.
+@override@JsonKey() final  int salesRevenueCents;
 @override final  double? averageDailyGainKg;
 
 /// Create a copy of HomeDashboard
@@ -245,16 +249,16 @@ _$HomeDashboardCopyWith<_HomeDashboard> get copyWith => __$HomeDashboardCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _HomeDashboard&&(identical(other.activeAnimals, activeAnimals) || other.activeAnimals == activeAnimals)&&(identical(other.monthlyAdditions, monthlyAdditions) || other.monthlyAdditions == monthlyAdditions)&&(identical(other.monthlyRemovals, monthlyRemovals) || other.monthlyRemovals == monthlyRemovals)&&(identical(other.knownLiveWeightKg, knownLiveWeightKg) || other.knownLiveWeightKg == knownLiveWeightKg)&&(identical(other.animalsWithCurrentWeight, animalsWithCurrentWeight) || other.animalsWithCurrentWeight == animalsWithCurrentWeight)&&(identical(other.animalsWithDailyGain, animalsWithDailyGain) || other.animalsWithDailyGain == animalsWithDailyGain)&&const DeepCollectionEquality().equals(other._categories, _categories)&&const DeepCollectionEquality().equals(other._lots, _lots)&&(identical(other.operatingExpensesCents, operatingExpensesCents) || other.operatingExpensesCents == operatingExpensesCents)&&(identical(other.averageDailyGainKg, averageDailyGainKg) || other.averageDailyGainKg == averageDailyGainKg));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _HomeDashboard&&(identical(other.activeAnimals, activeAnimals) || other.activeAnimals == activeAnimals)&&(identical(other.monthlyAdditions, monthlyAdditions) || other.monthlyAdditions == monthlyAdditions)&&(identical(other.monthlyRemovals, monthlyRemovals) || other.monthlyRemovals == monthlyRemovals)&&(identical(other.knownLiveWeightKg, knownLiveWeightKg) || other.knownLiveWeightKg == knownLiveWeightKg)&&(identical(other.animalsWithCurrentWeight, animalsWithCurrentWeight) || other.animalsWithCurrentWeight == animalsWithCurrentWeight)&&(identical(other.animalsWithDailyGain, animalsWithDailyGain) || other.animalsWithDailyGain == animalsWithDailyGain)&&const DeepCollectionEquality().equals(other._categories, _categories)&&const DeepCollectionEquality().equals(other._lots, _lots)&&(identical(other.operatingExpensesCents, operatingExpensesCents) || other.operatingExpensesCents == operatingExpensesCents)&&(identical(other.salesRevenueCents, salesRevenueCents) || other.salesRevenueCents == salesRevenueCents)&&(identical(other.averageDailyGainKg, averageDailyGainKg) || other.averageDailyGainKg == averageDailyGainKg));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,activeAnimals,monthlyAdditions,monthlyRemovals,knownLiveWeightKg,animalsWithCurrentWeight,animalsWithDailyGain,const DeepCollectionEquality().hash(_categories),const DeepCollectionEquality().hash(_lots),operatingExpensesCents,averageDailyGainKg);
+int get hashCode => Object.hash(runtimeType,activeAnimals,monthlyAdditions,monthlyRemovals,knownLiveWeightKg,animalsWithCurrentWeight,animalsWithDailyGain,const DeepCollectionEquality().hash(_categories),const DeepCollectionEquality().hash(_lots),operatingExpensesCents,salesRevenueCents,averageDailyGainKg);
 
 @override
 String toString() {
-  return 'HomeDashboard(activeAnimals: $activeAnimals, monthlyAdditions: $monthlyAdditions, monthlyRemovals: $monthlyRemovals, knownLiveWeightKg: $knownLiveWeightKg, animalsWithCurrentWeight: $animalsWithCurrentWeight, animalsWithDailyGain: $animalsWithDailyGain, categories: $categories, lots: $lots, operatingExpensesCents: $operatingExpensesCents, averageDailyGainKg: $averageDailyGainKg)';
+  return 'HomeDashboard(activeAnimals: $activeAnimals, monthlyAdditions: $monthlyAdditions, monthlyRemovals: $monthlyRemovals, knownLiveWeightKg: $knownLiveWeightKg, animalsWithCurrentWeight: $animalsWithCurrentWeight, animalsWithDailyGain: $animalsWithDailyGain, categories: $categories, lots: $lots, operatingExpensesCents: $operatingExpensesCents, salesRevenueCents: $salesRevenueCents, averageDailyGainKg: $averageDailyGainKg)';
 }
 
 
@@ -265,7 +269,7 @@ abstract mixin class _$HomeDashboardCopyWith<$Res> implements $HomeDashboardCopy
   factory _$HomeDashboardCopyWith(_HomeDashboard value, $Res Function(_HomeDashboard) _then) = __$HomeDashboardCopyWithImpl;
 @override @useResult
 $Res call({
- int activeAnimals, int monthlyAdditions, int monthlyRemovals, double knownLiveWeightKg, int animalsWithCurrentWeight, int animalsWithDailyGain, List<CategoryInventoryMetric> categories, List<LotWeightMetric> lots, int operatingExpensesCents, double? averageDailyGainKg
+ int activeAnimals, int monthlyAdditions, int monthlyRemovals, double knownLiveWeightKg, int animalsWithCurrentWeight, int animalsWithDailyGain, List<CategoryInventoryMetric> categories, List<LotWeightMetric> lots, int operatingExpensesCents, int salesRevenueCents, double? averageDailyGainKg
 });
 
 
@@ -282,7 +286,7 @@ class __$HomeDashboardCopyWithImpl<$Res>
 
 /// Create a copy of HomeDashboard
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? activeAnimals = null,Object? monthlyAdditions = null,Object? monthlyRemovals = null,Object? knownLiveWeightKg = null,Object? animalsWithCurrentWeight = null,Object? animalsWithDailyGain = null,Object? categories = null,Object? lots = null,Object? operatingExpensesCents = null,Object? averageDailyGainKg = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? activeAnimals = null,Object? monthlyAdditions = null,Object? monthlyRemovals = null,Object? knownLiveWeightKg = null,Object? animalsWithCurrentWeight = null,Object? animalsWithDailyGain = null,Object? categories = null,Object? lots = null,Object? operatingExpensesCents = null,Object? salesRevenueCents = null,Object? averageDailyGainKg = freezed,}) {
   return _then(_HomeDashboard(
 activeAnimals: null == activeAnimals ? _self.activeAnimals : activeAnimals // ignore: cast_nullable_to_non_nullable
 as int,monthlyAdditions: null == monthlyAdditions ? _self.monthlyAdditions : monthlyAdditions // ignore: cast_nullable_to_non_nullable
@@ -293,6 +297,7 @@ as int,animalsWithDailyGain: null == animalsWithDailyGain ? _self.animalsWithDai
 as int,categories: null == categories ? _self._categories : categories // ignore: cast_nullable_to_non_nullable
 as List<CategoryInventoryMetric>,lots: null == lots ? _self._lots : lots // ignore: cast_nullable_to_non_nullable
 as List<LotWeightMetric>,operatingExpensesCents: null == operatingExpensesCents ? _self.operatingExpensesCents : operatingExpensesCents // ignore: cast_nullable_to_non_nullable
+as int,salesRevenueCents: null == salesRevenueCents ? _self.salesRevenueCents : salesRevenueCents // ignore: cast_nullable_to_non_nullable
 as int,averageDailyGainKg: freezed == averageDailyGainKg ? _self.averageDailyGainKg : averageDailyGainKg // ignore: cast_nullable_to_non_nullable
 as double?,
   ));

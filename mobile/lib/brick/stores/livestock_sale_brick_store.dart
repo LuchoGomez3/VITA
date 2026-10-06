@@ -39,8 +39,23 @@ abstract class LivestockSaleBrickStore {
   Future<BrickLivestockSaleModel> saveSale(BrickLivestockSaleModel sale);
 }
 
+/// Lectura y cobro local del historial, sin repetir la baja de animales.
+abstract class LivestockSaleHistoryBrickStore {
+  /// Consulta ventas vigentes; `null` incluye todos los establecimientos.
+  Future<List<BrickLivestockSaleModel>> getSales(String? establishmentId);
+
+  /// Completa el primer cobro de una venta que todavía no recibió dinero.
+  Future<BrickLivestockSaleModel> collectUnpaidSale(BrickLivestockSaleModel sale);
+}
+
+/// Conflicto funcional al intentar cobrar una venta ausente o ya cobrada.
+class LivestockSaleCollectionException implements Exception {
+  /// Indica que el historial debe recargarse antes de volver a cobrar.
+  const LivestockSaleCollectionException();
+}
+
 /// Store que coordina venta, stock local y resultado de sincronizacion.
-class BrickLivestockSaleStore implements LivestockSaleBrickStore {
+class BrickLivestockSaleStore implements LivestockSaleBrickStore, LivestockSaleHistoryBrickStore {
   BrickLivestockSaleStore._(
     this._repository, {
     required bool enableRemoteSync,
@@ -72,6 +87,38 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
       repository,
       enableRemoteSync: enableRemoteSync,
     );
+  }
+
+  @override
+  Future<List<BrickLivestockSaleModel>> getSales(String? establishmentId) async {
+    final stored = await _repository.getLocal<BrickLivestockSaleModel>();
+    final latest = <String, BrickLivestockSaleModel>{};
+    for (final sale in stored.where((sale) => establishmentId == null || sale.establishmentId == establishmentId)) {
+      final current = latest[sale.localId];
+      if (current == null || sale.updatedAt.isAfter(current.updatedAt)) latest[sale.localId] = sale;
+    }
+    return latest.values.where((sale) => sale.deletedAt == null).toList()
+      ..sort((a, b) => b.operationDate.compareTo(a.operationDate));
+  }
+
+  @override
+  Future<BrickLivestockSaleModel> collectUnpaidSale(BrickLivestockSaleModel sale) {
+    return _repository.runLocalTransaction((transaction) async {
+      final stored = await transaction.getLocal<BrickLivestockSaleModel>();
+      final current = _latestSaleById(stored, sale.localId);
+      // Se vuelve a comprobar dentro de la transacción: dos pulsaciones o una
+      // pantalla desactualizada no pueden reemplazar un cobro ya registrado.
+      if (current == null || current.deletedAt != null || current.establishmentId != sale.establishmentId) {
+        throw const LivestockSaleCollectionException();
+      }
+      if (current.paymentCondition != 'pendiente' || current.initialPaymentJson != null) {
+        throw const LivestockSaleCollectionException();
+      }
+      sale.primaryKey = current.primaryKey;
+      // TODO(team): Integrar un comando de cobro independiente cuando exista
+      // el endpoint. El POST de alta no sirve para cobrar una venta existente.
+      return transaction.upsert(sale);
+    });
   }
 
   @override

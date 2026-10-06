@@ -187,7 +187,13 @@ class _FieldMapView extends StatelessWidget {
   }
 
   Future<void> _openLotDetail(BuildContext context, String lotId) async {
-    await context.push<bool>(AppRoutes.fieldDetailById(lotId));
+    final state = context.read<LotOverviewCubit>().state;
+    await context.push<bool>(
+      AppRoutes.fieldDetailById(
+        lotId,
+        showSatelliteMap: FieldSatelliteMap.supportsEstablishment(state.establishments[state.selectedEstablishmentId]),
+      ),
+    );
     if (!context.mounted) return;
     await context.read<LotOverviewCubit>().refresh();
   }

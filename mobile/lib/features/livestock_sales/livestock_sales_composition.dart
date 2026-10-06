@@ -3,12 +3,15 @@ import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/features/livestock_sales/data/repositories/livestock_sale_animal_repository_impl.dart';
+import 'package:frontend_mayoral/features/livestock_sales/data/repositories/livestock_sale_history_repository_impl.dart';
 import 'package:frontend_mayoral/features/livestock_sales/data/repositories/livestock_sale_repository_impl.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/add_animal_to_livestock_sale_selection_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/confirm_livestock_sale_use_case.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/livestock_sale_history_use_cases.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/remove_animal_from_livestock_sale_selection_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/search_livestock_sale_animals_by_rfid_prefix_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/livestock_sale_bloc.dart';
+import 'package:frontend_mayoral/features/livestock_sales/presentation/cubit/livestock_sale_history_cubit.dart';
 
 /// Dependencias de dominio listas para el futuro flujo de presentacion.
 class LivestockSalesUseCases {
@@ -73,5 +76,15 @@ LivestockSaleBloc createLivestockSaleBloc({
     searchAnimalsByRfidPrefix: useCases.searchAnimalsByRfidPrefix,
     removeAnimal: useCases.removeAnimal,
     confirmSale: useCases.confirmSale,
+  );
+}
+
+/// Compone el historial y su cobro local para el establecimiento activo.
+LivestockSaleHistoryCubit createLivestockSaleHistoryCubit({required String establishmentId}) {
+  final repository = LivestockSaleHistoryRepositoryImpl(BrickLivestockSaleStore.instance);
+  return LivestockSaleHistoryCubit(
+    establishmentId: establishmentId,
+    getHistory: GetLivestockSaleHistoryUseCase(repository),
+    collectSale: CollectUnpaidLivestockSaleUseCase(repository),
   );
 }
