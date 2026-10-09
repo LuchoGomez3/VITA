@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/presentation/login/bloc/login_bloc.dart';
+import 'package:frontend_mayoral/features/auth/presentation/login/pages/login_destination.dart';
 import 'package:frontend_mayoral/features/auth/presentation/login/strings/login_strings.dart';
 import 'package:frontend_mayoral/features/auth/presentation/login/widgets/login_form.dart';
 import 'package:frontend_mayoral/features/auth/presentation/login/widgets/login_header.dart';
@@ -72,7 +72,7 @@ class _LoginViewState extends State<_LoginView> {
                   SnackBar(content: Text(initialDataSyncError.message)),
                 );
             }
-            context.go(AppRoutes.home);
+            context.go(state.destinationAfterSignIn);
           case ResultError<AuthSession>(:final error):
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
