@@ -111,6 +111,7 @@ class EstablishmentRegistrationRemoteDataSource {
       'renspa_formato_invalido' ||
       'cuit_invalido' ||
       'superficie_invalida' ||
+      'poligono_invalido' ||
       'renspa_vacio' => DomainErrorCode.validation,
       _ => DomainErrorCode.unknown,
     };

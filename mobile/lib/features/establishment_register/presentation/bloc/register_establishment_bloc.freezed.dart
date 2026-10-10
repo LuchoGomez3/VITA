@@ -55,12 +55,18 @@ extension RegisterEstablishmentEventPatterns on RegisterEstablishmentEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _DraftChanged value)?  draftChanged,TResult Function( _CurrentLocationRequested value)?  currentLocationRequested,TResult Function( _NextStepRequested value)?  nextStepRequested,TResult Function( _PreviousStepRequested value)?  previousStepRequested,TResult Function( _StepRequested value)?  stepRequested,TResult Function( _SubmitRequested value)?  submitRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _DraftChanged value)?  draftChanged,TResult Function( _CurrentLocationRequested value)?  currentLocationRequested,TResult Function( _BoundaryPointAdded value)?  boundaryPointAdded,TResult Function( _BoundaryPointMoveStarted value)?  boundaryPointMoveStarted,TResult Function( _BoundaryPointMoved value)?  boundaryPointMoved,TResult Function( _BoundaryPointFromGpsRequested value)?  boundaryPointFromGpsRequested,TResult Function( _BoundaryUndoRequested value)?  boundaryUndoRequested,TResult Function( _BoundaryCleared value)?  boundaryCleared,TResult Function( _NextStepRequested value)?  nextStepRequested,TResult Function( _PreviousStepRequested value)?  previousStepRequested,TResult Function( _StepRequested value)?  stepRequested,TResult Function( _SubmitRequested value)?  submitRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _DraftChanged() when draftChanged != null:
 return draftChanged(_that);case _CurrentLocationRequested() when currentLocationRequested != null:
-return currentLocationRequested(_that);case _NextStepRequested() when nextStepRequested != null:
+return currentLocationRequested(_that);case _BoundaryPointAdded() when boundaryPointAdded != null:
+return boundaryPointAdded(_that);case _BoundaryPointMoveStarted() when boundaryPointMoveStarted != null:
+return boundaryPointMoveStarted(_that);case _BoundaryPointMoved() when boundaryPointMoved != null:
+return boundaryPointMoved(_that);case _BoundaryPointFromGpsRequested() when boundaryPointFromGpsRequested != null:
+return boundaryPointFromGpsRequested(_that);case _BoundaryUndoRequested() when boundaryUndoRequested != null:
+return boundaryUndoRequested(_that);case _BoundaryCleared() when boundaryCleared != null:
+return boundaryCleared(_that);case _NextStepRequested() when nextStepRequested != null:
 return nextStepRequested(_that);case _PreviousStepRequested() when previousStepRequested != null:
 return previousStepRequested(_that);case _StepRequested() when stepRequested != null:
 return stepRequested(_that);case _SubmitRequested() when submitRequested != null:
@@ -82,12 +88,18 @@ return submitRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _DraftChanged value)  draftChanged,required TResult Function( _CurrentLocationRequested value)  currentLocationRequested,required TResult Function( _NextStepRequested value)  nextStepRequested,required TResult Function( _PreviousStepRequested value)  previousStepRequested,required TResult Function( _StepRequested value)  stepRequested,required TResult Function( _SubmitRequested value)  submitRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _DraftChanged value)  draftChanged,required TResult Function( _CurrentLocationRequested value)  currentLocationRequested,required TResult Function( _BoundaryPointAdded value)  boundaryPointAdded,required TResult Function( _BoundaryPointMoveStarted value)  boundaryPointMoveStarted,required TResult Function( _BoundaryPointMoved value)  boundaryPointMoved,required TResult Function( _BoundaryPointFromGpsRequested value)  boundaryPointFromGpsRequested,required TResult Function( _BoundaryUndoRequested value)  boundaryUndoRequested,required TResult Function( _BoundaryCleared value)  boundaryCleared,required TResult Function( _NextStepRequested value)  nextStepRequested,required TResult Function( _PreviousStepRequested value)  previousStepRequested,required TResult Function( _StepRequested value)  stepRequested,required TResult Function( _SubmitRequested value)  submitRequested,}){
 final _that = this;
 switch (_that) {
 case _DraftChanged():
 return draftChanged(_that);case _CurrentLocationRequested():
-return currentLocationRequested(_that);case _NextStepRequested():
+return currentLocationRequested(_that);case _BoundaryPointAdded():
+return boundaryPointAdded(_that);case _BoundaryPointMoveStarted():
+return boundaryPointMoveStarted(_that);case _BoundaryPointMoved():
+return boundaryPointMoved(_that);case _BoundaryPointFromGpsRequested():
+return boundaryPointFromGpsRequested(_that);case _BoundaryUndoRequested():
+return boundaryUndoRequested(_that);case _BoundaryCleared():
+return boundaryCleared(_that);case _NextStepRequested():
 return nextStepRequested(_that);case _PreviousStepRequested():
 return previousStepRequested(_that);case _StepRequested():
 return stepRequested(_that);case _SubmitRequested():
@@ -105,12 +117,18 @@ return submitRequested(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _DraftChanged value)?  draftChanged,TResult? Function( _CurrentLocationRequested value)?  currentLocationRequested,TResult? Function( _NextStepRequested value)?  nextStepRequested,TResult? Function( _PreviousStepRequested value)?  previousStepRequested,TResult? Function( _StepRequested value)?  stepRequested,TResult? Function( _SubmitRequested value)?  submitRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _DraftChanged value)?  draftChanged,TResult? Function( _CurrentLocationRequested value)?  currentLocationRequested,TResult? Function( _BoundaryPointAdded value)?  boundaryPointAdded,TResult? Function( _BoundaryPointMoveStarted value)?  boundaryPointMoveStarted,TResult? Function( _BoundaryPointMoved value)?  boundaryPointMoved,TResult? Function( _BoundaryPointFromGpsRequested value)?  boundaryPointFromGpsRequested,TResult? Function( _BoundaryUndoRequested value)?  boundaryUndoRequested,TResult? Function( _BoundaryCleared value)?  boundaryCleared,TResult? Function( _NextStepRequested value)?  nextStepRequested,TResult? Function( _PreviousStepRequested value)?  previousStepRequested,TResult? Function( _StepRequested value)?  stepRequested,TResult? Function( _SubmitRequested value)?  submitRequested,}){
 final _that = this;
 switch (_that) {
 case _DraftChanged() when draftChanged != null:
 return draftChanged(_that);case _CurrentLocationRequested() when currentLocationRequested != null:
-return currentLocationRequested(_that);case _NextStepRequested() when nextStepRequested != null:
+return currentLocationRequested(_that);case _BoundaryPointAdded() when boundaryPointAdded != null:
+return boundaryPointAdded(_that);case _BoundaryPointMoveStarted() when boundaryPointMoveStarted != null:
+return boundaryPointMoveStarted(_that);case _BoundaryPointMoved() when boundaryPointMoved != null:
+return boundaryPointMoved(_that);case _BoundaryPointFromGpsRequested() when boundaryPointFromGpsRequested != null:
+return boundaryPointFromGpsRequested(_that);case _BoundaryUndoRequested() when boundaryUndoRequested != null:
+return boundaryUndoRequested(_that);case _BoundaryCleared() when boundaryCleared != null:
+return boundaryCleared(_that);case _NextStepRequested() when nextStepRequested != null:
 return nextStepRequested(_that);case _PreviousStepRequested() when previousStepRequested != null:
 return previousStepRequested(_that);case _StepRequested() when stepRequested != null:
 return stepRequested(_that);case _SubmitRequested() when submitRequested != null:
@@ -131,11 +149,17 @@ return submitRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( RegisterEstablishmentDraft draft)?  draftChanged,TResult Function()?  currentLocationRequested,TResult Function()?  nextStepRequested,TResult Function()?  previousStepRequested,TResult Function( RegisterEstablishmentStep step)?  stepRequested,TResult Function()?  submitRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( RegisterEstablishmentDraft draft)?  draftChanged,TResult Function()?  currentLocationRequested,TResult Function( BoundaryPoint point)?  boundaryPointAdded,TResult Function()?  boundaryPointMoveStarted,TResult Function( int index,  BoundaryPoint point)?  boundaryPointMoved,TResult Function()?  boundaryPointFromGpsRequested,TResult Function()?  boundaryUndoRequested,TResult Function()?  boundaryCleared,TResult Function()?  nextStepRequested,TResult Function()?  previousStepRequested,TResult Function( RegisterEstablishmentStep step)?  stepRequested,TResult Function()?  submitRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DraftChanged() when draftChanged != null:
 return draftChanged(_that.draft);case _CurrentLocationRequested() when currentLocationRequested != null:
-return currentLocationRequested();case _NextStepRequested() when nextStepRequested != null:
+return currentLocationRequested();case _BoundaryPointAdded() when boundaryPointAdded != null:
+return boundaryPointAdded(_that.point);case _BoundaryPointMoveStarted() when boundaryPointMoveStarted != null:
+return boundaryPointMoveStarted();case _BoundaryPointMoved() when boundaryPointMoved != null:
+return boundaryPointMoved(_that.index,_that.point);case _BoundaryPointFromGpsRequested() when boundaryPointFromGpsRequested != null:
+return boundaryPointFromGpsRequested();case _BoundaryUndoRequested() when boundaryUndoRequested != null:
+return boundaryUndoRequested();case _BoundaryCleared() when boundaryCleared != null:
+return boundaryCleared();case _NextStepRequested() when nextStepRequested != null:
 return nextStepRequested();case _PreviousStepRequested() when previousStepRequested != null:
 return previousStepRequested();case _StepRequested() when stepRequested != null:
 return stepRequested(_that.step);case _SubmitRequested() when submitRequested != null:
@@ -157,11 +181,17 @@ return submitRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( RegisterEstablishmentDraft draft)  draftChanged,required TResult Function()  currentLocationRequested,required TResult Function()  nextStepRequested,required TResult Function()  previousStepRequested,required TResult Function( RegisterEstablishmentStep step)  stepRequested,required TResult Function()  submitRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( RegisterEstablishmentDraft draft)  draftChanged,required TResult Function()  currentLocationRequested,required TResult Function( BoundaryPoint point)  boundaryPointAdded,required TResult Function()  boundaryPointMoveStarted,required TResult Function( int index,  BoundaryPoint point)  boundaryPointMoved,required TResult Function()  boundaryPointFromGpsRequested,required TResult Function()  boundaryUndoRequested,required TResult Function()  boundaryCleared,required TResult Function()  nextStepRequested,required TResult Function()  previousStepRequested,required TResult Function( RegisterEstablishmentStep step)  stepRequested,required TResult Function()  submitRequested,}) {final _that = this;
 switch (_that) {
 case _DraftChanged():
 return draftChanged(_that.draft);case _CurrentLocationRequested():
-return currentLocationRequested();case _NextStepRequested():
+return currentLocationRequested();case _BoundaryPointAdded():
+return boundaryPointAdded(_that.point);case _BoundaryPointMoveStarted():
+return boundaryPointMoveStarted();case _BoundaryPointMoved():
+return boundaryPointMoved(_that.index,_that.point);case _BoundaryPointFromGpsRequested():
+return boundaryPointFromGpsRequested();case _BoundaryUndoRequested():
+return boundaryUndoRequested();case _BoundaryCleared():
+return boundaryCleared();case _NextStepRequested():
 return nextStepRequested();case _PreviousStepRequested():
 return previousStepRequested();case _StepRequested():
 return stepRequested(_that.step);case _SubmitRequested():
@@ -179,11 +209,17 @@ return submitRequested();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( RegisterEstablishmentDraft draft)?  draftChanged,TResult? Function()?  currentLocationRequested,TResult? Function()?  nextStepRequested,TResult? Function()?  previousStepRequested,TResult? Function( RegisterEstablishmentStep step)?  stepRequested,TResult? Function()?  submitRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( RegisterEstablishmentDraft draft)?  draftChanged,TResult? Function()?  currentLocationRequested,TResult? Function( BoundaryPoint point)?  boundaryPointAdded,TResult? Function()?  boundaryPointMoveStarted,TResult? Function( int index,  BoundaryPoint point)?  boundaryPointMoved,TResult? Function()?  boundaryPointFromGpsRequested,TResult? Function()?  boundaryUndoRequested,TResult? Function()?  boundaryCleared,TResult? Function()?  nextStepRequested,TResult? Function()?  previousStepRequested,TResult? Function( RegisterEstablishmentStep step)?  stepRequested,TResult? Function()?  submitRequested,}) {final _that = this;
 switch (_that) {
 case _DraftChanged() when draftChanged != null:
 return draftChanged(_that.draft);case _CurrentLocationRequested() when currentLocationRequested != null:
-return currentLocationRequested();case _NextStepRequested() when nextStepRequested != null:
+return currentLocationRequested();case _BoundaryPointAdded() when boundaryPointAdded != null:
+return boundaryPointAdded(_that.point);case _BoundaryPointMoveStarted() when boundaryPointMoveStarted != null:
+return boundaryPointMoveStarted();case _BoundaryPointMoved() when boundaryPointMoved != null:
+return boundaryPointMoved(_that.index,_that.point);case _BoundaryPointFromGpsRequested() when boundaryPointFromGpsRequested != null:
+return boundaryPointFromGpsRequested();case _BoundaryUndoRequested() when boundaryUndoRequested != null:
+return boundaryUndoRequested();case _BoundaryCleared() when boundaryCleared != null:
+return boundaryCleared();case _NextStepRequested() when nextStepRequested != null:
 return nextStepRequested();case _PreviousStepRequested() when previousStepRequested != null:
 return previousStepRequested();case _StepRequested() when stepRequested != null:
 return stepRequested(_that.step);case _SubmitRequested() when submitRequested != null:
@@ -294,6 +330,286 @@ int get hashCode => runtimeType.hashCode;
 @override
 String toString() {
   return 'RegisterEstablishmentEvent.currentLocationRequested()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class _BoundaryPointAdded implements RegisterEstablishmentEvent {
+  const _BoundaryPointAdded(this.point);
+  
+
+ final  BoundaryPoint point;
+
+/// Create a copy of RegisterEstablishmentEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$BoundaryPointAddedCopyWith<_BoundaryPointAdded> get copyWith => __$BoundaryPointAddedCopyWithImpl<_BoundaryPointAdded>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BoundaryPointAdded&&(identical(other.point, point) || other.point == point));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,point);
+
+@override
+String toString() {
+  return 'RegisterEstablishmentEvent.boundaryPointAdded(point: $point)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$BoundaryPointAddedCopyWith<$Res> implements $RegisterEstablishmentEventCopyWith<$Res> {
+  factory _$BoundaryPointAddedCopyWith(_BoundaryPointAdded value, $Res Function(_BoundaryPointAdded) _then) = __$BoundaryPointAddedCopyWithImpl;
+@useResult
+$Res call({
+ BoundaryPoint point
+});
+
+
+$BoundaryPointCopyWith<$Res> get point;
+
+}
+/// @nodoc
+class __$BoundaryPointAddedCopyWithImpl<$Res>
+    implements _$BoundaryPointAddedCopyWith<$Res> {
+  __$BoundaryPointAddedCopyWithImpl(this._self, this._then);
+
+  final _BoundaryPointAdded _self;
+  final $Res Function(_BoundaryPointAdded) _then;
+
+/// Create a copy of RegisterEstablishmentEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? point = null,}) {
+  return _then(_BoundaryPointAdded(
+null == point ? _self.point : point // ignore: cast_nullable_to_non_nullable
+as BoundaryPoint,
+  ));
+}
+
+/// Create a copy of RegisterEstablishmentEvent
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$BoundaryPointCopyWith<$Res> get point {
+  
+  return $BoundaryPointCopyWith<$Res>(_self.point, (value) {
+    return _then(_self.copyWith(point: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class _BoundaryPointMoveStarted implements RegisterEstablishmentEvent {
+  const _BoundaryPointMoveStarted();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BoundaryPointMoveStarted);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'RegisterEstablishmentEvent.boundaryPointMoveStarted()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class _BoundaryPointMoved implements RegisterEstablishmentEvent {
+  const _BoundaryPointMoved(this.index, this.point);
+  
+
+ final  int index;
+ final  BoundaryPoint point;
+
+/// Create a copy of RegisterEstablishmentEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$BoundaryPointMovedCopyWith<_BoundaryPointMoved> get copyWith => __$BoundaryPointMovedCopyWithImpl<_BoundaryPointMoved>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BoundaryPointMoved&&(identical(other.index, index) || other.index == index)&&(identical(other.point, point) || other.point == point));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,index,point);
+
+@override
+String toString() {
+  return 'RegisterEstablishmentEvent.boundaryPointMoved(index: $index, point: $point)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$BoundaryPointMovedCopyWith<$Res> implements $RegisterEstablishmentEventCopyWith<$Res> {
+  factory _$BoundaryPointMovedCopyWith(_BoundaryPointMoved value, $Res Function(_BoundaryPointMoved) _then) = __$BoundaryPointMovedCopyWithImpl;
+@useResult
+$Res call({
+ int index, BoundaryPoint point
+});
+
+
+$BoundaryPointCopyWith<$Res> get point;
+
+}
+/// @nodoc
+class __$BoundaryPointMovedCopyWithImpl<$Res>
+    implements _$BoundaryPointMovedCopyWith<$Res> {
+  __$BoundaryPointMovedCopyWithImpl(this._self, this._then);
+
+  final _BoundaryPointMoved _self;
+  final $Res Function(_BoundaryPointMoved) _then;
+
+/// Create a copy of RegisterEstablishmentEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? index = null,Object? point = null,}) {
+  return _then(_BoundaryPointMoved(
+null == index ? _self.index : index // ignore: cast_nullable_to_non_nullable
+as int,null == point ? _self.point : point // ignore: cast_nullable_to_non_nullable
+as BoundaryPoint,
+  ));
+}
+
+/// Create a copy of RegisterEstablishmentEvent
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$BoundaryPointCopyWith<$Res> get point {
+  
+  return $BoundaryPointCopyWith<$Res>(_self.point, (value) {
+    return _then(_self.copyWith(point: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class _BoundaryPointFromGpsRequested implements RegisterEstablishmentEvent {
+  const _BoundaryPointFromGpsRequested();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BoundaryPointFromGpsRequested);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'RegisterEstablishmentEvent.boundaryPointFromGpsRequested()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class _BoundaryUndoRequested implements RegisterEstablishmentEvent {
+  const _BoundaryUndoRequested();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BoundaryUndoRequested);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'RegisterEstablishmentEvent.boundaryUndoRequested()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class _BoundaryCleared implements RegisterEstablishmentEvent {
+  const _BoundaryCleared();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BoundaryCleared);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'RegisterEstablishmentEvent.boundaryCleared()';
 }
 
 
@@ -467,7 +783,10 @@ String toString() {
 /// @nodoc
 mixin _$RegisterEstablishmentDraft {
 
- String get nombre; String get descripcion; Set<String> get tiposProduccion; String get cuitTitular; String get nroRenspa; String get provincia; String get departamento; String get localidad; double get latitud; double get longitud; bool get ubicacionConfirmadaPorGps; double get superficieHectareas; int get cantidadVertices; int get cantidadUnidadesProductivas;
+ String get nombre; String get descripcion; Set<String> get tiposProduccion; String get cuitTitular; String get nroRenspa; String get provincia; String get departamento; String get localidad; double get latitud; double get longitud; bool get ubicacionConfirmadaPorGps; int get cantidadUnidadesProductivas;/// Vértices del polígono dibujado en el paso 4, en orden de recorrido.
+ List<BoundaryPoint> get poligono;/// Superficie cargada a mano cuando no se dibuja el polígono. Si hay
+/// polígono, la superficie sale de su área y este valor se ignora.
+ double? get superficieManualHectareas;
 /// Create a copy of RegisterEstablishmentDraft
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -478,16 +797,16 @@ $RegisterEstablishmentDraftCopyWith<RegisterEstablishmentDraft> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterEstablishmentDraft&&(identical(other.nombre, nombre) || other.nombre == nombre)&&(identical(other.descripcion, descripcion) || other.descripcion == descripcion)&&const DeepCollectionEquality().equals(other.tiposProduccion, tiposProduccion)&&(identical(other.cuitTitular, cuitTitular) || other.cuitTitular == cuitTitular)&&(identical(other.nroRenspa, nroRenspa) || other.nroRenspa == nroRenspa)&&(identical(other.provincia, provincia) || other.provincia == provincia)&&(identical(other.departamento, departamento) || other.departamento == departamento)&&(identical(other.localidad, localidad) || other.localidad == localidad)&&(identical(other.latitud, latitud) || other.latitud == latitud)&&(identical(other.longitud, longitud) || other.longitud == longitud)&&(identical(other.ubicacionConfirmadaPorGps, ubicacionConfirmadaPorGps) || other.ubicacionConfirmadaPorGps == ubicacionConfirmadaPorGps)&&(identical(other.superficieHectareas, superficieHectareas) || other.superficieHectareas == superficieHectareas)&&(identical(other.cantidadVertices, cantidadVertices) || other.cantidadVertices == cantidadVertices)&&(identical(other.cantidadUnidadesProductivas, cantidadUnidadesProductivas) || other.cantidadUnidadesProductivas == cantidadUnidadesProductivas));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterEstablishmentDraft&&(identical(other.nombre, nombre) || other.nombre == nombre)&&(identical(other.descripcion, descripcion) || other.descripcion == descripcion)&&const DeepCollectionEquality().equals(other.tiposProduccion, tiposProduccion)&&(identical(other.cuitTitular, cuitTitular) || other.cuitTitular == cuitTitular)&&(identical(other.nroRenspa, nroRenspa) || other.nroRenspa == nroRenspa)&&(identical(other.provincia, provincia) || other.provincia == provincia)&&(identical(other.departamento, departamento) || other.departamento == departamento)&&(identical(other.localidad, localidad) || other.localidad == localidad)&&(identical(other.latitud, latitud) || other.latitud == latitud)&&(identical(other.longitud, longitud) || other.longitud == longitud)&&(identical(other.ubicacionConfirmadaPorGps, ubicacionConfirmadaPorGps) || other.ubicacionConfirmadaPorGps == ubicacionConfirmadaPorGps)&&(identical(other.cantidadUnidadesProductivas, cantidadUnidadesProductivas) || other.cantidadUnidadesProductivas == cantidadUnidadesProductivas)&&const DeepCollectionEquality().equals(other.poligono, poligono)&&(identical(other.superficieManualHectareas, superficieManualHectareas) || other.superficieManualHectareas == superficieManualHectareas));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,nombre,descripcion,const DeepCollectionEquality().hash(tiposProduccion),cuitTitular,nroRenspa,provincia,departamento,localidad,latitud,longitud,ubicacionConfirmadaPorGps,superficieHectareas,cantidadVertices,cantidadUnidadesProductivas);
+int get hashCode => Object.hash(runtimeType,nombre,descripcion,const DeepCollectionEquality().hash(tiposProduccion),cuitTitular,nroRenspa,provincia,departamento,localidad,latitud,longitud,ubicacionConfirmadaPorGps,cantidadUnidadesProductivas,const DeepCollectionEquality().hash(poligono),superficieManualHectareas);
 
 @override
 String toString() {
-  return 'RegisterEstablishmentDraft(nombre: $nombre, descripcion: $descripcion, tiposProduccion: $tiposProduccion, cuitTitular: $cuitTitular, nroRenspa: $nroRenspa, provincia: $provincia, departamento: $departamento, localidad: $localidad, latitud: $latitud, longitud: $longitud, ubicacionConfirmadaPorGps: $ubicacionConfirmadaPorGps, superficieHectareas: $superficieHectareas, cantidadVertices: $cantidadVertices, cantidadUnidadesProductivas: $cantidadUnidadesProductivas)';
+  return 'RegisterEstablishmentDraft(nombre: $nombre, descripcion: $descripcion, tiposProduccion: $tiposProduccion, cuitTitular: $cuitTitular, nroRenspa: $nroRenspa, provincia: $provincia, departamento: $departamento, localidad: $localidad, latitud: $latitud, longitud: $longitud, ubicacionConfirmadaPorGps: $ubicacionConfirmadaPorGps, cantidadUnidadesProductivas: $cantidadUnidadesProductivas, poligono: $poligono, superficieManualHectareas: $superficieManualHectareas)';
 }
 
 
@@ -498,7 +817,7 @@ abstract mixin class $RegisterEstablishmentDraftCopyWith<$Res>  {
   factory $RegisterEstablishmentDraftCopyWith(RegisterEstablishmentDraft value, $Res Function(RegisterEstablishmentDraft) _then) = _$RegisterEstablishmentDraftCopyWithImpl;
 @useResult
 $Res call({
- String nombre, String descripcion, Set<String> tiposProduccion, String cuitTitular, String nroRenspa, String provincia, String departamento, String localidad, double latitud, double longitud, bool ubicacionConfirmadaPorGps, double superficieHectareas, int cantidadVertices, int cantidadUnidadesProductivas
+ String nombre, String descripcion, Set<String> tiposProduccion, String cuitTitular, String nroRenspa, String provincia, String departamento, String localidad, double latitud, double longitud, bool ubicacionConfirmadaPorGps, int cantidadUnidadesProductivas, List<BoundaryPoint> poligono, double? superficieManualHectareas
 });
 
 
@@ -515,7 +834,7 @@ class _$RegisterEstablishmentDraftCopyWithImpl<$Res>
 
 /// Create a copy of RegisterEstablishmentDraft
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? nombre = null,Object? descripcion = null,Object? tiposProduccion = null,Object? cuitTitular = null,Object? nroRenspa = null,Object? provincia = null,Object? departamento = null,Object? localidad = null,Object? latitud = null,Object? longitud = null,Object? ubicacionConfirmadaPorGps = null,Object? superficieHectareas = null,Object? cantidadVertices = null,Object? cantidadUnidadesProductivas = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? nombre = null,Object? descripcion = null,Object? tiposProduccion = null,Object? cuitTitular = null,Object? nroRenspa = null,Object? provincia = null,Object? departamento = null,Object? localidad = null,Object? latitud = null,Object? longitud = null,Object? ubicacionConfirmadaPorGps = null,Object? cantidadUnidadesProductivas = null,Object? poligono = null,Object? superficieManualHectareas = freezed,}) {
   return _then(_self.copyWith(
 nombre: null == nombre ? _self.nombre : nombre // ignore: cast_nullable_to_non_nullable
 as String,descripcion: null == descripcion ? _self.descripcion : descripcion // ignore: cast_nullable_to_non_nullable
@@ -528,10 +847,10 @@ as String,localidad: null == localidad ? _self.localidad : localidad // ignore: 
 as String,latitud: null == latitud ? _self.latitud : latitud // ignore: cast_nullable_to_non_nullable
 as double,longitud: null == longitud ? _self.longitud : longitud // ignore: cast_nullable_to_non_nullable
 as double,ubicacionConfirmadaPorGps: null == ubicacionConfirmadaPorGps ? _self.ubicacionConfirmadaPorGps : ubicacionConfirmadaPorGps // ignore: cast_nullable_to_non_nullable
-as bool,superficieHectareas: null == superficieHectareas ? _self.superficieHectareas : superficieHectareas // ignore: cast_nullable_to_non_nullable
-as double,cantidadVertices: null == cantidadVertices ? _self.cantidadVertices : cantidadVertices // ignore: cast_nullable_to_non_nullable
-as int,cantidadUnidadesProductivas: null == cantidadUnidadesProductivas ? _self.cantidadUnidadesProductivas : cantidadUnidadesProductivas // ignore: cast_nullable_to_non_nullable
-as int,
+as bool,cantidadUnidadesProductivas: null == cantidadUnidadesProductivas ? _self.cantidadUnidadesProductivas : cantidadUnidadesProductivas // ignore: cast_nullable_to_non_nullable
+as int,poligono: null == poligono ? _self.poligono : poligono // ignore: cast_nullable_to_non_nullable
+as List<BoundaryPoint>,superficieManualHectareas: freezed == superficieManualHectareas ? _self.superficieManualHectareas : superficieManualHectareas // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 
@@ -613,10 +932,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String nombre,  String descripcion,  Set<String> tiposProduccion,  String cuitTitular,  String nroRenspa,  String provincia,  String departamento,  String localidad,  double latitud,  double longitud,  bool ubicacionConfirmadaPorGps,  double superficieHectareas,  int cantidadVertices,  int cantidadUnidadesProductivas)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String nombre,  String descripcion,  Set<String> tiposProduccion,  String cuitTitular,  String nroRenspa,  String provincia,  String departamento,  String localidad,  double latitud,  double longitud,  bool ubicacionConfirmadaPorGps,  int cantidadUnidadesProductivas,  List<BoundaryPoint> poligono,  double? superficieManualHectareas)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisterEstablishmentDraft() when $default != null:
-return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitTitular,_that.nroRenspa,_that.provincia,_that.departamento,_that.localidad,_that.latitud,_that.longitud,_that.ubicacionConfirmadaPorGps,_that.superficieHectareas,_that.cantidadVertices,_that.cantidadUnidadesProductivas);case _:
+return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitTitular,_that.nroRenspa,_that.provincia,_that.departamento,_that.localidad,_that.latitud,_that.longitud,_that.ubicacionConfirmadaPorGps,_that.cantidadUnidadesProductivas,_that.poligono,_that.superficieManualHectareas);case _:
   return orElse();
 
 }
@@ -634,10 +953,10 @@ return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitT
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String nombre,  String descripcion,  Set<String> tiposProduccion,  String cuitTitular,  String nroRenspa,  String provincia,  String departamento,  String localidad,  double latitud,  double longitud,  bool ubicacionConfirmadaPorGps,  double superficieHectareas,  int cantidadVertices,  int cantidadUnidadesProductivas)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String nombre,  String descripcion,  Set<String> tiposProduccion,  String cuitTitular,  String nroRenspa,  String provincia,  String departamento,  String localidad,  double latitud,  double longitud,  bool ubicacionConfirmadaPorGps,  int cantidadUnidadesProductivas,  List<BoundaryPoint> poligono,  double? superficieManualHectareas)  $default,) {final _that = this;
 switch (_that) {
 case _RegisterEstablishmentDraft():
-return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitTitular,_that.nroRenspa,_that.provincia,_that.departamento,_that.localidad,_that.latitud,_that.longitud,_that.ubicacionConfirmadaPorGps,_that.superficieHectareas,_that.cantidadVertices,_that.cantidadUnidadesProductivas);}
+return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitTitular,_that.nroRenspa,_that.provincia,_that.departamento,_that.localidad,_that.latitud,_that.longitud,_that.ubicacionConfirmadaPorGps,_that.cantidadUnidadesProductivas,_that.poligono,_that.superficieManualHectareas);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -651,10 +970,10 @@ return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitT
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String nombre,  String descripcion,  Set<String> tiposProduccion,  String cuitTitular,  String nroRenspa,  String provincia,  String departamento,  String localidad,  double latitud,  double longitud,  bool ubicacionConfirmadaPorGps,  double superficieHectareas,  int cantidadVertices,  int cantidadUnidadesProductivas)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String nombre,  String descripcion,  Set<String> tiposProduccion,  String cuitTitular,  String nroRenspa,  String provincia,  String departamento,  String localidad,  double latitud,  double longitud,  bool ubicacionConfirmadaPorGps,  int cantidadUnidadesProductivas,  List<BoundaryPoint> poligono,  double? superficieManualHectareas)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisterEstablishmentDraft() when $default != null:
-return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitTitular,_that.nroRenspa,_that.provincia,_that.departamento,_that.localidad,_that.latitud,_that.longitud,_that.ubicacionConfirmadaPorGps,_that.superficieHectareas,_that.cantidadVertices,_that.cantidadUnidadesProductivas);case _:
+return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitTitular,_that.nroRenspa,_that.provincia,_that.departamento,_that.localidad,_that.latitud,_that.longitud,_that.ubicacionConfirmadaPorGps,_that.cantidadUnidadesProductivas,_that.poligono,_that.superficieManualHectareas);case _:
   return null;
 
 }
@@ -666,7 +985,7 @@ return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitT
 
 
 class _RegisterEstablishmentDraft implements RegisterEstablishmentDraft {
-  const _RegisterEstablishmentDraft({required this.nombre, required this.descripcion, required final  Set<String> tiposProduccion, required this.cuitTitular, required this.nroRenspa, required this.provincia, required this.departamento, required this.localidad, required this.latitud, required this.longitud, required this.ubicacionConfirmadaPorGps, required this.superficieHectareas, required this.cantidadVertices, required this.cantidadUnidadesProductivas}): _tiposProduccion = tiposProduccion;
+  const _RegisterEstablishmentDraft({required this.nombre, required this.descripcion, required final  Set<String> tiposProduccion, required this.cuitTitular, required this.nroRenspa, required this.provincia, required this.departamento, required this.localidad, required this.latitud, required this.longitud, required this.ubicacionConfirmadaPorGps, required this.cantidadUnidadesProductivas, final  List<BoundaryPoint> poligono = const <BoundaryPoint>[], this.superficieManualHectareas}): _tiposProduccion = tiposProduccion,_poligono = poligono;
   
 
 @override final  String nombre;
@@ -686,9 +1005,19 @@ class _RegisterEstablishmentDraft implements RegisterEstablishmentDraft {
 @override final  double latitud;
 @override final  double longitud;
 @override final  bool ubicacionConfirmadaPorGps;
-@override final  double superficieHectareas;
-@override final  int cantidadVertices;
 @override final  int cantidadUnidadesProductivas;
+/// Vértices del polígono dibujado en el paso 4, en orden de recorrido.
+ final  List<BoundaryPoint> _poligono;
+/// Vértices del polígono dibujado en el paso 4, en orden de recorrido.
+@override@JsonKey() List<BoundaryPoint> get poligono {
+  if (_poligono is EqualUnmodifiableListView) return _poligono;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_poligono);
+}
+
+/// Superficie cargada a mano cuando no se dibuja el polígono. Si hay
+/// polígono, la superficie sale de su área y este valor se ignora.
+@override final  double? superficieManualHectareas;
 
 /// Create a copy of RegisterEstablishmentDraft
 /// with the given fields replaced by the non-null parameter values.
@@ -700,16 +1029,16 @@ _$RegisterEstablishmentDraftCopyWith<_RegisterEstablishmentDraft> get copyWith =
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterEstablishmentDraft&&(identical(other.nombre, nombre) || other.nombre == nombre)&&(identical(other.descripcion, descripcion) || other.descripcion == descripcion)&&const DeepCollectionEquality().equals(other._tiposProduccion, _tiposProduccion)&&(identical(other.cuitTitular, cuitTitular) || other.cuitTitular == cuitTitular)&&(identical(other.nroRenspa, nroRenspa) || other.nroRenspa == nroRenspa)&&(identical(other.provincia, provincia) || other.provincia == provincia)&&(identical(other.departamento, departamento) || other.departamento == departamento)&&(identical(other.localidad, localidad) || other.localidad == localidad)&&(identical(other.latitud, latitud) || other.latitud == latitud)&&(identical(other.longitud, longitud) || other.longitud == longitud)&&(identical(other.ubicacionConfirmadaPorGps, ubicacionConfirmadaPorGps) || other.ubicacionConfirmadaPorGps == ubicacionConfirmadaPorGps)&&(identical(other.superficieHectareas, superficieHectareas) || other.superficieHectareas == superficieHectareas)&&(identical(other.cantidadVertices, cantidadVertices) || other.cantidadVertices == cantidadVertices)&&(identical(other.cantidadUnidadesProductivas, cantidadUnidadesProductivas) || other.cantidadUnidadesProductivas == cantidadUnidadesProductivas));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterEstablishmentDraft&&(identical(other.nombre, nombre) || other.nombre == nombre)&&(identical(other.descripcion, descripcion) || other.descripcion == descripcion)&&const DeepCollectionEquality().equals(other._tiposProduccion, _tiposProduccion)&&(identical(other.cuitTitular, cuitTitular) || other.cuitTitular == cuitTitular)&&(identical(other.nroRenspa, nroRenspa) || other.nroRenspa == nroRenspa)&&(identical(other.provincia, provincia) || other.provincia == provincia)&&(identical(other.departamento, departamento) || other.departamento == departamento)&&(identical(other.localidad, localidad) || other.localidad == localidad)&&(identical(other.latitud, latitud) || other.latitud == latitud)&&(identical(other.longitud, longitud) || other.longitud == longitud)&&(identical(other.ubicacionConfirmadaPorGps, ubicacionConfirmadaPorGps) || other.ubicacionConfirmadaPorGps == ubicacionConfirmadaPorGps)&&(identical(other.cantidadUnidadesProductivas, cantidadUnidadesProductivas) || other.cantidadUnidadesProductivas == cantidadUnidadesProductivas)&&const DeepCollectionEquality().equals(other._poligono, _poligono)&&(identical(other.superficieManualHectareas, superficieManualHectareas) || other.superficieManualHectareas == superficieManualHectareas));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,nombre,descripcion,const DeepCollectionEquality().hash(_tiposProduccion),cuitTitular,nroRenspa,provincia,departamento,localidad,latitud,longitud,ubicacionConfirmadaPorGps,superficieHectareas,cantidadVertices,cantidadUnidadesProductivas);
+int get hashCode => Object.hash(runtimeType,nombre,descripcion,const DeepCollectionEquality().hash(_tiposProduccion),cuitTitular,nroRenspa,provincia,departamento,localidad,latitud,longitud,ubicacionConfirmadaPorGps,cantidadUnidadesProductivas,const DeepCollectionEquality().hash(_poligono),superficieManualHectareas);
 
 @override
 String toString() {
-  return 'RegisterEstablishmentDraft(nombre: $nombre, descripcion: $descripcion, tiposProduccion: $tiposProduccion, cuitTitular: $cuitTitular, nroRenspa: $nroRenspa, provincia: $provincia, departamento: $departamento, localidad: $localidad, latitud: $latitud, longitud: $longitud, ubicacionConfirmadaPorGps: $ubicacionConfirmadaPorGps, superficieHectareas: $superficieHectareas, cantidadVertices: $cantidadVertices, cantidadUnidadesProductivas: $cantidadUnidadesProductivas)';
+  return 'RegisterEstablishmentDraft(nombre: $nombre, descripcion: $descripcion, tiposProduccion: $tiposProduccion, cuitTitular: $cuitTitular, nroRenspa: $nroRenspa, provincia: $provincia, departamento: $departamento, localidad: $localidad, latitud: $latitud, longitud: $longitud, ubicacionConfirmadaPorGps: $ubicacionConfirmadaPorGps, cantidadUnidadesProductivas: $cantidadUnidadesProductivas, poligono: $poligono, superficieManualHectareas: $superficieManualHectareas)';
 }
 
 
@@ -720,7 +1049,7 @@ abstract mixin class _$RegisterEstablishmentDraftCopyWith<$Res> implements $Regi
   factory _$RegisterEstablishmentDraftCopyWith(_RegisterEstablishmentDraft value, $Res Function(_RegisterEstablishmentDraft) _then) = __$RegisterEstablishmentDraftCopyWithImpl;
 @override @useResult
 $Res call({
- String nombre, String descripcion, Set<String> tiposProduccion, String cuitTitular, String nroRenspa, String provincia, String departamento, String localidad, double latitud, double longitud, bool ubicacionConfirmadaPorGps, double superficieHectareas, int cantidadVertices, int cantidadUnidadesProductivas
+ String nombre, String descripcion, Set<String> tiposProduccion, String cuitTitular, String nroRenspa, String provincia, String departamento, String localidad, double latitud, double longitud, bool ubicacionConfirmadaPorGps, int cantidadUnidadesProductivas, List<BoundaryPoint> poligono, double? superficieManualHectareas
 });
 
 
@@ -737,7 +1066,7 @@ class __$RegisterEstablishmentDraftCopyWithImpl<$Res>
 
 /// Create a copy of RegisterEstablishmentDraft
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? nombre = null,Object? descripcion = null,Object? tiposProduccion = null,Object? cuitTitular = null,Object? nroRenspa = null,Object? provincia = null,Object? departamento = null,Object? localidad = null,Object? latitud = null,Object? longitud = null,Object? ubicacionConfirmadaPorGps = null,Object? superficieHectareas = null,Object? cantidadVertices = null,Object? cantidadUnidadesProductivas = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? nombre = null,Object? descripcion = null,Object? tiposProduccion = null,Object? cuitTitular = null,Object? nroRenspa = null,Object? provincia = null,Object? departamento = null,Object? localidad = null,Object? latitud = null,Object? longitud = null,Object? ubicacionConfirmadaPorGps = null,Object? cantidadUnidadesProductivas = null,Object? poligono = null,Object? superficieManualHectareas = freezed,}) {
   return _then(_RegisterEstablishmentDraft(
 nombre: null == nombre ? _self.nombre : nombre // ignore: cast_nullable_to_non_nullable
 as String,descripcion: null == descripcion ? _self.descripcion : descripcion // ignore: cast_nullable_to_non_nullable
@@ -750,10 +1079,10 @@ as String,localidad: null == localidad ? _self.localidad : localidad // ignore: 
 as String,latitud: null == latitud ? _self.latitud : latitud // ignore: cast_nullable_to_non_nullable
 as double,longitud: null == longitud ? _self.longitud : longitud // ignore: cast_nullable_to_non_nullable
 as double,ubicacionConfirmadaPorGps: null == ubicacionConfirmadaPorGps ? _self.ubicacionConfirmadaPorGps : ubicacionConfirmadaPorGps // ignore: cast_nullable_to_non_nullable
-as bool,superficieHectareas: null == superficieHectareas ? _self.superficieHectareas : superficieHectareas // ignore: cast_nullable_to_non_nullable
-as double,cantidadVertices: null == cantidadVertices ? _self.cantidadVertices : cantidadVertices // ignore: cast_nullable_to_non_nullable
-as int,cantidadUnidadesProductivas: null == cantidadUnidadesProductivas ? _self.cantidadUnidadesProductivas : cantidadUnidadesProductivas // ignore: cast_nullable_to_non_nullable
-as int,
+as bool,cantidadUnidadesProductivas: null == cantidadUnidadesProductivas ? _self.cantidadUnidadesProductivas : cantidadUnidadesProductivas // ignore: cast_nullable_to_non_nullable
+as int,poligono: null == poligono ? _self._poligono : poligono // ignore: cast_nullable_to_non_nullable
+as List<BoundaryPoint>,superficieManualHectareas: freezed == superficieManualHectareas ? _self.superficieManualHectareas : superficieManualHectareas // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 
@@ -763,7 +1092,10 @@ as int,
 /// @nodoc
 mixin _$RegisterEstablishmentState {
 
- RegisterEstablishmentStep get currentStep; RegisterEstablishmentDraft get draft; ResultState<RegisteredEstablishment> get submitResult; ResultState<CurrentLocation> get locationResult;
+ RegisterEstablishmentStep get currentStep; RegisterEstablishmentDraft get draft; ResultState<RegisteredEstablishment> get submitResult; ResultState<CurrentLocation> get locationResult;/// Lectura del GPS para marcar un vértice del paso 4. Separada de
+/// [locationResult] para que cada paso muestre solo sus propios errores.
+ ResultState<CurrentLocation> get boundaryGpsResult;/// Polígonos anteriores a cada edición del paso 4, para "Deshacer".
+ List<List<BoundaryPoint>> get boundaryHistory;
 /// Create a copy of RegisterEstablishmentState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -774,16 +1106,16 @@ $RegisterEstablishmentStateCopyWith<RegisterEstablishmentState> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterEstablishmentState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult)&&(identical(other.locationResult, locationResult) || other.locationResult == locationResult));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisterEstablishmentState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult)&&(identical(other.locationResult, locationResult) || other.locationResult == locationResult)&&(identical(other.boundaryGpsResult, boundaryGpsResult) || other.boundaryGpsResult == boundaryGpsResult)&&const DeepCollectionEquality().equals(other.boundaryHistory, boundaryHistory));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,currentStep,draft,submitResult,locationResult);
+int get hashCode => Object.hash(runtimeType,currentStep,draft,submitResult,locationResult,boundaryGpsResult,const DeepCollectionEquality().hash(boundaryHistory));
 
 @override
 String toString() {
-  return 'RegisterEstablishmentState(currentStep: $currentStep, draft: $draft, submitResult: $submitResult, locationResult: $locationResult)';
+  return 'RegisterEstablishmentState(currentStep: $currentStep, draft: $draft, submitResult: $submitResult, locationResult: $locationResult, boundaryGpsResult: $boundaryGpsResult, boundaryHistory: $boundaryHistory)';
 }
 
 
@@ -794,11 +1126,11 @@ abstract mixin class $RegisterEstablishmentStateCopyWith<$Res>  {
   factory $RegisterEstablishmentStateCopyWith(RegisterEstablishmentState value, $Res Function(RegisterEstablishmentState) _then) = _$RegisterEstablishmentStateCopyWithImpl;
 @useResult
 $Res call({
- RegisterEstablishmentStep currentStep, RegisterEstablishmentDraft draft, ResultState<RegisteredEstablishment> submitResult, ResultState<CurrentLocation> locationResult
+ RegisterEstablishmentStep currentStep, RegisterEstablishmentDraft draft, ResultState<RegisteredEstablishment> submitResult, ResultState<CurrentLocation> locationResult, ResultState<CurrentLocation> boundaryGpsResult, List<List<BoundaryPoint>> boundaryHistory
 });
 
 
-$RegisterEstablishmentDraftCopyWith<$Res> get draft;$ResultStateCopyWith<RegisteredEstablishment, $Res> get submitResult;$ResultStateCopyWith<CurrentLocation, $Res> get locationResult;
+$RegisterEstablishmentDraftCopyWith<$Res> get draft;$ResultStateCopyWith<RegisteredEstablishment, $Res> get submitResult;$ResultStateCopyWith<CurrentLocation, $Res> get locationResult;$ResultStateCopyWith<CurrentLocation, $Res> get boundaryGpsResult;
 
 }
 /// @nodoc
@@ -811,13 +1143,15 @@ class _$RegisterEstablishmentStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterEstablishmentState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? currentStep = null,Object? draft = null,Object? submitResult = null,Object? locationResult = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? currentStep = null,Object? draft = null,Object? submitResult = null,Object? locationResult = null,Object? boundaryGpsResult = null,Object? boundaryHistory = null,}) {
   return _then(_self.copyWith(
 currentStep: null == currentStep ? _self.currentStep : currentStep // ignore: cast_nullable_to_non_nullable
 as RegisterEstablishmentStep,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
 as RegisterEstablishmentDraft,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
 as ResultState<RegisteredEstablishment>,locationResult: null == locationResult ? _self.locationResult : locationResult // ignore: cast_nullable_to_non_nullable
-as ResultState<CurrentLocation>,
+as ResultState<CurrentLocation>,boundaryGpsResult: null == boundaryGpsResult ? _self.boundaryGpsResult : boundaryGpsResult // ignore: cast_nullable_to_non_nullable
+as ResultState<CurrentLocation>,boundaryHistory: null == boundaryHistory ? _self.boundaryHistory : boundaryHistory // ignore: cast_nullable_to_non_nullable
+as List<List<BoundaryPoint>>,
   ));
 }
 /// Create a copy of RegisterEstablishmentState
@@ -846,6 +1180,15 @@ $ResultStateCopyWith<CurrentLocation, $Res> get locationResult {
   
   return $ResultStateCopyWith<CurrentLocation, $Res>(_self.locationResult, (value) {
     return _then(_self.copyWith(locationResult: value));
+  });
+}/// Create a copy of RegisterEstablishmentState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<CurrentLocation, $Res> get boundaryGpsResult {
+  
+  return $ResultStateCopyWith<CurrentLocation, $Res>(_self.boundaryGpsResult, (value) {
+    return _then(_self.copyWith(boundaryGpsResult: value));
   });
 }
 }
@@ -926,10 +1269,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RegisterEstablishmentStep currentStep,  RegisterEstablishmentDraft draft,  ResultState<RegisteredEstablishment> submitResult,  ResultState<CurrentLocation> locationResult)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( RegisterEstablishmentStep currentStep,  RegisterEstablishmentDraft draft,  ResultState<RegisteredEstablishment> submitResult,  ResultState<CurrentLocation> locationResult,  ResultState<CurrentLocation> boundaryGpsResult,  List<List<BoundaryPoint>> boundaryHistory)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisterEstablishmentState() when $default != null:
-return $default(_that.currentStep,_that.draft,_that.submitResult,_that.locationResult);case _:
+return $default(_that.currentStep,_that.draft,_that.submitResult,_that.locationResult,_that.boundaryGpsResult,_that.boundaryHistory);case _:
   return orElse();
 
 }
@@ -947,10 +1290,10 @@ return $default(_that.currentStep,_that.draft,_that.submitResult,_that.locationR
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RegisterEstablishmentStep currentStep,  RegisterEstablishmentDraft draft,  ResultState<RegisteredEstablishment> submitResult,  ResultState<CurrentLocation> locationResult)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( RegisterEstablishmentStep currentStep,  RegisterEstablishmentDraft draft,  ResultState<RegisteredEstablishment> submitResult,  ResultState<CurrentLocation> locationResult,  ResultState<CurrentLocation> boundaryGpsResult,  List<List<BoundaryPoint>> boundaryHistory)  $default,) {final _that = this;
 switch (_that) {
 case _RegisterEstablishmentState():
-return $default(_that.currentStep,_that.draft,_that.submitResult,_that.locationResult);}
+return $default(_that.currentStep,_that.draft,_that.submitResult,_that.locationResult,_that.boundaryGpsResult,_that.boundaryHistory);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -964,10 +1307,10 @@ return $default(_that.currentStep,_that.draft,_that.submitResult,_that.locationR
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RegisterEstablishmentStep currentStep,  RegisterEstablishmentDraft draft,  ResultState<RegisteredEstablishment> submitResult,  ResultState<CurrentLocation> locationResult)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( RegisterEstablishmentStep currentStep,  RegisterEstablishmentDraft draft,  ResultState<RegisteredEstablishment> submitResult,  ResultState<CurrentLocation> locationResult,  ResultState<CurrentLocation> boundaryGpsResult,  List<List<BoundaryPoint>> boundaryHistory)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisterEstablishmentState() when $default != null:
-return $default(_that.currentStep,_that.draft,_that.submitResult,_that.locationResult);case _:
+return $default(_that.currentStep,_that.draft,_that.submitResult,_that.locationResult,_that.boundaryGpsResult,_that.boundaryHistory);case _:
   return null;
 
 }
@@ -979,13 +1322,25 @@ return $default(_that.currentStep,_that.draft,_that.submitResult,_that.locationR
 
 
 class _RegisterEstablishmentState implements RegisterEstablishmentState {
-  const _RegisterEstablishmentState({required this.currentStep, required this.draft, this.submitResult = const ResultState<RegisteredEstablishment>.initial(), this.locationResult = const ResultState<CurrentLocation>.initial()});
+  const _RegisterEstablishmentState({required this.currentStep, required this.draft, this.submitResult = const ResultState<RegisteredEstablishment>.initial(), this.locationResult = const ResultState<CurrentLocation>.initial(), this.boundaryGpsResult = const ResultState<CurrentLocation>.initial(), final  List<List<BoundaryPoint>> boundaryHistory = const <List<BoundaryPoint>>[]}): _boundaryHistory = boundaryHistory;
   
 
 @override final  RegisterEstablishmentStep currentStep;
 @override final  RegisterEstablishmentDraft draft;
 @override@JsonKey() final  ResultState<RegisteredEstablishment> submitResult;
 @override@JsonKey() final  ResultState<CurrentLocation> locationResult;
+/// Lectura del GPS para marcar un vértice del paso 4. Separada de
+/// [locationResult] para que cada paso muestre solo sus propios errores.
+@override@JsonKey() final  ResultState<CurrentLocation> boundaryGpsResult;
+/// Polígonos anteriores a cada edición del paso 4, para "Deshacer".
+ final  List<List<BoundaryPoint>> _boundaryHistory;
+/// Polígonos anteriores a cada edición del paso 4, para "Deshacer".
+@override@JsonKey() List<List<BoundaryPoint>> get boundaryHistory {
+  if (_boundaryHistory is EqualUnmodifiableListView) return _boundaryHistory;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_boundaryHistory);
+}
+
 
 /// Create a copy of RegisterEstablishmentState
 /// with the given fields replaced by the non-null parameter values.
@@ -997,16 +1352,16 @@ _$RegisterEstablishmentStateCopyWith<_RegisterEstablishmentState> get copyWith =
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterEstablishmentState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult)&&(identical(other.locationResult, locationResult) || other.locationResult == locationResult));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisterEstablishmentState&&(identical(other.currentStep, currentStep) || other.currentStep == currentStep)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.submitResult, submitResult) || other.submitResult == submitResult)&&(identical(other.locationResult, locationResult) || other.locationResult == locationResult)&&(identical(other.boundaryGpsResult, boundaryGpsResult) || other.boundaryGpsResult == boundaryGpsResult)&&const DeepCollectionEquality().equals(other._boundaryHistory, _boundaryHistory));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,currentStep,draft,submitResult,locationResult);
+int get hashCode => Object.hash(runtimeType,currentStep,draft,submitResult,locationResult,boundaryGpsResult,const DeepCollectionEquality().hash(_boundaryHistory));
 
 @override
 String toString() {
-  return 'RegisterEstablishmentState(currentStep: $currentStep, draft: $draft, submitResult: $submitResult, locationResult: $locationResult)';
+  return 'RegisterEstablishmentState(currentStep: $currentStep, draft: $draft, submitResult: $submitResult, locationResult: $locationResult, boundaryGpsResult: $boundaryGpsResult, boundaryHistory: $boundaryHistory)';
 }
 
 
@@ -1017,11 +1372,11 @@ abstract mixin class _$RegisterEstablishmentStateCopyWith<$Res> implements $Regi
   factory _$RegisterEstablishmentStateCopyWith(_RegisterEstablishmentState value, $Res Function(_RegisterEstablishmentState) _then) = __$RegisterEstablishmentStateCopyWithImpl;
 @override @useResult
 $Res call({
- RegisterEstablishmentStep currentStep, RegisterEstablishmentDraft draft, ResultState<RegisteredEstablishment> submitResult, ResultState<CurrentLocation> locationResult
+ RegisterEstablishmentStep currentStep, RegisterEstablishmentDraft draft, ResultState<RegisteredEstablishment> submitResult, ResultState<CurrentLocation> locationResult, ResultState<CurrentLocation> boundaryGpsResult, List<List<BoundaryPoint>> boundaryHistory
 });
 
 
-@override $RegisterEstablishmentDraftCopyWith<$Res> get draft;@override $ResultStateCopyWith<RegisteredEstablishment, $Res> get submitResult;@override $ResultStateCopyWith<CurrentLocation, $Res> get locationResult;
+@override $RegisterEstablishmentDraftCopyWith<$Res> get draft;@override $ResultStateCopyWith<RegisteredEstablishment, $Res> get submitResult;@override $ResultStateCopyWith<CurrentLocation, $Res> get locationResult;@override $ResultStateCopyWith<CurrentLocation, $Res> get boundaryGpsResult;
 
 }
 /// @nodoc
@@ -1034,13 +1389,15 @@ class __$RegisterEstablishmentStateCopyWithImpl<$Res>
 
 /// Create a copy of RegisterEstablishmentState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? currentStep = null,Object? draft = null,Object? submitResult = null,Object? locationResult = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? currentStep = null,Object? draft = null,Object? submitResult = null,Object? locationResult = null,Object? boundaryGpsResult = null,Object? boundaryHistory = null,}) {
   return _then(_RegisterEstablishmentState(
 currentStep: null == currentStep ? _self.currentStep : currentStep // ignore: cast_nullable_to_non_nullable
 as RegisterEstablishmentStep,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
 as RegisterEstablishmentDraft,submitResult: null == submitResult ? _self.submitResult : submitResult // ignore: cast_nullable_to_non_nullable
 as ResultState<RegisteredEstablishment>,locationResult: null == locationResult ? _self.locationResult : locationResult // ignore: cast_nullable_to_non_nullable
-as ResultState<CurrentLocation>,
+as ResultState<CurrentLocation>,boundaryGpsResult: null == boundaryGpsResult ? _self.boundaryGpsResult : boundaryGpsResult // ignore: cast_nullable_to_non_nullable
+as ResultState<CurrentLocation>,boundaryHistory: null == boundaryHistory ? _self._boundaryHistory : boundaryHistory // ignore: cast_nullable_to_non_nullable
+as List<List<BoundaryPoint>>,
   ));
 }
 
@@ -1070,6 +1427,15 @@ $ResultStateCopyWith<CurrentLocation, $Res> get locationResult {
   
   return $ResultStateCopyWith<CurrentLocation, $Res>(_self.locationResult, (value) {
     return _then(_self.copyWith(locationResult: value));
+  });
+}/// Create a copy of RegisterEstablishmentState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<CurrentLocation, $Res> get boundaryGpsResult {
+  
+  return $ResultStateCopyWith<CurrentLocation, $Res>(_self.boundaryGpsResult, (value) {
+    return _then(_self.copyWith(boundaryGpsResult: value));
   });
 }
 }

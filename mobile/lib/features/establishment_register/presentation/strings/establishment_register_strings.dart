@@ -274,8 +274,43 @@ class EstablishmentRegisterStrings {
   /// Tooltip del boton de capa.
   static const stepFourLayerTooltip = 'Capa';
 
-  /// Texto del hint inferior del paso 4.
+  /// Superficie en hectáreas: sin decimales desde 100 ha, con uno por debajo
+  /// (en un campo chico, 3,4 ha y 3 ha no son lo mismo).
+  static String hectares(double value) => '${value.toStringAsFixed(value >= 100 ? 0 : 1)} ha';
+
+  /// Tooltip del boton que marca un vertice con el GPS.
+  static const stepFourGpsVertexTooltip = 'Marcar vértice acá (GPS)';
+
+  /// Hint inferior cuando todavia no hay vertices.
+  static const stepFourHintEmpty = 'Tocá el mapa para marcar el primer vértice';
+
+  /// Hint inferior cuando faltan vertices para cerrar el poligono.
+  static const stepFourHintTooFewVertices = 'Marcá al menos 3 vértices';
+
+  /// Hint inferior cuando dos lados del poligono se cruzan.
+  static const stepFourHintSelfIntersecting = 'Los lados se cruzan: mové un vértice';
+
+  /// Texto del hint inferior del paso 4 con el poligono completo.
   static const stepFourHintText = 'Tocá cualquier vértice para arrastrarlo';
+
+  /// Aviso cuando no carga la imagen satelital (sin conexion).
+  static const stepFourSatelliteUnavailable =
+      'Sin imagen satelital. Podés recorrer el campo y marcar cada esquina con el GPS.';
+
+  /// Atribucion obligatoria de la imagen satelital.
+  static const stepFourSatelliteAttribution = 'Imagen: Esri, Maxar, Earthstar Geographics';
+
+  /// Titulo del panel de superficie cargada a mano.
+  static const stepFourManualSurfaceTitle = '¿No podés dibujarlo ahora?';
+
+  /// Campo de superficie cargada a mano.
+  static const stepFourManualSurfaceFieldTitle = 'Superficie total (ha)';
+
+  /// Ayuda del campo de superficie cargada a mano.
+  static const stepFourManualSurfaceHelper = 'Cargá las hectáreas y delimitá el campo más adelante.';
+
+  /// Snackbar al marcar un vertice con el GPS.
+  static String stepFourGpsVertexAdded(int precisionMetros) => 'Vértice marcado (precisión ±$precisionMetros m)';
 
   /// Boton para editar una seccion desde la revision.
   static const reviewEditButton = 'Editar';
@@ -291,6 +326,9 @@ class EstablishmentRegisterStrings {
 
   /// Titulo de la seccion 4 de revision.
   static const reviewSectionFourTitle = 'Superficie delimitada';
+
+  /// Chip de revision cuando la superficie se cargo a mano.
+  static const reviewManualSurfaceChipLabel = 'Cargada a mano';
 
   /// Etiqueta de nombre en la revision.
   static const reviewNombreLabel = 'Nombre';

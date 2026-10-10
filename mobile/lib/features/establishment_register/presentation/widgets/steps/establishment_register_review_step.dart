@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_draft_validation.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/strings/establishment_register_strings.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/establishment_info_callout.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/establishment_review_section.dart';
@@ -105,20 +106,25 @@ class EstablishmentRegisterReviewStep extends StatelessWidget {
               trailing: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const FieldBoundaryPreview(height: 120, showVertexLabels: false),
-                  const SizedBox(height: AppSpacing.sm),
+                  if (draft.poligono.isNotEmpty) ...[
+                    FieldBoundaryPreview(points: draft.poligono, height: 120),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
                   Wrap(
                     spacing: AppSpacing.xs,
                     runSpacing: AppSpacing.xs,
                     children: [
                       _ReviewChip(
-                        label: '${draft.superficieHectareas.toStringAsFixed(0)} ha',
+                        label: EstablishmentRegisterStrings.hectares(draft.superficieHectareas),
                         isHighlighted: true,
                       ),
                       const _ReviewChip(
                         label: EstablishmentRegisterStrings.reviewUnidadProductivaChipLabel,
                       ),
-                      _ReviewChip(label: '${draft.cantidadVertices} vértices'),
+                      if (draft.poligono.isEmpty)
+                        const _ReviewChip(label: EstablishmentRegisterStrings.reviewManualSurfaceChipLabel)
+                      else
+                        _ReviewChip(label: '${draft.poligono.length} vértices'),
                     ],
                   ),
                 ],

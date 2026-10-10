@@ -57,11 +57,15 @@ Puntos de entrada al flujo: botón "Configurar mi establecimiento" en
   una posición. El GPS no necesita internet, así que funciona sin señal de
   datos. Si falla (GPS apagado, permiso negado o bloqueado, sin señal) el
   borrador no cambia y un snackbar explica qué hacer.
-- **Paso 4 — Delimitar superficie**: `superficieHectareas`,
-  `cantidadVertices`. **Réplica visual estática en toda esta iniciativa** —
-  sin SDK de mapas, sin arrastre de vértices (decisión de
-  producto, ver el plan de referencia). Los valores son fijos/mock hasta que
-  una historia futura decida qué paquete de mapas usar.
+- **Paso 4 — Delimitar superficie** (ADR-0009): `poligono` (vértices WGS84
+  en orden de recorrido) y `superficieManualHectareas`. Mapa real
+  (`flutter_map`) centrado en el GPS del paso 3, con imagen satelital de Esri
+  como ayuda; sin conexión queda con fondo neutro y todo sigue funcionando.
+  Tocar el mapa agrega un vértice, se arrastran, y hay Deshacer (un arrastre
+  completo es un solo paso), Borrar y "Marcar vértice acá" con el GPS para
+  recorrer el perímetro. El polígono es **opcional**: sin dibujarlo, se carga
+  la superficie a mano. `superficieHectareas` es derivada: el área geodésica
+  del polígono si tiene 3+ vértices, si no la cargada a mano.
 - `cantidadUnidadesProductivas` se mantiene en 1: "agregar otra unidad
   productiva" (otro RENSPA) está deliberadamente fuera de alcance.
 
@@ -74,8 +78,9 @@ surgieron durante el maquetado, reusables entre pasos:
 - `EstablishmentReviewSection` — tarjeta numerada de revisión con filas
   label/valor (soporta `isMono`/`isMuted` por fila) y botón "Editar" que
   dispara `stepRequested`.
-- `FieldBoundaryPreview` — mapa decorativo con el polígono mock superpuesto;
-  con vértices numerados en el paso 4, sin ellos (miniatura) en la revisión.
+- `FieldBoundaryPreview` — miniatura del polígono real en la revisión, sin
+  tiles (proyección local, funciona sin conexión). Si la superficie se cargó a
+  mano no se muestra y la revisión dice "Cargada a mano".
 - `RenspaBreakdownPanel`, `EstablishmentInfoCallout`, `StaticMapPreview` —
   reusados entre el paso 2/3/4 y la revisión.
 
@@ -90,7 +95,6 @@ Source Code Pro).
 
 - "Sumarme a uno existente con código" (botón en el estado vacío).
 - "Agregar otra unidad productiva" (botón en el paso 2).
-- Mapa real e interacción de dibujo de polígono (paso 4).
 - Registro offline: la creación de establecimiento es **online-only**
   (mismo criterio que `sign_up`), no usa Brick/SQLite.
 
@@ -121,13 +125,13 @@ antes de armar el request — la UI nunca es la única barrera.
   no vacíos; avanzar exige además `ubicacionConfirmadaPorGps == true` (o sea,
   "Usar mi ubicación actual" consiguió al menos una lectura del GPS). Mientras no está
   confirmada, las coordenadas muestran un placeholder (`—`) en vez de `0.0000°`.
-- **Paso 4 — Delimitar superficie**: `superficieHectareas > 0`,
-  `cantidadVertices >= 3`. Trivialmente cierto hoy (valores mock fijos, sin
-  mapa real editable), pero ya con la forma correcta para cuando el mapa real
-  reemplace el mock.
-- **Revisar**: válido sólo si los 4 pasos anteriores lo son. `.initial()` deja
-  de sembrar datos ficticios (Etapa 1) y arranca vacío en todos los campos
-  excepto la superficie/vértices del paso 4 (siguen fijos, ver arriba).
+- **Paso 4 — Delimitar superficie** (`surfaceStepIssue`): sin polígono, la
+  superficie cargada a mano debe ser > 0 (`missingSurface`). Con polígono,
+  necesita 3+ vértices (`tooFewVertices`), lados que no se crucen
+  (`selfIntersecting`) y área > 0. El hint inferior del mapa explica cuál
+  falta.
+- **Revisar**: válido sólo si los 4 pasos anteriores lo son. `.initial()`
+  arranca vacío en todos los campos.
 
 Tests: `test/core/formatters/renspa_input_formatter_test.dart`,
 `test/features/establishment_register/presentation/bloc/register_establishment_draft_validation_test.dart`
@@ -142,10 +146,10 @@ diseño y que el modelo original (PRO-40) no tenía: `descripcion` (`str |
 None`), `tipo_produccion` (`list[str] | None`, `JSON`), `latitud`/`longitud`
 (`Decimal | None`, `Numeric(9,6)`) y `poligono` (`list[dict] | None`, `JSON`
 — **no PostGIS**, reservado para "Release 2: lote geolocation" por
-CLAUDE.md). El mobile hoy **no envía `poligono`**: el paso 4 sigue siendo una
-réplica visual estática sin coordenadas de vértices reales, sólo manda
-`superficie_ha` ya calculada. La columna queda lista para cuando un mapa real
-reemplace el mock.
+CLAUDE.md). Mobile envía `poligono` sólo si se dibujó (`orden` desde 1) y
+siempre `superficie_ha` redondeada a 2 decimales. El backend lo valida
+(ADR-0009): 3+ vértices, `orden` único, coordenadas en rango y sin cruces
+(`shapely`).
 
 ### Endpoints
 
@@ -176,6 +180,7 @@ reemplace el mock.
 | `renspa_duplicado` | 409 | Ya existe un establecimiento con ese RENSPA | Vuelve al paso 2 (`stepRequested(renspa)`) + banner inline junto al campo RENSPA (`EstablishmentRegisterStrings.renspaConflictMessage`) |
 | `cuit_invalido` | 422 | CUIT informado con dígito verificador incorrecto o formato inválido | Snackbar genérico |
 | `superficie_invalida` | 422 | `superficie_ha <= 0` | Snackbar genérico |
+| `poligono_invalido` | 422 | Polígono con < 3 vértices, `orden` repetido, coordenadas fuera de rango, lados que se cruzan o sin superficie | Snackbar genérico con el `message` (no debería ocurrir: el paso 4 ya lo bloquea) |
 | `establecimiento_no_encontrado` | 404 | `PUT`/`GET` sobre un id inexistente o sin membresía | No aplica al alta; sí a una futura pantalla de edición |
 | *(sin conexión)* | — | `SocketException`/`TimeoutException` | `EstablishmentOfflineModal` (mismo patrón que `SignUpOfflineModal`, duplicado localmente a propósito) |
 
@@ -191,7 +196,7 @@ que el resto de la app (`AuthRemoteDataSource`).
   **preserva** el `code` del backend y lo traduce 1 a 1 a
   `DomainErrorCode` (tabla arriba).
 - `data/mappers/establishment_registration_json_mapper.dart` — `toJson`
-  arma el body en snake_case (sin `poligono`); `registeredFromJson` combina
+  arma el body en snake_case (con `poligono` sólo si se dibujó); `registeredFromJson` combina
   el `id`/`created_at` que confirma el backend con el `EstablishmentRegistration`
   que ya se tenía localmente (no hace falta re-derivar el resto de los
   campos desde la respuesta).
