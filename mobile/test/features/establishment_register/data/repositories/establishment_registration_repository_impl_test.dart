@@ -164,7 +164,6 @@ const _registration = EstablishmentRegistration(
   latitud: -33.1,
   longitud: -64.1,
   superficieHectareas: 847,
-  cantidadVertices: 7,
 );
 
 class _FakeTokenProvider implements BackendAccessTokenProvider {

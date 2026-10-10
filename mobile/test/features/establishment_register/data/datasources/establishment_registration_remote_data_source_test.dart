@@ -132,6 +132,36 @@ void main() {
         ),
       );
     });
+
+    test('maps a poligono_invalido backend error to validation, keeping its message', () async {
+      final dataSource = EstablishmentRegistrationRemoteDataSource(
+        backendBaseUrl: _backendBaseUrl,
+        tokenProvider: const _FakeTokenProvider('access-token'),
+        client: MockClient((request) async {
+          return http.Response(
+            jsonEncode({
+              'success': false,
+              'errors': [
+                {
+                  'code': 'poligono_invalido',
+                  'message': 'El polígono del campo no es válido: los lados se cruzan',
+                },
+              ],
+            }),
+            422,
+          );
+        }),
+      );
+
+      expect(
+        dataSource.register(_registration),
+        throwsA(
+          isA<DomainException>()
+              .having((error) => error.code, 'code', DomainErrorCode.validation)
+              .having((error) => error.message, 'message', contains('los lados se cruzan')),
+        ),
+      );
+    });
   });
 }
 
@@ -149,7 +179,6 @@ const _registration = EstablishmentRegistration(
   latitud: -33.1,
   longitud: -64.1,
   superficieHectareas: 847,
-  cantidadVertices: 7,
 );
 
 const _establecimientoJson = <String, Object?>{

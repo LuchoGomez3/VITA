@@ -14,7 +14,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$EstablishmentRegistration {
 
- String get nombre; String get descripcion; List<String> get tiposProduccion; String get cuitTitular; String get nroRenspa; String get provincia; String get departamento; String get localidad; double get latitud; double get longitud; double get superficieHectareas; int get cantidadVertices;
+ String get nombre; String get descripcion; List<String> get tiposProduccion; String get cuitTitular; String get nroRenspa; String get provincia; String get departamento; String get localidad; double get latitud; double get longitud; double get superficieHectareas;/// Vértices del campo en orden de recorrido. Vacío si la superficie se
+/// cargó a mano sin dibujar el polígono.
+ List<BoundaryPoint> get poligono;
 /// Create a copy of EstablishmentRegistration
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +27,16 @@ $EstablishmentRegistrationCopyWith<EstablishmentRegistration> get copyWith => _$
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EstablishmentRegistration&&(identical(other.nombre, nombre) || other.nombre == nombre)&&(identical(other.descripcion, descripcion) || other.descripcion == descripcion)&&const DeepCollectionEquality().equals(other.tiposProduccion, tiposProduccion)&&(identical(other.cuitTitular, cuitTitular) || other.cuitTitular == cuitTitular)&&(identical(other.nroRenspa, nroRenspa) || other.nroRenspa == nroRenspa)&&(identical(other.provincia, provincia) || other.provincia == provincia)&&(identical(other.departamento, departamento) || other.departamento == departamento)&&(identical(other.localidad, localidad) || other.localidad == localidad)&&(identical(other.latitud, latitud) || other.latitud == latitud)&&(identical(other.longitud, longitud) || other.longitud == longitud)&&(identical(other.superficieHectareas, superficieHectareas) || other.superficieHectareas == superficieHectareas)&&(identical(other.cantidadVertices, cantidadVertices) || other.cantidadVertices == cantidadVertices));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EstablishmentRegistration&&(identical(other.nombre, nombre) || other.nombre == nombre)&&(identical(other.descripcion, descripcion) || other.descripcion == descripcion)&&const DeepCollectionEquality().equals(other.tiposProduccion, tiposProduccion)&&(identical(other.cuitTitular, cuitTitular) || other.cuitTitular == cuitTitular)&&(identical(other.nroRenspa, nroRenspa) || other.nroRenspa == nroRenspa)&&(identical(other.provincia, provincia) || other.provincia == provincia)&&(identical(other.departamento, departamento) || other.departamento == departamento)&&(identical(other.localidad, localidad) || other.localidad == localidad)&&(identical(other.latitud, latitud) || other.latitud == latitud)&&(identical(other.longitud, longitud) || other.longitud == longitud)&&(identical(other.superficieHectareas, superficieHectareas) || other.superficieHectareas == superficieHectareas)&&const DeepCollectionEquality().equals(other.poligono, poligono));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,nombre,descripcion,const DeepCollectionEquality().hash(tiposProduccion),cuitTitular,nroRenspa,provincia,departamento,localidad,latitud,longitud,superficieHectareas,cantidadVertices);
+int get hashCode => Object.hash(runtimeType,nombre,descripcion,const DeepCollectionEquality().hash(tiposProduccion),cuitTitular,nroRenspa,provincia,departamento,localidad,latitud,longitud,superficieHectareas,const DeepCollectionEquality().hash(poligono));
 
 @override
 String toString() {
-  return 'EstablishmentRegistration(nombre: $nombre, descripcion: $descripcion, tiposProduccion: $tiposProduccion, cuitTitular: $cuitTitular, nroRenspa: $nroRenspa, provincia: $provincia, departamento: $departamento, localidad: $localidad, latitud: $latitud, longitud: $longitud, superficieHectareas: $superficieHectareas, cantidadVertices: $cantidadVertices)';
+  return 'EstablishmentRegistration(nombre: $nombre, descripcion: $descripcion, tiposProduccion: $tiposProduccion, cuitTitular: $cuitTitular, nroRenspa: $nroRenspa, provincia: $provincia, departamento: $departamento, localidad: $localidad, latitud: $latitud, longitud: $longitud, superficieHectareas: $superficieHectareas, poligono: $poligono)';
 }
 
 
@@ -45,7 +47,7 @@ abstract mixin class $EstablishmentRegistrationCopyWith<$Res>  {
   factory $EstablishmentRegistrationCopyWith(EstablishmentRegistration value, $Res Function(EstablishmentRegistration) _then) = _$EstablishmentRegistrationCopyWithImpl;
 @useResult
 $Res call({
- String nombre, String descripcion, List<String> tiposProduccion, String cuitTitular, String nroRenspa, String provincia, String departamento, String localidad, double latitud, double longitud, double superficieHectareas, int cantidadVertices
+ String nombre, String descripcion, List<String> tiposProduccion, String cuitTitular, String nroRenspa, String provincia, String departamento, String localidad, double latitud, double longitud, double superficieHectareas, List<BoundaryPoint> poligono
 });
 
 
@@ -62,7 +64,7 @@ class _$EstablishmentRegistrationCopyWithImpl<$Res>
 
 /// Create a copy of EstablishmentRegistration
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? nombre = null,Object? descripcion = null,Object? tiposProduccion = null,Object? cuitTitular = null,Object? nroRenspa = null,Object? provincia = null,Object? departamento = null,Object? localidad = null,Object? latitud = null,Object? longitud = null,Object? superficieHectareas = null,Object? cantidadVertices = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? nombre = null,Object? descripcion = null,Object? tiposProduccion = null,Object? cuitTitular = null,Object? nroRenspa = null,Object? provincia = null,Object? departamento = null,Object? localidad = null,Object? latitud = null,Object? longitud = null,Object? superficieHectareas = null,Object? poligono = null,}) {
   return _then(_self.copyWith(
 nombre: null == nombre ? _self.nombre : nombre // ignore: cast_nullable_to_non_nullable
 as String,descripcion: null == descripcion ? _self.descripcion : descripcion // ignore: cast_nullable_to_non_nullable
@@ -75,8 +77,8 @@ as String,localidad: null == localidad ? _self.localidad : localidad // ignore: 
 as String,latitud: null == latitud ? _self.latitud : latitud // ignore: cast_nullable_to_non_nullable
 as double,longitud: null == longitud ? _self.longitud : longitud // ignore: cast_nullable_to_non_nullable
 as double,superficieHectareas: null == superficieHectareas ? _self.superficieHectareas : superficieHectareas // ignore: cast_nullable_to_non_nullable
-as double,cantidadVertices: null == cantidadVertices ? _self.cantidadVertices : cantidadVertices // ignore: cast_nullable_to_non_nullable
-as int,
+as double,poligono: null == poligono ? _self.poligono : poligono // ignore: cast_nullable_to_non_nullable
+as List<BoundaryPoint>,
   ));
 }
 
@@ -158,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String nombre,  String descripcion,  List<String> tiposProduccion,  String cuitTitular,  String nroRenspa,  String provincia,  String departamento,  String localidad,  double latitud,  double longitud,  double superficieHectareas,  int cantidadVertices)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String nombre,  String descripcion,  List<String> tiposProduccion,  String cuitTitular,  String nroRenspa,  String provincia,  String departamento,  String localidad,  double latitud,  double longitud,  double superficieHectareas,  List<BoundaryPoint> poligono)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _EstablishmentRegistration() when $default != null:
-return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitTitular,_that.nroRenspa,_that.provincia,_that.departamento,_that.localidad,_that.latitud,_that.longitud,_that.superficieHectareas,_that.cantidadVertices);case _:
+return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitTitular,_that.nroRenspa,_that.provincia,_that.departamento,_that.localidad,_that.latitud,_that.longitud,_that.superficieHectareas,_that.poligono);case _:
   return orElse();
 
 }
@@ -179,10 +181,10 @@ return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitT
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String nombre,  String descripcion,  List<String> tiposProduccion,  String cuitTitular,  String nroRenspa,  String provincia,  String departamento,  String localidad,  double latitud,  double longitud,  double superficieHectareas,  int cantidadVertices)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String nombre,  String descripcion,  List<String> tiposProduccion,  String cuitTitular,  String nroRenspa,  String provincia,  String departamento,  String localidad,  double latitud,  double longitud,  double superficieHectareas,  List<BoundaryPoint> poligono)  $default,) {final _that = this;
 switch (_that) {
 case _EstablishmentRegistration():
-return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitTitular,_that.nroRenspa,_that.provincia,_that.departamento,_that.localidad,_that.latitud,_that.longitud,_that.superficieHectareas,_that.cantidadVertices);}
+return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitTitular,_that.nroRenspa,_that.provincia,_that.departamento,_that.localidad,_that.latitud,_that.longitud,_that.superficieHectareas,_that.poligono);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -196,10 +198,10 @@ return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitT
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String nombre,  String descripcion,  List<String> tiposProduccion,  String cuitTitular,  String nroRenspa,  String provincia,  String departamento,  String localidad,  double latitud,  double longitud,  double superficieHectareas,  int cantidadVertices)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String nombre,  String descripcion,  List<String> tiposProduccion,  String cuitTitular,  String nroRenspa,  String provincia,  String departamento,  String localidad,  double latitud,  double longitud,  double superficieHectareas,  List<BoundaryPoint> poligono)?  $default,) {final _that = this;
 switch (_that) {
 case _EstablishmentRegistration() when $default != null:
-return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitTitular,_that.nroRenspa,_that.provincia,_that.departamento,_that.localidad,_that.latitud,_that.longitud,_that.superficieHectareas,_that.cantidadVertices);case _:
+return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitTitular,_that.nroRenspa,_that.provincia,_that.departamento,_that.localidad,_that.latitud,_that.longitud,_that.superficieHectareas,_that.poligono);case _:
   return null;
 
 }
@@ -211,7 +213,7 @@ return $default(_that.nombre,_that.descripcion,_that.tiposProduccion,_that.cuitT
 
 
 class _EstablishmentRegistration implements EstablishmentRegistration {
-  const _EstablishmentRegistration({required this.nombre, required this.descripcion, required final  List<String> tiposProduccion, required this.cuitTitular, required this.nroRenspa, required this.provincia, required this.departamento, required this.localidad, required this.latitud, required this.longitud, required this.superficieHectareas, required this.cantidadVertices}): _tiposProduccion = tiposProduccion;
+  const _EstablishmentRegistration({required this.nombre, required this.descripcion, required final  List<String> tiposProduccion, required this.cuitTitular, required this.nroRenspa, required this.provincia, required this.departamento, required this.localidad, required this.latitud, required this.longitud, required this.superficieHectareas, final  List<BoundaryPoint> poligono = const <BoundaryPoint>[]}): _tiposProduccion = tiposProduccion,_poligono = poligono;
   
 
 @override final  String nombre;
@@ -231,7 +233,17 @@ class _EstablishmentRegistration implements EstablishmentRegistration {
 @override final  double latitud;
 @override final  double longitud;
 @override final  double superficieHectareas;
-@override final  int cantidadVertices;
+/// Vértices del campo en orden de recorrido. Vacío si la superficie se
+/// cargó a mano sin dibujar el polígono.
+ final  List<BoundaryPoint> _poligono;
+/// Vértices del campo en orden de recorrido. Vacío si la superficie se
+/// cargó a mano sin dibujar el polígono.
+@override@JsonKey() List<BoundaryPoint> get poligono {
+  if (_poligono is EqualUnmodifiableListView) return _poligono;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_poligono);
+}
+
 
 /// Create a copy of EstablishmentRegistration
 /// with the given fields replaced by the non-null parameter values.
@@ -243,16 +255,16 @@ _$EstablishmentRegistrationCopyWith<_EstablishmentRegistration> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EstablishmentRegistration&&(identical(other.nombre, nombre) || other.nombre == nombre)&&(identical(other.descripcion, descripcion) || other.descripcion == descripcion)&&const DeepCollectionEquality().equals(other._tiposProduccion, _tiposProduccion)&&(identical(other.cuitTitular, cuitTitular) || other.cuitTitular == cuitTitular)&&(identical(other.nroRenspa, nroRenspa) || other.nroRenspa == nroRenspa)&&(identical(other.provincia, provincia) || other.provincia == provincia)&&(identical(other.departamento, departamento) || other.departamento == departamento)&&(identical(other.localidad, localidad) || other.localidad == localidad)&&(identical(other.latitud, latitud) || other.latitud == latitud)&&(identical(other.longitud, longitud) || other.longitud == longitud)&&(identical(other.superficieHectareas, superficieHectareas) || other.superficieHectareas == superficieHectareas)&&(identical(other.cantidadVertices, cantidadVertices) || other.cantidadVertices == cantidadVertices));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EstablishmentRegistration&&(identical(other.nombre, nombre) || other.nombre == nombre)&&(identical(other.descripcion, descripcion) || other.descripcion == descripcion)&&const DeepCollectionEquality().equals(other._tiposProduccion, _tiposProduccion)&&(identical(other.cuitTitular, cuitTitular) || other.cuitTitular == cuitTitular)&&(identical(other.nroRenspa, nroRenspa) || other.nroRenspa == nroRenspa)&&(identical(other.provincia, provincia) || other.provincia == provincia)&&(identical(other.departamento, departamento) || other.departamento == departamento)&&(identical(other.localidad, localidad) || other.localidad == localidad)&&(identical(other.latitud, latitud) || other.latitud == latitud)&&(identical(other.longitud, longitud) || other.longitud == longitud)&&(identical(other.superficieHectareas, superficieHectareas) || other.superficieHectareas == superficieHectareas)&&const DeepCollectionEquality().equals(other._poligono, _poligono));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,nombre,descripcion,const DeepCollectionEquality().hash(_tiposProduccion),cuitTitular,nroRenspa,provincia,departamento,localidad,latitud,longitud,superficieHectareas,cantidadVertices);
+int get hashCode => Object.hash(runtimeType,nombre,descripcion,const DeepCollectionEquality().hash(_tiposProduccion),cuitTitular,nroRenspa,provincia,departamento,localidad,latitud,longitud,superficieHectareas,const DeepCollectionEquality().hash(_poligono));
 
 @override
 String toString() {
-  return 'EstablishmentRegistration(nombre: $nombre, descripcion: $descripcion, tiposProduccion: $tiposProduccion, cuitTitular: $cuitTitular, nroRenspa: $nroRenspa, provincia: $provincia, departamento: $departamento, localidad: $localidad, latitud: $latitud, longitud: $longitud, superficieHectareas: $superficieHectareas, cantidadVertices: $cantidadVertices)';
+  return 'EstablishmentRegistration(nombre: $nombre, descripcion: $descripcion, tiposProduccion: $tiposProduccion, cuitTitular: $cuitTitular, nroRenspa: $nroRenspa, provincia: $provincia, departamento: $departamento, localidad: $localidad, latitud: $latitud, longitud: $longitud, superficieHectareas: $superficieHectareas, poligono: $poligono)';
 }
 
 
@@ -263,7 +275,7 @@ abstract mixin class _$EstablishmentRegistrationCopyWith<$Res> implements $Estab
   factory _$EstablishmentRegistrationCopyWith(_EstablishmentRegistration value, $Res Function(_EstablishmentRegistration) _then) = __$EstablishmentRegistrationCopyWithImpl;
 @override @useResult
 $Res call({
- String nombre, String descripcion, List<String> tiposProduccion, String cuitTitular, String nroRenspa, String provincia, String departamento, String localidad, double latitud, double longitud, double superficieHectareas, int cantidadVertices
+ String nombre, String descripcion, List<String> tiposProduccion, String cuitTitular, String nroRenspa, String provincia, String departamento, String localidad, double latitud, double longitud, double superficieHectareas, List<BoundaryPoint> poligono
 });
 
 
@@ -280,7 +292,7 @@ class __$EstablishmentRegistrationCopyWithImpl<$Res>
 
 /// Create a copy of EstablishmentRegistration
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? nombre = null,Object? descripcion = null,Object? tiposProduccion = null,Object? cuitTitular = null,Object? nroRenspa = null,Object? provincia = null,Object? departamento = null,Object? localidad = null,Object? latitud = null,Object? longitud = null,Object? superficieHectareas = null,Object? cantidadVertices = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? nombre = null,Object? descripcion = null,Object? tiposProduccion = null,Object? cuitTitular = null,Object? nroRenspa = null,Object? provincia = null,Object? departamento = null,Object? localidad = null,Object? latitud = null,Object? longitud = null,Object? superficieHectareas = null,Object? poligono = null,}) {
   return _then(_EstablishmentRegistration(
 nombre: null == nombre ? _self.nombre : nombre // ignore: cast_nullable_to_non_nullable
 as String,descripcion: null == descripcion ? _self.descripcion : descripcion // ignore: cast_nullable_to_non_nullable
@@ -293,8 +305,8 @@ as String,localidad: null == localidad ? _self.localidad : localidad // ignore: 
 as String,latitud: null == latitud ? _self.latitud : latitud // ignore: cast_nullable_to_non_nullable
 as double,longitud: null == longitud ? _self.longitud : longitud // ignore: cast_nullable_to_non_nullable
 as double,superficieHectareas: null == superficieHectareas ? _self.superficieHectareas : superficieHectareas // ignore: cast_nullable_to_non_nullable
-as double,cantidadVertices: null == cantidadVertices ? _self.cantidadVertices : cantidadVertices // ignore: cast_nullable_to_non_nullable
-as int,
+as double,poligono: null == poligono ? _self._poligono : poligono // ignore: cast_nullable_to_non_nullable
+as List<BoundaryPoint>,
   ));
 }
 

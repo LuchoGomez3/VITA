@@ -3,6 +3,7 @@ import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/entities/boundary_point.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/current_location.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/repositories/current_location_repository.dart';
@@ -243,6 +244,147 @@ void main() {
 
       expect(bloc.state.submitResult, isA<ResultError<RegisteredEstablishment>>());
     });
+
+    group('boundary polygon (step 4)', () {
+      test('adds vertices in drawing order', () async {
+        bloc
+          ..add(const RegisterEstablishmentEvent.boundaryPointAdded(_a))
+          ..add(const RegisterEstablishmentEvent.boundaryPointAdded(_b));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.draft.poligono, [_a, _b]);
+      });
+
+      test('undo removes the last added vertex, one step at a time', () async {
+        bloc
+          ..add(const RegisterEstablishmentEvent.boundaryPointAdded(_a))
+          ..add(const RegisterEstablishmentEvent.boundaryPointAdded(_b))
+          ..add(const RegisterEstablishmentEvent.boundaryUndoRequested());
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.draft.poligono, [_a]);
+
+        bloc
+          ..add(const RegisterEstablishmentEvent.boundaryUndoRequested())
+          ..add(const RegisterEstablishmentEvent.boundaryUndoRequested());
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.draft.poligono, isEmpty);
+        expect(bloc.state.boundaryHistory, isEmpty);
+      });
+
+      test('undo reverts a whole drag, not each of its moves', () async {
+        const moved1 = BoundaryPoint(latitud: -33.61, longitud: -64.57);
+        const moved2 = BoundaryPoint(latitud: -33.615, longitud: -64.565);
+        bloc
+          ..add(const RegisterEstablishmentEvent.boundaryPointAdded(_a))
+          ..add(const RegisterEstablishmentEvent.boundaryPointAdded(_b))
+          ..add(const RegisterEstablishmentEvent.boundaryPointAdded(_c))
+          ..add(const RegisterEstablishmentEvent.boundaryPointMoveStarted())
+          ..add(const RegisterEstablishmentEvent.boundaryPointMoved(2, moved1))
+          ..add(const RegisterEstablishmentEvent.boundaryPointMoved(2, moved2));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.draft.poligono, [_a, _b, moved2]);
+
+        bloc.add(const RegisterEstablishmentEvent.boundaryUndoRequested());
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.draft.poligono, [_a, _b, _c]);
+      });
+
+      test('ignores a move for a vertex that does not exist', () async {
+        bloc
+          ..add(const RegisterEstablishmentEvent.boundaryPointAdded(_a))
+          ..add(const RegisterEstablishmentEvent.boundaryPointMoved(3, _b));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.draft.poligono, [_a]);
+      });
+
+      test('clear removes every vertex and can be undone', () async {
+        bloc
+          ..add(const RegisterEstablishmentEvent.boundaryPointAdded(_a))
+          ..add(const RegisterEstablishmentEvent.boundaryPointAdded(_b))
+          ..add(const RegisterEstablishmentEvent.boundaryCleared());
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.draft.poligono, isEmpty);
+
+        bloc.add(const RegisterEstablishmentEvent.boundaryUndoRequested());
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.draft.poligono, [_a, _b]);
+      });
+
+      test('marks a vertex where the GPS is, without touching the step 3 location', () async {
+        bloc.add(const RegisterEstablishmentEvent.boundaryPointFromGpsRequested());
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.boundaryGpsResult, isA<Data<CurrentLocation>>());
+        expect(bloc.state.draft.poligono, [const BoundaryPoint(latitud: -32.1234, longitud: -63.5678)]);
+        expect(bloc.state.locationResult, isA<Initial<CurrentLocation>>());
+        expect(bloc.state.draft.ubicacionConfirmadaPorGps, isFalse);
+        expect(locationRepository.calls, 1);
+      });
+
+      test('keeps the polygon unchanged when the GPS vertex reading fails', () async {
+        bloc.add(const RegisterEstablishmentEvent.boundaryPointAdded(_a));
+        await Future<void>.delayed(Duration.zero);
+        locationRepository.result = const Result.failure(
+          DomainException(message: 'gps apagado', reason: CurrentLocationFailure.serviceDisabled),
+        );
+
+        bloc.add(const RegisterEstablishmentEvent.boundaryPointFromGpsRequested());
+        await Future<void>.delayed(Duration.zero);
+
+        expect(
+          bloc.state.boundaryGpsResult,
+          isA<ResultError<CurrentLocation>>().having(
+            (result) => result.error.reason,
+            'reason',
+            CurrentLocationFailure.serviceDisabled,
+          ),
+        );
+        expect(bloc.state.draft.poligono, [_a]);
+        expect(bloc.state.locationResult, isA<Initial<CurrentLocation>>());
+      });
+
+      test('submits the drawn polygon and its area as the surface', () async {
+        bloc.add(RegisterEstablishmentEvent.draftChanged(_validDraft(bloc.state.draft)));
+        for (final point in [_a, _b, _c, _d]) {
+          bloc.add(RegisterEstablishmentEvent.boundaryPointAdded(point));
+        }
+        await Future<void>.delayed(Duration.zero);
+
+        bloc.add(const RegisterEstablishmentEvent.submitRequested());
+        await Future<void>.delayed(Duration.zero);
+
+        final sent = repository.lastRegistration!;
+        expect(sent.poligono, [_a, _b, _c, _d]);
+        expect(sent.superficieHectareas, bloc.state.draft.superficieHectareas);
+        expect(sent.superficieHectareas, isNot(320));
+      });
+
+      test('submits the hand-entered surface with no polygon', () async {
+        bloc.add(RegisterEstablishmentEvent.draftChanged(_validDraft(bloc.state.draft)));
+        await Future<void>.delayed(Duration.zero);
+
+        bloc.add(const RegisterEstablishmentEvent.submitRequested());
+        await Future<void>.delayed(Duration.zero);
+
+        expect(repository.lastRegistration?.poligono, isEmpty);
+        expect(repository.lastRegistration?.superficieHectareas, 320);
+      });
+
+      test('does not submit a polygon whose sides cross', () async {
+        bloc.add(RegisterEstablishmentEvent.draftChanged(_validDraft(bloc.state.draft)));
+        for (final point in [_a, _c, _b, _d]) {
+          bloc.add(RegisterEstablishmentEvent.boundaryPointAdded(point));
+        }
+        await Future<void>.delayed(Duration.zero);
+
+        bloc.add(const RegisterEstablishmentEvent.submitRequested());
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.submitResult, isA<ResultError<RegisteredEstablishment>>());
+        expect(repository.registerCalls, 0);
+      });
+    });
   });
 }
 
@@ -258,8 +400,14 @@ RegisterEstablishmentDraft _validDraft(RegisterEstablishmentDraft draft) {
     latitud: -31.4201,
     longitud: -64.1888,
     ubicacionConfirmadaPorGps: true,
+    superficieManualHectareas: 320,
   );
 }
+
+const _a = BoundaryPoint(latitud: -33.60, longitud: -64.60);
+const _b = BoundaryPoint(latitud: -33.60, longitud: -64.58);
+const _c = BoundaryPoint(latitud: -33.62, longitud: -64.58);
+const _d = BoundaryPoint(latitud: -33.62, longitud: -64.60);
 
 class _FakeEstablishmentRegistrationRepository implements EstablishmentRegistrationRepository {
   int registerCalls = 0;
@@ -280,7 +428,6 @@ class _FakeEstablishmentRegistrationRepository implements EstablishmentRegistrat
         latitud: -33.7242,
         longitud: -64.5891,
         superficieHectareas: 847,
-        cantidadVertices: 7,
       ),
       createdAt: DateTime(2025, 3, 14),
       role: UserRole.owner,
