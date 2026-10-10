@@ -222,13 +222,36 @@ class EstablishmentRegisterStrings {
   static const stepThreeCoordinatesFieldTitle = 'Coordenadas del punto de referencia';
 
   /// Confirmación de toma de coordenadas por GPS.
-  static const stepThreeGpsConfirmedCaption = 'Tomada del GPS · precisión 4 m';
+  static const stepThreeGpsConfirmedCaption = 'Tomada del GPS';
+
+  /// Confirmación de toma de coordenadas por GPS con la precisión informada.
+  static String stepThreeGpsConfirmedCaptionWithPrecision(int precisionMetros) =>
+      'Tomada del GPS · precisión $precisionMetros m';
 
   /// Placeholder de coordenadas mientras no se confirmó la ubicación.
   static const stepThreeCoordinateUnconfirmedPlaceholder = '—';
 
-  /// Boton para tomar la ubicación actual (mock).
+  /// Boton para tomar la ubicación actual del GPS.
   static const stepThreeUseCurrentLocationButton = 'Usar mi ubicación actual';
+
+  /// Error cuando el GPS del celular está apagado.
+  static const stepThreeLocationServiceDisabledError =
+      'El GPS está apagado. Activá la ubicación del celular y volvé a intentar.';
+
+  /// Error cuando el usuario negó el permiso de ubicación.
+  static const stepThreeLocationPermissionDeniedError =
+      'Necesitamos permiso de ubicación para tomar el punto de referencia del campo.';
+
+  /// Error cuando el permiso de ubicación quedó bloqueado en el sistema.
+  static const stepThreeLocationPermissionDeniedForeverError =
+      'El permiso de ubicación está bloqueado. Habilitalo para VITA desde los ajustes del celular.';
+
+  /// Error cuando el GPS no consigue señal a tiempo.
+  static const stepThreeLocationTimeoutError =
+      'No se pudo obtener señal GPS. Probá a cielo abierto y volvé a intentar.';
+
+  /// Error genérico al leer la ubicación.
+  static const stepThreeLocationUnknownError = 'No se pudo leer la ubicación. Volvé a intentar.';
 
   /// Titulo de la vista previa del mapa.
   static const stepThreePreviewLabel = 'Vista previa';

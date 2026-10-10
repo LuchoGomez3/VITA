@@ -3,7 +3,9 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/entities/current_location.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/use_cases/get_current_location_use_case.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/use_cases/register_establishment_use_case.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_draft_validation.dart';
 
@@ -19,9 +21,11 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
   /// Crea el BLoC de registro en el paso inicial solicitado.
   RegisterEstablishmentBloc({
     required RegisterEstablishmentUseCase registerEstablishmentUseCase,
+    required GetCurrentLocationUseCase getCurrentLocationUseCase,
     RegisterEstablishmentStep initialStep = RegisterEstablishmentStep.identification,
     void Function()? onClose,
   }) : _registerEstablishmentUseCase = registerEstablishmentUseCase,
+       _getCurrentLocationUseCase = getCurrentLocationUseCase,
        _onClose = onClose,
        super(
          RegisterEstablishmentState(
@@ -30,6 +34,7 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
          ),
        ) {
     on<_DraftChanged>(_onDraftChanged);
+    on<_CurrentLocationRequested>(_onCurrentLocationRequested);
     on<_NextStepRequested>(_onNextStepRequested);
     on<_PreviousStepRequested>(_onPreviousStepRequested);
     on<_StepRequested>(_onStepRequested);
@@ -37,6 +42,7 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
   }
 
   final RegisterEstablishmentUseCase _registerEstablishmentUseCase;
+  final GetCurrentLocationUseCase _getCurrentLocationUseCase;
   final void Function()? _onClose;
 
   /// Reemplaza el borrador completo cuando un campo del formulario cambia.
@@ -63,6 +69,39 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
         submitResult: renspaFieldsChanged && hasRenspaConflict ? const ResultState.initial() : submitResult,
       ),
     );
+  }
+
+  /// Lee el GPS y, si lo consigue, fija las coordenadas del paso 3.
+  ///
+  /// Si falla, el borrador no cambia: la UI muestra el motivo a partir de
+  /// `locationResult` y el usuario puede reintentar.
+  Future<void> _onCurrentLocationRequested(
+    _CurrentLocationRequested event,
+    Emitter<RegisterEstablishmentState> emit,
+  ) async {
+    if (state.locationResult is Loading<CurrentLocation>) {
+      return;
+    }
+
+    emit(state.copyWith(locationResult: const ResultState.loading()));
+
+    final result = await _getCurrentLocationUseCase();
+
+    switch (result) {
+      case Success<CurrentLocation>(:final data):
+        emit(
+          state.copyWith(
+            draft: state.draft.copyWith(
+              latitud: data.latitud,
+              longitud: data.longitud,
+              ubicacionConfirmadaPorGps: true,
+            ),
+            locationResult: ResultState.data(data),
+          ),
+        );
+      case Failure<CurrentLocation>(:final error):
+        emit(state.copyWith(locationResult: ResultState.error(error)));
+    }
   }
 
   /// Avanza el wizard un paso, sin pasar de la pantalla de revision.
@@ -144,16 +183,6 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
       return const Result.failure(
         DomainException(
           message: 'Revisá los datos cargados: hay pasos incompletos.',
-          code: DomainErrorCode.validation,
-        ),
-      );
-    }
-
-    if (draft.isLocationMocked) {
-      return const Result.failure(
-        DomainException(
-          message:
-              'La ubicación todavía es un valor de prueba: falta integrar GPS real antes de poder crear el establecimiento.',
           code: DomainErrorCode.validation,
         ),
       );
