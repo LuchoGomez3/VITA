@@ -11,6 +11,7 @@ import 'package:frontend_mayoral/features/establishment_register/presentation/bl
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_draft_validation.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/strings/establishment_register_strings.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/location_failure_message.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/satellite_imagery.dart';
 import 'package:latlong2/latlong.dart';
 
 /// Paso 4 · Delimitar la superficie del establecimiento.
@@ -112,10 +113,6 @@ class _BoundaryEditor extends StatefulWidget {
 }
 
 class _BoundaryEditorState extends State<_BoundaryEditor> {
-  /// Imagen satelital de Esri (World Imagery). Ver ADR-0009 por términos de uso.
-  static const _satelliteUrlTemplate =
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-
   /// Centro de Córdoba, para cuando todavía no hay lectura del GPS.
   static const _fallbackCenter = LatLng(-31.4201, -64.1888);
 
@@ -124,16 +121,41 @@ class _BoundaryEditorState extends State<_BoundaryEditor> {
   bool _isSatelliteUnavailable = false;
   bool _isDraggingVertex = false;
 
+  /// Zoom al que se muestra el campo alrededor del punto del paso 3: unos
+  /// 800 m de ancho en pantalla, para que se distingan alambrados y
+  /// distancias. Con dos dedos se aleja para un campo grande.
+  static const _fieldZoom = 16.0;
+
+  @override
+  void didUpdateWidget(covariant _BoundaryEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // El paso 4 se construye al abrir el wizard (IndexedStack), antes de que
+    // el paso 3 lea el GPS. Cuando llega una lectura nueva, centra el mapa
+    // ahí: el MapController conserva la cámara, así que no alcanza con
+    // cambiar el centro inicial.
+    final reference = _referenceOf(widget.draft);
+    if (reference != null && reference != _referenceOf(oldWidget.draft)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _mapController.move(reference, _fieldZoom);
+        }
+      });
+    }
+  }
+
   @override
   void dispose() {
     _mapController.dispose();
     super.dispose();
   }
 
+  static LatLng? _referenceOf(RegisterEstablishmentDraft draft) =>
+      draft.ubicacionConfirmadaPorGps ? LatLng(draft.latitud, draft.longitud) : null;
+
   @override
   Widget build(BuildContext context) {
     final draft = widget.draft;
-    final reference = draft.ubicacionConfirmadaPorGps ? LatLng(draft.latitud, draft.longitud) : null;
+    final reference = _referenceOf(draft);
     final mapPoints = [for (final point in draft.poligono) LatLng(point.latitud, point.longitud)];
     final issue = draft.surfaceStepIssue;
     final isClosed = draft.poligono.length >= 3;
@@ -142,13 +164,11 @@ class _BoundaryEditorState extends State<_BoundaryEditor> {
       fit: StackFit.expand,
       children: [
         FlutterMap(
-          // Si el paso 3 vuelve a leer el GPS, el mapa se recentra ahí.
-          key: ValueKey(reference),
           mapController: _mapController,
           options: MapOptions(
             initialCenter: reference ?? _fallbackCenter,
-            initialZoom: reference == null ? 7 : 15,
-            maxZoom: 19,
+            initialZoom: reference == null ? 7 : _fieldZoom,
+            maxZoom: satelliteMaxZoom,
             backgroundColor: AppColors.backgroundSecondary,
             interactionOptions: InteractionOptions(
               flags: _isDraggingVertex ? InteractiveFlag.none : InteractiveFlag.all & ~InteractiveFlag.rotate,
@@ -160,12 +180,7 @@ class _BoundaryEditorState extends State<_BoundaryEditor> {
             ),
           ),
           children: [
-            if (_isSatelliteOn)
-              TileLayer(
-                urlTemplate: _satelliteUrlTemplate,
-                userAgentPackageName: 'com.example.frontend_mayoral',
-                errorTileCallback: (_, _, _) => _markSatelliteUnavailable(),
-              ),
+            if (_isSatelliteOn) satelliteTileLayer(onError: _markSatelliteUnavailable),
             if (isClosed)
               PolygonLayer(
                 polygons: [
@@ -217,10 +232,16 @@ class _BoundaryEditorState extends State<_BoundaryEditor> {
                   ),
               ],
             ),
-            if (_isSatelliteOn && !_isSatelliteUnavailable)
-              const SimpleAttributionWidget(
-                source: Text(EstablishmentRegisterStrings.stepFourSatelliteAttribution),
+            Scalebar(
+              alignment: Alignment.bottomLeft,
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              lineColor: _showsImagery ? AppColors.onPrimary : AppColors.textPrimary,
+              textStyle: AppTypography.smallEmphasis.copyWith(
+                color: _showsImagery ? AppColors.onPrimary : AppColors.textPrimary,
+                shadows: _showsImagery ? const [Shadow(blurRadius: 3)] : null,
               ),
+            ),
+            if (_showsImagery) const SatelliteAttribution(),
           ],
         ),
         Positioned(
@@ -283,7 +304,8 @@ class _BoundaryEditorState extends State<_BoundaryEditor> {
           ),
         ),
         Positioned(
-          bottom: AppSpacing.lg,
+          // Por encima de la barra de escala y la atribución.
+          bottom: 56,
           left: AppSpacing.md,
           right: AppSpacing.md,
           child: _HintPill(text: _hintFor(draft)),
@@ -293,6 +315,9 @@ class _BoundaryEditorState extends State<_BoundaryEditor> {
   }
 
   RegisterEstablishmentBloc get _bloc => context.read<RegisterEstablishmentBloc>();
+
+  /// Si se está viendo la imagen satelital (pedida y cargando bien).
+  bool get _showsImagery => _isSatelliteOn && !_isSatelliteUnavailable;
 
   /// Los tiles fallan de a muchos y fuera del build: avisa una sola vez.
   void _markSatelliteUnavailable() {

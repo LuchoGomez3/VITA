@@ -26,21 +26,15 @@ void main() {
 
   /// Crea el BLoC dentro del test: así sus emisiones corren en el mismo reloj
   /// falso que `pump` y la UI se redibuja.
-  Future<void> pumpStep(WidgetTester tester) async {
-    bloc =
-        RegisterEstablishmentBloc(
-          registerEstablishmentUseCase: RegisterEstablishmentUseCase(_UnusedRegistrationRepository()),
-          getCurrentLocationUseCase: GetCurrentLocationUseCase(locationRepository),
-          initialStep: RegisterEstablishmentStep.surface,
-        )..add(
-          RegisterEstablishmentEvent.draftChanged(
-            RegisterEstablishmentDraft.initial().copyWith(
-              latitud: -33.61,
-              longitud: -64.59,
-              ubicacionConfirmadaPorGps: true,
-            ),
-          ),
-        );
+  Future<void> pumpStep(WidgetTester tester, {bool withGpsLocation = true}) async {
+    bloc = RegisterEstablishmentBloc(
+      registerEstablishmentUseCase: RegisterEstablishmentUseCase(_UnusedRegistrationRepository()),
+      getCurrentLocationUseCase: GetCurrentLocationUseCase(locationRepository),
+      initialStep: RegisterEstablishmentStep.surface,
+    );
+    if (withGpsLocation) {
+      bloc.add(RegisterEstablishmentEvent.draftChanged(_draftWithGps));
+    }
     addTearDown(bloc.close);
 
     await tester.pumpWidget(
@@ -77,6 +71,20 @@ void main() {
 
     expect(bloc.state.draft.superficieManualHectareas, 320.5);
     expect(bloc.state.draft.isSurfaceStepValid, isTrue);
+  });
+
+  testWidgets('centers the map on the step 3 GPS reading when it arrives after the map was built', (tester) async {
+    // El wizard construye el paso 4 al abrirse (IndexedStack), antes del GPS.
+    await pumpStep(tester, withGpsLocation: false);
+
+    bloc.add(RegisterEstablishmentEvent.draftChanged(_draftWithGps));
+    await tester.pump();
+    await tester.pump();
+
+    final camera = tester.widget<FlutterMap>(find.byType(FlutterMap)).mapController!.camera;
+    expect(camera.center.latitude, closeTo(-33.61, 1e-6));
+    expect(camera.center.longitude, closeTo(-64.59, 1e-6));
+    expect(camera.zoom, 16);
   });
 
   testWidgets('tapping the map adds a vertex', (tester) async {
@@ -157,11 +165,19 @@ void main() {
 /// Número de vértice dibujado sobre el mapa (no el contador del chip).
 Finder _vertexLabel(String label) => find.descendant(of: find.byType(MarkerLayer), matching: find.text(label));
 
+final RegisterEstablishmentDraft _draftWithGps = RegisterEstablishmentDraft.initial().copyWith(
+  latitud: -33.61,
+  longitud: -64.59,
+  ubicacionConfirmadaPorGps: true,
+);
+
+/// Campo de unos 440 × 370 m alrededor del punto GPS: entra entero en la
+/// pantalla al zoom inicial (los marcadores fuera de cuadro no se dibujan).
 const _square = [
-  BoundaryPoint(latitud: -33.600, longitud: -64.600),
-  BoundaryPoint(latitud: -33.600, longitud: -64.580),
-  BoundaryPoint(latitud: -33.620, longitud: -64.580),
-  BoundaryPoint(latitud: -33.620, longitud: -64.600),
+  BoundaryPoint(latitud: -33.608, longitud: -64.592),
+  BoundaryPoint(latitud: -33.608, longitud: -64.588),
+  BoundaryPoint(latitud: -33.612, longitud: -64.588),
+  BoundaryPoint(latitud: -33.612, longitud: -64.592),
 ];
 
 class _FakeCurrentLocationRepository implements CurrentLocationRepository {

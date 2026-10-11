@@ -42,6 +42,12 @@ para los lotes.
   - El botón **"Marcar vértice acá"** usa el GPS (ADR-0008) para delimitar el campo
     recorriendo el perímetro, sin datos móviles ni imagen.
 - **Botón "Capa":** alterna entre imagen satelital y fondo neutro.
+- **Zoom:** el paso 4 abre en zoom 16 (unos 800 m de ancho en pantalla) con barra de
+  escala, para que se distingan alambrados y distancias. Se piden tiles hasta el zoom 17:
+  en zonas rurales de Córdoba Esri no tiene imagen al 19 y devuelve una placa gris, así
+  que más cerca se amplía la imagen del 17.
+- **Paso 3:** la vista previa del punto de referencia también es un mapa real fijo, con la
+  misma imagen y el mismo fallback. Antes de leer el GPS muestra una indicación.
 
 **Términos de uso:** el uso de los tiles de Esri sin cuenta es adecuado para el MVP
 académico. Antes de un despliegue comercial hay que revisar los términos de Esri o

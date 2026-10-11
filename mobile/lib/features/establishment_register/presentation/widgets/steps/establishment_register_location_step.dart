@@ -7,12 +7,20 @@ import 'package:frontend_mayoral/features/establishment_register/domain/entities
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/strings/establishment_register_strings.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/location_failure_message.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/location_map_preview.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/static_map_preview.dart';
 
 /// Paso 3 · Provincia, departamento, localidad y coordenadas del establecimiento.
 class EstablishmentRegisterLocationStep extends StatelessWidget {
   /// Crea el paso de ubicación geográfica del establecimiento.
-  const EstablishmentRegisterLocationStep({super.key});
+  const EstablishmentRegisterLocationStep({
+    super.key,
+    this.showSatelliteImagery = true,
+  });
+
+  /// Si la vista previa pide tiles satelitales. Los tests lo apagan para no
+  /// usar la red.
+  final bool showSatelliteImagery;
 
   @override
   Widget build(BuildContext context) {
@@ -150,11 +158,22 @@ class EstablishmentRegisterLocationStep extends StatelessWidget {
                 style: AppTypography.secondaryEmphasis,
               ),
               const SizedBox(height: AppSpacing.xs),
-              const StaticMapPreview(
-                child: Center(
-                  child: Icon(Icons.location_on, size: 32, color: AppColors.error),
+              if (draft.ubicacionConfirmadaPorGps)
+                LocationMapPreview(
+                  latitud: draft.latitud,
+                  longitud: draft.longitud,
+                  showSatelliteImagery: showSatelliteImagery,
+                )
+              else
+                const StaticMapPreview(
+                  child: Center(
+                    child: Text(
+                      EstablishmentRegisterStrings.stepThreePreviewPlaceholder,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.formFieldHelper,
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
         ),

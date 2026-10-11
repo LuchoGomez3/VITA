@@ -256,6 +256,9 @@ class EstablishmentRegisterStrings {
   /// Titulo de la vista previa del mapa.
   static const stepThreePreviewLabel = 'Vista previa';
 
+  /// Vista previa antes de leer el GPS.
+  static const stepThreePreviewPlaceholder = 'Usá tu ubicación actual para ver el campo en el mapa';
+
   /// Texto del banner de instrucciones del paso 4.
   static const stepFourBannerText = 'Tocá los vértices del campo. Vas a poder dividir en potreros más adelante.';
 
@@ -298,7 +301,7 @@ class EstablishmentRegisterStrings {
       'Sin imagen satelital. Podés recorrer el campo y marcar cada esquina con el GPS.';
 
   /// Atribucion obligatoria de la imagen satelital.
-  static const stepFourSatelliteAttribution = 'Imagen: Esri, Maxar, Earthstar Geographics';
+  static const stepFourSatelliteAttribution = '© Esri, Maxar, Earthstar Geographics';
 
   /// Titulo del panel de superficie cargada a mano.
   static const stepFourManualSurfaceTitle = '¿No podés dibujarlo ahora?';

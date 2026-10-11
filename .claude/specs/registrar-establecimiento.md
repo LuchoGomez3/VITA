@@ -56,7 +56,9 @@ Puntos de entrada al flujo: botón "Configurar mi establecimiento" en
   "Usar mi ubicación actual" pide el permiso si hace falta y espera hasta 30 s
   una posición. El GPS no necesita internet, así que funciona sin señal de
   datos. Si falla (GPS apagado, permiso negado o bloqueado, sin señal) el
-  borrador no cambia y un snackbar explica qué hacer.
+  borrador no cambia y un snackbar explica qué hacer. La vista previa es un mapa
+  real fijo centrado en el punto leído (`LocationMapPreview`, imagen satelital
+  con fallback neutro); antes de leer el GPS muestra una indicación.
 - **Paso 4 — Delimitar superficie** (ADR-0009): `poligono` (vértices WGS84
   en orden de recorrido) y `superficieManualHectareas`. Mapa real
   (`flutter_map`) centrado en el GPS del paso 3, con imagen satelital de Esri
