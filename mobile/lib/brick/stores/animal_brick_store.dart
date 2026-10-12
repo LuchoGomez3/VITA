@@ -34,6 +34,9 @@ abstract class AnimalBrickStore {
 
   /// Descarga animales remotos de [establishmentId] y los guarda en SQLite.
   Future<void> pullRemoteAnimals(String establishmentId);
+
+  /// Vuelve a encolar un alta rechazada y la marca como pendiente localmente.
+  Future<void> retryRejectedAnimal(String animalId);
 }
 
 /// Store Brick especifico para operaciones de animales.
@@ -195,6 +198,21 @@ class BrickAnimalStore implements AnimalBrickStore {
       )..primaryKey = localAnimalsById[animal.localId]?.primaryKey;
       await _repository.upsertLocal<BrickAnimalModel>(synchronizedAnimal);
     }
+  }
+
+  @override
+  Future<void> retryRejectedAnimal(String animalId) async {
+    final animal = await getAnimalById(animalId);
+    if (animal == null || animal.syncStatus != BrickAnimalSyncStatus.rejected) {
+      throw StateError('Rejected animal not found.');
+    }
+
+    final pendingAnimal = animal.copyWith(
+      syncStatus: BrickAnimalSyncStatus.pending,
+      syncErrorCode: null,
+    );
+    final savedAnimal = await _repository.upsertLocal<BrickAnimalModel>(pendingAnimal);
+    await _repository.enqueueRemoteUpsert<BrickAnimalModel>(savedAnimal);
   }
 
   BrickAnimalModel _preferredAnimal(
