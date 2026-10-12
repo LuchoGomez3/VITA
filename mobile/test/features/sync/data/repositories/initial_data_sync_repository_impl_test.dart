@@ -40,7 +40,7 @@ void main() {
     await repository.sync();
 
     expect(animalStore.pulls, ['establishment-1', 'establishment-1']);
-    expect(categoryStore.pulls, ['establishment-1', 'establishment-1']);
+    expect(categoryStore.pullCount, 2);
     expect(lotStore.pulls, ['establishment-1', 'establishment-1']);
     expect(lotStore.pushes, ['establishment-1', 'establishment-1']);
     expect(weighingStore.pulls, ['establishment-1', 'establishment-1']);
@@ -164,22 +164,13 @@ class _FakeAnimalStore implements AnimalBrickStore {
 }
 
 class _FakeCategoryStore implements CategoriaBrickStore {
-  final List<String> pulls = [];
+  int pullCount = 0;
 
   @override
-  Future<void> pullRemoteCategorias(String establishmentId) async {
-    pulls.add(establishmentId);
-  }
+  Future<void> pullRemoteCategorias() async => pullCount += 1;
 
   @override
-  Future<List<BrickCategoriaModel>> getLocalCategorias(
-    String establishmentId,
-  ) async => [];
-
-  @override
-  Future<BrickCategoriaModel> upsertCategoria(
-    BrickCategoriaModel categoria,
-  ) async => categoria;
+  Future<List<BrickCategoriaModel>> getLocalCategorias() async => [];
 }
 
 class _FakeLotStore implements LotBrickStore {
