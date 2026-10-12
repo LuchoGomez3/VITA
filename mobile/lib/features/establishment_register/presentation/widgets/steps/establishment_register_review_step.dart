@@ -6,12 +6,19 @@ import 'package:frontend_mayoral/features/establishment_register/presentation/bl
 import 'package:frontend_mayoral/features/establishment_register/presentation/strings/establishment_register_strings.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/establishment_info_callout.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/establishment_review_section.dart';
-import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/field_boundary_preview.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/location_map_preview.dart';
 
 /// Revisar y crear · resumen final antes de enviar el registro.
 class EstablishmentRegisterReviewStep extends StatelessWidget {
   /// Crea el paso de revisión final del establecimiento.
-  const EstablishmentRegisterReviewStep({super.key});
+  const EstablishmentRegisterReviewStep({
+    super.key,
+    this.showSatelliteImagery = true,
+  });
+
+  /// Si el mapa pide tiles satelitales. Los tests lo apagan para no usar la
+  /// red.
+  final bool showSatelliteImagery;
 
   @override
   Widget build(BuildContext context) {
@@ -106,8 +113,14 @@ class EstablishmentRegisterReviewStep extends StatelessWidget {
               trailing: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (draft.poligono.isNotEmpty) ...[
-                    FieldBoundaryPreview(points: draft.poligono, height: 120),
+                  if (draft.ubicacionConfirmadaPorGps) ...[
+                    LocationMapPreview(
+                      latitud: draft.latitud,
+                      longitud: draft.longitud,
+                      boundary: draft.poligono,
+                      height: 160,
+                      showSatelliteImagery: showSatelliteImagery,
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                   ],
                   Wrap(

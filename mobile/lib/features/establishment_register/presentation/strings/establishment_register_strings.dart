@@ -277,6 +277,9 @@ class EstablishmentRegisterStrings {
   /// Tooltip del boton de capa.
   static const stepFourLayerTooltip = 'Capa';
 
+  /// Aviso cuando la sesión venció durante el alta.
+  static const sessionExpiredMessage = 'Tu sesión venció. Iniciá sesión de nuevo para crear el establecimiento.';
+
   /// Superficie en hectáreas: sin decimales desde 100 ha, con uno por debajo
   /// (en un campo chico, 3,4 ha y 3 ha no son lo mismo).
   static String hectares(double value) => '${value.toStringAsFixed(value >= 100 ? 0 : 1)} ha';

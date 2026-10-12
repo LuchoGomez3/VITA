@@ -80,9 +80,10 @@ surgieron durante el maquetado, reusables entre pasos:
 - `EstablishmentReviewSection` — tarjeta numerada de revisión con filas
   label/valor (soporta `isMono`/`isMuted` por fila) y botón "Editar" que
   dispara `stepRequested`.
-- `FieldBoundaryPreview` — miniatura del polígono real en la revisión, sin
-  tiles (proyección local, funciona sin conexión). Si la superficie se cargó a
-  mano no se muestra y la revisión dice "Cargada a mano".
+- `LocationMapPreview` — mapa satelital fijo (fallback neutro sin conexión)
+  con el pin del paso 3 y, si se dibujó, el polígono encuadrado entero. Lo
+  usan el paso 3 y la revisión; con la superficie cargada a mano, la revisión
+  muestra el mapa con el pin y el chip "Cargada a mano".
 - `RenspaBreakdownPanel`, `EstablishmentInfoCallout`, `StaticMapPreview` —
   reusados entre el paso 2/3/4 y la revisión.
 
@@ -184,6 +185,7 @@ siempre `superficie_ha` redondeada a 2 decimales. El backend lo valida
 | `superficie_invalida` | 422 | `superficie_ha <= 0` | Snackbar genérico |
 | `poligono_invalido` | 422 | Polígono con < 3 vértices, `orden` repetido, coordenadas fuera de rango, lados que se cruzan o sin superficie | Snackbar genérico con el `message` (no debería ocurrir: el paso 4 ya lo bloquea) |
 | `establecimiento_no_encontrado` | 404 | `PUT`/`GET` sobre un id inexistente o sin membresía | No aplica al alta; sí a una futura pantalla de edición |
+| *(sesión vencida)* | — | El token venció y la renovación fue rechazada (`DomainErrorCode.unauthorized`) | Snackbar `sessionExpiredMessage` + `AuthSessionCubit.signOut()`: el router lleva a iniciar sesión. El alta no usa el cliente de Brick, así que el aviso global no llega solo (ver ítem 6 del backlog) |
 | *(sin conexión)* | — | `SocketException`/`TimeoutException` | `EstablishmentOfflineModal` (mismo patrón que `SignUpOfflineModal`, duplicado localmente a propósito) |
 
 Todo lo que no sea `renspa_duplicado` ni un error de conectividad cae a un
