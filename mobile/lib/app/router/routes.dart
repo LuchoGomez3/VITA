@@ -83,6 +83,9 @@ class AppRoutes {
   /// Captura RFID para completar un formulario existente.
   static const rfidCapture = '/capturar-rfid';
 
+  /// Valor de ruta que solicita devolver el RFID a una venta en curso.
+  static const rfidSaleSelectionMode = 'seleccion_venta';
+
   /// Ruta de la seccion de registros de gastos.
   static const expenseRecords = '/registros-de-gastos';
 
@@ -92,6 +95,9 @@ class AppRoutes {
   /// Ruta temporal para registrar un ingreso operativo.
   static const incomeRegister = '/registros-de-gastos/registrar-ingreso';
 
+  /// Ruta raiz del registro de una venta de hacienda.
+  static const livestockSaleRegister = '/registrar-venta';
+
   /// Construye la ruta de egresos con el establecimiento activo explicito.
   static String expensesForEstablishment({
     required String path,
@@ -100,6 +106,12 @@ class AppRoutes {
   }) =>
       '$path?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}'
       '&establecimientoNombre=${Uri.encodeQueryComponent(establishmentName)}';
+
+  /// Construye la ruta de venta con el establecimiento activo explicito.
+  static String livestockSaleForEstablishment(String establishmentId) {
+    return '$livestockSaleRegister?establecimientoId='
+        '${Uri.encodeQueryComponent(establishmentId)}';
+  }
 
   /// Ruta del menu principal de reportes SENASA.
   static const String senasaMenu = procedures;
@@ -166,6 +178,12 @@ class AppRoutes {
   /// Construye la ruta de identificacion para un establecimiento activo.
   static String rfidScanForEstablishment(String establishmentId) {
     return '$rfidScan?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
+  }
+
+  /// Abre el lector RFID para seleccionar un animal de una venta en curso.
+  static String rfidScanForLivestockSale(String establishmentId) {
+    return '${rfidScanForEstablishment(establishmentId)}'
+        '&modo=$rfidSaleSelectionMode';
   }
 
   /// Construye la ruta de alta con una caravana RFID ya leida.
