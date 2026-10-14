@@ -18,6 +18,9 @@ extension UserRolePermissions on UserRole {
   /// Solo administradores y propietarios pueden consultar finanzas.
   bool get canViewFinancialInformation => this == UserRole.admin || this == UserRole.owner;
 
+  /// Solo los roles comerciales pueden registrar ventas de hacienda.
+  bool get canRegisterLivestockSale => this == UserRole.admin || this == UserRole.owner;
+
   /// Interpreta el rol recibido para un establecimiento.
   static UserRole fromBackend(String? value) => switch (value) {
     'admin' || 'administrator' => UserRole.admin,

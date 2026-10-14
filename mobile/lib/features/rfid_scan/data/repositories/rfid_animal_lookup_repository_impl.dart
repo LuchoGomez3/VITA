@@ -36,4 +36,38 @@ class RfidAnimalLookupRepositoryImpl implements RfidAnimalLookupRepository {
       );
     }
   }
+
+  @override
+  Future<Result<List<IdentifiedAnimal>>> findByRfidPrefix({
+    required String rfidPrefix,
+    required String establishmentId,
+  }) async {
+    try {
+      final normalizedPrefix = rfidPrefix.trim();
+      if (normalizedPrefix.isEmpty) {
+        return const Result.success(<IdentifiedAnimal>[]);
+      }
+
+      final animals = await _animalBrickStore.getLocalAnimals();
+      final matches =
+          animals
+              .where(
+                (animal) =>
+                    animal.establishmentId == establishmentId &&
+                    animal.deletedAt == null &&
+                    animal.rfidTagNumber.startsWith(normalizedPrefix),
+              )
+              .map(IdentifiedAnimalMapper.fromBrick)
+              .toList()
+            ..sort((left, right) => left.rfidTagNumber.compareTo(right.rfidTagNumber));
+
+      return Result.success(matches.take(10).toList(growable: false));
+    } on Object {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudieron buscar coincidencias en el dispositivo.',
+        ),
+      );
+    }
+  }
 }

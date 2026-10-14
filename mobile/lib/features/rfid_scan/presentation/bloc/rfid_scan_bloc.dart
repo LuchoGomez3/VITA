@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/entities/identified_animal.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/repositories/rfid_reading_source.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/use_cases/find_animal_by_rfid_use_case.dart';
+import 'package:frontend_mayoral/features/rfid_scan/domain/use_cases/search_animals_by_rfid_prefix_use_case.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/use_cases/validate_rfid_reading_use_case.dart';
 
 part 'rfid_scan_bloc.freezed.dart';
@@ -32,12 +33,14 @@ class RfidScanBloc extends Bloc<RfidScanEvent, RfidScanState> {
     required RfidReadingSource readingSource,
     required ValidateRfidReadingUseCase validateRfidReadingUseCase,
     FindAnimalByRfidUseCase? findAnimalByRfidUseCase,
+    SearchAnimalsByRfidPrefixUseCase? searchAnimalsByRfidPrefixUseCase,
     String? establishmentId,
     this.mode = RfidScanMode.identify,
     this.readingTimeout = const Duration(seconds: 30),
   }) : _readingSource = readingSource,
        _validateRfidReadingUseCase = validateRfidReadingUseCase,
        _findAnimalByRfidUseCase = findAnimalByRfidUseCase,
+       _searchAnimalsByRfidPrefixUseCase = searchAnimalsByRfidPrefixUseCase,
        _establishmentId = establishmentId,
        assert(
          mode == RfidScanMode.capture || (findAnimalByRfidUseCase != null && establishmentId != null),
@@ -47,6 +50,7 @@ class RfidScanBloc extends Bloc<RfidScanEvent, RfidScanState> {
     on<_ListeningRequested>(_onListeningRequested);
     on<_Stopped>(_onStopped);
     on<_ReadingReceived>(_onReadingReceived);
+    on<_RfidPrefixChanged>(_onRfidPrefixChanged);
     on<_InvalidReadingDetected>(_onInvalidReadingDetected);
     on<_AnimalFound>(_onAnimalFound);
     on<_AnimalNotFound>(_onAnimalNotFound);
@@ -57,6 +61,7 @@ class RfidScanBloc extends Bloc<RfidScanEvent, RfidScanState> {
   final RfidReadingSource _readingSource;
   final ValidateRfidReadingUseCase _validateRfidReadingUseCase;
   final FindAnimalByRfidUseCase? _findAnimalByRfidUseCase;
+  final SearchAnimalsByRfidPrefixUseCase? _searchAnimalsByRfidPrefixUseCase;
   final String? _establishmentId;
 
   /// Captura reutilizable sin búsqueda de animal, para otros flujos.
@@ -128,6 +133,51 @@ class RfidScanBloc extends Bloc<RfidScanEvent, RfidScanState> {
         }
       case Failure<IdentifiedAnimal?>():
         emit(const RfidScanState.error());
+    }
+  }
+
+  /// Actualiza las coincidencias locales sin iniciar una lectura del baston.
+  Future<void> _onRfidPrefixChanged(
+    _RfidPrefixChanged event,
+    Emitter<RfidScanState> emit,
+  ) async {
+    if (mode == RfidScanMode.capture || _searchAnimalsByRfidPrefixUseCase == null) {
+      return;
+    }
+    final prefix = event.prefix.trim();
+    if (prefix.isEmpty) {
+      emit(const RfidScanState.inactive());
+      return;
+    }
+
+    final previousSuggestions = state.maybeWhen(
+      inactive: (_, suggestions) => suggestions,
+      orElse: () => const <IdentifiedAnimal>[],
+    );
+    emit(
+      RfidScanState.inactive(
+        rfidPrefix: prefix,
+        suggestions: previousSuggestions,
+      ),
+    );
+    final result = await _searchAnimalsByRfidPrefixUseCase(
+      rfidPrefix: prefix,
+      establishmentId: _establishmentId!,
+    );
+
+    // Evita que una consulta anterior, pero mas lenta, reemplace el listado
+    // correspondiente al ultimo prefijo que permanece visible en el campo.
+    final isCurrentPrefix = state.maybeWhen(
+      inactive: (currentPrefix, _) => currentPrefix == prefix,
+      orElse: () => false,
+    );
+    if (!isCurrentPrefix) return;
+
+    switch (result) {
+      case Success<List<IdentifiedAnimal>>(:final data):
+        emit(RfidScanState.inactive(rfidPrefix: prefix, suggestions: data));
+      case Failure<List<IdentifiedAnimal>>():
+        emit(RfidScanState.inactive(rfidPrefix: prefix));
     }
   }
 

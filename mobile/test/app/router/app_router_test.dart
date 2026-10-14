@@ -6,6 +6,21 @@ import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart
 import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
 
 void main() {
+  test('builds the livestock sale route for the active establishment', () {
+    expect(
+      AppRoutes.livestockSaleForEstablishment('field/id'),
+      '${AppRoutes.livestockSaleRegister}?establecimientoId=field%2Fid',
+    );
+  });
+
+  test('builds the RFID selector route for a livestock sale', () {
+    expect(
+      AppRoutes.rfidScanForLivestockSale('field/id'),
+      '${AppRoutes.rfidScan}?establecimientoId=field%2Fid'
+      '&modo=${AppRoutes.rfidSaleSelectionMode}',
+    );
+  });
+
   group('AppRouter.redirectFor', () {
     test('keeps checking state on the technical startup route', () {
       expect(
