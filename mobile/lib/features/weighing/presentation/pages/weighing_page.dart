@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/weighing/domain/entities/animal_weighing.dart';
+import 'package:frontend_mayoral/features/weighing/domain/use_cases/record_animal_weighing_use_case.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/mock/weighing_mock.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/strings/weighing_strings.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/widgets/weighing_animal_header.dart';
@@ -20,20 +23,35 @@ const _savedToastDuration = Duration(seconds: 2);
 /// sincronización ni cálculo real de GPD.
 class WeighingPage extends StatefulWidget {
   /// Crea la pantalla de pesaje.
-  const WeighingPage({super.key});
+  ///
+  /// Desde la ficha de un animal llega [animal] (se pesa ese animal, no la
+  /// cola ficticia) y la pestaña elegida en [initialTab].
+  const WeighingPage({super.key, this.request, this.recordWeighing});
+
+  /// Animal a pesar y pestaña inicial, o `null` para la cola ficticia.
+  final WeighingRequest? request;
+
+  /// Guarda el pesaje. Con [request] y este caso de uso, "Guardar pesaje"
+  /// registra el peso de verdad (offline-first) y vuelve con `true`.
+  final RecordAnimalWeighingUseCase? recordWeighing;
 
   @override
   State<WeighingPage> createState() => _WeighingPageState();
 }
 
 class _WeighingPageState extends State<WeighingPage> {
-  WeighingCaptureTab _tab = WeighingCaptureTab.bluetooth;
+  late WeighingCaptureTab _tab = widget.request?.initialTab ?? WeighingCaptureTab.bluetooth;
+  bool _isSaving = false;
   int _batchIndex = 0;
   int _batchPosition = weighingBatchStart;
   String _manualInput = '';
   bool _showSavedToast = false;
 
-  WeighingAnimalMock get _currentAnimal => weighingBatchMock[_batchIndex % weighingBatchMock.length];
+  WeighingAnimalMock get _currentAnimal =>
+      widget.request?.animal ?? weighingBatchMock[_batchIndex % weighingBatchMock.length];
+
+  /// Si se está pesando un animal real (desde su ficha) y no la cola ficticia.
+  bool get _isRealWeighing => widget.request != null && widget.recordWeighing != null;
 
   void _handleNumpadKey(String key) {
     setState(() {
@@ -50,7 +68,11 @@ class _WeighingPageState extends State<WeighingPage> {
     });
   }
 
-  void _handleSave() {
+  Future<void> _handleSave() async {
+    if (_isRealWeighing) {
+      await _saveRealWeighing();
+      return;
+    }
     setState(() => _showSavedToast = true);
     Future.delayed(_savedToastDuration, () {
       if (!mounted) return;
@@ -62,6 +84,50 @@ class _WeighingPageState extends State<WeighingPage> {
         _manualInput = '';
       });
     });
+  }
+
+  Future<void> _saveRealWeighing() async {
+    final request = widget.request!;
+    if (_tab == WeighingCaptureTab.bluetooth) {
+      _showMessage(WeighingStrings.noScaleConnected);
+      return;
+    }
+    final weightKg = double.tryParse(_manualInput.replaceAll(WeighingStrings.numpadDecimalSeparator, '.'));
+    if (weightKg == null) {
+      _showMessage(WeighingStrings.enterWeight);
+      return;
+    }
+    if (_isSaving) {
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    final result = await widget.recordWeighing!(
+      establishmentId: request.establishmentId,
+      animalId: request.animalId,
+      weightKg: weightKg,
+      source: AnimalWeighingSource.manual,
+    );
+    if (!mounted) {
+      return;
+    }
+    switch (result) {
+      case Success<AnimalWeighing>():
+        setState(() => _showSavedToast = true);
+        await Future<void>.delayed(_savedToastDuration);
+        if (mounted) {
+          Navigator.of(context).pop(true);
+        }
+      case Failure<AnimalWeighing>(:final error):
+        setState(() => _isSaving = false);
+        _showMessage(error.message);
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -91,7 +157,10 @@ class _WeighingPageState extends State<WeighingPage> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(AppSpacing.md),
-                  child: AppFilledButton(label: WeighingStrings.saveCta, onPressed: _handleSave),
+                  child: AppFilledButton(
+                    label: WeighingStrings.saveCta,
+                    onPressed: _isSaving ? null : _handleSave,
+                  ),
                 ),
               ],
             ),
@@ -101,9 +170,10 @@ class _WeighingPageState extends State<WeighingPage> {
                 right: AppSpacing.md,
                 top: AppSpacing.md,
                 child: AppSuccessBanner(
-                  message:
-                      '${WeighingStrings.savedToastTitle}\n'
-                      '${WeighingStrings.savedToastSubtitle(weighingGpdDelta)}',
+                  message: _isRealWeighing
+                      ? '${WeighingStrings.savedToastTitle}\n${WeighingStrings.savedOfflineSubtitle}'
+                      : '${WeighingStrings.savedToastTitle}\n'
+                            '${WeighingStrings.savedToastSubtitle(weighingGpdDelta)}',
                 ),
               ),
           ],
@@ -193,4 +263,29 @@ class _GpdChip extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Pedido para abrir el pesaje de un animal puntual (por ejemplo, desde su
+/// ficha). Viaja como `extra` de la ruta [WeighingPage].
+@immutable
+class WeighingRequest {
+  /// Crea el pedido para pesar el animal [animalId] en la pestaña [initialTab].
+  const WeighingRequest({
+    required this.animalId,
+    required this.establishmentId,
+    required this.animal,
+    required this.initialTab,
+  });
+
+  /// UUID del animal a pesar.
+  final String animalId;
+
+  /// Establecimiento del animal.
+  final String establishmentId;
+
+  /// Datos que se muestran en la cabecera (caravana, RFID, raza y categoría).
+  final WeighingAnimalMock animal;
+
+  /// Pestaña con la que abre.
+  final WeighingCaptureTab initialTab;
 }

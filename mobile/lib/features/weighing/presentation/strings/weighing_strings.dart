@@ -52,4 +52,13 @@ abstract final class WeighingStrings {
 
   /// Separador decimal usado en el numpad manual (formato es-AR).
   static const numpadDecimalSeparator = ',';
+
+  /// Subtítulo del aviso al guardar un pesaje real.
+  static const savedOfflineSubtitle = 'Queda guardado en el celular y se sincroniza cuando haya conexión.';
+
+  /// Pestaña Bluetooth sin balanza real conectada.
+  static const noScaleConnected = 'No hay una balanza conectada. Usá la carga manual.';
+
+  /// Guardar sin haber ingresado un peso.
+  static const enterWeight = 'Ingresá el peso con el teclado.';
 }

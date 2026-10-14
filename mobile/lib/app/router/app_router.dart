@@ -41,6 +41,7 @@ import 'package:frontend_mayoral/features/health/presentation/pages/health_page.
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
+import 'package:frontend_mayoral/features/livestock/livestock_composition.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/financial_access_denied_page.dart';
@@ -63,6 +64,7 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senas
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/pages/weighing_page.dart';
+import 'package:frontend_mayoral/features/weighing/weighing_composition.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion central de rutas y proteccion de sesion de la aplicacion.
@@ -141,7 +143,7 @@ class AppRouter {
               routes: [
                 GoRoute(
                   path: AppRoutes.livestock,
-                  builder: (context, state) => const LivestockPage(),
+                  builder: (context, state) => const LivestockPage(createCubit: createAnimalListCubit),
                 ),
               ],
             ),
@@ -238,7 +240,12 @@ class AppRouter {
         // Maquetas (Etapa 1) de pesaje y sanidad, con datos ficticios.
         GoRoute(
           path: AppRoutes.weighing,
-          builder: (context, state) => const WeighingPage(),
+          builder: (context, state) {
+            final request = state.extra;
+            return request is WeighingRequest
+                ? WeighingPage(request: request, recordWeighing: createRecordAnimalWeighingUseCase())
+                : const WeighingPage();
+          },
         ),
         GoRoute(
           path: AppRoutes.health,
