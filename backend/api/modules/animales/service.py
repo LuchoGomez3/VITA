@@ -60,20 +60,14 @@ class AnimalService:
             raise exc
         raise error from exc
 
-    async def _categoria_asignable(
-        self, categoria_id: UUID, establecimiento_id: UUID
-    ) -> Categoria:
-        """Categoría que se le puede asignar a un animal del establecimiento.
+    async def _categoria_asignable(self, categoria_id: UUID) -> Categoria:
+        """Categoría del catálogo global que se le puede asignar a un animal.
 
-        Puede ser global (``establecimiento_id`` null) o propia; nunca de otro
-        establecimiento ni borrada lógicamente.
+        El catálogo es igual para todos los establecimientos (adr-0010): solo se
+        exige que exista y no esté borrada lógicamente.
         """
         categoria = await self.repository.get_categoria(categoria_id)
-        if (
-            categoria is None
-            or categoria.deleted_at is not None
-            or categoria.establecimiento_id not in (None, establecimiento_id)
-        ):
+        if categoria is None or categoria.deleted_at is not None:
             raise AnimalReferenciaInvalidaError("categoria")
         return categoria
 
@@ -89,7 +83,7 @@ class AnimalService:
             return None
         if categoria_id == animal.categoria_id:
             return await self.repository.get_categoria(categoria_id)
-        return await self._categoria_asignable(categoria_id, animal.establecimiento_id)
+        return await self._categoria_asignable(categoria_id)
 
     async def _aplicar_borrado(
         self, animal: Animal, deleted_at: datetime | None
@@ -138,9 +132,7 @@ class AnimalService:
 
         categoria = None
         if data.categoria_id is not None:
-            categoria = await self._categoria_asignable(
-                data.categoria_id, data.establecimiento_id
-            )
+            categoria = await self._categoria_asignable(data.categoria_id)
         # Un alta que llega ya borrada (se creó y se borró offline) no se valida
         # contra su categoría: la compatibilidad se exige a los animales vivos.
         if data.deleted_at is None:
