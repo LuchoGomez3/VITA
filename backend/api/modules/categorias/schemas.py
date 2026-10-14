@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
+from api.shared.enums import SexoPermitido
 from api.shared.schemas import SyncFields
 
 
@@ -15,11 +16,17 @@ class CategoriaCreate(SyncFields):
     ``id``/``created_at``/``updated_at`` y el backend los respeta (alta idempotente
     con last-write-wins). No se pueden crear categorías del catálogo global desde la
     API (esas se siembran); ``establecimiento_id`` es obligatorio.
+
+    ``sexo_permitido`` es obligatorio al crear una categoría nueva. Es opcional en
+    el esquema solo para que el reenvío de un alta ya registrada, desde un
+    cliente anterior a este campo, conserve el valor guardado en vez de fallar.
     """
 
     establecimiento_id: UUID
     nombre: str
     descripcion: str | None = None
+    sexo_permitido: SexoPermitido | None = None
+    permite_estado_reproductivo: bool | None = None
 
     @field_validator("nombre")
     @classmethod
@@ -36,6 +43,8 @@ class CategoriaUpdate(SyncFields):
 
     nombre: str | None = None
     descripcion: str | None = None
+    sexo_permitido: SexoPermitido | None = None
+    permite_estado_reproductivo: bool | None = None
 
     @field_validator("nombre")
     @classmethod
@@ -56,6 +65,9 @@ class CategoriaRead(BaseModel):
     establecimiento_id: UUID | None = None
     nombre: str
     descripcion: str | None = None
+    # Reglas que el frontend usa para ofrecer solo las categorías compatibles.
+    sexo_permitido: SexoPermitido
+    permite_estado_reproductivo: bool
     created_at: datetime
     updated_at: datetime
     # Se expone para la descarga delta: un registro con deleted_at != null le indica

@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.modules.categorias.exceptions import (
@@ -11,6 +12,8 @@ from api.modules.categorias.exceptions import (
     CategoriaNoEncontradaError,
     EstablecimientoNoAutorizadoError,
     NombreCategoriaDuplicadoError,
+    ReglasCategoriaEnUsoError,
+    SexoPermitidoObligatorioError,
 )
 from api.modules.categorias.models import Categoria
 from api.modules.categorias.repository import CategoriaRepository
@@ -21,6 +24,8 @@ from api.modules.categorias.schemas import (
 )
 from api.modules.establecimientos.repository import UsuarioEstablecimientoRepository
 from api.modules.usuarios.models import Usuario
+from api.shared.enums import SexoPermitido
+from api.shared.rechazos_base import VIOLACION_CHECK, inspeccionar
 
 
 def _as_utc(dt: datetime | None) -> datetime | None:
@@ -66,10 +71,12 @@ class CategoriaService:
             if existente.establecimiento_id is None:
                 raise CategoriaGlobalNoEditableError()
             await self._exigir_acceso(current_user, existente.establecimiento_id)
-            self._merge_alta_lww(existente, data)
-            await self.repository.save(existente)
+            await self._merge_alta_lww(existente, data)
+            await self._guardar(existente)
             return CategoriaRead.model_validate(existente)
 
+        if data.sexo_permitido is None:
+            raise SexoPermitidoObligatorioError()
         if await self.repository.exists_nombre(data.establecimiento_id, data.nombre):
             raise NombreCategoriaDuplicadoError(data.nombre)
 
@@ -81,15 +88,74 @@ class CategoriaService:
             establecimiento_id=data.establecimiento_id,
             nombre=data.nombre,
             descripcion=data.descripcion,
+            sexo_permitido=data.sexo_permitido,
+            permite_estado_reproductivo=bool(data.permite_estado_reproductivo),
         )
         await self.repository.create(categoria)
         return CategoriaRead.model_validate(categoria)
 
-    def _merge_alta_lww(self, existente: Categoria, data: CategoriaCreate) -> None:
+    async def _guardar(self, categoria: Categoria) -> None:
+        """Persiste y traduce el rechazo del trigger de reglas a su error de dominio.
+
+        Si otra escritura asigna un animal entre la validación y el flush, el
+        trigger ``trg_categorias_reglas_compatibles`` rechaza el cambio: tiene
+        que llegar como ``reglas_categoria_en_uso``, no como un 500.
+        """
+        try:
+            await self.repository.save(categoria)
+        except IntegrityError as exc:
+            await self.session.rollback()
+            rechazo = inspeccionar(exc)
+            if (
+                rechazo.sqlstate == VIOLACION_CHECK
+                and rechazo.restriccion == "categorias_reglas_compatibles"
+            ):
+                cantidad = int(rechazo.detalle) if rechazo.detalle else 0
+                raise ReglasCategoriaEnUsoError(cantidad) from exc
+            raise
+
+    async def _exigir_reglas_compatibles(
+        self,
+        categoria: Categoria,
+        sexo_permitido: SexoPermitido | None,
+        permite_estado_reproductivo: bool | None,
+    ) -> None:
+        """Aplica a la categoría las reglas nuevas si no dejan animales inválidos.
+
+        ``None`` conserva la regla actual. Se valida antes de mutar para que un
+        rechazo no deje cambios parciales en la sesión.
+        """
+        nuevo_sexo = sexo_permitido or SexoPermitido(categoria.sexo_permitido)
+        nuevo_permite = (
+            categoria.permite_estado_reproductivo
+            if permite_estado_reproductivo is None
+            else permite_estado_reproductivo
+        )
+        if (
+            nuevo_sexo == categoria.sexo_permitido
+            and nuevo_permite == categoria.permite_estado_reproductivo
+        ):
+            return
+        incompatibles = await self.repository.contar_animales_incompatibles(
+            categoria.id,
+            sexo_permitido=nuevo_sexo,
+            permite_estado_reproductivo=nuevo_permite,
+        )
+        if incompatibles:
+            raise ReglasCategoriaEnUsoError(incompatibles)
+        categoria.sexo_permitido = nuevo_sexo
+        categoria.permite_estado_reproductivo = nuevo_permite
+
+    async def _merge_alta_lww(
+        self, existente: Categoria, data: CategoriaCreate
+    ) -> None:
         """Aplica un alta reenviada solo si el cliente trae una versión más nueva."""
         entrante = _as_utc(data.updated_at) or datetime.now(UTC)
         if entrante <= _as_utc(existente.updated_at):
             return
+        await self._exigir_reglas_compatibles(
+            existente, data.sexo_permitido, data.permite_estado_reproductivo
+        )
         existente.nombre = data.nombre
         existente.descripcion = data.descripcion
         existente.deleted_at = data.deleted_at
@@ -117,13 +183,16 @@ class CategoriaService:
             ):
                 raise NombreCategoriaDuplicadoError(data.nombre)
             categoria.nombre = data.nombre
+        await self._exigir_reglas_compatibles(
+            categoria, data.sexo_permitido, data.permite_estado_reproductivo
+        )
         if data.descripcion is not None:
             categoria.descripcion = data.descripcion
         if data.deleted_at is not None:
             categoria.deleted_at = data.deleted_at
         categoria.updated_at = entrante
 
-        await self.repository.save(categoria)
+        await self._guardar(categoria)
         return CategoriaRead.model_validate(categoria)
 
     async def borrar(

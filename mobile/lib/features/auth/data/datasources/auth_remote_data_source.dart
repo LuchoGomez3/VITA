@@ -123,6 +123,25 @@ class AuthRemoteDataSource {
     return _sessionFromBody(body);
   }
 
+  /// Solicita al backend que invalide la sesión remota actual.
+  Future<void> signOut(String accessToken) async {
+    final response = await _client
+        .post(
+          _uri('/api/auth/logout'),
+          headers: {
+            'Authorization': 'Bearer $accessToken',
+          },
+        )
+        .timeout(_requestTimeout);
+
+    final body = _decodeResponse(response);
+    _throwIfUnsuccessful(
+      response,
+      body,
+      fallbackMessage: 'No se pudo cerrar la sesion remota.',
+    );
+  }
+
   /// Lee el perfil asociado al token Bearer.
   ///
   /// Este metodo queda disponible para validaciones online puntuales. No se usa

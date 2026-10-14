@@ -31,6 +31,11 @@ class UsuarioRegistroCreate(BaseModel):
     def _normalizar_cuit(cls, v: str) -> str:
         return normalizar_cuit(v)
 
+    @field_validator("email")
+    @classmethod
+    def _normalizar_email(cls, v: EmailStr) -> str:
+        return str(v).strip().lower()
+
     @field_validator("password")
     @classmethod
     def _password_segura(cls, v: str) -> str:

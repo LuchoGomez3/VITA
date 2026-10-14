@@ -8,12 +8,9 @@ from enum import Enum
 
 
 class RolUsuario(str, Enum):
-    administrator = "administrator"
+    admin = "admin"
     owner = "owner"
-    veterinarian = "veterinarian"
-    capataz = "capataz"
-    asset_manager = "asset_manager"
-    external_buyer = "external_buyer"
+    employee = "employee"
 
 
 class SexoAnimal(str, Enum):
@@ -51,7 +48,103 @@ class TipoEventoSanitario(str, Enum):
 
 
 class TipoEgreso(str, Enum):
-    venta = "venta"
+    """Motivo de salida física NO comercial de un animal del establecimiento.
+
+    La salida por venta no se modela acá: es una operación comercial con
+    comprador, DTe y monto, y vive en la tabla ``ventas``.
+    """
+
     muerte = "muerte"
     baja = "baja"
     traslado_externo = "traslado_externo"
+
+
+class TipoVenta(str, Enum):
+    """Modalidad con la que se pacta el monto de una venta de hacienda."""
+
+    por_kilo = "por_kilo"
+    al_bulto = "al_bulto"
+
+
+class TipoComprador(str, Enum):
+    """Canal comercial por el que sale la hacienda."""
+
+    frigorifico = "frigorifico"
+    remate = "remate"
+    particular = "particular"
+
+
+class MedioCobro(str, Enum):
+    """Instrumento con el que se recibió un cobro de venta."""
+
+    efectivo = "efectivo"
+    transferencia = "transferencia"
+    cheque = "cheque"
+    tarjeta = "tarjeta"
+
+
+class TipoEgresoOperativo(str, Enum):
+    """Clasificación contable principal de un egreso monetario del campo."""
+
+    costo_produccion = "costo_produccion"
+    gasto_administrativo = "gasto_administrativo"
+
+
+class CategoriaEgresoOperativo(str, Enum):
+    """Categorías cerradas que permiten calcular márgenes de forma consistente."""
+
+    sanidad = "sanidad"
+    alimentacion = "alimentacion"
+    identificacion = "identificacion"
+    combustible = "combustible"
+    estructura = "estructura"
+    honorarios = "honorarios"
+
+
+class EstadoLote(str, Enum):
+    """Estado operativo de un lote (potrero).
+
+    Los cuatro estados ocupan espacio en el lienzo del establecimiento: un lote
+    en descanso o mantenimiento sigue siendo una división física y no puede
+    superponerse con otro. Solo ``activo`` admite el ingreso de animales.
+    """
+
+    activo = "activo"
+    descanso = "descanso"
+    mantenimiento = "mantenimiento"
+    inactivo = "inactivo"
+
+
+class RecursoForrajero(str, Enum):
+    """Recurso forrajero predominante del lote.
+
+    Es un catálogo de códigos estables, no una etiqueta visible: la traducción a
+    texto para el usuario la resuelve el cliente.
+    """
+
+    pasto_natural = "pasto_natural"
+    alfalfa = "alfalfa"
+    sorgo = "sorgo"
+    maiz = "maiz"
+    avena = "avena"
+    otro = "otro"
+
+
+class EstadoReproductivo(str, Enum):
+    """Condición reproductiva de una hembra, independiente de ``EstadoAnimal``.
+
+    Un animal puede estar ``activo`` y ``prenada`` a la vez. ``null`` en la columna
+    significa que no corresponde (por ejemplo, un macho).
+    """
+
+    sin_determinar = "sin_determinar"
+    vacia = "vacia"
+    prenada = "prenada"
+
+
+class SexoPermitido(str, Enum):
+    """Sexo de los animales que admite una categoría."""
+
+    macho = "macho"
+    hembra = "hembra"
+    ambos = "ambos"

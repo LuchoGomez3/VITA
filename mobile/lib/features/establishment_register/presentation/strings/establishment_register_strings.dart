@@ -388,6 +388,5 @@ class EstablishmentRegisterStrings {
   static const cloudIcon = 'assets/icons/cloud.svg';
 
   /// Mensaje inline cuando el backend rechaza el RENSPA por estar duplicado.
-  static const renspaConflictMessage =
-      'Este RENSPA ya está registrado. Revisalo antes de continuar.';
+  static const renspaConflictMessage = 'Este RENSPA ya está registrado. Revisalo antes de continuar.';
 }

@@ -22,12 +22,16 @@ class AppOutlinedButton extends StatelessWidget {
 
   /// El texto del boton.
   final String label;
+
   /// El icono del boton.
   final Widget? icon;
+
   /// La funcion que se ejecuta cuando se presiona el boton.
   final VoidCallback? onPressed;
+
   /// Indica si el boton esta en estado de carga.
   final bool isLoading;
+
   /// El estilo del texto del boton.
   final TextStyle? textStyle;
 
@@ -45,25 +49,25 @@ class AppOutlinedButton extends StatelessWidget {
             style: buttonTextStyle,
           )
         : icon == null
-            ? Text(
-                label,
-                style: buttonTextStyle,
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  icon!,
-                  const SizedBox(width: AppSpacing.sm),
-                  // Flexible para que labels largos envuelvan en vez de
-                  // desbordar el boton en pantallas angostas.
-                  Flexible(
-                    child: Text(
-                      label,
-                      style: buttonTextStyle,
-                    ),
-                  ),
-                ],
-              );
+        ? Text(
+            label,
+            style: buttonTextStyle,
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              icon!,
+              const SizedBox(width: AppSpacing.sm),
+              // Flexible para que labels largos envuelvan en vez de
+              // desbordar el boton en pantallas angostas.
+              Flexible(
+                child: Text(
+                  label,
+                  style: buttonTextStyle,
+                ),
+              ),
+            ],
+          );
 
     return SizedBox(
       // Los botones secundarios ocupan todo el ancho disponible por defecto.

@@ -112,8 +112,7 @@ class BrickPesajeStore implements PesajeBrickStore {
     final protectedLocalIds = localPesajes
         .where(
           (pesaje) =>
-              pesaje.syncStatus == BrickPesajeSyncStatus.pending ||
-              pesaje.syncStatus == BrickPesajeSyncStatus.rejected,
+              pesaje.syncStatus == BrickPesajeSyncStatus.pending || pesaje.syncStatus == BrickPesajeSyncStatus.rejected,
         )
         .map((pesaje) => pesaje.localId)
         .toSet();

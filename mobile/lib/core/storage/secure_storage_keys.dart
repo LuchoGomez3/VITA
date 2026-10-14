@@ -11,11 +11,4 @@ class SecureStorageKeys {
 
   /// Datos completos de los establecimientos disponibles para la sesión.
   static const establishmentCatalog = 'establishment_catalog_v1';
-
-  /// Marker local que evita repetir el bootstrap offline por usuario.
-  static String initialDataSyncCompleted(String userId) {
-    // La versión 4 incorpora el catálogo completo de establecimientos. Cambiar
-    // la versión ejecuta una vez el nuevo bootstrap en instalaciones existentes.
-    return 'initial_data_sync_completed_v4_$userId';
-  }
 }

@@ -1,24 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
-
-/// Destino mock disponible para asignar al animal.
-class AnimalDestinationOption {
-  /// Crea una opcion de destino.
-  const AnimalDestinationOption({
-    required this.id,
-    required this.name,
-    required this.details,
-  });
-
-  /// Identificador temporal del destino.
-  final String id;
-
-  /// Nombre visible del potrero.
-  final String name;
-
-  /// Informacion complementaria del destino.
-  final String details;
-}
+import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
 
 /// Tarjeta reutilizable para seleccionar el destino del animal.
 class DestinationSelectionCard extends StatelessWidget {
@@ -31,7 +13,7 @@ class DestinationSelectionCard extends StatelessWidget {
   });
 
   /// Destino mostrado por la tarjeta.
-  final AnimalDestinationOption destination;
+  final AnimalRegistrationDestination destination;
 
   /// Indica si el destino esta seleccionado.
   final bool isSelected;

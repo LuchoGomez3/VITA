@@ -11,8 +11,7 @@ import 'package:frontend_mayoral/features/establishment_register/presentation/bl
 extension RegisterEstablishmentDraftValidation on RegisterEstablishmentDraft {
   /// Paso 1: nombre obligatorio (hasta 60 caracteres) y al menos un tipo de
   /// produccion seleccionado.
-  bool get isIdentificationStepValid =>
-      nombre.trim().isNotEmpty && nombre.length <= 60 && tiposProduccion.isNotEmpty;
+  bool get isIdentificationStepValid => nombre.trim().isNotEmpty && nombre.length <= 60 && tiposProduccion.isNotEmpty;
 
   /// Paso 2: CUIT con digito verificador valido y RENSPA con formato
   /// `NN.NNN.N.NNNNN/NN` completo.

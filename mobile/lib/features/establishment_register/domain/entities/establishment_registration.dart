@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 
 part 'establishment_registration.freezed.dart';
 
@@ -30,5 +31,6 @@ sealed class RegisteredEstablishment with _$RegisteredEstablishment {
     required String id,
     required EstablishmentRegistration registration,
     required DateTime createdAt,
+    required UserRole role,
   }) = _RegisteredEstablishment;
 }

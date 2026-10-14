@@ -32,7 +32,7 @@ const List<MigrationCommand> _migration_20260622053112_up = [
   InsertColumn('sync_status', Column.integer, onTable: 'BrickAnimalModel'),
   InsertColumn('sync_error_code', Column.varchar, onTable: 'BrickAnimalModel'),
   InsertColumn('created_at', Column.datetime, onTable: 'BrickAnimalModel'),
-  InsertColumn('updated_at', Column.datetime, onTable: 'BrickAnimalModel')
+  InsertColumn('updated_at', Column.datetime, onTable: 'BrickAnimalModel'),
 ];
 
 const List<MigrationCommand> _migration_20260622053112_down = [
@@ -58,7 +58,7 @@ const List<MigrationCommand> _migration_20260622053112_down = [
   DropColumn('sync_status', onTable: 'BrickAnimalModel'),
   DropColumn('sync_error_code', onTable: 'BrickAnimalModel'),
   DropColumn('created_at', onTable: 'BrickAnimalModel'),
-  DropColumn('updated_at', onTable: 'BrickAnimalModel')
+  DropColumn('updated_at', onTable: 'BrickAnimalModel'),
 ];
 
 //

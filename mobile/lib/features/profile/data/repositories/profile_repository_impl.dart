@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -31,10 +32,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       }
 
       return Result.success(
-        decoded
-            .whereType<Map<String, dynamic>>()
-            .map(_mapEstablishment)
-            .toList(),
+        decoded.whereType<Map<String, dynamic>>().map(_mapEstablishment).toList(),
       );
     } on Object {
       return const Result.failure(
@@ -50,6 +48,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
       id: json['id'] as String,
       ownerId: json['owner_id'] as String,
       name: json['name'] as String,
+      role: UserRolePermissions.fromBackend(
+        json['role'] is String ? json['role'] as String : null,
+      ),
       renspaNumber: json['renspa_number'] as String?,
       cuit: json['cuit'] as String?,
       areaHectares: (json['area_hectares'] as num?)?.toDouble(),

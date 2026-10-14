@@ -1,6 +1,7 @@
 """Lógica de negocio del módulo animales."""
 
 from datetime import UTC, datetime
+from typing import NoReturn
 from uuid import UUID, uuid4
 
 from sqlalchemy.exc import IntegrityError
@@ -14,24 +15,18 @@ from api.modules.animales.exceptions import (
     LoteNoPerteneceAlEstablecimientoError,
 )
 from api.modules.animales.models import Animal
+from api.modules.animales.rechazos import traducir_rechazo
+from api.modules.animales.reglas_reproductivas import validar_combinacion
 from api.modules.animales.repository import AnimalRepository
 from api.modules.animales.schemas import AnimalCreate, AnimalRead, AnimalUpdate
+from api.modules.categorias.models import Categoria
 from api.modules.establecimientos.repository import UsuarioEstablecimientoRepository
+from api.modules.observaciones_animales.service import ObservacionAnimalService
 from api.modules.pesajes.models import Pesaje
 from api.modules.pesajes.repository import PesajeRepository
 from api.modules.usuarios.models import Usuario
 from api.shared.enums import EstadoAnimal, SexoAnimal
-
-
-def _as_utc(dt: datetime | None) -> datetime | None:
-    """Normaliza a UTC-aware para comparar timestamps de forma robusta.
-
-    Postgres devuelve datetimes aware; SQLite (tests) puede devolverlos naive.
-    Asumimos UTC en los naive para no romper la comparación del last-write-wins.
-    """
-    if dt is None:
-        return None
-    return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
+from api.shared.sync import as_utc
 
 
 class AnimalService:
@@ -40,6 +35,7 @@ class AnimalService:
         self.repository = AnimalRepository(session)
         self.pesaje_repository = PesajeRepository(session)
         self.membership_repository = UsuarioEstablecimientoRepository(session)
+        self.observaciones = ObservacionAnimalService(session)
 
     async def _exigir_acceso(
         self, current_user: Usuario, establecimiento_id: UUID
@@ -49,6 +45,62 @@ class AnimalService:
         )
         if membership is None:
             raise EstablecimientoNoAutorizadoError()
+
+    async def _rechazar(
+        self, exc: IntegrityError, nro_caravana: str | None
+    ) -> NoReturn:
+        """Revierte y traduce un rechazo de la base a su error de dominio.
+
+        Un rechazo que no se reconoce se propaga tal cual: disfrazarlo de otro
+        error escondería un bug.
+        """
+        await self.session.rollback()
+        error = traducir_rechazo(exc, nro_caravana)
+        if error is None:
+            raise exc
+        raise error from exc
+
+    async def _categoria_asignable(
+        self, categoria_id: UUID, establecimiento_id: UUID
+    ) -> Categoria:
+        """Categoría que se le puede asignar a un animal del establecimiento.
+
+        Puede ser global (``establecimiento_id`` null) o propia; nunca de otro
+        establecimiento ni borrada lógicamente.
+        """
+        categoria = await self.repository.get_categoria(categoria_id)
+        if (
+            categoria is None
+            or categoria.deleted_at is not None
+            or categoria.establecimiento_id not in (None, establecimiento_id)
+        ):
+            raise AnimalReferenciaInvalidaError("categoria")
+        return categoria
+
+    async def _categoria_final(
+        self, animal: Animal, categoria_id: UUID | None
+    ) -> Categoria | None:
+        """Categoría con la que quedaría el animal tras aplicar un cambio.
+
+        Si no cambia, se acepta la actual tal como está: una categoría que se
+        borró después de asignarse no debe trabar la edición de otros campos.
+        """
+        if categoria_id is None:
+            return None
+        if categoria_id == animal.categoria_id:
+            return await self.repository.get_categoria(categoria_id)
+        return await self._categoria_asignable(categoria_id, animal.establecimiento_id)
+
+    async def _aplicar_borrado(
+        self, animal: Animal, deleted_at: datetime | None
+    ) -> None:
+        """Cambia el ``deleted_at`` del animal y lo propaga a sus observaciones en
+        la misma transacción (borrado en cascada y restauración, ver adr-0007)."""
+        antes = animal.deleted_at
+        animal.deleted_at = deleted_at
+        await self.observaciones.propagar_borrado_del_animal(
+            animal.id, antes, deleted_at
+        )
 
     async def crear(self, current_user: Usuario, data: AnimalCreate) -> AnimalRead:
         """Alta de animal + pesaje inicial en la misma transacción.
@@ -64,8 +116,11 @@ class AnimalService:
         if existente is not None:
             # Re-sync de un alta ya registrada: merge con last-write-wins.
             await self._exigir_acceso(current_user, existente.establecimiento_id)
-            self._merge_alta_lww(existente, data)
-            await self.repository.save(existente)
+            await self._merge_alta_lww(existente, data)
+            try:
+                await self.repository.save(existente)
+            except IntegrityError as exc:
+                await self._rechazar(exc, data.nro_caravana_rfid)
             return AnimalRead.model_validate(existente)
 
         # Unicidad GLOBAL de caravana (SENASA 530/2025); excluye el propio id.
@@ -74,19 +129,22 @@ class AnimalService:
         ):
             raise CaravanaDuplicadaError(data.nro_caravana_rfid)
 
-        # El lote es obligatorio y debe pertenecer al establecimiento.
-        lote = await self.repository.get_lote(data.lote_id)
-        if lote is None or lote.establecimiento_id != data.establecimiento_id:
-            raise LoteNoPerteneceAlEstablecimientoError()
+        # El lote es opcional —el animal puede entrar sin asignar—, pero si se
+        # informa tiene que existir y ser del establecimiento.
+        if data.lote_id is not None:
+            lote = await self.repository.get_lote(data.lote_id)
+            if lote is None or lote.establecimiento_id != data.establecimiento_id:
+                raise LoteNoPerteneceAlEstablecimientoError()
 
-        # La categoría puede ser global (establecimiento_id None) o del propio.
+        categoria = None
         if data.categoria_id is not None:
-            categoria = await self.repository.get_categoria(data.categoria_id)
-            if categoria is None or categoria.establecimiento_id not in (
-                None,
-                data.establecimiento_id,
-            ):
-                raise AnimalReferenciaInvalidaError("categoria")
+            categoria = await self._categoria_asignable(
+                data.categoria_id, data.establecimiento_id
+            )
+        # Un alta que llega ya borrada (se creó y se borró offline) no se valida
+        # contra su categoría: la compatibilidad se exige a los animales vivos.
+        if data.deleted_at is None:
+            validar_combinacion(data.sexo, categoria, data.estado_reproductivo)
 
         # Madre/padre deben existir y ser del mismo establecimiento.
         for campo, ref_id in (("madre", data.madre_id), ("padre", data.padre_id)):
@@ -115,7 +173,7 @@ class AnimalService:
             padre_id=data.padre_id,
             pelaje=data.pelaje,
             estado=EstadoAnimal.activo,
-            observaciones=data.observaciones,
+            estado_reproductivo=data.estado_reproductivo,
         )
 
         try:
@@ -131,18 +189,34 @@ class AnimalService:
                 )
             )
         except IntegrityError as exc:
-            await self.session.rollback()
-            raise CaravanaDuplicadaError(data.nro_caravana_rfid) from exc
+            await self._rechazar(exc, data.nro_caravana_rfid)
 
         return AnimalRead.model_validate(animal)
 
-    def _merge_alta_lww(self, existente: Animal, data: AnimalCreate) -> None:
+    async def _merge_alta_lww(self, existente: Animal, data: AnimalCreate) -> None:
         """Aplica los campos de un alta reenviada solo si el cliente trae una versión
         más nueva (last-write-wins por ``updated_at``). Si es más vieja o igual, se
-        conserva la del servidor (no-op)."""
-        entrante = _as_utc(data.updated_at) or datetime.now(UTC)
-        if entrante <= _as_utc(existente.updated_at):
+        conserva la del servidor (no-op).
+
+        El reenvío puede cambiar sexo y categoría, así que valida la combinación
+        final antes de tocar nada: si es inválida, el registro queda como estaba.
+        Solo se valida si el animal queda vivo: reenviar un borrado no puede
+        fallar porque la categoría cambió después, y restaurarlo sí revalida.
+        """
+        entrante = as_utc(data.updated_at) or datetime.now(UTC)
+        if entrante <= as_utc(existente.updated_at):
             return
+
+        # Un cliente anterior a este campo no lo envía: omitirlo no lo borra.
+        estado_reproductivo = (
+            data.estado_reproductivo
+            if "estado_reproductivo" in data.model_fields_set
+            else existente.estado_reproductivo
+        )
+        categoria = await self._categoria_final(existente, data.categoria_id)
+        if data.deleted_at is None:
+            validar_combinacion(data.sexo, categoria, estado_reproductivo)
+
         existente.nro_caravana_rfid = data.nro_caravana_rfid
         existente.caravana_visual = data.caravana_visual
         existente.sexo = data.sexo
@@ -153,8 +227,8 @@ class AnimalService:
         existente.madre_id = data.madre_id
         existente.padre_id = data.padre_id
         existente.pelaje = data.pelaje
-        existente.observaciones = data.observaciones
-        existente.deleted_at = data.deleted_at
+        existente.estado_reproductivo = estado_reproductivo
+        await self._aplicar_borrado(existente, data.deleted_at)
         # Explícito: queda en el SET del UPDATE y el onupdate=func.now() no lo pisa.
         existente.updated_at = entrante
 
@@ -162,14 +236,18 @@ class AnimalService:
         self, current_user: Usuario, animal_id: UUID, data: AnimalUpdate
     ) -> AnimalRead:
         """Edición idempotente con last-write-wins. Aplica los campos provistos solo
-        si el ``updated_at`` entrante es más nuevo que el persistido."""
+        si el ``updated_at`` entrante es más nuevo que el persistido.
+
+        Valida todo antes de mutar: una combinación inválida rechaza la operación
+        completa sin cambios parciales.
+        """
         animal = await self.repository.get_by_id_including_deleted(animal_id)
         if animal is None:
             raise AnimalNoEncontradoError()
         await self._exigir_acceso(current_user, animal.establecimiento_id)
 
-        entrante = _as_utc(data.updated_at) or datetime.now(UTC)
-        if entrante <= _as_utc(animal.updated_at):
+        entrante = as_utc(data.updated_at) or datetime.now(UTC)
+        if entrante <= as_utc(animal.updated_at):
             # Cambio rancio: gana el servidor.
             return AnimalRead.model_validate(animal)
 
@@ -177,31 +255,48 @@ class AnimalService:
             lote = await self.repository.get_lote(data.lote_id)
             if lote is None or lote.establecimiento_id != animal.establecimiento_id:
                 raise LoteNoPerteneceAlEstablecimientoError()
-            animal.lote_id = data.lote_id
-        if data.categoria_id is not None:
-            categoria = await self.repository.get_categoria(data.categoria_id)
-            if categoria is None or categoria.establecimiento_id not in (
-                None,
-                animal.establecimiento_id,
-            ):
-                raise AnimalReferenciaInvalidaError("categoria")
-            animal.categoria_id = data.categoria_id
 
+        # ``None`` en categoría significa "sin cambios"; en la condición
+        # reproductiva, un ``null`` explícito la limpia.
+        categoria_id = (
+            data.categoria_id if data.categoria_id is not None else animal.categoria_id
+        )
+        estado_reproductivo = (
+            data.estado_reproductivo
+            if "estado_reproductivo" in data.model_fields_set
+            else animal.estado_reproductivo
+        )
+        categoria = await self._categoria_final(animal, categoria_id)
+        # ``deleted_at`` en None significa "sin cambios", así que esta vía no
+        # restaura: solo valida si el animal sigue vivo.
+        deleted_at_final = (
+            data.deleted_at if data.deleted_at is not None else animal.deleted_at
+        )
+        if deleted_at_final is None:
+            validar_combinacion(SexoAnimal(animal.sexo), categoria, estado_reproductivo)
+
+        if data.lote_id is not None:
+            animal.lote_id = data.lote_id
+        animal.categoria_id = categoria_id
+        animal.estado_reproductivo = estado_reproductivo
         if data.raza is not None:
             animal.raza = data.raza
         if data.fecha_nacimiento is not None:
             animal.fecha_nacimiento = data.fecha_nacimiento
         if data.pelaje is not None:
             animal.pelaje = data.pelaje
-        if data.observaciones is not None:
-            animal.observaciones = data.observaciones
         if data.estado is not None:
             animal.estado = data.estado
         if data.deleted_at is not None:
-            animal.deleted_at = data.deleted_at
+            await self._aplicar_borrado(animal, data.deleted_at)
         animal.updated_at = entrante
 
-        await self.repository.save(animal)
+        # Se lee antes del flush: si falla, tocar el objeto dispara otro flush.
+        nro_caravana = animal.nro_caravana_rfid
+        try:
+            await self.repository.save(animal)
+        except IntegrityError as exc:
+            await self._rechazar(exc, nro_caravana)
         return AnimalRead.model_validate(animal)
 
     async def borrar(
@@ -219,9 +314,9 @@ class AnimalService:
             raise AnimalNoEncontradoError()
         await self._exigir_acceso(current_user, animal.establecimiento_id)
 
-        ts = _as_utc(deleted_at) or datetime.now(UTC)
-        animal.deleted_at = ts
-        animal.updated_at = _as_utc(updated_at) or ts
+        ts = as_utc(deleted_at) or datetime.now(UTC)
+        await self._aplicar_borrado(animal, ts)
+        animal.updated_at = as_utc(updated_at) or ts
         await self.repository.save(animal)
         return AnimalRead.model_validate(animal)
 

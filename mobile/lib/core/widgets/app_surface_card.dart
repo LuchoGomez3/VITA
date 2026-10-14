@@ -11,6 +11,7 @@ class AppSurfaceCard extends StatelessWidget {
     this.elevation,
     this.shadowColor,
     this.color,
+    this.clipBehavior = Clip.none,
   });
 
   /// Contenido presentado dentro de la tarjeta.
@@ -28,12 +29,16 @@ class AppSurfaceCard extends StatelessWidget {
   /// Color de fondo opcional de la superficie.
   final Color? color;
 
+  /// Recorte aplicado al contenido usando la forma de la tarjeta.
+  final Clip clipBehavior;
+
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: elevation,
       shadowColor: shadowColor,
       color: color,
+      clipBehavior: clipBehavior,
       child: Padding(
         padding: padding,
         child: child,

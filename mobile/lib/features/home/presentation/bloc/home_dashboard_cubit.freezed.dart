@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$HomeDashboardState {
 
- ResultState<HomeDashboard> get dashboardState; Map<String, String> get establishments; String? get selectedEstablishmentId;
+ ResultState<HomeDashboard> get dashboardState; Map<String, EstablishmentMembership> get establishments; String? get selectedEstablishmentId;
 /// Create a copy of HomeDashboardState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -45,7 +45,7 @@ abstract mixin class $HomeDashboardStateCopyWith<$Res>  {
   factory $HomeDashboardStateCopyWith(HomeDashboardState value, $Res Function(HomeDashboardState) _then) = _$HomeDashboardStateCopyWithImpl;
 @useResult
 $Res call({
- ResultState<HomeDashboard> dashboardState, Map<String, String> establishments, String? selectedEstablishmentId
+ ResultState<HomeDashboard> dashboardState, Map<String, EstablishmentMembership> establishments, String? selectedEstablishmentId
 });
 
 
@@ -66,7 +66,7 @@ class _$HomeDashboardStateCopyWithImpl<$Res>
   return _then(_self.copyWith(
 dashboardState: null == dashboardState ? _self.dashboardState : dashboardState // ignore: cast_nullable_to_non_nullable
 as ResultState<HomeDashboard>,establishments: null == establishments ? _self.establishments : establishments // ignore: cast_nullable_to_non_nullable
-as Map<String, String>,selectedEstablishmentId: freezed == selectedEstablishmentId ? _self.selectedEstablishmentId : selectedEstablishmentId // ignore: cast_nullable_to_non_nullable
+as Map<String, EstablishmentMembership>,selectedEstablishmentId: freezed == selectedEstablishmentId ? _self.selectedEstablishmentId : selectedEstablishmentId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -161,7 +161,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<HomeDashboard> dashboardState,  Map<String, String> establishments,  String? selectedEstablishmentId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<HomeDashboard> dashboardState,  Map<String, EstablishmentMembership> establishments,  String? selectedEstablishmentId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _HomeDashboardState() when $default != null:
 return $default(_that.dashboardState,_that.establishments,_that.selectedEstablishmentId);case _:
@@ -182,7 +182,7 @@ return $default(_that.dashboardState,_that.establishments,_that.selectedEstablis
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<HomeDashboard> dashboardState,  Map<String, String> establishments,  String? selectedEstablishmentId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<HomeDashboard> dashboardState,  Map<String, EstablishmentMembership> establishments,  String? selectedEstablishmentId)  $default,) {final _that = this;
 switch (_that) {
 case _HomeDashboardState():
 return $default(_that.dashboardState,_that.establishments,_that.selectedEstablishmentId);case _:
@@ -202,7 +202,7 @@ return $default(_that.dashboardState,_that.establishments,_that.selectedEstablis
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<HomeDashboard> dashboardState,  Map<String, String> establishments,  String? selectedEstablishmentId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<HomeDashboard> dashboardState,  Map<String, EstablishmentMembership> establishments,  String? selectedEstablishmentId)?  $default,) {final _that = this;
 switch (_that) {
 case _HomeDashboardState() when $default != null:
 return $default(_that.dashboardState,_that.establishments,_that.selectedEstablishmentId);case _:
@@ -217,12 +217,12 @@ return $default(_that.dashboardState,_that.establishments,_that.selectedEstablis
 
 
 class _HomeDashboardState implements HomeDashboardState {
-  const _HomeDashboardState({this.dashboardState = const ResultState<HomeDashboard>.initial(), final  Map<String, String> establishments = const <String, String>{}, this.selectedEstablishmentId}): _establishments = establishments;
+  const _HomeDashboardState({this.dashboardState = const ResultState<HomeDashboard>.initial(), final  Map<String, EstablishmentMembership> establishments = const <String, EstablishmentMembership>{}, this.selectedEstablishmentId}): _establishments = establishments;
   
 
 @override@JsonKey() final  ResultState<HomeDashboard> dashboardState;
- final  Map<String, String> _establishments;
-@override@JsonKey() Map<String, String> get establishments {
+ final  Map<String, EstablishmentMembership> _establishments;
+@override@JsonKey() Map<String, EstablishmentMembership> get establishments {
   if (_establishments is EqualUnmodifiableMapView) return _establishments;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableMapView(_establishments);
@@ -260,7 +260,7 @@ abstract mixin class _$HomeDashboardStateCopyWith<$Res> implements $HomeDashboar
   factory _$HomeDashboardStateCopyWith(_HomeDashboardState value, $Res Function(_HomeDashboardState) _then) = __$HomeDashboardStateCopyWithImpl;
 @override @useResult
 $Res call({
- ResultState<HomeDashboard> dashboardState, Map<String, String> establishments, String? selectedEstablishmentId
+ ResultState<HomeDashboard> dashboardState, Map<String, EstablishmentMembership> establishments, String? selectedEstablishmentId
 });
 
 
@@ -281,7 +281,7 @@ class __$HomeDashboardStateCopyWithImpl<$Res>
   return _then(_HomeDashboardState(
 dashboardState: null == dashboardState ? _self.dashboardState : dashboardState // ignore: cast_nullable_to_non_nullable
 as ResultState<HomeDashboard>,establishments: null == establishments ? _self._establishments : establishments // ignore: cast_nullable_to_non_nullable
-as Map<String, String>,selectedEstablishmentId: freezed == selectedEstablishmentId ? _self.selectedEstablishmentId : selectedEstablishmentId // ignore: cast_nullable_to_non_nullable
+as Map<String, EstablishmentMembership>,selectedEstablishmentId: freezed == selectedEstablishmentId ? _self.selectedEstablishmentId : selectedEstablishmentId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

@@ -10,10 +10,13 @@ from database.models import Base, SoftDeleteMixin
 
 
 class Egreso(Base, SoftDeleteMixin, table=True):
+    """Salida física no comercial de un animal. Las ventas viven en ``ventas``."""
+
     __tablename__ = "egresos"
 
     establecimiento_id: UUID = Field(foreign_key="establecimientos.id", index=True)
-    tipo: TipoEgreso = Field(default=TipoEgreso.venta, sa_type=String, nullable=False)
+    # Sin default: el motivo de la salida siempre es una decisión explícita.
+    tipo: TipoEgreso = Field(sa_type=String, nullable=False)
     fecha: datetime = Field(sa_type=DateTime(timezone=True), nullable=False)
     consignatario_id: UUID | None = Field(default=None, foreign_key="usuarios.id")
     comprador_texto: str | None = None

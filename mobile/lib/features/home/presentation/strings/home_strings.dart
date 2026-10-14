@@ -24,6 +24,7 @@ abstract final class HomeStrings {
   /// Nombre de respaldo mientras la sesion termina de restaurarse.
   static const defaultUserName = 'Productor';
 
+  /// Etiqueta del rol en el establecimiento seleccionado.
   /// Titulo principal del tablero.
   static const title = 'Estado de la hacienda';
 
@@ -69,6 +70,9 @@ abstract final class HomeStrings {
 
   /// Accion para consultar ingresos y egresos.
   static const movements = 'Movimientos';
+
+  /// Mensaje temporal para funcionalidades planificadas en otra historia.
+  static const comingSoon = 'Próximamente';
 
   /// Etiqueta del stock vigente.
   static const activeStock = 'Stock activo';

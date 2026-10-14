@@ -31,8 +31,7 @@ abstract final class ProfileStrings {
   static const establishmentsSection = 'Establecimientos';
 
   /// Mensaje cuando la sesión no tiene establecimientos guardados.
-  static const noEstablishments =
-      'No hay establecimientos disponibles para esta cuenta.';
+  static const noEstablishments = 'No hay establecimientos disponibles para esta cuenta.';
 
   /// Etiqueta del número RENSPA.
   static const renspaLabel = 'RENSPA';
@@ -63,14 +62,4 @@ abstract final class ProfileStrings {
 
   /// Valor usado brevemente mientras la sesion termina de restaurarse.
   static const emptyCredential = '—';
-
-  /// Devuelve el nombre visible de un rol persistido.
-  static String roleName(String role) {
-    return switch (role) {
-      'admin' => 'Administrador',
-      'encargado' => 'Encargado',
-      'operario' => 'Operario',
-      _ => 'Sin rol asignado',
-    };
-  }
 }
