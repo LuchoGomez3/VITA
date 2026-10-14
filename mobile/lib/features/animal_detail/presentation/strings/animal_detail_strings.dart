@@ -60,7 +60,7 @@ class AnimalDetailStrings {
   static const aiWeighingMethod = 'Estimación por IA';
 
   /// Titulo del grafico de peso.
-  static const weightChartTitle = 'Evolución de Peso';
+  static const weightChartTitle = 'Evolución del peso';
 
   /// Mensaje mostrado cuando el animal todavia no tiene pesajes registrados.
   static const noWeightHistory = 'Todavía no hay pesajes registrados.';
@@ -109,4 +109,83 @@ class AnimalDetailStrings {
 
   /// Valor mostrado cuando el backend/cache aun no tiene un dato.
   static const noDataValue = 'Sin dato';
+
+  /// Pestañas de la ficha (diseño "Ficha · General").
+  static const generalTab = 'General';
+
+  /// Pestaña de genealogía.
+  static const genealogyTab = 'Genealogía';
+
+  /// Pestaña de pesajes.
+  static const weighingsTab = 'Pesajes';
+
+  /// Pestaña de sanidad.
+  static const healthTab = 'Sanidad';
+
+  /// Pestaña de movimientos (abreviada como en el diseño).
+  static const movementsTab = 'Movim.';
+
+  /// Subtítulo de la cabecera: categoría y edad.
+  static String headerSubtitle(String category, String age) =>
+      [category, age].where((part) => part.isNotEmpty).join(' · ');
+
+  /// Título de la sección de identificación.
+  static const identificationSection = 'Identificación';
+
+  /// Fila RFID.
+  static const rfidLabel = 'RFID';
+
+  /// Fila caravana visual.
+  static const visualTagLabel = 'Caravana visual';
+
+  /// Fila potrero actual.
+  static const currentLotLabel = 'Potrero actual';
+
+  /// Fila de edad calculada.
+  static const calculatedAgeLabel = 'Edad calculada';
+
+  /// Fila de fecha de nacimiento (diseño, en minúscula).
+  static const birthDateRowLabel = 'Fecha nacimiento';
+
+  /// Animal sin potrero asignado.
+  static const noLot = 'Sin potrero';
+
+  /// Placeholder de la foto del animal.
+  static const photoPlaceholder = 'Sin foto del animal';
+
+  /// Pestaña que todavía no está desarrollada.
+  static const comingSoonTitle = 'Próximamente';
+
+  /// Genealogía todavía no desarrollada.
+  static const genealogyComingSoon = 'Acá vas a ver el árbol genealógico del animal: padres y abuelos.';
+
+  /// Sanidad todavía no desarrollada.
+  static const healthComingSoon = 'Acá vas a ver los tratamientos y vacunaciones del animal.';
+
+  /// Título del histórico de pesajes.
+  static String weighingHistoryTitle(int count) => 'Histórico · $count ${count == 1 ? 'pesaje' : 'pesajes'}';
+
+  /// Fecha del último pesaje en la tarjeta de evolución.
+  static String lastWeighing(String date) => 'Último: $date';
+
+  /// Chip de ganancia diaria.
+  static String dailyGain(String value) => 'GPD $value kg/día';
+
+  /// Botón flotante para registrar un pesaje del animal.
+  static const newWeighingTooltip = 'Registrar pesaje';
+
+  /// Título de la hoja para elegir cómo pesar.
+  static const weighingMethodSheetTitle = '¿Cómo querés pesarlo?';
+
+  /// Opción de pesaje con balanza Bluetooth.
+  static const weighingWithBluetooth = 'Balanza Bluetooth';
+
+  /// Opción de pesaje manual.
+  static const weighingManual = 'Carga manual';
+
+  /// Opción de pesaje por foto.
+  static const weighingWithPhoto = 'Foto (Pesaje IA)';
+
+  /// Error al abrir la cámara.
+  static const cameraError = 'No se pudo abrir la cámara. Revisá los permisos e intentá nuevamente.';
 }

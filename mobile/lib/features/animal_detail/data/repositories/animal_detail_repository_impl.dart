@@ -1,6 +1,7 @@
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -16,15 +17,18 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
     required AnimalBrickStore brickStore,
     required CategoriaBrickStore categoriaBrickStore,
     required PesajeBrickStore pesajeBrickStore,
+    required LotBrickStore lotBrickStore,
     required AnimalDetailRemoteDataSource remoteDataSource,
   }) : _brickStore = brickStore,
        _categoriaBrickStore = categoriaBrickStore,
        _pesajeBrickStore = pesajeBrickStore,
+       _lotBrickStore = lotBrickStore,
        _remoteDataSource = remoteDataSource;
 
   final AnimalBrickStore _brickStore;
   final CategoriaBrickStore _categoriaBrickStore;
   final PesajeBrickStore _pesajeBrickStore;
+  final LotBrickStore _lotBrickStore;
   final AnimalDetailRemoteDataSource _remoteDataSource;
 
   @override
@@ -101,9 +105,13 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
     );
     final latestWeight = weightHistory.lastOrNull;
     final categoryName = localCategorias.where((category) => category.localId == detail.categoryId).firstOrNull?.name;
+    // Los animales que bajan del backend llegan solo con el id del potrero.
+    final localLots = await _lotBrickStore.getLocalLots(detail.establishmentId);
+    final lotName = localLots.where((lot) => lot.localId == detail.lotId).firstOrNull?.name;
 
     return detail.copyWith(
       categoryName: categoryName ?? detail.categoryName,
+      lotName: lotName ?? detail.lotName,
       weightHistory: weightHistory,
       currentWeight: latestWeight?.weightKg ?? detail.currentWeight,
       weighingMethod: latestWeight?.method ?? detail.weighingMethod,
