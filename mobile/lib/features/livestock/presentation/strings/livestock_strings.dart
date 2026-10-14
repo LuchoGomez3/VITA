@@ -3,6 +3,38 @@ abstract final class LivestockStrings {
   /// Titulo de la pantalla.
   static const title = 'Hacienda';
 
+  /// Titulo de la lista de animales (diseño "Lista de animales").
+  static const animalListTitle = 'Animales';
+
+  /// Placeholder del buscador de la lista.
+  static const searchHint = 'Buscar caravana, RFID o raza…';
+
+  /// Chip que muestra todos los animales, con el total.
+  static String allAnimalsChip(int count) => 'Todos · $count';
+
+  /// Botón flotante para dar de alta un animal.
+  static const newAnimalButton = 'Nuevo animal';
+
+  /// Lista vacía: todavía no hay animales guardados en el celular.
+  static const emptyTitle = 'Todavía no hay animales';
+
+  /// Explicación de la lista vacía.
+  static const emptyDescription =
+      'Registrá el primero con "Nuevo animal". Si ya cargaste animales en otro '
+      'dispositivo, aparecen acá después de sincronizar.';
+
+  /// Sin resultados para la búsqueda o el filtro.
+  static const noResults = 'Ningún animal coincide con la búsqueda.';
+
+  /// Animal sin potrero asignado.
+  static const noLot = 'Sin potrero';
+
+  /// Animal sin pesajes registrados.
+  static const noWeight = 'Sin pesaje';
+
+  /// Opción del selector para ver los animales de todos los establecimientos.
+  static const allEstablishments = 'Todos';
+
   /// Titulo del modulo de registro.
   static const animalRegisterTitle = 'Registrar animal';
 
