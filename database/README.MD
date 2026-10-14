@@ -88,7 +88,8 @@ lógica entre tablas y vive en dos triggers:
   `deleted_at`. Comprueba que la categoría admita el sexo y, para `vacia`/`prenada`, que
   esté habilitada, pero solo si el animal queda vivo: un animal borrado no se valida
   contra su categoría, y restaurarlo lo revalida. Al **asignar** la categoría rechaza
-  también una borrada o de otro establecimiento, esté vivo o no el animal.
+  también una borrada, esté vivo o no el animal. El catálogo es global (ADR-0010): no hay
+  categorías de otro establecimiento.
 - `trg_categorias_reglas_compatibles` (`validar_reglas_categoria()`) rechaza cambiar
   `sexo_permitido` o `permite_estado_reproductivo` si deja animales vivos incompatibles.
 
@@ -103,16 +104,19 @@ Los triggers BEFORE corren antes que el WITH CHECK del RLS, así que no pueden l
 que quien escribe no ve, porque su mensaje de error las revelaría.
 `validar_categoria_animal()` es `security invoker`: el backend (rol `postgres`, que no
 pasa por RLS) valida todo, y un cliente directo recibe siempre el rechazo del RLS (42501),
-sea la categoría ajena, inexistente o incompatible. `validar_reglas_categoria()` es
+sea la categoría inexistente o incompatible. `validar_reglas_categoria()` es
 `security definer` porque tiene que contar todos los animales de la categoría. No filtra
 información: solo corre en el UPDATE de filas que el RLS ya dejó actualizar.
 `create_all` las instala en Postgres; en producción las
-crea la migración `20261001_02` (espejo: `backend/scripts/agregar_reglas_reproductivas_categorias.sql`).
+crea la migración `20261001_02` (espejo: `backend/scripts/agregar_reglas_reproductivas_categorias.sql`)
+y `20261014_01` reemplaza `validar_categoria_animal()` al pasar al catálogo global
+(espejo: `backend/scripts/catalogo_global_categorias.sql`).
 Sus tests corren contra un Postgres efímero (`VITA_TEST_POSTGRES_URL`, probados con 16;
 Supabase usa 17).
 
-El catálogo real son las seis categorías del front, globales (`establecimiento_id` null)
-y con los mismos UUIDs que usa mobile:
+El catálogo real son las seis categorías del front, globales y con los mismos UUIDs que
+usa mobile. Desde `20261014_01` (ADR-0010) `categorias` no tiene `establecimiento_id`: el
+catálogo es igual para todos y la API solo lo lee:
 
 - Ternera, `hembra`.
 - Ternero, `macho`.
