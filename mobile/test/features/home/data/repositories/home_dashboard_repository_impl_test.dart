@@ -11,6 +11,7 @@ import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/home/data/repositories/home_dashboard_repository_impl.dart';
 import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
+import 'package:frontend_mayoral/features/home/domain/use_cases/get_home_dashboard_use_case.dart';
 
 void main() {
   test('stock metrics include only active animals', () async {
@@ -26,10 +27,13 @@ void main() {
       pesajeStore: const _FakeWeighingStore(),
       secureStorage: _FakeSecureStorage(),
       operatingExpenseStore: const _FakeExpenseStore(),
+    );
+    final useCase = GetHomeDashboardUseCase(
+      repository,
       now: () => DateTime.utc(2026, 9, 29),
     );
 
-    final result = await repository.getDashboard(
+    final result = await useCase(
       establishmentIds: {'establishment-id'},
     );
 
@@ -38,6 +42,7 @@ void main() {
     expect(dashboard.activeAnimals, 1);
     expect(dashboard.categories.single.animals, 1);
     expect(dashboard.lots.single.animals, 1);
+    expect(dashboard.monthlyRemovals, 3);
   });
 }
 
@@ -62,6 +67,10 @@ BrickAnimalModel _animal(
     weighingMethod: BrickAnimalWeighingMethod.manual,
     weighingDate: timestamp,
     productiveStatus: status,
+    productiveStatusChangedAt:
+        status == BrickAnimalProductiveStatus.active || status == BrickAnimalProductiveStatus.unknown
+        ? null
+        : DateTime.utc(2026, 9, 15),
     createdAt: timestamp,
     updatedAt: timestamp,
   );
@@ -76,7 +85,25 @@ class _FakeAnimalStore implements AnimalBrickStore {
   Future<List<BrickAnimalModel>> getLocalAnimals() async => animals;
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) => throw StateError('Unexpected upsertAnimal call');
+
+  @override
+  Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) => throw StateError('Unexpected cacheAnimal call');
+
+  @override
+  Future<BrickAnimalModel?> getAnimalById(String animalId) => throw StateError('Unexpected getAnimalById call');
+
+  @override
+  Future<BrickAnimalModel?> getAnimalByRfidTagNumber({
+    required String rfidTagNumber,
+    required String establishmentId,
+  }) => throw StateError('Unexpected getAnimalByRfidTagNumber call');
+
+  @override
+  Future<void> pullRemoteAnimals(String establishmentId) => throw StateError('Unexpected pullRemoteAnimals call');
+
+  @override
+  Future<void> retryRejectedAnimal(String animalId) => throw StateError('Unexpected retryRejectedAnimal call');
 }
 
 class _FakeCategoryStore implements CategoriaBrickStore {
@@ -86,7 +113,7 @@ class _FakeCategoryStore implements CategoriaBrickStore {
   Future<List<BrickCategoriaModel>> getLocalCategorias() async => const [];
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Future<void> pullRemoteCategorias() => throw StateError('Unexpected pullRemoteCategorias call');
 }
 
 class _FakeWeighingStore implements PesajeBrickStore {
@@ -96,7 +123,23 @@ class _FakeWeighingStore implements PesajeBrickStore {
   Future<List<BrickPesajeModel>> getLocalPesajes() async => const [];
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Future<List<BrickPesajeModel>> getLocalPesajesByAnimal(String animalId) =>
+      throw StateError('Unexpected getLocalPesajesByAnimal call');
+
+  @override
+  Future<List<BrickPesajeModel>> loadPesajesByAnimal(
+    String establishmentId,
+    String animalId,
+  ) => throw StateError('Unexpected loadPesajesByAnimal call');
+
+  @override
+  Future<void> pullRemotePesajes(
+    String establishmentId, {
+    String? animalId,
+  }) => throw StateError('Unexpected pullRemotePesajes call');
+
+  @override
+  Future<BrickPesajeModel> upsertPesaje(BrickPesajeModel pesaje) => throw StateError('Unexpected upsertPesaje call');
 }
 
 class _FakeExpenseStore implements OperatingExpenseBrickStore {
@@ -108,7 +151,17 @@ class _FakeExpenseStore implements OperatingExpenseBrickStore {
   ) async => const [];
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Future<void> pullRemoteExpenses(String establishmentId) => throw StateError('Unexpected pullRemoteExpenses call');
+
+  @override
+  Future<void> reconcileRemoteExpenses(
+    Iterable<BrickOperatingExpenseModel> expenses,
+  ) => throw StateError('Unexpected reconcileRemoteExpenses call');
+
+  @override
+  Future<BrickOperatingExpenseModel> upsertExpense(
+    BrickOperatingExpenseModel expense,
+  ) => throw StateError('Unexpected upsertExpense call');
 }
 
 class _FakeSecureStorage implements SecureStorageService {
