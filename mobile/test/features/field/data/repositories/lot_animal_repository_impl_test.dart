@@ -67,5 +67,23 @@ class _FakeAnimalStore implements AnimalBrickStore {
   Future<List<BrickAnimalModel>> getLocalAnimals() async => animals;
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) => throw StateError('Unexpected upsertAnimal call');
+
+  @override
+  Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) => throw StateError('Unexpected cacheAnimal call');
+
+  @override
+  Future<BrickAnimalModel?> getAnimalById(String animalId) => throw StateError('Unexpected getAnimalById call');
+
+  @override
+  Future<BrickAnimalModel?> getAnimalByRfidTagNumber({
+    required String rfidTagNumber,
+    required String establishmentId,
+  }) => throw StateError('Unexpected getAnimalByRfidTagNumber call');
+
+  @override
+  Future<void> pullRemoteAnimals(String establishmentId) => throw StateError('Unexpected pullRemoteAnimals call');
+
+  @override
+  Future<void> retryRejectedAnimal(String animalId) => throw StateError('Unexpected retryRejectedAnimal call');
 }

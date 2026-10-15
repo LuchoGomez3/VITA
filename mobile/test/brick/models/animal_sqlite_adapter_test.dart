@@ -2,10 +2,11 @@ import 'package:brick_sqlite/brick_sqlite.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/brick.g.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
   test('SQLite persists productive status as stable text', () async {
-    final provider = _FakeSqliteProvider();
+    final provider = _sqliteProvider();
     final adapter = BrickAnimalModelAdapter();
     final row = await adapter.toSqlite(
       _animal(BrickAnimalProductiveStatus.sold),
@@ -22,7 +23,7 @@ void main() {
   });
 
   test('SQLite reads pre-migration rows as active', () async {
-    final provider = _FakeSqliteProvider();
+    final provider = _sqliteProvider();
     final adapter = BrickAnimalModelAdapter();
     final row =
         await adapter.toSqlite(
@@ -52,9 +53,46 @@ void main() {
       BrickAnimalProductiveStatus.active,
     );
   });
+
+  test('copyWith can clear the authoritative productive status date', () {
+    final changedAt = DateTime.utc(2026, 10, 15);
+    final animal = _animal(
+      BrickAnimalProductiveStatus.sold,
+      productiveStatusChangedAt: changedAt,
+    );
+
+    expect(animal.copyWith().productiveStatusChangedAt, changedAt);
+    expect(
+      animal.copyWith(productiveStatusChangedAt: null).productiveStatusChangedAt,
+      isNull,
+    );
+  });
+
+  test('SQLite preserves the authoritative productive status date', () async {
+    final provider = _sqliteProvider();
+    final adapter = BrickAnimalModelAdapter();
+    final changedAt = DateTime.utc(2026, 10, 15, 12);
+    final row = await adapter.toSqlite(
+      _animal(
+        BrickAnimalProductiveStatus.removed,
+        productiveStatusChangedAt: changedAt,
+      ),
+      provider: provider,
+    );
+
+    final restored = await adapter.fromSqlite(
+      {...row, '_brick_id': 3},
+      provider: provider,
+    );
+
+    expect(restored.productiveStatusChangedAt, changedAt);
+  });
 }
 
-BrickAnimalModel _animal(BrickAnimalProductiveStatus status) {
+BrickAnimalModel _animal(
+  BrickAnimalProductiveStatus status, {
+  DateTime? productiveStatusChangedAt,
+}) {
   final timestamp = DateTime.utc(2026, 9, 29);
   return BrickAnimalModel(
     localId: 'animal-id',
@@ -70,12 +108,14 @@ BrickAnimalModel _animal(BrickAnimalProductiveStatus status) {
     weighingMethod: BrickAnimalWeighingMethod.manual,
     weighingDate: timestamp,
     productiveStatus: status,
+    productiveStatusChangedAt: productiveStatusChangedAt,
     createdAt: timestamp,
     updatedAt: timestamp,
   );
 }
 
-class _FakeSqliteProvider implements SqliteProvider {
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
+SqliteProvider _sqliteProvider() => SqliteProvider(
+  inMemoryDatabasePath,
+  databaseFactory: databaseFactoryFfi,
+  modelDictionary: sqliteModelDictionary,
+);

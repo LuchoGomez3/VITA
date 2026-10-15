@@ -87,6 +87,10 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
         );
         await _movementStore.pushPendingMovements(establishmentId);
         _logInitialSyncStep(
+          'reconciling animals after lot movements for establishment=$establishmentId',
+        );
+        await _animalStore.pullRemoteAnimals(establishmentId);
+        _logInitialSyncStep(
           'pulling lot movements for establishment=$establishmentId',
         );
         await _movementStore.pullRemoteMovements(establishmentId);

@@ -249,6 +249,7 @@ class _FakeAnimalDetailRemoteDataSource extends AnimalDetailRemoteDataSource {
       coat: null,
       observations: null,
       productiveStatus: 'vendido',
+      productiveStatusChangedAt: DateTime(2025, 3, 14),
       createdAt: DateTime(2025, 3, 14),
       updatedAt: DateTime(2025, 3, 14),
     );

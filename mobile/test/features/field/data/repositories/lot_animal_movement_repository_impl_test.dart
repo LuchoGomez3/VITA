@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
 import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
@@ -31,7 +32,11 @@ void main() {
       offlineQueuePath: queuePath,
       localDatabaseFactory: databaseFactoryFfi,
     );
-    BrickAnimalLotMovementStore.configure(AppBrickRepository.instance);
+    BrickAnimalStore.configure(AppBrickRepository.instance);
+    BrickAnimalLotMovementStore.configure(
+      AppBrickRepository.instance,
+      animalStore: BrickAnimalStore.instance,
+    );
     movementStore = BrickAnimalLotMovementStore.instance;
   });
 
@@ -61,9 +66,38 @@ void main() {
       expect(result, isA<Failure<LotAnimalMovement>>());
     });
   }
+
+  test('movement pending state stays on the movement aggregate', () async {
+    final movementStore = _CapturingMovementStore();
+    final repository = LotAnimalMovementRepositoryImpl(
+      animalStore: _FakeAnimalStore(
+        _animal(
+          BrickAnimalProductiveStatus.active,
+          syncStatus: BrickAnimalSyncStatus.synchronized,
+        ),
+      ),
+      lotStore: const _FakeLotStore(),
+      movementStore: movementStore,
+    );
+
+    final result = await repository.moveAnimals(_movement());
+
+    expect(result, isA<Success<LotAnimalMovement>>());
+    expect(
+      movementStore.savedAnimals.single.syncStatus,
+      BrickAnimalSyncStatus.synchronized,
+    );
+    expect(
+      movementStore.savedMovement?.syncStatus,
+      BrickAnimalLotMovementSyncStatus.pending,
+    );
+  });
 }
 
-BrickAnimalModel _animal(BrickAnimalProductiveStatus status) {
+BrickAnimalModel _animal(
+  BrickAnimalProductiveStatus status, {
+  BrickAnimalSyncStatus syncStatus = BrickAnimalSyncStatus.pending,
+}) {
   final timestamp = DateTime.utc(2026, 9, 29);
   return BrickAnimalModel(
     localId: 'animal-id',
@@ -79,9 +113,36 @@ BrickAnimalModel _animal(BrickAnimalProductiveStatus status) {
     weighingMethod: BrickAnimalWeighingMethod.manual,
     weighingDate: timestamp,
     productiveStatus: status,
+    syncStatus: syncStatus,
     createdAt: timestamp,
     updatedAt: timestamp,
   );
+}
+
+class _CapturingMovementStore implements AnimalLotMovementBrickStore {
+  List<BrickAnimalModel> savedAnimals = const [];
+  BrickAnimalLotMovementModel? savedMovement;
+
+  @override
+  Future<BrickAnimalLotMovementModel> saveWithAnimals({
+    required List<BrickAnimalModel> animals,
+    required BrickAnimalLotMovementModel movement,
+  }) async {
+    savedAnimals = animals;
+    savedMovement = movement;
+    return movement;
+  }
+
+  @override
+  Future<BrickAnimalLotMovementModel> save(
+    BrickAnimalLotMovementModel movement,
+  ) => throw StateError('Unexpected save call');
+
+  @override
+  Future<void> pullRemoteMovements(String establishmentId) => throw StateError('Unexpected pullRemoteMovements call');
+
+  @override
+  Future<void> pushPendingMovements(String establishmentId) => throw StateError('Unexpected pushPendingMovements call');
 }
 
 LotAnimalMovement _movement() {
@@ -108,7 +169,25 @@ class _FakeAnimalStore implements AnimalBrickStore {
   Future<List<BrickAnimalModel>> getLocalAnimals() async => [animal];
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) => throw StateError('Unexpected upsertAnimal call');
+
+  @override
+  Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) => throw StateError('Unexpected cacheAnimal call');
+
+  @override
+  Future<BrickAnimalModel?> getAnimalById(String animalId) => throw StateError('Unexpected getAnimalById call');
+
+  @override
+  Future<BrickAnimalModel?> getAnimalByRfidTagNumber({
+    required String rfidTagNumber,
+    required String establishmentId,
+  }) => throw StateError('Unexpected getAnimalByRfidTagNumber call');
+
+  @override
+  Future<void> pullRemoteAnimals(String establishmentId) => throw StateError('Unexpected pullRemoteAnimals call');
+
+  @override
+  Future<void> retryRejectedAnimal(String animalId) => throw StateError('Unexpected retryRejectedAnimal call');
 }
 
 class _FakeLotStore implements LotBrickStore {
@@ -131,5 +210,14 @@ class _FakeLotStore implements LotBrickStore {
   }
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Future<BrickLotModel> upsertLocalLot(BrickLotModel lot) => throw StateError('Unexpected upsertLocalLot call');
+
+  @override
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId) => throw StateError('Unexpected getLocalLots call');
+
+  @override
+  Future<void> pullRemoteLots(String establishmentId) => throw StateError('Unexpected pullRemoteLots call');
+
+  @override
+  Future<void> pushPendingLots(String establishmentId) => throw StateError('Unexpected pushPendingLots call');
 }

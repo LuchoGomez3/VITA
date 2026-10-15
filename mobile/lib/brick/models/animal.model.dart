@@ -3,6 +3,7 @@ import 'package:brick_rest/brick_rest.dart';
 import 'package:brick_sqlite/brick_sqlite.dart' show Column, Sqlite;
 
 const _unchangedSyncErrorCode = Object();
+const _unchangedProductiveStatusChangedAt = Object();
 
 /// Sexo persistido localmente por Brick.
 ///
@@ -167,6 +168,7 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
     this.coat,
     this.observations,
     this.productiveStatus = BrickAnimalProductiveStatus.unknown,
+    this.productiveStatusChangedAt,
     this.syncStatus = BrickAnimalSyncStatus.pending,
     this.syncErrorCode,
   });
@@ -297,6 +299,17 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   )
   final BrickAnimalProductiveStatus productiveStatus;
 
+  /// Momento autoritativo en que cambio por ultima vez el estado productivo.
+  ///
+  /// Permite atribuir ventas, muertes y bajas al periodo correcto sin confundir
+  /// el cambio con una edicion posterior de cualquier otro dato del animal.
+  @Rest(
+    name: 'estado_actualizado_en',
+    ignoreTo: true,
+    fromGenerator: 'brickNullableDateTimeFromBackend(%DATA_PROPERTY%)',
+  )
+  final DateTime? productiveStatusChangedAt;
+
   /// Estado local de sincronizacion.
   ///
   /// No se envia al backend: representa el estado de la cola/local sync en este
@@ -332,6 +345,7 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
     String? lotId,
     String? lotName,
     BrickAnimalProductiveStatus? productiveStatus,
+    Object? productiveStatusChangedAt = _unchangedProductiveStatusChangedAt,
   }) {
     final nextSyncErrorCode =
         identical(
@@ -340,6 +354,13 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
         )
         ? this.syncErrorCode
         : syncErrorCode as String?;
+    final nextProductiveStatusChangedAt =
+        identical(
+          productiveStatusChangedAt,
+          _unchangedProductiveStatusChangedAt,
+        )
+        ? this.productiveStatusChangedAt
+        : productiveStatusChangedAt as DateTime?;
 
     return BrickAnimalModel(
       localId: localId,
@@ -365,6 +386,7 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
       coat: coat,
       observations: observations,
       productiveStatus: productiveStatus ?? this.productiveStatus,
+      productiveStatusChangedAt: nextProductiveStatusChangedAt,
       syncErrorCode: nextSyncErrorCode,
     )..primaryKey = primaryKey;
   }
@@ -486,4 +508,12 @@ DateTime brickDateTimeFromBackend(Object? value) {
   }
 
   return DateTime.fromMillisecondsSinceEpoch(0);
+}
+
+/// Convierte timestamps opcionales del backend sin inventar una fecha.
+DateTime? brickNullableDateTimeFromBackend(Object? value) {
+  if (value is String && value.isNotEmpty) {
+    return DateTime.parse(value);
+  }
+  return null;
 }

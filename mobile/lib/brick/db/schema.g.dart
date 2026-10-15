@@ -13,6 +13,7 @@ part '20260910133325.migration.dart';
 part '20260917120957.migration.dart';
 part '20261002183516.migration.dart';
 part '20261015043521.migration.dart';
+part '20261015133521.migration.dart';
 
 /// All intelligently-generated migrations from all `@Migratable` classes on disk
 final migrations = <Migration>{
@@ -28,11 +29,12 @@ final migrations = <Migration>{
   const Migration20260917120957(),
   const Migration20261002183516(),
   const Migration20261015043521(),
+  const Migration20261015133521(),
 };
 
 /// A consumable database structure including the latest generated migration.
 final schema = Schema(
-  20261015043521,
+  20261015133521,
   generatorVersion: 1,
   tables: <SchemaTable>{
     SchemaTable(
@@ -64,6 +66,7 @@ final schema = Schema(
         SchemaColumn('coat', Column.varchar),
         SchemaColumn('observations', Column.varchar),
         SchemaColumn('productive_status', Column.varchar),
+        SchemaColumn('productive_status_changed_at', Column.datetime),
         SchemaColumn('sync_status', Column.integer),
         SchemaColumn('sync_error_code', Column.varchar),
         SchemaColumn('created_at', Column.datetime),

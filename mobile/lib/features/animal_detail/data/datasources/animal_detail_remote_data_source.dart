@@ -107,6 +107,7 @@ class AnimalDetailBackendDto {
     required this.coat,
     required this.observations,
     required this.productiveStatus,
+    required this.productiveStatusChangedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -128,6 +129,9 @@ class AnimalDetailBackendDto {
       coat: json['pelaje'] as String?,
       observations: json['observaciones'] as String?,
       productiveStatus: json['estado'] as String?,
+      productiveStatusChangedAt: _nullableDateTime(
+        json['estado_actualizado_en'],
+      ),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -175,9 +179,16 @@ class AnimalDetailBackendDto {
   /// Estado productivo con el codigo textual definido por backend.
   final String? productiveStatus;
 
+  /// Momento autoritativo del ultimo cambio de estado productivo.
+  final DateTime? productiveStatusChangedAt;
+
   /// Fecha de creacion.
   final DateTime createdAt;
 
   /// Fecha de actualizacion.
   final DateTime updatedAt;
+}
+
+DateTime? _nullableDateTime(Object? value) {
+  return value is String && value.isNotEmpty ? DateTime.parse(value) : null;
 }
