@@ -22,6 +22,7 @@ from api.modules.establecimientos.repository import UsuarioEstablecimientoReposi
 from api.modules.lotes.models import Lote
 from api.modules.lotes.repository import LoteRepository
 from api.modules.movimientos.exceptions import (
+    AnimalesNoActivosError,
     AnimalesNoPertenecenAlLoteOrigenError,
     LoteDestinoNoDisponibleError,
     LoteOrigenNoDisponibleError,
@@ -31,7 +32,7 @@ from api.modules.movimientos.models import MovimientoLote
 from api.modules.movimientos.repository import MovimientoLoteRepository
 from api.modules.movimientos.schemas import MovimientoLoteCreate, MovimientoLoteRead
 from api.modules.usuarios.models import Usuario
-from api.shared.enums import EstadoLote
+from api.shared.enums import EstadoAnimal, EstadoLote
 from api.shared.exceptions import EstablecimientoNoAutorizadoError
 from api.shared.sync import as_utc
 
@@ -105,7 +106,11 @@ class MovimientoLoteService:
         "los que se pueda" dejaría al cliente y al servidor con estados distintos
         sin que nadie se entere.
         """
-        animales = await self.repository.list_animales_por_ids(data.animal_ids)
+        # El bloqueo evita que una baja concurrente se intercale entre esta
+        # validacion y la escritura del nuevo lote dentro de la transaccion.
+        animales = await self.repository.list_animales_por_ids(
+            data.animal_ids, for_update=True
+        )
         por_id = {animal.id: animal for animal in animales}
 
         invalidos = [
@@ -118,6 +123,14 @@ class MovimientoLoteService:
         ]
         if invalidos:
             raise AnimalesNoPertenecenAlLoteOrigenError(invalidos)
+
+        inactivos = [
+            animal_id
+            for animal_id in data.animal_ids
+            if por_id[animal_id].estado != EstadoAnimal.activo
+        ]
+        if inactivos:
+            raise AnimalesNoActivosError(inactivos)
 
         return [por_id[animal_id] for animal_id in data.animal_ids]
 

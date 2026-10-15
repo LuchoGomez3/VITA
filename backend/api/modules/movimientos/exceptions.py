@@ -6,7 +6,7 @@ Los ``code`` son parte del contrato con el cliente offline (Brick los lee de
 
 from uuid import UUID
 
-from api.shared.exceptions import NotFoundError, ValidationError
+from api.shared.exceptions import ConflictError, NotFoundError, ValidationError
 
 
 class MovimientoLoteInvalidoError(ValidationError):
@@ -50,6 +50,18 @@ class AnimalesNoPertenecenAlLoteOrigenError(ValidationError):
         super().__init__(
             "Algunos animales no están disponibles en el lote de origen",
             details={"animal_ids": [str(a) for a in animal_ids]},
+        )
+
+
+class AnimalesNoActivosError(ConflictError):
+    """El estado autoritativo impide realizar una operacion de campo."""
+
+    code = "animales_no_activos"
+
+    def __init__(self, animal_ids: list[UUID]) -> None:
+        super().__init__(
+            "Algunos animales ya no están activos",
+            details={"animal_ids": [str(animal_id) for animal_id in animal_ids]},
         )
 
 

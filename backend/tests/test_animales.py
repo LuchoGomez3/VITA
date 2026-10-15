@@ -527,6 +527,7 @@ async def test_put_actualiza_multiples_campos(auth_client, establecimiento_con_l
     assert data["fecha_nacimiento"] == "2023-05-05"
     assert data["pelaje"] == "colorado"
     assert data["estado"] == "vendido"
+    assert data["estado_actualizado_en"].startswith("2025-06-01T00:00:00")
     assert data["deleted_at"] is not None
 
 
