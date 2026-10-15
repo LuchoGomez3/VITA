@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/restore_session_use_case.dart';
@@ -14,17 +15,19 @@ part 'auth_session_state.dart';
 ///
 /// Su responsabilidad es pequena pero central: decidir si la app esta
 /// restaurando sesion, autenticada o sin sesion. No hace llamadas de UI ni sabe
-/// de rutas; solo coordina casos de uso de auth y expone estado para que el
-/// router pueda reaccionar.
+/// de rutas; coordina casos de uso y dispara una actualizacion no bloqueante
+/// despues de restaurar para reconciliar la cache con otros dispositivos.
 class AuthSessionCubit extends Cubit<AuthSessionState> {
   /// Crea el cubit con los casos de uso necesarios para la sesion global.
   AuthSessionCubit({
     required RestoreSessionUseCase restoreSessionUseCase,
     required SignOutUseCase signOutUseCase,
+    PreparePostAuthentication? refreshOfflineData,
     Stream<void>? authRejections,
     void Function()? onClose,
   }) : _restoreSessionUseCase = restoreSessionUseCase,
        _signOutUseCase = signOutUseCase,
+       _refreshOfflineData = refreshOfflineData,
        _onClose = onClose,
        super(const AuthSessionState.checking()) {
     _authRejectionSubscription = authRejections?.listen((_) {
@@ -34,6 +37,7 @@ class AuthSessionCubit extends Cubit<AuthSessionState> {
 
   final RestoreSessionUseCase _restoreSessionUseCase;
   final SignOutUseCase _signOutUseCase;
+  final PreparePostAuthentication? _refreshOfflineData;
   final void Function()? _onClose;
   StreamSubscription<void>? _authRejectionSubscription;
   bool _isSigningOut = false;
@@ -46,6 +50,8 @@ class AuthSessionCubit extends Cubit<AuthSessionState> {
     switch (result) {
       case Success<AuthSession>(:final data):
         emit(AuthSessionState.authenticated(data));
+        final refreshOfflineData = _refreshOfflineData;
+        if (refreshOfflineData != null) unawaited(refreshOfflineData());
       case Failure<AuthSession>():
         emit(const AuthSessionState.unauthenticated());
     }

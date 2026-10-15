@@ -34,7 +34,7 @@ class HomeDashboardContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: context.read<HomeDashboardCubit>().load,
+      onRefresh: context.read<HomeDashboardCubit>().refresh,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.sm,

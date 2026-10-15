@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$HomeDashboardState {
 
- ResultState<HomeDashboard> get dashboardState; Map<String, EstablishmentMembership> get establishments; String? get selectedEstablishmentId;
+ ResultState<HomeDashboard> get dashboardState; Map<String, EstablishmentMembership> get establishments; bool get isRefreshing; DomainException? get refreshError; String? get selectedEstablishmentId;
 /// Create a copy of HomeDashboardState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $HomeDashboardStateCopyWith<HomeDashboardState> get copyWith => _$HomeDashboardS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is HomeDashboardState&&(identical(other.dashboardState, dashboardState) || other.dashboardState == dashboardState)&&const DeepCollectionEquality().equals(other.establishments, establishments)&&(identical(other.selectedEstablishmentId, selectedEstablishmentId) || other.selectedEstablishmentId == selectedEstablishmentId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is HomeDashboardState&&(identical(other.dashboardState, dashboardState) || other.dashboardState == dashboardState)&&const DeepCollectionEquality().equals(other.establishments, establishments)&&(identical(other.isRefreshing, isRefreshing) || other.isRefreshing == isRefreshing)&&(identical(other.refreshError, refreshError) || other.refreshError == refreshError)&&(identical(other.selectedEstablishmentId, selectedEstablishmentId) || other.selectedEstablishmentId == selectedEstablishmentId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,dashboardState,const DeepCollectionEquality().hash(establishments),selectedEstablishmentId);
+int get hashCode => Object.hash(runtimeType,dashboardState,const DeepCollectionEquality().hash(establishments),isRefreshing,refreshError,selectedEstablishmentId);
 
 @override
 String toString() {
-  return 'HomeDashboardState(dashboardState: $dashboardState, establishments: $establishments, selectedEstablishmentId: $selectedEstablishmentId)';
+  return 'HomeDashboardState(dashboardState: $dashboardState, establishments: $establishments, isRefreshing: $isRefreshing, refreshError: $refreshError, selectedEstablishmentId: $selectedEstablishmentId)';
 }
 
 
@@ -45,11 +45,11 @@ abstract mixin class $HomeDashboardStateCopyWith<$Res>  {
   factory $HomeDashboardStateCopyWith(HomeDashboardState value, $Res Function(HomeDashboardState) _then) = _$HomeDashboardStateCopyWithImpl;
 @useResult
 $Res call({
- ResultState<HomeDashboard> dashboardState, Map<String, EstablishmentMembership> establishments, String? selectedEstablishmentId
+ ResultState<HomeDashboard> dashboardState, Map<String, EstablishmentMembership> establishments, bool isRefreshing, DomainException? refreshError, String? selectedEstablishmentId
 });
 
 
-$ResultStateCopyWith<HomeDashboard, $Res> get dashboardState;
+$ResultStateCopyWith<HomeDashboard, $Res> get dashboardState;$DomainExceptionCopyWith<$Res>? get refreshError;
 
 }
 /// @nodoc
@@ -62,11 +62,13 @@ class _$HomeDashboardStateCopyWithImpl<$Res>
 
 /// Create a copy of HomeDashboardState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? dashboardState = null,Object? establishments = null,Object? selectedEstablishmentId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? dashboardState = null,Object? establishments = null,Object? isRefreshing = null,Object? refreshError = freezed,Object? selectedEstablishmentId = freezed,}) {
   return _then(_self.copyWith(
 dashboardState: null == dashboardState ? _self.dashboardState : dashboardState // ignore: cast_nullable_to_non_nullable
 as ResultState<HomeDashboard>,establishments: null == establishments ? _self.establishments : establishments // ignore: cast_nullable_to_non_nullable
-as Map<String, EstablishmentMembership>,selectedEstablishmentId: freezed == selectedEstablishmentId ? _self.selectedEstablishmentId : selectedEstablishmentId // ignore: cast_nullable_to_non_nullable
+as Map<String, EstablishmentMembership>,isRefreshing: null == isRefreshing ? _self.isRefreshing : isRefreshing // ignore: cast_nullable_to_non_nullable
+as bool,refreshError: freezed == refreshError ? _self.refreshError : refreshError // ignore: cast_nullable_to_non_nullable
+as DomainException?,selectedEstablishmentId: freezed == selectedEstablishmentId ? _self.selectedEstablishmentId : selectedEstablishmentId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -78,6 +80,18 @@ $ResultStateCopyWith<HomeDashboard, $Res> get dashboardState {
   
   return $ResultStateCopyWith<HomeDashboard, $Res>(_self.dashboardState, (value) {
     return _then(_self.copyWith(dashboardState: value));
+  });
+}/// Create a copy of HomeDashboardState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$DomainExceptionCopyWith<$Res>? get refreshError {
+    if (_self.refreshError == null) {
+    return null;
+  }
+
+  return $DomainExceptionCopyWith<$Res>(_self.refreshError!, (value) {
+    return _then(_self.copyWith(refreshError: value));
   });
 }
 }
@@ -161,10 +175,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<HomeDashboard> dashboardState,  Map<String, EstablishmentMembership> establishments,  String? selectedEstablishmentId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<HomeDashboard> dashboardState,  Map<String, EstablishmentMembership> establishments,  bool isRefreshing,  DomainException? refreshError,  String? selectedEstablishmentId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _HomeDashboardState() when $default != null:
-return $default(_that.dashboardState,_that.establishments,_that.selectedEstablishmentId);case _:
+return $default(_that.dashboardState,_that.establishments,_that.isRefreshing,_that.refreshError,_that.selectedEstablishmentId);case _:
   return orElse();
 
 }
@@ -182,10 +196,10 @@ return $default(_that.dashboardState,_that.establishments,_that.selectedEstablis
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<HomeDashboard> dashboardState,  Map<String, EstablishmentMembership> establishments,  String? selectedEstablishmentId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<HomeDashboard> dashboardState,  Map<String, EstablishmentMembership> establishments,  bool isRefreshing,  DomainException? refreshError,  String? selectedEstablishmentId)  $default,) {final _that = this;
 switch (_that) {
 case _HomeDashboardState():
-return $default(_that.dashboardState,_that.establishments,_that.selectedEstablishmentId);case _:
+return $default(_that.dashboardState,_that.establishments,_that.isRefreshing,_that.refreshError,_that.selectedEstablishmentId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +216,10 @@ return $default(_that.dashboardState,_that.establishments,_that.selectedEstablis
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<HomeDashboard> dashboardState,  Map<String, EstablishmentMembership> establishments,  String? selectedEstablishmentId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<HomeDashboard> dashboardState,  Map<String, EstablishmentMembership> establishments,  bool isRefreshing,  DomainException? refreshError,  String? selectedEstablishmentId)?  $default,) {final _that = this;
 switch (_that) {
 case _HomeDashboardState() when $default != null:
-return $default(_that.dashboardState,_that.establishments,_that.selectedEstablishmentId);case _:
+return $default(_that.dashboardState,_that.establishments,_that.isRefreshing,_that.refreshError,_that.selectedEstablishmentId);case _:
   return null;
 
 }
@@ -217,7 +231,7 @@ return $default(_that.dashboardState,_that.establishments,_that.selectedEstablis
 
 
 class _HomeDashboardState implements HomeDashboardState {
-  const _HomeDashboardState({this.dashboardState = const ResultState<HomeDashboard>.initial(), final  Map<String, EstablishmentMembership> establishments = const <String, EstablishmentMembership>{}, this.selectedEstablishmentId}): _establishments = establishments;
+  const _HomeDashboardState({this.dashboardState = const ResultState<HomeDashboard>.initial(), final  Map<String, EstablishmentMembership> establishments = const <String, EstablishmentMembership>{}, this.isRefreshing = false, this.refreshError, this.selectedEstablishmentId}): _establishments = establishments;
   
 
 @override@JsonKey() final  ResultState<HomeDashboard> dashboardState;
@@ -228,6 +242,8 @@ class _HomeDashboardState implements HomeDashboardState {
   return EqualUnmodifiableMapView(_establishments);
 }
 
+@override@JsonKey() final  bool isRefreshing;
+@override final  DomainException? refreshError;
 @override final  String? selectedEstablishmentId;
 
 /// Create a copy of HomeDashboardState
@@ -240,16 +256,16 @@ _$HomeDashboardStateCopyWith<_HomeDashboardState> get copyWith => __$HomeDashboa
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _HomeDashboardState&&(identical(other.dashboardState, dashboardState) || other.dashboardState == dashboardState)&&const DeepCollectionEquality().equals(other._establishments, _establishments)&&(identical(other.selectedEstablishmentId, selectedEstablishmentId) || other.selectedEstablishmentId == selectedEstablishmentId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _HomeDashboardState&&(identical(other.dashboardState, dashboardState) || other.dashboardState == dashboardState)&&const DeepCollectionEquality().equals(other._establishments, _establishments)&&(identical(other.isRefreshing, isRefreshing) || other.isRefreshing == isRefreshing)&&(identical(other.refreshError, refreshError) || other.refreshError == refreshError)&&(identical(other.selectedEstablishmentId, selectedEstablishmentId) || other.selectedEstablishmentId == selectedEstablishmentId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,dashboardState,const DeepCollectionEquality().hash(_establishments),selectedEstablishmentId);
+int get hashCode => Object.hash(runtimeType,dashboardState,const DeepCollectionEquality().hash(_establishments),isRefreshing,refreshError,selectedEstablishmentId);
 
 @override
 String toString() {
-  return 'HomeDashboardState(dashboardState: $dashboardState, establishments: $establishments, selectedEstablishmentId: $selectedEstablishmentId)';
+  return 'HomeDashboardState(dashboardState: $dashboardState, establishments: $establishments, isRefreshing: $isRefreshing, refreshError: $refreshError, selectedEstablishmentId: $selectedEstablishmentId)';
 }
 
 
@@ -260,11 +276,11 @@ abstract mixin class _$HomeDashboardStateCopyWith<$Res> implements $HomeDashboar
   factory _$HomeDashboardStateCopyWith(_HomeDashboardState value, $Res Function(_HomeDashboardState) _then) = __$HomeDashboardStateCopyWithImpl;
 @override @useResult
 $Res call({
- ResultState<HomeDashboard> dashboardState, Map<String, EstablishmentMembership> establishments, String? selectedEstablishmentId
+ ResultState<HomeDashboard> dashboardState, Map<String, EstablishmentMembership> establishments, bool isRefreshing, DomainException? refreshError, String? selectedEstablishmentId
 });
 
 
-@override $ResultStateCopyWith<HomeDashboard, $Res> get dashboardState;
+@override $ResultStateCopyWith<HomeDashboard, $Res> get dashboardState;@override $DomainExceptionCopyWith<$Res>? get refreshError;
 
 }
 /// @nodoc
@@ -277,11 +293,13 @@ class __$HomeDashboardStateCopyWithImpl<$Res>
 
 /// Create a copy of HomeDashboardState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? dashboardState = null,Object? establishments = null,Object? selectedEstablishmentId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? dashboardState = null,Object? establishments = null,Object? isRefreshing = null,Object? refreshError = freezed,Object? selectedEstablishmentId = freezed,}) {
   return _then(_HomeDashboardState(
 dashboardState: null == dashboardState ? _self.dashboardState : dashboardState // ignore: cast_nullable_to_non_nullable
 as ResultState<HomeDashboard>,establishments: null == establishments ? _self._establishments : establishments // ignore: cast_nullable_to_non_nullable
-as Map<String, EstablishmentMembership>,selectedEstablishmentId: freezed == selectedEstablishmentId ? _self.selectedEstablishmentId : selectedEstablishmentId // ignore: cast_nullable_to_non_nullable
+as Map<String, EstablishmentMembership>,isRefreshing: null == isRefreshing ? _self.isRefreshing : isRefreshing // ignore: cast_nullable_to_non_nullable
+as bool,refreshError: freezed == refreshError ? _self.refreshError : refreshError // ignore: cast_nullable_to_non_nullable
+as DomainException?,selectedEstablishmentId: freezed == selectedEstablishmentId ? _self.selectedEstablishmentId : selectedEstablishmentId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -294,6 +312,18 @@ $ResultStateCopyWith<HomeDashboard, $Res> get dashboardState {
   
   return $ResultStateCopyWith<HomeDashboard, $Res>(_self.dashboardState, (value) {
     return _then(_self.copyWith(dashboardState: value));
+  });
+}/// Create a copy of HomeDashboardState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$DomainExceptionCopyWith<$Res>? get refreshError {
+    if (_self.refreshError == null) {
+    return null;
+  }
+
+  return $DomainExceptionCopyWith<$Res>(_self.refreshError!, (value) {
+    return _then(_self.copyWith(refreshError: value));
   });
 }
 }
