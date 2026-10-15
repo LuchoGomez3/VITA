@@ -15,6 +15,8 @@ class HomeLotMetricsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppSurfaceCard(
+      elevation: 3,
+      shadowColor: AppColors.cardShadow,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

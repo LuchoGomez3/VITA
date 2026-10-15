@@ -18,6 +18,8 @@ class HomeDailyGainCard extends StatelessWidget {
     final dailyGain = dashboard.averageDailyGainKg;
 
     return AppSurfaceCard(
+      elevation: 3,
+      shadowColor: AppColors.cardShadow,
       child: Row(
         children: [
           const HomeAssetIcon(
