@@ -93,6 +93,9 @@ sealed class AnimalDetail with _$AnimalDetail {
     /// Observaciones libres.
     String? observations,
 
+    /// Ruta de la foto guardada en los datos privados de esta instalación.
+    String? localPhotoPath,
+
     /// Codigo de rechazo de sync guardado localmente.
     String? syncErrorCode,
   }) = _AnimalDetail;

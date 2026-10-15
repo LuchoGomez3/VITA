@@ -9,6 +9,7 @@ import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/anima
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_data_grid.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_header.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_photo.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_sync_footer.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_event_history.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/weight_gain_chart.dart';
@@ -36,29 +37,21 @@ class AnimalDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => createCubit()..loadAnimalData(animalId),
-      child: _AnimalDetailView(animalId: animalId),
+      child: const _AnimalDetailView(),
     );
   }
 }
 
 class _AnimalDetailView extends StatelessWidget {
-  const _AnimalDetailView({
-    required this.animalId,
-  });
-
-  final String animalId;
+  const _AnimalDetailView();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => _close(context),
-        ),
-        actions: const [SizedBox(width: 48)],
-        title: const Text(AnimalDetailStrings.pageTitle),
+      extendBodyBehindAppBar: true,
+      appBar: AppHeader(
+        title: AnimalDetailStrings.pageTitle,
+        onBackPressed: () => _close(context),
       ),
       body: BlocBuilder<AnimalDetailCubit, ResultState<AnimalDetail>>(
         builder: (context, state) {
@@ -84,54 +77,118 @@ class _AnimalDetailView extends StatelessWidget {
 }
 
 class _AnimalDetailContent extends StatelessWidget {
-  const _AnimalDetailContent({
-    required this.animalDetail,
-  });
+  const _AnimalDetailContent({required this.animalDetail});
 
   final AnimalDetail animalDetail;
 
   @override
   Widget build(BuildContext context) {
+    return AnimalDetailPhoto(
+      animalDetail: animalDetail,
+      contentBuilder: (photo) => _AnimalDetailLayout(
+        animalDetail: animalDetail,
+        photo: photo,
+      ),
+    );
+  }
+}
+
+class _AnimalDetailLayout extends StatelessWidget {
+  const _AnimalDetailLayout({
+    required this.animalDetail,
+    required this.photo,
+  });
+
+  final AnimalDetail animalDetail;
+  final Widget? photo;
+
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AppSurfaceCard(
-            child: Column(
-              children: [
-                AnimalDetailHeader(animalDetail: animalDetail),
-                const SizedBox(height: AppSpacing.lg),
-                AnimalDetailDataGrid(animalDetail: animalDetail),
-              ],
-            ),
-          ),
-          AppSurfaceCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AnimalDetailStrings.observationsLabel,
-                  style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final headerHeight =
+              MediaQuery.viewPaddingOf(context).top +
+              const AppHeader(title: AnimalDetailStrings.pageTitle).preferredSize.height;
+          final photoTop = headerHeight - AppRadius.lg;
+          final contentTop = photo == null
+              ? headerHeight + AppSpacing.lg
+              : photoTop + constraints.maxWidth * 3 / 4 - (AppSpacing.lg + AppSpacing.md);
+
+          return Stack(
+            children: [
+              if (photo != null)
+                Positioned(
+                  top: photoTop,
+                  left: 0,
+                  right: 0,
+                  child: photo!,
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  animalDetail.observations ?? AnimalDetailStrings.noDataValue,
-                  style: AppTypography.mediumEmphasis,
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.sm,
+                  contentTop,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
                 ),
-              ],
-            ),
-          ),
-          WeightGainChart(weightHistory: animalDetail.weightHistory),
-          AppSurfaceCard(
-            child: AnimalEventHistory(animalDetail: animalDetail),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          AnimalDetailSyncFooter(
-            animalDetail: animalDetail,
-            onRetry: () => context.read<AnimalDetailCubit>().retrySync(animalDetail.id),
-          ),
-        ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AppSurfaceCard(
+                      elevation: 4,
+                      shadowColor: AppColors.textPrimary,
+                      color: AppColors.surface,
+                      child: Column(
+                        children: [
+                          AnimalDetailHeader(
+                            animalDetail: animalDetail,
+                            showAvatar: photo == null,
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          AnimalDetailDataGrid(animalDetail: animalDetail),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppSurfaceCard(
+                      elevation: 4,
+                      shadowColor: AppColors.textPrimary,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AnimalDetailStrings.observationsLabel,
+                            style: AppTypography.smallEmphasis.copyWith(
+                              color: AppColors.textHint,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            animalDetail.observations ?? AnimalDetailStrings.noDataValue,
+                            style: AppTypography.mediumEmphasis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    WeightGainChart(weightHistory: animalDetail.weightHistory),
+                    const SizedBox(height: AppSpacing.md),
+                    AppSurfaceCard(
+                      elevation: 4,
+                      shadowColor: AppColors.textPrimary,
+                      child: AnimalEventHistory(animalDetail: animalDetail),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    AnimalDetailSyncFooter(
+                      animalDetail: animalDetail,
+                      onRetry: () => context.read<AnimalDetailCubit>().retrySync(animalDetail.id),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

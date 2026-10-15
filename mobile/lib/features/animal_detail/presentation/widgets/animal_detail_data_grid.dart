@@ -80,6 +80,13 @@ class AnimalDetailDataGrid extends StatelessWidget {
                 label: AnimalDetailStrings.lastWeightSourceLabel,
                 value: animalDetail.weighingMethod.label,
                 isHighlighted: true,
+                // El verde identifica únicamente los pesajes estimados por IA.
+                highlightColor: animalDetail.weighingMethod == AnimalWeighingMethod.artificialIntelligence
+                    ? AppColors.primary
+                    : null,
+                highlightBackgroundColor: animalDetail.weighingMethod == AnimalWeighingMethod.artificialIntelligence
+                    ? AppColors.backgroundSecondaryLight
+                    : null,
               ),
             ),
           ],
