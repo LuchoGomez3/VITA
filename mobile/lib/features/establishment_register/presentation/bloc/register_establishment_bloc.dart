@@ -3,7 +3,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/entities/boundary_point.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/entities/current_location.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/use_cases/get_current_location_use_case.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/use_cases/register_establishment_use_case.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_draft_validation.dart';
 
@@ -19,9 +22,11 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
   /// Crea el BLoC de registro en el paso inicial solicitado.
   RegisterEstablishmentBloc({
     required RegisterEstablishmentUseCase registerEstablishmentUseCase,
+    required GetCurrentLocationUseCase getCurrentLocationUseCase,
     RegisterEstablishmentStep initialStep = RegisterEstablishmentStep.identification,
     void Function()? onClose,
   }) : _registerEstablishmentUseCase = registerEstablishmentUseCase,
+       _getCurrentLocationUseCase = getCurrentLocationUseCase,
        _onClose = onClose,
        super(
          RegisterEstablishmentState(
@@ -30,6 +35,13 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
          ),
        ) {
     on<_DraftChanged>(_onDraftChanged);
+    on<_CurrentLocationRequested>(_onCurrentLocationRequested);
+    on<_BoundaryPointAdded>(_onBoundaryPointAdded);
+    on<_BoundaryPointMoveStarted>(_onBoundaryPointMoveStarted);
+    on<_BoundaryPointMoved>(_onBoundaryPointMoved);
+    on<_BoundaryPointFromGpsRequested>(_onBoundaryPointFromGpsRequested);
+    on<_BoundaryUndoRequested>(_onBoundaryUndoRequested);
+    on<_BoundaryCleared>(_onBoundaryCleared);
     on<_NextStepRequested>(_onNextStepRequested);
     on<_PreviousStepRequested>(_onPreviousStepRequested);
     on<_StepRequested>(_onStepRequested);
@@ -37,6 +49,7 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
   }
 
   final RegisterEstablishmentUseCase _registerEstablishmentUseCase;
+  final GetCurrentLocationUseCase _getCurrentLocationUseCase;
   final void Function()? _onClose;
 
   /// Reemplaza el borrador completo cuando un campo del formulario cambia.
@@ -61,6 +74,141 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
       state.copyWith(
         draft: newDraft,
         submitResult: renspaFieldsChanged && hasRenspaConflict ? const ResultState.initial() : submitResult,
+      ),
+    );
+  }
+
+  /// Lee el GPS y, si lo consigue, fija las coordenadas del paso 3.
+  ///
+  /// Si falla, el borrador no cambia: la UI muestra el motivo a partir de
+  /// `locationResult` y el usuario puede reintentar.
+  Future<void> _onCurrentLocationRequested(
+    _CurrentLocationRequested event,
+    Emitter<RegisterEstablishmentState> emit,
+  ) async {
+    if (state.locationResult is Loading<CurrentLocation>) {
+      return;
+    }
+
+    emit(state.copyWith(locationResult: const ResultState.loading()));
+
+    final result = await _getCurrentLocationUseCase();
+
+    switch (result) {
+      case Success<CurrentLocation>(:final data):
+        emit(
+          state.copyWith(
+            draft: state.draft.copyWith(
+              latitud: data.latitud,
+              longitud: data.longitud,
+              ubicacionConfirmadaPorGps: true,
+            ),
+            locationResult: ResultState.data(data),
+          ),
+        );
+      case Failure<CurrentLocation>(:final error):
+        emit(state.copyWith(locationResult: ResultState.error(error)));
+    }
+  }
+
+  void _onBoundaryPointAdded(
+    _BoundaryPointAdded event,
+    Emitter<RegisterEstablishmentState> emit,
+  ) {
+    _emitBoundary(emit, [...state.draft.poligono, event.point]);
+  }
+
+  /// Guarda el polígono previo al arrastre: deshacer revierte el arrastre
+  /// completo, no cada uno de sus movimientos.
+  void _onBoundaryPointMoveStarted(
+    _BoundaryPointMoveStarted event,
+    Emitter<RegisterEstablishmentState> emit,
+  ) {
+    emit(state.copyWith(boundaryHistory: [...state.boundaryHistory, state.draft.poligono]));
+  }
+
+  void _onBoundaryPointMoved(
+    _BoundaryPointMoved event,
+    Emitter<RegisterEstablishmentState> emit,
+  ) {
+    final poligono = state.draft.poligono;
+    if (event.index < 0 || event.index >= poligono.length) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        draft: state.draft.copyWith(
+          poligono: [...poligono]..[event.index] = event.point,
+        ),
+      ),
+    );
+  }
+
+  /// Lee el GPS y agrega un vértice donde está parado el productor.
+  ///
+  /// Sirve para delimitar el campo recorriendo el perímetro, sin conexión ni
+  /// imagen satelital. Si la lectura falla, el polígono no cambia.
+  Future<void> _onBoundaryPointFromGpsRequested(
+    _BoundaryPointFromGpsRequested event,
+    Emitter<RegisterEstablishmentState> emit,
+  ) async {
+    if (state.boundaryGpsResult is Loading<CurrentLocation>) {
+      return;
+    }
+
+    emit(state.copyWith(boundaryGpsResult: const ResultState.loading()));
+
+    final result = await _getCurrentLocationUseCase();
+
+    switch (result) {
+      case Success<CurrentLocation>(:final data):
+        emit(state.copyWith(boundaryGpsResult: ResultState.data(data)));
+        _emitBoundary(emit, [
+          ...state.draft.poligono,
+          BoundaryPoint(latitud: data.latitud, longitud: data.longitud),
+        ]);
+      case Failure<CurrentLocation>(:final error):
+        emit(state.copyWith(boundaryGpsResult: ResultState.error(error)));
+    }
+  }
+
+  void _onBoundaryUndoRequested(
+    _BoundaryUndoRequested event,
+    Emitter<RegisterEstablishmentState> emit,
+  ) {
+    final history = state.boundaryHistory;
+    if (history.isEmpty) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        draft: state.draft.copyWith(poligono: history.last),
+        boundaryHistory: history.sublist(0, history.length - 1),
+      ),
+    );
+  }
+
+  void _onBoundaryCleared(
+    _BoundaryCleared event,
+    Emitter<RegisterEstablishmentState> emit,
+  ) {
+    if (state.draft.poligono.isEmpty) {
+      return;
+    }
+    _emitBoundary(emit, const []);
+  }
+
+  /// Reemplaza el polígono y guarda el anterior para poder deshacer.
+  void _emitBoundary(
+    Emitter<RegisterEstablishmentState> emit,
+    List<BoundaryPoint> poligono,
+  ) {
+    emit(
+      state.copyWith(
+        draft: state.draft.copyWith(poligono: poligono),
+        boundaryHistory: [...state.boundaryHistory, state.draft.poligono],
       ),
     );
   }
@@ -149,16 +297,6 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
       );
     }
 
-    if (draft.isLocationMocked) {
-      return const Result.failure(
-        DomainException(
-          message:
-              'La ubicación todavía es un valor de prueba: falta integrar GPS real antes de poder crear el establecimiento.',
-          code: DomainErrorCode.validation,
-        ),
-      );
-    }
-
     return Result.success(
       EstablishmentRegistration(
         nombre: draft.nombre,
@@ -172,7 +310,7 @@ class RegisterEstablishmentBloc extends Bloc<RegisterEstablishmentEvent, Registe
         latitud: draft.latitud,
         longitud: draft.longitud,
         superficieHectareas: draft.superficieHectareas,
-        cantidadVertices: draft.cantidadVertices,
+        poligono: draft.poligono,
       ),
     );
   }

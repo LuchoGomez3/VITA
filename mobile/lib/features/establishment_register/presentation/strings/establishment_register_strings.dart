@@ -222,16 +222,42 @@ class EstablishmentRegisterStrings {
   static const stepThreeCoordinatesFieldTitle = 'Coordenadas del punto de referencia';
 
   /// Confirmación de toma de coordenadas por GPS.
-  static const stepThreeGpsConfirmedCaption = 'Tomada del GPS · precisión 4 m';
+  static const stepThreeGpsConfirmedCaption = 'Tomada del GPS';
+
+  /// Confirmación de toma de coordenadas por GPS con la precisión informada.
+  static String stepThreeGpsConfirmedCaptionWithPrecision(int precisionMetros) =>
+      'Tomada del GPS · precisión $precisionMetros m';
 
   /// Placeholder de coordenadas mientras no se confirmó la ubicación.
   static const stepThreeCoordinateUnconfirmedPlaceholder = '—';
 
-  /// Boton para tomar la ubicación actual (mock).
+  /// Boton para tomar la ubicación actual del GPS.
   static const stepThreeUseCurrentLocationButton = 'Usar mi ubicación actual';
+
+  /// Error cuando el GPS del celular está apagado.
+  static const stepThreeLocationServiceDisabledError =
+      'El GPS está apagado. Activá la ubicación del celular y volvé a intentar.';
+
+  /// Error cuando el usuario negó el permiso de ubicación.
+  static const stepThreeLocationPermissionDeniedError =
+      'Necesitamos permiso de ubicación para tomar el punto de referencia del campo.';
+
+  /// Error cuando el permiso de ubicación quedó bloqueado en el sistema.
+  static const stepThreeLocationPermissionDeniedForeverError =
+      'El permiso de ubicación está bloqueado. Habilitalo para VITA desde los ajustes del celular.';
+
+  /// Error cuando el GPS no consigue señal a tiempo.
+  static const stepThreeLocationTimeoutError =
+      'No se pudo obtener señal GPS. Probá a cielo abierto y volvé a intentar.';
+
+  /// Error genérico al leer la ubicación.
+  static const stepThreeLocationUnknownError = 'No se pudo leer la ubicación. Volvé a intentar.';
 
   /// Titulo de la vista previa del mapa.
   static const stepThreePreviewLabel = 'Vista previa';
+
+  /// Vista previa antes de leer el GPS.
+  static const stepThreePreviewPlaceholder = 'Usá tu ubicación actual para ver el campo en el mapa';
 
   /// Texto del banner de instrucciones del paso 4.
   static const stepFourBannerText = 'Tocá los vértices del campo. Vas a poder dividir en potreros más adelante.';
@@ -251,8 +277,46 @@ class EstablishmentRegisterStrings {
   /// Tooltip del boton de capa.
   static const stepFourLayerTooltip = 'Capa';
 
-  /// Texto del hint inferior del paso 4.
+  /// Aviso cuando la sesión venció durante el alta.
+  static const sessionExpiredMessage = 'Tu sesión venció. Iniciá sesión de nuevo para crear el establecimiento.';
+
+  /// Superficie en hectáreas: sin decimales desde 100 ha, con uno por debajo
+  /// (en un campo chico, 3,4 ha y 3 ha no son lo mismo).
+  static String hectares(double value) => '${value.toStringAsFixed(value >= 100 ? 0 : 1)} ha';
+
+  /// Tooltip del boton que marca un vertice con el GPS.
+  static const stepFourGpsVertexTooltip = 'Marcar vértice acá (GPS)';
+
+  /// Hint inferior cuando todavia no hay vertices.
+  static const stepFourHintEmpty = 'Tocá el mapa para marcar el primer vértice';
+
+  /// Hint inferior cuando faltan vertices para cerrar el poligono.
+  static const stepFourHintTooFewVertices = 'Marcá al menos 3 vértices';
+
+  /// Hint inferior cuando dos lados del poligono se cruzan.
+  static const stepFourHintSelfIntersecting = 'Los lados se cruzan: mové un vértice';
+
+  /// Texto del hint inferior del paso 4 con el poligono completo.
   static const stepFourHintText = 'Tocá cualquier vértice para arrastrarlo';
+
+  /// Aviso cuando no carga la imagen satelital (sin conexion).
+  static const stepFourSatelliteUnavailable =
+      'Sin imagen satelital. Podés recorrer el campo y marcar cada esquina con el GPS.';
+
+  /// Atribucion obligatoria de la imagen satelital.
+  static const stepFourSatelliteAttribution = '© Esri, Maxar, Earthstar Geographics';
+
+  /// Titulo del panel de superficie cargada a mano.
+  static const stepFourManualSurfaceTitle = '¿No podés dibujarlo ahora?';
+
+  /// Campo de superficie cargada a mano.
+  static const stepFourManualSurfaceFieldTitle = 'Superficie total (ha)';
+
+  /// Ayuda del campo de superficie cargada a mano.
+  static const stepFourManualSurfaceHelper = 'Cargá las hectáreas y delimitá el campo más adelante.';
+
+  /// Snackbar al marcar un vertice con el GPS.
+  static String stepFourGpsVertexAdded(int precisionMetros) => 'Vértice marcado (precisión ±$precisionMetros m)';
 
   /// Boton para editar una seccion desde la revision.
   static const reviewEditButton = 'Editar';
@@ -268,6 +332,9 @@ class EstablishmentRegisterStrings {
 
   /// Titulo de la seccion 4 de revision.
   static const reviewSectionFourTitle = 'Superficie delimitada';
+
+  /// Chip de revision cuando la superficie se cargo a mano.
+  static const reviewManualSurfaceChipLabel = 'Cargada a mano';
 
   /// Etiqueta de nombre en la revision.
   static const reviewNombreLabel = 'Nombre';

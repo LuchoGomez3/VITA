@@ -10,7 +10,7 @@ import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_dashboard_content.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_dashboard_error.dart';
-import 'package:frontend_mayoral/features/home/presentation/widgets/home_expandable_header.dart';
+import 'package:frontend_mayoral/features/home/presentation/widgets/home_header.dart';
 import 'package:go_router/go_router.dart';
 
 /// Factory que crea el cubit responsable de los indicadores de Inicio.
@@ -55,20 +55,18 @@ class _HomeDashboardView extends StatefulWidget {
 }
 
 class _HomeDashboardViewState extends State<_HomeDashboardView> {
-  bool _isSelectorExpanded = false;
-  String? _highlightedEstablishmentId;
+  final _establishmentMenu = MenuController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
-          HomeExpandableHeader(
+          HomeHeader(
             greeting: _greeting(DateTime.now(), widget.userName),
-            isExpanded: _isSelectorExpanded,
-            highlightedEstablishmentId: _highlightedEstablishmentId,
-            onToggle: _toggleSelector,
+            establishmentMenuController: _establishmentMenu,
             onSelected: _selectEstablishment,
+            onCreateEstablishment: _createEstablishment,
             onIdentifyAnimal: _identifyAnimal,
           ),
           Expanded(
@@ -93,32 +91,21 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
     context.push(AppRoutes.rfidScanForEstablishment(establishmentId));
   }
 
-  void _toggleSelector() {
-    setState(() {
-      _isSelectorExpanded = !_isSelectorExpanded;
-      if (_isSelectorExpanded) {
-        final cubit = context.read<HomeDashboardCubit>();
-        _highlightedEstablishmentId = cubit.state.selectedEstablishmentId;
-      }
-    });
-  }
-
-  void _openSelector() {
-    final cubit = context.read<HomeDashboardCubit>();
-    setState(() {
-      _highlightedEstablishmentId = cubit.state.selectedEstablishmentId;
-      _isSelectorExpanded = true;
-    });
-  }
+  void _openSelector() => _establishmentMenu.open();
 
   void _selectEstablishment(String? establishmentId) {
-    setState(() {
-      _highlightedEstablishmentId = establishmentId;
-      _isSelectorExpanded = false;
-    });
     unawaited(
       context.read<HomeDashboardCubit>().selectEstablishment(establishmentId),
     );
+  }
+
+  /// Abre el wizard de alta y, al volver, recarga Inicio para que el
+  /// establecimiento recién creado aparezca en el selector.
+  Future<void> _createEstablishment() async {
+    await context.push<void>(AppRoutes.establishmentRegisterStep1);
+    if (mounted) {
+      await context.read<HomeDashboardCubit>().load();
+    }
   }
 
   String _greeting(DateTime dateTime, String name) {

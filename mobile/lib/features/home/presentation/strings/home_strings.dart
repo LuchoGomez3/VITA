@@ -9,8 +9,8 @@ abstract final class HomeStrings {
   /// Texto mostrado antes del establecimiento elegido.
   static const establishmentPrefix = 'Resumen productivo de';
 
-  /// Indicación mostrada al abrir el selector.
-  static const establishmentSelectionPrompt = 'Seleccioná un establecimiento';
+  /// Opción del selector que abre el alta de un establecimiento nuevo.
+  static const createEstablishmentOption = 'Nuevo establecimiento';
 
   /// Saludo utilizado durante la mañana.
   static const goodMorning = 'Buenos días';
