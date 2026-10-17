@@ -250,7 +250,7 @@ void main() {
 
     testWidgets('con el código muestra la confirmación del diseño y al sumarse el éxito', (tester) async {
       final repository = FakeTeamRepository();
-      await _pump(tester, joinPage(repository));
+      final popped = await _pump(tester, joinPage(repository));
 
       expect(find.text(TeamStrings.enterCodeTitle), findsOneWidget);
       expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
@@ -273,6 +273,11 @@ void main() {
       expect(find.text(TeamStrings.joinedTitle('La Sirena')), findsOneWidget);
       expect(find.text(TeamStrings.downloadDone), findsOneWidget);
       expect(find.text(TeamStrings.goHomeCta), findsOneWidget);
+
+      // "Ir al inicio" le devuelve el control a Perfil (que recarga la lista).
+      await tester.tap(find.text(TeamStrings.goHomeCta));
+      await tester.pumpAndSettle();
+      expect(popped, [true]);
     });
 
     testWidgets('un código inválido queda en rojo con los intentos que quedan', (tester) async {

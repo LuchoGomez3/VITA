@@ -176,7 +176,7 @@ class _EstablishmentsContent extends StatelessWidget {
           onOpen: (establishment) => context.push(AppRoutes.profileEstablishment, extra: establishment),
           onJoin: () async {
             await context.push<void>(AppRoutes.joinEstablishment);
-            // Se recarga siempre: "Ir al inicio" sale con `go` y no devuelve nada.
+            // Se recarga siempre: también al salir sin sumarse (flecha atrás).
             if (context.mounted) {
               await context.read<ProfileCubit>().load();
             }

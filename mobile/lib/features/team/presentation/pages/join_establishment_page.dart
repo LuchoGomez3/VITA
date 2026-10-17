@@ -351,7 +351,14 @@ class _Joined extends StatelessWidget {
               AppFilledButton(
                 label: TeamStrings.goHomeCta,
                 icon: const Icon(Icons.arrow_forward),
-                onPressed: () => context.go(AppRoutes.home),
+                onPressed: () {
+                  // Primero `pop`: completa el `push` de Perfil para que recargue
+                  // la lista con el campo nuevo. `go` solo descartaría la pantalla
+                  // sin avisarle, y Perfil seguiría mostrando la lista vieja.
+                  final router = GoRouter.of(context);
+                  context.pop(true);
+                  router.go(AppRoutes.home);
+                },
               ),
             ],
           ),
