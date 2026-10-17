@@ -32,6 +32,16 @@ def upgrade() -> None:
                 "estado_actualizado_en", sa.DateTime(timezone=True), nullable=True
             ),
         )
+    op.execute(
+        sa.text(
+            """
+            update animales
+            set estado_actualizado_en = updated_at
+            where estado in ('vendido', 'muerto', 'baja')
+              and estado_actualizado_en is null
+            """
+        )
+    )
 
 
 def downgrade() -> None:
