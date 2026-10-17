@@ -49,7 +49,7 @@ class _InvitationCreatedPageState extends State<InvitationCreatedPage> {
   }
 
   Future<void> _share() => SharePlus.instance.share(
-    ShareParams(text: TeamStrings.shareMessage(widget.establishmentName, widget.created.code)),
+    ShareParams(text: TeamStrings.shareMessage(widget.establishmentName, widget.created.code, _invitation.email)),
   );
 
   Future<void> _cancel() async {

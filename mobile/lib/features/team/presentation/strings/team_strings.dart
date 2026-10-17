@@ -181,8 +181,8 @@ abstract final class TeamStrings {
   static const codeCopied = 'Código copiado.';
 
   /// Mensaje que se comparte por WhatsApp u otra app.
-  static String shareMessage(String establishment, String code) =>
-      'Te invité a $establishment en VITA. Entrá a la app con este email, andá a Perfil > '
+  static String shareMessage(String establishment, String code, String email) =>
+      'Te invité a $establishment en VITA. Entrá a la app con tu email $email, andá a Perfil > '
       'Sumarme a otro establecimiento e ingresá el código $code (vence en 7 días).';
 
   /// Cerrar la pantalla.

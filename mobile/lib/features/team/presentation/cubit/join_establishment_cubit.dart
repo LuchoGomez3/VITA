@@ -112,6 +112,14 @@ class JoinEstablishmentCubit extends Cubit<JoinEstablishmentState> {
     }
   }
 
+  /// Saca el error y deja el código para corregirlo ("Volver a intentar"
+  /// cuando el servidor lo rechazó: reintentar el mismo no serviría).
+  void dismissError() {
+    if (state.step == JoinStep.enterCode && state.error != null) {
+      emit(JoinEstablishmentState(code: state.code));
+    }
+  }
+
   /// Borra el código para escribir otro ("Borrar y escribir de nuevo", "No es
   /// mi invitación").
   void clear() => emit(const JoinEstablishmentState());

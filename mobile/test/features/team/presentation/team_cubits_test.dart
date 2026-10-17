@@ -229,6 +229,18 @@ void main() {
       expect(cubit.state.error, isNull);
     });
 
+    test('"Volver a intentar" tras un rechazo saca el error y deja el código', () async {
+      const error = DomainException(message: 'x', reason: (reason: TeamErrorReason.invalidCode, remainingAttempts: 3));
+      final repository = FakeTeamRepository()..previewResult = const Result.failure(error);
+      final cubit = joinCubit(repository)..edit('7K4P2N');
+      await cubit.check();
+
+      cubit.dismissError();
+
+      expect(cubit.state.error, isNull);
+      expect(cubit.state.code, '7K4P2N');
+    });
+
     test('pegar un código con guion y de más lo recorta a 6', () {
       final cubit = joinCubit(FakeTeamRepository())..edit(' 7k4-p2m-xyz ');
 

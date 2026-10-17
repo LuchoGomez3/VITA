@@ -132,7 +132,9 @@ class _JoinView extends StatelessWidget {
           AppFilledButton(
             label: TeamStrings.retryCodeCta,
             icon: const Icon(Icons.refresh),
-            onPressed: _canRetry(state.error!) ? () => unawaited(cubit.check()) : null,
+            // Sin conexión se reintenta el mismo código; si el servidor lo
+            // rechazó, se vuelve a la edición con lo escrito.
+            onPressed: _canRetry(state.error!) ? () => unawaited(cubit.check()) : cubit.dismissError,
           ),
           TextButton(onPressed: cubit.clear, child: const Text(TeamStrings.clearCodeCta)),
         ],
