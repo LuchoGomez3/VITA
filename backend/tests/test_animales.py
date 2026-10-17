@@ -1,5 +1,6 @@
 """Tests de PRO-22: registro de animal (+ pesaje inicial)."""
 
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
@@ -52,6 +53,13 @@ def _payload(est_id, lote_id, **overrides):
     }
     base.update(overrides)
     return base
+
+
+def _timestamp_utc(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
 
 
 @pytest.mark.anyio
@@ -529,6 +537,81 @@ async def test_put_actualiza_multiples_campos(auth_client, establecimiento_con_l
     assert data["estado"] == "vendido"
     assert data["estado_actualizado_en"].startswith("2025-06-01T00:00:00")
     assert data["deleted_at"] is not None
+
+
+async def _crear_animal_vendido(auth_client, establecimiento_id, lote_id):
+    animal_id = str(uuid4())
+    alta = await auth_client.post(
+        "/api/v1/animales",
+        json=_payload(
+            establecimiento_id,
+            lote_id,
+            id=animal_id,
+            updated_at="2025-01-01T00:00:00Z",
+        ),
+    )
+    assert alta.status_code == 201
+    venta = await auth_client.put(
+        f"/api/v1/animales/{animal_id}",
+        json={"estado": "vendido", "updated_at": "2025-06-01T00:00:00Z"},
+    )
+    assert venta.status_code == 200
+    return animal_id, venta.json()["data"]["estado_actualizado_en"]
+
+
+@pytest.mark.anyio
+async def test_put_de_otro_campo_conserva_fecha_del_estado(
+    auth_client, establecimiento_con_lote
+):
+    est, lote = establecimiento_con_lote
+    animal_id, fecha_estado = await _crear_animal_vendido(auth_client, est.id, lote.id)
+
+    respuesta = await auth_client.put(
+        f"/api/v1/animales/{animal_id}",
+        json={"raza": "Hereford", "updated_at": "2025-07-01T00:00:00Z"},
+    )
+
+    assert respuesta.status_code == 200
+    data = respuesta.json()["data"]
+    assert data["raza"] == "Hereford"
+    assert data["estado"] == "vendido"
+    assert _timestamp_utc(data["estado_actualizado_en"]) == _timestamp_utc(fecha_estado)
+
+
+@pytest.mark.anyio
+async def test_put_del_mismo_estado_conserva_su_fecha(
+    auth_client, establecimiento_con_lote
+):
+    est, lote = establecimiento_con_lote
+    animal_id, fecha_estado = await _crear_animal_vendido(auth_client, est.id, lote.id)
+
+    respuesta = await auth_client.put(
+        f"/api/v1/animales/{animal_id}",
+        json={"estado": "vendido", "updated_at": "2025-07-01T00:00:00Z"},
+    )
+
+    assert respuesta.status_code == 200
+    data = respuesta.json()["data"]
+    assert data["estado"] == "vendido"
+    assert _timestamp_utc(data["estado_actualizado_en"]) == _timestamp_utc(fecha_estado)
+
+
+@pytest.mark.anyio
+async def test_put_rancio_no_cambia_estado_ni_su_fecha(
+    auth_client, establecimiento_con_lote
+):
+    est, lote = establecimiento_con_lote
+    animal_id, fecha_estado = await _crear_animal_vendido(auth_client, est.id, lote.id)
+
+    respuesta = await auth_client.put(
+        f"/api/v1/animales/{animal_id}",
+        json={"estado": "muerto", "updated_at": "2025-05-01T00:00:00Z"},
+    )
+
+    assert respuesta.status_code == 200
+    data = respuesta.json()["data"]
+    assert data["estado"] == "vendido"
+    assert _timestamp_utc(data["estado_actualizado_en"]) == _timestamp_utc(fecha_estado)
 
 
 @pytest.mark.anyio
