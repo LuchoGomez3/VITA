@@ -1,18 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/current_location.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/strings/establishment_register_strings.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/location_failure_message.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/location_map_preview.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/static_map_preview.dart';
 
 /// Paso 3 · Provincia, departamento, localidad y coordenadas del establecimiento.
 class EstablishmentRegisterLocationStep extends StatelessWidget {
   /// Crea el paso de ubicación geográfica del establecimiento.
-  const EstablishmentRegisterLocationStep({super.key});
+  const EstablishmentRegisterLocationStep({
+    super.key,
+    this.showSatelliteImagery = true,
+  });
+
+  /// Si la vista previa pide tiles satelitales. Los tests lo apagan para no
+  /// usar la red.
+  final bool showSatelliteImagery;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +37,7 @@ class EstablishmentRegisterLocationStep extends StatelessWidget {
         if (state.locationResult case ResultError<CurrentLocation>(:final error)) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(_locationErrorMessage(error))));
+            ..showSnackBar(SnackBar(content: Text(locationFailureMessage(error))));
         }
       },
       child: SafeArea(
@@ -150,11 +158,22 @@ class EstablishmentRegisterLocationStep extends StatelessWidget {
                 style: AppTypography.secondaryEmphasis,
               ),
               const SizedBox(height: AppSpacing.xs),
-              const StaticMapPreview(
-                child: Center(
-                  child: Icon(Icons.location_on, size: 32, color: AppColors.error),
+              if (draft.ubicacionConfirmadaPorGps)
+                LocationMapPreview(
+                  latitud: draft.latitud,
+                  longitud: draft.longitud,
+                  showSatelliteImagery: showSatelliteImagery,
+                )
+              else
+                const StaticMapPreview(
+                  child: Center(
+                    child: Text(
+                      EstablishmentRegisterStrings.stepThreePreviewPlaceholder,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.formFieldHelper,
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -169,17 +188,6 @@ class EstablishmentRegisterLocationStep extends StatelessWidget {
       );
     }
     return EstablishmentRegisterStrings.stepThreeGpsConfirmedCaption;
-  }
-
-  String _locationErrorMessage(DomainException error) {
-    return switch (error.reason) {
-      CurrentLocationFailure.serviceDisabled => EstablishmentRegisterStrings.stepThreeLocationServiceDisabledError,
-      CurrentLocationFailure.permissionDenied => EstablishmentRegisterStrings.stepThreeLocationPermissionDeniedError,
-      CurrentLocationFailure.permissionDeniedForever =>
-        EstablishmentRegisterStrings.stepThreeLocationPermissionDeniedForeverError,
-      CurrentLocationFailure.timeout => EstablishmentRegisterStrings.stepThreeLocationTimeoutError,
-      _ => EstablishmentRegisterStrings.stepThreeLocationUnknownError,
-    };
   }
 
   String _formatCoordinate(RegisterEstablishmentDraft draft, double value) {

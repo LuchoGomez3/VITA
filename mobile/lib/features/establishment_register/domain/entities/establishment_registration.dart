@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/entities/boundary_point.dart';
 
 part 'establishment_registration.freezed.dart';
 
@@ -19,7 +20,10 @@ sealed class EstablishmentRegistration with _$EstablishmentRegistration {
     required double latitud,
     required double longitud,
     required double superficieHectareas,
-    required int cantidadVertices,
+
+    /// Vértices del campo en orden de recorrido. Vacío si la superficie se
+    /// cargó a mano sin dibujar el polígono.
+    @Default(<BoundaryPoint>[]) List<BoundaryPoint> poligono,
   }) = _EstablishmentRegistration;
 }
 

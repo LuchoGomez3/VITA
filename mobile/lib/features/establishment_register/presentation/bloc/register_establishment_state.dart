@@ -34,14 +34,17 @@ sealed class RegisterEstablishmentDraft with _$RegisterEstablishmentDraft {
     required double latitud,
     required double longitud,
     required bool ubicacionConfirmadaPorGps,
-    required double superficieHectareas,
-    required int cantidadVertices,
     required int cantidadUnidadesProductivas,
+
+    /// Vértices del polígono dibujado en el paso 4, en orden de recorrido.
+    @Default(<BoundaryPoint>[]) List<BoundaryPoint> poligono,
+
+    /// Superficie cargada a mano cuando no se dibuja el polígono. Si hay
+    /// polígono, la superficie sale de su área y este valor se ignora.
+    double? superficieManualHectareas,
   }) = _RegisterEstablishmentDraft;
 
-  /// Crea los valores iniciales del formulario, vacios salvo la superficie
-  /// delimitada (paso 4, replica visual estatica sin mapa real editable: ver
-  /// `.claude/specs/registrar-establecimiento.md`).
+  /// Crea los valores iniciales del formulario, todos vacíos.
   factory RegisterEstablishmentDraft.initial() => const RegisterEstablishmentDraft(
     nombre: '',
     descripcion: '',
@@ -54,8 +57,6 @@ sealed class RegisterEstablishmentDraft with _$RegisterEstablishmentDraft {
     latitud: 0,
     longitud: 0,
     ubicacionConfirmadaPorGps: false,
-    superficieHectareas: 847,
-    cantidadVertices: 7,
     cantidadUnidadesProductivas: 1,
   );
 }
@@ -69,5 +70,12 @@ sealed class RegisterEstablishmentState with _$RegisterEstablishmentState {
     required RegisterEstablishmentDraft draft,
     @Default(ResultState<RegisteredEstablishment>.initial()) ResultState<RegisteredEstablishment> submitResult,
     @Default(ResultState<CurrentLocation>.initial()) ResultState<CurrentLocation> locationResult,
+
+    /// Lectura del GPS para marcar un vértice del paso 4. Separada de
+    /// [locationResult] para que cada paso muestre solo sus propios errores.
+    @Default(ResultState<CurrentLocation>.initial()) ResultState<CurrentLocation> boundaryGpsResult,
+
+    /// Polígonos anteriores a cada edición del paso 4, para "Deshacer".
+    @Default(<List<BoundaryPoint>>[]) List<List<BoundaryPoint>> boundaryHistory,
   }) = _RegisterEstablishmentState;
 }
