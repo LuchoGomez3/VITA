@@ -40,11 +40,26 @@ typedef TeamSnapshot = ({
   DateTime fetchedAt,
 });
 
+/// Invitación recién creada (o reenviada) con su código en claro.
+///
+/// El servidor lo devuelve esta única vez, para que el dueño lo comparta por
+/// WhatsApp si el email no llega; no se guarda en el celular.
+typedef CreatedInvitation = ({TeamInvitation invitation, String code});
+
 /// Lo que ve quien canjea un código antes de confirmar.
 typedef InvitationPreview = ({
   String establishmentId,
   String establishmentName,
+  String? renspa,
+  String? locality,
+  String? province,
   UserRole role,
+
+  /// Email al que se mandó la invitación (el de la sesión).
+  String email,
   String invitedBy,
+
+  /// Rol de quien invitó; `null` si ya no forma parte del campo.
+  UserRole? invitedByRole,
   DateTime expiresAt,
 });

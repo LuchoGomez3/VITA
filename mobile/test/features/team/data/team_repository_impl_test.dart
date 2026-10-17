@@ -136,11 +136,11 @@ void main() {
   });
 
   test('invita con el email normalizado y el rol del backend', () async {
-    final repo = repository((_) => _ok(_invitation(), status: 201));
+    final repo = repository((_) => _ok({..._invitation(), 'codigo': '7K4-P2M'}, status: 201));
 
     final result = await repo.invite(_campo, email: '  Vet@Example.com ', role: UserRole.veterinarian);
 
-    expect(result, isA<Success<TeamInvitation>>());
+    expect((result as Success<CreatedInvitation>).data.code, '7K4-P2M');
     final request = requests.single;
     expect(request.method, 'POST');
     expect(request.url.path, '/api/v1/establecimientos/campo-1/invitaciones');
@@ -159,15 +159,41 @@ void main() {
     };
 
     for (final MapEntry(key: response, value: (code, reason)) in cases.entries) {
-      final result = await repository((_) => response).preview('K7QM4XPD');
+      final result = await repository((_) => response).preview('7K4P2M');
       final error = (result as Failure).error;
       expect(error.code, code);
-      expect(error.reason, reason);
+      expect((error.reason! as TeamFailure).reason, reason);
     }
   });
 
+  test('informa cuántos intentos le quedan a quien canjea', () async {
+    final response = http.Response.bytes(
+      utf8.encode(
+        jsonEncode({
+          'success': false,
+          'errors': [
+            {
+              'code': 'codigo_invalido',
+              'message': 'x',
+              'details': {'intentos_restantes': 4},
+            },
+          ],
+        }),
+      ),
+      422,
+    );
+
+    final result = await repository((_) => response).accept('7K4P2N');
+
+    final failure = (result as Failure).error.reason! as TeamFailure;
+    expect(failure.reason, TeamErrorReason.invalidCode);
+    expect(failure.remainingAttempts, 4);
+  });
+
   test('reenviar, cancelar y quitar usan la ruta de cada recurso', () async {
-    final repo = repository((request) => request.method == 'DELETE' ? http.Response('', 204) : _ok(_invitation()));
+    final repo = repository(
+      (request) => request.method == 'DELETE' ? http.Response('', 204) : _ok({..._invitation(), 'codigo': 'Q8R-T3W'}),
+    );
 
     await repo.resend(_campo, 'inv-1');
     await repo.cancel(_campo, 'inv-1');
@@ -195,11 +221,11 @@ void main() {
       }, status: 201),
     );
 
-    final result = await repo.accept('K7QM-4XPD');
+    final result = await repo.accept('7K4-P2M');
 
     final membership = (result as Success<EstablishmentMembership>).data;
     expect(membership.role, UserRole.veterinarian);
-    expect(jsonDecode(requests.single.body), {'codigo': 'K7QM-4XPD'});
+    expect(jsonDecode(requests.single.body), {'codigo': '7K4-P2M'});
     final catalog = jsonDecode(storage.values[SecureStorageKeys.establishmentCatalog]!) as List<dynamic>;
     final entry = catalog.single as Map<String, dynamic>;
     expect(entry['name'], 'La Sirena');
@@ -213,17 +239,26 @@ void main() {
       (_) => _ok({
         'establecimiento_id': _campo,
         'establecimiento_nombre': 'La Sirena',
+        'establecimiento_renspa': '07.123.0.00456/01',
+        'establecimiento_localidad': 'Coronel Moldes',
+        'establecimiento_provincia': 'Córdoba',
         'rol': 'employee',
+        'email': 'peon@example.com',
         'invitado_por': 'Cecilia Lazarte',
+        'invitado_por_rol': 'owner',
         'expira_en': '2026-10-24T00:00:00Z',
       }),
     );
 
-    final result = await repo.preview('K7QM4XPD');
+    final result = await repo.preview('7K4P2M');
 
     final preview = (result as Success<InvitationPreview>).data;
     expect(preview.establishmentName, 'La Sirena');
     expect(preview.role, UserRole.employee);
+    expect(preview.renspa, '07.123.0.00456/01');
+    expect(preview.locality, 'Coronel Moldes');
+    expect(preview.invitedByRole, UserRole.owner);
+    expect(preview.email, 'peon@example.com');
     expect(requests.single.url.path, '/api/v1/invitaciones/validaciones');
   });
 

@@ -37,11 +37,18 @@ class AppRoutes {
   /// Invitar a alguien al equipo de un establecimiento.
   static const teamInvite = '/perfil/establecimiento/:establishmentId/equipo/invitar';
 
+  /// Invitación recién creada, con el código para compartir (recibe
+  /// `({CreatedInvitation created, String establishmentName})` en `extra`).
+  static const teamInvitationCreated = '/perfil/establecimiento/:establishmentId/equipo/invitacion';
+
   /// Sumarse a un establecimiento con el código de una invitación.
   static const joinEstablishment = '/perfil/sumarme';
 
   /// Equipo de [establishmentId].
   static String teamFor(String establishmentId) => '/perfil/establecimiento/$establishmentId/equipo';
+
+  /// Invitación creada en [establishmentId].
+  static String teamInvitationCreatedFor(String establishmentId) => '${teamFor(establishmentId)}/invitacion';
 
   /// Invitar al equipo de [establishmentId].
   static String teamInviteFor(String establishmentId) => '${teamFor(establishmentId)}/invitar';

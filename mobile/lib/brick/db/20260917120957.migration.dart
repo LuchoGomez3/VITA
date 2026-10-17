@@ -10,12 +10,10 @@ part of 'schema.g.dart';
 // The migration version must **always** mirror the file name
 
 const List<MigrationCommand> _migration_20260917120957_up = [
-  DropColumn('establishment_id', onTable: 'BrickCategoriaModel')
+  DropColumn('establishment_id', onTable: 'BrickCategoriaModel'),
 ];
 
-const List<MigrationCommand> _migration_20260917120957_down = [
-  
-];
+const List<MigrationCommand> _migration_20260917120957_down = [];
 
 //
 // DO NOT EDIT BELOW THIS LINE

@@ -11,12 +11,12 @@ part of 'schema.g.dart';
 
 const List<MigrationCommand> _migration_20261002183516_up = [
   InsertColumn('sync_status', Column.integer, onTable: 'BrickAnimalLotMovementModel'),
-  InsertColumn('sync_error_code', Column.varchar, onTable: 'BrickAnimalLotMovementModel')
+  InsertColumn('sync_error_code', Column.varchar, onTable: 'BrickAnimalLotMovementModel'),
 ];
 
 const List<MigrationCommand> _migration_20261002183516_down = [
   DropColumn('sync_status', onTable: 'BrickAnimalLotMovementModel'),
-  DropColumn('sync_error_code', onTable: 'BrickAnimalLotMovementModel')
+  DropColumn('sync_error_code', onTable: 'BrickAnimalLotMovementModel'),
 ];
 
 //

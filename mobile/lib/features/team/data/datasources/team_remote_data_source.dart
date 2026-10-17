@@ -48,7 +48,7 @@ class TeamRemoteDataSource {
   }
 
   /// Crea una invitación y manda el email.
-  Future<TeamInvitation> invite(String establishmentId, {required String email, required UserRole role}) async {
+  Future<CreatedInvitation> invite(String establishmentId, {required String email, required UserRole role}) async {
     final response = await _send(
       () async => _client.post(
         _establishment(establishmentId, 'invitaciones'),
@@ -56,18 +56,18 @@ class TeamRemoteDataSource {
         body: jsonEncode({'email': email, 'rol': role.backendValue}),
       ),
     );
-    return _invitationFrom(_data(response));
+    return _createdFrom(_data(response));
   }
 
   /// Genera un código nuevo y reenvía el email.
-  Future<TeamInvitation> resend(String establishmentId, String invitationId) async {
+  Future<CreatedInvitation> resend(String establishmentId, String invitationId) async {
     final response = await _send(
       () async => _client.post(
         _establishment(establishmentId, 'invitaciones/$invitationId/reenvios'),
         headers: await _headers(),
       ),
     );
-    return _invitationFrom(_data(response));
+    return _createdFrom(_data(response));
   }
 
   /// Cancela una invitación pendiente.
@@ -97,11 +97,17 @@ class TeamRemoteDataSource {
       ),
     );
     final json = _data(response);
+    final invitedByRole = json['invitado_por_rol'] as String?;
     return (
       establishmentId: json['establecimiento_id'] as String,
       establishmentName: json['establecimiento_nombre'] as String,
+      renspa: json['establecimiento_renspa'] as String?,
+      locality: json['establecimiento_localidad'] as String?,
+      province: json['establecimiento_provincia'] as String?,
       role: UserRolePermissions.fromBackend(json['rol'] as String?),
+      email: (json['email'] as String?) ?? '',
       invitedBy: (json['invitado_por'] as String?) ?? '',
+      invitedByRole: invitedByRole == null ? null : UserRolePermissions.fromBackend(invitedByRole),
       expiresAt: DateTime.parse(json['expira_en'] as String),
     );
   }
@@ -147,7 +153,7 @@ class TeamRemoteDataSource {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return response;
     }
-    final (message, backendCode) = _backendError(response);
+    final (message, backendCode, remaining) = _backendError(response);
     throw DomainException(
       message: message ?? 'El servidor no pudo completar la operación (${response.statusCode}).',
       code: switch (response.statusCode) {
@@ -157,9 +163,12 @@ class TeamRemoteDataSource {
         422 => DomainErrorCode.validation,
         _ => DomainErrorCode.unknown,
       },
-      reason: response.statusCode == 429
-          ? TeamErrorReason.tooManyAttempts
-          : TeamErrorReason.fromBackendCode(backendCode),
+      reason: (
+        reason: response.statusCode == 429
+            ? TeamErrorReason.tooManyAttempts
+            : TeamErrorReason.fromBackendCode(backendCode),
+        remainingAttempts: response.statusCode == 429 ? 0 : remaining,
+      ),
     );
   }
 
@@ -197,6 +206,9 @@ class TeamRemoteDataSource {
     memberSince: DateTime.parse(json['miembro_desde'] as String),
   );
 
+  static CreatedInvitation _createdFrom(Map<String, dynamic> json) =>
+      (invitation: _invitationFrom(json), code: json['codigo'] as String);
+
   static TeamInvitation _invitationFrom(Map<String, dynamic> json) => (
     id: json['id'] as String,
     email: json['email'] as String,
@@ -207,20 +219,22 @@ class TeamRemoteDataSource {
     createdAt: DateTime.parse(json['created_at'] as String),
   );
 
-  (String?, String?) _backendError(http.Response response) {
+  (String?, String?, int?) _backendError(http.Response response) {
     try {
       final payload = jsonDecode(utf8.decode(response.bodyBytes));
       final errors = payload is Map<String, dynamic> ? payload['errors'] : null;
       if (errors is List && errors.isNotEmpty && errors.first is Map<String, dynamic>) {
         final error = errors.first as Map<String, dynamic>;
-        return (error['message'] as String?, error['code'] as String?);
+        final details = error['details'];
+        final remaining = details is Map<String, dynamic> ? details['intentos_restantes'] : null;
+        return (error['message'] as String?, error['code'] as String?, remaining is int ? remaining : null);
       }
       // Los HTTPException (p. ej. el 429 del límite de intentos) llegan como
       // `{"error": "..."}`.
       final error = payload is Map<String, dynamic> ? payload['error'] : null;
-      return (error is String ? error : null, null);
+      return (error is String ? error : null, null, null);
     } on FormatException {
-      return (null, null);
+      return (null, null, null);
     }
   }
 }

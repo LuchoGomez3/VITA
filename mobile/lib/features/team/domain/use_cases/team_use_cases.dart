@@ -34,7 +34,7 @@ class InviteTeamMemberUseCase {
   final TeamRepository _repository;
 
   /// Invita a [email] con [role] en [establishmentId].
-  Future<Result<TeamInvitation>> call(String establishmentId, {required String email, required UserRole role}) =>
+  Future<Result<CreatedInvitation>> call(String establishmentId, {required String email, required UserRole role}) =>
       _repository.invite(establishmentId, email: email, role: role);
 }
 
@@ -46,7 +46,7 @@ class ManageTeamUseCase {
   final TeamRepository _repository;
 
   /// Genera un código nuevo y reenvía el email.
-  Future<Result<TeamInvitation>> resend(String establishmentId, String invitationId) =>
+  Future<Result<CreatedInvitation>> resend(String establishmentId, String invitationId) =>
       _repository.resend(establishmentId, invitationId);
 
   /// Cancela la invitación.

@@ -9,9 +9,7 @@ Future<BrickCategoriaModel> _$BrickCategoriaModelFromRest(
   return BrickCategoriaModel(
     localId: data['id'] as String,
     name: data['nombre'] as String,
-    description: data['descripcion'] == null
-        ? null
-        : data['descripcion'] as String?,
+    description: data['descripcion'] == null ? null : data['descripcion'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -45,9 +43,7 @@ Future<BrickCategoriaModel> _$BrickCategoriaModelFromSqlite(
   return BrickCategoriaModel(
     localId: data['local_id'] as String,
     name: data['name'] as String,
-    description: data['description'] == null
-        ? null
-        : data['description'] as String?,
+    description: data['description'] == null ? null : data['description'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -74,8 +70,7 @@ Future<Map<String, dynamic>> _$BrickCategoriaModelToSqlite(
 }
 
 /// Construct a [BrickCategoriaModel]
-class BrickCategoriaModelAdapter
-    extends OfflineFirstWithRestAdapter<BrickCategoriaModel> {
+class BrickCategoriaModelAdapter extends OfflineFirstWithRestAdapter<BrickCategoriaModel> {
   BrickCategoriaModelAdapter();
 
   @override

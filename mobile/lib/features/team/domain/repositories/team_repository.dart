@@ -15,11 +15,11 @@ abstract interface class TeamRepository {
   /// Trae el equipo del servidor y lo guarda en el celular.
   Future<Result<TeamSnapshot>> refresh(String establishmentId);
 
-  /// Invita a [email] con [role]; el código viaja solo en el email.
-  Future<Result<TeamInvitation>> invite(String establishmentId, {required String email, required UserRole role});
+  /// Invita a [email] con [role]. Devuelve el código en claro esta única vez.
+  Future<Result<CreatedInvitation>> invite(String establishmentId, {required String email, required UserRole role});
 
-  /// Genera un código nuevo y reenvía el email.
-  Future<Result<TeamInvitation>> resend(String establishmentId, String invitationId);
+  /// Genera un código nuevo (devuelto en claro) y reenvía el email.
+  Future<Result<CreatedInvitation>> resend(String establishmentId, String invitationId);
 
   /// Cancela una invitación pendiente.
   Future<Result<void>> cancel(String establishmentId, String invitationId);

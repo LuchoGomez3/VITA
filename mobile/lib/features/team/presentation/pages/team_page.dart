@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -40,8 +42,18 @@ class _TeamView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<TeamCubit, TeamState>(
-      listenWhen: (previous, current) => current.notice != null || current.error != null,
-      listener: _showFeedback,
+      listenWhen: (previous, current) =>
+          current.notice != null ||
+          current.error != null ||
+          (current.created != null && current.created != previous.created),
+      listener: (context, state) {
+        final created = state.created;
+        if (created != null) {
+          unawaited(_openCreated(context, context.read<TeamCubit>(), created));
+          return;
+        }
+        _showFeedback(context, state);
+      },
       builder: (context, state) {
         final cubit = context.read<TeamCubit>();
         return Scaffold(
@@ -196,10 +208,24 @@ class _TeamView extends StatelessWidget {
   }
 
   Future<void> _openInvite(BuildContext context, TeamCubit cubit) async {
-    final sent = await context.push<bool>(AppRoutes.teamInviteFor(cubit.establishmentId));
-    if (sent ?? false) {
-      await cubit.refresh();
+    final created = await context.push<CreatedInvitation>(AppRoutes.teamInviteFor(cubit.establishmentId));
+    if (created == null || !context.mounted) {
+      return;
     }
+    await cubit.refresh();
+    if (context.mounted) {
+      await _openCreated(context, cubit, created);
+    }
+  }
+
+  /// "Invitación creada": el código para compartir. Al volver se refresca por
+  /// si la cancelaron desde ahí.
+  Future<void> _openCreated(BuildContext context, TeamCubit cubit, CreatedInvitation created) async {
+    await context.push<bool>(
+      AppRoutes.teamInvitationCreatedFor(cubit.establishmentId),
+      extra: (created: created, establishmentName: cubit.state.establishment?.name ?? ''),
+    );
+    await cubit.refresh();
   }
 
   static void _showFeedback(BuildContext context, TeamState state) {

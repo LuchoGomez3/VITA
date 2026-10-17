@@ -29,6 +29,5 @@ class ProfileHeaderClipper extends CustomClipper<Path> {
   }
 
   @override
-  bool shouldReclip(ProfileHeaderClipper oldClipper) =>
-      transition != oldClipper.transition;
+  bool shouldReclip(ProfileHeaderClipper oldClipper) => transition != oldClipper.transition;
 }

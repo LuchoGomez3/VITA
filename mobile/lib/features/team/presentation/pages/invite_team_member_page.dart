@@ -18,8 +18,8 @@ IconData _roleIcon(UserRole role) => switch (role) {
 
 /// Invitar a una persona al equipo (`EquipoInvitar`): email y rol.
 ///
-/// Vuelve a Equipo con `true` cuando la invitación quedó creada, aunque el
-/// email no haya salido (en ese caso se reenvía desde la lista).
+/// Vuelve a Equipo con la invitación creada (`CreatedInvitation`) cuando la invitación quedó
+/// creada (aunque el email no haya salido), para mostrar el código.
 class InviteTeamMemberPage extends StatefulWidget {
   /// Crea la pantalla para [establishmentId].
   const InviteTeamMemberPage({required this.establishmentId, required this.createCubit, super.key});
@@ -45,7 +45,7 @@ class _InviteTeamMemberPageState extends State<InviteTeamMemberPage> {
     _cubit.then((cubit) {
       _created = cubit;
       if (cubit == null && mounted) {
-        context.pop(false);
+        context.pop();
       }
     });
   }
@@ -95,14 +95,8 @@ class _InviteViewState extends State<_InviteView> {
         final sent = state.sent;
         final messenger = ScaffoldMessenger.of(context);
         if (sent != null) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(
-                sent.emailSent ? TeamStrings.sentNotice(sent.email) : TeamStrings.sentWithoutEmailNotice,
-              ),
-            ),
-          );
-          context.pop(true);
+          // Equipo abre "Invitación creada" con el código para compartir.
+          context.pop(sent);
           return;
         }
         final error = state.error;
@@ -125,7 +119,7 @@ class _InviteViewState extends State<_InviteView> {
                       IconButton(
                         icon: const Icon(Icons.close),
                         tooltip: TeamStrings.closeTooltip,
-                        onPressed: () => context.pop(false),
+                        onPressed: () => context.pop(),
                       ),
                       const SizedBox(width: AppSpacing.xs),
                       const Text(TeamStrings.inviteTitle, style: AppTypography.appBarTitle),

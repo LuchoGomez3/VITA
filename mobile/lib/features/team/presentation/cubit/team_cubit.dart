@@ -35,6 +35,7 @@ class TeamState {
     this.busyId,
     this.notice,
     this.error,
+    this.created,
   });
 
   /// Establecimiento y rol propio, del catálogo del celular.
@@ -62,6 +63,10 @@ class TeamState {
   /// Error de la última acción, para mostrarlo una vez.
   final DomainException? error;
 
+  /// Invitación reenviada con su código nuevo, para abrir la pantalla de
+  /// compartir una vez.
+  final CreatedInvitation? created;
+
   /// Si la persona puede invitar, reenviar, cancelar y quitar.
   bool get canManage => establishment?.role.canManageTeam ?? false;
 
@@ -78,6 +83,7 @@ class TeamState {
     bool clearBusy = false,
     TeamNotice? notice,
     DomainException? error,
+    CreatedInvitation? created,
   }) => TeamState(
     establishment: establishment ?? this.establishment,
     snapshot: snapshot ?? this.snapshot,
@@ -87,6 +93,7 @@ class TeamState {
     busyId: clearBusy ? null : (busyId ?? this.busyId),
     notice: notice,
     error: error,
+    created: created,
   );
 
   @override
@@ -99,11 +106,12 @@ class TeamState {
       other.establishmentMissing == establishmentMissing &&
       other.busyId == busyId &&
       other.notice == notice &&
-      other.error == error;
+      other.error == error &&
+      other.created == created;
 
   @override
   int get hashCode =>
-      Object.hash(establishment, snapshot, isLoading, isOffline, establishmentMissing, busyId, notice, error);
+      Object.hash(establishment, snapshot, isLoading, isOffline, establishmentMissing, busyId, notice, error, created);
 }
 
 /// Muestra el equipo (primero lo guardado, después lo del servidor) y aplica
@@ -162,14 +170,28 @@ class TeamCubit extends Cubit<TeamState> {
     }
   }
 
-  /// Genera un código nuevo para [invitation] y reenvía el email.
-  Future<void> resend(TeamInvitation invitation) => _run(invitation.id, () async {
-    final result = await _manageTeam.resend(establishmentId, invitation.id);
-    if (result case Success(:final data)) {
-      return (data.emailSent ? TeamNotice.resent : TeamNotice.resentWithoutEmail, null);
+  /// Genera un código nuevo para [invitation], reenvía el email y expone el
+  /// código en [TeamState.created] para compartirlo.
+  Future<void> resend(TeamInvitation invitation) async {
+    if (!state.actionsEnabled) {
+      return;
     }
-    return (null, _errorOf(result));
-  });
+    emit(state._copyWith(busyId: invitation.id));
+    final result = await _manageTeam.resend(establishmentId, invitation.id);
+    switch (result) {
+      case Success<CreatedInvitation>(:final data):
+        emit(
+          state._copyWith(
+            clearBusy: true,
+            created: data,
+            notice: data.invitation.emailSent ? TeamNotice.resent : TeamNotice.resentWithoutEmail,
+          ),
+        );
+        await refresh();
+      case Failure<CreatedInvitation>(:final error):
+        emit(state._copyWith(clearBusy: true, error: error, isOffline: error.code == DomainErrorCode.offline));
+    }
+  }
 
   /// Cancela [invitation].
   Future<void> cancel(TeamInvitation invitation) => _run(invitation.id, () async {

@@ -36,8 +36,8 @@ class InviteTeamMemberState {
   /// Si la invitación se está enviando.
   final bool isSending;
 
-  /// Invitación creada; la página vuelve a Equipo.
-  final TeamInvitation? sent;
+  /// Invitación creada con su código; la página abre la pantalla de compartir.
+  final CreatedInvitation? sent;
 
   /// Error del servidor, para mostrarlo una vez.
   final DomainException? error;
@@ -103,9 +103,9 @@ class InviteTeamMemberCubit extends Cubit<InviteTeamMemberState> {
     emit(InviteTeamMemberState(role: state.role, isSending: true));
     final result = await _invite(establishmentId, email: normalized, role: state.role);
     switch (result) {
-      case Success<TeamInvitation>(:final data):
+      case Success<CreatedInvitation>(:final data):
         emit(InviteTeamMemberState(role: state.role, sent: data));
-      case Failure<TeamInvitation>(:final error):
+      case Failure<CreatedInvitation>(:final error):
         emit(InviteTeamMemberState(role: state.role, error: error));
     }
   }

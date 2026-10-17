@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
+import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -89,18 +90,24 @@ void main() {
       await cubit.remove(worker);
       await cubit.cancel(pendingVet);
       repository.resendResult = Result.success((
-        id: pendingVet.id,
-        email: pendingVet.email,
-        role: pendingVet.role,
-        expiresAt: pendingVet.expiresAt,
-        isExpired: false,
-        emailSent: false,
-        createdAt: pendingVet.createdAt,
+        invitation: (
+          id: pendingVet.id,
+          email: pendingVet.email,
+          role: pendingVet.role,
+          expiresAt: pendingVet.expiresAt,
+          isExpired: false,
+          emailSent: false,
+          createdAt: pendingVet.createdAt,
+        ),
+        code: 'Q8R-T3W',
       ));
+      final created = cubit.stream.firstWhere((s) => s.created != null);
       await cubit.resend(pendingVet);
       await Future<void>.delayed(Duration.zero);
 
       expect(notices, [TeamNotice.removed, TeamNotice.cancelled, TeamNotice.resentWithoutEmail]);
+      // Reenviar abre "Invitación creada" con el código nuevo.
+      expect((await created).created!.code, 'Q8R-T3W');
       expect(repository.calls.where((c) => c == 'refresh'), hasLength(4));
       await subscription.cancel();
     });
@@ -109,7 +116,7 @@ void main() {
       const error = DomainException(
         message: 'x',
         code: DomainErrorCode.conflict,
-        reason: TeamErrorReason.holderNotRemovable,
+        reason: (reason: TeamErrorReason.holderNotRemovable, remainingAttempts: null),
       );
       final repository = FakeTeamRepository()..removeResult = const Result.failure(error);
       final cubit = _teamCubit(repository);
@@ -156,7 +163,7 @@ void main() {
 
       await cubit.submit(' socio@example.com ');
       expect(repository.calls, ['invite:socio@example.com:admin']);
-      expect(cubit.state.sent, pendingVet);
+      expect(cubit.state.sent!.code, '7K4-P2M');
 
       repository.inviteResult = const Result.failure(offlineError);
       await cubit.submit('socio@example.com');
@@ -166,44 +173,80 @@ void main() {
   });
 
   group('JoinEstablishmentCubit', () {
-    test('valida, muestra la previsualización y se suma', () async {
-      final repository = FakeTeamRepository();
-      final cubit = JoinEstablishmentCubit(JoinEstablishmentUseCase(repository));
+    JoinEstablishmentCubit joinCubit(FakeTeamRepository repository, {bool syncFails = false, List<String>? log}) =>
+        JoinEstablishmentCubit(
+          JoinEstablishmentUseCase(repository),
+          syncData: () async {
+            log?.add('sync');
+            return syncFails
+                ? const Result.failure(offlineError)
+                : Result.success(PostAuthenticationSummary(establishmentIds: const ['campo-1']));
+          },
+        );
 
-      await cubit.check('k7qm-4xpd');
+    test('valida, muestra la previsualización, se suma y baja los datos', () async {
+      final repository = FakeTeamRepository();
+      final log = <String>[];
+      final cubit = joinCubit(repository, log: log)..edit('7k4-p2m');
+
+      await cubit.check();
       expect(cubit.state.step, JoinStep.confirm);
       expect(cubit.state.preview!.establishmentName, 'La Sirena');
 
       await cubit.confirm();
       expect(cubit.state.step, JoinStep.joined);
       expect(cubit.state.joined!.name, 'La Sirena');
-      expect(repository.calls, ['preview:K7QM4XPD', 'accept:K7QM4XPD']);
+      expect(cubit.state.dataSync, JoinDataSync.done);
+      expect(repository.calls, ['preview:7K4P2M', 'accept:7K4P2M']);
+      expect(log, ['sync']);
     });
 
-    test('un código incompleto no se manda y uno inválido vuelve a escribirse', () async {
-      const error = DomainException(message: 'x', reason: TeamErrorReason.invalidCode);
-      final repository = FakeTeamRepository()..previewResult = const Result.failure(error);
-      final cubit = JoinEstablishmentCubit(JoinEstablishmentUseCase(repository));
+    test('si la descarga falla igual queda sumado', () async {
+      final cubit = joinCubit(FakeTeamRepository(), syncFails: true)..edit('7K4P2M');
+      await cubit.check();
 
-      await cubit.check('K7QM');
+      await cubit.confirm();
+
+      expect(cubit.state.step, JoinStep.joined);
+      expect(cubit.state.dataSync, JoinDataSync.failed);
+    });
+
+    test('un código incompleto no se manda; uno inválido queda en rojo hasta editarlo', () async {
+      const error = DomainException(message: 'x', reason: (reason: TeamErrorReason.invalidCode, remainingAttempts: 4));
+      final repository = FakeTeamRepository()..previewResult = const Result.failure(error);
+      final cubit = joinCubit(repository)..edit('7K4');
+
+      await cubit.check();
       expect(repository.calls, isEmpty);
 
-      await cubit.check('K7QM4XPD');
+      cubit.edit('7K4P2N');
+      await cubit.check();
       expect(cubit.state.step, JoinStep.enterCode);
       expect(cubit.state.error, error);
+      expect(cubit.state.code, '7K4P2N');
+
+      cubit.edit('7K4P2');
+      expect(cubit.state.error, isNull);
     });
 
-    test('si el canje falla se queda en la confirmación para reintentar', () async {
+    test('pegar un código con guion y de más lo recorta a 6', () {
+      final cubit = joinCubit(FakeTeamRepository())..edit(' 7k4-p2m-xyz ');
+
+      expect(cubit.state.code, '7K4P2M');
+    });
+
+    test('si el canje falla se queda en la confirmación; "No es mi invitación" vuelve a empezar', () async {
       final repository = FakeTeamRepository()..acceptResult = const Result.failure(offlineError);
-      final cubit = JoinEstablishmentCubit(JoinEstablishmentUseCase(repository));
-      await cubit.check('K7QM4XPD');
+      final cubit = joinCubit(repository)..edit('7K4P2M');
+      await cubit.check();
 
       await cubit.confirm();
 
       expect(cubit.state.step, JoinStep.confirm);
       expect(cubit.state.error, offlineError);
-      cubit.editCode();
+      cubit.clear();
       expect(cubit.state.step, JoinStep.enterCode);
+      expect(cubit.state.code, isEmpty);
     });
   });
 }

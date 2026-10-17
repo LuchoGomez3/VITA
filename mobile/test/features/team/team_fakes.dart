@@ -66,15 +66,20 @@ TeamSnapshot snapshotOf({List<TeamMember>? members, List<TeamInvitation>? invita
 class FakeTeamRepository implements TeamRepository {
   TeamSnapshot? cached;
   Result<TeamSnapshot> refreshResult = Result.success(snapshotOf());
-  Result<TeamInvitation> inviteResult = Result.success(pendingVet);
-  Result<TeamInvitation> resendResult = Result.success(pendingVet);
+  Result<CreatedInvitation> inviteResult = Result.success((invitation: pendingVet, code: '7K4-P2M'));
+  Result<CreatedInvitation> resendResult = Result.success((invitation: pendingVet, code: 'Q8R-T3W'));
   Result<void> cancelResult = const Result.success(null);
   Result<void> removeResult = const Result.success(null);
   Result<InvitationPreview> previewResult = Result.success((
     establishmentId: 'campo-1',
     establishmentName: 'La Sirena',
+    renspa: '07.123.0.00456/01',
+    locality: 'Coronel Moldes',
+    province: 'Córdoba',
     role: UserRole.veterinarian,
+    email: 'vet@example.com',
     invitedBy: 'Cecilia Lazarte',
+    invitedByRole: UserRole.owner,
     expiresAt: DateTime.utc(2026, 10, 24),
   ));
   Result<EstablishmentMembership> acceptResult = const Result.success(
@@ -93,13 +98,17 @@ class FakeTeamRepository implements TeamRepository {
   }
 
   @override
-  Future<Result<TeamInvitation>> invite(String establishmentId, {required String email, required UserRole role}) async {
+  Future<Result<CreatedInvitation>> invite(
+    String establishmentId, {
+    required String email,
+    required UserRole role,
+  }) async {
     calls.add('invite:$email:${role.backendValue}');
     return inviteResult;
   }
 
   @override
-  Future<Result<TeamInvitation>> resend(String establishmentId, String invitationId) async {
+  Future<Result<CreatedInvitation>> resend(String establishmentId, String invitationId) async {
     calls.add('resend:$invitationId');
     return resendResult;
   }

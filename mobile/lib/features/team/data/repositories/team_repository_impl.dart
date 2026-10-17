@@ -50,11 +50,11 @@ class TeamRepositoryImpl implements TeamRepository {
   });
 
   @override
-  Future<Result<TeamInvitation>> invite(String establishmentId, {required String email, required UserRole role}) =>
+  Future<Result<CreatedInvitation>> invite(String establishmentId, {required String email, required UserRole role}) =>
       _guard(() => _remote.invite(establishmentId, email: email.trim().toLowerCase(), role: role));
 
   @override
-  Future<Result<TeamInvitation>> resend(String establishmentId, String invitationId) =>
+  Future<Result<CreatedInvitation>> resend(String establishmentId, String invitationId) =>
       _guard(() => _remote.resend(establishmentId, invitationId));
 
   @override

@@ -9,16 +9,12 @@ Future<BrickAnimalLotMovementModel> _$BrickAnimalLotMovementModelFromRest(
   return BrickAnimalLotMovementModel(
     localId: data['id'] as String,
     establishmentId: data['establecimiento_id'] as String,
-    sourceLotId: data['lote_origen_id'] == null
-        ? null
-        : data['lote_origen_id'] as String?,
+    sourceLotId: data['lote_origen_id'] == null ? null : data['lote_origen_id'] as String?,
     destinationLotId: data['lote_destino_id'] as String,
     animalIdsJson: brickMovementAnimalIdsFromBackend(data['animal_ids']),
     occurredAt: DateTime.parse(data['fecha_movimiento'] as String),
     reason: data['motivo'] as String,
-    responsibleId: data['responsable_id'] == null
-        ? null
-        : data['responsable_id'] as String?,
+    responsibleId: data['responsable_id'] == null ? null : data['responsable_id'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -56,16 +52,12 @@ Future<BrickAnimalLotMovementModel> _$BrickAnimalLotMovementModelFromSqlite(
   return BrickAnimalLotMovementModel(
     localId: data['local_id'] as String,
     establishmentId: data['establishment_id'] as String,
-    sourceLotId: data['source_lot_id'] == null
-        ? null
-        : data['source_lot_id'] as String?,
+    sourceLotId: data['source_lot_id'] == null ? null : data['source_lot_id'] as String?,
     destinationLotId: data['destination_lot_id'] as String,
     animalIdsJson: data['animal_ids_json'] as String,
     occurredAt: DateTime.parse(data['occurred_at'] as String),
     reason: data['reason'] as String,
-    responsibleId: data['responsible_id'] == null
-        ? null
-        : data['responsible_id'] as String?,
+    responsibleId: data['responsible_id'] == null ? null : data['responsible_id'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -74,9 +66,7 @@ Future<BrickAnimalLotMovementModel> _$BrickAnimalLotMovementModelFromSqlite(
         ? null
         : DateTime.tryParse(data['deleted_at'] as String),
     syncStatus: brickMovementSyncStatusFromSqlite(data['sync_status']),
-    syncErrorCode: data['sync_error_code'] == null
-        ? null
-        : data['sync_error_code'] as String?,
+    syncErrorCode: data['sync_error_code'] == null ? null : data['sync_error_code'] as String?,
   )..primaryKey = data['_brick_id'] as int;
 }
 
@@ -105,8 +95,7 @@ Future<Map<String, dynamic>> _$BrickAnimalLotMovementModelToSqlite(
 }
 
 /// Construct a [BrickAnimalLotMovementModel]
-class BrickAnimalLotMovementModelAdapter
-    extends OfflineFirstWithRestAdapter<BrickAnimalLotMovementModel> {
+class BrickAnimalLotMovementModelAdapter extends OfflineFirstWithRestAdapter<BrickAnimalLotMovementModel> {
   BrickAnimalLotMovementModelAdapter();
 
   @override

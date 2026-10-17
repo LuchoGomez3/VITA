@@ -1,6 +1,10 @@
-/// Motivos funcionales que el backend informa con un código estable.
+/// Falla del equipo tal como la informa el backend.
 ///
-/// Viajan en `DomainException.reason` para que la presentación elija el texto.
+/// Viaja en `DomainException.reason` para que la presentación elija el texto y,
+/// al canjear un código, muestre cuántos intentos le quedan a la persona.
+typedef TeamFailure = ({TeamErrorReason? reason, int? remainingAttempts});
+
+/// Motivos funcionales que el backend informa con un código estable.
 enum TeamErrorReason {
   /// El usuario no es dueño ni administrador.
   notAllowed,

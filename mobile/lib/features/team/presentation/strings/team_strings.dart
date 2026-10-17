@@ -150,59 +150,216 @@ abstract final class TeamStrings {
     UserRole.unknown => '',
   };
 
-  // ─── Sumarse con código ───────────────────────────────────────────────────
+  // ─── Invitación creada (owner) ────────────────────────────────────────────
+
+  /// Título de la pantalla.
+  static const createdTitle = 'Invitación creada';
+
+  /// Chip de la invitación recién creada.
+  static const pendingStatus = 'Pendiente';
+
+  /// Vencimiento y uso del código.
+  static String codeValidity(DateTime expiresAt) => 'Vence el ${_date(expiresAt)} · uso único';
+
+  /// Cómo se usa el código.
+  static const createdExplanation =
+      'Le enviamos el código por correo. Si no le llega, compartíselo por WhatsApp o dictáselo: '
+      'lo ingresa en la app desde "Sumarme a un establecimiento".';
+
+  /// El email no salió.
+  static const createdWithoutEmailExplanation =
+      'No pudimos mandar el correo. Compartíselo por WhatsApp o dictáselo: lo ingresa en la app '
+      'desde "Sumarme a un establecimiento".';
+
+  /// Copiar el código.
+  static const copyCta = 'Copiar';
+
+  /// Compartir el código.
+  static const shareCta = 'Compartir';
+
+  /// Aviso: se copió.
+  static const codeCopied = 'Código copiado.';
+
+  /// Mensaje que se comparte por WhatsApp u otra app.
+  static String shareMessage(String establishment, String code) =>
+      'Te invité a $establishment en VITA. Entrá a la app con este email, andá a Perfil > '
+      'Sumarme a otro establecimiento e ingresá el código $code (vence en 7 días).';
+
+  /// Cerrar la pantalla.
+  static const doneCta = 'Listo';
+
+  /// Cancelando.
+  static const cancellingCta = 'Cancelando…';
+
+  // ─── Sumarse con código (invitado) ────────────────────────────────────────
 
   /// Título de la pantalla.
   static const joinTitle = 'Sumarme a un establecimiento';
 
-  /// Explicación.
-  static const joinIntro =
-      'Ingresá el código que te llegó por email. Tenés que haber entrado a VITA con ese mismo email.';
+  /// Título del paso de ingresar el código.
+  static const enterCodeTitle = 'Ingresá tu código';
 
-  /// Campo del código.
+  /// Explicación del código.
+  static const enterCodeIntro =
+      'Son 6 caracteres, letras y números. Te lo mandó el dueño o administrador del campo por correo o mensaje.';
+
+  /// Explicación corta (con un error a la vista).
+  static const enterCodeIntroShort = 'Son 6 caracteres, letras y números.';
+
+  /// Aclaración de mayúsculas.
+  static const caseInsensitive = 'No distingue mayúsculas de minúsculas.';
+
+  /// Pegar desde el portapapeles.
+  static const pasteCta = 'Pegar código copiado';
+
+  /// Aviso de conexión.
+  static const onlineNote =
+      'Para validar el código necesitás conexión. Después vas a poder trabajar en el campo sin señal.';
+
+  /// Etiqueta del código.
   static const codeLabel = 'Código de invitación';
 
-  /// Ejemplo del código.
-  static const codeHint = 'K7QM-4XPD';
+  /// Validar.
+  static const validateCta = 'Validar código';
 
-  /// Botón de validar.
-  static const checkCta = 'Continuar';
-
-  /// Botón mientras valida.
+  /// Validando.
   static const checkingCta = 'Revisando…';
 
-  /// Previsualización.
-  static String previewMessage(String establishment, UserRole role) =>
-      'Te vas a sumar a $establishment como ${UserRoleStrings.name(role)}.';
+  /// Reintentar el mismo código.
+  static const retryCodeCta = 'Volver a intentar';
 
-  /// Quién invitó.
-  static String previewInvitedBy(String name) => 'Te invitó $name.';
+  /// Borrar el código.
+  static const clearCodeCta = 'Borrar y escribir de nuevo';
 
-  /// Botón de confirmar.
-  static const joinCta = 'Sumarme';
+  /// Intentos que quedan.
+  static String remainingAttempts(int remaining) => switch (remaining) {
+    0 => 'No te quedan intentos por ahora. Esperá un rato.',
+    1 => 'Te queda 1 intento.',
+    _ => 'Te quedan $remaining intentos.',
+  };
 
-  /// Botón mientras confirma.
+  /// Código válido.
+  static const validCode = 'Código válido';
+
+  /// Sección del campo.
+  static const invitedTo = 'Te invitaron a';
+
+  /// RENSPA del campo.
+  static String renspa(String value) => 'RENSPA $value';
+
+  /// Fila de quién invitó.
+  static const invitedByLabel = 'Invitado por';
+
+  /// Quién invitó y con qué rol.
+  static String invitedByValue(String name, UserRole? role) =>
+      role == null ? name : '$name · ${UserRoleStrings.name(role)}';
+
+  /// Fila del rol.
+  static const yourRoleLabel = 'Tu rol';
+
+  /// Fila del email.
+  static const emailRowLabel = 'Correo';
+
+  /// Título de lo que podrá hacer.
+  static String abilitiesTitle(UserRole role) => 'Como ${UserRoleStrings.name(role).toLowerCase()} vas a poder';
+
+  /// Lo que puede y no puede hacer cada rol (adr-0012: veterinario opera como
+  /// empleado por ahora).
+  static ({List<String> can, List<String> cannot}) roleAbilities(UserRole role) => switch (role) {
+    UserRole.owner => (
+      can: const [
+        'Gestionar el equipo y los datos del campo',
+        'Ver finanzas y ventas',
+        'Cargar animales, pesajes y sanidad',
+      ],
+      cannot: const [],
+    ),
+    UserRole.admin => (
+      can: const [
+        'Invitar y quitar empleados y veterinarios',
+        'Ver finanzas y ventas',
+        'Cargar animales, pesajes y sanidad',
+      ],
+      cannot: const ['Sumar dueños al campo'],
+    ),
+    UserRole.employee || UserRole.veterinarian => (
+      can: const [
+        'Dar de alta animales y registrar pesajes',
+        'Aplicar vacunas y tratamientos',
+        'Mover animales entre potreros',
+      ],
+      cannot: const ['Gestionar el equipo ni ver finanzas'],
+    ),
+    UserRole.unknown => (can: const [], cannot: const []),
+  };
+
+  /// Confirmar.
+  static String joinEstablishmentCta(String establishment) => 'Unirme a $establishment';
+
+  /// Confirmando.
   static const joiningCta = 'Sumándote…';
 
-  /// Volver a escribir el código.
-  static const otherCodeCta = 'Usar otro código';
+  /// No es su invitación.
+  static const notMyInvitationCta = 'No es mi invitación';
 
-  /// Aviso: ya se sumó.
-  static String joinedNotice(String establishment) => 'Ya formás parte de $establishment.';
+  /// Título del éxito.
+  static String joinedTitle(String establishment) => 'Ya sos parte de $establishment';
+
+  /// Subtítulo del éxito.
+  static String joinedSubtitle(UserRole role, String invitedBy) {
+    final asRole = 'Entraste como ${UserRoleStrings.name(role).toLowerCase()}.';
+    return invitedBy.isEmpty ? asRole : '$asRole Le avisamos a $invitedBy.';
+  }
+
+  /// Descargando.
+  static const downloadingData = 'Descargando datos del campo';
+
+  /// Descarga terminada.
+  static const downloadedTitle = 'Datos del campo';
+
+  /// Mientras descarga.
+  static const downloadRunning = 'Animales y potreros, para usar sin señal.';
+
+  /// Terminó.
+  static const downloadDone = 'Listo: quedaron en el celular para usar sin señal.';
+
+  /// Falló.
+  static const downloadFailed = 'No pudimos bajar todo ahora; se completa en la próxima sincronización.';
+
+  /// Ir al inicio.
+  static const goHomeCta = 'Ir al inicio';
+
+  /// Título del error de un código.
+  static String codeErrorTitle(DomainException error) {
+    final failure = error.reason;
+    final reason = failure is TeamFailure ? failure.reason : null;
+    return switch (reason) {
+      TeamErrorReason.expiredCode => 'El código venció',
+      TeamErrorReason.usedCode => 'El código ya se usó',
+      TeamErrorReason.revokedCode => 'La invitación fue cancelada',
+      TeamErrorReason.codeForAnotherEmail => 'El código es para otra cuenta',
+      TeamErrorReason.tooManyAttempts => 'Demasiados intentos',
+      TeamErrorReason.alreadyMember => 'Ya formás parte del campo',
+      _ when error.code == DomainErrorCode.offline => 'Sin conexión',
+      _ => 'El código no es válido',
+    };
+  }
 
   // ─── Errores ──────────────────────────────────────────────────────────────
 
   /// Mensaje para el usuario de un error del equipo.
   static String error(DomainException error) {
-    final reason = error.reason;
-    if (reason is TeamErrorReason) {
+    final failure = error.reason;
+    final reason = failure is TeamFailure ? failure.reason : null;
+    if (reason != null) {
       return switch (reason) {
         TeamErrorReason.notAllowed => 'Solo el dueño o un administrador pueden gestionar el equipo.',
         TeamErrorReason.roleNotAssignable => 'Tu rol no te permite gestionar a alguien con ese rol.',
         TeamErrorReason.alreadyMember => 'Esa persona ya forma parte del equipo.',
         TeamErrorReason.duplicatedInvitation =>
           'Ya hay una invitación pendiente para ese email. Podés reenviarla desde el equipo.',
-        TeamErrorReason.invalidCode => 'El código no es válido. Revisá que esté bien escrito.',
+        TeamErrorReason.invalidCode =>
+          'Revisá que esté bien escrito. Si ya pasaron 7 días o ya fue usado, pedile al dueño que te envíe uno nuevo.',
         TeamErrorReason.expiredCode => 'El código venció. Pedile a quien te invitó que te lo reenvíe.',
         TeamErrorReason.usedCode => 'Este código ya se usó.',
         TeamErrorReason.revokedCode => 'La invitación fue cancelada. Pedile una nueva a quien te invitó.',
