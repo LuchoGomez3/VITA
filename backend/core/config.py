@@ -78,6 +78,11 @@ class Settings:
             os.getenv("AVATAR_IMAGEN_LADO_MAX", "512")
         )
         self.AVATAR_IMAGEN_CALIDAD: int = int(os.getenv("AVATAR_IMAGEN_CALIDAD", "85"))
+        # Tope de píxeles antes de decodificar (40 MP: sobra para cualquier
+        # cámara de celular y acota la memoria a ~160 MB por foto).
+        self.AVATAR_IMAGEN_MAX_PIXELES: int = int(
+            os.getenv("AVATAR_IMAGEN_MAX_PIXELES", str(40_000_000))
+        )
 
         # Auth provider: "supabase" en entornos reales; "local" para
         # desarrollo/test (emite y valida JWT con JWT_SECRET, sin red).

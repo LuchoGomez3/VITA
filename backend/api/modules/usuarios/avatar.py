@@ -20,6 +20,7 @@ from uuid import UUID
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from api.modules.usuarios.exceptions import (
+    AvatarDimensionesExcesivasError,
     AvatarFormatoInvalidoError,
     ImagenDemasiadoGrandeError,
     ImagenVaciaError,
@@ -63,12 +64,26 @@ def validar_tamanio_declarado(content_length: int | None) -> None:
     """Rechaza por ``Content-Length`` antes de leer el cuerpo.
 
     Es un atajo, no la validación: el header lo pone el cliente y puede mentir o
-    faltar. El chequeo que manda es el de ``normalizar_avatar`` sobre los bytes
-    reales; este solo evita traer 200 MB a memoria para después descartarlos.
+    faltar. Starlette guarda el archivo del multipart en disco a partir de 1 MB,
+    y el endpoint lo lee con ``leer_con_limite``, así que una foto enorme nunca
+    entra completa en memoria.
     """
     maximo = settings.AVATAR_IMAGEN_MAX_BYTES
     if content_length is not None and content_length > maximo:
         raise ImagenDemasiadoGrandeError(maximo)
+
+
+async def leer_con_limite(archivo) -> bytes:
+    """Lee el archivo subido hasta el máximo permitido más un byte.
+
+    Si hay más, es demasiado grande y se rechaza sin terminar de leerlo (cubre el
+    caso de un request sin ``Content-Length``).
+    """
+    maximo = settings.AVATAR_IMAGEN_MAX_BYTES
+    datos = await archivo.read(maximo + 1)
+    if len(datos) > maximo:
+        raise ImagenDemasiadoGrandeError(maximo)
+    return datos
 
 
 def normalizar_avatar(datos: bytes) -> bytes:
@@ -99,6 +114,12 @@ def normalizar_avatar(datos: bytes) -> bytes:
             # extensión .jpg pasa, un archivo que solo empieza "parecido", no.
             if sonda.format != formato or sonda.format not in _FORMATOS_ACEPTADOS:
                 raise AvatarFormatoInvalidoError()
+            # El límite de bytes es sobre el archivo comprimido: un PNG liso de
+            # 13.000 x 13.000 px pesa unos KB y al decodificarlo ocupa ~700 MB.
+            # Las dimensiones se leen del encabezado, sin decodificar nada.
+            ancho, alto = sonda.size
+            if ancho * alto > settings.AVATAR_IMAGEN_MAX_PIXELES:
+                raise AvatarDimensionesExcesivasError()
             sonda.verify()
     except (UnidentifiedImageError, OSError, SyntaxError, ValueError) as exc:
         # Sin el detalle de Pillow en el mensaje al usuario: no puede hacer nada

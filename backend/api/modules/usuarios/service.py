@@ -2,6 +2,8 @@
 
 from datetime import UTC, datetime
 import logging
+
+import anyio
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
@@ -122,7 +124,9 @@ class PerfilUsuarioService:
         la subida falla, el perfil sigue apuntando a la foto que había.
         """
         usuario = await self._cargar(usuario_id)
-        foto = normalizar_avatar(datos)
+        # Pillow es CPU puro: en el event loop frenaría a todos los demás
+        # requests mientras procesa una foto de cámara.
+        foto = await anyio.to_thread.run_sync(normalizar_avatar, datos)
         try:
             await self.storage.subir_jpeg(clave_de_avatar(usuario.id), foto)
         except StorageError as exc:
@@ -145,14 +149,16 @@ class PerfilUsuarioService:
         """Borra la foto. Sin foto previa no hace nada (idempotente).
 
         Primero se borra el objeto y después la fecha: si Storage falla, el
-        perfil sigue mostrando la foto que todavía existe.
+        perfil sigue mostrando la foto que todavía existe. El objeto se borra
+        aunque la fecha esté vacía: si una subida llegó al bucket pero no a la
+        base, así no queda una foto huérfana ocupando espacio.
         """
         usuario = await self._cargar(usuario_id)
+        try:
+            await self.storage.borrar(clave_de_avatar(usuario.id))
+        except StorageError as exc:
+            raise AlmacenamientoDeAvatarFallidoError() from exc
         if usuario.avatar_actualizado_en is not None:
-            try:
-                await self.storage.borrar(clave_de_avatar(usuario.id))
-            except StorageError as exc:
-                raise AlmacenamientoDeAvatarFallidoError() from exc
             usuario.avatar_actualizado_en = None
             await self.repository.guardar(usuario)
         return UsuarioRead.model_validate(usuario)

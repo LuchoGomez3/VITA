@@ -11,7 +11,7 @@ from sqlalchemy import select
 
 from api.auth.dependencies import get_current_user
 from api.auth.providers.local_provider import LocalAuthProvider
-from api.modules.usuarios.avatar import normalizar_avatar
+from api.modules.usuarios.avatar import leer_con_limite, normalizar_avatar
 from api.modules.usuarios.exceptions import ImagenDemasiadoGrandeError
 from api.modules.usuarios.models import Usuario
 from core.config import settings
@@ -281,6 +281,76 @@ def test_el_limite_tambien_se_aplica_a_los_bytes_reales(monkeypatch):
 
 
 @pytest.mark.anyio
+async def test_rechaza_una_foto_liviana_con_dimensiones_enormes(
+    auth_client, storage, monkeypatch
+):
+    """Un PNG liso pesa pocos KB aunque mida 13.000 px por lado: se rechaza por
+    las dimensiones del encabezado, antes de decodificarlo."""
+    monkeypatch.setattr(settings, "AVATAR_IMAGEN_MAX_PIXELES", 100 * 100)
+    salida = io.BytesIO()
+    Image.new("RGB", (101, 100), (46, 125, 50)).save(salida, format="PNG")
+
+    resp = await auth_client.put(
+        _AVATAR, files=_archivo(salida.getvalue(), "image/png")
+    )
+
+    assert resp.status_code == 422
+    assert resp.json()["errors"][0]["code"] == "avatar_dimensiones_excesivas"
+    assert storage.objetos == {}
+
+
+class _ArchivoSubido:
+    """Doble de ``UploadFile`` que registra cuánto se le pidió leer."""
+
+    def __init__(self, datos: bytes) -> None:
+        self._datos = datos
+        self.pedidos: list[int] = []
+
+    async def read(self, size: int = -1) -> bytes:
+        self.pedidos.append(size)
+        return self._datos if size < 0 else self._datos[:size]
+
+
+@pytest.mark.anyio
+async def test_lee_el_archivo_sin_pasar_del_limite(monkeypatch):
+    """Sin ``Content-Length`` el archivo se lee con tope, nunca entero."""
+    monkeypatch.setattr(settings, "AVATAR_IMAGEN_MAX_BYTES", 1000)
+    archivo = _ArchivoSubido(b"x" * 5000)
+
+    with pytest.raises(ImagenDemasiadoGrandeError):
+        await leer_con_limite(archivo)
+
+    assert archivo.pedidos == [1001]
+
+
+@pytest.mark.anyio
+async def test_el_middleware_de_camel_case_no_lee_los_archivos():
+    """Si el middleware leyera el multipart, la foto entera pasaría a memoria
+    antes de que el endpoint aplique su límite."""
+    from starlette.requests import Request
+
+    from core.middlewares import camel_case_to_snake_case_middleware
+
+    async def receive():
+        raise AssertionError("el middleware leyó el cuerpo del multipart")
+
+    request = Request(
+        {
+            "type": "http",
+            "method": "PUT",
+            "path": _AVATAR,
+            "headers": [(b"content-type", b"multipart/form-data; boundary=x")],
+        },
+        receive,
+    )
+
+    async def call_next(_request):
+        return "siguiente"
+
+    assert await camel_case_to_snake_case_middleware(request, call_next) == "siguiente"
+
+
+@pytest.mark.anyio
 async def test_si_storage_falla_no_cambia_la_fecha(
     auth_client, usuario_actual, storage, session_maker
 ):
@@ -332,6 +402,19 @@ async def test_delete_borra_la_foto_y_es_idempotente(
     assert (
         await _usuario_en_base(session_maker, usuario_actual.id)
     ).avatar_actualizado_en is None
+
+
+@pytest.mark.anyio
+async def test_delete_borra_una_foto_huerfana_sin_fecha(
+    auth_client, usuario_actual, storage
+):
+    """Si una subida llegó al bucket pero no a la base, "Quitar foto" la borra."""
+    storage.objetos[f"{usuario_actual.id}.jpg"] = b"foto-huerfana"
+
+    resp = await auth_client.delete(_AVATAR)
+
+    assert resp.status_code == 200
+    assert storage.objetos == {}
 
 
 @pytest.mark.anyio

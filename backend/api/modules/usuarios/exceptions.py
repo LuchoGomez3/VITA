@@ -36,6 +36,15 @@ class AvatarFormatoInvalidoError(ValidationError):
         super().__init__("La foto tiene que ser JPEG, PNG o WebP.")
 
 
+class AvatarDimensionesExcesivasError(ValidationError):
+    """La foto pesa poco pero mide demasiado: decodificarla agotaría la memoria."""
+
+    code = "avatar_dimensiones_excesivas"
+
+    def __init__(self) -> None:
+        super().__init__("La foto es demasiado grande. Probá con otra.")
+
+
 class ImagenVaciaError(ValidationError):
     code = "imagen_vacia"
 

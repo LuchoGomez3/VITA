@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth.dependencies import get_current_user
 from api.auth.providers import AuthProvider, get_auth_provider
-from api.modules.usuarios.avatar import validar_tamanio_declarado
+from api.modules.usuarios.avatar import leer_con_limite, validar_tamanio_declarado
 from api.modules.usuarios.models import Usuario
 from api.modules.usuarios.schemas import UsuarioPerfilUpdate, UsuarioRegistroCreate
 from api.modules.usuarios.service import PerfilUsuarioService, UsuarioService
@@ -80,7 +80,7 @@ async def subir_mi_avatar(
     y la guarda con una clave fija por usuario, así que nunca hay más de una.
     """
     validar_tamanio_declarado(content_length)
-    perfil = await service.subir_avatar(current_user.id, await archivo.read())
+    perfil = await service.subir_avatar(current_user.id, await leer_con_limite(archivo))
     return StandardResponse(success=True, data=perfil.model_dump(mode="json"))
 
 
