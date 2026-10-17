@@ -72,3 +72,28 @@ def email_invitacion(
         texto=texto,
         html=html,
     )
+
+
+def email_aceptacion(
+    *, destinatario: str, establecimiento: str, nuevo_miembro: str, rol: RolUsuario
+) -> Email:
+    """Aviso a quien invitó: la persona canjeó el código y ya está en el equipo."""
+    campo = _una_linea(establecimiento)
+    quien = _una_linea(nuevo_miembro)
+    rol_texto = NOMBRE_ROL[rol]
+    texto = (
+        f"Hola,\n\n{quien} aceptó tu invitación y ya forma parte del equipo de "
+        f"{campo} como {rol_texto}.\n\nLo ves en Perfil > {campo} > Equipo.\n"
+    )
+    html = (
+        f"<p>Hola,</p><p><strong>{escape(quien)}</strong> aceptó tu invitación y ya "
+        f"forma parte del equipo de <strong>{escape(campo)}</strong> como "
+        f"<strong>{escape(rol_texto)}</strong>.</p>"
+        f"<p>Lo ves en <em>Perfil &gt; {escape(campo)} &gt; Equipo</em>.</p>"
+    )
+    return Email(
+        destinatario=destinatario,
+        asunto=f"{quien} se sumó a {campo}",
+        texto=texto,
+        html=html,
+    )

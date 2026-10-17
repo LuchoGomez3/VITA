@@ -9,7 +9,7 @@ import anyio
 import pytest
 
 from api.modules.equipo import codigos
-from api.modules.equipo.email_templates import email_invitacion
+from api.modules.equipo.email_templates import email_aceptacion, email_invitacion
 from api.modules.equipo.models import InvitacionEstablecimiento
 from api.modules.equipo.service import EquipoService
 from api.shared.enums import RolUsuario
@@ -31,17 +31,17 @@ def test_los_codigos_usan_solo_el_alfabeto_sin_caracteres_ambiguos():
 
     assert len(generados) == 200
     for codigo in generados:
-        assert len(codigo) == 8
+        assert len(codigo) == 6
         assert not set(codigo) & set("01OIL")
         assert codigos.tiene_formato_valido(codigo)
 
 
 def test_el_hash_ignora_formato_y_depende_de_la_clave():
-    base = codigos.hashear_codigo("K7QM4XPD", "clave")
+    base = codigos.hashear_codigo("7K4P2M", "clave")
 
-    assert codigos.hashear_codigo(" k7qm-4xpd ", "clave") == base
-    assert codigos.hashear_codigo("K7QM4XPD", "otra-clave") != base
-    assert codigos.formatear_codigo("K7QM4XPD") == "K7QM-4XPD"
+    assert codigos.hashear_codigo(" 7k4-p2m ", "clave") == base
+    assert codigos.hashear_codigo("7K4P2M", "otra-clave") != base
+    assert codigos.formatear_codigo("7K4P2M") == "7K4-P2M"
 
 
 # ─── Contenido del email ────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ def _email(**cambios):
         "establecimiento": "La Sirena",
         "invitado_por": "Cecilia Lazarte",
         "rol": RolUsuario.veterinarian,
-        "codigo_formateado": "K7QM-4XPD",
+        "codigo_formateado": "7K4-P2M",
         # 03:00 UTC del 25 es todavía el 25 en Córdoba (UTC-3), 02:59 es el 24.
         "expira_en": datetime(2026, 10, 25, 2, 59, tzinfo=UTC),
     }
@@ -67,10 +67,24 @@ def test_el_email_explica_como_sumarse_y_muestra_la_fecha_local():
     assert email.asunto == "Te invitaron a La Sirena en VITA"
     assert "Cecilia Lazarte te invitó" in email.texto
     assert "como Veterinario" in email.texto
-    assert "K7QM-4XPD" in email.texto and "K7QM-4XPD" in email.html
+    assert "7K4-P2M" in email.texto and "7K4-P2M" in email.html
     assert "Vence el 24/10/2026" in email.texto
     assert "Sumarme a otro establecimiento" in email.texto
     assert "mariano@example.com" in email.texto
+
+
+def test_el_aviso_de_aceptacion_le_cuenta_quien_se_sumo():
+    email = email_aceptacion(
+        destinatario="ceci@example.com",
+        establecimiento="La Sirena",
+        nuevo_miembro="Diego <b>Romero</b>",
+        rol=RolUsuario.employee,
+    )
+
+    assert email.destinatario == "ceci@example.com"
+    assert email.asunto == "Diego <b>Romero</b> se sumó a La Sirena"
+    assert "como Empleado" in email.texto
+    assert "<b>Romero</b>" not in email.html
 
 
 def test_el_email_escapa_los_nombres_y_no_rompe_el_asunto():
@@ -226,6 +240,6 @@ async def test_un_smtp_colgado_no_bloquea_la_invitacion(session, monkeypatch):
     class _Yo:
         nombre, apellido = "Cecilia", "Lazarte"
 
-    await servicio._enviar(invitacion, "K7QM4XPD", _Campo(), _Yo())
+    await servicio._enviar(invitacion, "7K4P2M", _Campo(), _Yo())
 
     assert invitacion.email_enviado_en is None

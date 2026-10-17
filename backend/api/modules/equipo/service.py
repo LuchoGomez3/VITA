@@ -24,7 +24,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.modules.equipo import codigos
-from api.modules.equipo.email_templates import email_invitacion
+from api.modules.equipo.email_templates import email_aceptacion, email_invitacion
 from api.modules.equipo.exceptions import (
     CodigoDeOtroEmailError,
     CodigoInvalidoError,
@@ -44,6 +44,7 @@ from api.modules.equipo.exceptions import (
 from api.modules.equipo.models import InvitacionEstablecimiento
 from api.modules.equipo.repository import InvitacionRepository, MiembroRepository
 from api.modules.equipo.schemas import (
+    InvitacionCreada,
     InvitacionCreate,
     InvitacionPrevia,
     InvitacionRead,
@@ -193,7 +194,7 @@ class EquipoService:
 
     async def invitar(
         self, current_user: Usuario, establecimiento_id: UUID, data: InvitacionCreate
-    ) -> InvitacionRead:
+    ) -> InvitacionCreada:
         establecimiento, mis_roles = await self._acceso(
             current_user, establecimiento_id
         )
@@ -236,11 +237,11 @@ class EquipoService:
             raise InvitacionPendienteDuplicadaError() from exc
 
         await self._enviar(invitacion, codigo, establecimiento, current_user)
-        return self._representar(invitacion)
+        return self._representar_creada(invitacion, codigo)
 
     async def reenviar(
         self, current_user: Usuario, establecimiento_id: UUID, invitacion_id: UUID
-    ) -> InvitacionRead:
+    ) -> InvitacionCreada:
         establecimiento, mis_roles = await self._acceso(
             current_user, establecimiento_id
         )
@@ -251,7 +252,7 @@ class EquipoService:
         self._renovar_codigo(invitacion, codigo)
         await self.invitaciones.guardar(invitacion)
         await self._enviar(invitacion, codigo, establecimiento, current_user)
-        return self._representar(invitacion)
+        return self._representar_creada(invitacion, codigo)
 
     async def cancelar(
         self, current_user: Usuario, establecimiento_id: UUID, invitacion_id: UUID
@@ -271,14 +272,28 @@ class EquipoService:
             current_user, codigo
         )
         invitado_por = await self.usuarios.get_by_id(invitacion.invitado_por_id)
+        roles_de_quien_invita = {
+            RolUsuario(m.rol)
+            for m in await self.membresias.get_memberships(
+                invitacion.invitado_por_id, establecimiento.id
+            )
+        }
         return InvitacionPrevia(
             establecimiento_id=establecimiento.id,
             establecimiento_nombre=establecimiento.nombre,
+            establecimiento_renspa=establecimiento.nro_renspa,
+            establecimiento_localidad=establecimiento.localidad,
+            establecimiento_provincia=establecimiento.provincia,
             rol=RolUsuario(invitacion.rol),
+            email=invitacion.email,
             invitado_por=(
                 f"{invitado_por.nombre} {invitado_por.apellido}"
                 if invitado_por is not None
                 else ""
+            ),
+            # Puede haber dejado el campo después de invitar: entonces no hay rol.
+            invitado_por_rol=(
+                _rol_principal(roles_de_quien_invita) if roles_de_quien_invita else None
             ),
             expira_en=as_utc(invitacion.expira_en),
         )
@@ -320,6 +335,7 @@ class EquipoService:
             establecimiento.id,
             rol.value,
         )
+        await self._avisar_aceptacion(invitacion, establecimiento, current_user, rol)
         datos = EstablecimientoRead.model_validate(establecimiento).model_dump()
         return EstablecimientoConRolRead(**datos, rol=rol)
 
@@ -442,6 +458,49 @@ class EquipoService:
             return
         invitacion.email_enviado_en = self.reloj()
         await self.invitaciones.guardar(invitacion)
+
+    async def _avisar_aceptacion(
+        self,
+        invitacion: InvitacionEstablecimiento,
+        establecimiento: Establecimiento,
+        nuevo: Usuario,
+        rol: RolUsuario,
+    ) -> None:
+        """Le avisa por email a quien invitó. Nunca bloquea el canje.
+
+        Sin ``email_sender`` (o si el envío falla) el canje sigue igual: el
+        aviso es una cortesía y quien invitó lo ve igual en Equipo.
+        """
+        invitado_por = await self.usuarios.get_by_id(invitacion.invitado_por_id)
+        if self.email_sender is None or invitado_por is None:
+            return
+        email = email_aceptacion(
+            destinatario=invitado_por.email,
+            establecimiento=establecimiento.nombre,
+            nuevo_miembro=f"{nuevo.nombre} {nuevo.apellido}",
+            rol=rol,
+        )
+        try:
+            with anyio.fail_after(settings.EMAIL_TIMEOUT_SECONDS):
+                await self.email_sender.enviar(email)
+        except (EmailEnvioError, TimeoutError):
+            logger.warning(
+                "[EQUIPO] No salió el aviso de aceptación de la invitación %s",
+                invitacion.id,
+            )
+
+    def _representar_creada(
+        self, invitacion: InvitacionEstablecimiento, codigo: str
+    ) -> InvitacionCreada:
+        """La invitación con el código en claro: solo en esta respuesta.
+
+        Es para que el owner lo comparta por otro medio si el email no llega.
+        No se puede volver a leer: en la base queda solo el HMAC.
+        """
+        return InvitacionCreada(
+            **self._representar(invitacion).model_dump(),
+            codigo=codigos.formatear_codigo(codigo),
+        )
 
     def _representar(self, invitacion: InvitacionEstablecimiento) -> InvitacionRead:
         return InvitacionRead(

@@ -1,9 +1,10 @@
 """Códigos de invitación: generación, normalización y hash (adr-0012).
 
-8 caracteres de un alfabeto de 31 símbolos sin los que se confunden al dictarlos
-o leerlos (0/O, 1/I/L): ~8,5 × 10¹¹ combinaciones. Con el límite de intentos por
-usuario no se puede adivinar uno. Se muestra como ``XXXX-XXXX`` y se acepta con
-o sin guion, espacios o minúsculas.
+6 caracteres de un alfabeto de 31 símbolos sin los que se confunden al dictarlos
+o leerlos (0/O, 1/I/L): ~8,9 × 10⁸ combinaciones. Alcanza porque el canje además
+exige la sesión del email invitado: adivinar un código no le sirve a otra cuenta,
+y el límite de intentos por usuario frena la fuerza bruta. Se muestra como
+``XXX-XXX`` (como en el diseño) y se acepta con o sin guion, espacios o minúsculas.
 
 Se guarda un HMAC-SHA256 con una clave del servidor y no el código: si se filtra
 la tabla, sin la clave no se pueden probar códigos offline. No hace falta un
@@ -15,7 +16,7 @@ import hmac
 import secrets
 
 ALFABETO = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
-LONGITUD = 8
+LONGITUD = 6
 
 
 def generar_codigo() -> str:

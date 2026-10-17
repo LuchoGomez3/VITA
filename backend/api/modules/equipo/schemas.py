@@ -45,6 +45,12 @@ class InvitacionRead(BaseModel):
     created_at: datetime
 
 
+class InvitacionCreada(InvitacionRead):
+    """Respuesta de invitar y reenviar: lleva el código en claro una sola vez."""
+
+    codigo: str
+
+
 class CodigoInvitacion(BaseModel):
     codigo: str
 
@@ -61,6 +67,11 @@ class InvitacionPrevia(BaseModel):
 
     establecimiento_id: UUID
     establecimiento_nombre: str
+    establecimiento_renspa: str | None = None
+    establecimiento_localidad: str | None = None
+    establecimiento_provincia: str | None = None
     rol: RolUsuario
+    email: str
     invitado_por: str
+    invitado_por_rol: RolUsuario | None = None
     expira_en: datetime

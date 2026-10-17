@@ -21,7 +21,7 @@ from core.email import Email, EmailEnvioError, get_email_sender
 
 pytestmark = pytest.mark.anyio
 
-_CODIGO = re.compile(r"\b([2-9A-Z]{4}-[2-9A-Z]{4})\b")
+_CODIGO = re.compile(r"código de invitación es: ([2-9A-Z]{3}-[2-9A-Z]{3})")
 
 
 class _EmailsFalsos:
@@ -37,9 +37,11 @@ class _EmailsFalsos:
         self.enviados.append(email)
 
     def ultimo_codigo(self) -> str:
-        coincidencia = _CODIGO.search(self.enviados[-1].texto)
-        assert coincidencia is not None
-        return coincidencia.group(1)
+        """Código de la última invitación enviada (salta los avisos de aceptación)."""
+        for email in reversed(self.enviados):
+            if coincidencia := _CODIGO.search(email.texto):
+                return coincidencia.group(1)
+        raise AssertionError("no se envió ninguna invitación")
 
 
 @pytest.fixture
@@ -105,7 +107,7 @@ async def _invitar(client, campo, email="mariano@campo.example.com", rol="employ
 # ─── Invitar ────────────────────────────────────────────────────────────────
 
 
-async def test_el_dueno_invita_por_email_y_el_codigo_solo_viaja_en_el_email(
+async def test_el_dueno_invita_por_email_y_en_la_base_solo_queda_el_hash(
     auth_client, session, escenario, emails
 ):
     respuesta = await _invitar(
@@ -119,7 +121,7 @@ async def test_el_dueno_invita_por_email_y_el_codigo_solo_viaja_en_el_email(
     assert datos["estado"] == "pendiente"
     assert datos["email_enviado"] is True
     assert datos["vencida"] is False
-    assert "codigo" not in datos and "codigo_hash" not in datos
+    assert "codigo_hash" not in datos
 
     email = emails.enviados[-1]
     assert email.destinatario == "mariano@campo.example.com"
@@ -127,6 +129,7 @@ async def test_el_dueno_invita_por_email_y_el_codigo_solo_viaja_en_el_email(
     assert "Empleado" in email.texto
     codigo = emails.ultimo_codigo()
 
+    assert datos["codigo"] == codigo
     guardada = await session.get(InvitacionEstablecimiento, UUID(datos["id"]))
     assert codigo.replace("-", "") not in guardada.codigo_hash
     assert len(guardada.codigo_hash) == 64
@@ -486,16 +489,19 @@ async def test_los_intentos_de_codigo_se_limitan_por_usuario(
     monkeypatch.setattr(settings, "INVITACION_CODIGO_RATE_LIMIT", 3)
     _como(app, escenario["invitada"])
 
-    estados = [
-        (
-            await auth_client.post(
-                "/api/v1/invitaciones/validaciones", json={"codigo": "2345-6789"}
-            )
-        ).status_code
+    respuestas = [
+        await auth_client.post(
+            "/api/v1/invitaciones/validaciones", json={"codigo": "234-567"}
+        )
         for _ in range(4)
     ]
 
-    assert estados == [422, 422, 422, 429]
+    assert [r.status_code for r in respuestas] == [422, 422, 422, 429]
+    # La app muestra "Te quedan N intentos" con este dato.
+    restantes = [
+        r.json()["errors"][0]["details"]["intentos_restantes"] for r in respuestas[:3]
+    ]
+    assert restantes == [2, 1, 0]
 
 
 # ─── Quitar ─────────────────────────────────────────────────────────────────
@@ -599,3 +605,73 @@ async def test_el_estado_aceptada_queda_registrado(
     assert invitacion.estado == EstadoInvitacion.aceptada
     assert invitacion.aceptada_por_id == escenario["invitada"].id
     assert invitacion.aceptada_en is not None
+
+
+# ─── Lo que pide el diseño de la invitación ─────────────────────────────────
+
+
+async def test_invitar_y_reenviar_devuelven_el_codigo_una_sola_vez(
+    auth_client, session, escenario, emails
+):
+    creada = (await _invitar(auth_client, escenario["campo"])).json()["data"]
+
+    assert creada["codigo"] == emails.ultimo_codigo()
+    assert re.fullmatch(r"[2-9A-Z]{3}-[2-9A-Z]{3}", creada["codigo"])
+    listada = (await auth_client.get(_url(escenario["campo"]))).json()["data"][0]
+    assert "codigo" not in listada
+
+    reenvio = await auth_client.post(
+        f"{_url(escenario['campo'])}/{creada['id']}/reenvios"
+    )
+    assert reenvio.json()["data"]["codigo"] == emails.ultimo_codigo()
+    assert reenvio.json()["data"]["codigo"] != creada["codigo"]
+
+
+async def test_la_previsualizacion_trae_lo_que_muestra_la_confirmacion(
+    app, auth_client, session, escenario, emails
+):
+    campo = escenario["campo"]
+    campo.nro_renspa = "07.123.0.00456/01"
+    campo.localidad = "Coronel Moldes"
+    campo.provincia = "Córdoba"
+    session.add(campo)
+    await session.commit()
+    codigo = await _invitar_y_cambiar_a_la_invitada(app, auth_client, escenario, emails)
+
+    previa = (
+        await auth_client.post(
+            "/api/v1/invitaciones/validaciones", json={"codigo": codigo}
+        )
+    ).json()["data"]
+
+    assert previa["establecimiento_renspa"] == "07.123.0.00456/01"
+    assert previa["establecimiento_localidad"] == "Coronel Moldes"
+    assert previa["establecimiento_provincia"] == "Córdoba"
+    assert previa["invitado_por_rol"] == "owner"
+    assert previa["email"] == "mariano@campo.example.com"
+
+
+async def test_al_sumarse_se_le_avisa_a_quien_invito(
+    app, auth_client, escenario, emails
+):
+    codigo = await _invitar_y_cambiar_a_la_invitada(app, auth_client, escenario, emails)
+
+    await auth_client.post("/api/v1/invitaciones/aceptaciones", json={"codigo": codigo})
+
+    aviso = emails.enviados[-1]
+    assert aviso.destinatario == "ceci@campo.example.com"
+    assert "Mariano Sintética" in aviso.asunto
+    assert "como Empleado" in aviso.texto
+
+
+async def test_si_el_aviso_no_sale_el_canje_igual_funciona(
+    app, auth_client, escenario, emails
+):
+    codigo = await _invitar_y_cambiar_a_la_invitada(app, auth_client, escenario, emails)
+    emails.fallar = True
+
+    respuesta = await auth_client.post(
+        "/api/v1/invitaciones/aceptaciones", json={"codigo": codigo}
+    )
+
+    assert respuesta.status_code == 201

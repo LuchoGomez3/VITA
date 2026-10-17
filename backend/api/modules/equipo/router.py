@@ -4,6 +4,7 @@ Todos son online-only: invitar necesita mandar el email y canjear necesita que
 el servidor valide el código. La lista del equipo la cachea la app.
 """
 
+from contextlib import asynccontextmanager
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Response, status
@@ -13,6 +14,7 @@ from api.auth.dependencies import get_current_user
 from api.modules.equipo.schemas import CodigoInvitacion, InvitacionCreate
 from api.modules.equipo.service import EquipoService
 from api.modules.usuarios.models import Usuario
+from api.shared.exceptions import DomainException
 from api.shared.schemas import StandardResponse
 from core.auth_rate_limit import auth_rate_limiter
 from core.config import settings
@@ -22,15 +24,34 @@ from database.database import get_session
 router = APIRouter(prefix="/v1", tags=["equipo"])
 
 
+def _clave_de_intentos(usuario: Usuario) -> str:
+    return f"invitacion_codigo:{usuario.id}"
+
+
 async def limitar_intentos_de_codigo(
     current_user: Usuario = Depends(get_current_user),
 ) -> None:
     """Frena a quien prueba códigos al azar: el límite sigue al usuario."""
     await auth_rate_limiter.check_key(
-        f"invitacion_codigo:{current_user.id}",
+        _clave_de_intentos(current_user),
         limit=settings.INVITACION_CODIGO_RATE_LIMIT,
         window_seconds=settings.INVITACION_CODIGO_RATE_WINDOW_SECONDS,
     )
+
+
+@asynccontextmanager
+async def _informar_intentos_restantes(usuario: Usuario):
+    """Suma ``intentos_restantes`` a los errores del código (pantalla "Te quedan N")."""
+    try:
+        yield
+    except DomainException as exc:
+        restantes = await auth_rate_limiter.remaining(
+            _clave_de_intentos(usuario),
+            limit=settings.INVITACION_CODIGO_RATE_LIMIT,
+            window_seconds=settings.INVITACION_CODIGO_RATE_WINDOW_SECONDS,
+        )
+        exc.details = {**(exc.details or {}), "intentos_restantes": restantes}
+        raise
 
 
 @router.get(
@@ -94,7 +115,8 @@ async def invitar(
     current_user: Usuario = Depends(get_current_user),
     email_sender: EmailSender = Depends(get_email_sender),
 ):
-    """Invita por email con un rol. ``email_enviado=false`` si el envío falló."""
+    """Invita por email con un rol. Devuelve el código en claro esta única vez,
+    para compartirlo por otro medio; ``email_enviado=false`` si el envío falló."""
     invitacion = await EquipoService(session, email_sender=email_sender).invitar(
         current_user, establecimiento_id, data
     )
@@ -147,7 +169,8 @@ async def validar_codigo(
     current_user: Usuario = Depends(get_current_user),
 ):
     """Muestra a qué campo y con qué rol se suma, sin consumir el código."""
-    previa = await EquipoService(session).previsualizar(current_user, data.codigo)
+    async with _informar_intentos_restantes(current_user):
+        previa = await EquipoService(session).previsualizar(current_user, data.codigo)
     return StandardResponse(success=True, data=previa.model_dump())
 
 
@@ -161,7 +184,12 @@ async def aceptar_invitacion(
     data: CodigoInvitacion,
     session: AsyncSession = Depends(get_session),
     current_user: Usuario = Depends(get_current_user),
+    email_sender: EmailSender = Depends(get_email_sender),
 ):
-    """Canjea el código: crea la membresía y devuelve el campo con el rol."""
-    establecimiento = await EquipoService(session).aceptar(current_user, data.codigo)
+    """Canjea el código: crea la membresía, le avisa a quien invitó y devuelve el
+    campo con el rol."""
+    async with _informar_intentos_restantes(current_user):
+        establecimiento = await EquipoService(
+            session, email_sender=email_sender
+        ).aceptar(current_user, data.codigo)
     return StandardResponse(success=True, data=establecimiento.model_dump())

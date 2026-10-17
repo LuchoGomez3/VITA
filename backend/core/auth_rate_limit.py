@@ -59,6 +59,14 @@ class InMemoryRateLimiter:
                 )
             attempts.append(now)
 
+    async def remaining(self, key: str, *, limit: int, window_seconds: int) -> int:
+        """Intentos que le quedan a ``key`` en la ventana actual (sin registrar)."""
+        cutoff = self._clock() - window_seconds
+        async with self._lock:
+            attempts = self._attempts.get(key)
+            usados = sum(1 for t in attempts if t > cutoff) if attempts else 0
+        return max(0, limit - usados)
+
     def reset(self) -> None:
         """Limpia contadores; se usa para aislar las pruebas automatizadas."""
         self._attempts.clear()
