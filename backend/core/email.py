@@ -53,8 +53,11 @@ class ConsoleEmailSender:
     """Loguea el email en lugar de mandarlo. Solo para desarrollo y tests."""
 
     async def enviar(self, email: Email) -> None:
-        logger.info(
-            "[EMAIL] (console) Para: %s | Asunto: %s\n%s",
+        # WARNING y no INFO: tiene que verse aunque el logging de la app no esté
+        # configurado (``uvicorn`` directo, sin ``main.py``), y avisa que el
+        # email no salió de verdad.
+        logger.warning(
+            "[EMAIL] (console, no se envió) Para: %s | Asunto: %s\n%s",
             email.destinatario,
             email.asunto,
             email.texto,
