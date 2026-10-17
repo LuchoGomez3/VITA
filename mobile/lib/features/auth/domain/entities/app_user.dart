@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:frontend_mayoral/features/auth/domain/entities/user_role.dart';
 
 part 'app_user.freezed.dart';
 
@@ -13,6 +12,5 @@ abstract class AppUser with _$AppUser {
     required String firstName,
     required String lastName,
     String? cuit,
-    @Default(UserRole.unknown) UserRole role,
   }) = _AppUser;
 }

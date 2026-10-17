@@ -1,7 +1,11 @@
 /// Un dispositivo Bluetooth emparejado mock.
 class PairedDeviceMock {
   /// Crea un dispositivo mock.
-  const PairedDeviceMock({required this.name, required this.detail, required this.isConnected});
+  const PairedDeviceMock({
+    required this.name,
+    required this.detail,
+    required this.isConnected,
+  });
 
   /// Nombre comercial del dispositivo.
   final String name;
@@ -15,14 +19,26 @@ class PairedDeviceMock {
 
 /// Los 2 dispositivos mock ya emparejados (ver `.claude/specs/ajustes.md`).
 const pairedDevicesMock = [
-  PairedDeviceMock(name: 'Tru-Test GES3S', detail: 'Bastón RFID · #4421 · conectado', isConnected: true),
-  PairedDeviceMock(name: 'Magris MC-200', detail: 'Balanza · #M9012 · conectada', isConnected: true),
+  PairedDeviceMock(
+    name: 'Tru-Test GES3S',
+    detail: 'Bastón RFID · #4421 · conectado',
+    isConnected: true,
+  ),
+  PairedDeviceMock(
+    name: 'Magris MC-200',
+    detail: 'Balanza · #M9012 · conectada',
+    isConnected: true,
+  ),
 ];
 
 /// Una fila informativa de sólo lectura (Preferencias / Sobre la app).
 class SettingsInfoMock {
   /// Crea una fila informativa mock.
-  const SettingsInfoMock({required this.label, this.value, this.isNavigable = true});
+  const SettingsInfoMock({
+    required this.label,
+    this.value,
+    this.isNavigable = true,
+  });
 
   /// Etiqueta de la fila.
   final String label;
@@ -45,5 +61,9 @@ const preferencesMock = [
 const aboutAppMock = [
   SettingsInfoMock(label: 'Manual de usuario'),
   SettingsInfoMock(label: 'Soporte', value: 'soporte@hacienda.app'),
-  SettingsInfoMock(label: 'Versión', value: 'v0.9.3 · build 412', isNavigable: false),
+  SettingsInfoMock(
+    label: 'Versión',
+    value: 'v0.9.3 · build 412',
+    isNavigable: false,
+  ),
 ];

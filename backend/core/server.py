@@ -3,7 +3,7 @@ import os
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 
 from core.config import EnvironmentOption, settings
 from core.contextmanager import lifespan
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_fastapi_app() -> FastAPI:
+    settings.validate_runtime_configuration()
     app = FastAPI(
         title=settings.APP_NAME,
         description=settings.APP_DESCRIPTION,
@@ -30,22 +31,16 @@ def create_fastapi_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Cors conf
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=settings.CORS_ALLOW_ORIGINS,
+        allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+        allow_methods=settings.CORS_ALLOW_METHODS,
+        allow_headers=settings.CORS_ALLOW_HEADERS,
     )
 
-    # Add session middleware
-    app.add_middleware(
-        SessionMiddleware,
-        secret_key=settings.JWT_SECRET,
-        session_cookie="session",
-        max_age=3600,  # 1 hour
-    )
+    if settings.ENVIRONMENT not in (EnvironmentOption.LOCAL, EnvironmentOption.TEST):
+        app.add_middleware(HTTPSRedirectMiddleware)
 
     app.add_exception_handler(HTTPException, custom_exception_handler)
     app.add_exception_handler(DomainException, domain_exception_handler)

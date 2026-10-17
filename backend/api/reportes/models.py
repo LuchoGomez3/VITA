@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, LargeBinary, String, UniqueConstraint
+from sqlalchemy import DateTime, Index, LargeBinary, String, UniqueConstraint, desc
 from sqlmodel import Field
 
 from database.models import Base
@@ -17,6 +17,13 @@ class ExportacionSenasa(Base, table=True):
     """
 
     __tablename__ = "exportaciones_senasa"
+    __table_args__ = (
+        Index(
+            "ix_exportaciones_senasa_historial",
+            "establecimiento_id",
+            desc("created_at"),
+        ),
+    )
 
     establecimiento_id: UUID = Field(
         foreign_key="establecimientos.id", index=True, nullable=False
@@ -47,9 +54,13 @@ class ExportacionSenasaAnimal(Base, table=True):
             "animal_id",
             name="uq_exportacion_senasa_animal",
         ),
+        Index(
+            "ix_exportaciones_senasa_animales_exportacion_id",
+            "exportacion_senasa_id",
+        ),
     )
 
     exportacion_senasa_id: UUID = Field(
-        foreign_key="exportaciones_senasa.id", index=True, nullable=False
+        foreign_key="exportaciones_senasa.id", nullable=False
     )
     animal_id: UUID = Field(foreign_key="animales.id", index=True, nullable=False)

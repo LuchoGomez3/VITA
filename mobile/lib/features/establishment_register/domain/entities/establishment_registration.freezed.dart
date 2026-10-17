@@ -304,7 +304,7 @@ as int,
 /// @nodoc
 mixin _$RegisteredEstablishment {
 
- String get id; EstablishmentRegistration get registration; DateTime get createdAt;
+ String get id; EstablishmentRegistration get registration; DateTime get createdAt; UserRole get role;
 /// Create a copy of RegisteredEstablishment
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -315,16 +315,16 @@ $RegisteredEstablishmentCopyWith<RegisteredEstablishment> get copyWith => _$Regi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisteredEstablishment&&(identical(other.id, id) || other.id == id)&&(identical(other.registration, registration) || other.registration == registration)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RegisteredEstablishment&&(identical(other.id, id) || other.id == id)&&(identical(other.registration, registration) || other.registration == registration)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.role, role) || other.role == role));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,registration,createdAt);
+int get hashCode => Object.hash(runtimeType,id,registration,createdAt,role);
 
 @override
 String toString() {
-  return 'RegisteredEstablishment(id: $id, registration: $registration, createdAt: $createdAt)';
+  return 'RegisteredEstablishment(id: $id, registration: $registration, createdAt: $createdAt, role: $role)';
 }
 
 
@@ -335,7 +335,7 @@ abstract mixin class $RegisteredEstablishmentCopyWith<$Res>  {
   factory $RegisteredEstablishmentCopyWith(RegisteredEstablishment value, $Res Function(RegisteredEstablishment) _then) = _$RegisteredEstablishmentCopyWithImpl;
 @useResult
 $Res call({
- String id, EstablishmentRegistration registration, DateTime createdAt
+ String id, EstablishmentRegistration registration, DateTime createdAt, UserRole role
 });
 
 
@@ -352,12 +352,13 @@ class _$RegisteredEstablishmentCopyWithImpl<$Res>
 
 /// Create a copy of RegisteredEstablishment
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? registration = null,Object? createdAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? registration = null,Object? createdAt = null,Object? role = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,registration: null == registration ? _self.registration : registration // ignore: cast_nullable_to_non_nullable
 as EstablishmentRegistration,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
+as UserRole,
   ));
 }
 /// Create a copy of RegisteredEstablishment
@@ -448,10 +449,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  EstablishmentRegistration registration,  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  EstablishmentRegistration registration,  DateTime createdAt,  UserRole role)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisteredEstablishment() when $default != null:
-return $default(_that.id,_that.registration,_that.createdAt);case _:
+return $default(_that.id,_that.registration,_that.createdAt,_that.role);case _:
   return orElse();
 
 }
@@ -469,10 +470,10 @@ return $default(_that.id,_that.registration,_that.createdAt);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  EstablishmentRegistration registration,  DateTime createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  EstablishmentRegistration registration,  DateTime createdAt,  UserRole role)  $default,) {final _that = this;
 switch (_that) {
 case _RegisteredEstablishment():
-return $default(_that.id,_that.registration,_that.createdAt);}
+return $default(_that.id,_that.registration,_that.createdAt,_that.role);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -486,10 +487,10 @@ return $default(_that.id,_that.registration,_that.createdAt);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  EstablishmentRegistration registration,  DateTime createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  EstablishmentRegistration registration,  DateTime createdAt,  UserRole role)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisteredEstablishment() when $default != null:
-return $default(_that.id,_that.registration,_that.createdAt);case _:
+return $default(_that.id,_that.registration,_that.createdAt,_that.role);case _:
   return null;
 
 }
@@ -501,12 +502,13 @@ return $default(_that.id,_that.registration,_that.createdAt);case _:
 
 
 class _RegisteredEstablishment implements RegisteredEstablishment {
-  const _RegisteredEstablishment({required this.id, required this.registration, required this.createdAt});
+  const _RegisteredEstablishment({required this.id, required this.registration, required this.createdAt, required this.role});
   
 
 @override final  String id;
 @override final  EstablishmentRegistration registration;
 @override final  DateTime createdAt;
+@override final  UserRole role;
 
 /// Create a copy of RegisteredEstablishment
 /// with the given fields replaced by the non-null parameter values.
@@ -518,16 +520,16 @@ _$RegisteredEstablishmentCopyWith<_RegisteredEstablishment> get copyWith => __$R
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisteredEstablishment&&(identical(other.id, id) || other.id == id)&&(identical(other.registration, registration) || other.registration == registration)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RegisteredEstablishment&&(identical(other.id, id) || other.id == id)&&(identical(other.registration, registration) || other.registration == registration)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.role, role) || other.role == role));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,registration,createdAt);
+int get hashCode => Object.hash(runtimeType,id,registration,createdAt,role);
 
 @override
 String toString() {
-  return 'RegisteredEstablishment(id: $id, registration: $registration, createdAt: $createdAt)';
+  return 'RegisteredEstablishment(id: $id, registration: $registration, createdAt: $createdAt, role: $role)';
 }
 
 
@@ -538,7 +540,7 @@ abstract mixin class _$RegisteredEstablishmentCopyWith<$Res> implements $Registe
   factory _$RegisteredEstablishmentCopyWith(_RegisteredEstablishment value, $Res Function(_RegisteredEstablishment) _then) = __$RegisteredEstablishmentCopyWithImpl;
 @override @useResult
 $Res call({
- String id, EstablishmentRegistration registration, DateTime createdAt
+ String id, EstablishmentRegistration registration, DateTime createdAt, UserRole role
 });
 
 
@@ -555,12 +557,13 @@ class __$RegisteredEstablishmentCopyWithImpl<$Res>
 
 /// Create a copy of RegisteredEstablishment
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? registration = null,Object? createdAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? registration = null,Object? createdAt = null,Object? role = null,}) {
   return _then(_RegisteredEstablishment(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,registration: null == registration ? _self.registration : registration // ignore: cast_nullable_to_non_nullable
 as EstablishmentRegistration,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
+as UserRole,
   ));
 }
 

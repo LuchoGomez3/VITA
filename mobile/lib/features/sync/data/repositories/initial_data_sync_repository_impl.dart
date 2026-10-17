@@ -4,13 +4,21 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
+import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/sync/data/datasources/establishment_remote_data_source.dart';
 import 'package:frontend_mayoral/features/sync/domain/repositories/initial_data_sync_repository.dart';
+import 'package:http/http.dart' as http;
+
+/// Sincroniza los datos financieros de un establecimiento habilitado.
+typedef SyncOperatingExpenseData = Future<void> Function(String establishmentId);
 
 /// Implementacion que descarga datos iniciales a SQLite para uso offline.
 ///
@@ -27,26 +35,32 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     required EstablishmentRemoteDataSource establishmentRemoteDataSource,
     required AnimalBrickStore animalStore,
     required CategoriaBrickStore categoryStore,
+    required LotBrickStore lotStore,
     required PesajeBrickStore weighingStore,
+    required AnimalLotMovementBrickStore movementStore,
+    required SyncOperatingExpenseData syncOperatingExpenseData,
   }) : _secureStorage = secureStorage,
        _establishmentRemoteDataSource = establishmentRemoteDataSource,
        _animalStore = animalStore,
        _categoryStore = categoryStore,
-       _weighingStore = weighingStore;
+       _lotStore = lotStore,
+       _weighingStore = weighingStore,
+       _movementStore = movementStore,
+       _syncOperatingExpenseData = syncOperatingExpenseData;
 
   final SecureStorageService _secureStorage;
   final EstablishmentRemoteDataSource _establishmentRemoteDataSource;
   final AnimalBrickStore _animalStore;
   final CategoriaBrickStore _categoryStore;
+  final LotBrickStore _lotStore;
   final PesajeBrickStore _weighingStore;
+  final AnimalLotMovementBrickStore _movementStore;
+  final SyncOperatingExpenseData _syncOperatingExpenseData;
 
   @override
-  Future<Result<void>> syncForUser(String userId) async {
-    final markerKey = SecureStorageKeys.initialDataSyncCompleted(userId);
-
+  Future<Result<PostAuthenticationSummary>> sync() async {
     try {
-      final establishments =
-          await _establishmentRemoteDataSource.fetchEstablishments();
+      final establishments = await _establishmentRemoteDataSource.fetchEstablishments();
       await _secureStorage.write(
         key: SecureStorageKeys.establishmentCatalog,
         value: jsonEncode(
@@ -54,31 +68,49 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
         ),
       );
       _logInitialSyncStep('establishments=${establishments.length}');
+      _logInitialSyncStep('pulling global animal categories');
+      await _categoryStore.pullRemoteCategorias();
       for (final establishment in establishments) {
         final establishmentId = establishment.id;
-        // El catalogo se cachea antes que los animales para que sus referencias
-        // de categoria ya esten disponibles en los flujos offline.
         _logInitialSyncStep(
-          'pulling categories for establishment=$establishmentId',
+          'pushing pending lots for establishment=$establishmentId',
         );
-        await _categoryStore.pullRemoteCategorias(establishmentId);
+        await _lotStore.pushPendingLots(establishmentId);
+        _logInitialSyncStep('pulling lots for establishment=$establishmentId');
+        await _lotStore.pullRemoteLots(establishmentId);
         _logInitialSyncStep(
           'pulling animals for establishment=$establishmentId',
         );
         await _animalStore.pullRemoteAnimals(establishmentId);
         _logInitialSyncStep(
+          'pushing pending lot movements for establishment=$establishmentId',
+        );
+        await _movementStore.pushPendingMovements(establishmentId);
+        _logInitialSyncStep(
+          'pulling lot movements for establishment=$establishmentId',
+        );
+        await _movementStore.pullRemoteMovements(establishmentId);
+        _logInitialSyncStep(
           'pulling weighings for establishment=$establishmentId',
         );
         await _weighingStore.pullRemotePesajes(establishmentId);
+        if (establishment.role.canViewFinancialInformation) {
+          _logInitialSyncStep(
+            'pulling operating expense data for establishment=$establishmentId',
+          );
+          await _syncOperatingExpenseData(establishmentId);
+        }
       }
-      await _secureStorage.write(key: markerKey, value: 'true');
 
-      return const Result.success(null);
+      return Result.success(
+        PostAuthenticationSummary(
+          establishmentIds: establishments.map((establishment) => establishment.id).toList(growable: false),
+        ),
+      );
     } on SocketException {
       return const Result.failure(
         DomainException(
-          message:
-              'No se pudieron preparar los datos offline por falta de conexion.',
+          message: 'No se pudieron preparar los datos offline por falta de conexion.',
           code: DomainErrorCode.offline,
         ),
       );
@@ -86,6 +118,13 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
       return const Result.failure(
         DomainException(
           message: 'La preparacion de datos offline tardo demasiado.',
+          code: DomainErrorCode.offline,
+        ),
+      );
+    } on http.ClientException {
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudieron preparar los datos offline por falta de conexion.',
           code: DomainErrorCode.offline,
         ),
       );

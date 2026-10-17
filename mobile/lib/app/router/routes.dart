@@ -53,6 +53,9 @@ class AppRoutes {
   /// Ruta de identificacion de animales mediante caravana RFID.
   static const rfidScan = '/identificar-animal';
 
+  /// Captura RFID para completar un formulario existente.
+  static const rfidCapture = '/capturar-rfid';
+
   /// Ruta de la seccion de registros de gastos.
   static const expenseRecords = '/registros-de-gastos';
 
@@ -62,8 +65,17 @@ class AppRoutes {
   /// Ruta temporal para registrar un ingreso operativo.
   static const incomeRegister = '/registros-de-gastos/registrar-ingreso';
 
+  /// Construye la ruta de egresos con el establecimiento activo explicito.
+  static String expensesForEstablishment({
+    required String path,
+    required String establishmentId,
+    required String establishmentName,
+  }) =>
+      '$path?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}'
+      '&establecimientoNombre=${Uri.encodeQueryComponent(establishmentName)}';
+
   /// Ruta del menu principal de reportes SENASA.
-  static const senasaMenu = procedures;
+  static const String senasaMenu = procedures;
 
   /// Route for the SENASA report filters.
   static const senasaReport = '/senasa-report';
@@ -80,11 +92,14 @@ class AppRoutes {
   /// Ruta del mapa de potreros.
   static const field = '/campo';
 
-  /// Ruta de la lista de potreros.
+  /// Alias legado que redirige al visor local de lotes.
   static const fieldList = '/campo/lista';
 
-  /// Ruta del detalle de un potrero.
-  static const fieldDetail = '/campo/:potreroId';
+  /// Ruta del editor local para delimitar un nuevo lote.
+  static const lotRegister = '/campo/nuevo-lote';
+
+  /// Ruta del detalle de un lote.
+  static const fieldDetail = '/campo/:loteId';
 
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {
@@ -118,12 +133,16 @@ class AppRoutes {
   }
 
   /// Construye la ruta de alta con una caravana RFID ya leida.
-  static String animalRegisterWithRfid(String rfidTagNumber) {
-    return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}';
+  static String animalRegisterWithRfid({
+    required String rfidTagNumber,
+    required String establishmentId,
+  }) {
+    return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}'
+        '&establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
   }
 
-  /// Obtiene la ruta de detalle de un potrero por su id.
-  static String fieldDetailById(String potreroId) {
-    return '/campo/$potreroId';
+  /// Obtiene la ruta de detalle de un lote por su id.
+  static String fieldDetailById(String lotId) {
+    return '/campo/$lotId';
   }
 }

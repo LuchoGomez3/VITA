@@ -40,8 +40,12 @@ class SettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = isPrimaryAction ? AppColors.primary : AppColors.textSecondary;
-    final labelColor = isPrimaryAction ? AppColors.primary : AppColors.textPrimary;
+    final iconColor = isPrimaryAction
+        ? AppColors.primary
+        : AppColors.textSecondary;
+    final labelColor = isPrimaryAction
+        ? AppColors.primary
+        : AppColors.textPrimary;
 
     return InkWell(
       onTap: onTap,
@@ -51,7 +55,9 @@ class SettingsRow extends StatelessWidget {
           children: [
             DecoratedBox(
               decoration: BoxDecoration(
-                color: isPrimaryAction ? AppColors.backgroundSecondary : AppColors.backgroundTertiary,
+                color: isPrimaryAction
+                    ? AppColors.backgroundSecondary
+                    : AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Padding(
@@ -64,16 +70,24 @@ class SettingsRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: AppTypography.mediumEmphasis.copyWith(color: labelColor)),
+                  Text(
+                    label,
+                    style: AppTypography.mediumEmphasis.copyWith(
+                      color: labelColor,
+                    ),
+                  ),
                   if (subtitle != null)
                     Text(
                       subtitle!,
-                      style: AppTypography.smallEmphasis.copyWith(color: subtitleColor ?? AppColors.textHint),
+                      style: AppTypography.smallEmphasis.copyWith(
+                        color: subtitleColor ?? AppColors.textHint,
+                      ),
                     ),
                 ],
               ),
             ),
-            if (isNavigable) const Icon(Icons.chevron_right, color: AppColors.textHint),
+            if (isNavigable)
+              const Icon(Icons.chevron_right, color: AppColors.textHint),
           ],
         ),
       ),

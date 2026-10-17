@@ -5,13 +5,17 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 /// Sección de ajustes: título + card con filas separadas por línea.
 class SettingsSectionCard extends StatelessWidget {
   /// Crea la sección a partir de sus [rows].
-  const SettingsSectionCard({required this.title, required this.rows, super.key});
+  const SettingsSectionCard({
+    required this.title,
+    required this.rows,
+    super.key,
+  });
 
   /// Título de la sección.
   final String title;
 
   /// Filas mostradas dentro de la card, ya construidas (típicamente
-  /// [SettingsRow]).
+  /// `SettingsRow`).
   final List<Widget> rows;
 
   @override

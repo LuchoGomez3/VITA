@@ -81,8 +81,7 @@ class BrickPesajeRequestTransformer extends RestRequestTransformer {
     final encodedAnimalId = Uri.encodeQueryComponent(animalId);
 
     return RestRequest(
-      url:
-          '$weighingsPath?establecimiento_id=$encodedEstablishmentId&animal_id=$encodedAnimalId',
+      url: '$weighingsPath?establecimiento_id=$encodedEstablishmentId&animal_id=$encodedAnimalId',
       topLevelKey: 'data',
     );
   }

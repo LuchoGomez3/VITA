@@ -7,11 +7,15 @@ class ShellPlaceholderPage extends StatelessWidget {
   /// Crea un placeholder minimo con el titulo de la futura seccion.
   const ShellPlaceholderPage({
     required this.title,
+    this.message,
     super.key,
   });
 
   /// Nombre visible de la seccion pendiente.
   final String title;
+
+  /// Mensaje central que explica el estado temporal de la sección.
+  final String? message;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +23,7 @@ class ShellPlaceholderPage extends StatelessWidget {
       appBar: AppHeader(title: title),
       body: Center(
         child: Text(
-          title,
+          message ?? title,
           style: AppTypography.pageTitle,
         ),
       ),

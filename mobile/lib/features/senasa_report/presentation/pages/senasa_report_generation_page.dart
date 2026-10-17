@@ -3,12 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/bloc/senasa_report_generation_cubit.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_error_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/strings/senasa_report_strings.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_generation_progress.dart';
-import 'package:frontend_mayoral/features/senasa_report/presentation/widgets/report_status_indicator.dart';
 import 'package:go_router/go_router.dart';
 
 /// Factory que construye el Cubit de generación SENASA.
@@ -63,7 +63,11 @@ class _SenasaReportGenerationView extends StatelessWidget {
                       child: const Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          ReportStatusIndicator.loading(),
+                          AppStatusIndicator(
+                            icon: Icons.description_outlined,
+                            color: AppColors.primary,
+                            isLoading: true,
+                          ),
                           SizedBox(height: AppSpacing.lg),
                           Text(
                             SenasaStrings.generationTitle,

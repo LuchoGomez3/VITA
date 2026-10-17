@@ -9,6 +9,7 @@ import 'package:frontend_mayoral/features/profile/presentation/cubit/profile_cub
 import 'package:frontend_mayoral/features/profile/presentation/mock/settings_mock.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_establishments_section.dart';
+import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_sliver_header.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_user_card.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/settings_row.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/settings_section_card.dart';
@@ -24,19 +25,14 @@ typedef ProfileCubitFactory = ProfileCubit Function();
 class ProfilePage extends StatefulWidget {
   /// Crea la pantalla con los datos de la sesión autenticada.
   const ProfilePage({
-    required this.userId,
     required this.email,
     required this.firstName,
     required this.lastName,
     required this.cuit,
-    required this.role,
     required this.createCubit,
     required this.signOut,
     super.key,
   });
-
-  /// ID interno del usuario.
-  final String userId;
 
   /// Correo usado para iniciar sesión.
   final String email;
@@ -49,9 +45,6 @@ class ProfilePage extends StatefulWidget {
 
   /// CUIT opcional del usuario.
   final String? cuit;
-
-  /// Rol persistido en la sesión.
-  final String role;
 
   /// Crea el Cubit perteneciente a esta página.
   final ProfileCubitFactory createCubit;
@@ -71,40 +64,54 @@ class _ProfilePageState extends State<ProfilePage> {
     return BlocProvider<ProfileCubit>(
       create: (_) => widget.createCubit()..load(),
       child: Scaffold(
-        appBar: const AppHeader(title: ProfileStrings.title),
-        body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.sm,
-              AppSpacing.sm,
-              AppSpacing.sm,
-              AppSpacing.xl,
+        body: CustomScrollView(
+          slivers: [
+            ProfileSliverHeader(
+              firstName: widget.firstName,
+              lastName: widget.lastName,
             ),
-            children: [
-              ProfileUserCard(
-                userId: widget.userId,
-                email: widget.email,
-                firstName: widget.firstName,
-                lastName: widget.lastName,
-                cuit: widget.cuit,
-                role: widget.role,
+            SliverToBoxAdapter(
+              child: SafeArea(
+                top: false,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 640),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.lg,
+                        AppSpacing.md,
+                        AppSpacing.xl,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ProfileUserCard(
+                            email: widget.email,
+                            cuit: widget.cuit,
+                          ),
+                          const SizedBox(height: AppSpacing.xl),
+                          const _EstablishmentsContent(),
+                          const SizedBox(height: AppSpacing.xl),
+                          const _SettingsSections(),
+                          const SizedBox(height: AppSpacing.lg),
+                          AppFilledButton(
+                            label: ProfileStrings.signOutButton,
+                            loadingLabel: ProfileStrings.signingOutButton,
+                            isLoading: _isSigningOut,
+                            icon: const Icon(Icons.logout),
+                            backgroundColor: AppColors.error,
+                            foregroundColor: AppColors.onError,
+                            onPressed: _signOut,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: AppSpacing.xl),
-              const _EstablishmentsContent(),
-              const SizedBox(height: AppSpacing.xl),
-              const _SettingsSections(),
-              const SizedBox(height: AppSpacing.lg),
-              AppFilledButton(
-                label: ProfileStrings.signOutButton,
-                loadingLabel: ProfileStrings.signingOutButton,
-                isLoading: _isSigningOut,
-                icon: const Icon(Icons.logout),
-                backgroundColor: AppColors.error,
-                foregroundColor: AppColors.onError,
-                onPressed: _signOut,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -115,7 +122,7 @@ class _ProfilePageState extends State<ProfilePage> {
     await widget.signOut();
 
     if (mounted) {
-      context.go(AppRoutes.login);
+      context.go(AppRoutes.signUp);
     }
   }
 }
@@ -127,7 +134,8 @@ class _EstablishmentsContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileCubit, ResultState<List<EstablishmentDetails>>>(
       builder: (context, state) => switch (state) {
-        Data<List<EstablishmentDetails>>(:final data) => ProfileEstablishmentsSection(establishments: data),
+        Data<List<EstablishmentDetails>>(:final data) =>
+          ProfileEstablishmentsSection(establishments: data),
         ResultError<List<EstablishmentDetails>>(:final error) => Column(
           children: [
             Text(error.message),
@@ -189,7 +197,9 @@ class _SettingsSections extends StatelessWidget {
                 label: item.label,
                 subtitle: item.value,
                 isNavigable: item.isNavigable,
-                onTap: item.isNavigable ? () => _showOutOfScopeSnackBar(context) : null,
+                onTap: item.isNavigable
+                    ? () => _showOutOfScopeSnackBar(context)
+                    : null,
               ),
           ],
         ),
@@ -203,7 +213,9 @@ class _SettingsSections extends StatelessWidget {
                 label: item.label,
                 subtitle: item.value,
                 isNavigable: item.isNavigable,
-                onTap: item.isNavigable ? () => _showOutOfScopeSnackBar(context) : null,
+                onTap: item.isNavigable
+                    ? () => _showOutOfScopeSnackBar(context)
+                    : null,
               ),
           ],
         ),

@@ -3,15 +3,13 @@
 from api.shared.exceptions import ConflictError
 
 
-class EmailYaRegistradoError(ConflictError):
-    code = "email_ya_registrado"
+class UsuarioYaRegistradoError(ConflictError):
+    """Conflicto unificado para evitar revelar qué identificador existe."""
 
-    def __init__(self, email: str) -> None:
-        super().__init__(f"El email '{email}' ya está registrado")
+    code = "usuario_ya_registrado"
 
-
-class CuitYaRegistradoError(ConflictError):
-    code = "cuit_ya_registrado"
-
-    def __init__(self, cuit: str) -> None:
-        super().__init__(f"El CUIT/CUIL '{cuit}' ya está registrado")
+    def __init__(self) -> None:
+        super().__init__(
+            "El CUIT o correo ingresado ya se encuentran asociados a una cuenta activa. "
+            "Por favor, iniciá sesión."
+        )

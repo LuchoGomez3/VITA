@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend_mayoral/app/router/routes.dart';
-import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
-import 'package:go_router/go_router.dart';
 
 /// Pantalla tecnica de arranque mientras se restaura la sesion local.
 ///
@@ -15,34 +11,10 @@ class AuthCheckPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AuthSessionCubit, AuthSessionState>(
-      listener: _redirect,
-      builder: (context, state) {
-        // El listener cubre cambios futuros. Este post-frame cubre el caso en
-        // que la restauracion haya terminado antes de construir esta pantalla.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (context.mounted) {
-            _redirect(context, state);
-          }
-        });
-
-        return const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        );
-      },
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
     );
-  }
-
-  void _redirect(BuildContext context, AuthSessionState state) {
-    switch (state) {
-      case AuthSessionAuthenticated():
-        context.go(AppRoutes.home);
-      case AuthSessionUnauthenticated():
-        context.go(AppRoutes.signUp);
-      case AuthSessionChecking():
-        break;
-    }
   }
 }

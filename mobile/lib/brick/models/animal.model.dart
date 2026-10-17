@@ -83,7 +83,7 @@ class BrickAnimalRequestTransformer extends RestRequestTransformer {
     final encodedEstablishmentId = Uri.encodeQueryComponent(establishmentId);
 
     return RestRequest(
-      url: '$animalsPath?establecimiento_id=$encodedEstablishmentId',
+      url: '$animalsPath?establecimiento_id=$encodedEstablishmentId&include_deleted=true',
       topLevelKey: 'data',
     );
   }
@@ -290,6 +290,8 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
     BrickAnimalSyncStatus? syncStatus,
     Object? syncErrorCode = _unchangedSyncErrorCode,
     DateTime? updatedAt,
+    String? lotId,
+    String? lotName,
   }) {
     final nextSyncErrorCode =
         identical(
@@ -308,8 +310,8 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
       birthDate: birthDate,
       categoryId: categoryId,
       categoryName: categoryName,
-      lotId: lotId,
-      lotName: lotName,
+      lotId: lotId ?? this.lotId,
+      lotName: lotName ?? this.lotName,
       establishmentId: establishmentId,
       initialWeight: initialWeight,
       weighingMethod: weighingMethod,
@@ -327,7 +329,7 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   }
 }
 
-/// TODO (Agustín): Eliminar luego estas funciones si no son necesarias.
+// Pendiente de revisión: eliminar estas funciones si dejan de ser necesarias.
 /// Convierte el enum de sexo del backend al enum local persistido.
 BrickAnimalSex brickAnimalSexFromBackend(String value) {
   return switch (value) {

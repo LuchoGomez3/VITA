@@ -1,5 +1,5 @@
 import 'package:frontend_mayoral/core/result/result.dart';
-import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/registration_request.dart';
 import 'package:frontend_mayoral/features/auth/domain/repositories/auth_repository.dart';
 
@@ -11,7 +11,7 @@ class RegisterUserUseCase {
   final AuthRepository _repository;
 
   /// Ejecuta el registro con los datos validados por el formulario.
-  Future<Result<AppUser>> call({
+  Future<Result<AuthSession>> call({
     required RegistrationRequest request,
   }) {
     return _repository.register(request: request);

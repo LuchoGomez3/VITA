@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
 
 /// Mapper JSON del alta de establecimiento contra `/api/v1/establecimientos`.
@@ -40,6 +41,9 @@ class EstablishmentRegistrationJsonMapper {
         id: id,
         registration: registration,
         createdAt: DateTime.parse(createdAt),
+        role: UserRolePermissions.fromBackend(
+          json['rol'] is String ? json['rol'] as String : null,
+        ),
       );
     }
 

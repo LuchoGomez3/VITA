@@ -58,9 +58,6 @@ class EstablishmentRemoteDataSource {
       return const [];
     }
 
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(EstablishmentRemoteSummary.fromJson)
-        .toList();
+    return data.whereType<Map<String, dynamic>>().map(EstablishmentRemoteSummary.fromJson).toList();
   }
 }

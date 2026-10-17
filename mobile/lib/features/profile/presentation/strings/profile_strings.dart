@@ -1,31 +1,25 @@
 /// Textos centralizados de la pantalla de perfil.
 abstract final class ProfileStrings {
   /// Titulo de la pantalla.
-  static const title = 'Perfil y ajustes';
+  static const title = 'Perfil';
 
   /// Etiqueta del identificador de inicio de sesion.
   static const usernameLabel = 'Usuario';
 
   /// Título de la información personal.
-  static const userDataSection = 'Datos del usuario';
+  static const userDataSection = 'Información personal';
 
-  /// Etiqueta del ID interno.
-  static const userIdLabel = 'ID de usuario';
+  /// Texto de apoyo de la cabecera del perfil.
+  static const accountSubtitle = 'Tu cuenta en VITA';
+
+  /// Explica la relación del usuario con el listado.
+  static const establishmentsSubtitle = 'Los campos de los que formás parte';
 
   /// Etiqueta del correo electrónico.
   static const emailLabel = 'Correo electrónico';
 
-  /// Etiqueta del nombre del usuario.
-  static const firstNameLabel = 'Nombre';
-
-  /// Etiqueta del apellido del usuario.
-  static const lastNameLabel = 'Apellido';
-
   /// Etiqueta del CUIT personal.
   static const cuitLabel = 'CUIT';
-
-  /// Etiqueta del rol de acceso.
-  static const roleLabel = 'Rol';
 
   /// Título del listado de establecimientos.
   static const establishmentsSection = 'Establecimientos';
@@ -78,14 +72,4 @@ abstract final class ProfileStrings {
 
   /// Mensaje mostrado por acciones sin funcionalidad real todavía.
   static const outOfScopeMessage = 'Fuera de alcance de esta iniciativa';
-
-  /// Devuelve el nombre visible de un rol persistido.
-  static String roleName(String role) {
-    return switch (role) {
-      'admin' => 'Administrador',
-      'encargado' => 'Encargado',
-      'operario' => 'Operario',
-      _ => 'Sin rol asignado',
-    };
-  }
 }

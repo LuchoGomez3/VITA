@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/features/establishment_register/data/mappers/establishment_registration_json_mapper.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
 
@@ -45,6 +46,7 @@ void main() {
         {
           'id': 'est-123',
           'created_at': '2025-03-14T00:00:00.000Z',
+          'rol': 'owner',
         },
         registration,
       );
@@ -52,6 +54,7 @@ void main() {
       expect(registered.id, 'est-123');
       expect(registered.registration, registration);
       expect(registered.createdAt, DateTime.parse('2025-03-14T00:00:00.000Z'));
+      expect(registered.role, UserRole.owner);
     });
 
     test('throws a FormatException when id or created_at are missing', () {

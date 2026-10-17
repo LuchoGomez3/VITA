@@ -186,6 +186,32 @@ El alta es offline-first:
 7. `AnimalBrickStore` actualiza el registro local:
    `pending -> synchronized` o `pending -> rejected`.
 
+## Flujo offline-first de lotes y movimientos
+
+La gestión de lotes utiliza SQLite como fuente de verdad local y sincroniza
+contra los contratos backend acordados:
+
+```txt
+Field UI
+  -> casos de uso de field
+  -> repositorios de field
+  -> BrickLotStore / BrickAnimalLotMovementStore / AnimalBrickStore
+  -> SQLite + cola REST
+```
+
+`BrickLotModel` conserva la delimitación cartesiana local versionada. Sus
+coordenadas pertenecen al lienzo `0..1000`; no son latitud/longitud ni GeoJSON.
+Además persiste superficie en décimas de hectárea, forraje, agua, estado y los
+timestamps necesarios para el esquema LWW.
+
+El movimiento entre lotes actualiza la ubicación de los animales y guarda un
+`BrickAnimalLotMovementModel` con origen, destino, animales, fecha y motivo.
+Ambas escrituras se ejecutan dentro de una única transacción SQLite para no
+dejar un traslado parcial si alguna operación falla. Lotes y movimientos se
+encolan siempre para sincronización; el login también envía pendientes y luego
+descarga la representación autoritativa en el orden lotes, animales y
+movimientos.
+
 ## Codigo generado
 
 Si cambia un modelo Brick, se debe regenerar:

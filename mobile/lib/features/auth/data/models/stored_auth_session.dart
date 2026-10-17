@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
-import 'package:frontend_mayoral/features/auth/domain/entities/user_role.dart';
 
 /// Version serializable de la sesion que vive en secure storage.
 ///
@@ -21,7 +20,6 @@ class StoredAuthSession {
     required this.firstName,
     required this.lastName,
     this.cuit,
-    this.role = UserRole.unknown,
   });
 
   /// Construye el modelo local desde la entidad usada por el resto de la app.
@@ -35,7 +33,6 @@ class StoredAuthSession {
       firstName: session.user.firstName,
       lastName: session.user.lastName,
       cuit: session.user.cuit,
-      role: session.user.role,
     );
   }
 
@@ -50,7 +47,6 @@ class StoredAuthSession {
       firstName: _readString(json, 'first_name'),
       lastName: _readString(json, 'last_name'),
       cuit: _readNullableString(json, 'cuit'),
-      role: _readRole(json['role']),
     );
   }
 
@@ -88,9 +84,6 @@ class StoredAuthSession {
   /// CUIT del productor cuando el backend lo provee.
   final String? cuit;
 
-  /// Rol conocido por mobile. Si backend no lo envia, queda `unknown`.
-  final UserRole role;
-
   /// Convierte el modelo persistido a la entidad de dominio.
   AuthSession toDomain() {
     return AuthSession(
@@ -103,7 +96,6 @@ class StoredAuthSession {
         firstName: firstName,
         lastName: lastName,
         cuit: cuit,
-        role: role,
       ),
     );
   }
@@ -119,7 +111,6 @@ class StoredAuthSession {
       'first_name': firstName,
       'last_name': lastName,
       'cuit': cuit,
-      'role': role.name,
     };
   }
 
@@ -152,19 +143,5 @@ class StoredAuthSession {
     }
 
     return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
-  }
-
-  static UserRole _readRole(Object? value) {
-    if (value is! String) {
-      return UserRole.unknown;
-    }
-
-    for (final role in UserRole.values) {
-      if (role.name == value) {
-        return role;
-      }
-    }
-
-    return UserRole.unknown;
   }
 }

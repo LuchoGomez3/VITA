@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
@@ -225,6 +226,7 @@ class _FakeEstablishmentRegistrationRepository implements EstablishmentRegistrat
         cantidadVertices: 7,
       ),
       createdAt: DateTime(2025, 3, 14),
+      role: UserRole.owner,
     ),
   );
 
