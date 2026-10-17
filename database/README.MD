@@ -55,6 +55,21 @@ que un Postgres de desarrollo pueda migrar igual. En ese caso el aislamiento por
 queda enteramente a cargo del service, que filtra por membresía en toda consulta —
 motivo por el cual el service nunca debe delegar el aislamiento en RLS.
 
+## Personalización del perfil
+
+`usuarios` guarda la personalización de la cabecera de Perfil (migración
+`20261017_01`, adr-0011):
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `color_cabecera` | `varchar(7)` | `#RRGGBB` en mayúsculas (`ck_usuarios_color_cabecera`); `null` = verde por defecto |
+| `avatar_actualizado_en` | `timestamptz` | cuándo se subió la foto; `null` = sin foto |
+
+La foto no vive en la base: está en el bucket privado `avatars` de Supabase Storage
+con clave `{usuario_id}.jpg` (una por usuario, se pisa al reemplazarla). El check se
+escribe con `ltrim` y no con una expresión regular para que corra igual en el SQLite
+de los tests.
+
 ## Convenciones de las tablas sincronizables
 
 Toda entidad que viaje al cliente offline hereda de `Base` y `SoftDeleteMixin`:
