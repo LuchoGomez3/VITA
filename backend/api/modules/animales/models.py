@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import DDL, CheckConstraint, String, event
+from sqlalchemy import DDL, CheckConstraint, DateTime, String, event
 from sqlmodel import Field
 
 from api.shared.enums import EstadoAnimal, EstadoReproductivo, SexoAnimal
@@ -47,7 +47,9 @@ class Animal(Base, SoftDeleteMixin, table=True):
     )
     # Se mantiene separado de updated_at: editar raza/lote despues de una baja
     # no debe mover esa salida productiva a otro periodo del tablero.
-    estado_actualizado_en: datetime | None = Field(default=None, nullable=True)
+    estado_actualizado_en: datetime | None = Field(
+        default=None, sa_type=DateTime(timezone=True), nullable=True
+    )
     # Separado de ``estado``: un animal puede estar ``activo`` y ``prenada``.
     estado_reproductivo: EstadoReproductivo | None = Field(
         default=None, sa_type=String, nullable=True
