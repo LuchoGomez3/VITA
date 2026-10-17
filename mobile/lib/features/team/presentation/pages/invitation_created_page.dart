@@ -121,6 +121,12 @@ class _InvitationCreatedPageState extends State<InvitationCreatedPage> {
                 children: [
                   _InviteeCard(invitation: _invitation),
                   const SizedBox(height: AppSpacing.md),
+                  // Si el email no salió, se avisa arriba de todo: el código
+                  // sirve igual y hay que mandarlo por otro medio.
+                  if (!_invitation.emailSent) ...[
+                    const _EmailNotSentBanner(),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
                   DecoratedBox(
                     decoration: BoxDecoration(
                       color: AppColors.backgroundSecondaryLight,
@@ -149,11 +155,10 @@ class _InvitationCreatedPageState extends State<InvitationCreatedPage> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Text(
-                    _invitation.emailSent ? TeamStrings.createdExplanation : TeamStrings.createdWithoutEmailExplanation,
-                    style: AppTypography.secondaryEmphasis,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
+                  if (_invitation.emailSent) ...[
+                    const Text(TeamStrings.createdExplanation, style: AppTypography.secondaryEmphasis),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
                   Row(
                     children: [
                       Expanded(
@@ -165,11 +170,18 @@ class _InvitationCreatedPageState extends State<InvitationCreatedPage> {
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
-                        child: AppOutlinedButton(
-                          label: TeamStrings.shareCta,
-                          icon: const Icon(Icons.share_outlined),
-                          onPressed: () => unawaited(_share()),
-                        ),
+                        // Sin email, compartir es el camino principal.
+                        child: _invitation.emailSent
+                            ? AppOutlinedButton(
+                                label: TeamStrings.shareCta,
+                                icon: const Icon(Icons.share_outlined),
+                                onPressed: () => unawaited(_share()),
+                              )
+                            : AppFilledButton(
+                                label: TeamStrings.shareCta,
+                                icon: const Icon(Icons.share_outlined),
+                                onPressed: () => unawaited(_share()),
+                              ),
                       ),
                     ],
                   ),
@@ -186,6 +198,47 @@ class _InvitationCreatedPageState extends State<InvitationCreatedPage> {
                     onPressed: _cancelling ? null : () => unawaited(_cancel()),
                     style: TextButton.styleFrom(foregroundColor: AppColors.error),
                     child: Text(_cancelling ? TeamStrings.cancellingCta : TeamStrings.cancelAction),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmailNotSentBanner extends StatelessWidget {
+  const _EmailNotSentBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.syncPendingContainer,
+        border: Border.all(color: AppColors.syncPending),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.mail_lock_outlined, color: AppColors.syncPending, size: 22),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    TeamStrings.emailNotSentTitle,
+                    style: AppTypography.mediumEmphasis.copyWith(color: AppColors.syncPending),
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    TeamStrings.createdWithoutEmailExplanation,
+                    style: AppTypography.smallEmphasis.copyWith(color: AppColors.syncPending),
                   ),
                 ],
               ),

@@ -98,7 +98,7 @@ abstract final class TeamStrings {
   static const resentNotice = 'Reenviamos la invitación con un código nuevo.';
 
   /// Aviso: código nuevo sin email.
-  static const resentWithoutEmailNotice = 'Generamos un código nuevo pero el email no salió. Probá de nuevo más tarde.';
+  static const resentWithoutEmailNotice = 'Generamos un código nuevo, pero el email no salió.';
 
   /// Aviso: se canceló.
   static const cancelledNotice = 'Invitación cancelada.';
@@ -166,10 +166,14 @@ abstract final class TeamStrings {
       'Le enviamos el código por correo. Si no le llega, compartíselo por WhatsApp o dictáselo: '
       'lo ingresa en la app desde "Sumarme a un establecimiento".';
 
-  /// El email no salió.
+  /// Título del aviso cuando el email no salió.
+  static const emailNotSentTitle = 'No pudimos enviar el email';
+
+  /// Qué hacer si el email no salió.
   static const createdWithoutEmailExplanation =
-      'No pudimos mandar el correo. Compartíselo por WhatsApp o dictáselo: lo ingresa en la app '
-      'desde "Sumarme a un establecimiento".';
+      'La invitación quedó creada y este código sirve igual. Mandáselo vos por WhatsApp o dictáselo: '
+      'lo ingresa en la app desde "Sumarme a un establecimiento". Si preferís que le llegue el email, '
+      'probá "Reenviar invitación" más tarde desde Equipo.';
 
   /// Copiar el código.
   static const copyCta = 'Copiar';

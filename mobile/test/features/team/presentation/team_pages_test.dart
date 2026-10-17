@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/core/authentication/post_authentication_summary
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
 import 'package:frontend_mayoral/features/team/domain/errors/team_error.dart';
 import 'package:frontend_mayoral/features/team/domain/use_cases/team_use_cases.dart';
@@ -213,6 +214,32 @@ void main() {
       await tester.tap(find.text(TeamStrings.doneCta));
       await tester.pumpAndSettle();
       expect(popped, [true]);
+    });
+
+    testWidgets('si el email no salió lo avisa arriba y destaca Compartir', (tester) async {
+      await _pump(
+        tester,
+        InvitationCreatedPage(
+          created: (
+            invitation: (
+              id: pendingVet.id,
+              email: pendingVet.email,
+              role: pendingVet.role,
+              expiresAt: pendingVet.expiresAt,
+              isExpired: false,
+              emailSent: false,
+              createdAt: pendingVet.createdAt,
+            ),
+            code: '7K4-P2M',
+          ),
+          establishmentName: 'La Sirena',
+          cancelInvitation: () async => const Result.success(null),
+        ),
+      );
+
+      expect(find.text(TeamStrings.emailNotSentTitle), findsOneWidget);
+      expect(find.text(TeamStrings.createdExplanation), findsNothing);
+      expect(find.widgetWithText(AppFilledButton, TeamStrings.shareCta), findsOneWidget);
     });
 
     testWidgets('cancelar pide confirmación y vuelve a Equipo', (tester) async {
