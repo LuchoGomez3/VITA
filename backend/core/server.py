@@ -63,6 +63,7 @@ def create_fastapi_app() -> FastAPI:
     # Show current version
     @app.get("/version")
     def version():
-        return {"commit": os.getenv("GIT_SHA")}
+        # Render expone el commit desplegado como RENDER_GIT_COMMIT.
+        return {"commit": os.getenv("GIT_SHA") or os.getenv("RENDER_GIT_COMMIT")}
 
     return app
