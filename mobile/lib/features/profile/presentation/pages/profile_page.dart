@@ -14,12 +14,19 @@ import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_u
 import 'package:frontend_mayoral/features/profile/presentation/widgets/settings_row.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/settings_section_card.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 
 /// Callback que cierra la sesión actual.
 typedef SignOut = Future<void> Function();
 
 /// Factory que crea el Cubit responsable de los establecimientos de Perfil.
 typedef ProfileCubitFactory = ProfileCubit Function();
+
+/// Versión y número de compilación de la app instalada.
+typedef AppVersion = ({String version, String buildNumber});
+
+/// Lee la versión de la app instalada.
+typedef AppVersionReader = Future<AppVersion> Function();
 
 /// Pantalla que muestra el usuario y sus establecimientos.
 class ProfilePage extends StatefulWidget {
@@ -31,6 +38,7 @@ class ProfilePage extends StatefulWidget {
     required this.cuit,
     required this.createCubit,
     required this.signOut,
+    required this.readAppVersion,
     super.key,
   });
 
@@ -51,6 +59,9 @@ class ProfilePage extends StatefulWidget {
 
   /// Cierra la sesión actual.
   final SignOut signOut;
+
+  /// Lee la versión instalada para la fila "Versión".
+  final AppVersionReader readAppVersion;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -92,8 +103,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           const SizedBox(height: AppSpacing.xl),
                           const _EstablishmentsContent(),
+                          const _JoinEstablishmentCard(),
                           const SizedBox(height: AppSpacing.xl),
-                          const _SettingsSections(),
+                          _SettingsSections(readAppVersion: widget.readAppVersion),
                           const SizedBox(height: AppSpacing.lg),
                           AppFilledButton(
                             label: ProfileStrings.signOutButton,
@@ -134,8 +146,7 @@ class _EstablishmentsContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileCubit, ResultState<List<EstablishmentDetails>>>(
       builder: (context, state) => switch (state) {
-        Data<List<EstablishmentDetails>>(:final data) =>
-          ProfileEstablishmentsSection(establishments: data),
+        Data<List<EstablishmentDetails>>(:final data) => ProfileEstablishmentsSection(establishments: data),
         ResultError<List<EstablishmentDetails>>(:final error) => Column(
           children: [
             Text(error.message),
@@ -152,17 +163,39 @@ class _EstablishmentsContent extends StatelessWidget {
   }
 }
 
-/// Secciones mock de sólo lectura: dispositivos, preferencias y "sobre la
-/// app". Réplica visual estática de `AjustesScreen` (ver
-/// `.claude/specs/ajustes.md`); ninguna fila navega a algo real todavía.
-class _SettingsSections extends StatelessWidget {
-  const _SettingsSections();
+void _showComingSoon(BuildContext context) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(const SnackBar(content: Text(ProfileStrings.comingSoonMessage)));
+}
 
-  void _showOutOfScopeSnackBar(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text(ProfileStrings.outOfScopeMessage)),
+/// "Sumarme a otro establecimiento": cierra la lista de establecimientos como
+/// en el diseño. Se conecta cuando exista el flujo de sumarse con código.
+class _JoinEstablishmentCard extends StatelessWidget {
+  const _JoinEstablishmentCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingsSectionCard(
+      rows: [
+        SettingsRow(
+          icon: Icons.add,
+          label: ProfileStrings.joinEstablishmentLabel,
+          isPrimaryAction: true,
+          onTap: () => _showComingSoon(context),
+        ),
+      ],
     );
   }
+}
+
+/// Secciones de `AjustesScreen`: dispositivos, preferencias y "sobre la app".
+/// Salvo la versión, todavía son datos de ejemplo (ver
+/// `.claude/specs/ajustes.md`) y sus filas solo avisan que llegan pronto.
+class _SettingsSections extends StatelessWidget {
+  const _SettingsSections({required this.readAppVersion});
+
+  final AppVersionReader readAppVersion;
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +207,7 @@ class _SettingsSections extends StatelessWidget {
           rows: [
             for (final device in pairedDevicesMock)
               SettingsRow(
-                icon: Icons.bluetooth,
+                icon: device.icon,
                 label: device.name,
                 subtitle: device.detail,
                 subtitleColor: device.isConnected ? AppColors.primary : null,
@@ -183,7 +216,7 @@ class _SettingsSections extends StatelessWidget {
               icon: Icons.add,
               label: ProfileStrings.addDeviceLabel,
               isPrimaryAction: true,
-              onTap: () => _showOutOfScopeSnackBar(context),
+              onTap: () => _showComingSoon(context),
             ),
           ],
         ),
@@ -193,13 +226,11 @@ class _SettingsSections extends StatelessWidget {
           rows: [
             for (final item in preferencesMock)
               SettingsRow(
-                icon: Icons.tune,
+                icon: item.icon,
                 label: item.label,
                 subtitle: item.value,
-                isNavigable: item.isNavigable,
-                onTap: item.isNavigable
-                    ? () => _showOutOfScopeSnackBar(context)
-                    : null,
+                isNavigable: true,
+                onTap: () => _showComingSoon(context),
               ),
           ],
         ),
@@ -209,17 +240,59 @@ class _SettingsSections extends StatelessWidget {
           rows: [
             for (final item in aboutAppMock)
               SettingsRow(
-                icon: Icons.info_outline,
+                icon: item.icon,
                 label: item.label,
                 subtitle: item.value,
-                isNavigable: item.isNavigable,
-                onTap: item.isNavigable
-                    ? () => _showOutOfScopeSnackBar(context)
-                    : null,
+                isNavigable: true,
+                onTap: () => _showComingSoon(context),
               ),
+            _VersionRow(readAppVersion: readAppVersion),
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Fila "Versión" con la versión real instalada (no navegable).
+class _VersionRow extends StatefulWidget {
+  const _VersionRow({required this.readAppVersion});
+
+  final AppVersionReader readAppVersion;
+
+  @override
+  State<_VersionRow> createState() => _VersionRowState();
+}
+
+class _VersionRowState extends State<_VersionRow> {
+  static final _logger = Logger('ProfileVersionRow');
+
+  late final Future<AppVersion?> _version = _read();
+
+  Future<AppVersion?> _read() async {
+    try {
+      return await widget.readAppVersion();
+    } on Exception catch (error, stackTrace) {
+      // No es crítico: la fila queda con un guion en vez de la versión.
+      _logger.warning('No se pudo leer la versión instalada', error, stackTrace);
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<AppVersion?>(
+      future: _version,
+      builder: (context, snapshot) {
+        final version = snapshot.data;
+        return SettingsRow(
+          icon: Icons.verified_user_outlined,
+          label: ProfileStrings.versionLabel,
+          subtitle: version == null
+              ? ProfileStrings.emptyCredential
+              : ProfileStrings.versionValue(version.version, version.buildNumber),
+        );
+      },
     );
   }
 }

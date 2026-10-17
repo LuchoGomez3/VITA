@@ -6,13 +6,14 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 class SettingsSectionCard extends StatelessWidget {
   /// Crea la sección a partir de sus [rows].
   const SettingsSectionCard({
-    required this.title,
     required this.rows,
     super.key,
+    this.title,
   });
 
-  /// Título de la sección.
-  final String title;
+  /// Título de la sección; sin título la card va sola (por ejemplo, debajo
+  /// de una sección que ya tiene el suyo).
+  final String? title;
 
   /// Filas mostradas dentro de la card, ya construidas (típicamente
   /// `SettingsRow`).
@@ -20,16 +21,25 @@ class SettingsSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final heading = title;
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(title, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: AppSpacing.sm),
+        if (heading != null) ...[
+          // Mismo estilo que "Información personal" y "Establecimientos".
+          Text(heading, style: AppTypography.pageTitle),
+          const SizedBox(height: AppSpacing.sm),
+        ],
         AppSurfaceCard(
+          // Las filas llevan su propio padding: así el divisor y el efecto
+          // al tocar ocupan todo el ancho, como en el diseño.
+          padding: EdgeInsets.zero,
+          clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
               for (var i = 0; i < rows.length; i++) ...[
-                if (i > 0) const Divider(),
+                if (i > 0) const Divider(height: 1),
                 rows[i],
               ],
             ],

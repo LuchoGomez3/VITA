@@ -25,8 +25,7 @@ abstract final class ProfileStrings {
   static const establishmentsSection = 'Establecimientos';
 
   /// Mensaje cuando la sesión no tiene establecimientos guardados.
-  static const noEstablishments =
-      'No hay establecimientos disponibles para esta cuenta.';
+  static const noEstablishments = 'No hay establecimientos disponibles para esta cuenta.';
 
   /// Etiqueta del número RENSPA.
   static const renspaLabel = 'RENSPA';
@@ -71,5 +70,14 @@ abstract final class ProfileStrings {
   static const aboutAppSection = 'Sobre la app';
 
   /// Mensaje mostrado por acciones sin funcionalidad real todavía.
-  static const outOfScopeMessage = 'Fuera de alcance de esta iniciativa';
+  static const comingSoonMessage = 'Disponible próximamente';
+
+  /// Acción para sumarse a un establecimiento de otro productor.
+  static const joinEstablishmentLabel = 'Sumarme a otro establecimiento';
+
+  /// Etiqueta de la fila con la versión instalada.
+  static const versionLabel = 'Versión';
+
+  /// Versión y número de compilación de la app instalada.
+  static String versionValue(String version, String buildNumber) => 'v$version · build $buildNumber';
 }

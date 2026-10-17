@@ -16,6 +16,9 @@ class SettingsRow extends StatelessWidget {
     this.onTap,
   });
 
+  /// Lado de la caja del icono (32 en el diseño).
+  static const _iconBoxSize = 32.0;
+
   /// Icono representativo de la fila.
   final IconData icon;
 
@@ -40,29 +43,29 @@ class SettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = isPrimaryAction
-        ? AppColors.primary
-        : AppColors.textSecondary;
-    final labelColor = isPrimaryAction
-        ? AppColors.primary
-        : AppColors.textPrimary;
+    final detail = subtitle;
 
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         child: Row(
           children: [
-            DecoratedBox(
+            // En el diseño la acción primaria tiene la caja verde llena.
+            Container(
+              width: _iconBoxSize,
+              height: _iconBoxSize,
               decoration: BoxDecoration(
-                color: isPrimaryAction
-                    ? AppColors.backgroundSecondary
-                    : AppColors.backgroundTertiary,
+                color: isPrimaryAction ? AppColors.primary : AppColors.backgroundTertiary,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xs),
-                child: Icon(icon, size: 20, color: iconColor),
+              child: Icon(
+                icon,
+                size: 18,
+                color: isPrimaryAction ? AppColors.onPrimary : AppColors.textSecondary,
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -73,21 +76,24 @@ class SettingsRow extends StatelessWidget {
                   Text(
                     label,
                     style: AppTypography.mediumEmphasis.copyWith(
-                      color: labelColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: isPrimaryAction ? AppColors.primary : AppColors.textPrimary,
                     ),
                   ),
-                  if (subtitle != null)
+                  if (detail != null)
                     Text(
-                      subtitle!,
+                      detail,
                       style: AppTypography.smallEmphasis.copyWith(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                         color: subtitleColor ?? AppColors.textHint,
                       ),
                     ),
                 ],
               ),
             ),
-            if (isNavigable)
-              const Icon(Icons.chevron_right, color: AppColors.textHint),
+            if (isNavigable) const Icon(Icons.chevron_right, size: 16, color: AppColors.textHint),
           ],
         ),
       ),

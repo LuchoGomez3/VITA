@@ -168,6 +168,7 @@ class AppRouter {
                         cuit: session.user.cuit,
                         createCubit: createProfileCubit,
                         signOut: context.read<AuthSessionCubit>().signOut,
+                        readAppVersion: readInstalledAppVersion,
                       ),
                       _ => ProfilePage(
                         email: ProfileStrings.emptyCredential,
@@ -176,6 +177,7 @@ class AppRouter {
                         cuit: null,
                         createCubit: createProfileCubit,
                         signOut: context.read<AuthSessionCubit>().signOut,
+                        readAppVersion: readInstalledAppVersion,
                       ),
                     };
                   },

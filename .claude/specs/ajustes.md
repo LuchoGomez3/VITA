@@ -57,7 +57,7 @@ Sin rutas nuevas: se agregan widgets a la página existente.
 |---|---|
 | Manual de usuario | (fila navegable, sin destino) |
 | Soporte | soporte@hacienda.app |
-| Versión | v0.9.3 · build 412 (sin chevron, no navegable) |
+| Versión | real: `v<version> · build <n>` del `pubspec.yaml` instalado (sin chevron, no navegable) |
 
 Patrón visual: cada sección es un título + card con filas separadas por
 línea (label + valor/subtítulo + chevron si es navegable), replicando
@@ -91,6 +91,31 @@ nueva**: se extendió `ProfilePage` existente.
   sin acción.
 - Sin colores nuevos, sin rutas nuevas, sin tests (mismo criterio que las
   4 iteraciones anteriores de esta misma).
+
+### Ajustes posteriores (2026-10-16, merge de `develop`)
+
+Mientras el PR esperaba, `develop` rehízo Perfil (cabecera verde adaptable,
+"Información personal", tarjetas de establecimiento). Se mantuvo ese diseño
+y se acomodaron las secciones de ajustes:
+
+- Títulos de sección con `AppTypography.pageTitle`, igual que
+  "Información personal" y "Establecimientos".
+- `SettingsRow` con las medidas del diseño: caja de icono de 32 (verde llena
+  en las acciones primarias), icono 18, label 13/700, subtítulo 11/600 y
+  filas a todo el ancho de la card (divisor y efecto al tocar incluidos).
+- Un icono por fila (bastón/balanza, tema, idioma, unidades, manual,
+  soporte, versión) en vez de uno repetido por sección.
+- Fila "Sumarme a otro establecimiento" debajo de los establecimientos; por
+  ahora avisa "Disponible próximamente" hasta que exista el flujo de
+  sumarse con código.
+- "Versión" lee la versión instalada con `package_info_plus`
+  (`readInstalledAppVersion` en `profile_composition.dart`); si falla, se
+  loguea y la fila muestra un guion.
+- El mensaje de las filas sin destino pasó de "Fuera de alcance de esta
+  iniciativa" a "Disponible próximamente".
+- Queda distinto al diseño, a propósito: la cabecera (el diseño usa
+  `AppHeader` con selector de establecimiento y "Ajustes") y las tarjetas de
+  establecimiento, que son el rediseño reciente de Perfil en `develop`.
 
 Con este PR, ningún flujo del índice `estado-pantallas-diseno.md` queda en
 🎨: la iniciativa de maquetado queda completa (Etapa 1) en los 6 flujos que
