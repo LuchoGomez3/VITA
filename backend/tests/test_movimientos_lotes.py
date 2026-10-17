@@ -16,7 +16,7 @@ from api.modules.establecimientos.models import (
     UsuarioEstablecimiento,
 )
 from api.modules.movimientos.models import MovimientoLote, MovimientoLoteAnimal
-from api.shared.enums import EstadoLote, RolUsuario, SexoAnimal
+from api.shared.enums import EstadoAnimal, EstadoLote, RolUsuario, SexoAnimal
 from tests.factories import crear_lote
 
 BASE = "/api/v1/movimientos_lotes"
@@ -310,6 +310,32 @@ async def test_animal_borrado_se_rechaza(auth_client, session, campo):
         BASE, json=_payload(est.id, origen.id, destino.id, [a.id for a in animales])
     )
     assert resp.status_code == 422
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "estado",
+    [EstadoAnimal.vendido, EstadoAnimal.muerto, EstadoAnimal.baja],
+)
+async def test_animal_inactivo_se_rechaza_como_conflicto(
+    auth_client, session, campo, estado
+):
+    est, origen, destino, animales = campo
+    animales[0].estado = estado
+    session.add(animales[0])
+    await session.commit()
+
+    resp = await auth_client.post(
+        BASE, json=_payload(est.id, origen.id, destino.id, [a.id for a in animales])
+    )
+
+    assert resp.status_code == 409
+    error = resp.json()["errors"][0]
+    assert error["code"] == "animales_no_activos"
+    assert str(animales[0].id) in error["details"]["animal_ids"]
+    for animal in animales:
+        await session.refresh(animal)
+        assert animal.lote_id == origen.id
 
 
 # ============================================================ validaciones

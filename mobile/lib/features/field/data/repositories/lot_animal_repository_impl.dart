@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/brick/mappers/animal_productive_status_mapper.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -23,6 +24,7 @@ class LotAnimalRepositoryImpl implements LotAnimalRepository {
       return Result.success([
         for (final animal in animals)
           if (animal.deletedAt == null &&
+              animal.productiveStatus.toDomain().isInProductiveStock &&
               animal.establishmentId == establishmentId &&
               (lotId == null || animal.lotId == lotId))
             LotAnimalSummary(
@@ -32,6 +34,7 @@ class LotAnimalRepositoryImpl implements LotAnimalRepository {
               rfidTagNumber: animal.rfidTagNumber,
               visualTag: animal.visualTag,
               categoryName: animal.categoryName,
+              syncErrorCode: animal.syncErrorCode,
             ),
       ]);
     } on Object catch (error, stackTrace) {

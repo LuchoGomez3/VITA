@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
@@ -31,7 +32,8 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
   @override
   void initState() {
     super.initState();
-    _birthWeightController.text = context.read<RegisterAnimalBloc>().state.draft.birthWeight;
+    final draft = context.read<RegisterAnimalBloc>().state.draft;
+    _birthWeightController.text = draft.birthWeight;
   }
 
   @override
@@ -42,18 +44,16 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
 
   @override
   Widget build(BuildContext context) {
-    final draft = context.select(
-      (RegisterAnimalBloc bloc) => bloc.state.draft,
-    );
+    final state = context.watch<RegisterAnimalBloc>().state;
+    final draft = state.draft;
+    final showErrors = state.showStepValidationErrors;
 
     return Column(
       children: [
-        // TODO(agusf): mostrar metodo y fecha reales recibidos del flujo RFID,
-        // OCR o carga manual cuando identificacion entregue esos metadatos.
         AnimalIdentificationSummary(
           rfid: draft.rfid,
           visualTag: _visualTag(draft),
-          readingDescription: AnimalRegisterStrings.stepTwoMockReading,
+          readingDescription: AnimalRegisterStrings.identificationSummary,
         ),
         Expanded(
           child: SingleChildScrollView(
@@ -74,9 +74,8 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                 AppDropdownFormField<String>(
                   title: AnimalRegisterStrings.stepTwoBreedTitle,
                   hintText: AnimalRegisterStrings.stepTwoBreedHint,
-                  initialValue: draft.breed,
-                  // TODO(agusf): reemplazar por el catalogo offline de razas
-                  // cuando backend defina y sincronice esa fuente.
+                  initialValue: draft.breed.isEmpty ? null : draft.breed,
+                  errorText: showErrors && draft.breed.trim().isEmpty ? AnimalRegisterStrings.breedRequired : null,
                   options: AnimalRegisterStrings.stepTwoBreedOptions
                       .map(
                         (breed) => AppDropdownOption(
@@ -89,14 +88,14 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                     if (breed == null) {
                       return;
                     }
-
                     _updateDraft(draft.copyWith(breed: breed));
                   },
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 AppSegmentedFormField<String>(
                   title: AnimalRegisterStrings.stepTwoSexTitle,
-                  value: draft.sex,
+                  value: draft.sex.isEmpty ? null : draft.sex,
+                  errorText: showErrors && draft.sex.isEmpty ? AnimalRegisterStrings.sexRequired : null,
                   options: const [
                     AppSegmentedOption(
                       value: AnimalRegisterStrings.stepTwoFemale,
@@ -116,6 +115,7 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                   title: AnimalRegisterStrings.stepTwoBirthDateTitle,
                   hintText: AnimalRegisterStrings.stepTwoBirthDateHint,
                   value: draft.birthDate,
+                  errorText: showErrors && draft.birthDate == null ? AnimalRegisterStrings.birthDateRequired : null,
                   onChanged: (date) {
                     setState(() {
                       _selectedDatePreset = null;
@@ -150,28 +150,54 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                   onChanged: _applyBirthDatePreset,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                AppChoiceSelector<String>(
-                  title: AnimalRegisterStrings.stepTwoCategoryTitle,
-                  value: draft.category,
-                  // TODO(agusf): consumir categorias desde el BLoC usando el
-                  // catalogo Brick, con UUID real como valor seleccionado.
-                  options: AnimalRegisterStrings.stepTwoCategories
-                      .map(
-                        (category) => AppChoiceOption(
-                          value: category,
-                          label: category,
+                switch (state.categoriesState) {
+                  Initial() || Loading() => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  ResultError(:final error) => Text(
+                    error.message,
+                    style: AppTypography.errorBody,
+                  ),
+                  Data(:final data) when data.isEmpty => const Text(
+                    AnimalRegisterStrings.noCategoriesMessage,
+                    style: AppTypography.pageBodyTitle,
+                  ),
+                  Data(:final data) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppChoiceSelector<String>(
+                        title: AnimalRegisterStrings.stepTwoCategoryTitle,
+                        value: draft.categoryId,
+                        options: [
+                          for (final category in data)
+                            AppChoiceOption(
+                              value: category.id,
+                              label: category.name,
+                            ),
+                        ],
+                        onChanged: (categoryId) {
+                          final category = data.firstWhere(
+                            (item) => item.id == categoryId,
+                          );
+                          _updateDraft(
+                            draft.copyWith(
+                              categoryId: category.id,
+                              categoryName: category.name,
+                            ),
+                          );
+                        },
+                      ),
+                      if (showErrors && draft.categoryId == null) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        const Text(
+                          AnimalRegisterStrings.categoryRequired,
+                          style: AppTypography.formFieldError,
                         ),
-                      )
-                      .toList(),
-                  onChanged: (category) {
-                    _updateDraft(draft.copyWith(category: category));
-                  },
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                const Text(
-                  AnimalRegisterStrings.stepTwoCategorySuggestion,
-                  style: AppTypography.pageBodyTitle,
-                ),
+                      ],
+                    ],
+                  ),
+                  _ => const SizedBox.shrink(),
+                },
                 const SizedBox(height: AppSpacing.md),
                 AppTextFormField(
                   controller: _birthWeightController,
@@ -185,6 +211,12 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                       RegExp(r'^\d*[,.]?\d{0,2}'),
                     ),
                   ],
+                  validation: showErrors && !_hasValidWeight(draft.birthWeight)
+                      ? AppFieldValidation.invalid
+                      : AppFieldValidation.neutral,
+                  validationMessage: showErrors && !_hasValidWeight(draft.birthWeight)
+                      ? AnimalRegisterStrings.invalidBirthWeight
+                      : null,
                   onChanged: (value) {
                     _updateDraft(draft.copyWith(birthWeight: value));
                   },
@@ -229,6 +261,11 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
 
   String _visualTag(RegisterAnimalDraft draft) {
     return '${draft.visualTagSeries} ${draft.visualTagNumber}'.trim();
+  }
+
+  bool _hasValidWeight(String value) {
+    final parsed = double.tryParse(value.trim().replaceAll(',', '.'));
+    return parsed != null && parsed > 0;
   }
 
   void _updateDraft(RegisterAnimalDraft draft) {

@@ -5,4 +5,7 @@ import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_d
 abstract class AnimalDetailRepository {
   /// Obtiene el detalle por el identificador del animal.
   Future<Result<AnimalDetail>> getById(String animalId);
+
+  /// Vuelve a encolar la sincronizacion de un animal rechazado.
+  Future<Result<void>> retrySync(String animalId);
 }

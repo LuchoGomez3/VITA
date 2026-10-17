@@ -13,5 +13,6 @@ sealed class LotAnimalSummary with _$LotAnimalSummary {
     required String rfidTagNumber,
     required String visualTag,
     required String categoryName,
+    String? syncErrorCode,
   }) = _LotAnimalSummary;
 }

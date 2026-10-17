@@ -21,8 +21,9 @@ class AppDropdownOption<T> {
 
 /// Campo seleccionable reutilizable para formularios de la app.
 ///
-/// Este widget envuelve `DropdownButtonFormField` de Flutter y le aplica los
-/// estilos default de la app para mantener consistencia visual.
+/// Este widget envuelve `DropdownMenu` de Flutter y le aplica los estilos
+/// default de la app para mantener consistencia visual. El menu queda anclado
+/// debajo del campo, sin desplazarlo segun la opcion seleccionada.
 ///
 /// TODO(forms): definir una estrategia comun de validaciones por tipo de campo.
 /// Hoy se expone `validator` para que cada pantalla pueda consumir validadores
@@ -40,6 +41,7 @@ class AppDropdownFormField<T> extends StatelessWidget {
     this.onChanged,
     this.enabled = true,
     this.helperText,
+    this.errorText,
     this.icon,
   });
 
@@ -70,6 +72,9 @@ class AppDropdownFormField<T> extends StatelessWidget {
   /// Texto de ayuda del campo.
   final String? helperText;
 
+  /// Mensaje de validacion mostrado debajo del campo.
+  final String? errorText;
+
   /// Icono del campo.
   final Widget? icon;
 
@@ -88,38 +93,53 @@ class AppDropdownFormField<T> extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
         ],
-        DropdownButtonFormField<T>(
+        FormField<T>(
+          key: ValueKey(initialValue),
           initialValue: initialValue,
           validator: validator,
-          onChanged: enabled ? onChanged : null,
-          isExpanded: true,
-          icon:
-              icon ??
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textSecondary,
-              ),
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          style: AppTypography.mediumEmphasis,
-          hint: Text(
-            hintText,
-            style: AppTypography.formFieldHint,
-          ),
-          decoration: InputDecoration(
-            helperText: helperText,
-          ),
-          items: options
-              .map(
-                (option) => DropdownMenuItem<T>(
-                  value: option.value,
-                  child: Text(
-                    option.label,
-                    style: AppTypography.mediumEmphasis,
-                    overflow: TextOverflow.ellipsis,
+          builder: (field) => LayoutBuilder(
+            builder: (context, constraints) => DropdownMenu<T>(
+              initialSelection: field.value,
+              enabled: enabled,
+              width: constraints.maxWidth,
+              menuHeight: 280,
+              textStyle: AppTypography.formFieldValue,
+              hintText: hintText,
+              helperText: helperText,
+              errorText: errorText ?? field.errorText,
+              trailingIcon:
+                  icon ??
+                  const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: AppColors.textSecondary,
                   ),
-                ),
-              )
-              .toList(),
+              selectedTrailingIcon:
+                  icon ??
+                  const Icon(
+                    Icons.keyboard_arrow_up,
+                    color: AppColors.textSecondary,
+                  ),
+              dropdownMenuEntries: options
+                  .map(
+                    (option) => DropdownMenuEntry<T>(
+                      value: option.value,
+                      label: option.label,
+                      labelWidget: Text(
+                        option.label,
+                        style: AppTypography.mediumEmphasis,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onSelected: enabled
+                  ? (value) {
+                      field.didChange(value);
+                      onChanged?.call(value);
+                    }
+                  : null,
+            ),
+          ),
         ),
       ],
     );

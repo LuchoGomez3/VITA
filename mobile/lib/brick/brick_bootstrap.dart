@@ -1,4 +1,3 @@
-import 'package:frontend_mayoral/app/config/app_config.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
@@ -41,14 +40,11 @@ class BrickBootstrap {
     BrickAnimalStore.configure(AppBrickRepository.instance);
     BrickAnimalLotMovementStore.configure(
       AppBrickRepository.instance,
-      enableRemoteSync: AppConfig.current.enableLotMovementRemoteSync,
+      animalStore: BrickAnimalStore.instance,
     );
     BrickCategoriaStore.configure(AppBrickRepository.instance);
     BrickPesajeStore.configure(AppBrickRepository.instance);
-    BrickLotStore.configure(
-      AppBrickRepository.instance,
-      enableRemoteSync: AppConfig.current.enableLotRemoteSync,
-    );
+    BrickLotStore.configure(AppBrickRepository.instance);
     BrickOperatingExpenseCategoryStore.configure(AppBrickRepository.instance);
     BrickOperatingExpenseStore.configure(
       AppBrickRepository.instance,

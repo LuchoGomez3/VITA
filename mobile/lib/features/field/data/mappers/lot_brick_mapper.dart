@@ -32,6 +32,12 @@ class LotBrickMapper {
     forageResourceCode: model.forageResourceCode,
     hasWater: model.hasWater,
     status: LotStatus.fromCode(model.statusCode),
+    syncStatus: switch (model.syncStatus) {
+      BrickLotSyncStatus.pending => LotSyncStatus.pending,
+      BrickLotSyncStatus.synchronized => LotSyncStatus.synchronized,
+      BrickLotSyncStatus.rejected => LotSyncStatus.rejected,
+    },
+    syncErrorCode: model.syncErrorCode,
     createdAt: model.createdAt,
     updatedAt: model.updatedAt,
     deletedAt: model.deletedAt,

@@ -44,6 +44,30 @@ void main() {
       expect(result, isNull);
     });
   });
+
+  test('reconcile preserves a pending lot but adopts remote productive status', () {
+    final statusChangedAt = DateTime.utc(2026, 10, 15);
+    final local = _animal(
+      id: 'animal-id',
+      lotId: 'pending-destination',
+    );
+    final remote = _animal(
+      id: 'animal-id',
+      lotId: 'authoritative-origin',
+      productiveStatus: BrickAnimalProductiveStatus.sold,
+      productiveStatusChangedAt: statusChangedAt,
+    );
+
+    final reconciled = BrickAnimalStore.reconcileRemoteAnimal(
+      local: local,
+      remote: remote,
+    );
+
+    expect(reconciled.lotId, 'pending-destination');
+    expect(reconciled.syncStatus, BrickAnimalSyncStatus.pending);
+    expect(reconciled.productiveStatus, BrickAnimalProductiveStatus.sold);
+    expect(reconciled.productiveStatusChangedAt, statusChangedAt);
+  });
 }
 
 BrickAnimalModel _animal({
@@ -52,6 +76,10 @@ BrickAnimalModel _animal({
   String establishmentId = 'establishment-id',
   DateTime? deletedAt,
   DateTime? updatedAt,
+  String lotId = 'lot-id',
+  BrickAnimalProductiveStatus productiveStatus = BrickAnimalProductiveStatus.active,
+  DateTime? productiveStatusChangedAt,
+  BrickAnimalSyncStatus syncStatus = BrickAnimalSyncStatus.pending,
 }) {
   final timestamp = updatedAt ?? DateTime(2025, 3, 14);
   return BrickAnimalModel(
@@ -62,7 +90,7 @@ BrickAnimalModel _animal({
     breed: 'Aberdeen Angus',
     birthDate: DateTime(2025, 3, 14),
     categoryId: 'category-id',
-    lotId: 'lot-id',
+    lotId: lotId,
     establishmentId: establishmentId,
     initialWeight: 32.5,
     weighingMethod: BrickAnimalWeighingMethod.manual,
@@ -70,5 +98,8 @@ BrickAnimalModel _animal({
     createdAt: timestamp,
     updatedAt: timestamp,
     deletedAt: deletedAt,
+    productiveStatus: productiveStatus,
+    productiveStatusChangedAt: productiveStatusChangedAt,
+    syncStatus: syncStatus,
   );
 }

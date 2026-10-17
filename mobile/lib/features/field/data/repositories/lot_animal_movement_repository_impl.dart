@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/mappers/animal_productive_status_mapper.dart';
 import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
@@ -17,14 +17,14 @@ class LotAnimalMovementRepositoryImpl implements LotAnimalMovementRepository {
   const LotAnimalMovementRepositoryImpl({
     required AnimalBrickStore animalStore,
     required LotBrickStore lotStore,
-    required BrickAnimalLotMovementStore movementStore,
+    required AnimalLotMovementBrickStore movementStore,
   }) : _animalStore = animalStore,
        _lotStore = lotStore,
        _movementStore = movementStore;
 
   final AnimalBrickStore _animalStore;
   final LotBrickStore _lotStore;
-  final BrickAnimalLotMovementStore _movementStore;
+  final AnimalLotMovementBrickStore _movementStore;
   static final _logger = Logger('LotAnimalMovementRepository');
 
   @override
@@ -49,6 +49,7 @@ class LotAnimalMovementRepositoryImpl implements LotAnimalMovementRepository {
           selected.any(
             (animal) =>
                 animal.deletedAt != null ||
+                !animal.productiveStatus.toDomain().isInProductiveStock ||
                 animal.establishmentId != movement.establishmentId ||
                 animal.lotId != movement.sourceLotId,
           )) {
@@ -66,8 +67,6 @@ class LotAnimalMovementRepositoryImpl implements LotAnimalMovementRepository {
             lotId: destination.localId,
             lotName: destination.name,
             updatedAt: movement.updatedAt,
-            syncStatus: BrickAnimalSyncStatus.pending,
-            syncErrorCode: null,
           ),
       ];
       await _movementStore.saveWithAnimals(

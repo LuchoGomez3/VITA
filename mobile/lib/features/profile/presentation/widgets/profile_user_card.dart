@@ -3,29 +3,17 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 
-/// Tarjeta que presenta todos los datos disponibles del usuario.
+/// Tarjeta que presenta los datos personales del usuario.
 class ProfileUserCard extends StatelessWidget {
   /// Crea la tarjeta con la información de la sesión.
   const ProfileUserCard({
-    required this.userId,
     required this.email,
-    required this.firstName,
-    required this.lastName,
     required this.cuit,
     super.key,
   });
 
-  /// ID interno del usuario.
-  final String userId;
-
   /// Correo electrónico de acceso.
   final String email;
-
-  /// Nombre del usuario.
-  final String firstName;
-
-  /// Apellido del usuario.
-  final String lastName;
 
   /// CUIT opcional.
   final String? cuit;
@@ -35,38 +23,21 @@ class ProfileUserCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
+        const Text(
           ProfileStrings.userDataSection,
-          style: Theme.of(context).textTheme.titleLarge,
+          style: AppTypography.pageTitle,
         ),
         const SizedBox(height: AppSpacing.sm),
         AppSurfaceCard(
+          elevation: 0,
           child: Column(
             children: [
-              ProfileInfoRow(
-                label: ProfileStrings.userIdLabel,
-                value: userId,
-                icon: Icons.fingerprint,
-              ),
-              const Divider(),
               ProfileInfoRow(
                 label: ProfileStrings.emailLabel,
                 value: email,
                 icon: Icons.email_outlined,
               ),
-              const Divider(),
-              ProfileInfoRow(
-                label: ProfileStrings.firstNameLabel,
-                value: firstName,
-                icon: Icons.badge_outlined,
-              ),
-              const Divider(),
-              ProfileInfoRow(
-                label: ProfileStrings.lastNameLabel,
-                value: lastName,
-                icon: Icons.badge_outlined,
-              ),
-              const Divider(),
+              const Divider(height: AppSpacing.lg),
               ProfileInfoRow(
                 label: ProfileStrings.cuitLabel,
                 value: cuit ?? ProfileStrings.emptyCredential,
@@ -102,8 +73,18 @@ class ProfileInfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: AppColors.primary),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.termsBackground,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: Icon(icon, color: AppColors.textSecondary, size: 20),
+          ),
+        ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(
