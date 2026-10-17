@@ -62,6 +62,10 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senas
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
+import 'package:frontend_mayoral/features/team/presentation/pages/invite_team_member_page.dart';
+import 'package:frontend_mayoral/features/team/presentation/pages/join_establishment_page.dart';
+import 'package:frontend_mayoral/features/team/presentation/pages/team_page.dart';
+import 'package:frontend_mayoral/features/team/team_composition.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion central de rutas y proteccion de sesion de la aplicacion.
@@ -198,6 +202,24 @@ class AppRouter {
           // vuelve a Perfil, que tiene la lista.
           redirect: (context, state) => state.extra is EstablishmentDetails ? null : AppRoutes.profile,
           builder: (context, state) => EstablishmentDetailPage(establishment: state.extra! as EstablishmentDetails),
+        ),
+        GoRoute(
+          path: AppRoutes.team,
+          builder: (context, state) => TeamPage(
+            establishmentId: state.pathParameters['establishmentId']!,
+            createCubit: createTeamCubit,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.teamInvite,
+          builder: (context, state) => InviteTeamMemberPage(
+            establishmentId: state.pathParameters['establishmentId']!,
+            createCubit: createInviteTeamMemberCubit,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.joinEstablishment,
+          builder: (context, state) => const JoinEstablishmentPage(createCubit: createJoinEstablishmentCubit),
         ),
         GoRoute(
           path: AppRoutes.animalRegisterStep1,

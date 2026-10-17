@@ -174,7 +174,12 @@ class _EstablishmentsContent extends StatelessWidget {
         Data<List<EstablishmentDetails>>(:final data) => ProfileEstablishmentsSection(
           establishments: data,
           onOpen: (establishment) => context.push(AppRoutes.profileEstablishment, extra: establishment),
-          onJoin: () => _showComingSoon(context),
+          onJoin: () async {
+            final joined = await context.push<bool>(AppRoutes.joinEstablishment);
+            if ((joined ?? false) && context.mounted) {
+              await context.read<ProfileCubit>().load();
+            }
+          },
         ),
         ResultError<List<EstablishmentDetails>>(:final error) => Column(
           children: [

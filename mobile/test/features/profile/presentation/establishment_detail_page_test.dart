@@ -42,6 +42,25 @@ void main() {
     });
   });
 
+  testWidgets('la ficha lleva al equipo del establecimiento', (tester) async {
+    var teamTaps = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: EstablishmentDetailPage(establishment: _withoutLocation, onOpenTeam: () => teamTaps++),
+      ),
+    );
+
+    await tester.scrollUntilVisible(
+      find.text(ProfileStrings.teamRowLabel),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text(ProfileStrings.teamRowManageSubtitle), findsOneWidget);
+    await tester.tap(find.text(ProfileStrings.teamRowLabel));
+
+    expect(teamTaps, 1);
+  });
+
   testWidgets('la lista abre la ficha tocada y ofrece sumarse a otro campo', (tester) async {
     EstablishmentDetails? opened;
     var joinTaps = 0;

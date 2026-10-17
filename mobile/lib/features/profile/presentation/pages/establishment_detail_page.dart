@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/authentication/user_role_strings.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
@@ -8,6 +10,9 @@ import 'package:frontend_mayoral/features/establishment_register/presentation/wi
 import 'package:frontend_mayoral/features/profile/domain/entities/establishment_details.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/establishment_details_grid.dart';
+import 'package:frontend_mayoral/features/profile/presentation/widgets/settings_row.dart';
+import 'package:frontend_mayoral/features/profile/presentation/widgets/settings_section_card.dart';
+import 'package:go_router/go_router.dart';
 
 /// Ficha de un establecimiento: el campo en el mapa satelital, la superficie y
 /// los datos de identificación.
@@ -20,6 +25,7 @@ class EstablishmentDetailPage extends StatelessWidget {
     required this.establishment,
     super.key,
     this.showSatelliteImagery = true,
+    this.onOpenTeam,
   });
 
   /// Establecimiento a mostrar.
@@ -27,6 +33,9 @@ class EstablishmentDetailPage extends StatelessWidget {
 
   /// Si se pide la imagen satelital. Los tests lo apagan para no usar la red.
   final bool showSatelliteImagery;
+
+  /// Abre el equipo del establecimiento; por defecto navega a su ruta.
+  final VoidCallback? onOpenTeam;
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +108,21 @@ class EstablishmentDetailPage extends StatelessWidget {
                       (label: ProfileStrings.coordinatesLabel, value: _coordinates(establishment)),
                     ],
                   ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                SettingsSectionCard(
+                  title: ProfileStrings.teamSection,
+                  rows: [
+                    SettingsRow(
+                      icon: Icons.group_outlined,
+                      label: ProfileStrings.teamRowLabel,
+                      subtitle: establishment.role.canManageTeam
+                          ? ProfileStrings.teamRowManageSubtitle
+                          : ProfileStrings.teamRowViewSubtitle,
+                      isNavigable: true,
+                      onTap: onOpenTeam ?? () => context.push(AppRoutes.teamFor(establishment.id)),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -7,6 +7,7 @@ abstract final class UserRoleStrings {
     UserRole.admin => 'Administrador',
     UserRole.owner => 'Dueño',
     UserRole.employee => 'Empleado',
+    UserRole.veterinarian => 'Veterinario',
     UserRole.unknown => 'Sin rol asignado',
   };
 }

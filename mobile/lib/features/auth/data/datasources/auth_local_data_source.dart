@@ -38,5 +38,6 @@ class AuthLocalDataSource {
     // El catálogo pertenece a la sesión y no debe quedar visible para el
     // siguiente usuario que inicie sesión en el mismo dispositivo.
     await _secureStorage.delete(SecureStorageKeys.establishmentCatalog);
+    await _secureStorage.delete(SecureStorageKeys.teamSnapshot);
   }
 }
