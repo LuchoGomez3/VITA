@@ -33,7 +33,16 @@ class InMemoryRateLimiter:
     ) -> None:
         """Registra un intento o responde 429 cuando se supera el límite."""
         client_host = request.client.host if request.client else "unknown"
-        key = f"{operation}:{client_host}"
+        await self.check_key(
+            f"{operation}:{client_host}", limit=limit, window_seconds=window_seconds
+        )
+
+    async def check_key(self, key: str, *, limit: int, window_seconds: int) -> None:
+        """Igual que ``check`` pero con la clave explícita (p. ej. por usuario).
+
+        Sirve para endpoints autenticados, donde el límite tiene que seguir al
+        usuario aunque cambie de red (datos móviles en el campo).
+        """
         now = self._clock()
         cutoff = now - window_seconds
 
