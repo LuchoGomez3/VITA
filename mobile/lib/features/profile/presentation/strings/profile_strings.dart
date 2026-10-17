@@ -124,4 +124,73 @@ abstract final class ProfileStrings {
   /// Latitud y longitud con 5 decimales (alrededor de un metro).
   static String coordinates(double latitude, double longitude) =>
       '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}';
+
+  /// Ayuda del lápiz de la cabecera.
+  static const editAppearanceTooltip = 'Editar foto y color';
+
+  /// Pestaña de la foto en la hoja de edición.
+  static const photoTab = 'Foto';
+
+  /// Pestaña del color en la hoja de edición.
+  static const colorTab = 'Color de fondo';
+
+  /// Acción para sacar una foto con la cámara.
+  static const takePhoto = 'Sacar una foto';
+
+  /// Acción para elegir una foto de la galería.
+  static const pickFromGallery = 'Elegir de la galería';
+
+  /// Acción para volver a las iniciales.
+  static const removePhoto = 'Quitar foto';
+
+  /// Explica dónde se usa la foto.
+  static const photoHint = 'Tu foto se ve en el perfil de este celular y de cualquier otro donde entres con tu cuenta.';
+
+  /// Título de los colores sugeridos.
+  static const savedColors = 'Colores guardados';
+
+  /// Nombre del verde de VITA en la paleta.
+  static const originalColor = 'Original';
+
+  /// Título del selector libre.
+  static const customColor = 'Elegí un color';
+
+  /// Título de los campos de rojo, verde y azul.
+  static const rgbLabel = 'O escribilo en RGB (0 a 255)';
+
+  /// Etiquetas de los campos RGB.
+  static const redLabel = 'R';
+
+  /// Etiqueta del campo de verde.
+  static const greenLabel = 'G';
+
+  /// Etiqueta del campo de azul.
+  static const blueLabel = 'B';
+
+  /// Botón que aplica el color elegido.
+  static const applyColor = 'Aplicar color';
+
+  /// Aviso cuando el cambio llegó a la cuenta.
+  static const appearanceSaved = 'Listo, se guardó el cambio.';
+
+  /// Aviso cuando el cambio quedó en el celular.
+  static const appearanceSavedOffline = 'Guardado en el celular. Se sube a tu cuenta cuando vuelva la señal.';
+
+  /// Error al abrir la cámara o la galería.
+  static const photoPickerError = 'No se pudo abrir la cámara o la galería. Revisá los permisos de la app.';
+
+  /// Acción para elegir un avatar ilustrado.
+  static const chooseAvatar = 'Elegir un avatar';
+
+  /// Título del selector de avatares.
+  static const avatarPickerTitle = 'Elegí tu avatar';
+
+  /// Acción para ver otra tanda de avatares.
+  static const moreAvatars = 'Ver otros';
+
+  /// Crédito que exige la licencia CC BY 4.0 del estilo Toon Head.
+  static const avatarAttribution = 'Avatares "Toon Head" de Johan Melin (CC BY 4.0), generados con DiceBear.';
+
+  /// Descripción accesible de cada avatar de la grilla.
+  static String avatarOption(int index) => 'Avatar ${index + 1}';
 }

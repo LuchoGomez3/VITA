@@ -11,4 +11,8 @@ class SecureStorageKeys {
 
   /// Datos completos de los establecimientos disponibles para la sesión.
   static const establishmentCatalog = 'establishment_catalog_v1';
+
+  /// Color de la cabecera de Perfil y estado de la foto del usuario, con lo
+  /// que falta subir cuando vuelva la conexión.
+  static const profileAppearance = 'profile_appearance_v1';
 }

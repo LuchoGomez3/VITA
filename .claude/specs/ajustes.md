@@ -122,6 +122,45 @@ Con este PR, ningún flujo del índice `estado-pantallas-diseno.md` queda en
 faltaban — Campo, Pesaje, Sanidad, Sincronización, Gestión de equipo y
 Ajustes.
 
+### Establecimientos y ficha (2026-10-17)
+
+- "Establecimientos" pasa a ser una lista como `SectionList`: cada fila
+  ("Dueño · 847 ha") abre `EstablishmentDetailPage`
+  (`/perfil/establecimiento`, con `EstablishmentDetails` en `extra`).
+- La ficha muestra el mapa satelital con el pin y el contorno
+  (`LocationMapPreview` del alta, por eso esta rama está apilada sobre
+  `feature/establecimiento-delimitar-superficie`, #66), la superficie
+  declarada y la delimitada (`FieldBoundaryGeometry`), y RENSPA, CUIT,
+  provincia, departamento, localidad y coordenadas.
+- El catálogo offline (`establishment_catalog_v1`) guarda ahora `latitude`,
+  `longitude` y `boundary`, que ya devolvía el backend. Los catálogos viejos
+  se leen sin ubicación hasta el próximo inicio de sesión.
+- La cabecera compacta de Perfil deja de repetir el nombre del usuario.
+
+### Foto y color de la cabecera (2026-10-17)
+
+- Lápiz arriba a la derecha de la cabecera, visible solo con la cabecera
+  expandida. Abre `ProfileAppearanceSheet` con dos pestañas de alto propio:
+  - **Foto:** sacar una foto, elegir de la galería, elegir un avatar
+    "Toon Head" (DiceBear, generado en el celular con `dicebear_core` +
+    `dicebear_styles`, con el crédito CC BY 4.0 de Johan Melin) o quitar la
+    foto.
+  - **Color de fondo:** 12 colores guardados más el verde original, rueda
+    (`flutter_colorpicker`) y campos R/G/B. Sobre un color claro el texto de
+    la cabecera pasa a oscuro.
+- Offline-first (`ProfileAppearanceRepositoryImpl`): el cambio se guarda en el
+  celular (`profile_appearance_v1` + archivo en documentos) y se sube con su
+  propio reintento, porque la cola de Brick no encola multipart. Lo pendiente
+  no se pisa con lo que trae la cuenta; una foto que el servidor rechaza se
+  descarta y se avisa.
+- Backend (adr-0011): `PATCH /api/v1/usuarios/me` (color),
+  `PUT|GET|DELETE /api/v1/usuarios/me/avatar`. El bucket privado `avatars`
+  guarda una sola foto por usuario (`<usuario_id>.jpg`, upsert), normalizada
+  a JPEG de 512 px sin metadatos; el bucket acepta solo `image/jpeg` de hasta
+  1 MB. Columnas nuevas en `usuarios`: `color_cabecera` y
+  `avatar_actualizado_en` (migración `20261017_01`, aplicada en Supabase por
+  script el 2026-10-17).
+
 ## Explícitamente fuera de alcance de esta iniciativa
 
 - "Vincular nuevo dispositivo" — sin flujo de emparejamiento real (ni

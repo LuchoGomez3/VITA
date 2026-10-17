@@ -171,6 +171,8 @@ class AppRouter {
                         createCubit: createProfileCubit,
                         signOut: context.read<AuthSessionCubit>().signOut,
                         readAppVersion: readInstalledAppVersion,
+                        userId: session.user.id,
+                        createAppearanceCubit: createProfileAppearanceCubit,
                       ),
                       _ => ProfilePage(
                         email: ProfileStrings.emptyCredential,
@@ -180,6 +182,8 @@ class AppRouter {
                         createCubit: createProfileCubit,
                         signOut: context.read<AuthSessionCubit>().signOut,
                         readAppVersion: readInstalledAppVersion,
+                        userId: null,
+                        createAppearanceCubit: createProfileAppearanceCubit,
                       ),
                     };
                   },

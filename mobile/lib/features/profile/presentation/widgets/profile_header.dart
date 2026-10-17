@@ -9,8 +9,17 @@ class ProfileHeader extends StatelessWidget {
     required this.firstName,
     required this.lastName,
     this.showTitle = true,
+    this.foreground = AppColors.onPrimary,
+    this.avatar,
     super.key,
   });
+
+  /// Color de los textos y del avatar sin foto; cambia a oscuro cuando el
+  /// usuario elige un fondo claro.
+  final Color foreground;
+
+  /// Foto del usuario; sin foto se muestran las iniciales.
+  final ImageProvider? avatar;
 
   /// Permite que la cabecera desplazable dibuje el título en una capa fija.
   final bool showTitle;
@@ -51,27 +60,20 @@ class ProfileHeader extends StatelessWidget {
               maintainState: true,
               child: Text(
                 ProfileStrings.title,
-                style: AppTypography.appBarTitle.copyWith(
-                  color: AppColors.onPrimary,
-                ),
+                style: AppTypography.appBarTitle.copyWith(color: foreground),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
             Center(
               child: CircleAvatar(
                 radius: 36,
-                backgroundColor: AppColors.onPrimary.withValues(alpha: 0.16),
+                backgroundColor: foreground.withValues(alpha: 0.16),
+                foregroundImage: avatar,
                 child: initials.isEmpty
-                    ? const Icon(
-                        Icons.person_outline,
-                        color: AppColors.onPrimary,
-                        size: 32,
-                      )
+                    ? Icon(Icons.person_outline, color: foreground, size: 32)
                     : Text(
                         initials.toUpperCase(),
-                        style: AppTypography.bigTitle.copyWith(
-                          color: AppColors.onPrimary,
-                        ),
+                        style: AppTypography.bigTitle.copyWith(color: foreground),
                       ),
               ),
             ),
@@ -79,16 +81,14 @@ class ProfileHeader extends StatelessWidget {
             Text(
               fullName.isEmpty ? ProfileStrings.usernameLabel : fullName,
               textAlign: TextAlign.center,
-              style: AppTypography.bigTitle.copyWith(
-                color: AppColors.onPrimary,
-              ),
+              style: AppTypography.bigTitle.copyWith(color: foreground),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               ProfileStrings.accountSubtitle,
               textAlign: TextAlign.center,
               style: AppTypography.formFieldValue.copyWith(
-                color: AppColors.onPrimary.withValues(alpha: 0.85),
+                color: foreground.withValues(alpha: 0.85),
               ),
             ),
           ],

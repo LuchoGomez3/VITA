@@ -14,7 +14,19 @@ class ProfileSliverHeader extends StatelessWidget {
     required this.firstName,
     required this.lastName,
     super.key,
+    this.headerColor,
+    this.avatar,
+    this.onEdit,
   });
+
+  /// Color elegido por el usuario; `null` es el verde original.
+  final Color? headerColor;
+
+  /// Foto del usuario; sin foto se muestran las iniciales.
+  final ImageProvider? avatar;
+
+  /// Abre la edición de la foto y el color (el lápiz de arriba a la derecha).
+  final VoidCallback? onEdit;
 
   /// Nombre de la cuenta.
   final String firstName;
@@ -60,6 +72,9 @@ class ProfileSliverHeader extends StatelessWidget {
           delegate: _ProfileHeaderDelegate(
             firstName: firstName,
             lastName: lastName,
+            headerColor: headerColor,
+            avatar: avatar,
+            onEdit: onEdit,
             topInset: topInset,
             titleHeight: titleHeight,
             // Compacta queda solo "Perfil": el nombre ya está en la cabecera
@@ -106,6 +121,9 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
   const _ProfileHeaderDelegate({
     required this.firstName,
     required this.lastName,
+    required this.headerColor,
+    required this.avatar,
+    required this.onEdit,
     required this.topInset,
     required this.titleHeight,
     required this.minExtent,
@@ -114,6 +132,9 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   final String firstName;
   final String lastName;
+  final Color? headerColor;
+  final ImageProvider? avatar;
+  final VoidCallback? onEdit;
   final double topInset;
   final double titleHeight;
 
@@ -149,11 +170,18 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
     final colorProgress = Curves.easeInOut.transform(
       ((shrinkOffset - collapseDistance - colorDelay) / colorDistance).clamp(0.0, 1.0),
     );
+    final background = headerColor ?? AppColors.primary;
+    final backgroundEnd = headerColor == null ? AppColors.primaryDark : _darker(background);
+    // Sobre un color claro el texto blanco no se lee: pasa a oscuro.
+    final expandedForeground = background.computeLuminance() > 0.45 ? AppColors.textPrimary : AppColors.onPrimary;
     final foreground = Color.lerp(
-      AppColors.onPrimary,
+      expandedForeground,
       AppColors.textPrimary,
       colorProgress,
     );
+    // El lápiz solo está con la cabecera arriba de todo: se apaga en cuanto
+    // el usuario empieza a scrollear.
+    final editOpacity = 1 - (displacement / AppSpacing.lg).clamp(0.0, 1.0);
 
     final titleBottom = topInset + AppSpacing.lg + titleHeight;
 
@@ -180,12 +208,12 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                     end: Alignment.bottomRight,
                     colors: [
                       Color.lerp(
-                        AppColors.primary,
+                        background,
                         AppColors.backgroundTertiary,
                         colorProgress,
                       )!,
                       Color.lerp(
-                        AppColors.primaryDark,
+                        backgroundEnd,
                         AppColors.backgroundTertiary,
                         colorProgress,
                       )!,
@@ -214,6 +242,8 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                             firstName: firstName,
                             lastName: lastName,
                             showTitle: false,
+                            foreground: expandedForeground,
+                            avatar: avatar,
                           ),
                         ),
                       ),
@@ -231,18 +261,71 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                 style: AppTypography.appBarTitle.copyWith(color: foreground),
               ),
             ),
+            if (onEdit != null && editOpacity > 0)
+              Positioned(
+                // Centrado verticalmente con el título "Perfil".
+                top: topInset + AppSpacing.lg + titleHeight / 2 - _editButtonSize / 2,
+                right: AppSpacing.md,
+                child: IgnorePointer(
+                  ignoring: editOpacity < 1,
+                  child: Opacity(
+                    opacity: editOpacity,
+                    child: _EditButton(color: expandedForeground, onPressed: onEdit!),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
+  static const _editButtonSize = 40.0;
+
+  /// Final del degradado: el mismo tono un poco más oscuro, como el verde
+  /// original pasa de `primary` a `primaryDark`.
+  static Color _darker(Color color) {
+    final hsl = HSLColor.fromColor(color);
+    return hsl.withLightness((hsl.lightness - 0.12).clamp(0.0, 1.0)).toColor();
+  }
+
   @override
   bool shouldRebuild(_ProfileHeaderDelegate oldDelegate) =>
+      headerColor != oldDelegate.headerColor ||
+      avatar != oldDelegate.avatar ||
+      onEdit != oldDelegate.onEdit ||
       firstName != oldDelegate.firstName ||
       lastName != oldDelegate.lastName ||
       topInset != oldDelegate.topInset ||
       titleHeight != oldDelegate.titleHeight ||
       minExtent != oldDelegate.minExtent ||
       maxExtent != oldDelegate.maxExtent;
+}
+
+/// Lápiz redondo para editar la foto y el color.
+class _EditButton extends StatelessWidget {
+  const _EditButton({required this.color, required this.onPressed});
+
+  final Color color;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withValues(alpha: 0.16),
+      shape: const CircleBorder(),
+      child: IconButton(
+        tooltip: ProfileStrings.editAppearanceTooltip,
+        constraints: const BoxConstraints.tightFor(
+          width: _ProfileHeaderDelegate._editButtonSize,
+          height: _ProfileHeaderDelegate._editButtonSize,
+        ),
+        padding: EdgeInsets.zero,
+        iconSize: 20,
+        color: color,
+        icon: const Icon(Icons.edit_outlined),
+        onPressed: onPressed,
+      ),
+    );
+  }
 }
