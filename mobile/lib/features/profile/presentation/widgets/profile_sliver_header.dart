@@ -1,10 +1,13 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_header.dart';
 import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_header_clipper.dart';
 
-/// Cabecera que pasa del perfil completo a una identidad compacta al desplazar.
+/// Cabecera que pasa del perfil completo a una barra compacta con el título al
+/// desplazar.
 class ProfileSliverHeader extends StatelessWidget {
   /// Crea el encabezado fijo con los datos de la sesión.
   const ProfileSliverHeader({
@@ -25,9 +28,7 @@ class ProfileSliverHeader extends StatelessWidget {
       firstName.trim(),
       lastName.trim(),
     ].where((name) => name.isNotEmpty).join(' ');
-    final displayName = fullName.isEmpty
-        ? ProfileStrings.usernameLabel
-        : fullName;
+    final displayName = fullName.isEmpty ? ProfileStrings.usernameLabel : fullName;
 
     return SliverLayoutBuilder(
       builder: (context, constraints) {
@@ -53,28 +54,17 @@ class ProfileSliverHeader extends StatelessWidget {
           AppTypography.formFieldValue,
           width,
         );
-        final compactNameHeight = _textHeight(
-          context,
-          displayName,
-          AppTypography.formFieldValueEmphasis,
-          width,
-        );
 
         return SliverPersistentHeader(
           pinned: true,
           delegate: _ProfileHeaderDelegate(
             firstName: firstName,
             lastName: lastName,
-            displayName: displayName,
             topInset: topInset,
             titleHeight: titleHeight,
-            minExtent:
-                topInset +
-                AppSpacing.lg +
-                AppSpacing.md +
-                titleHeight +
-                AppSpacing.xxs +
-                compactNameHeight,
+            // Compacta queda solo "Perfil": el nombre ya está en la cabecera
+            // grande y repetirlo al scrollear le quitaba lugar al contenido.
+            minExtent: topInset + AppSpacing.lg + titleHeight + AppSpacing.md,
             maxExtent:
                 topInset +
                 AppSpacing.lg * 3 +
@@ -116,7 +106,6 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
   const _ProfileHeaderDelegate({
     required this.firstName,
     required this.lastName,
-    required this.displayName,
     required this.topInset,
     required this.titleHeight,
     required this.minExtent,
@@ -125,7 +114,6 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   final String firstName;
   final String lastName;
-  final String displayName;
   final double topInset;
   final double titleHeight;
 
@@ -153,9 +141,13 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
     ).transform(progress);
     // El color cambia después de comprimir: esperamos 16 píxeles adicionales
     // y lo mezclamos durante los siguientes 64. Al subir se revierte igual.
+    // El encabezado solo sigue recibiendo desplazamiento hasta `maxExtent`:
+    // con la barra compacta baja (sin área segura arriba) no quedan 80
+    // píxeles, así que la mezcla se acorta para terminar siempre.
+    final colorDelay = math.min(AppSpacing.md, minExtent / 4);
+    final colorDistance = math.min(AppSpacing.xl * 2, minExtent - colorDelay);
     final colorProgress = Curves.easeInOut.transform(
-      ((shrinkOffset - collapseDistance - AppSpacing.md) / (AppSpacing.xl * 2))
-          .clamp(0.0, 1.0),
+      ((shrinkOffset - collapseDistance - colorDelay) / colorDistance).clamp(0.0, 1.0),
     );
     final foreground = Color.lerp(
       AppColors.onPrimary,
@@ -227,32 +219,6 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                       ),
                     ),
                   ],
-                ),
-              ),
-            ),
-            IgnorePointer(
-              ignoring: compactOpacity < 0.5,
-              child: ExcludeSemantics(
-                excluding: compactOpacity < 0.5,
-                child: Opacity(
-                  opacity: compactOpacity,
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      AppSpacing.lg,
-                      titleBottom + AppSpacing.xxs,
-                      AppSpacing.lg,
-                      AppSpacing.md,
-                    ),
-                    child: Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Text(
-                        displayName,
-                        style: AppTypography.formFieldValueEmphasis.copyWith(
-                          color: foreground,
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
               ),
             ),

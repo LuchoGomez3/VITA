@@ -72,6 +72,22 @@ abstract final class ProfileStrings {
   /// Mensaje mostrado por acciones sin funcionalidad real todavía.
   static const comingSoonMessage = 'Disponible próximamente';
 
+  /// Superficie en hectáreas, con separadores de Argentina ("1.250,5 ha").
+  static String hectares(double value) {
+    final rounded = (value * 10).round() / 10;
+    final whole = rounded.truncate();
+    final decimal = ((rounded - whole) * 10).round();
+    final digits = whole.toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(digits[i]);
+    }
+    return decimal == 0 ? '$buffer $hectaresUnit' : '$buffer,$decimal $hectaresUnit';
+  }
+
   /// Acción para sumarse a un establecimiento de otro productor.
   static const joinEstablishmentLabel = 'Sumarme a otro establecimiento';
 
@@ -80,4 +96,32 @@ abstract final class ProfileStrings {
 
   /// Versión y número de compilación de la app instalada.
   static String versionValue(String version, String buildNumber) => 'v$version · build $buildNumber';
+
+  /// Título de la sección con los datos de la ficha del establecimiento.
+  static const establishmentDataSection = 'Datos del establecimiento';
+
+  /// Etiqueta de la superficie que declaró el productor en el alta.
+  static const declaredAreaLabel = 'Superficie declarada';
+
+  /// Etiqueta de la superficie calculada con el contorno dibujado.
+  static const mappedAreaLabel = 'Superficie delimitada';
+
+  /// Etiqueta de las coordenadas del punto de referencia.
+  static const coordinatesLabel = 'Coordenadas';
+
+  /// Chip sobre el mapa cuando el campo tiene contorno.
+  static const boundaryDrawn = 'Campo delimitado';
+
+  /// Chip sobre el mapa y valor de la superficie cuando no hay contorno.
+  static const boundaryMissing = 'Sin delimitar';
+
+  /// Reemplazo del mapa cuando el establecimiento no tiene ubicación.
+  static const noLocation = 'Sin ubicación cargada';
+
+  /// Ayuda debajo del mapa cuando falta la ubicación.
+  static const noLocationHint = 'Aparece cuando se carga la ubicación del campo en el alta.';
+
+  /// Latitud y longitud con 5 decimales (alrededor de un metro).
+  static String coordinates(double latitude, double longitude) =>
+      '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}';
 }

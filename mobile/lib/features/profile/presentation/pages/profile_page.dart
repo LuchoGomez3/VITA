@@ -103,7 +103,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           const SizedBox(height: AppSpacing.xl),
                           const _EstablishmentsContent(),
-                          const _JoinEstablishmentCard(),
                           const SizedBox(height: AppSpacing.xl),
                           _SettingsSections(readAppVersion: widget.readAppVersion),
                           const SizedBox(height: AppSpacing.lg),
@@ -146,7 +145,11 @@ class _EstablishmentsContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileCubit, ResultState<List<EstablishmentDetails>>>(
       builder: (context, state) => switch (state) {
-        Data<List<EstablishmentDetails>>(:final data) => ProfileEstablishmentsSection(establishments: data),
+        Data<List<EstablishmentDetails>>(:final data) => ProfileEstablishmentsSection(
+          establishments: data,
+          onOpen: (establishment) => context.push(AppRoutes.profileEstablishment, extra: establishment),
+          onJoin: () => _showComingSoon(context),
+        ),
         ResultError<List<EstablishmentDetails>>(:final error) => Column(
           children: [
             Text(error.message),
@@ -167,26 +170,6 @@ void _showComingSoon(BuildContext context) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(const SnackBar(content: Text(ProfileStrings.comingSoonMessage)));
-}
-
-/// "Sumarme a otro establecimiento": cierra la lista de establecimientos como
-/// en el diseño. Se conecta cuando exista el flujo de sumarse con código.
-class _JoinEstablishmentCard extends StatelessWidget {
-  const _JoinEstablishmentCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return SettingsSectionCard(
-      rows: [
-        SettingsRow(
-          icon: Icons.add,
-          label: ProfileStrings.joinEstablishmentLabel,
-          isPrimaryAction: true,
-          onTap: () => _showComingSoon(context),
-        ),
-      ],
-    );
-  }
 }
 
 /// Secciones de `AjustesScreen`: dispositivos, preferencias y "sobre la app".
