@@ -109,7 +109,9 @@ class MovimientoLoteService:
         # El bloqueo evita que una baja concurrente se intercale entre esta
         # validacion y la escritura del nuevo lote dentro de la transaccion.
         animales = await self.repository.list_animales_por_ids(
-            data.animal_ids, for_update=True
+            data.animal_ids,
+            data.establecimiento_id,
+            for_update=True,
         )
         por_id = {animal.id: animal for animal in animales}
 

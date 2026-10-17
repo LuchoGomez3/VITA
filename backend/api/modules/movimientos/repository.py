@@ -72,12 +72,23 @@ class MovimientoLoteRepository:
         return agrupado
 
     async def list_animales_por_ids(
-        self, animal_ids: list[UUID], *, for_update: bool = False
+        self,
+        animal_ids: list[UUID],
+        establecimiento_id: UUID,
+        *,
+        for_update: bool = False,
     ) -> list[Animal]:
         """Carga los animales en una consulta y puede bloquearlos hasta el commit."""
         if not animal_ids:
             return []
-        query = select(Animal).where(Animal.id.in_(animal_ids))
+        query = (
+            select(Animal)
+            .where(
+                Animal.id.in_(animal_ids),
+                Animal.establecimiento_id == establecimiento_id,
+            )
+            .order_by(Animal.id)
+        )
         if for_update:
             query = query.with_for_update()
         result = await self.session.execute(query)
