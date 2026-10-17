@@ -162,7 +162,6 @@ class AppRouter {
 
                     return switch (sessionState) {
                       AuthSessionAuthenticated(:final session) => ProfilePage(
-                        userId: session.user.id,
                         email: session.user.email,
                         firstName: session.user.firstName,
                         lastName: session.user.lastName,
@@ -171,7 +170,6 @@ class AppRouter {
                         signOut: context.read<AuthSessionCubit>().signOut,
                       ),
                       _ => ProfilePage(
-                        userId: ProfileStrings.emptyCredential,
                         email: ProfileStrings.emptyCredential,
                         firstName: ProfileStrings.emptyCredential,
                         lastName: ProfileStrings.emptyCredential,
