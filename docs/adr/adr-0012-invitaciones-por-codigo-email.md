@@ -26,20 +26,28 @@ Restricciones:
 ## Decisión
 
 1. **Email con un código.** Invitar crea una fila en `invitaciones_establecimientos` y
-   manda un email con un código de 8 caracteres. La persona entra a VITA (o se
+   manda un email con un código de 6 caracteres (`XXX-XXX`). La persona entra a VITA (o se
    registra) **con ese mismo email** y lo canjea en Perfil → "Sumarme a otro
    establecimiento". El canje exige las dos cosas: el código prueba que controla la
    casilla y la sesión prueba que es esa cuenta. Antes de confirmar ve a qué campo y
    con qué rol se suma (`POST /invitaciones/validaciones`, no consume el código).
-2. **Código.** Tiene 8 caracteres de un alfabeto de 31 símbolos sin los que se
-   confunden al dictarlos (0/O, 1/I/L): unas 8,5 × 10¹¹ combinaciones. Vence a los
+2. **Código.** Tiene 6 caracteres, como en el diseño, de un alfabeto de 31 símbolos
+   sin los que se confunden al dictarlos (0/O, 1/I/L): unas 8,9 × 10⁸ combinaciones.
+   Alcanza porque el canje también exige la sesión del email invitado: adivinar un
+   código no le sirve a otra cuenta. Vence a los
    7 días, sirve una sola vez y no requiere aprobación. Reenviar genera uno nuevo e
    invalida el anterior.
 3. **Se guarda un HMAC-SHA256 del código**, con una clave del servidor
    (`INVITACION_CODIGO_SECRETO`), y nunca el código. Si se filtra la tabla, sin la
    clave no se pueden probar códigos offline. No hace falta un hash lento: el código es
    aleatorio y no lo elige una persona.
-4. **Límite de intentos por usuario:** 10 por hora entre validar y canjear. El
+3b. **El dueño ve el código una vez.** Invitar y reenviar devuelven el código en
+   claro solo en esa respuesta, y la app lo muestra en "Invitación creada" para
+   copiarlo o compartirlo por WhatsApp si el email no llega. No se puede volver a
+   leer: si se pierde, se reenvía la invitación y sale uno nuevo. Mostrárselo al
+   dueño no debilita nada, porque el canje sigue atado al email invitado.
+4. **Límite de intentos por usuario:** 10 por hora entre validar y canjear. Los
+   errores devuelven `intentos_restantes` y la app muestra "Te quedan N intentos". El
    límite sigue al usuario, no a la IP, porque en el campo la IP cambia con los datos
    móviles. Es en memoria (`core/auth_rate_limit.py`): con varios workers habría que
    pasarlo a Redis.
@@ -60,6 +68,9 @@ Restricciones:
    - Nadie se quita a sí mismo y el titular (`owner_id`) no se quita. Como a un `owner`
      solo lo quita otro `owner`, el campo nunca queda sin dueño.
    - Ver el equipo: cualquier miembro activo.
+8b. **Al canjear, se le avisa a quien invitó** con un email ("X se sumó a La Sirena").
+   Si el aviso falla, el canje no se bloquea. Después de sumarse, la app corre la
+   sincronización inicial para bajar los datos del campo nuevo.
 9. **Online-only, con la lista cacheada.** Invitar, reenviar, cancelar, quitar y canjear
    necesitan señal, igual que crear la cuenta o el establecimiento. La lista del equipo
    se guarda en el celular (`team_snapshot_v1`, se borra al cerrar sesión), se ve sin
@@ -92,6 +103,3 @@ Restricciones:
 - Pendiente: `/usuarios/registro` exige CUIT, y un capataz o veterinario invitado puede
   no tenerlo.
 - Pendiente: acotar `veterinarian` al módulo Sanidad, en una historia aparte.
-- Pendiente: el catálogo del celular se actualiza al canjear, pero los datos
-  productivos del campo nuevo (animales, lotes) llegan con la próxima sincronización
-  inicial.

@@ -12,7 +12,8 @@ description: >-
 Quién tiene acceso a cada establecimiento y con qué rol. Las decisiones están en
 **[`adr-0012`](../../docs/adr/adr-0012-invitaciones-por-codigo-email.md)**:
 
-- La invitación llega **por email con un código de 8 caracteres**, que se canjea con
+- La invitación llega **por email con un código de 6 caracteres** (`XXX-XXX`), que el
+  dueño también ve una vez para compartirlo por WhatsApp. Se canjea con
   una sesión iniciada con ese mismo email.
 - Hay 4 roles: `owner`, `admin`, `employee` y `veterinarian`. `veterinarian` opera
   como `employee`.
@@ -32,7 +33,8 @@ Ver también **[`estado-pantallas-diseno.md`](./estado-pantallas-diseno.md)**.
 |---|---|---|
 | `EquipoScreen` | `TeamPage` | `/perfil/establecimiento/:establishmentId/equipo` |
 | `EquipoInvitar` | `InviteTeamMemberPage` | `/perfil/establecimiento/:establishmentId/equipo/invitar` |
-| (no está en el diseño) | `JoinEstablishmentPage` | `/perfil/sumarme` |
+| `InvCodigoGenerado` | `InvitationCreatedPage` | `/perfil/establecimiento/:establishmentId/equipo/invitacion` (código en `extra`) |
+| `InvIngresarCodigo`, `InvError`, `InvConfirmar`, `InvExito` | `JoinEstablishmentPage` | `/perfil/sumarme` |
 
 Las rutas llevan el id en el path y no en `extra`, para sobrevivir a que el sistema
 restaure la app. El establecimiento y el rol propio salen de `EstablishmentCatalog`.
@@ -72,18 +74,33 @@ restaure la app. El establecimiento y el rol propio salen de `EstablishmentCatal
 - "Enviar invitación" vuelve a Equipo con un aviso. Si el email no salió, la
   invitación queda creada y se reenvía desde la lista.
 
+### `InvitationCreatedPage`
+
+Se abre al invitar y al reenviar. Muestra:
+
+- el invitado, con el rol y el chip "Pendiente";
+- el código grande, con su vencimiento y "uso único";
+- "Copiar", y "Compartir" (el menú de compartir del celular, con un mensaje que
+  incluye el email invitado);
+- "Listo", y "Cancelar invitación" con confirmación.
+
 ### `JoinEstablishmentPage`
 
-Se abre desde la fila "Sumarme a otro establecimiento" de Perfil, que antes decía
-"Disponible próximamente".
+Se abre desde la fila "Sumarme a otro establecimiento" de Perfil.
 
-1. Se escribe el código. Se acepta con o sin guion y en minúsculas.
-2. "Continuar" previsualiza: "Te vas a sumar a La Sirena como Veterinario. Te invitó…".
-3. "Sumarme" canjea el código, agrega el campo al catálogo del celular y vuelve a
-   Perfil, que recarga la lista.
-
-Cada error tiene su mensaje: código inválido, vencido, usado, revocado, de otro email,
-demasiados intentos o sin conexión.
+1. **Ingresar:** 6 cajitas `XXX-XXX`. No distingue mayúsculas; se puede pegar el
+   código copiado. Hay un aviso de que hace falta conexión y el botón "Validar código".
+2. **Error:** las cajitas quedan en rojo y aparece un banner con el motivo (inválido,
+   vencido, usado, cancelado, de otra cuenta, sin conexión) y "Te quedan N intentos".
+   - "Volver a intentar": si el error fue de conexión, reintenta; si no, vuelve a la
+     edición con lo escrito.
+   - "Borrar y escribir de nuevo".
+3. **Confirmar:** "Código válido" y la tarjeta del campo (RENSPA, localidad, quién
+   invitó y con qué rol, el rol propio y el correo). Debajo, "Como X vas a poder…".
+   Botones "Unirme a {campo}" y "No es mi invitación".
+4. **Éxito:** "Ya sos parte de {campo}. Le avisamos a {quien invitó}". La descarga de
+   los datos del campo (la sincronización inicial) se muestra con una barra
+   indeterminada. "Ir al inicio".
 
 ## Backend
 
@@ -108,5 +125,3 @@ Son 8 endpoints en `backend/api/modules/equipo/` (ver el ADR):
   `employee`.
 - Elegir el proveedor SMTP y cargar las variables antes del primer deploy.
 - `/usuarios/registro` exige CUIT, y un invitado puede no tenerlo.
-- Los datos productivos del campo al que alguien se suma llegan con la próxima
-  sincronización inicial.
