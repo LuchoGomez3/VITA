@@ -4,6 +4,8 @@ import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart'
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/establishment_register/data/datasources/establishment_registration_remote_data_source.dart';
 import 'package:frontend_mayoral/features/establishment_register/data/repositories/establishment_registration_repository_impl.dart';
+import 'package:frontend_mayoral/features/establishment_register/data/repositories/geolocator_current_location_repository.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/use_cases/get_current_location_use_case.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/use_cases/register_establishment_use_case.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
 import 'package:http/http.dart' as http;
@@ -33,6 +35,7 @@ RegisterEstablishmentBloc createRegisterEstablishmentBloc({
   return RegisterEstablishmentBloc(
     initialStep: initialStep,
     registerEstablishmentUseCase: RegisterEstablishmentUseCase(repository),
+    getCurrentLocationUseCase: GetCurrentLocationUseCase(GeolocatorCurrentLocationRepository()),
     onClose: client.close,
   );
 }

@@ -3,20 +3,27 @@ import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/entities/current_location.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/repositories/current_location_repository.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/repositories/establishment_registration_repository.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/use_cases/get_current_location_use_case.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/use_cases/register_establishment_use_case.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
+import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_draft_validation.dart';
 
 void main() {
   group('RegisterEstablishmentBloc', () {
     late _FakeEstablishmentRegistrationRepository repository;
+    late _FakeCurrentLocationRepository locationRepository;
     late RegisterEstablishmentBloc bloc;
 
     setUp(() {
       repository = _FakeEstablishmentRegistrationRepository();
+      locationRepository = _FakeCurrentLocationRepository();
       bloc = RegisterEstablishmentBloc(
         registerEstablishmentUseCase: RegisterEstablishmentUseCase(repository),
+        getCurrentLocationUseCase: GetCurrentLocationUseCase(locationRepository),
       );
       addTearDown(bloc.close);
     });
@@ -52,6 +59,7 @@ void main() {
       final reviewBloc = RegisterEstablishmentBloc(
         initialStep: RegisterEstablishmentStep.review,
         registerEstablishmentUseCase: RegisterEstablishmentUseCase(repository),
+        getCurrentLocationUseCase: GetCurrentLocationUseCase(locationRepository),
       );
       addTearDown(reviewBloc.close);
 
@@ -108,20 +116,68 @@ void main() {
       expect(repository.registerCalls, 0);
     });
 
-    test('does not submit when the location is still the GPS mock value', () async {
-      final draft = _validDraft(bloc.state.draft).copyWith(
-        latitud: mockLocationLatitud,
-        longitud: mockLocationLongitud,
-        ubicacionConfirmadaPorGps: true,
+    test('fills the coordinates with the GPS reading', () async {
+      final expectation = expectLater(
+        bloc.stream,
+        emitsInOrder([
+          isA<RegisterEstablishmentState>().having(
+            (state) => state.locationResult,
+            'locationResult',
+            isA<Loading<CurrentLocation>>(),
+          ),
+          isA<RegisterEstablishmentState>()
+              .having((state) => state.locationResult, 'locationResult', isA<Data<CurrentLocation>>())
+              .having((state) => state.draft.latitud, 'latitud', -32.1234)
+              .having((state) => state.draft.longitud, 'longitud', -63.5678)
+              .having((state) => state.draft.ubicacionConfirmadaPorGps, 'ubicacionConfirmadaPorGps', isTrue),
+        ]),
       );
-      bloc.add(RegisterEstablishmentEvent.draftChanged(draft));
+
+      bloc.add(const RegisterEstablishmentEvent.currentLocationRequested());
+
+      await expectation;
+      expect(locationRepository.calls, 1);
+    });
+
+    test('keeps the draft unconfirmed when the GPS reading fails', () async {
+      locationRepository.result = const Result.failure(
+        DomainException(
+          message: 'sin señal',
+          reason: CurrentLocationFailure.timeout,
+        ),
+      );
+
+      bloc.add(const RegisterEstablishmentEvent.currentLocationRequested());
+
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        bloc.state.locationResult,
+        isA<ResultError<CurrentLocation>>().having(
+          (result) => result.error.reason,
+          'reason',
+          CurrentLocationFailure.timeout,
+        ),
+      );
+      expect(bloc.state.draft.ubicacionConfirmadaPorGps, isFalse);
+      expect(bloc.state.draft.isLocationStepValid, isFalse);
+    });
+
+    test('submits the GPS coordinates read in step 3', () async {
+      bloc
+        ..add(
+          RegisterEstablishmentEvent.draftChanged(
+            _validDraft(bloc.state.draft).copyWith(ubicacionConfirmadaPorGps: false),
+          ),
+        )
+        ..add(const RegisterEstablishmentEvent.currentLocationRequested());
       await Future<void>.delayed(Duration.zero);
 
       bloc.add(const RegisterEstablishmentEvent.submitRequested());
-
       await Future<void>.delayed(Duration.zero);
-      expect(bloc.state.submitResult, isA<ResultError<RegisteredEstablishment>>());
-      expect(repository.registerCalls, 0);
+
+      expect(bloc.state.submitResult, isA<Data<RegisteredEstablishment>>());
+      expect(repository.lastRegistration?.latitud, -32.1234);
+      expect(repository.lastRegistration?.longitud, -63.5678);
     });
 
     test('emits repository failures', () async {
@@ -207,6 +263,7 @@ RegisterEstablishmentDraft _validDraft(RegisterEstablishmentDraft draft) {
 
 class _FakeEstablishmentRegistrationRepository implements EstablishmentRegistrationRepository {
   int registerCalls = 0;
+  EstablishmentRegistration? lastRegistration;
 
   Result<RegisteredEstablishment> result = Result.success(
     RegisteredEstablishment(
@@ -235,6 +292,21 @@ class _FakeEstablishmentRegistrationRepository implements EstablishmentRegistrat
     EstablishmentRegistration registration,
   ) async {
     registerCalls += 1;
+    lastRegistration = registration;
+    return result;
+  }
+}
+
+class _FakeCurrentLocationRepository implements CurrentLocationRepository {
+  int calls = 0;
+
+  Result<CurrentLocation> result = const Result.success(
+    CurrentLocation(latitud: -32.1234, longitud: -63.5678, precisionMetros: 6),
+  );
+
+  @override
+  Future<Result<CurrentLocation>> getCurrentLocation() async {
+    calls += 1;
     return result;
   }
 }

@@ -20,15 +20,10 @@ extension RegisterEstablishmentDraftValidation on RegisterEstablishmentDraft {
       RenspaInputFormatter.validationError(nroRenspa) == null;
 
   /// Paso 3: provincia/departamento/localidad seleccionados y ubicacion
-  /// confirmada explicitamente (no se puede avanzar con coordenadas sin
-  /// confirmar, ya que hoy no hay mapa real para verificarlas a simple vista).
+  /// leida del GPS (no se puede avanzar con coordenadas sin confirmar, ya que
+  /// hoy no hay mapa real para verificarlas a simple vista).
   bool get isLocationStepValid =>
       provincia.isNotEmpty && departamento.isNotEmpty && localidad.isNotEmpty && ubicacionConfirmadaPorGps;
-
-  /// Indica si la ubicación sigue siendo el valor mock de "Usar mi ubicación
-  /// actual" (no hay GPS real todavía). Bloquea el envío al backend sin
-  /// impedir recorrer el resto del wizard.
-  bool get isLocationMocked => latitud == mockLocationLatitud && longitud == mockLocationLongitud;
 
   /// Paso 4: superficie y vertices positivos. Hoy son siempre valores mock
   /// (replica visual estatica, ver spec), asi que la regla es trivialmente
