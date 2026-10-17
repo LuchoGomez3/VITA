@@ -60,6 +60,30 @@ class Settings:
         # validar los tokens emitidos por Supabase en el adaptador correspondiente.
         self.SUPABASE_JWT_SECRET: str = os.getenv("SUPABASE_JWT_SECRET", "")
 
+        # Storage: bucket PRIVADO con la foto de perfil de cada usuario. El
+        # backend entra con la service-role key y sirve la imagen él mismo; nunca
+        # emite URLs públicas ni firmadas (adr-0011).
+        self.SUPABASE_STORAGE_BUCKET_AVATARES: str = os.getenv(
+            "SUPABASE_STORAGE_BUCKET_AVATARES", "avatars"
+        )
+
+        # Límites de la foto de perfil. Se acepta una foto de cámara sin tocar
+        # (hasta 8 MB) y se guarda recomprimida a 512 px de lado mayor: se ve en
+        # un círculo de ~72 px, y a ese tamaño pesa ~40 KB contra el 1 GB del
+        # plan free de Supabase (el bucket rechaza más de 1 MB).
+        self.AVATAR_IMAGEN_MAX_BYTES: int = int(
+            os.getenv("AVATAR_IMAGEN_MAX_BYTES", str(8 * 1024 * 1024))
+        )
+        self.AVATAR_IMAGEN_LADO_MAX: int = int(
+            os.getenv("AVATAR_IMAGEN_LADO_MAX", "512")
+        )
+        self.AVATAR_IMAGEN_CALIDAD: int = int(os.getenv("AVATAR_IMAGEN_CALIDAD", "85"))
+        # Tope de píxeles antes de decodificar (40 MP: sobra para cualquier
+        # cámara de celular y acota la memoria a ~160 MB por foto).
+        self.AVATAR_IMAGEN_MAX_PIXELES: int = int(
+            os.getenv("AVATAR_IMAGEN_MAX_PIXELES", str(40_000_000))
+        )
+
         # Auth provider: "supabase" en entornos reales; "local" para
         # desarrollo/test (emite y valida JWT con JWT_SECRET, sin red).
         self.AUTH_PROVIDER: str = os.getenv(

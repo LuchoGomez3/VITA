@@ -36,11 +36,13 @@ class HomeDashboardContent extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: context.read<HomeDashboardCubit>().load,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(
+        // El espacio seguro viaja con la lista: permite ver contenido detrás
+        // de la barra y deja la última tarjeta accesible al terminar el scroll.
+        padding: EdgeInsets.fromLTRB(
           AppSpacing.sm,
           AppSpacing.sm,
           AppSpacing.sm,
-          AppSpacing.xl,
+          AppSpacing.xl + MediaQuery.paddingOf(context).bottom,
         ),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [

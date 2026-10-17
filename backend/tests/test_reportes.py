@@ -52,9 +52,7 @@ async def datos_reporte(session, usuario_actual):
             activo=True,
         )
     )
-    categoria = Categoria(
-        establecimiento_id=est.id, nombre="Ternero", sexo_permitido=SexoPermitido.ambos
-    )
+    categoria = Categoria(nombre="Ternero", sexo_permitido=SexoPermitido.ambos)
     lote = crear_lote(est.id, "Lote 1")
     session.add(categoria)
     session.add(lote)

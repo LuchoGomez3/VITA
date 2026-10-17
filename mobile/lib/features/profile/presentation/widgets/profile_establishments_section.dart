@@ -4,115 +4,86 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/profile/domain/entities/establishment_details.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
-import 'package:frontend_mayoral/features/profile/presentation/widgets/profile_user_card.dart';
+import 'package:frontend_mayoral/features/profile/presentation/widgets/settings_row.dart';
+import 'package:frontend_mayoral/features/profile/presentation/widgets/settings_section_card.dart';
 
 /// Sección que presenta todos los establecimientos de la sesión.
+///
+/// Es una lista como `SectionList` del diseño: cada fila abre la ficha del
+/// establecimiento y la última permite sumarse a otro.
 class ProfileEstablishmentsSection extends StatelessWidget {
   /// Crea la sección con el catálogo offline.
   const ProfileEstablishmentsSection({
     required this.establishments,
+    required this.onOpen,
+    required this.onJoin,
     super.key,
   });
 
   /// Catálogo completo disponible offline.
   final List<EstablishmentDetails> establishments;
 
+  /// Abre la ficha del establecimiento tocado.
+  final ValueChanged<EstablishmentDetails> onOpen;
+
+  /// Acción "Sumarme a otro establecimiento".
+  final VoidCallback onJoin;
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          ProfileStrings.establishmentsSection,
-          style: Theme.of(context).textTheme.titleLarge,
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                ProfileStrings.establishmentsSection,
+                style: AppTypography.pageTitle,
+              ),
+            ),
+            AppStatusChip(label: '${establishments.length}'),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xxs),
+        const Text(
+          ProfileStrings.establishmentsSubtitle,
+          style: AppTypography.formFieldHelper,
         ),
         const SizedBox(height: AppSpacing.sm),
-        if (establishments.isEmpty)
-          const AppSurfaceCard(
-            child: Text(ProfileStrings.noEstablishments),
-          )
-        else
-          ...establishments.map(
-            (establishment) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: _EstablishmentCard(establishment: establishment),
+        SettingsSectionCard(
+          rows: [
+            if (establishments.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(AppSpacing.md),
+                child: Text(ProfileStrings.noEstablishments),
+              ),
+            for (final establishment in establishments)
+              SettingsRow(
+                icon: Icons.agriculture_outlined,
+                label: establishment.name,
+                subtitle: _summary(establishment),
+                isNavigable: true,
+                onTap: () => onOpen(establishment),
+              ),
+            SettingsRow(
+              icon: Icons.add,
+              label: ProfileStrings.joinEstablishmentLabel,
+              isPrimaryAction: true,
+              onTap: onJoin,
             ),
-          ),
+          ],
+        ),
       ],
     );
   }
-}
 
-class _EstablishmentCard extends StatelessWidget {
-  const _EstablishmentCard({required this.establishment});
-
-  final EstablishmentDetails establishment;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppSurfaceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            establishment.name,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          ProfileInfoRow(
-            label: ProfileStrings.roleLabel,
-            value: UserRoleStrings.name(establishment.role),
-            icon: Icons.admin_panel_settings_outlined,
-          ),
-          const Divider(),
-          ProfileInfoRow(
-            label: ProfileStrings.renspaLabel,
-            value: _value(establishment.renspaNumber),
-            icon: Icons.assignment_outlined,
-          ),
-          const Divider(),
-          ProfileInfoRow(
-            label: ProfileStrings.cuitLabel,
-            value: _value(establishment.cuit),
-            icon: Icons.numbers,
-          ),
-          const Divider(),
-          ProfileInfoRow(
-            label: ProfileStrings.areaLabel,
-            value: _area(establishment.areaHectares),
-            icon: Icons.landscape_outlined,
-          ),
-          const Divider(),
-          ProfileInfoRow(
-            label: ProfileStrings.provinceLabel,
-            value: _value(establishment.province),
-            icon: Icons.map_outlined,
-          ),
-          const Divider(),
-          ProfileInfoRow(
-            label: ProfileStrings.departmentLabel,
-            value: _value(establishment.department),
-            icon: Icons.location_city_outlined,
-          ),
-          const Divider(),
-          ProfileInfoRow(
-            label: ProfileStrings.localityLabel,
-            value: _value(establishment.locality),
-            icon: Icons.place_outlined,
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _area(double? area) {
-    if (area == null) {
-      return ProfileStrings.emptyCredential;
-    }
-    return '${area.toStringAsFixed(2)} ${ProfileStrings.hectaresUnit}';
-  }
-
-  String _value(String? value) {
-    return value == null || value.trim().isEmpty ? ProfileStrings.emptyCredential : value;
+  /// "Dueño · 847 ha": el rol y, si se conoce, la superficie declarada.
+  String _summary(EstablishmentDetails establishment) {
+    final area = establishment.areaHectares;
+    return [
+      UserRoleStrings.name(establishment.role),
+      if (area != null) ProfileStrings.hectares(area),
+    ].join(' · ');
   }
 }

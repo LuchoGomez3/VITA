@@ -3,8 +3,22 @@ part of 'register_animal_bloc.dart';
 /// Events accepted by [RegisterAnimalBloc].
 @freezed
 sealed class RegisterAnimalEvent with _$RegisterAnimalEvent {
-  /// Carga los lotes de destino disponibles offline.
-  const factory RegisterAnimalEvent.destinationsRequested() = _DestinationsRequested;
+  /// Recibe una caravana válida desde la pantalla de captura HID.
+  const factory RegisterAnimalEvent.rfidCaptured(String rfid) = _RfidCaptured;
+
+  /// Carga los animales locales del establecimiento para buscar progenitores.
+  const factory RegisterAnimalEvent.parentsRequested() = _ParentsRequested;
+
+  /// Carga el catalogo global de categorias desde la cache offline.
+  const factory RegisterAnimalEvent.categoriesRequested() = _CategoriesRequested;
+
+  /// Carga los establecimientos disponibles offline.
+  const factory RegisterAnimalEvent.establishmentsRequested() = _EstablishmentsRequested;
+
+  /// Selecciona el establecimiento y carga sus lotes locales.
+  const factory RegisterAnimalEvent.establishmentSelected(
+    String establishmentId,
+  ) = _EstablishmentSelected;
 
   /// Replaces the current registration draft.
   const factory RegisterAnimalEvent.draftChanged(

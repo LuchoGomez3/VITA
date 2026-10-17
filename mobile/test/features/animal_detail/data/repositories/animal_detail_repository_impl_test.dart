@@ -69,7 +69,7 @@ void main() {
 
       final detail = (result as Success<AnimalDetail>).data;
       expect(pesajeStore.pulledAnimalId, _animalId);
-      expect(categoriaStore.pullCalls, 1);
+      expect(categoriaStore.readCalls, 1);
       expect(detail.categoryName, 'Novillito');
       expect(detail.weightHistory.map((record) => record.weightKg), [210, 245]);
       expect(detail.currentWeight, 245);
@@ -82,7 +82,6 @@ void main() {
         brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
         categoriaBrickStore: _FakeCategoriaBrickStore(
           categorias: [_categoria],
-          failPull: true,
         ),
         pesajeBrickStore: _FakePesajeBrickStore(
           pesajes: [_firstPesaje],
@@ -96,6 +95,21 @@ void main() {
       final detail = (result as Success<AnimalDetail>).data;
       expect(detail.categoryName, 'Novillito');
       expect(detail.weightHistory.single.weightKg, 210);
+    });
+
+    test('retries a rejected animal through the Brick store', () async {
+      final brickStore = _FakeAnimalBrickStore(localAnimal: _brickAnimal);
+      final repository = AnimalDetailRepositoryImpl(
+        brickStore: brickStore,
+        categoriaBrickStore: _FakeCategoriaBrickStore(),
+        pesajeBrickStore: _FakePesajeBrickStore(),
+        remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
+      );
+
+      final result = await repository.retrySync(_animalId);
+
+      expect(result, const Result<void>.success(null));
+      expect(brickStore.retriedAnimalIds, [_animalId]);
     });
   });
 }
@@ -123,7 +137,6 @@ final _brickAnimal = BrickAnimalModel(
 
 final _categoria = BrickCategoriaModel(
   localId: 'category-id',
-  establishmentId: 'establishment-id',
   name: 'Novillito',
   createdAt: DateTime(2025),
   updatedAt: DateTime(2025),
@@ -157,6 +170,7 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
 
   final BrickAnimalModel? localAnimal;
   final List<BrickAnimalModel> cachedAnimals = [];
+  final List<String> retriedAnimalIds = [];
 
   @override
   Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) async {
@@ -193,6 +207,11 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
 
   @override
   Future<void> pullRemoteAnimals(String establishmentId) async {}
+
+  @override
+  Future<void> retryRejectedAnimal(String animalId) async {
+    retriedAnimalIds.add(animalId);
+  }
 
   @override
   Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) async {
@@ -234,30 +253,19 @@ class _FakeAnimalDetailRemoteDataSource extends AnimalDetailRemoteDataSource {
 class _FakeCategoriaBrickStore implements CategoriaBrickStore {
   _FakeCategoriaBrickStore({
     this.categorias = const [],
-    this.failPull = false,
   });
 
   final List<BrickCategoriaModel> categorias;
-  final bool failPull;
-  int pullCalls = 0;
+  int readCalls = 0;
 
   @override
-  Future<List<BrickCategoriaModel>> getLocalCategorias(
-    String establishmentId,
-  ) async => categorias;
-
-  @override
-  Future<void> pullRemoteCategorias(String establishmentId) async {
-    pullCalls += 1;
-    if (failPull) {
-      throw Exception('offline');
-    }
+  Future<List<BrickCategoriaModel>> getLocalCategorias() async {
+    readCalls += 1;
+    return categorias;
   }
 
   @override
-  Future<BrickCategoriaModel> upsertCategoria(
-    BrickCategoriaModel categoria,
-  ) async => categoria;
+  Future<void> pullRemoteCategorias() async {}
 }
 
 class _FakePesajeBrickStore implements PesajeBrickStore {

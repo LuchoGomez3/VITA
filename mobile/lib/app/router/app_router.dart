@@ -45,10 +45,13 @@ import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expense_history_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expenses_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/strings/operating_expense_strings.dart';
+import 'package:frontend_mayoral/features/profile/domain/entities/establishment_details.dart';
+import 'package:frontend_mayoral/features/profile/presentation/pages/establishment_detail_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
 import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
+import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_capture_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/strings/rfid_scan_strings.dart';
 import 'package:frontend_mayoral/features/rfid_scan/rfid_scan_composition.dart';
@@ -161,22 +164,26 @@ class AppRouter {
 
                     return switch (sessionState) {
                       AuthSessionAuthenticated(:final session) => ProfilePage(
-                        userId: session.user.id,
                         email: session.user.email,
                         firstName: session.user.firstName,
                         lastName: session.user.lastName,
                         cuit: session.user.cuit,
                         createCubit: createProfileCubit,
                         signOut: context.read<AuthSessionCubit>().signOut,
+                        readAppVersion: readInstalledAppVersion,
+                        userId: session.user.id,
+                        createAppearanceCubit: createProfileAppearanceCubit,
                       ),
                       _ => ProfilePage(
-                        userId: ProfileStrings.emptyCredential,
                         email: ProfileStrings.emptyCredential,
                         firstName: ProfileStrings.emptyCredential,
                         lastName: ProfileStrings.emptyCredential,
                         cuit: null,
                         createCubit: createProfileCubit,
                         signOut: context.read<AuthSessionCubit>().signOut,
+                        readAppVersion: readInstalledAppVersion,
+                        userId: null,
+                        createAppearanceCubit: createProfileAppearanceCubit,
                       ),
                     };
                   },
@@ -186,10 +193,18 @@ class AppRouter {
           ],
         ),
         GoRoute(
+          path: AppRoutes.profileEstablishment,
+          // Sin el establecimiento (por ejemplo, al restaurar la app) se
+          // vuelve a Perfil, que tiene la lista.
+          redirect: (context, state) => state.extra is EstablishmentDetails ? null : AppRoutes.profile,
+          builder: (context, state) => EstablishmentDetailPage(establishment: state.extra! as EstablishmentDetails),
+        ),
+        GoRoute(
           path: AppRoutes.animalRegisterStep1,
           builder: (context, state) => RegisterAnimalPage(
             createBloc: createRegisterAnimalBloc,
             initialRfid: state.uri.queryParameters['rfid'] ?? '',
+            initialEstablishmentId: state.uri.queryParameters['establecimientoId'],
           ),
         ),
         GoRoute(
@@ -302,7 +317,23 @@ class AppRouter {
               ),
               onHidKeyEvent: readingSource.handleKeyEvent,
               onAnimalDetailRequested: (animalId) => context.push(AppRoutes.animalDetailById(animalId)),
-              onRegisterAnimalRequested: (rfid) => context.push(AppRoutes.animalRegisterWithRfid(rfid)),
+              onRegisterAnimalRequested: (rfid) => context.push(
+                AppRoutes.animalRegisterWithRfid(
+                  rfidTagNumber: rfid,
+                  establishmentId: establishmentId,
+                ),
+              ),
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.rfidCapture,
+          builder: (context, state) {
+            final readingSource = HidRfidReadingSource();
+            return RfidCapturePage(
+              createBloc: () => createRfidCaptureBloc(readingSource: readingSource),
+              onHidKeyEvent: readingSource.handleKeyEvent,
+              onCaptured: (rfid) => context.pop(rfid),
             );
           },
         ),

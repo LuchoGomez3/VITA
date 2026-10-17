@@ -2,10 +2,14 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
+import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -17,14 +21,18 @@ void main() {
   test('refreshes offline data on every login', () async {
     final animalStore = _FakeAnimalStore();
     final categoryStore = _FakeCategoryStore();
+    final lotStore = _FakeLotStore();
     final weighingStore = _FakeWeighingStore();
+    final movementStore = _FakeMovementStore();
     final financialSync = _FakeOperatingExpenseSync();
     final repository = InitialDataSyncRepositoryImpl(
       secureStorage: _MemoryStorage(),
       establishmentRemoteDataSource: _FakeEstablishmentRemoteDataSource(),
       animalStore: animalStore,
       categoryStore: categoryStore,
+      lotStore: lotStore,
       weighingStore: weighingStore,
+      movementStore: movementStore,
       syncOperatingExpenseData: financialSync.call,
     );
 
@@ -32,8 +40,12 @@ void main() {
     await repository.sync();
 
     expect(animalStore.pulls, ['establishment-1', 'establishment-1']);
-    expect(categoryStore.pulls, ['establishment-1', 'establishment-1']);
+    expect(categoryStore.pullCount, 2);
+    expect(lotStore.pulls, ['establishment-1', 'establishment-1']);
+    expect(lotStore.pushes, ['establishment-1', 'establishment-1']);
     expect(weighingStore.pulls, ['establishment-1', 'establishment-1']);
+    expect(movementStore.pulls, ['establishment-1', 'establishment-1']);
+    expect(movementStore.pushes, ['establishment-1', 'establishment-1']);
     expect(financialSync.pulls, ['establishment-1', 'establishment-1']);
   });
 
@@ -44,7 +56,9 @@ void main() {
       establishmentRemoteDataSource: _FakeEstablishmentRemoteDataSource(),
       animalStore: _FakeAnimalStore(),
       categoryStore: _FakeCategoryStore(),
+      lotStore: _FakeLotStore(),
       weighingStore: _FakeWeighingStore(),
+      movementStore: _FakeMovementStore(),
       syncOperatingExpenseData: _FakeOperatingExpenseSync().call,
     );
 
@@ -64,7 +78,9 @@ void main() {
       ),
       animalStore: _FakeAnimalStore(),
       categoryStore: _FakeCategoryStore(),
+      lotStore: _FakeLotStore(),
       weighingStore: _FakeWeighingStore(),
+      movementStore: _FakeMovementStore(),
       syncOperatingExpenseData: financialSync.call,
     );
 
@@ -126,6 +142,9 @@ class _FakeAnimalStore implements AnimalBrickStore {
   }
 
   @override
+  Future<void> retryRejectedAnimal(String animalId) async {}
+
+  @override
   Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) async => animal;
 
   @override
@@ -145,22 +164,63 @@ class _FakeAnimalStore implements AnimalBrickStore {
 }
 
 class _FakeCategoryStore implements CategoriaBrickStore {
-  final List<String> pulls = [];
+  int pullCount = 0;
 
   @override
-  Future<void> pullRemoteCategorias(String establishmentId) async {
+  Future<void> pullRemoteCategorias() async => pullCount += 1;
+
+  @override
+  Future<List<BrickCategoriaModel>> getLocalCategorias() async => [];
+}
+
+class _FakeLotStore implements LotBrickStore {
+  final List<String> pulls = [];
+  final List<String> pushes = [];
+
+  @override
+  Future<BrickLotModel?> getLocalLot(String lotId) async => null;
+
+  @override
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId) async => [];
+
+  @override
+  Future<void> pullRemoteLots(String establishmentId) async {
     pulls.add(establishmentId);
   }
 
   @override
-  Future<List<BrickCategoriaModel>> getLocalCategorias(
-    String establishmentId,
-  ) async => [];
+  Future<void> pushPendingLots(String establishmentId) async {
+    pushes.add(establishmentId);
+  }
 
   @override
-  Future<BrickCategoriaModel> upsertCategoria(
-    BrickCategoriaModel categoria,
-  ) async => categoria;
+  Future<BrickLotModel> upsertLocalLot(BrickLotModel lot) async => lot;
+}
+
+class _FakeMovementStore implements AnimalLotMovementBrickStore {
+  final List<String> pulls = [];
+  final List<String> pushes = [];
+
+  @override
+  Future<void> pullRemoteMovements(String establishmentId) async {
+    pulls.add(establishmentId);
+  }
+
+  @override
+  Future<void> pushPendingMovements(String establishmentId) async {
+    pushes.add(establishmentId);
+  }
+
+  @override
+  Future<BrickAnimalLotMovementModel> save(
+    BrickAnimalLotMovementModel movement,
+  ) async => movement;
+
+  @override
+  Future<BrickAnimalLotMovementModel> saveWithAnimals({
+    required List<BrickAnimalModel> animals,
+    required BrickAnimalLotMovementModel movement,
+  }) async => movement;
 }
 
 class _FakeWeighingStore implements PesajeBrickStore {

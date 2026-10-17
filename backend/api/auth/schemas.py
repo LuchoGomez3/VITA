@@ -5,6 +5,7 @@ viven la respuesta de sesión (con ``refresh_token`` para el ciclo offline-first
 y el body del refresh.
 """
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -18,6 +19,9 @@ class UsuarioSesion(BaseModel):
     apellido: str
     email: str
     cuit: str | None = None
+    # Personalización de la cabecera de Perfil (adr-0011).
+    color_cabecera: str | None = None
+    avatar_actualizado_en: datetime | None = None
 
 
 class TokenResponse(BaseModel):

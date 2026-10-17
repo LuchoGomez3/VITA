@@ -224,11 +224,7 @@ async def test_una_restauracion_rechazada_no_restaura_observaciones(
     from api.modules.categorias.models import Categoria
     from api.shared.enums import SexoPermitido
 
-    toro = Categoria(
-        nombre="Toro",
-        establecimiento_id=campo,
-        sexo_permitido=SexoPermitido.macho,
-    )
+    toro = Categoria(nombre="Toro", sexo_permitido=SexoPermitido.macho)
     session.add(toro)
     await session.commit()
     vaca = await _animal(auth_client, campo)

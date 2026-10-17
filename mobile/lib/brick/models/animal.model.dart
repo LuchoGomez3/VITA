@@ -83,7 +83,7 @@ class BrickAnimalRequestTransformer extends RestRequestTransformer {
     final encodedEstablishmentId = Uri.encodeQueryComponent(establishmentId);
 
     return RestRequest(
-      url: '$animalsPath?establecimiento_id=$encodedEstablishmentId',
+      url: '$animalsPath?establecimiento_id=$encodedEstablishmentId&include_deleted=true',
       topLevelKey: 'data',
     );
   }
