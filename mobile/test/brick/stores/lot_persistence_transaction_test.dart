@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
 import 'package:frontend_mayoral/brick/models/lot.model.dart';
+import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
@@ -40,7 +41,11 @@ void main() {
     );
     repository = AppBrickRepository.instance;
     BrickLotStore.configure(repository);
-    BrickAnimalLotMovementStore.configure(repository);
+    BrickAnimalStore.configure(repository);
+    BrickAnimalLotMovementStore.configure(
+      repository,
+      animalStore: BrickAnimalStore.instance,
+    );
     lotStore = BrickLotStore.instance;
     movementStore = BrickAnimalLotMovementStore.instance;
   });
@@ -121,7 +126,7 @@ void main() {
     );
   });
 
-  test('marca movimiento y animales como rechazados por backend', () async {
+  test('el rechazo queda aislado en el agregado movimiento', () async {
     final original = await repository.upsertLocal<BrickAnimalModel>(
       _animal(id: 'animal-rejected', lotId: 'source-lot'),
     );
@@ -152,11 +157,8 @@ void main() {
     final rejectedAnimal = animals.singleWhere(
       (item) => item.localId == 'animal-rejected',
     );
-    expect(rejectedAnimal.syncStatus, BrickAnimalSyncStatus.rejected);
-    expect(
-      rejectedAnimal.syncErrorCode,
-      'animales_no_pertenecen_lote_origen',
-    );
+    expect(rejectedAnimal.syncStatus, original.syncStatus);
+    expect(rejectedAnimal.syncErrorCode, original.syncErrorCode);
   });
 
   test('reemplaza el lote local con la respuesta autoritativa', () async {

@@ -108,6 +108,21 @@ Un modelo Brick describe como se guarda una entidad en SQLite y como se
 serializa contra REST. Por ejemplo, `animal.model.dart` define los campos del
 animal local, los nombres esperados por el backend y que datos son solo mobile.
 
+El animal conserva dos estados distintos:
+
+- `productiveStatus`: indica si esta activo, vendido, muerto o dado de baja.
+- `syncStatus`: indica si el registro local esta pendiente, sincronizado o
+  rechazado por backend.
+
+No deben intercambiarse. En el alcance actual, `productiveStatus` es de lectura:
+se descarga desde backend y no se envia en el POST generico de alta. La futura
+venta, muerte o baja debera tener un comando offline-first especifico que cambie
+SQLite y encole el `PUT /animales/{id}`; esa transicion todavia no esta
+implementada. Las filas creadas antes de incorporar el estado productivo se leen
+como `active`: al introducir esta migracion se verifico que todos los animales
+existentes en backend estaban activos. Un valor desconocido recibido desde
+backend o SQLite se conserva como `unknown`.
+
 Estos modelos no son entidades de dominio. Son modelos tecnicos de
 persistencia/sync.
 

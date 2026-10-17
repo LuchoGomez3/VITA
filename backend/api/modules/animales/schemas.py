@@ -109,6 +109,7 @@ class AnimalRead(BaseModel):
     madre_id: UUID | None = None
     pelaje: str | None = None
     estado: EstadoAnimal
+    estado_actualizado_en: datetime | None = None
     estado_reproductivo: EstadoReproductivo | None = None
     # Columna legacy de solo lectura: la API ya no la escribe. Las notas viven en
     # /observaciones_animales (adr-0007).
