@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/team/domain/use_cases/team_use_cases.dart';
 import 'package:frontend_mayoral/features/team/presentation/cubit/invite_team_member_cubit.dart';
@@ -109,6 +110,20 @@ void main() {
       expect(find.text('Mariano Suárez'), findsOneWidget);
       expect(find.byTooltip(TeamStrings.actionsTooltip), findsNothing);
     });
+  });
+
+  testWidgets('si no se pudo cargar y no hay nada guardado ofrece reintentar', (tester) async {
+    final repository = FakeTeamRepository()..refreshResult = const Result.failure(DomainException(message: 'x'));
+    await _pump(tester, _teamPage(repository, UserRole.owner));
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text(TeamStrings.loadFailed), findsOneWidget);
+
+    repository.refreshResult = Result.success(snapshotOf());
+    await tester.tap(find.text(TeamStrings.retryCta));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mariano Suárez'), findsOneWidget);
   });
 
   group('InviteTeamMemberPage', () {

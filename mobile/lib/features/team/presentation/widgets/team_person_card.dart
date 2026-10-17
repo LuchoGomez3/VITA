@@ -14,7 +14,7 @@ class TeamPersonCard extends StatelessWidget {
   /// Crea la card.
   const TeamPersonCard({
     required this.title,
-    required this.email,
+    required this.subtitle,
     required this.role,
     required this.statusLabel,
     required this.statusTone,
@@ -30,8 +30,8 @@ class TeamPersonCard extends StatelessWidget {
   /// Nombre de la persona, o el email si todavía no aceptó.
   final String title;
 
-  /// Email de la persona.
-  final String email;
+  /// Segunda línea: el email del miembro o el estado de la invitación.
+  final String subtitle;
 
   /// Rol en el establecimiento.
   final UserRole role;
@@ -101,7 +101,7 @@ class TeamPersonCard extends StatelessWidget {
                     ],
                   ),
                   Text(
-                    email,
+                    subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),

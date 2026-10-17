@@ -66,17 +66,25 @@ class _TeamView extends StatelessWidget {
     }
     final snapshot = state.snapshot;
     if (snapshot == null) {
-      return state.isOffline
-          ? RefreshIndicator(
-              onRefresh: cubit.refresh,
-              child: ListView(
-                children: const [
-                  _OfflineBanner(fetchedAt: null),
-                  _Message(text: TeamStrings.emptyOffline),
-                ],
-              ),
-            )
-          : const Center(child: CircularProgressIndicator());
+      // Cargando: todavía no se resolvió el establecimiento o se está pidiendo.
+      if (state.isLoading || state.establishment == null) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      // No hay nada guardado y no se pudo traer: aviso y reintento, nunca un
+      // spinner eterno.
+      return RefreshIndicator(
+        onRefresh: cubit.refresh,
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          children: [
+            if (state.isOffline) const _OfflineBanner(fetchedAt: null),
+            _Message(text: state.isOffline ? TeamStrings.emptyOffline : TeamStrings.loadFailed),
+            Center(
+              child: AppOutlinedButton(label: TeamStrings.retryCta, onPressed: cubit.refresh),
+            ),
+          ],
+        ),
+      );
     }
 
     final myRole = state.establishment?.role ?? UserRole.unknown;
@@ -113,7 +121,7 @@ class _TeamView extends StatelessWidget {
     final canRemove = state.actionsEnabled && !member.isHolder && myRole.canRemove(member.role);
     return TeamPersonCard(
       title: '${member.firstName} ${member.lastName}'.trim(),
-      email: member.email,
+      subtitle: member.email,
       role: member.role,
       statusLabel: TeamStrings.activeStatus,
       statusTone: AppStatusChipTone.success,
@@ -152,7 +160,7 @@ class _TeamView extends StatelessWidget {
     final canManage = state.actionsEnabled && myRole.assignableRoles.contains(invitation.role);
     return TeamPersonCard(
       title: invitation.email,
-      email: invitation.email,
+      subtitle: TeamStrings.invitationSubtitle,
       role: invitation.role,
       statusLabel: invitation.isExpired ? TeamStrings.expiredStatus : TeamStrings.invitedStatus,
       statusTone: invitation.isExpired ? AppStatusChipTone.neutral : AppStatusChipTone.warn,

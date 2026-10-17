@@ -25,6 +25,9 @@ abstract final class TeamStrings {
   /// Estado de una invitación sin aceptar.
   static const invitedStatus = 'Invit. pend.';
 
+  /// Segunda línea de una invitación: todavía no hay nombre para mostrar.
+  static const invitationSubtitle = 'Invitación por email, sin aceptar';
+
   /// Estado de una invitación vencida.
   static const expiredStatus = 'Vencida';
 
@@ -47,6 +50,12 @@ abstract final class TeamStrings {
 
   /// No hay nada guardado ni conexión.
   static const emptyOffline = 'Todavía no se cargó el equipo de este campo.';
+
+  /// No se pudo traer el equipo y no hay nada guardado.
+  static const loadFailed = 'No pudimos cargar el equipo.';
+
+  /// Reintentar la carga.
+  static const retryCta = 'Reintentar';
 
   /// El establecimiento no está en el celular.
   static const establishmentMissing = 'No encontramos este establecimiento en el celular.';
@@ -109,7 +118,7 @@ abstract final class TeamStrings {
   static const emailLabel = 'Email del invitado';
 
   /// Ayuda del campo de email.
-  static const emailHelper = 'Le llega un código para sumarse. Tiene que entrar a VITA con este email.';
+  static const emailHelper = 'Le llega un código para sumarse con este email.';
 
   /// Email vacío.
   static const emailRequired = 'Escribí el email de la persona.';
