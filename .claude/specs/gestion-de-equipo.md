@@ -1,20 +1,28 @@
 ---
 name: gestion-de-equipo
 description: >-
-  Flujo de gestión de equipo (listado de usuarios del establecimiento e
-  invitación con rol) — pantallas, secciones y datos mock del diseño de
-  referencia. Documento vivo, se actualiza en el mismo commit que introduce
-  cada pieza descripta acá.
+  Equipo del establecimiento: lista de usuarios activos e invitaciones
+  pendientes, invitar por email con un código y sumarse a otro campo con ese
+  código. Documento vivo, se actualiza en el mismo commit que introduce cada
+  pieza descripta acá.
 ---
 
 # Gestión de equipo
 
-Administración de los usuarios que tienen acceso a un establecimiento y su
-rol. Es una acción sensible (afecta permisos de otros usuarios), por lo que
-probablemente sea **online-only** cuando se conecte a backend (mismo criterio
-que `sign_up`/`establishment_register`, a confirmar en Etapa 3). Se llega por
-un atajo de desarrollo desde `livestock_page.dart`; en el diseño original vive
-detrás del tab "Más", que no existe en el shell actual de 4 tabs.
+Quién tiene acceso a cada establecimiento y con qué rol. Las decisiones están en
+**[`adr-0012`](../../docs/adr/adr-0012-invitaciones-por-codigo-email.md)**:
+
+- La invitación llega **por email con un código de 8 caracteres**, que se canjea con
+  una sesión iniciada con ese mismo email.
+- Hay 4 roles: `owner`, `admin`, `employee` y `veterinarian`. `veterinarian` opera
+  como `employee`.
+- Solo dueños y administradores gestionan el equipo.
+- Es **online-only**, con la lista cacheada para verla sin conexión.
+
+Se entra desde **Perfil → Establecimientos → ficha del establecimiento → Equipo**,
+no desde Hacienda: cada establecimiento tiene su equipo. La maqueta original
+(PR #42, `feature/pantalla-equipo`) entraba por un atajo en `livestock_page.dart`;
+se reemplaza por esta implementación.
 
 Ver también **[`estado-pantallas-diseno.md`](./estado-pantallas-diseno.md)**.
 
@@ -22,68 +30,83 @@ Ver también **[`estado-pantallas-diseno.md`](./estado-pantallas-diseno.md)**.
 
 | Pantalla (Claude Design) | Página Flutter | Ruta |
 |---|---|---|
-| `EquipoScreen` | `TeamPage` | `/equipo` |
-| `EquipoInvitar` | `InviteTeamMemberPage` | `/equipo/invitar` |
+| `EquipoScreen` | `TeamPage` | `/perfil/establecimiento/:establishmentId/equipo` |
+| `EquipoInvitar` | `InviteTeamMemberPage` | `/perfil/establecimiento/:establishmentId/equipo/invitar` |
+| (no está en el diseño) | `JoinEstablishmentPage` | `/perfil/sumarme` |
+
+Las rutas llevan el id en el path y no en `extra`, para sobrevivir a que el sistema
+restaure la app. El establecimiento y el rol propio salen de `EstablishmentCatalog`.
 
 ## Contenido por pantalla
 
-### `TeamPage` (`/equipo`)
+### Ficha del establecimiento
 
-- Header: `AppHeader` ("La Sirena" / "Equipo" / 14 pendientes).
-- Sección "Usuarios · 4": una card por usuario con avatar de iniciales
-  coloreado, nombre, chip de estado (activo/invitación pendiente), email,
-  chip de rol y subtítulo opcional de alcance.
-- FAB "Invitar usuario" → `InviteTeamMemberPage`.
+- Después de "Datos del establecimiento" hay una sección "Equipo" con la fila
+  "Usuarios del establecimiento".
+- La ven todos los miembros. El subtítulo cambia según si la persona puede
+  gestionar el equipo.
 
-**Datos mock (los 4 usuarios):**
+### `TeamPage`
 
-| Nombre | Email | Rol (diseño) | Estado | Iniciales/color | Alcance |
-|---|---|---|---|---|---|
-| Mariano Suárez | mariano@lasirena.com.ar | Capataz | activo | MS · primario | — |
-| Cecilia Lazarte | ceci@lasirena.com.ar | Owner | activo | CL · chart-4 | — |
-| Diego Romero | dr.vet@gmail.com | Veterinario | activo | DR · chart-2 | Acceso solo lectura · módulo Sanidad |
-| Augusto Páez | augusto.consign@gmail.com | Consignatario externo | invitación pendiente | AP · muted | Acceso solo lectura · módulo Animales |
+- Header: `AppHeader` con el nombre del campo y "Equipo".
+- "Usuarios · N" lista los miembros activos. Cada card tiene:
+  - avatar de iniciales con el color de cabecera del perfil;
+  - nombre, chip "Activo", email y chip de rol;
+  - para el titular, la nota "Titular del establecimiento".
+- "Invitaciones pendientes · N" lista las invitaciones:
+  - el chip es "Invit. pend." (warn), o "Vencida" si pasó la fecha;
+  - una nota muestra el vencimiento o avisa que el email no salió.
+- Menú ⋮, solo con las acciones que permite el rol propio:
+  - en un miembro: quitar, que pide confirmación;
+  - en una invitación: reenviar, y cancelar con confirmación.
+- FAB "Invitar usuario": solo para owner y admin.
+- Sin conexión aparece un banner con la fecha de lo guardado; las acciones y el FAB
+  quedan deshabilitados.
+- Se actualiza tirando hacia abajo (pull to refresh).
 
-### `InviteTeamMemberPage` (`/equipo/invitar`)
+### `InviteTeamMemberPage`
 
-- Header propio: botón de cerrar + "Invitar usuario".
-- Campo de email (mock: `hernan.peon@lasirena.com.ar`).
-- Selector de rol: radio-cards con descripción, uno seleccionado por defecto.
-- CTA fijo: "Enviar invitación".
+- Campo de email, validado en la app y en el backend.
+- Radio-cards con los roles que quien invita puede asignar: un admin no ve "Dueño".
+  Empleado viene preseleccionado.
+- "Enviar invitación" vuelve a Equipo con un aviso. Si el email no salió, la
+  invitación queda creada y se reenvía desde la lista.
 
-**Roles del diseño** (radio-cards, `capataz` preseleccionado):
+### `JoinEstablishmentPage`
 
-| Rol (diseño) | Descripción |
-|---|---|
-| Owner | Control total · facturación · eliminar el establecimiento. |
-| Administrator | Configuración + datos + usuarios. No factura. |
-| Capataz (preseleccionado) | Operación diaria: animales, pesajes, sanidad, movimientos. |
-| Veterinario | Acceso parcial al módulo Sanidad. Puede aplicar tratamientos. |
-| Consignatario externo | Solo lectura del rodeo. Pensado para escritorios. |
+Se abre desde la fila "Sumarme a otro establecimiento" de Perfil, que antes decía
+"Disponible próximamente".
 
-**Divergencia con el dominio real a documentar, no a copiar ciegamente**:
-CLAUDE.md define **seis** roles (`administrator`, `owner`, `veterinarian`,
-`capataz`, `asset_manager`, `external_buyer`); el diseño sólo tiene 5 y omite
-`asset_manager`. El mock de Etapa 1 debe listar los 6 roles reales (agregando
-una descripción razonable para `asset_manager`), no limitarse a los 5 del
-diseño.
+1. Se escribe el código. Se acepta con o sin guion y en minúsculas.
+2. "Continuar" previsualiza: "Te vas a sumar a La Sirena como Veterinario. Te invitó…".
+3. "Sumarme" canjea el código, agrega el campo al catálogo del celular y vuelve a
+   Perfil, que recarga la lista.
 
-## Estado de la Etapa 1 (maquetado)
+Cada error tiene su mensaje: código inválido, vencido, usado, revocado, de otro email,
+demasiados intentos o sin conexión.
 
-_A completar en `feature/pantalla-equipo`._
+## Backend
 
-## Explícitamente fuera de alcance de esta iniciativa
+Son 8 endpoints en `backend/api/modules/equipo/` (ver el ADR):
 
-- Acción sobre una card de usuario existente (editar rol, revocar acceso) —
-  el diseño no la define, sólo el alta.
-- Reenvío de invitación pendiente.
+- `GET` y `DELETE` sobre `/establecimientos/{id}/usuarios[/{usuario_id}]`;
+- `GET` y `POST` sobre `/establecimientos/{id}/invitaciones`, más `POST .../{inv}/reenvios`
+  y `DELETE .../{inv}`;
+- `POST /invitaciones/validaciones` y `POST /invitaciones/aceptaciones`.
 
-## Pendiente para Etapas 2 y 3
+## Fuera de alcance
 
-- Backend: no existe todavía endpoint de invitación/gestión de miembros de
-  `usuario` por establecimiento.
-- Validación de email (formato) y de que el rol seleccionado sea uno de los
-  6 válidos.
-- Confirmar si el alta de miembro es online-only (afecta permisos de otro
-  usuario, similar a por qué `sign_up` lo es) — a decidir con el Product
-  Owner antes de Etapa 3.
+- Cambiar el rol de un miembro existente.
+- Transferir la titularidad del establecimiento.
+- Permisos finos por módulo para `veterinarian`; los otros roles de CLAUDE.md
+  (`capataz`, `asset_manager`, `external_buyer`) tampoco se implementan.
+- Deep links.
+
+## Pendiente
+
+- Validar con Ernesto (PO) la tabla de permisos y que `veterinarian` funcione como
+  `employee`.
+- Elegir el proveedor SMTP y cargar las variables antes del primer deploy.
+- `/usuarios/registro` exige CUIT, y un invitado puede no tenerlo.
+- Los datos productivos del campo al que alguien se suma llegan con la próxima
+  sincronización inicial.
