@@ -72,7 +72,7 @@ BrickLotModel _lot({
     boundaryJson: '{}',
     surfaceTenths: 100,
     hasWater: true,
-    statusCode: 'active',
+    statusCode: 'activo',
     createdAt: DateTime.utc(2026, 8, 28),
     updatedAt: timestamp,
     deletedAt: deletedAt,

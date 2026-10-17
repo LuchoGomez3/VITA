@@ -1,9 +1,21 @@
-import 'package:frontend_mayoral/core/theme/theme.dart';
-import 'package:frontend_mayoral/features/animal_register/presentation/widgets/ear_tag_color_selector.dart';
-
 /// Textos base del flujo de alta manual de animal.
 class AnimalRegisterStrings {
   const AnimalRegisterStrings._();
+
+  /// Error al leer los establecimientos disponibles sin conexion.
+  static const establishmentsLoadError = 'No se pudieron cargar los establecimientos guardados.';
+
+  /// Etiqueta del selector que contextualiza el alta.
+  static const establishmentSelectorLabel = 'Establecimiento';
+
+  /// Ayuda visible antes de seleccionar el establecimiento del animal.
+  static const establishmentSelectorHint = 'Seleccioná un establecimiento';
+
+  /// Validacion cuando el alta todavia no tiene establecimiento.
+  static const establishmentRequired = 'Seleccioná un establecimiento antes de guardar.';
+
+  /// Estado vacio cuando el usuario no tiene establecimientos disponibles.
+  static const noEstablishmentsMessage = 'No hay establecimientos disponibles para registrar el animal.';
 
   /// Error al leer los lotes disponibles desde el almacenamiento local.
   static const destinationsLoadError = 'No se pudieron cargar los lotes guardados.';
@@ -13,6 +25,18 @@ class AnimalRegisterStrings {
 
   /// Titulo de la pagina.
   static const pageTitle = 'Alta de animal';
+
+  /// Titulo corto del primer paso para el header de progreso.
+  static const progressIdentificationTitle = 'Identificación';
+
+  /// Titulo corto del segundo paso para el header de progreso.
+  static const progressBasicDataTitle = 'Datos básicos';
+
+  /// Titulo corto del tercer paso para el header de progreso.
+  static const progressDestinationTitle = 'Destino y genealogía';
+
+  /// Titulo corto del último paso para el header de progreso.
+  static const progressReviewTitle = 'Revisión';
 
   /// Subtitulo de la pagina.
   static const pageStepSubtitle = 'Paso 1 de 4 • Identificación';
@@ -31,6 +55,12 @@ class AnimalRegisterStrings {
   /// Hint del campo de RFID.
   static const rfidFieldHint = 'Ingresá los 15 dígitos';
 
+  /// Error cuando la caravana ya está guardada localmente.
+  static const rfidAlreadyRegistered = 'Esta caravana ya está registrada en el dispositivo.';
+
+  /// Error de formato de la caravana electrónica.
+  static const rfidInvalid = 'Ingresá una caravana RFID válida de 15 dígitos.';
+
   /// Titulo del campo de serie.
   static const seriesFieldTitle = 'Serie';
 
@@ -43,34 +73,11 @@ class AnimalRegisterStrings {
   /// Hint del campo de número de caravana visual.
   static const visualNumberFieldHint = 'Ej. 1048';
 
-  /// Titulo del campo de color de caravana.
-  static const earTagColorTitle = 'Color de caravana';
-
   /// Titulo del boton de prueba con bastón Bluetooth.
   static const bluetoothButtonLabel = 'Probar con bastón Bluetooth';
 
   /// Titulo del boton de siguiente.
   static const nextButtonLabel = 'Siguiente';
-
-  /// Opciones de color de caravana. (Agus: Esto lo voy a cambiar)
-  static const earTagColorOptions = [
-    EarTagColorOption(
-      name: 'Amarillo',
-      color: AppColors.earTagYellow,
-    ),
-    EarTagColorOption(
-      name: 'Beige',
-      color: AppColors.backgroundTertiary,
-    ),
-    EarTagColorOption(
-      name: 'Lila',
-      color: AppColors.earTagLilac,
-    ),
-    EarTagColorOption(
-      name: 'Naranja',
-      color: AppColors.earTagOrange,
-    ),
-  ];
 
   // Paso 2: datos basicos.
 
@@ -86,13 +93,16 @@ class AnimalRegisterStrings {
   /// Hint visible cuando no hay una raza seleccionada.
   static const stepTwoBreedHint = 'Seleccioná una raza';
 
-  /// Razas mock disponibles hasta integrar la fuente de datos real.
+  /// Razas disponibles para seleccionar en el alta.
   static const stepTwoBreedOptions = [
     'Aberdeen Angus',
     'Hereford',
     'Braford',
     'Brangus',
   ];
+
+  /// Validacion cuando no se selecciono una raza.
+  static const breedRequired = 'Ingresá la raza antes de guardar.';
 
   /// Titulo del selector de sexo.
   static const stepTwoSexTitle = 'Sexo';
@@ -103,11 +113,17 @@ class AnimalRegisterStrings {
   /// Etiqueta para la opcion macho.
   static const stepTwoMale = 'Macho';
 
+  /// Validacion cuando no se selecciono el sexo.
+  static const sexRequired = 'Seleccioná el sexo antes de guardar.';
+
   /// Titulo del campo de fecha de nacimiento.
   static const stepTwoBirthDateTitle = 'Fecha de nacimiento';
 
   /// Hint del campo de fecha de nacimiento.
   static const stepTwoBirthDateHint = 'Seleccioná una fecha';
+
+  /// Validacion cuando no se selecciono la fecha de nacimiento.
+  static const birthDateRequired = 'Seleccioná la fecha de nacimiento antes de guardar.';
 
   /// Atajo para seleccionar la fecha actual.
   static const stepTwoToday = 'Hoy';
@@ -124,21 +140,14 @@ class AnimalRegisterStrings {
   /// Titulo del selector de categoria.
   static const stepTwoCategoryTitle = 'Categoría';
 
-  /// Categorias mock disponibles hasta integrar las reglas del dominio.
-  static const stepTwoCategories = [
-    'Ternera',
-    'Ternero',
-    'Vaquillona',
-    'Vaca',
-    'Novillo',
-    'Toro',
-  ];
+  /// Estado vacio cuando la sincronizacion no dejo categorias disponibles.
+  static const noCategoriesMessage = 'No hay categorías disponibles. Sincronizá los datos e intentá nuevamente.';
 
-  /// Aclaracion sobre la futura sugerencia automatica de categoria.
-  static const stepTwoCategorySuggestion = 'Sugerido automáticamente por fecha de nacimiento y sexo.';
+  /// Validacion cuando el productor no selecciono una categoria.
+  static const categoryRequired = 'Seleccioná una categoría antes de guardar.';
 
-  /// Titulo del campo opcional de peso al nacer.
-  static const stepTwoBirthWeightTitle = 'Peso al nacer • opcional';
+  /// Titulo del campo de peso al nacer.
+  static const stepTwoBirthWeightTitle = 'Peso al nacer';
 
   /// Ejemplo de formato para el peso al nacer.
   static const stepTwoBirthWeightHint = '32,5';
@@ -149,17 +158,8 @@ class AnimalRegisterStrings {
   /// Texto del boton que avanza al siguiente paso.
   static const stepTwoNextButton = 'Siguiente';
 
-  // TODO(agusf): eliminar los datos mock restantes cuando identificacion,
-  // catalogos y genealogia expongan sus fuentes offline reales.
-
-  /// RFID mock mostrado en el resumen de identificacion.
-  static const stepTwoMockRfid = '982 000 412 991 416';
-
-  /// Numero visual mock mostrado en la caravana.
-  static const stepTwoMockVisualTag = '003 1295';
-
-  /// Descripcion mock de la lectura de la caravana.
-  static const stepTwoMockReading = 'Caravana 003 1295 · leída a las 11:42';
+  /// Descripcion neutral del resumen de identificacion.
+  static const identificationSummary = 'Identificación cargada para esta alta';
 
   // Paso 3: genealogia y destino.
 
@@ -181,7 +181,10 @@ class AnimalRegisterStrings {
   static const stepThreeFatherTitle = 'Padre (toro)';
 
   /// Hint compartido por los buscadores de progenitores.
-  static const stepThreeSearchHint = 'Buscar caravana o nombre...';
+  static const stepThreeSearchHint = 'Buscar caravana visual o RFID...';
+
+  /// Error inline cuando la caravana no corresponde a un progenitor elegible.
+  static const parentNotFound = 'No se encontró la caravana en este establecimiento.';
 
   /// Encabezado principal de la seccion de destino.
   static const stepThreeDestinationTitle = 'DESTINO';
@@ -194,51 +197,6 @@ class AnimalRegisterStrings {
 
   /// Texto del boton que avanza al siguiente paso.
   static const stepThreeNextButton = 'Siguiente';
-
-  /// Nombre mock de la madre seleccionada.
-  static const stepThreeMockMotherName = 'Aberdeen Angus';
-
-  /// Numero visual mock de la madre seleccionada.
-  static const stepThreeMockMotherTag = '003 0421';
-
-  /// RFID mock de la madre seleccionada.
-  static const stepThreeMockMotherRfid = '982 000 412 884 421';
-
-  /// Nombre mock del primer toro sugerido.
-  static const stepThreeMockFatherOneName = 'Don Pedro';
-
-  /// Raza mock del primer toro sugerido.
-  static const stepThreeMockFatherOneBreed = 'Aberdeen Angus';
-
-  /// Numero visual mock del primer toro sugerido.
-  static const stepThreeMockFatherOneTag = '003 0820';
-
-  /// Nombre mock del segundo toro sugerido.
-  static const stepThreeMockFatherTwoName = 'Tornado';
-
-  /// Raza mock del segundo toro sugerido.
-  static const stepThreeMockFatherTwoBreed = 'Brangus';
-
-  /// Numero visual mock del segundo toro sugerido.
-  static const stepThreeMockFatherTwoTag = '003 0612';
-
-  /// Nombre mock del tercer toro sugerido.
-  static const stepThreeMockFatherThreeName = 'Capitán';
-
-  /// Raza mock del tercer toro sugerido.
-  static const stepThreeMockFatherThreeBreed = 'Hereford';
-
-  /// Numero visual mock del tercer toro sugerido.
-  static const stepThreeMockFatherThreeTag = '002 0118';
-
-  /// Etiqueta visible para los candidatos a padre.
-  static const stepThreeBullBadge = 'Toro';
-
-  /// Nombre mock del potrero seleccionado.
-  static const stepThreeMockDestinationName = 'La Cumbre';
-
-  /// Detalle mock del potrero seleccionado.
-  static const stepThreeMockDestinationDetails = '142 ha · 342 animales actualmente';
 
   // Paso 4: revision.
 
@@ -261,50 +219,23 @@ class AnimalRegisterStrings {
   /// Titulo de la seccion de genealogia y destino.
   static const stepFourGenealogyTitle = 'GENEALOGÍA Y DESTINO';
 
-  /// Numero visual usado en la caravana de revision.
-  static const stepFourIdentificationVisualTag = '003 1295';
-
-  /// RFID mostrado en la seccion de identificacion.
-  static const stepFourIdentificationRfid = '982 000 412 991 416';
-
-  /// Descripcion visual de la caravana.
-  static const stepFourIdentificationTag = 'Caravana 003 1295 · amarilla';
-
   /// Label del campo raza.
   static const stepFourBreedLabel = 'Raza';
-
-  /// Valor mock del campo raza.
-  static const stepFourBreedValue = 'Aberdeen Angus';
 
   /// Label del campo sexo.
   static const stepFourSexLabel = 'Sexo';
 
-  /// Valor mock del campo sexo.
-  static const stepFourSexValue = 'Hembra';
-
   /// Label del campo fecha de nacimiento.
   static const stepFourBirthDateLabel = 'Fecha de nacimiento';
-
-  /// Valor mock del campo fecha de nacimiento.
-  static const stepFourBirthDateValue = '14/03/2025 · 2 m 1 día';
 
   /// Label del campo categoria.
   static const stepFourCategoryLabel = 'Categoría';
 
-  /// Valor mock del campo categoria.
-  static const stepFourCategoryValue = 'Ternera';
-
   /// Label del campo peso al nacer.
   static const stepFourBirthWeightLabel = 'Peso al nacer';
 
-  /// Valor mock del campo peso al nacer.
-  static const stepFourBirthWeightValue = '32,5 kg';
-
   /// Label del campo madre.
   static const stepFourMotherLabel = 'Madre';
-
-  /// Valor mock del campo madre.
-  static const stepFourMotherValue = '003 0421 · Aberdeen';
 
   /// Label del campo padre.
   static const stepFourFatherLabel = 'Padre';
@@ -312,14 +243,11 @@ class AnimalRegisterStrings {
   /// Value displayed when optional information is missing.
   static const stepFourNoDataValue = '— (sin datos)';
 
-  /// Valor mock del campo padre.
-  static const String stepFourFatherValue = stepFourNoDataValue;
-
   /// Label del campo potrero.
   static const stepFourDestinationLabel = 'Potrero';
 
-  /// Valor mock del campo potrero.
-  static const stepFourDestinationValue = 'La Cumbre · 142 ha';
+  /// Label del establecimiento en la revision del alta.
+  static const stepFourEstablishmentLabel = 'Establecimiento';
 
   /// Texto del boton para volver al paso anterior.
   static const stepFourBackButton = 'Atrás';
@@ -335,27 +263,22 @@ class AnimalRegisterStrings {
   /// Titulo principal de la pantalla de exito.
   static const successTitle = 'Animal dado de alta';
 
-  /// Subtitulo de la pantalla de exito.
-  static const successSubtitle = 'La ternera 003 1295 ya forma parte del rodeo de La Sirena.';
-
   /// Texto del boton para iniciar otra alta.
   static const successRegisterAnotherButton = 'Dar de alta otro animal';
-
-  /// Texto del boton para ver la ficha del animal.
-  static const successViewDetailsButton = 'Ver ficha de 003 1295';
 
   /// Texto de la accion para volver al inicio.
   static const successBackHomeButton = 'Volver al inicio';
 
-  /// Numero visual mock mostrado en la tarjeta de exito.
-  static const successMockVisualTag = '003 1295';
+  /// Mensaje de validacion del lote de destino.
+  static const destinationRequired = 'Seleccioná el potrero de destino antes de guardar.';
 
-  /// Titulo mock del animal registrado.
-  static const successMockAnimalTitle = 'Aberdeen Angus · Ternera';
+  /// Mensaje de validacion del peso inicial.
+  static const invalidBirthWeight = 'Ingresá un peso válido mayor a 0 kg.';
 
-  /// RFID mock del animal registrado.
-  static const successMockRfid = '982 000 412 991 416';
+  /// Construye el mensaje de confirmacion con datos reales.
+  static String successDescription(String visualTag) =>
+      'La caravana $visualTag quedó guardada en este dispositivo y espera sincronización.';
 
-  /// Destino mock del animal registrado.
-  static const successMockDestination = 'La Cumbre';
+  /// Construye la accion de acceso a la ficha con datos reales.
+  static String viewAnimalDetails(String visualTag) => 'Ver ficha de $visualTag';
 }

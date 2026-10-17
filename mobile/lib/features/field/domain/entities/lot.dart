@@ -18,7 +18,9 @@ sealed class Lot with _$Lot {
     required DateTime createdAt,
     required DateTime updatedAt,
     @Default(LotStatus.active) LotStatus status,
+    @Default(LotSyncStatus.pending) LotSyncStatus syncStatus,
     String? forageResourceCode,
+    String? syncErrorCode,
     DateTime? deletedAt,
   }) = _Lot;
 
@@ -26,4 +28,16 @@ sealed class Lot with _$Lot {
 
   /// Superficie declarada expresada en hectáreas con un decimal.
   double get surfaceHectares => surfaceTenths / 10;
+}
+
+/// Estado de sincronización visible para la gestión del lote.
+enum LotSyncStatus {
+  /// El cambio está guardado localmente y pendiente de backend.
+  pending,
+
+  /// Backend confirmó la versión local.
+  synchronized,
+
+  /// Backend rechazó el cambio y requiere corrección del usuario.
+  rejected,
 }

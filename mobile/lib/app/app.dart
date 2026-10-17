@@ -10,6 +10,7 @@ import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/auth/auth_composition.dart' as auth_composition;
 import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
+import 'package:frontend_mayoral/features/sync/sync_composition.dart';
 import 'package:go_router/go_router.dart';
 
 /// Factory usada para construir el cubit global de sesion.
@@ -57,6 +58,7 @@ class _FrontendMayoralAppState extends State<FrontendMayoralApp> {
     _router.dispose();
     _routerRefreshNotifier.dispose();
     unawaited(_authSessionCubit.close());
+    unawaited(disposeOfflineSyncCoordinator());
     super.dispose();
   }
 

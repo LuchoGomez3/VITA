@@ -11,6 +11,7 @@ Se saltean si no está ``VITA_TEST_POSTGRES_URL`` (ver ``tests/postgres_helpers`
 """
 
 from contextlib import asynccontextmanager
+import importlib.util
 import os
 from pathlib import Path
 import subprocess
@@ -29,10 +30,6 @@ from api.modules.animales.exceptions import (
     EstadoReproductivoInvalidoError,
 )
 from api.modules.animales.schemas import AnimalCreate, AnimalUpdate
-from api.modules.categorias.exceptions import ReglasCategoriaEnUsoError
-from api.modules.categorias.repository import CategoriaRepository
-from api.modules.categorias.schemas import CategoriaUpdate
-from api.modules.categorias.service import CategoriaService
 from api.modules.usuarios.models import Usuario
 from tests.postgres_helpers import (
     base_temporal,
@@ -94,11 +91,35 @@ _A_ESQUEMA_LEGACY = (
 )
 
 
+def _migracion_catalogo_global():
+    ruta = _BACKEND / "alembic/versions/20261014_01_catalogo_global_categorias.py"
+    spec = importlib.util.spec_from_file_location("catalogo_global", ruta)
+    assert spec is not None and spec.loader is not None
+    modulo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modulo)
+    return modulo
+
+
+# Esta suite prueba las reglas de VITA-173 (20261001_02) sobre el esquema de esa
+# época, cuando las categorías todavía podían ser propias de un establecimiento.
+# Los modelos ya no tienen esa columna (20261014_01, adr-0010): se le devuelve al
+# esquema de ``create_all`` junto con la versión anterior del trigger. La
+# transición al catálogo global la prueba test_catalogo_global_categorias_postgres.
+_ESQUEMA_PREVIO_AL_CATALOGO_GLOBAL = (
+    "alter table categorias add column establecimiento_id uuid"
+    " references establecimientos(id)",
+    "create index ix_categorias_establecimiento_id on categorias (establecimiento_id)",
+    _migracion_catalogo_global()._FUNCION_CATEGORIA_COMPATIBLE_ANTERIOR,
+)
+
+
 async def _crear_esquema(url: str) -> None:
     engine = create_async_engine(url_sqlalchemy(url))
     try:
         async with engine.begin() as conn:
             await conn.run_sync(SQLModel.metadata.create_all)
+            for sentencia in _ESQUEMA_PREVIO_AL_CATALOGO_GLOBAL:
+                await conn.exec_driver_sql(sentencia)
     finally:
         await engine.dispose()
 
@@ -993,23 +1014,3 @@ async def test_reenvio_traduce_el_rechazo_real_del_trigger(monkeypatch):
             await conexion.fetchval("select sexo from animales where id = $1", alta.id)
             == "hembra"
         )
-
-
-async def test_categoria_traduce_el_rechazo_real_del_trigger(monkeypatch):
-    async with _service_sobre_postgres() as (session, usuario, _):
-        await modulo_animales.AnimalService(session).crear(
-            usuario, _alta_servicio(categoria_id=_TERNERO)
-        )
-        await session.commit()
-
-        async def _cero(*_, **__):
-            return 0
-
-        monkeypatch.setattr(CategoriaRepository, "contar_animales_incompatibles", _cero)
-        with pytest.raises(ReglasCategoriaEnUsoError) as error:
-            await CategoriaService(session).actualizar(
-                usuario,
-                _TERNERO,
-                CategoriaUpdate(sexo_permitido="macho"),
-            )
-        assert error.value.details == {"animales_incompatibles": 1}

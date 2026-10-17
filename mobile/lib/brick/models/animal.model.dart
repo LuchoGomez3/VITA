@@ -1,7 +1,9 @@
 import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart';
 import 'package:brick_rest/brick_rest.dart';
+import 'package:brick_sqlite/brick_sqlite.dart' show Column, Sqlite;
 
 const _unchangedSyncErrorCode = Object();
+const _unchangedProductiveStatusChangedAt = Object();
 
 /// Sexo persistido localmente por Brick.
 ///
@@ -41,6 +43,27 @@ enum BrickAnimalSyncStatus {
 
   /// Rechazado por el backend y pendiente de correccion/revision.
   rejected,
+}
+
+/// Estado productivo del animal guardado en el dispositivo.
+///
+/// Es independiente de [BrickAnimalSyncStatus]: un animal puede estar vendido
+/// localmente y, al mismo tiempo, pendiente de sincronizacion.
+enum BrickAnimalProductiveStatus {
+  /// El dispositivo todavia no conoce el estado confirmado por backend.
+  unknown,
+
+  /// El animal integra el stock productivo disponible.
+  active,
+
+  /// El animal fue vendido y ya no integra el stock activo.
+  sold,
+
+  /// El animal fue registrado como muerto.
+  dead,
+
+  /// El animal fue dado de baja por otro motivo.
+  removed,
 }
 
 /// Define las rutas REST que Brick usa para sincronizar animales.
@@ -83,7 +106,7 @@ class BrickAnimalRequestTransformer extends RestRequestTransformer {
     final encodedEstablishmentId = Uri.encodeQueryComponent(establishmentId);
 
     return RestRequest(
-      url: '$animalsPath?establecimiento_id=$encodedEstablishmentId',
+      url: '$animalsPath?establecimiento_id=$encodedEstablishmentId&include_deleted=true',
       topLevelKey: 'data',
     );
   }
@@ -144,6 +167,8 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
     this.fatherId,
     this.coat,
     this.observations,
+    this.productiveStatus = BrickAnimalProductiveStatus.unknown,
+    this.productiveStatusChangedAt,
     this.syncStatus = BrickAnimalSyncStatus.pending,
     this.syncErrorCode,
   });
@@ -258,6 +283,33 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   @Rest(name: 'observaciones')
   final String? observations;
 
+  /// Estado productivo recibido desde backend y conservado en SQLite.
+  ///
+  /// No se envia en altas o actualizaciones comunes: backend es la autoridad
+  /// que crea animales activos y procesa las bajas comerciales o productivas.
+  @Rest(
+    name: 'estado',
+    ignoreTo: true,
+    fromGenerator: 'brickAnimalProductiveStatusFromBackend(%DATA_PROPERTY%)',
+  )
+  @Sqlite(
+    columnType: Column.varchar,
+    fromGenerator: 'brickAnimalProductiveStatusFromSqlite(%DATA_PROPERTY%)',
+    toGenerator: 'brickAnimalProductiveStatusToSqlite(%INSTANCE_PROPERTY%)',
+  )
+  final BrickAnimalProductiveStatus productiveStatus;
+
+  /// Momento autoritativo en que cambio por ultima vez el estado productivo.
+  ///
+  /// Permite atribuir ventas, muertes y bajas al periodo correcto sin confundir
+  /// el cambio con una edicion posterior de cualquier otro dato del animal.
+  @Rest(
+    name: 'estado_actualizado_en',
+    ignoreTo: true,
+    fromGenerator: 'brickNullableDateTimeFromBackend(%DATA_PROPERTY%)',
+  )
+  final DateTime? productiveStatusChangedAt;
+
   /// Estado local de sincronizacion.
   ///
   /// No se envia al backend: representa el estado de la cola/local sync en este
@@ -292,6 +344,8 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
     DateTime? updatedAt,
     String? lotId,
     String? lotName,
+    BrickAnimalProductiveStatus? productiveStatus,
+    Object? productiveStatusChangedAt = _unchangedProductiveStatusChangedAt,
   }) {
     final nextSyncErrorCode =
         identical(
@@ -300,6 +354,13 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
         )
         ? this.syncErrorCode
         : syncErrorCode as String?;
+    final nextProductiveStatusChangedAt =
+        identical(
+          productiveStatusChangedAt,
+          _unchangedProductiveStatusChangedAt,
+        )
+        ? this.productiveStatusChangedAt
+        : productiveStatusChangedAt as DateTime?;
 
     return BrickAnimalModel(
       localId: localId,
@@ -324,9 +385,46 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
       fatherId: fatherId,
       coat: coat,
       observations: observations,
+      productiveStatus: productiveStatus ?? this.productiveStatus,
+      productiveStatusChangedAt: nextProductiveStatusChangedAt,
       syncErrorCode: nextSyncErrorCode,
     )..primaryKey = primaryKey;
   }
+}
+
+/// Convierte el estado del backend al codigo estable usado por mobile.
+BrickAnimalProductiveStatus brickAnimalProductiveStatusFromBackend(
+  Object? value,
+) {
+  return switch (value) {
+    'activo' => BrickAnimalProductiveStatus.active,
+    'vendido' => BrickAnimalProductiveStatus.sold,
+    'muerto' => BrickAnimalProductiveStatus.dead,
+    'baja' => BrickAnimalProductiveStatus.removed,
+    _ => BrickAnimalProductiveStatus.unknown,
+  };
+}
+
+/// Recupera el estado local y migra las filas legacy al estado activo.
+BrickAnimalProductiveStatus brickAnimalProductiveStatusFromSqlite(
+  Object? value,
+) {
+  return switch (value) {
+    null => BrickAnimalProductiveStatus.active,
+    'active' => BrickAnimalProductiveStatus.active,
+    'sold' => BrickAnimalProductiveStatus.sold,
+    'dead' => BrickAnimalProductiveStatus.dead,
+    'removed' => BrickAnimalProductiveStatus.removed,
+    'unknown' => BrickAnimalProductiveStatus.unknown,
+    _ => BrickAnimalProductiveStatus.unknown,
+  };
+}
+
+/// Persiste el enum como texto para tolerar nuevos estados sin mover indices.
+String brickAnimalProductiveStatusToSqlite(
+  BrickAnimalProductiveStatus value,
+) {
+  return value.name;
 }
 
 // Pendiente de revisión: eliminar estas funciones si dejan de ser necesarias.
@@ -410,4 +508,12 @@ DateTime brickDateTimeFromBackend(Object? value) {
   }
 
   return DateTime.fromMillisecondsSinceEpoch(0);
+}
+
+/// Convierte timestamps opcionales del backend sin inventar una fecha.
+DateTime? brickNullableDateTimeFromBackend(Object? value) {
+  if (value is String && value.isNotEmpty) {
+    return DateTime.parse(value);
+  }
+  return null;
 }

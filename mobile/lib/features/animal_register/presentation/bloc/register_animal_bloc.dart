@@ -3,8 +3,13 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_category.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_parent.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_context.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/use_cases/check_animal_rfid_use_case.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_categories_use_case.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_parents_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
 
@@ -21,23 +26,36 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
   /// Crea el BLoC de registro en el paso inicial solicitado.
   ///
   /// [registrationContext] es un contrato de dominio que resuelve IDs de
-  /// establecimiento, lote, categoria y genealogia. Mantenerlo como abstraccion
+  /// establecimiento y lote. Mantenerlo como abstraccion
   /// evita que presentation dependa de implementaciones concretas de data.
   RegisterAnimalBloc({
     required RegisterAnimalUseCase registerAnimalUseCase,
+    required GetAnimalCategoriesUseCase getAnimalCategoriesUseCase,
+    required GetAnimalParentsUseCase getAnimalParentsUseCase,
+    required CheckAnimalRfidUseCase checkAnimalRfidUseCase,
     required AnimalRegistrationContext registrationContext,
     RegisterAnimalStep initialStep = RegisterAnimalStep.identification,
     String initialRfid = '',
+    String? initialEstablishmentId,
   }) : _registerAnimalUseCase = registerAnimalUseCase,
+       _getAnimalCategoriesUseCase = getAnimalCategoriesUseCase,
+       _getAnimalParentsUseCase = getAnimalParentsUseCase,
+       _checkAnimalRfidUseCase = checkAnimalRfidUseCase,
        _registrationContext = registrationContext,
        super(
          RegisterAnimalState(
            currentStep: initialStep,
-           draft: RegisterAnimalDraft.initial(rfid: initialRfid),
+           draft: RegisterAnimalDraft.initial(rfid: initialRfid).copyWith(
+             establishmentId: initialEstablishmentId,
+           ),
          ),
        ) {
     on<_DraftChanged>(_onDraftChanged);
-    on<_DestinationsRequested>(_onDestinationsRequested);
+    on<_RfidCaptured>(_onRfidCaptured);
+    on<_CategoriesRequested>(_onCategoriesRequested);
+    on<_ParentsRequested>(_onParentsRequested);
+    on<_EstablishmentsRequested>(_onEstablishmentsRequested);
+    on<_EstablishmentSelected>(_onEstablishmentSelected);
     on<_NextStepRequested>(_onNextStepRequested);
     on<_PreviousStepRequested>(_onPreviousStepRequested);
     on<_StepRequested>(_onStepRequested);
@@ -45,26 +63,125 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
   }
 
   final RegisterAnimalUseCase _registerAnimalUseCase;
+  final GetAnimalCategoriesUseCase _getAnimalCategoriesUseCase;
+  final GetAnimalParentsUseCase _getAnimalParentsUseCase;
+  final CheckAnimalRfidUseCase _checkAnimalRfidUseCase;
   final AnimalRegistrationContext _registrationContext;
+  int _parentsRequest = 0;
 
-  Future<void> _onDestinationsRequested(
-    _DestinationsRequested event,
+  Future<void> _onParentsRequested(
+    _ParentsRequested event,
     Emitter<RegisterAnimalState> emit,
   ) async {
-    emit(state.copyWith(destinationsState: const ResultState.loading()));
+    final establishmentId = state.draft.establishmentId;
+    if (establishmentId == null) return;
+    final request = ++_parentsRequest;
+    emit(state.copyWith(parentsState: const ResultState.loading()));
+    final result = await _getAnimalParentsUseCase(establishmentId);
+    // Un cambio de establecimiento invalida cualquier lectura anterior.
+    if (request != _parentsRequest) return;
+    switch (result) {
+      case Success<List<AnimalParent>>(:final data):
+        emit(state.copyWith(parentsState: ResultState.data(data)));
+      case Failure<List<AnimalParent>>(:final error):
+        emit(state.copyWith(parentsState: ResultState.error(error)));
+    }
+  }
+
+  Future<void> _onCategoriesRequested(
+    _CategoriesRequested event,
+    Emitter<RegisterAnimalState> emit,
+  ) async {
+    emit(state.copyWith(categoriesState: const ResultState.loading()));
+    final result = await _getAnimalCategoriesUseCase();
+    switch (result) {
+      case Success<List<AnimalCategory>>(:final data):
+        emit(
+          state.copyWith(
+            categoriesState: ResultState.data(data),
+          ),
+        );
+      case Failure<List<AnimalCategory>>(:final error):
+        emit(state.copyWith(categoriesState: ResultState.error(error)));
+    }
+  }
+
+  Future<void> _onEstablishmentsRequested(
+    _EstablishmentsRequested event,
+    Emitter<RegisterAnimalState> emit,
+  ) async {
+    emit(state.copyWith(establishmentsState: const ResultState.loading()));
     try {
-      final destinations = await _registrationContext.loadDestinations();
-      final selectedId = state.draft.destinationId;
-      final selectionStillExists = destinations.any(
-        (destination) => destination.id == selectedId,
+      final establishments = await _registrationContext.loadEstablishments();
+      final requestedId = state.draft.establishmentId;
+      final requested = establishments.where(
+        (establishment) => establishment.id == requestedId,
       );
+      final selected = requested.isNotEmpty
+          ? requested.first
+          : establishments.length == 1
+          ? establishments.first
+          : null;
       emit(
         state.copyWith(
-          destinationsState: ResultState.data(destinations),
-          draft: selectionStillExists ? state.draft : state.draft.copyWith(destinationId: null),
+          establishmentsState: ResultState.data(establishments),
+          destinationsState: const ResultState.initial(),
+          draft: state.draft.copyWith(
+            establishmentId: selected?.id,
+            establishmentName: selected?.name,
+            destinationId: null,
+          ),
         ),
       );
+      if (selected != null) {
+        add(RegisterAnimalEvent.establishmentSelected(selected.id));
+      }
     } on Object {
+      emit(
+        state.copyWith(
+          establishmentsState: const ResultState.error(
+            DomainException(
+              message: AnimalRegisterStrings.establishmentsLoadError,
+              code: DomainErrorCode.offline,
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _onEstablishmentSelected(
+    _EstablishmentSelected event,
+    Emitter<RegisterAnimalState> emit,
+  ) async {
+    final establishment = state.establishments.where((item) => item.id == event.establishmentId).firstOrNull;
+    if (establishment == null) {
+      return;
+    }
+
+    _parentsRequest++;
+    emit(
+      state.copyWith(
+        draft: state.draft.copyWith(
+          establishmentId: establishment.id,
+          establishmentName: establishment.name,
+          destinationId: null,
+          mother: null,
+          father: null,
+        ),
+        parentsState: const ResultState.initial(),
+        destinationsState: const ResultState.loading(),
+      ),
+    );
+    add(const RegisterAnimalEvent.parentsRequested());
+    try {
+      final destinations = await _registrationContext.loadDestinations(
+        establishment.id,
+      );
+      if (state.draft.establishmentId != establishment.id) return;
+      emit(state.copyWith(destinationsState: ResultState.data(destinations)));
+    } on Object {
+      if (state.draft.establishmentId != establishment.id) return;
       emit(
         state.copyWith(
           destinationsState: const ResultState.error(
@@ -86,21 +203,81 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     _DraftChanged event,
     Emitter<RegisterAnimalState> emit,
   ) {
-    emit(state.copyWith(draft: event.draft));
+    emit(
+      state.copyWith(
+        draft: event.draft,
+        rfidCheckState: event.draft.rfid == state.draft.rfid ? state.rfidCheckState : const ResultState.initial(),
+      ),
+    );
+  }
+
+  Future<void> _onRfidCaptured(
+    _RfidCaptured event,
+    Emitter<RegisterAnimalState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        draft: state.draft.copyWith(rfid: event.rfid),
+        rfidCheckState: const ResultState.loading(),
+      ),
+    );
+    await _checkRfid(event.rfid, emit);
+  }
+
+  Future<bool> _checkRfid(String rfid, Emitter<RegisterAnimalState> emit) async {
+    if (!_isValidRfid(rfid)) {
+      emit(
+        state.copyWith(
+          rfidCheckState: const ResultState.error(
+            DomainException(message: AnimalRegisterStrings.rfidInvalid, code: DomainErrorCode.validation),
+          ),
+        ),
+      );
+      return false;
+    }
+    emit(state.copyWith(rfidCheckState: const ResultState.loading()));
+    final result = await _checkAnimalRfidUseCase(rfid);
+    if (state.draft.rfid.trim() != rfid) return false;
+    switch (result) {
+      case Success<bool>(:final data):
+        emit(state.copyWith(rfidCheckState: ResultState.data(data)));
+        return !data;
+      case Failure<bool>(:final error):
+        emit(state.copyWith(rfidCheckState: ResultState.error(error)));
+        return false;
+    }
+    return false;
   }
 
   /// Avanza el wizard un paso, sin pasar de la pantalla de revision.
-  void _onNextStepRequested(
+  Future<void> _onNextStepRequested(
     _NextStepRequested event,
     Emitter<RegisterAnimalState> emit,
-  ) {
-    if (state.currentStep == RegisterAnimalStep.review) {
+  ) async {
+    final currentStep = state.currentStep;
+    if (currentStep == RegisterAnimalStep.review || state.rfidCheckState is Loading<bool>) {
       return;
     }
 
+    if (!state.draft.isValidForStep(currentStep)) {
+      emit(state.copyWith(showStepValidationErrors: true));
+      if (currentStep == RegisterAnimalStep.identification) {
+        await _checkRfid(state.draft.rfid.trim(), emit);
+      }
+      return;
+    }
+
+    if (currentStep == RegisterAnimalStep.identification && !await _checkRfid(state.draft.rfid.trim(), emit)) {
+      emit(state.copyWith(showStepValidationErrors: true));
+      return;
+    }
+
+    if (state.currentStep != currentStep) return;
+
     emit(
       state.copyWith(
-        currentStep: RegisterAnimalStep.values[state.currentStep.index + 1],
+        currentStep: RegisterAnimalStep.values[currentStep.index + 1],
+        showStepValidationErrors: false,
       ),
     );
   }
@@ -117,6 +294,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     emit(
       state.copyWith(
         currentStep: RegisterAnimalStep.values[state.currentStep.index - 1],
+        showStepValidationErrors: false,
       ),
     );
   }
@@ -126,7 +304,12 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     _StepRequested event,
     Emitter<RegisterAnimalState> emit,
   ) {
-    emit(state.copyWith(currentStep: event.step));
+    emit(
+      state.copyWith(
+        currentStep: event.step,
+        showStepValidationErrors: false,
+      ),
+    );
   }
 
   /// Valida el borrador, construye el request de dominio y lo envia.
@@ -145,6 +328,18 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
 
     final registration = _buildRegistration();
     if (registration case Failure<AnimalRegistration>(:final error)) {
+      emit(state.copyWith(submitResult: ResultState.error(error)));
+      return;
+    }
+
+    if (!await _checkRfid(state.draft.rfid.trim(), emit)) {
+      final error = switch (state.rfidCheckState) {
+        ResultError<bool>(:final error) => error,
+        _ => const DomainException(
+          message: AnimalRegisterStrings.rfidAlreadyRegistered,
+          code: DomainErrorCode.validation,
+        ),
+      };
       emit(state.copyWith(submitResult: ResultState.error(error)));
       return;
     }
@@ -177,7 +372,17 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     if (!_isValidRfid(rfid)) {
       return const Result.failure(
         DomainException(
-          message: 'Ingresá una caravana RFID válida de 15 dígitos.',
+          message: AnimalRegisterStrings.rfidInvalid,
+          code: DomainErrorCode.validation,
+        ),
+      );
+    }
+
+    final establishmentId = draft.establishmentId;
+    if (establishmentId == null) {
+      return const Result.failure(
+        DomainException(
+          message: AnimalRegisterStrings.establishmentRequired,
           code: DomainErrorCode.validation,
         ),
       );
@@ -187,7 +392,47 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     if (destinationId == null) {
       return const Result.failure(
         DomainException(
-          message: 'Seleccioná el potrero de destino antes de guardar.',
+          message: AnimalRegisterStrings.destinationRequired,
+          code: DomainErrorCode.validation,
+        ),
+      );
+    }
+
+    final breed = draft.breed.trim();
+    if (breed.isEmpty) {
+      return const Result.failure(
+        DomainException(
+          message: AnimalRegisterStrings.breedRequired,
+          code: DomainErrorCode.validation,
+        ),
+      );
+    }
+
+    if (draft.sex.isEmpty) {
+      return const Result.failure(
+        DomainException(
+          message: AnimalRegisterStrings.sexRequired,
+          code: DomainErrorCode.validation,
+        ),
+      );
+    }
+
+    final birthDate = draft.birthDate;
+    if (birthDate == null) {
+      return const Result.failure(
+        DomainException(
+          message: AnimalRegisterStrings.birthDateRequired,
+          code: DomainErrorCode.validation,
+        ),
+      );
+    }
+
+    final categoryId = draft.categoryId;
+    final categoryName = draft.categoryName;
+    if (categoryId == null || categoryName == null) {
+      return const Result.failure(
+        DomainException(
+          message: AnimalRegisterStrings.categoryRequired,
           code: DomainErrorCode.validation,
         ),
       );
@@ -197,7 +442,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     if (parsedWeight == null || parsedWeight <= 0) {
       return const Result.failure(
         DomainException(
-          message: 'Ingresá un peso válido mayor a 0 kg.',
+          message: AnimalRegisterStrings.invalidBirthWeight,
           code: DomainErrorCode.validation,
         ),
       );
@@ -216,16 +461,16 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
           rfidTagNumber: rfid,
           visualTag: visualTag,
           sex: _mapSex(draft.sex),
-          breed: draft.breed,
-          birthDate: draft.birthDate,
+          breed: breed,
+          birthDate: birthDate,
           lotId: _registrationContext.resolveLotId(destinationId),
           lotName: _registrationContext.resolveLotName(destinationId),
-          establishmentId: _registrationContext.establishmentId,
-          categoryId: _registrationContext.resolveCategoryId(draft.category),
-          categoryName: draft.category,
+          establishmentId: establishmentId,
+          categoryId: categoryId,
+          categoryName: categoryName,
           initialWeight: parsedWeight,
-          motherId: _registrationContext.resolveMotherId(draft.motherId),
-          fatherId: _registrationContext.resolveFatherId(draft.fatherId),
+          motherId: draft.mother?.id,
+          fatherId: draft.father?.id,
           weighingDate: DateTime.now().toUtc(),
         ),
       );
