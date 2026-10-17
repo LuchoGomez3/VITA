@@ -15,23 +15,11 @@ abstract final class ProfileStrings {
   /// Explica la relación del usuario con el listado.
   static const establishmentsSubtitle = 'Los campos de los que formás parte';
 
-  /// Etiqueta del ID interno.
-  static const userIdLabel = 'ID de usuario';
-
   /// Etiqueta del correo electrónico.
   static const emailLabel = 'Correo electrónico';
 
-  /// Etiqueta del nombre del usuario.
-  static const firstNameLabel = 'Nombre';
-
-  /// Etiqueta del apellido del usuario.
-  static const lastNameLabel = 'Apellido';
-
   /// Etiqueta del CUIT personal.
   static const cuitLabel = 'CUIT';
-
-  /// Etiqueta del rol de acceso.
-  static const roleLabel = 'Rol';
 
   /// Título del listado de establecimientos.
   static const establishmentsSection = 'Establecimientos';

@@ -70,7 +70,7 @@ void main() {
       final collapseDistance = delegate.maxExtent - delegate.minExtent;
       controller.jumpTo(collapseDistance);
       await tester.pumpAndSettle();
-      expect(_backgroundColors(tester, background), [AppColors.primary, AppColors.passwordStrengthVeryStrong]);
+      expect(_backgroundColors(tester, background), [AppColors.primary, AppColors.primaryDark]);
       expect(tester.widget<Text>(title).style?.color, AppColors.onPrimary);
 
       controller.jumpTo(collapseDistance + 48);
@@ -102,7 +102,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(tester.getSize(header).height, expandedHeight);
       expect(find.byType(CircleAvatar).hitTestable(), findsOneWidget);
-      expect(_backgroundColors(tester, background), [AppColors.primary, AppColors.passwordStrengthVeryStrong]);
+      expect(_backgroundColors(tester, background), [AppColors.primary, AppColors.primaryDark]);
     });
   }
 }

@@ -22,7 +22,6 @@ typedef ProfileCubitFactory = ProfileCubit Function();
 class ProfilePage extends StatefulWidget {
   /// Crea la pantalla con los datos de la sesión autenticada.
   const ProfilePage({
-    required this.userId,
     required this.email,
     required this.firstName,
     required this.lastName,
@@ -31,9 +30,6 @@ class ProfilePage extends StatefulWidget {
     required this.signOut,
     super.key,
   });
-
-  /// ID interno del usuario.
-  final String userId;
 
   /// Correo usado para iniciar sesión.
   final String email;

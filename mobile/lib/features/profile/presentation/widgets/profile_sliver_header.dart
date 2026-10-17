@@ -141,7 +141,7 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                     end: Alignment.bottomRight,
                     colors: [
                       Color.lerp(AppColors.primary, AppColors.backgroundTertiary, colorProgress)!,
-                      Color.lerp(AppColors.passwordStrengthVeryStrong, AppColors.backgroundTertiary, colorProgress)!,
+                      Color.lerp(AppColors.primaryDark, AppColors.backgroundTertiary, colorProgress)!,
                     ],
                   ),
                 ),
