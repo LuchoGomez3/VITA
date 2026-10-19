@@ -1,17 +1,17 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
-import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_photo.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 
 /// Presenta la foto completa en una superficie consistente con las tarjetas.
 class AnimalDetailPhoto extends StatelessWidget {
   /// Crea la foto desde una captura guardada en los datos privados de la app.
-  const AnimalDetailPhoto({required this.animalDetail, required this.contentBuilder, super.key});
+  const AnimalDetailPhoto({required this.photo, required this.contentBuilder, super.key});
 
-  /// Contiene la ruta local resuelta por la capa de datos.
-  final AnimalDetail animalDetail;
+  /// Contiene los bytes resueltos por el caso de uso, si existe una foto.
+  final AnimalPhoto? photo;
 
   /// Construye la ficha con una foto válida o con null para el diseño original.
   /// La misma decisión controla la imagen grande y el círculo del encabezado.
@@ -19,11 +19,11 @@ class AnimalDetailPhoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final path = animalDetail.localPhotoPath;
-    if (path == null) return contentBuilder(null);
+    final localPhoto = photo;
+    if (localPhoto == null) return contentBuilder(null);
 
-    return Image(
-      image: FileImage(File(path)),
+    return Image.memory(
+      Uint8List.fromList(localPhoto.bytes),
       fit: BoxFit.cover,
       semanticLabel: AnimalDetailStrings.animalPhotoLabel,
       // La proporción se aplica después de decodificar para no reservar espacio

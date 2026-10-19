@@ -7,7 +7,6 @@ import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
-import 'package:frontend_mayoral/core/storage/animal_photo_store.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_detail_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
@@ -19,7 +18,6 @@ void main() {
       final brickStore = _FakeAnimalBrickStore(localAnimal: _brickAnimal);
       final remoteDataSource = _FakeAnimalDetailRemoteDataSource();
       final repository = AnimalDetailRepositoryImpl(
-        photoStore: _FakeAnimalPhotoStore(),
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
@@ -33,14 +31,12 @@ void main() {
       final detail = (result as Success<AnimalDetail>).data;
       expect(detail.id, _animalId);
       expect(detail.syncStatus, AnimalSyncStatus.pending);
-      expect(detail.localPhotoPath, isNull);
     });
 
     test('queries backend when the animal is not cached locally', () async {
       final brickStore = _FakeAnimalBrickStore();
       final remoteDataSource = _FakeAnimalDetailRemoteDataSource();
       final repository = AnimalDetailRepositoryImpl(
-        photoStore: _FakeAnimalPhotoStore(),
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
@@ -67,7 +63,6 @@ void main() {
         categorias: [_categoria],
       );
       final repository = AnimalDetailRepositoryImpl(
-        photoStore: _FakeAnimalPhotoStore(),
         brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
         categoriaBrickStore: categoriaStore,
         pesajeBrickStore: pesajeStore,
@@ -88,7 +83,6 @@ void main() {
 
     test('uses cached related data when remote pulls fail', () async {
       final repository = AnimalDetailRepositoryImpl(
-        photoStore: _FakeAnimalPhotoStore(),
         brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
         categoriaBrickStore: _FakeCategoriaBrickStore(
           categorias: [_categoria],
@@ -110,7 +104,6 @@ void main() {
     test('retries a rejected animal through the Brick store', () async {
       final brickStore = _FakeAnimalBrickStore(localAnimal: _brickAnimal);
       final repository = AnimalDetailRepositoryImpl(
-        photoStore: _FakeAnimalPhotoStore(),
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
@@ -122,43 +115,10 @@ void main() {
       expect(result, const Result<void>.success(null));
       expect(brickStore.retriedAnimalIds, [_animalId]);
     });
-
-    test('reads the private photo independently of remote weighing URLs', () async {
-      final photoStore = _FakeAnimalPhotoStore(path: '/private/animal/photo');
-      final repository = AnimalDetailRepositoryImpl(
-        photoStore: photoStore,
-        brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
-        categoriaBrickStore: _FakeCategoriaBrickStore(),
-        pesajeBrickStore: _FakePesajeBrickStore(pesajes: [_latestPesaje], failPull: true),
-        remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
-      );
-
-      final result = await repository.getById(_animalId);
-
-      expect((result as Success<AnimalDetail>).data.localPhotoPath, '/private/animal/photo');
-      expect(photoStore.animalId, _animalId);
-      expect(photoStore.establishmentId, 'establishment-id');
-    });
   });
 }
 
 const _animalId = '96a221e0-c202-42ac-8b8e-11d89dc41f8d';
-
-/// Sustituye el disco para probar que el repository consulta la foto del animal.
-class _FakeAnimalPhotoStore extends AnimalPhotoStore {
-  _FakeAnimalPhotoStore({this.path});
-
-  final String? path;
-  String? animalId;
-  String? establishmentId;
-
-  @override
-  Future<String?> findPhoto({required String establishmentId, required String animalId}) async {
-    this.establishmentId = establishmentId;
-    this.animalId = animalId;
-    return path;
-  }
-}
 
 final _brickAnimal = BrickAnimalModel(
   localId: _animalId,

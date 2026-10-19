@@ -5,8 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/storage/animal_photo_store.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
   late Directory directory;
   late AnimalPhotoStore store;
 
@@ -28,30 +26,29 @@ void main() {
       sourcePath: capture.path,
     );
     await capture.delete();
-    final path = await store.findPhoto(
+    final bytes = await store.readPhotoBytes(
       establishmentId: 'farm',
       animalId: 'animal',
     );
 
-    expect(path, isNotNull);
-    expect(await File(path!).readAsBytes(), [1, 2, 3]);
+    expect(bytes, [1, 2, 3]);
     final reopened = AnimalPhotoStore(directoryProvider: () async => directory);
     expect(
-      await reopened.findPhoto(
+      await reopened.readPhotoBytes(
         establishmentId: 'farm',
         animalId: 'animal',
       ),
-      path,
+      [1, 2, 3],
     );
     expect(
-      await store.findPhoto(
+      await store.readPhotoBytes(
         establishmentId: 'other-farm',
         animalId: 'animal',
       ),
       isNull,
     );
     expect(
-      await store.findPhoto(
+      await store.readPhotoBytes(
         establishmentId: 'farm',
         animalId: 'other-animal',
       ),
@@ -61,7 +58,7 @@ void main() {
 
   test('replaces the previous photo and returns null after removal', () async {
     final capture = await File('${directory.path}/capture').writeAsBytes([1]);
-    final path = await store.savePhoto(
+    await store.savePhoto(
       establishmentId: 'farm',
       animalId: 'animal',
       sourcePath: capture.path,
@@ -74,10 +71,18 @@ void main() {
       sourcePath: capture.path,
     );
 
-    expect(await File(path).readAsBytes(), [2]);
-    await File(path).delete();
     expect(
-      await store.findPhoto(
+      await store.readPhotoBytes(
+        establishmentId: 'farm',
+        animalId: 'animal',
+      ),
+      [2],
+    );
+    await File(
+      '${directory.path}/animal_photos/farm/animal/photo',
+    ).delete();
+    expect(
+      await store.readPhotoBytes(
         establishmentId: 'farm',
         animalId: 'animal',
       ),
@@ -86,19 +91,18 @@ void main() {
   });
 
   test('stores in-memory JPEG bytes in the same private location', () async {
-    final path = await store.savePhotoBytes(
+    await store.savePhotoBytes(
       establishmentId: 'farm',
       animalId: 'animal',
       jpegBytes: Uint8List.fromList([4, 5, 6]),
     );
 
-    expect(await File(path).readAsBytes(), [4, 5, 6]);
     expect(
-      await store.findPhoto(
+      await store.readPhotoBytes(
         establishmentId: 'farm',
         animalId: 'animal',
       ),
-      path,
+      [4, 5, 6],
     );
   });
 }

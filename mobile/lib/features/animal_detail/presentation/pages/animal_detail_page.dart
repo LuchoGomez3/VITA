@@ -5,7 +5,9 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_photo.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_state.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_data_grid.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_header.dart';
@@ -53,12 +55,18 @@ class _AnimalDetailView extends StatelessWidget {
         title: AnimalDetailStrings.pageTitle,
         onBackPressed: () => _close(context),
       ),
-      body: BlocBuilder<AnimalDetailCubit, ResultState<AnimalDetail>>(
+      body: BlocBuilder<AnimalDetailCubit, AnimalDetailState>(
         builder: (context, state) {
-          return switch (state) {
+          return switch (state.detail) {
             Loading<AnimalDetail>() => const Center(child: CircularProgressIndicator()),
             ResultError<AnimalDetail>(:final error) => Center(child: Text(error.message)),
-            Data<AnimalDetail>(:final data) => _AnimalDetailContent(animalDetail: data),
+            Data<AnimalDetail>(:final data) => _AnimalDetailContent(
+              animalDetail: data,
+              photo: switch (state.photo) {
+                Data<AnimalPhoto?>(:final data) => data,
+                _ => null,
+              },
+            ),
             _ => const SizedBox.shrink(),
           };
         },
@@ -77,14 +85,15 @@ class _AnimalDetailView extends StatelessWidget {
 }
 
 class _AnimalDetailContent extends StatelessWidget {
-  const _AnimalDetailContent({required this.animalDetail});
+  const _AnimalDetailContent({required this.animalDetail, required this.photo});
 
   final AnimalDetail animalDetail;
+  final AnimalPhoto? photo;
 
   @override
   Widget build(BuildContext context) {
     return AnimalDetailPhoto(
-      animalDetail: animalDetail,
+      photo: photo,
       contentBuilder: (photo) => _AnimalDetailLayout(
         animalDetail: animalDetail,
         photo: photo,

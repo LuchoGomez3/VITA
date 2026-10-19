@@ -9,8 +9,13 @@ el campo remoto `foto_url` de los pesajes.
 
 `AnimalPhotoStore`, en `lib/core/storage/animal_photo_store.dart`, conserva
 una foto por animal y establecimiento. Una captura nueva reemplaza la anterior;
-un pesaje sin captura conserva la foto existente. El detalle consulta el store
-desde data y entrega `AnimalDetail.localPhotoPath` a presentation.
+un pesaje sin captura conserva la foto existente. El repositorio local de fotos
+lee el store desde data y entrega un `AnimalPhoto` con bytes al dominio. La ruta
+fisica queda encapsulada dentro del store y presentation usa `Image.memory`.
+
+La ficha y la foto tienen estados de carga independientes. Si el proveedor del
+directorio o el filesystem fallan, data registra el incidente sin IDs ni rutas
+y responde foto ausente; el detalle del animal permanece disponible.
 
 Si no hay foto, mientras carga o si falla la decodificación, se conserva el
 avatar original y no se reserva un bloque vacío. Cuando la foto se decodifica,

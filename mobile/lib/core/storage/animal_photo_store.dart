@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/painting.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// Fotos privadas del dispositivo compartidas por pesaje y detalle animal.
@@ -20,7 +19,7 @@ class AnimalPhotoStore {
   ///
   /// La rama de pesaje debe esperar esta copia antes de eliminar la captura
   /// temporal. Si falla, el error se propaga para que el flujo pueda informarlo.
-  Future<String> savePhoto({
+  Future<void> savePhoto({
     required String establishmentId,
     required String animalId,
     required String sourcePath,
@@ -28,16 +27,13 @@ class AnimalPhotoStore {
     final destination = await _photoFile(establishmentId, animalId);
     await destination.parent.create(recursive: true);
     await File(sourcePath).copy(destination.path);
-    // Evita mostrar la foto anterior desde memoria después de reemplazarla.
-    await FileImage(destination).evict();
-    return destination.path;
   }
 
   /// Guarda bytes JPEG cuando la captura no existe como archivo temporal.
   ///
   /// La ruta coincide con la que consulta el detalle y queda fuera de Brick y
   /// de la cola de sincronización.
-  Future<String> savePhotoBytes({
+  Future<void> savePhotoBytes({
     required String establishmentId,
     required String animalId,
     required Uint8List jpegBytes,
@@ -45,23 +41,16 @@ class AnimalPhotoStore {
     final destination = await _photoFile(establishmentId, animalId);
     await destination.parent.create(recursive: true);
     await destination.writeAsBytes(jpegBytes, flush: true);
-    await FileImage(destination).evict();
-    return destination.path;
   }
 
-  /// Devuelve la ruta local o null cuando no hay foto o no se puede leer.
-  ///
-  /// La foto es opcional: un fallo de acceso al disco no invalida la ficha.
-  Future<String?> findPhoto({
+  /// Lee los bytes de la foto o devuelve null cuando no existe.
+  Future<Uint8List?> readPhotoBytes({
     required String establishmentId,
     required String animalId,
   }) async {
-    try {
-      final file = await _photoFile(establishmentId, animalId);
-      return file.existsSync() ? file.path : null;
-    } on FileSystemException {
-      return null;
-    }
+    final file = await _photoFile(establishmentId, animalId);
+    if (!file.existsSync()) return null;
+    return file.readAsBytes();
   }
 
   /// Codifica los IDs para que cada uno ocupe un único segmento de la ruta.
