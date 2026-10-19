@@ -34,7 +34,7 @@ class HomeDashboardContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: context.read<HomeDashboardCubit>().load,
+      onRefresh: context.read<HomeDashboardCubit>().refresh,
       child: ListView(
         // El espacio seguro viaja con la lista: permite ver contenido detrás
         // de la barra y deja la última tarjeta accesible al terminar el scroll.

@@ -278,7 +278,9 @@ class AnimalService:
         if data.pelaje is not None:
             animal.pelaje = data.pelaje
         if data.estado is not None:
-            animal.estado = data.estado
+            if data.estado != animal.estado:
+                animal.estado = data.estado
+                animal.estado_actualizado_en = entrante
         if data.deleted_at is not None:
             await self._aplicar_borrado(animal, data.deleted_at)
         animal.updated_at = entrante

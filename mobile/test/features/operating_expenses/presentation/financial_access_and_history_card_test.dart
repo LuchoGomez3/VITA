@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/core/authentication/establishment_membership.da
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
+import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard_source.dart';
 import 'package:frontend_mayoral/features/home/domain/repositories/home_dashboard_repository.dart';
 import 'package:frontend_mayoral/features/home/domain/use_cases/get_home_dashboard_use_case.dart';
 import 'package:frontend_mayoral/features/home/domain/use_cases/get_home_establishments_use_case.dart';
@@ -137,7 +138,16 @@ const _dashboard = HomeDashboard(
 
 class _HomeRepository implements HomeDashboardRepository {
   @override
-  Future<Result<HomeDashboard>> getDashboard({Set<String>? establishmentIds}) async => const Result.success(_dashboard);
+  Future<Result<HomeDashboardSource>> getDashboardSource({
+    Set<String>? establishmentIds,
+  }) async => const Result.success(
+    HomeDashboardSource(
+      animals: [],
+      weighings: [],
+      categoryNamesById: {},
+      operatingExpensesCents: 0,
+    ),
+  );
 
   @override
   Future<Result<Map<String, EstablishmentMembership>>> getEstablishments() async {
