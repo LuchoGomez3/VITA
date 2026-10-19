@@ -24,4 +24,7 @@ abstract final class LivestockStrings {
 
   /// Error recuperable al obtener el catálogo local.
   static const establishmentsError = 'No se pudieron cargar los establecimientos. Intentá nuevamente.';
+
+  /// Estado del botón mientras se consulta el catálogo local.
+  static const loadingEstablishments = 'Cargando...';
 }

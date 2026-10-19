@@ -40,14 +40,14 @@ class _FrontendMayoralAppState extends State<FrontendMayoralApp> {
     final createCubit = widget._createAuthSessionCubit ?? auth_composition.createAuthSessionCubit;
     _authSessionCubit = createCubit();
     _routerRefreshNotifier = AuthRouterRefreshNotifier(_authSessionCubit);
-    const establishmentCatalog = EstablishmentCatalog(
-      secureStorage: FlutterSecureStorageService(),
-    );
     _router = AppRouter.create(
       authSessionCubit: _authSessionCubit,
       refreshListenable: _routerRefreshNotifier,
-      establishmentCatalog: establishmentCatalog,
-      getEstablishmentRole: const GetEstablishmentRoleUseCase(establishmentCatalog),
+      getEstablishmentRole: const GetEstablishmentRoleUseCase(
+        EstablishmentCatalog(
+          secureStorage: FlutterSecureStorageService(),
+        ),
+      ),
     );
     unawaited(_authSessionCubit.restoreSession());
   }
