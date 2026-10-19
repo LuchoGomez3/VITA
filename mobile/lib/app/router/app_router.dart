@@ -39,6 +39,7 @@ import 'package:frontend_mayoral/features/field/presentation/strings/field_strin
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
+import 'package:frontend_mayoral/features/livestock/livestock_composition.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/financial_access_denied_page.dart';
@@ -138,7 +139,14 @@ class AppRouter {
               routes: [
                 GoRoute(
                   path: AppRoutes.livestock,
-                  builder: (context, state) => const LivestockPage(),
+                  builder: (context, state) => LivestockPage(
+                    createCubit: createLivestockReaderCubit,
+                    onIdentifyAnimal: (establishmentId) async {
+                      await context.push<void>(
+                        AppRoutes.rfidScanForEstablishment(establishmentId),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
@@ -162,7 +170,6 @@ class AppRouter {
 
                     return switch (sessionState) {
                       AuthSessionAuthenticated(:final session) => ProfilePage(
-                        userId: session.user.id,
                         email: session.user.email,
                         firstName: session.user.firstName,
                         lastName: session.user.lastName,
@@ -171,7 +178,6 @@ class AppRouter {
                         signOut: context.read<AuthSessionCubit>().signOut,
                       ),
                       _ => ProfilePage(
-                        userId: ProfileStrings.emptyCredential,
                         email: ProfileStrings.emptyCredential,
                         firstName: ProfileStrings.emptyCredential,
                         lastName: ProfileStrings.emptyCredential,

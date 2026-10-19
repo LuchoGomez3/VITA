@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 
@@ -41,6 +43,12 @@ class AnimalDetailHeader extends StatelessWidget {
                 AnimalDetailStrings.animalIdLabel,
                 style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),
               ),
+              const SizedBox(height: AppSpacing.xxs),
+              AppStatusChip(
+                label: animalDetail.productiveStatus.label,
+                tone: animalDetail.productiveStatus.tone,
+                showDot: true,
+              ),
             ],
           ),
         ),
@@ -48,6 +56,23 @@ class AnimalDetailHeader extends StatelessWidget {
       ],
     );
   }
+}
+
+extension on AnimalProductiveStatus {
+  String get label => switch (this) {
+    AnimalProductiveStatus.active => AnimalDetailStrings.productiveStatusActive,
+    AnimalProductiveStatus.sold => AnimalDetailStrings.productiveStatusSold,
+    AnimalProductiveStatus.dead => AnimalDetailStrings.productiveStatusDead,
+    AnimalProductiveStatus.removed => AnimalDetailStrings.productiveStatusRemoved,
+    AnimalProductiveStatus.unknown => AnimalDetailStrings.productiveStatusUnknown,
+  };
+
+  AppStatusChipTone get tone => switch (this) {
+    AnimalProductiveStatus.active => AppStatusChipTone.success,
+    AnimalProductiveStatus.sold || AnimalProductiveStatus.removed => AppStatusChipTone.warning,
+    AnimalProductiveStatus.dead => AppStatusChipTone.error,
+    AnimalProductiveStatus.unknown => AppStatusChipTone.neutral,
+  };
 }
 
 class _CurrentLocation extends StatelessWidget {

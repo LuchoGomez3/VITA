@@ -179,25 +179,37 @@ class BrickAnimalStore implements AnimalBrickStore {
     final localAnimalsById = {
       for (final animal in localAnimals) animal.localId: animal,
     };
-    final protectedLocalIds = localAnimals
-        .where(
-          (animal) =>
-              animal.syncStatus == BrickAnimalSyncStatus.pending || animal.syncStatus == BrickAnimalSyncStatus.rejected,
-        )
-        .map((animal) => animal.localId)
-        .toSet();
-
     for (final animal in remoteAnimals) {
-      if (protectedLocalIds.contains(animal.localId)) {
-        continue;
-      }
-
-      final synchronizedAnimal = animal.copyWith(
-        syncStatus: BrickAnimalSyncStatus.synchronized,
-        syncErrorCode: null,
-      )..primaryKey = localAnimalsById[animal.localId]?.primaryKey;
+      final local = localAnimalsById[animal.localId];
+      final synchronizedAnimal = reconcileRemoteAnimal(
+        local: local,
+        remote: animal,
+      )..primaryKey = local?.primaryKey;
       await _repository.upsertLocal<BrickAnimalModel>(synchronizedAnimal);
     }
+  }
+
+  /// Fusiona el estado autoritativo sin pisar un alta local pendiente.
+  ///
+  /// Los cambios de lote pertenecen al agregado movimiento y ya no marcan al
+  /// animal como pendiente. Esta fusion queda para altas realmente pendientes:
+  /// conserva sus datos locales, pero nunca retiene un estado productivo viejo.
+  @visibleForTesting
+  static BrickAnimalModel reconcileRemoteAnimal({
+    required BrickAnimalModel? local,
+    required BrickAnimalModel remote,
+  }) {
+    final protectsLocalWrite = local != null && local.syncStatus != BrickAnimalSyncStatus.synchronized;
+    if (protectsLocalWrite) {
+      return local.copyWith(
+        productiveStatus: remote.productiveStatus,
+        productiveStatusChangedAt: remote.productiveStatusChangedAt,
+      );
+    }
+    return remote.copyWith(
+      syncStatus: BrickAnimalSyncStatus.synchronized,
+      syncErrorCode: null,
+    );
   }
 
   @override

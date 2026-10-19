@@ -34,6 +34,7 @@ dependencies:
   brick_offline_first_with_rest: ^4.0.0
   brick_rest: ^4.0.0
   brick_sqlite: ^4.0.0
+  connectivity_plus: 7.0.0
   cupertino_icons: ^1.0.8
   flutter:
     sdk: flutter

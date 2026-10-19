@@ -14,6 +14,21 @@ class AnimalDetailStrings {
   /// Etiqueta de ubicacion actual.
   static const currentLocationLabel = 'Ubicación actual';
 
+  /// Estado productivo activo.
+  static const productiveStatusActive = 'Activo';
+
+  /// Estado productivo vendido.
+  static const productiveStatusSold = 'Vendido';
+
+  /// Estado productivo muerto.
+  static const productiveStatusDead = 'Muerto';
+
+  /// Estado productivo dado de baja.
+  static const productiveStatusRemoved = 'Dado de baja';
+
+  /// Estado productivo que esta version no reconoce.
+  static const productiveStatusUnknown = 'Estado desconocido';
+
   /// Etiqueta de raza.
   static const breedLabel = 'Raza';
 

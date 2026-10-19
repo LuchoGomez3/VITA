@@ -34,7 +34,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<HomeDashboardCubit>(
-      create: (_) => createCubit()..load(),
+      create: (_) => createCubit()..initialize(),
       child: _HomeDashboardView(userName: _displayUserName),
     );
   }
@@ -54,29 +54,56 @@ class _HomeDashboardView extends StatefulWidget {
   State<_HomeDashboardView> createState() => _HomeDashboardViewState();
 }
 
-class _HomeDashboardViewState extends State<_HomeDashboardView> {
+class _HomeDashboardViewState extends State<_HomeDashboardView> with WidgetsBindingObserver {
   bool _isSelectorExpanded = false;
   String? _highlightedEstablishmentId;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(context.read<HomeDashboardCubit>().refresh());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          HomeExpandableHeader(
-            greeting: _greeting(DateTime.now(), widget.userName),
-            isExpanded: _isSelectorExpanded,
-            highlightedEstablishmentId: _highlightedEstablishmentId,
-            onToggle: _toggleSelector,
-            onSelected: _selectEstablishment,
-            onIdentifyAnimal: _identifyAnimal,
-          ),
-          Expanded(
-            child: _HomeDashboardBody(
-              onEstablishmentSelectionRequested: _openSelector,
+    return BlocListener<HomeDashboardCubit, HomeDashboardState>(
+      listenWhen: (previous, current) => previous.refreshError != current.refreshError && current.refreshError != null,
+      listener: (context, state) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(state.refreshError!.message)),
+        );
+      },
+      child: Scaffold(
+        body: Column(
+          children: [
+            HomeExpandableHeader(
+              greeting: _greeting(DateTime.now(), widget.userName),
+              isExpanded: _isSelectorExpanded,
+              highlightedEstablishmentId: _highlightedEstablishmentId,
+              onToggle: _toggleSelector,
+              onSelected: _selectEstablishment,
+              onIdentifyAnimal: _identifyAnimal,
             ),
-          ),
-        ],
+            Expanded(
+              child: _HomeDashboardBody(
+                onEstablishmentSelectionRequested: _openSelector,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -144,6 +171,8 @@ class _HomeDashboardBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
+      // El tablero puede desplazarse por detrás de la barra inferior.
+      bottom: false,
       child: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
         builder: (context, state) {
           final dashboardState = state.dashboardState;

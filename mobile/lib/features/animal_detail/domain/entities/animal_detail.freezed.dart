@@ -297,7 +297,8 @@ mixin _$AnimalDetail {
  double get currentWeight;/// Metodo asociado al ultimo peso conocido.
  AnimalWeighingMethod get weighingMethod;/// Fecha del ultimo pesaje conocido.
  DateTime get weighingDate;/// Estado local de sincronizacion con backend.
- AnimalSyncStatus get syncStatus;/// Ultima actualizacion conocida.
+ AnimalSyncStatus get syncStatus;/// Estado productivo que determina si el animal sigue en stock.
+ AnimalProductiveStatus get productiveStatus;/// Ultima actualizacion conocida.
  DateTime get updatedAt;/// Historial real de pesajes ordenado desde el mas antiguo al mas reciente.
  List<AnimalWeightRecord> get weightHistory;/// ID backend de la madre, si existe.
  String? get motherId;/// ID backend del padre, si existe.
@@ -316,16 +317,16 @@ $AnimalDetailCopyWith<AnimalDetail> get copyWith => _$AnimalDetailCopyWithImpl<A
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AnimalDetail&&(identical(other.id, id) || other.id == id)&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.sex, sex) || other.sex == sex)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.birthDate, birthDate) || other.birthDate == birthDate)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.lotName, lotName) || other.lotName == lotName)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.currentWeight, currentWeight) || other.currentWeight == currentWeight)&&(identical(other.weighingMethod, weighingMethod) || other.weighingMethod == weighingMethod)&&(identical(other.weighingDate, weighingDate) || other.weighingDate == weighingDate)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other.weightHistory, weightHistory)&&(identical(other.motherId, motherId) || other.motherId == motherId)&&(identical(other.fatherId, fatherId) || other.fatherId == fatherId)&&(identical(other.coat, coat) || other.coat == coat)&&(identical(other.observations, observations) || other.observations == observations)&&(identical(other.localPhotoPath, localPhotoPath) || other.localPhotoPath == localPhotoPath)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AnimalDetail&&(identical(other.id, id) || other.id == id)&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.sex, sex) || other.sex == sex)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.birthDate, birthDate) || other.birthDate == birthDate)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.lotName, lotName) || other.lotName == lotName)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.currentWeight, currentWeight) || other.currentWeight == currentWeight)&&(identical(other.weighingMethod, weighingMethod) || other.weighingMethod == weighingMethod)&&(identical(other.weighingDate, weighingDate) || other.weighingDate == weighingDate)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.productiveStatus, productiveStatus) || other.productiveStatus == productiveStatus)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other.weightHistory, weightHistory)&&(identical(other.motherId, motherId) || other.motherId == motherId)&&(identical(other.fatherId, fatherId) || other.fatherId == fatherId)&&(identical(other.coat, coat) || other.coat == coat)&&(identical(other.observations, observations) || other.observations == observations)&&(identical(other.localPhotoPath, localPhotoPath) || other.localPhotoPath == localPhotoPath)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
 }
 
 
 @override
-int get hashCode => Object.hashAll([runtimeType,id,rfidTagNumber,visualTag,sex,breed,birthDate,categoryId,categoryName,lotId,lotName,establishmentId,currentWeight,weighingMethod,weighingDate,syncStatus,updatedAt,const DeepCollectionEquality().hash(weightHistory),motherId,fatherId,coat,observations,localPhotoPath,syncErrorCode]);
+int get hashCode => Object.hashAll([runtimeType,id,rfidTagNumber,visualTag,sex,breed,birthDate,categoryId,categoryName,lotId,lotName,establishmentId,currentWeight,weighingMethod,weighingDate,syncStatus,productiveStatus,updatedAt,const DeepCollectionEquality().hash(weightHistory),motherId,fatherId,coat,observations,localPhotoPath,syncErrorCode]);
 
 @override
 String toString() {
-  return 'AnimalDetail(id: $id, rfidTagNumber: $rfidTagNumber, visualTag: $visualTag, sex: $sex, breed: $breed, birthDate: $birthDate, categoryId: $categoryId, categoryName: $categoryName, lotId: $lotId, lotName: $lotName, establishmentId: $establishmentId, currentWeight: $currentWeight, weighingMethod: $weighingMethod, weighingDate: $weighingDate, syncStatus: $syncStatus, updatedAt: $updatedAt, weightHistory: $weightHistory, motherId: $motherId, fatherId: $fatherId, coat: $coat, observations: $observations, localPhotoPath: $localPhotoPath, syncErrorCode: $syncErrorCode)';
+  return 'AnimalDetail(id: $id, rfidTagNumber: $rfidTagNumber, visualTag: $visualTag, sex: $sex, breed: $breed, birthDate: $birthDate, categoryId: $categoryId, categoryName: $categoryName, lotId: $lotId, lotName: $lotName, establishmentId: $establishmentId, currentWeight: $currentWeight, weighingMethod: $weighingMethod, weighingDate: $weighingDate, syncStatus: $syncStatus, productiveStatus: $productiveStatus, updatedAt: $updatedAt, weightHistory: $weightHistory, motherId: $motherId, fatherId: $fatherId, coat: $coat, observations: $observations, localPhotoPath: $localPhotoPath, syncErrorCode: $syncErrorCode)';
 }
 
 
@@ -336,7 +337,7 @@ abstract mixin class $AnimalDetailCopyWith<$Res>  {
   factory $AnimalDetailCopyWith(AnimalDetail value, $Res Function(AnimalDetail) _then) = _$AnimalDetailCopyWithImpl;
 @useResult
 $Res call({
- String id, String rfidTagNumber, String visualTag, AnimalSex sex, String breed, DateTime birthDate, String categoryId, String categoryName, String lotId, String lotName, String establishmentId, double currentWeight, AnimalWeighingMethod weighingMethod, DateTime weighingDate, AnimalSyncStatus syncStatus, DateTime updatedAt, List<AnimalWeightRecord> weightHistory, String? motherId, String? fatherId, String? coat, String? observations, String? localPhotoPath, String? syncErrorCode
+ String id, String rfidTagNumber, String visualTag, AnimalSex sex, String breed, DateTime birthDate, String categoryId, String categoryName, String lotId, String lotName, String establishmentId, double currentWeight, AnimalWeighingMethod weighingMethod, DateTime weighingDate, AnimalSyncStatus syncStatus, AnimalProductiveStatus productiveStatus, DateTime updatedAt, List<AnimalWeightRecord> weightHistory, String? motherId, String? fatherId, String? coat, String? observations, String? localPhotoPath, String? syncErrorCode
 });
 
 
@@ -353,7 +354,7 @@ class _$AnimalDetailCopyWithImpl<$Res>
 
 /// Create a copy of AnimalDetail
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? rfidTagNumber = null,Object? visualTag = null,Object? sex = null,Object? breed = null,Object? birthDate = null,Object? categoryId = null,Object? categoryName = null,Object? lotId = null,Object? lotName = null,Object? establishmentId = null,Object? currentWeight = null,Object? weighingMethod = null,Object? weighingDate = null,Object? syncStatus = null,Object? updatedAt = null,Object? weightHistory = null,Object? motherId = freezed,Object? fatherId = freezed,Object? coat = freezed,Object? observations = freezed,Object? localPhotoPath = freezed,Object? syncErrorCode = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? rfidTagNumber = null,Object? visualTag = null,Object? sex = null,Object? breed = null,Object? birthDate = null,Object? categoryId = null,Object? categoryName = null,Object? lotId = null,Object? lotName = null,Object? establishmentId = null,Object? currentWeight = null,Object? weighingMethod = null,Object? weighingDate = null,Object? syncStatus = null,Object? productiveStatus = null,Object? updatedAt = null,Object? weightHistory = null,Object? motherId = freezed,Object? fatherId = freezed,Object? coat = freezed,Object? observations = freezed,Object? localPhotoPath = freezed,Object? syncErrorCode = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,rfidTagNumber: null == rfidTagNumber ? _self.rfidTagNumber : rfidTagNumber // ignore: cast_nullable_to_non_nullable
@@ -370,7 +371,8 @@ as String,currentWeight: null == currentWeight ? _self.currentWeight : currentWe
 as double,weighingMethod: null == weighingMethod ? _self.weighingMethod : weighingMethod // ignore: cast_nullable_to_non_nullable
 as AnimalWeighingMethod,weighingDate: null == weighingDate ? _self.weighingDate : weighingDate // ignore: cast_nullable_to_non_nullable
 as DateTime,syncStatus: null == syncStatus ? _self.syncStatus : syncStatus // ignore: cast_nullable_to_non_nullable
-as AnimalSyncStatus,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as AnimalSyncStatus,productiveStatus: null == productiveStatus ? _self.productiveStatus : productiveStatus // ignore: cast_nullable_to_non_nullable
+as AnimalProductiveStatus,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,weightHistory: null == weightHistory ? _self.weightHistory : weightHistory // ignore: cast_nullable_to_non_nullable
 as List<AnimalWeightRecord>,motherId: freezed == motherId ? _self.motherId : motherId // ignore: cast_nullable_to_non_nullable
 as String?,fatherId: freezed == fatherId ? _self.fatherId : fatherId // ignore: cast_nullable_to_non_nullable
@@ -460,10 +462,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String rfidTagNumber,  String visualTag,  AnimalSex sex,  String breed,  DateTime birthDate,  String categoryId,  String categoryName,  String lotId,  String lotName,  String establishmentId,  double currentWeight,  AnimalWeighingMethod weighingMethod,  DateTime weighingDate,  AnimalSyncStatus syncStatus,  DateTime updatedAt,  List<AnimalWeightRecord> weightHistory,  String? motherId,  String? fatherId,  String? coat,  String? observations,  String? localPhotoPath,  String? syncErrorCode)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String rfidTagNumber,  String visualTag,  AnimalSex sex,  String breed,  DateTime birthDate,  String categoryId,  String categoryName,  String lotId,  String lotName,  String establishmentId,  double currentWeight,  AnimalWeighingMethod weighingMethod,  DateTime weighingDate,  AnimalSyncStatus syncStatus,  AnimalProductiveStatus productiveStatus,  DateTime updatedAt,  List<AnimalWeightRecord> weightHistory,  String? motherId,  String? fatherId,  String? coat,  String? observations,  String? localPhotoPath,  String? syncErrorCode)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AnimalDetail() when $default != null:
-return $default(_that.id,_that.rfidTagNumber,_that.visualTag,_that.sex,_that.breed,_that.birthDate,_that.categoryId,_that.categoryName,_that.lotId,_that.lotName,_that.establishmentId,_that.currentWeight,_that.weighingMethod,_that.weighingDate,_that.syncStatus,_that.updatedAt,_that.weightHistory,_that.motherId,_that.fatherId,_that.coat,_that.observations,_that.localPhotoPath,_that.syncErrorCode);case _:
+return $default(_that.id,_that.rfidTagNumber,_that.visualTag,_that.sex,_that.breed,_that.birthDate,_that.categoryId,_that.categoryName,_that.lotId,_that.lotName,_that.establishmentId,_that.currentWeight,_that.weighingMethod,_that.weighingDate,_that.syncStatus,_that.productiveStatus,_that.updatedAt,_that.weightHistory,_that.motherId,_that.fatherId,_that.coat,_that.observations,_that.localPhotoPath,_that.syncErrorCode);case _:
   return orElse();
 
 }
@@ -481,10 +483,10 @@ return $default(_that.id,_that.rfidTagNumber,_that.visualTag,_that.sex,_that.bre
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String rfidTagNumber,  String visualTag,  AnimalSex sex,  String breed,  DateTime birthDate,  String categoryId,  String categoryName,  String lotId,  String lotName,  String establishmentId,  double currentWeight,  AnimalWeighingMethod weighingMethod,  DateTime weighingDate,  AnimalSyncStatus syncStatus,  DateTime updatedAt,  List<AnimalWeightRecord> weightHistory,  String? motherId,  String? fatherId,  String? coat,  String? observations,  String? localPhotoPath,  String? syncErrorCode)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String rfidTagNumber,  String visualTag,  AnimalSex sex,  String breed,  DateTime birthDate,  String categoryId,  String categoryName,  String lotId,  String lotName,  String establishmentId,  double currentWeight,  AnimalWeighingMethod weighingMethod,  DateTime weighingDate,  AnimalSyncStatus syncStatus,  AnimalProductiveStatus productiveStatus,  DateTime updatedAt,  List<AnimalWeightRecord> weightHistory,  String? motherId,  String? fatherId,  String? coat,  String? observations,  String? localPhotoPath,  String? syncErrorCode)  $default,) {final _that = this;
 switch (_that) {
 case _AnimalDetail():
-return $default(_that.id,_that.rfidTagNumber,_that.visualTag,_that.sex,_that.breed,_that.birthDate,_that.categoryId,_that.categoryName,_that.lotId,_that.lotName,_that.establishmentId,_that.currentWeight,_that.weighingMethod,_that.weighingDate,_that.syncStatus,_that.updatedAt,_that.weightHistory,_that.motherId,_that.fatherId,_that.coat,_that.observations,_that.localPhotoPath,_that.syncErrorCode);}
+return $default(_that.id,_that.rfidTagNumber,_that.visualTag,_that.sex,_that.breed,_that.birthDate,_that.categoryId,_that.categoryName,_that.lotId,_that.lotName,_that.establishmentId,_that.currentWeight,_that.weighingMethod,_that.weighingDate,_that.syncStatus,_that.productiveStatus,_that.updatedAt,_that.weightHistory,_that.motherId,_that.fatherId,_that.coat,_that.observations,_that.localPhotoPath,_that.syncErrorCode);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -498,10 +500,10 @@ return $default(_that.id,_that.rfidTagNumber,_that.visualTag,_that.sex,_that.bre
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String rfidTagNumber,  String visualTag,  AnimalSex sex,  String breed,  DateTime birthDate,  String categoryId,  String categoryName,  String lotId,  String lotName,  String establishmentId,  double currentWeight,  AnimalWeighingMethod weighingMethod,  DateTime weighingDate,  AnimalSyncStatus syncStatus,  DateTime updatedAt,  List<AnimalWeightRecord> weightHistory,  String? motherId,  String? fatherId,  String? coat,  String? observations,  String? localPhotoPath,  String? syncErrorCode)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String rfidTagNumber,  String visualTag,  AnimalSex sex,  String breed,  DateTime birthDate,  String categoryId,  String categoryName,  String lotId,  String lotName,  String establishmentId,  double currentWeight,  AnimalWeighingMethod weighingMethod,  DateTime weighingDate,  AnimalSyncStatus syncStatus,  AnimalProductiveStatus productiveStatus,  DateTime updatedAt,  List<AnimalWeightRecord> weightHistory,  String? motherId,  String? fatherId,  String? coat,  String? observations,  String? localPhotoPath,  String? syncErrorCode)?  $default,) {final _that = this;
 switch (_that) {
 case _AnimalDetail() when $default != null:
-return $default(_that.id,_that.rfidTagNumber,_that.visualTag,_that.sex,_that.breed,_that.birthDate,_that.categoryId,_that.categoryName,_that.lotId,_that.lotName,_that.establishmentId,_that.currentWeight,_that.weighingMethod,_that.weighingDate,_that.syncStatus,_that.updatedAt,_that.weightHistory,_that.motherId,_that.fatherId,_that.coat,_that.observations,_that.localPhotoPath,_that.syncErrorCode);case _:
+return $default(_that.id,_that.rfidTagNumber,_that.visualTag,_that.sex,_that.breed,_that.birthDate,_that.categoryId,_that.categoryName,_that.lotId,_that.lotName,_that.establishmentId,_that.currentWeight,_that.weighingMethod,_that.weighingDate,_that.syncStatus,_that.productiveStatus,_that.updatedAt,_that.weightHistory,_that.motherId,_that.fatherId,_that.coat,_that.observations,_that.localPhotoPath,_that.syncErrorCode);case _:
   return null;
 
 }
@@ -513,7 +515,7 @@ return $default(_that.id,_that.rfidTagNumber,_that.visualTag,_that.sex,_that.bre
 
 
 class _AnimalDetail implements AnimalDetail {
-  const _AnimalDetail({required this.id, required this.rfidTagNumber, required this.visualTag, required this.sex, required this.breed, required this.birthDate, required this.categoryId, required this.categoryName, required this.lotId, required this.lotName, required this.establishmentId, required this.currentWeight, required this.weighingMethod, required this.weighingDate, required this.syncStatus, required this.updatedAt, required final  List<AnimalWeightRecord> weightHistory, this.motherId, this.fatherId, this.coat, this.observations, this.localPhotoPath, this.syncErrorCode}): _weightHistory = weightHistory;
+  const _AnimalDetail({required this.id, required this.rfidTagNumber, required this.visualTag, required this.sex, required this.breed, required this.birthDate, required this.categoryId, required this.categoryName, required this.lotId, required this.lotName, required this.establishmentId, required this.currentWeight, required this.weighingMethod, required this.weighingDate, required this.syncStatus, required this.productiveStatus, required this.updatedAt, required final  List<AnimalWeightRecord> weightHistory, this.motherId, this.fatherId, this.coat, this.observations, this.localPhotoPath, this.syncErrorCode}): _weightHistory = weightHistory;
   
 
 /// UUID generado por mobile y usado tambien por backend.
@@ -546,6 +548,8 @@ class _AnimalDetail implements AnimalDetail {
 @override final  DateTime weighingDate;
 /// Estado local de sincronizacion con backend.
 @override final  AnimalSyncStatus syncStatus;
+/// Estado productivo que determina si el animal sigue en stock.
+@override final  AnimalProductiveStatus productiveStatus;
 /// Ultima actualizacion conocida.
 @override final  DateTime updatedAt;
 /// Historial real de pesajes ordenado desde el mas antiguo al mas reciente.
@@ -580,16 +584,16 @@ _$AnimalDetailCopyWith<_AnimalDetail> get copyWith => __$AnimalDetailCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AnimalDetail&&(identical(other.id, id) || other.id == id)&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.sex, sex) || other.sex == sex)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.birthDate, birthDate) || other.birthDate == birthDate)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.lotName, lotName) || other.lotName == lotName)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.currentWeight, currentWeight) || other.currentWeight == currentWeight)&&(identical(other.weighingMethod, weighingMethod) || other.weighingMethod == weighingMethod)&&(identical(other.weighingDate, weighingDate) || other.weighingDate == weighingDate)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other._weightHistory, _weightHistory)&&(identical(other.motherId, motherId) || other.motherId == motherId)&&(identical(other.fatherId, fatherId) || other.fatherId == fatherId)&&(identical(other.coat, coat) || other.coat == coat)&&(identical(other.observations, observations) || other.observations == observations)&&(identical(other.localPhotoPath, localPhotoPath) || other.localPhotoPath == localPhotoPath)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AnimalDetail&&(identical(other.id, id) || other.id == id)&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.sex, sex) || other.sex == sex)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.birthDate, birthDate) || other.birthDate == birthDate)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.lotName, lotName) || other.lotName == lotName)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.currentWeight, currentWeight) || other.currentWeight == currentWeight)&&(identical(other.weighingMethod, weighingMethod) || other.weighingMethod == weighingMethod)&&(identical(other.weighingDate, weighingDate) || other.weighingDate == weighingDate)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.productiveStatus, productiveStatus) || other.productiveStatus == productiveStatus)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other._weightHistory, _weightHistory)&&(identical(other.motherId, motherId) || other.motherId == motherId)&&(identical(other.fatherId, fatherId) || other.fatherId == fatherId)&&(identical(other.coat, coat) || other.coat == coat)&&(identical(other.observations, observations) || other.observations == observations)&&(identical(other.localPhotoPath, localPhotoPath) || other.localPhotoPath == localPhotoPath)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
 }
 
 
 @override
-int get hashCode => Object.hashAll([runtimeType,id,rfidTagNumber,visualTag,sex,breed,birthDate,categoryId,categoryName,lotId,lotName,establishmentId,currentWeight,weighingMethod,weighingDate,syncStatus,updatedAt,const DeepCollectionEquality().hash(_weightHistory),motherId,fatherId,coat,observations,localPhotoPath,syncErrorCode]);
+int get hashCode => Object.hashAll([runtimeType,id,rfidTagNumber,visualTag,sex,breed,birthDate,categoryId,categoryName,lotId,lotName,establishmentId,currentWeight,weighingMethod,weighingDate,syncStatus,productiveStatus,updatedAt,const DeepCollectionEquality().hash(_weightHistory),motherId,fatherId,coat,observations,localPhotoPath,syncErrorCode]);
 
 @override
 String toString() {
-  return 'AnimalDetail(id: $id, rfidTagNumber: $rfidTagNumber, visualTag: $visualTag, sex: $sex, breed: $breed, birthDate: $birthDate, categoryId: $categoryId, categoryName: $categoryName, lotId: $lotId, lotName: $lotName, establishmentId: $establishmentId, currentWeight: $currentWeight, weighingMethod: $weighingMethod, weighingDate: $weighingDate, syncStatus: $syncStatus, updatedAt: $updatedAt, weightHistory: $weightHistory, motherId: $motherId, fatherId: $fatherId, coat: $coat, observations: $observations, localPhotoPath: $localPhotoPath, syncErrorCode: $syncErrorCode)';
+  return 'AnimalDetail(id: $id, rfidTagNumber: $rfidTagNumber, visualTag: $visualTag, sex: $sex, breed: $breed, birthDate: $birthDate, categoryId: $categoryId, categoryName: $categoryName, lotId: $lotId, lotName: $lotName, establishmentId: $establishmentId, currentWeight: $currentWeight, weighingMethod: $weighingMethod, weighingDate: $weighingDate, syncStatus: $syncStatus, productiveStatus: $productiveStatus, updatedAt: $updatedAt, weightHistory: $weightHistory, motherId: $motherId, fatherId: $fatherId, coat: $coat, observations: $observations, localPhotoPath: $localPhotoPath, syncErrorCode: $syncErrorCode)';
 }
 
 
@@ -600,7 +604,7 @@ abstract mixin class _$AnimalDetailCopyWith<$Res> implements $AnimalDetailCopyWi
   factory _$AnimalDetailCopyWith(_AnimalDetail value, $Res Function(_AnimalDetail) _then) = __$AnimalDetailCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String rfidTagNumber, String visualTag, AnimalSex sex, String breed, DateTime birthDate, String categoryId, String categoryName, String lotId, String lotName, String establishmentId, double currentWeight, AnimalWeighingMethod weighingMethod, DateTime weighingDate, AnimalSyncStatus syncStatus, DateTime updatedAt, List<AnimalWeightRecord> weightHistory, String? motherId, String? fatherId, String? coat, String? observations, String? localPhotoPath, String? syncErrorCode
+ String id, String rfidTagNumber, String visualTag, AnimalSex sex, String breed, DateTime birthDate, String categoryId, String categoryName, String lotId, String lotName, String establishmentId, double currentWeight, AnimalWeighingMethod weighingMethod, DateTime weighingDate, AnimalSyncStatus syncStatus, AnimalProductiveStatus productiveStatus, DateTime updatedAt, List<AnimalWeightRecord> weightHistory, String? motherId, String? fatherId, String? coat, String? observations, String? localPhotoPath, String? syncErrorCode
 });
 
 
@@ -617,7 +621,7 @@ class __$AnimalDetailCopyWithImpl<$Res>
 
 /// Create a copy of AnimalDetail
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? rfidTagNumber = null,Object? visualTag = null,Object? sex = null,Object? breed = null,Object? birthDate = null,Object? categoryId = null,Object? categoryName = null,Object? lotId = null,Object? lotName = null,Object? establishmentId = null,Object? currentWeight = null,Object? weighingMethod = null,Object? weighingDate = null,Object? syncStatus = null,Object? updatedAt = null,Object? weightHistory = null,Object? motherId = freezed,Object? fatherId = freezed,Object? coat = freezed,Object? observations = freezed,Object? localPhotoPath = freezed,Object? syncErrorCode = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? rfidTagNumber = null,Object? visualTag = null,Object? sex = null,Object? breed = null,Object? birthDate = null,Object? categoryId = null,Object? categoryName = null,Object? lotId = null,Object? lotName = null,Object? establishmentId = null,Object? currentWeight = null,Object? weighingMethod = null,Object? weighingDate = null,Object? syncStatus = null,Object? productiveStatus = null,Object? updatedAt = null,Object? weightHistory = null,Object? motherId = freezed,Object? fatherId = freezed,Object? coat = freezed,Object? observations = freezed,Object? localPhotoPath = freezed,Object? syncErrorCode = freezed,}) {
   return _then(_AnimalDetail(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,rfidTagNumber: null == rfidTagNumber ? _self.rfidTagNumber : rfidTagNumber // ignore: cast_nullable_to_non_nullable
@@ -634,7 +638,8 @@ as String,currentWeight: null == currentWeight ? _self.currentWeight : currentWe
 as double,weighingMethod: null == weighingMethod ? _self.weighingMethod : weighingMethod // ignore: cast_nullable_to_non_nullable
 as AnimalWeighingMethod,weighingDate: null == weighingDate ? _self.weighingDate : weighingDate // ignore: cast_nullable_to_non_nullable
 as DateTime,syncStatus: null == syncStatus ? _self.syncStatus : syncStatus // ignore: cast_nullable_to_non_nullable
-as AnimalSyncStatus,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as AnimalSyncStatus,productiveStatus: null == productiveStatus ? _self.productiveStatus : productiveStatus // ignore: cast_nullable_to_non_nullable
+as AnimalProductiveStatus,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,weightHistory: null == weightHistory ? _self._weightHistory : weightHistory // ignore: cast_nullable_to_non_nullable
 as List<AnimalWeightRecord>,motherId: freezed == motherId ? _self.motherId : motherId // ignore: cast_nullable_to_non_nullable
 as String?,fatherId: freezed == fatherId ? _self.fatherId : fatherId // ignore: cast_nullable_to_non_nullable
