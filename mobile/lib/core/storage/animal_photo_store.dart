@@ -26,7 +26,10 @@ class AnimalPhotoStore {
   }) async {
     final destination = await _photoFile(establishmentId, animalId);
     await destination.parent.create(recursive: true);
-    await File(sourcePath).copy(destination.path);
+    await _writeAtomically(
+      destination,
+      (temporary) => File(sourcePath).copy(temporary.path),
+    );
   }
 
   /// Guarda bytes JPEG cuando la captura no existe como archivo temporal.
@@ -40,7 +43,10 @@ class AnimalPhotoStore {
   }) async {
     final destination = await _photoFile(establishmentId, animalId);
     await destination.parent.create(recursive: true);
-    await destination.writeAsBytes(jpegBytes, flush: true);
+    await _writeAtomically(
+      destination,
+      (temporary) => temporary.writeAsBytes(jpegBytes, flush: true),
+    );
   }
 
   /// Lee los bytes de la foto o devuelve null cuando no existe.
@@ -49,8 +55,47 @@ class AnimalPhotoStore {
     required String animalId,
   }) async {
     final file = await _photoFile(establishmentId, animalId);
+    await _recoverInterruptedReplacement(file);
     if (!file.existsSync()) return null;
     return file.readAsBytes();
+  }
+
+  Future<void> _writeAtomically(
+    File destination,
+    Future<Object> Function(File temporary) writeTemporary,
+  ) async {
+    await _recoverInterruptedReplacement(destination);
+    final temporary = File('${destination.path}.tmp');
+    final backup = File('${destination.path}.backup');
+    if (temporary.existsSync()) await temporary.delete();
+    await writeTemporary(temporary);
+
+    var previousPhotoMoved = false;
+    try {
+      if (destination.existsSync()) {
+        await destination.rename(backup.path);
+        previousPhotoMoved = true;
+      }
+      await temporary.rename(destination.path);
+      if (previousPhotoMoved && backup.existsSync()) await backup.delete();
+    } on Object catch (error, stackTrace) {
+      if (temporary.existsSync()) await temporary.delete();
+      if (previousPhotoMoved && !destination.existsSync() && backup.existsSync()) {
+        await backup.rename(destination.path);
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
+  Future<void> _recoverInterruptedReplacement(File destination) async {
+    final temporary = File('${destination.path}.tmp');
+    final backup = File('${destination.path}.backup');
+    if (destination.existsSync()) {
+      if (backup.existsSync()) await backup.delete();
+    } else if (backup.existsSync()) {
+      await backup.rename(destination.path);
+    }
+    if (temporary.existsSync()) await temporary.delete();
   }
 
   /// Codifica los IDs para que cada uno ocupe un único segmento de la ruta.

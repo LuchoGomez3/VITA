@@ -22,37 +22,81 @@ class AnimalDetailHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        if (showAvatar) ...[
-          const DecoratedBox(
-            decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-            child: SizedBox.square(dimension: 48),
-          ),
-          const SizedBox(width: AppSpacing.md),
-        ],
-        Expanded(
-          child: Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+        if (largeText || constraints.maxWidth < 360) {
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                animalDetail.displayIdentifier,
-                style: AppTypography.appBarTitle,
-              ),
-              Text(
-                AnimalDetailStrings.animalIdLabel,
-                style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),
-              ),
-              const SizedBox(height: AppSpacing.xxs),
-              AppStatusChip(
-                label: animalDetail.productiveStatus.label,
-                tone: animalDetail.productiveStatus.tone,
-                showDot: true,
-              ),
+              if (showAvatar) ...[
+                const _AnimalAvatar(),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+              _AnimalIdentity(animalDetail: animalDetail),
+              const SizedBox(height: AppSpacing.md),
+              _CurrentLocation(animalDetail: animalDetail),
             ],
-          ),
+          );
+        }
+
+        return Row(
+          children: [
+            if (showAvatar) ...[
+              const _AnimalAvatar(),
+              const SizedBox(width: AppSpacing.md),
+            ],
+            Expanded(child: _AnimalIdentity(animalDetail: animalDetail)),
+            const SizedBox(width: AppSpacing.sm),
+            Flexible(
+              child: _CurrentLocation(
+                animalDetail: animalDetail,
+                alignEnd: true,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _AnimalAvatar extends StatelessWidget {
+  const _AnimalAvatar();
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+      child: SizedBox.square(dimension: 48),
+    );
+  }
+}
+
+class _AnimalIdentity extends StatelessWidget {
+  const _AnimalIdentity({required this.animalDetail});
+
+  final AnimalDetail animalDetail;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          animalDetail.displayIdentifier,
+          style: AppTypography.appBarTitle,
         ),
-        _CurrentLocation(animalDetail: animalDetail),
+        Text(
+          AnimalDetailStrings.animalIdLabel,
+          style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),
+        ),
+        const SizedBox(height: AppSpacing.xxs),
+        AppStatusChip(
+          label: animalDetail.productiveStatus.label,
+          tone: animalDetail.productiveStatus.tone,
+          showDot: true,
+        ),
       ],
     );
   }
@@ -78,21 +122,25 @@ extension on AnimalProductiveStatus {
 class _CurrentLocation extends StatelessWidget {
   const _CurrentLocation({
     required this.animalDetail,
+    this.alignEnd = false,
   });
 
   final AnimalDetail animalDetail;
+  final bool alignEnd;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         Text(
           animalDetail.lotName.isEmpty ? AnimalDetailStrings.noDataValue : animalDetail.lotName,
+          textAlign: alignEnd ? TextAlign.end : TextAlign.start,
           style: AppTypography.mediumEmphasis,
         ),
         Text(
           AnimalDetailStrings.currentLocationLabel,
+          textAlign: alignEnd ? TextAlign.end : TextAlign.start,
           style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),
         ),
       ],

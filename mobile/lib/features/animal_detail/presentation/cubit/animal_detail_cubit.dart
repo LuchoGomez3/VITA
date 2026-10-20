@@ -26,6 +26,7 @@ class AnimalDetailCubit extends Cubit<AnimalDetailState> {
 
   /// Carga los datos del animal identificado por [animalId].
   Future<void> loadAnimalData(String animalId) async {
+    if (isClosed) return;
     emit(
       state.copyWith(
         detail: const ResultState.loading(),
@@ -34,6 +35,7 @@ class AnimalDetailCubit extends Cubit<AnimalDetailState> {
     );
 
     final result = await _getAnimalDetailUseCase(animalId);
+    if (isClosed) return;
     switch (result) {
       case Success(:final data):
         emit(
@@ -49,10 +51,12 @@ class AnimalDetailCubit extends Cubit<AnimalDetailState> {
   }
 
   Future<void> _loadPhoto(AnimalDetail detail) async {
+    if (isClosed) return;
     final result = await _getAnimalPhotoUseCase(
       establishmentId: detail.establishmentId,
       animalId: detail.id,
     );
+    if (isClosed) return;
     switch (result) {
       case Success<AnimalPhoto?>(:final data):
         emit(state.copyWith(photo: ResultState.data(data)));
@@ -63,8 +67,10 @@ class AnimalDetailCubit extends Cubit<AnimalDetailState> {
 
   /// Vuelve a encolar un alta rechazada y refresca su estado local.
   Future<void> retrySync(String animalId) async {
+    if (isClosed) return;
     emit(state.copyWith(detail: const ResultState.loading()));
     final result = await _retryAnimalSyncUseCase(animalId);
+    if (isClosed) return;
     switch (result) {
       case Success<void>():
         await loadAnimalData(animalId);

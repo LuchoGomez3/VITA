@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_photo.dart';
@@ -21,9 +19,11 @@ class AnimalDetailPhoto extends StatelessWidget {
   Widget build(BuildContext context) {
     final localPhoto = photo;
     if (localPhoto == null) return contentBuilder(null);
+    final cacheWidth = (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).ceil();
 
     return Image.memory(
-      Uint8List.fromList(localPhoto.bytes),
+      localPhoto.bytes,
+      cacheWidth: cacheWidth,
       fit: BoxFit.cover,
       semanticLabel: AnimalDetailStrings.animalPhotoLabel,
       // La proporción se aplica después de decodificar para no reservar espacio

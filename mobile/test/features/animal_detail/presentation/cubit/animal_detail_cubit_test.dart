@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
@@ -35,6 +37,28 @@ void main() {
     expect(photoRepository.animalId, _animal.id);
     await cubit.close();
   });
+
+  test('does not emit a photo after the cubit is closed', () async {
+    final detailRepository = _FakeAnimalDetailRepository();
+    final photoRepository = _PendingAnimalPhotoRepository();
+    final cubit = AnimalDetailCubit(
+      getAnimalDetailUseCase: GetAnimalDetailUseCase(detailRepository),
+      getAnimalPhotoUseCase: GetAnimalPhotoUseCase(photoRepository),
+      retryAnimalSyncUseCase: RetryAnimalSyncUseCase(detailRepository),
+    );
+
+    final load = cubit.loadAnimalData(_animal.id);
+    await photoRepository.requested.future;
+    expect(cubit.state.detail, isA<Data<AnimalDetail>>());
+    expect(cubit.state.photo, isA<Loading<AnimalPhoto?>>());
+
+    await cubit.close();
+    photoRepository.result.complete(
+      Result.success(AnimalPhoto.fromBytes([1, 2, 3])),
+    );
+
+    await expectLater(load, completes);
+  });
 }
 
 class _FakeAnimalDetailRepository implements AnimalDetailRepository {
@@ -64,6 +88,20 @@ class _FakeAnimalPhotoRepository implements AnimalPhotoRepository {
     this.establishmentId = establishmentId;
     this.animalId = animalId;
     return result;
+  }
+}
+
+class _PendingAnimalPhotoRepository implements AnimalPhotoRepository {
+  final requested = Completer<void>();
+  final result = Completer<Result<AnimalPhoto?>>();
+
+  @override
+  Future<Result<AnimalPhoto?>> getPhoto({
+    required String establishmentId,
+    required String animalId,
+  }) {
+    requested.complete();
+    return result.future;
   }
 }
 

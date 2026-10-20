@@ -26,7 +26,7 @@ class AnimalPhotoRepositoryImpl implements AnimalPhotoRepository {
         animalId: animalId,
       );
       return Result.success(
-        bytes == null ? null : AnimalPhoto(bytes: bytes),
+        bytes == null ? null : AnimalPhoto.fromBytes(bytes),
       );
     } on FileSystemException catch (error) {
       return _photoUnavailable(error);

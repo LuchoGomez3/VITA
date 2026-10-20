@@ -7,17 +7,22 @@ import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/ani
 
 void main() {
   testWidgets('renders local bytes through a memory image', (tester) async {
+    final photo = AnimalPhoto.fromBytes(base64Decode(_onePixelPng));
+
     await tester.pumpWidget(
       MaterialApp(
         home: AnimalDetailPhoto(
-          photo: AnimalPhoto(bytes: base64Decode(_onePixelPng)),
+          photo: photo,
           contentBuilder: (photo) => photo ?? const SizedBox.shrink(),
         ),
       ),
     );
 
     final image = tester.widget<Image>(find.byType(Image));
-    expect(image.image, isA<MemoryImage>());
+    final provider = image.image as ResizeImage;
+    final memoryImage = provider.imageProvider as MemoryImage;
+    expect(identical(memoryImage.bytes, photo.bytes), isTrue);
+    expect(provider.width, tester.view.physicalSize.width.round());
   });
 
   testWidgets('keeps the fallback when no local photo exists', (tester) async {

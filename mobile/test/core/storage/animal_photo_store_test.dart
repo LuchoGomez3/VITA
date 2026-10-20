@@ -105,4 +105,49 @@ void main() {
       [4, 5, 6],
     );
   });
+
+  test('keeps the previous photo when writing the replacement fails', () async {
+    await store.savePhotoBytes(
+      establishmentId: 'farm',
+      animalId: 'animal',
+      jpegBytes: Uint8List.fromList([1, 2, 3]),
+    );
+
+    await expectLater(
+      store.savePhoto(
+        establishmentId: 'farm',
+        animalId: 'animal',
+        sourcePath: '${directory.path}/missing-capture',
+      ),
+      throwsA(isA<FileSystemException>()),
+    );
+
+    expect(
+      await store.readPhotoBytes(
+        establishmentId: 'farm',
+        animalId: 'animal',
+      ),
+      [1, 2, 3],
+    );
+  });
+
+  test('recovers the previous photo after an interrupted replacement', () async {
+    final photoDirectory = Directory(
+      '${directory.path}/animal_photos/farm/animal',
+    );
+    await photoDirectory.create(recursive: true);
+    await File('${photoDirectory.path}/photo.backup').writeAsBytes([7, 8, 9]);
+    await File('${photoDirectory.path}/photo.tmp').writeAsBytes([4]);
+
+    expect(
+      await store.readPhotoBytes(
+        establishmentId: 'farm',
+        animalId: 'animal',
+      ),
+      [7, 8, 9],
+    );
+    expect(File('${photoDirectory.path}/photo').existsSync(), isTrue);
+    expect(File('${photoDirectory.path}/photo.backup').existsSync(), isFalse);
+    expect(File('${photoDirectory.path}/photo.tmp').existsSync(), isFalse);
+  });
 }
