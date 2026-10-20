@@ -97,14 +97,18 @@ sólo el resumen de estado.
 Detalle completo de campos, secciones y datos mock por flujo en su spec
 dedicado (mismo criterio que `registrar-establecimiento.md`).
 
-| Flujo | Estado | Spec | Archivo de diseño | Pantallas | Offline |
-|---|---|---|---|---|---|
-| Campo / potreros (mapa, lista, detalle) | 🧱 Mergeada a `develop` (PR #37) | [`campo-y-potreros.md`](./campo-y-potreros.md) | `screens-campo.jsx` | 3 | Probablemente offline-first (dato productivo de campo), a confirmar en Etapa 3 |
-| Pesaje en manga (Bluetooth/Manual/Foto) | 🧱 Maquetada, **PR #38 abierto** (`feature/pantalla-pesaje`, sin mergear) | [`pesaje-en-manga.md`](./pesaje-en-manga.md) | `screens-pesaje.jsx` | 3 (una sola página con tabs) | Offline-first (captura en el campo, sin conectividad) |
-| Sanidad (vacunaciones/tratamientos/alertas/aplicar) | 🧱 Maquetada en `feature/pantalla-sanidad` (rama apilada sobre #38 para reusar `AppEarTagBadge`; rebasar sobre `develop` cuando #38 mergee) | [`sanidad.md`](./sanidad.md) | `screens-sanidad.jsx` | 4 | Offline-first |
-| Gestión de equipo | 🎨 | [`gestion-de-equipo.md`](./gestion-de-equipo.md) | `screens-other.jsx` | 2 | Probablemente online-only (afecta permisos de otro usuario), a confirmar |
-| Sincronización | 🎨 | [`sincronizacion.md`](./sincronizacion.md) | `screens-other.jsx` | 1 | Es la UI del motor de sync que ya existe en `lib/features/sync` |
-| Ajustes (secciones nuevas sobre `ProfilePage`) | 🎨 | [`ajustes.md`](./ajustes.md) | `screens-other.jsx` | Extiende 1 pantalla existente | No aplica (son datos de preferencias/dispositivos, sin sync) |
+**Los 6 flujos de esta iniciativa ya están maquetados (🧱)** — cada uno en
+su propia rama, cada uno con PR abierto a `develop` salvo indicación
+contraria. Ninguno queda en 🎨.
+
+| Flujo | Spec | Archivo de diseño | Pantallas | Offline |
+|---|---|---|---|---|
+| Campo / potreros (mapa, lista, detalle) 🧱 (rama `feature/pantalla-campos`) | [`campo-y-potreros.md`](./campo-y-potreros.md) | `screens-campo.jsx` | 3 | Probablemente offline-first (dato productivo de campo), a confirmar en Etapa 3 |
+| Pesaje en manga (Bluetooth/Manual/Foto) 🧱 (rama `feature/pantalla-pesaje`, PR #38 abierto) | [`pesaje-en-manga.md`](./pesaje-en-manga.md) | `screens-pesaje.jsx` | 3 (una sola página con tabs) | Offline-first (captura en el campo, sin conectividad) |
+| Sanidad (vacunaciones/tratamientos/alertas/aplicar) 🧱 maquetada dentro del PR #40 (`feature/pantalla-sanidad`), que además trae la lista de animales y la ficha con pestañas | [`sanidad.md`](./sanidad.md) | `screens-sanidad.jsx` | 4 | Offline-first |
+| Gestión de equipo ✅ (rama `feature/equipo-establecimiento`, reemplaza a PR #42; se entra desde la ficha del establecimiento en Perfil) | [`gestion-de-equipo.md`](./gestion-de-equipo.md) | `screens-other.jsx` | 2 + Sumarme con código | Online-only con la lista cacheada (adr-0012); roles owner/admin/employee/veterinarian |
+| Sincronización 🧱 (rama `feature/pantalla-sync`, PR #41 abierto) | [`sincronizacion.md`](./sincronizacion.md) | `screens-other.jsx` | 1 | Offline-first (es la vista de estado del motor de sync); ojo — `lib/features/sync/` sólo tiene hoy la sincronización inicial post-login, no una cola de operaciones real |
+| Ajustes (secciones nuevas sobre `ProfilePage`) 🧱 (rama `feature/pantalla-ajustes`) | [`ajustes.md`](./ajustes.md) | `screens-other.jsx` | Extiende 1 pantalla existente | No aplica (son datos de preferencias/dispositivos, sin sync) |
 
 ## Pendientes sin spec todavía
 

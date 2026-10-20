@@ -12,6 +12,9 @@ typedef EstablishmentDetails = ({
   String? province,
   String? department,
   String? locality,
+  double? latitude,
+  double? longitude,
+  List<({double latitude, double longitude})> boundary,
   DateTime createdAt,
   DateTime updatedAt,
 });

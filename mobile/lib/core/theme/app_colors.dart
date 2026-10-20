@@ -13,6 +13,9 @@ class AppColors {
   /// bordes/accentos e indicadores interactivos.
   static const primary = Color(0xFF2E7D32);
 
+  /// Variante oscura de la marca para degradados y superficies destacadas.
+  static const primaryDark = Color(0xFF1B5E20);
+
   /// Color de contenido sobre superficies `primary`.
   static const onPrimary = Color(0xFFFFFFFF);
 

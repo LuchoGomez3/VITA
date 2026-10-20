@@ -35,6 +35,46 @@ def test_production_rejects_unrestricted_forwarded_headers(monkeypatch):
         Settings().validate_runtime_configuration()
 
 
+def _produccion_segura(monkeypatch):
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://production.example/vita")
+    monkeypatch.setenv("AUTH_PROVIDER", "supabase")
+    monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
+    monkeypatch.setenv("SUPABASE_ANON_KEY", "anon-test")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "service-test")
+    monkeypatch.setenv("CORS_ALLOW_ORIGINS", "https://app.example.com")
+    monkeypatch.setenv("FORWARDED_ALLOW_IPS", "10.0.0.1")
+    monkeypatch.setenv("EMAIL_PROVIDER", "smtp")
+    monkeypatch.setenv("SMTP_HOST", "smtp.example.com")
+    monkeypatch.setenv("SMTP_FROM", "VITA <no-reply@example.com>")
+    monkeypatch.setenv("INVITACION_CODIGO_SECRETO", "secreto-test")
+
+
+def test_production_accepts_complete_configuration(monkeypatch):
+    _produccion_segura(monkeypatch)
+
+    Settings().validate_runtime_configuration()
+
+
+def test_production_requires_smtp_for_team_invitations(monkeypatch):
+    _produccion_segura(monkeypatch)
+    monkeypatch.setenv("EMAIL_PROVIDER", "console")
+    monkeypatch.delenv("SMTP_HOST")
+
+    with pytest.raises(RuntimeError, match="EMAIL_PROVIDER=smtp, SMTP_HOST"):
+        Settings().validate_runtime_configuration()
+
+
+def test_production_requires_its_own_invitation_code_secret(monkeypatch):
+    # Sin clave propia, el HMAC de los códigos caería en JWT_SECRET, que en
+    # producción con Supabase puede quedar con el valor de desarrollo.
+    _produccion_segura(monkeypatch)
+    monkeypatch.delenv("INVITACION_CODIGO_SECRETO")
+
+    with pytest.raises(RuntimeError, match="INVITACION_CODIGO_SECRETO"):
+        Settings().validate_runtime_configuration()
+
+
 def test_production_uses_https_and_has_no_cookie_sessions(monkeypatch):
     monkeypatch.setattr(settings, "ENVIRONMENT", EnvironmentOption.PRODUCTION)
     monkeypatch.setattr(settings, "AUTH_PROVIDER", "supabase")
@@ -43,6 +83,10 @@ def test_production_uses_https_and_has_no_cookie_sessions(monkeypatch):
     monkeypatch.setattr(settings, "SUPABASE_SERVICE_ROLE_KEY", "service-test")
     monkeypatch.setattr(settings, "SUPABASE_JWT_SECRET", "jwt-test")
     monkeypatch.setattr(settings, "CORS_ALLOW_ORIGINS", ["https://app.example.com"])
+    monkeypatch.setattr(settings, "EMAIL_PROVIDER", "smtp")
+    monkeypatch.setattr(settings, "SMTP_HOST", "smtp.example.com")
+    monkeypatch.setattr(settings, "SMTP_FROM", "VITA <no-reply@example.com>")
+    monkeypatch.setenv("INVITACION_CODIGO_SECRETO", "secreto-test")
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://production.example/vita")
 
     app = create_fastapi_app()

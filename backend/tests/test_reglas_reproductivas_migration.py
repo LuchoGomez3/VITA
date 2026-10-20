@@ -25,6 +25,15 @@ _TERNERO_SUPABASE = "550e8400-e29b-41d4-a716-446655440030"
 _ENGORDE_RAPIDO = "550e8400-e29b-41d4-a716-446655440034"
 
 
+def _migracion_catalogo_global():
+    ruta = _BACKEND / "alembic/versions/20261014_01_catalogo_global_categorias.py"
+    spec = importlib.util.spec_from_file_location("catalogo_global", ruta)
+    assert spec is not None and spec.loader is not None
+    modulo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modulo)
+    return modulo
+
+
 @pytest.fixture(scope="module")
 def migracion():
     spec = importlib.util.spec_from_file_location("migracion_reglas", _MIGRACION)
@@ -50,9 +59,11 @@ def test_revision_y_encadenamiento(migracion):
 
 
 def test_triggers_de_la_migracion_son_copia_literal_de_los_modelos(migracion):
+    # La función del animal cambió en 20261014_01 (catálogo global, adr-0010):
+    # esa migración guarda esta versión para su downgrade.
     assert (
         migracion._FUNCION_CATEGORIA_COMPATIBLE
-        == animales_models.FUNCION_CATEGORIA_COMPATIBLE
+        == _migracion_catalogo_global()._FUNCION_CATEGORIA_COMPATIBLE_ANTERIOR
     )
     assert (
         migracion._TRIGGERS_CATEGORIA_COMPATIBLE

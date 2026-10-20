@@ -38,7 +38,10 @@ class BrickBootstrap {
     // Stores por entidad. A medida que sumemos modelos Brick, aca se registran
     // stores como BrickMovimientoStore, BrickEventoSanitarioStore, etc.
     BrickAnimalStore.configure(AppBrickRepository.instance);
-    BrickAnimalLotMovementStore.configure(AppBrickRepository.instance);
+    BrickAnimalLotMovementStore.configure(
+      AppBrickRepository.instance,
+      animalStore: BrickAnimalStore.instance,
+    );
     BrickCategoriaStore.configure(AppBrickRepository.instance);
     BrickPesajeStore.configure(AppBrickRepository.instance);
     BrickLotStore.configure(AppBrickRepository.instance);

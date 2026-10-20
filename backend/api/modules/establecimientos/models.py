@@ -7,6 +7,10 @@ from sqlmodel import Field
 from api.shared.enums import RolUsuario
 from database.models import Base, SoftDeleteMixin
 
+# Roles válidos de una membresía. La invitación al equipo usa el mismo check
+# (``api/modules/equipo/models.py``) y la migración 20261017_02 lo copia literal.
+CHECK_ROL_USUARIO = "rol IN ('admin', 'owner', 'employee', 'veterinarian')"
+
 
 class Establecimiento(Base, SoftDeleteMixin, table=True):
     __tablename__ = "establecimientos"
@@ -32,10 +36,7 @@ class Establecimiento(Base, SoftDeleteMixin, table=True):
 class UsuarioEstablecimiento(Base, table=True):
     __tablename__ = "usuarios_establecimientos"
     __table_args__ = (
-        CheckConstraint(
-            "rol IN ('admin', 'owner', 'employee')",
-            name="ck_usuarios_establecimientos_rol",
-        ),
+        CheckConstraint(CHECK_ROL_USUARIO, name="ck_usuarios_establecimientos_rol"),
         UniqueConstraint(
             "usuario_id",
             "establecimiento_id",

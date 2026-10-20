@@ -13,7 +13,7 @@ void main() {
 
     expect(gain, closeTo(-3, 1e-9));
     expect(formatDailyGain(gain), '−3,00');
-    expect(dailyGainTone(gain), AppStatusChipTone.danger);
+    expect(dailyGainTone(gain), AppStatusChipTone.error);
   });
 
   test('a weight gain is green with a plus sign', () {

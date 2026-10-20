@@ -52,7 +52,7 @@ double? dailyGainBetween(AnimalWeightRecord previous, AnimalWeightRecord current
 }
 
 /// Verde si el animal ganó peso (o se mantuvo), rojo si perdió.
-AppStatusChipTone dailyGainTone(double value) => value < 0 ? AppStatusChipTone.danger : AppStatusChipTone.success;
+AppStatusChipTone dailyGainTone(double value) => value < 0 ? AppStatusChipTone.error : AppStatusChipTone.success;
 
 /// GPD con signo y coma decimal: `+0,85`.
 String formatDailyGain(double value) {

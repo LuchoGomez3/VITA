@@ -1,7 +1,7 @@
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import DDL, CheckConstraint, String, event
+from sqlalchemy import DDL, CheckConstraint, DateTime, String, event
 from sqlmodel import Field
 
 from api.shared.enums import EstadoAnimal, EstadoReproductivo, SexoAnimal
@@ -45,6 +45,11 @@ class Animal(Base, SoftDeleteMixin, table=True):
     estado: EstadoAnimal = Field(
         default=EstadoAnimal.activo, sa_type=String, nullable=False
     )
+    # Se mantiene separado de updated_at: editar raza/lote despues de una baja
+    # no debe mover esa salida productiva a otro periodo del tablero.
+    estado_actualizado_en: datetime | None = Field(
+        default=None, sa_type=DateTime(timezone=True), nullable=True
+    )
     # Separado de ``estado``: un animal puede estar ``activo`` y ``prenada``.
     estado_reproductivo: EstadoReproductivo | None = Field(
         default=None, sa_type=String, nullable=True
@@ -73,7 +78,6 @@ security invoker
 set search_path = public, pg_temp
 as $$
 declare
-    v_establecimiento_id uuid;
     v_sexo_permitido varchar;
     v_permite boolean;
     v_borrada timestamptz;
@@ -93,35 +97,25 @@ begin
         return new;
     end if;
 
-    select c.establecimiento_id, c.sexo_permitido,
-           c.permite_estado_reproductivo, c.deleted_at
-      into v_establecimiento_id, v_sexo_permitido, v_permite, v_borrada
+    select c.sexo_permitido, c.permite_estado_reproductivo, c.deleted_at
+      into v_sexo_permitido, v_permite, v_borrada
       from public.categorias c
      where c.id = new.categoria_id
        for share;
 
-    -- Sin categoría visible, la FK o el RLS rechazan la fila. Con security
-    -- invoker, un cliente directo no ve categorías ajenas: el trigger no
-    -- distingue "ajena" de "inexistente" y no revela sus reglas.
+    -- Sin categoría visible, la FK o el RLS rechazan la fila.
     if not found then
         return new;
     end if;
 
-    -- Pertenencia y borrado se exigen solo al asignar: una categoría que se
-    -- borra después no debe trabar la edición de otros campos del animal. Vale
-    -- también para animales borrados: es aislamiento, no compatibilidad.
-    if tg_op = 'INSERT' or new.categoria_id is distinct from old.categoria_id then
-        if v_borrada is not null then
-            raise exception 'No se puede asignar una categoría eliminada'
-                using errcode = 'check_violation',
-                      constraint = 'animales_categoria_asignable';
-        end if;
-        if v_establecimiento_id is not null
-           and v_establecimiento_id <> new.establecimiento_id then
-            raise exception 'La categoría pertenece a otro establecimiento'
-                using errcode = 'check_violation',
-                      constraint = 'animales_categoria_asignable';
-        end if;
+    -- El borrado se exige solo al asignar: una categoría que se borra después
+    -- no debe trabar la edición de otros campos del animal. El catálogo es
+    -- global (adr-0010), así que no hay pertenencia a un establecimiento.
+    if (tg_op = 'INSERT' or new.categoria_id is distinct from old.categoria_id)
+       and v_borrada is not null then
+        raise exception 'No se puede asignar una categoría eliminada'
+            using errcode = 'check_violation',
+                  constraint = 'animales_categoria_asignable';
     end if;
 
     if new.deleted_at is not null then

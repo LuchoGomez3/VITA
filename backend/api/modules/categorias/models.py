@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from sqlalchemy import DDL, CheckConstraint, String, event, false
 from sqlmodel import Field
 
@@ -23,10 +21,9 @@ class Categoria(Base, SoftDeleteMixin, table=True):
         ),
     )
 
-    # null = catálogo global; con valor = categoría propia del establecimiento.
-    establecimiento_id: UUID | None = Field(
-        default=None, foreign_key="establecimientos.id", index=True
-    )
+    # Catálogo global, igual para todos los establecimientos: no pertenece a
+    # ninguno. Lo administra el equipo desde la base; la API solo lo lee (ver
+    # adr-0010).
     nombre: str
     descripcion: str | None = None
     # Reglas explícitas de la categoría: nunca se infieren de su nombre. Que un
@@ -41,8 +38,9 @@ class Categoria(Base, SoftDeleteMixin, table=True):
 
 
 # Cierra el invariante por la otra punta: cambiar las reglas de una categoría no
-# puede dejar animales vivos incompatibles. Misma condición que
-# ``CategoriaRepository.contar_animales_incompatibles``.
+# puede dejar animales vivos incompatibles. La API ya no edita el catálogo
+# (adr-0010), así que el trigger protege las ediciones directas en la base, que
+# es por donde se administra.
 #
 # Es ``security definer``: tiene que contar TODOS los animales de la categoría,
 # también los que quien escribe no ve, o el invariante quedaría abierto. No filtra

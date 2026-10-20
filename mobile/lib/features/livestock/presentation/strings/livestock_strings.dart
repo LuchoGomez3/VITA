@@ -1,6 +1,6 @@
 /// Textos centralizados de la pantalla de hacienda.
 abstract final class LivestockStrings {
-  /// Titulo de la pantalla.
+  /// Título de la pantalla.
   static const title = 'Hacienda';
 
   /// Titulo de la lista de animales (diseño "Lista de animales").
@@ -38,8 +38,12 @@ abstract final class LivestockStrings {
   /// Titulo del modulo de registro.
   static const animalRegisterTitle = 'Registrar animal';
 
-  /// Descripcion del modulo de registro.
-  static const animalRegisterDescription = 'Incorporá un nuevo animal a la hacienda.';
+  /// Acción principal para identificar un animal.
+  static const readTagTitle = 'Leer caravana';
+
+  /// Explica los caminos disponibles después de identificar la caravana.
+  static const readTagDescription =
+      'Leé la caravana con el bastón o ingresala manualmente para consultar o registrar un animal.';
 
   /// Boton para abrir el registro.
   static const animalRegisterButton = 'Registrar animal';
@@ -62,11 +66,11 @@ abstract final class LivestockStrings {
   /// Boton para abrir el pesaje en manga.
   static const weighingButton = 'Pesar animal';
 
-  /// Titulo del acceso al mapa de potreros.
+  /// Título del acceso al mapa de potreros.
   static const fieldTitle = 'Campo y potreros';
 
-  /// Descripcion del acceso al mapa de potreros.
-  static const fieldDescription = 'Consultá el mapa de potreros y la carga animal de cada uno.';
+  /// Descripción breve del acceso territorial.
+  static const fieldDescription = 'Explorá tus potreros y consultá su carga animal.';
 
   /// Boton para abrir el mapa de potreros.
   static const fieldButton = 'Ver campo';
@@ -79,4 +83,16 @@ abstract final class LivestockStrings {
 
   /// Boton para abrir sanidad.
   static const healthButton = 'Ver sanidad';
+
+  /// Solicitud de contexto cuando hay más de un establecimiento.
+  static const selectEstablishment = '¿Dónde vas a leer caravanas?';
+
+  /// Orientación cuando todavía no hay establecimientos disponibles.
+  static const noEstablishments = 'Registrá un establecimiento para leer caravanas.';
+
+  /// Error recuperable al obtener el catálogo local.
+  static const establishmentsError = 'No se pudieron cargar los establecimientos. Intentá nuevamente.';
+
+  /// Estado del botón mientras se consulta el catálogo local.
+  static const loadingEstablishments = 'Cargando...';
 }

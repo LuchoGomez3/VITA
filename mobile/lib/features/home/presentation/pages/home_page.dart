@@ -10,7 +10,7 @@ import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_dashboard_content.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_dashboard_error.dart';
-import 'package:frontend_mayoral/features/home/presentation/widgets/home_expandable_header.dart';
+import 'package:frontend_mayoral/features/home/presentation/widgets/home_header.dart';
 import 'package:go_router/go_router.dart';
 
 /// Factory que crea el cubit responsable de los indicadores de Inicio.
@@ -34,14 +34,16 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<HomeDashboardCubit>(
-      create: (_) => createCubit()..load(),
+      create: (_) => createCubit()..initialize(),
       child: _HomeDashboardView(userName: _displayUserName),
     );
   }
 
   String get _displayUserName {
     final trimmedUserName = userName.trim();
-    return trimmedUserName.isEmpty ? HomeStrings.defaultUserName : trimmedUserName;
+    return trimmedUserName.isEmpty
+        ? HomeStrings.defaultUserName
+        : trimmedUserName;
   }
 }
 
@@ -54,38 +56,71 @@ class _HomeDashboardView extends StatefulWidget {
   State<_HomeDashboardView> createState() => _HomeDashboardViewState();
 }
 
-class _HomeDashboardViewState extends State<_HomeDashboardView> {
-  bool _isSelectorExpanded = false;
-  String? _highlightedEstablishmentId;
+class _HomeDashboardViewState extends State<_HomeDashboardView>
+    with WidgetsBindingObserver {
+  final _establishmentMenu = MenuController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(context.read<HomeDashboardCubit>().refresh());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          HomeExpandableHeader(
-            greeting: _greeting(DateTime.now(), widget.userName),
-            isExpanded: _isSelectorExpanded,
-            highlightedEstablishmentId: _highlightedEstablishmentId,
-            onToggle: _toggleSelector,
-            onSelected: _selectEstablishment,
-            onIdentifyAnimal: _identifyAnimal,
-          ),
-          Expanded(
-            child: _HomeDashboardBody(
-              onEstablishmentSelectionRequested: _openSelector,
+    return BlocListener<HomeDashboardCubit, HomeDashboardState>(
+      listenWhen: (previous, current) =>
+          previous.refreshError != current.refreshError &&
+          current.refreshError != null,
+      listener: (context, state) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(state.refreshError!.message)));
+      },
+      child: Scaffold(
+        body: Column(
+          children: [
+            HomeHeader(
+              greeting: _greeting(DateTime.now(), widget.userName),
+              establishmentMenuController: _establishmentMenu,
+              onSelected: _selectEstablishment,
+              onCreateEstablishment: _createEstablishment,
+              onIdentifyAnimal: _identifyAnimal,
             ),
-          ),
-        ],
+            Expanded(
+              child: _HomeDashboardBody(
+                onEstablishmentSelectionRequested: _openSelector,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   void _identifyAnimal() {
-    final establishmentId = context.read<HomeDashboardCubit>().state.selectedEstablishmentId;
+    final establishmentId = context
+        .read<HomeDashboardCubit>()
+        .state
+        .selectedEstablishmentId;
     if (establishmentId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(HomeStrings.selectEstablishmentBeforeIdentification)),
+        const SnackBar(
+          content: Text(HomeStrings.selectEstablishmentBeforeIdentification),
+        ),
       );
       return;
     }
@@ -93,32 +128,21 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
     context.push(AppRoutes.rfidScanForEstablishment(establishmentId));
   }
 
-  void _toggleSelector() {
-    setState(() {
-      _isSelectorExpanded = !_isSelectorExpanded;
-      if (_isSelectorExpanded) {
-        final cubit = context.read<HomeDashboardCubit>();
-        _highlightedEstablishmentId = cubit.state.selectedEstablishmentId;
-      }
-    });
-  }
-
-  void _openSelector() {
-    final cubit = context.read<HomeDashboardCubit>();
-    setState(() {
-      _highlightedEstablishmentId = cubit.state.selectedEstablishmentId;
-      _isSelectorExpanded = true;
-    });
-  }
+  void _openSelector() => _establishmentMenu.open();
 
   void _selectEstablishment(String? establishmentId) {
-    setState(() {
-      _highlightedEstablishmentId = establishmentId;
-      _isSelectorExpanded = false;
-    });
     unawaited(
       context.read<HomeDashboardCubit>().selectEstablishment(establishmentId),
     );
+  }
+
+  /// Abre el wizard de alta y, al volver, recarga Inicio para que el
+  /// establecimiento recién creado aparezca en el selector.
+  Future<void> _createEstablishment() async {
+    await context.push<void>(AppRoutes.establishmentRegisterStep1);
+    if (mounted) {
+      await context.read<HomeDashboardCubit>().load();
+    }
   }
 
   String _greeting(DateTime dateTime, String name) {
@@ -134,9 +158,7 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> {
 }
 
 class _HomeDashboardBody extends StatelessWidget {
-  const _HomeDashboardBody({
-    required this.onEstablishmentSelectionRequested,
-  });
+  const _HomeDashboardBody({required this.onEstablishmentSelectionRequested});
 
   final VoidCallback onEstablishmentSelectionRequested;
 
@@ -144,17 +166,24 @@ class _HomeDashboardBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
+      // El tablero puede desplazarse por detrás de la barra inferior.
+      bottom: false,
       child: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
         builder: (context, state) {
           final dashboardState = state.dashboardState;
-          final membership = state.establishments[state.selectedEstablishmentId];
+          final membership =
+              state.establishments[state.selectedEstablishmentId];
           return switch (dashboardState) {
             Data<HomeDashboard>(:final data) => HomeDashboardContent(
               dashboard: data,
-              onEstablishmentSelectionRequested: onEstablishmentSelectionRequested,
-              canViewFinancialInformation: membership?.role.canViewFinancialInformation ?? false,
+              onEstablishmentSelectionRequested:
+                  onEstablishmentSelectionRequested,
+              canViewFinancialInformation:
+                  membership?.role.canViewFinancialInformation ?? false,
             ),
-            ResultError<HomeDashboard>(:final error) => HomeDashboardError(message: error.message),
+            ResultError<HomeDashboard>(:final error) => HomeDashboardError(
+              message: error.message,
+            ),
             _ => const Center(child: CircularProgressIndicator()),
           };
         },

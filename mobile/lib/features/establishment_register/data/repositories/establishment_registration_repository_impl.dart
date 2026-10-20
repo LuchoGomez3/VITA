@@ -48,6 +48,11 @@ class EstablishmentRegistrationRepositoryImpl implements EstablishmentRegistrati
           'province': registration.provincia,
           'department': registration.departamento,
           'locality': registration.localidad,
+          'latitude': registration.latitud,
+          'longitude': registration.longitud,
+          'boundary': [
+            for (final point in registration.poligono) {'latitude': point.latitud, 'longitude': point.longitud},
+          ],
           'created_at': registered.createdAt.toUtc().toIso8601String(),
           'updated_at': json['updated_at'] is String
               ? json['updated_at']

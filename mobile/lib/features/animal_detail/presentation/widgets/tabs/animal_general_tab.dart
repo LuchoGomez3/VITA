@@ -29,6 +29,17 @@ class AnimalGeneralTab extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
         const _PhotoPlaceholder(),
+        const SizedBox(height: AppSpacing.sm),
+        // Estado productivo (#72): un animal vendido o muerto sigue teniendo
+        // ficha, pero no cuenta en el stock.
+        Align(
+          alignment: Alignment.centerLeft,
+          child: AppStatusChip(
+            label: animal.productiveStatus.label,
+            tone: animal.productiveStatus.tone,
+            showDot: true,
+          ),
+        ),
         const SizedBox(height: AppSpacing.lg),
         const AnimalFichaSectionTitle(AnimalDetailStrings.identificationSection),
         const SizedBox(height: AppSpacing.xs),

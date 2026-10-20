@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
@@ -45,6 +46,7 @@ final _rejectedAnimal = AnimalDetail(
   weighingMethod: AnimalWeighingMethod.manual,
   weighingDate: DateTime(2025, 3, 14),
   syncStatus: AnimalSyncStatus.rejected,
+  productiveStatus: AnimalProductiveStatus.active,
   updatedAt: DateTime(2025, 3, 14),
   weightHistory: const [],
   syncErrorCode: 'future_backend_code',

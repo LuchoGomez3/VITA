@@ -9,8 +9,8 @@ abstract final class HomeStrings {
   /// Texto mostrado antes del establecimiento elegido.
   static const establishmentPrefix = 'Resumen productivo de';
 
-  /// Indicación mostrada al abrir el selector.
-  static const establishmentSelectionPrompt = 'Seleccioná un establecimiento';
+  /// Opción del selector que abre el alta de un establecimiento nuevo.
+  static const createEstablishmentOption = 'Nuevo establecimiento';
 
   /// Saludo utilizado durante la mañana.
   static const goodMorning = 'Buenos días';
@@ -78,13 +78,22 @@ abstract final class HomeStrings {
   static const activeStock = 'Stock activo';
 
   /// Etiqueta del peso vivo acumulado.
-  static const knownLiveWeight = 'Peso conocido';
+  static const knownLiveWeight = 'Peso vivo registrado';
 
   /// Etiqueta de incorporaciones mensuales.
-  static const monthlyAdditions = 'Altas del mes';
+  static const monthlyAdditions = 'Altas';
 
   /// Etiqueta de bajas mensuales.
-  static const monthlyRemovals = 'Bajas del mes';
+  static const monthlyRemovals = 'Bajas';
+
+  /// Agrupa los cambios de inventario del período actual.
+  static const monthlyMovements = 'Movimientos del mes';
+
+  /// Unidad de la ganancia diaria promedio.
+  static const dailyGainUnit = 'kg/día';
+
+  /// Explicita cuántos animales aportan al peso acumulado.
+  static String weightCoverage(int withWeight, int total) => 'Con peso: $withWeight de $total animales';
 
   /// Referencia temporal de altas y bajas.
   static const currentMonth = 'Mes actual';

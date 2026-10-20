@@ -1,12 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:brick_offline_first/brick_offline_first.dart';
 import 'package:brick_rest/brick_rest.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
+import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
+import 'package:logging/logging.dart';
 
 /// Contrato de persistencia y sincronización de movimientos entre lotes.
 abstract class AnimalLotMovementBrickStore {
@@ -30,14 +31,16 @@ abstract class AnimalLotMovementBrickStore {
 
 /// Persistencia offline-first de movimientos entre lotes.
 class BrickAnimalLotMovementStore implements AnimalLotMovementBrickStore {
-  BrickAnimalLotMovementStore._(this._repository) {
+  BrickAnimalLotMovementStore._(this._repository, this._animalStore) {
     _syncSubscription = _repository.syncResults.listen(applyMovementSyncResult);
   }
 
   static BrickAnimalLotMovementStore? _instance;
 
   final AppBrickRepository _repository;
+  final AnimalBrickStore _animalStore;
   late final StreamSubscription<BackendSyncResult> _syncSubscription;
+  static final _logger = Logger('BrickAnimalLotMovementStore');
 
   /// Instancia configurada durante el bootstrap.
   static BrickAnimalLotMovementStore get instance {
@@ -49,8 +52,11 @@ class BrickAnimalLotMovementStore implements AnimalLotMovementBrickStore {
   }
 
   /// Configura el store una sola vez.
-  static void configure(AppBrickRepository repository) {
-    _instance ??= BrickAnimalLotMovementStore._(repository);
+  static void configure(
+    AppBrickRepository repository, {
+    required AnimalBrickStore animalStore,
+  }) {
+    _instance ??= BrickAnimalLotMovementStore._(repository, animalStore);
   }
 
   /// Guarda primero en SQLite y encola el POST remoto.
@@ -126,7 +132,7 @@ class BrickAnimalLotMovementStore implements AnimalLotMovementBrickStore {
     }
   }
 
-  /// Aplica la confirmación o el rechazo del movimiento y de sus animales.
+  /// Aplica el resultado al movimiento y reconcilia luego los animales.
   Future<void> applyMovementSyncResult(BackendSyncResult result) async {
     if (!BrickAnimalLotMovementRequestTransformer.matchesMovementResource(
       result.resourcePath,
@@ -161,26 +167,13 @@ class BrickAnimalLotMovementStore implements AnimalLotMovementBrickStore {
       );
     }
     await _repository.upsertLocal(reconciled);
-    await _applyResultToAnimals(reconciled, result);
-  }
-
-  Future<void> _applyResultToAnimals(
-    BrickAnimalLotMovementModel movement,
-    BackendSyncResult result,
-  ) async {
-    final animalIds = (jsonDecode(movement.animalIdsJson) as List<dynamic>).cast<String>().toSet();
-    final animals = await _repository.getLocal<BrickAnimalModel>();
-    for (final animal in animals) {
-      final belongsToMovement =
-          animalIds.contains(animal.localId) &&
-          animal.lotId == movement.destinationLotId &&
-          animal.updatedAt.isAtSameMomentAs(movement.updatedAt);
-      if (!belongsToMovement) continue;
-      await _repository.upsertLocal(
-        animal.copyWith(
-          syncStatus: result.synchronized ? BrickAnimalSyncStatus.synchronized : BrickAnimalSyncStatus.rejected,
-          syncErrorCode: result.errorCode,
-        ),
+    try {
+      await _animalStore.pullRemoteAnimals(reconciled.establishmentId);
+    } on Object catch (error, stackTrace) {
+      _logger.warning(
+        'No se pudieron reconciliar los animales del movimiento.',
+        error,
+        stackTrace,
       );
     }
   }

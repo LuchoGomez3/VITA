@@ -267,6 +267,84 @@ async def test_geolocalizacion_y_poligono_persistidos(auth_client):
     assert data["poligono"] == poligono
 
 
+_CUADRADO = [
+    {"orden": 1, "latitud": -33.1, "longitud": -64.1},
+    {"orden": 2, "latitud": -33.1, "longitud": -64.2},
+    {"orden": 3, "latitud": -33.2, "longitud": -64.2},
+    {"orden": 4, "latitud": -33.2, "longitud": -64.1},
+]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "poligono",
+    [
+        pytest.param(_CUADRADO[:2], id="menos-de-3-vertices"),
+        pytest.param(
+            # Moño: recorre las esquinas en diagonal y los lados se cruzan.
+            [
+                {**v, "orden": i}
+                for i, v in enumerate(
+                    [_CUADRADO[0], _CUADRADO[2], _CUADRADO[1], _CUADRADO[3]], start=1
+                )
+            ],
+            id="lados-que-se-cruzan",
+        ),
+        pytest.param(
+            [{**v, "orden": 1} for v in _CUADRADO[:3]],
+            id="orden-repetido",
+        ),
+        pytest.param(
+            [_CUADRADO[0], _CUADRADO[1], {"orden": 3, "latitud": -95, "longitud": 0}],
+            id="latitud-fuera-de-rango",
+        ),
+        pytest.param(
+            # Colineales: no encierran superficie.
+            [
+                {"orden": 1, "latitud": -33.1, "longitud": -64.1},
+                {"orden": 2, "latitud": -33.2, "longitud": -64.1},
+                {"orden": 3, "latitud": -33.3, "longitud": -64.1},
+            ],
+            id="sin-superficie",
+        ),
+    ],
+)
+async def test_poligono_invalido_rechazado(auth_client, poligono):
+    resp = await auth_client.post(
+        "/api/v1/establecimientos",
+        json=_payload(poligono=poligono),
+    )
+    assert resp.status_code == 422
+    assert resp.json()["errors"][0]["code"] == "poligono_invalido"
+
+
+@pytest.mark.anyio
+async def test_poligono_en_cualquier_orden_de_envio_se_valida_por_orden(auth_client):
+    # Llega desordenado en la lista, pero por `orden` es el cuadrado válido.
+    desordenado = [_CUADRADO[2], _CUADRADO[0], _CUADRADO[3], _CUADRADO[1]]
+    resp = await auth_client.post(
+        "/api/v1/establecimientos",
+        json=_payload(poligono=desordenado),
+    )
+    assert resp.status_code == 201
+
+
+@pytest.mark.anyio
+async def test_actualizar_con_poligono_invalido_rechazado(auth_client):
+    creado = await auth_client.post("/api/v1/establecimientos", json=_payload())
+    est_id = creado.json()["data"]["id"]
+
+    resp = await auth_client.put(
+        f"/api/v1/establecimientos/{est_id}",
+        json={"poligono": _CUADRADO[:2]},
+    )
+    assert resp.status_code == 422
+    assert resp.json()["errors"][0]["code"] == "poligono_invalido"
+
+    detalle = await auth_client.get(f"/api/v1/establecimientos/{est_id}")
+    assert detalle.json()["data"]["poligono"] is None
+
+
 @pytest.mark.anyio
 async def test_actualizar_establecimiento_exitoso(auth_client):
     creado = await auth_client.post("/api/v1/establecimientos", json=_payload())
