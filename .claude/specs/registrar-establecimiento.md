@@ -50,10 +50,16 @@ Puntos de entrada al flujo: botón "Configurar mi establecimiento" en
 - **Paso 2 — RENSPA y titular**: `cuitTitular`, `nroRenspa` (formato
   `NN.NNN.N.NNNNN/NN`).
 - **Paso 3 — Ubicación geográfica**: `provincia`, `departamento`,
-  `localidad`, `latitud`/`longitud`, `ubicacionConfirmadaPorGps`.
+  `localidad`, `latitud`/`longitud`, `ubicacionConfirmadaPorGps`. Las
+  coordenadas salen del **GPS real** (paquete `geolocator`, detrás de
+  `GetCurrentLocationUseCase` → `CurrentLocationRepository`): el botón
+  "Usar mi ubicación actual" pide el permiso si hace falta y espera hasta 30 s
+  una posición. El GPS no necesita internet, así que funciona sin señal de
+  datos. Si falla (GPS apagado, permiso negado o bloqueado, sin señal) el
+  borrador no cambia y un snackbar explica qué hacer.
 - **Paso 4 — Delimitar superficie**: `superficieHectareas`,
   `cantidadVertices`. **Réplica visual estática en toda esta iniciativa** —
-  sin SDK de mapas, sin arrastre de vértices, sin GPS real (decisión de
+  sin SDK de mapas, sin arrastre de vértices (decisión de
   producto, ver el plan de referencia). Los valores son fijos/mock hasta que
   una historia futura decida qué paquete de mapas usar.
 - `cantidadUnidadesProductivas` se mantiene en 1: "agregar otra unidad
@@ -84,7 +90,7 @@ Source Code Pro).
 
 - "Sumarme a uno existente con código" (botón en el estado vacío).
 - "Agregar otra unidad productiva" (botón en el paso 2).
-- Mapa/GPS real e interacción de dibujo de polígono (paso 4).
+- Mapa real e interacción de dibujo de polígono (paso 4).
 - Registro offline: la creación de establecimiento es **online-only**
   (mismo criterio que `sign_up`), no usa Brick/SQLite.
 
@@ -113,7 +119,7 @@ antes de armar el request — la UI nunca es la única barrera.
   Ambos campos muestran borde y mensaje de error en tiempo real.
 - **Paso 3 — Ubicación geográfica**: `provincia`/`departamento`/`localidad`
   no vacíos; avanzar exige además `ubicacionConfirmadaPorGps == true` (o sea,
-  tocó "Usar mi ubicación actual" al menos una vez). Mientras no está
+  "Usar mi ubicación actual" consiguió al menos una lectura del GPS). Mientras no está
   confirmada, las coordenadas muestran un placeholder (`—`) en vez de `0.0000°`.
 - **Paso 4 — Delimitar superficie**: `superficieHectareas > 0`,
   `cantidadVertices >= 3`. Trivialmente cierto hoy (valores mock fijos, sin

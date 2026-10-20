@@ -8,6 +8,9 @@ sealed class RegisterEstablishmentEvent with _$RegisterEstablishmentEvent {
     RegisterEstablishmentDraft draft,
   ) = _DraftChanged;
 
+  /// Pide la ubicación actual al GPS para el paso 3.
+  const factory RegisterEstablishmentEvent.currentLocationRequested() = _CurrentLocationRequested;
+
   /// Avanza al siguiente paso del registro.
   const factory RegisterEstablishmentEvent.nextStepRequested() = _NextStepRequested;
 
