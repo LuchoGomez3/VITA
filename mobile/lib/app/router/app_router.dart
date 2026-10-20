@@ -46,6 +46,8 @@ import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expense_history_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expenses_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/strings/operating_expense_strings.dart';
+import 'package:frontend_mayoral/features/profile/domain/entities/establishment_details.dart';
+import 'package:frontend_mayoral/features/profile/presentation/pages/establishment_detail_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
@@ -176,6 +178,9 @@ class AppRouter {
                         cuit: session.user.cuit,
                         createCubit: createProfileCubit,
                         signOut: context.read<AuthSessionCubit>().signOut,
+                        readAppVersion: readInstalledAppVersion,
+                        userId: session.user.id,
+                        createAppearanceCubit: createProfileAppearanceCubit,
                       ),
                       _ => ProfilePage(
                         email: ProfileStrings.emptyCredential,
@@ -184,6 +189,9 @@ class AppRouter {
                         cuit: null,
                         createCubit: createProfileCubit,
                         signOut: context.read<AuthSessionCubit>().signOut,
+                        readAppVersion: readInstalledAppVersion,
+                        userId: null,
+                        createAppearanceCubit: createProfileAppearanceCubit,
                       ),
                     };
                   },
@@ -191,6 +199,13 @@ class AppRouter {
               ],
             ),
           ],
+        ),
+        GoRoute(
+          path: AppRoutes.profileEstablishment,
+          // Sin el establecimiento (por ejemplo, al restaurar la app) se
+          // vuelve a Perfil, que tiene la lista.
+          redirect: (context, state) => state.extra is EstablishmentDetails ? null : AppRoutes.profile,
+          builder: (context, state) => EstablishmentDetailPage(establishment: state.extra! as EstablishmentDetails),
         ),
         GoRoute(
           path: AppRoutes.animalRegisterStep1,

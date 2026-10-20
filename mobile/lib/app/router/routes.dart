@@ -26,6 +26,10 @@ class AppRoutes {
   /// Ruta raiz de la pestaña de perfil y ajustes.
   static const profile = '/perfil';
 
+  /// Ficha de un establecimiento de Perfil (recibe `EstablishmentDetails`
+  /// en `extra`).
+  static const profileEstablishment = '/perfil/establecimiento';
+
   /// Ruta liviana que espera la restauracion de sesion al arrancar.
   static const authCheck = '/auth-check';
 

@@ -6,11 +6,7 @@ import 'package:frontend_mayoral/features/profile/presentation/strings/profile_s
 /// Tarjeta que presenta los datos personales del usuario.
 class ProfileUserCard extends StatelessWidget {
   /// Crea la tarjeta con la información de la sesión.
-  const ProfileUserCard({
-    required this.email,
-    required this.cuit,
-    super.key,
-  });
+  const ProfileUserCard({required this.email, required this.cuit, super.key});
 
   /// Correo electrónico de acceso.
   final String email;
