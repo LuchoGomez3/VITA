@@ -1,6 +1,7 @@
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_detail_repository_impl.dart';
@@ -17,6 +18,7 @@ AnimalDetailCubit createAnimalDetailCubit() {
     brickStore: BrickAnimalStore.instance,
     categoriaBrickStore: BrickCategoriaStore.instance,
     pesajeBrickStore: BrickPesajeStore.instance,
+    lotBrickStore: BrickLotStore.instance,
     remoteDataSource: AnimalDetailRemoteDataSource(
       tokenProvider: SessionBackendAccessTokenProvider.instance,
     ),

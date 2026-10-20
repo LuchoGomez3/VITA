@@ -4,16 +4,16 @@ import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
-import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_header.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_general_tab.dart';
 
 void main() {
-  testWidgets('shows the productive status with text in the animal header', (
+  testWidgets('la pestaña General muestra el estado productivo con texto', (
     tester,
   ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: AnimalDetailHeader(animalDetail: _soldAnimal),
+          body: AnimalGeneralTab(animal: _soldAnimal, onRetrySync: () {}),
         ),
       ),
     );

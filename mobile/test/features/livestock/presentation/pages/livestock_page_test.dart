@@ -2,13 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
-import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/livestock/domain/entities/animal_list_entry.dart';
 import 'package:frontend_mayoral/features/livestock/domain/entities/livestock_establishment.dart';
+import 'package:frontend_mayoral/features/livestock/domain/repositories/animal_list_repository.dart';
 import 'package:frontend_mayoral/features/livestock/domain/repositories/livestock_establishment_repository.dart';
+import 'package:frontend_mayoral/features/livestock/domain/use_cases/get_animal_list_use_case.dart';
 import 'package:frontend_mayoral/features/livestock/domain/use_cases/get_livestock_establishments_use_case.dart';
+import 'package:frontend_mayoral/features/livestock/presentation/cubit/animal_list_cubit.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/cubit/livestock_reader_cubit.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/strings/livestock_strings.dart';
@@ -25,10 +29,7 @@ void main() {
       ),
     );
 
-    final readButton = find.widgetWithText(
-      AppFilledButton,
-      LivestockStrings.readTagTitle,
-    );
+    final readButton = find.byTooltip(LivestockStrings.readTagTitle);
     await tester.tap(readButton);
     await tester.tap(readButton);
 
@@ -160,9 +161,29 @@ void main() {
       ),
     );
 
-    expect(find.text(LivestockStrings.readTagDescription), findsOneWidget);
-    expect(find.widgetWithText(AppFilledButton, LivestockStrings.readTagTitle), findsOneWidget);
+    // Las tarjetas del #74 pasaron a ser accesos de la cabecera de la lista.
+    expect(find.byTooltip(LivestockStrings.readTagTitle), findsOneWidget);
+    expect(find.byTooltip(LivestockStrings.fieldTitle), findsOneWidget);
     expect(find.text('Ver animal 012'), findsNothing);
+  });
+
+  testWidgets('con un campo elegido en el selector lee ahí sin preguntar', (tester) async {
+    final repository = _FakeLivestockEstablishmentRepository(const Result.success([]));
+    final selectedIds = <String>[];
+    await tester.pumpWidget(
+      _testAppWithRepository(
+        repository: repository,
+        onIdentifyAnimal: selectedIds.add,
+        listEstablishments: const [
+          EstablishmentMembership(id: 'establishment-1', name: 'El Ombú', role: UserRole.owner),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await _tapReadTag(tester);
+
+    expect(selectedIds, ['establishment-1']);
   });
 }
 
@@ -177,13 +198,21 @@ Widget _testApp({
   );
 }
 
+/// [listEstablishments] son los campos del selector de la lista: con uno solo
+/// queda elegido y el lector no pregunta; vacío equivale a "Todos".
 Widget _testAppWithRepository({
   required LivestockEstablishmentRepository repository,
   required void Function(String establishmentId) onIdentifyAnimal,
+  List<EstablishmentMembership> listEstablishments = const [],
 }) {
+  final listRepository = _FakeAnimalListRepository(listEstablishments);
   return MaterialApp(
     home: LivestockPage(
-      createCubit: () => LivestockReaderCubit(
+      createCubit: () => AnimalListCubit(
+        getAnimalListUseCase: GetAnimalListUseCase(listRepository),
+        getEstablishmentsUseCase: GetAnimalListEstablishmentsUseCase(listRepository),
+      ),
+      createReaderCubit: () => LivestockReaderCubit(
         GetLivestockEstablishmentsUseCase(repository),
       ),
       onIdentifyAnimal: (establishmentId) async {
@@ -194,9 +223,8 @@ Widget _testAppWithRepository({
 }
 
 Future<void> _tapReadTag(WidgetTester tester) async {
-  await tester.tap(
-    find.widgetWithText(AppFilledButton, LivestockStrings.readTagTitle),
-  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.byTooltip(LivestockStrings.readTagTitle));
   await tester.pumpAndSettle();
 }
 
@@ -226,4 +254,16 @@ class _PendingLivestockEstablishmentRepository implements LivestockEstablishment
     callCount++;
     return resultCompleter.future;
   }
+}
+
+class _FakeAnimalListRepository implements AnimalListRepository {
+  _FakeAnimalListRepository(this.establishments);
+
+  final List<EstablishmentMembership> establishments;
+
+  @override
+  Future<Result<List<AnimalListEntry>>> getAnimals() async => const Result.success([]);
+
+  @override
+  Future<Result<List<EstablishmentMembership>>> getEstablishments() async => Result.success(establishments);
 }
