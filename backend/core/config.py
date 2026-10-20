@@ -115,6 +115,38 @@ class Settings:
             "127.0.0.1",
         ).strip()
 
+        # Email saliente (invitaciones al equipo, adr-0012). "console" solo
+        # loguea el mensaje y es para LOCAL/TEST; staging y producción exigen
+        # "smtp" (Brevo, Resend o una cuenta con contraseña de aplicación).
+        self.EMAIL_PROVIDER: str = os.getenv("EMAIL_PROVIDER", "console").lower()
+        self.SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+        self.SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+        self.SMTP_USER: str = os.getenv("SMTP_USER", "")
+        self.SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+        self.SMTP_FROM: str = os.getenv("SMTP_FROM", "")
+        # El envío es sincrónico dentro del request: el owner tiene que saber si
+        # el email salió. El timeout acota cuánto espera la app.
+        self.EMAIL_TIMEOUT_SECONDS: float = float(
+            os.getenv("EMAIL_TIMEOUT_SECONDS", "10")
+        )
+
+        # Invitaciones al equipo de un establecimiento (adr-0012).
+        self.INVITACION_VIGENCIA_DIAS: int = int(
+            os.getenv("INVITACION_VIGENCIA_DIAS", "7")
+        )
+        # Clave del HMAC con el que se guarda el código: si se filtra la tabla,
+        # sin esta clave no se pueden probar códigos por fuerza bruta offline.
+        self.INVITACION_CODIGO_SECRETO: str = os.getenv(
+            "INVITACION_CODIGO_SECRETO", self.JWT_SECRET
+        )
+        # Intentos de validar o canjear un código, por usuario y por hora.
+        self.INVITACION_CODIGO_RATE_LIMIT: int = int(
+            os.getenv("INVITACION_CODIGO_RATE_LIMIT", "10")
+        )
+        self.INVITACION_CODIGO_RATE_WINDOW_SECONDS: int = int(
+            os.getenv("INVITACION_CODIGO_RATE_WINDOW_SECONDS", "3600")
+        )
+
         # CORS. Mobile nativo no depende de CORS; esta lista protege clientes web.
         self.CORS_ALLOW_ORIGINS: list[str] = _csv_env("CORS_ALLOW_ORIGINS", "*")
         self.CORS_ALLOW_CREDENTIALS: bool = self.ENVIRONMENT not in (
@@ -155,6 +187,16 @@ class Settings:
         ):
             if not value:
                 missing.append(name)
+        if self.EMAIL_PROVIDER != "smtp":
+            missing.append("EMAIL_PROVIDER=smtp")
+        for name, value in (
+            ("SMTP_HOST", self.SMTP_HOST),
+            ("SMTP_FROM", self.SMTP_FROM),
+        ):
+            if not value:
+                missing.append(name)
+        if not os.getenv("INVITACION_CODIGO_SECRETO"):
+            missing.append("INVITACION_CODIGO_SECRETO")
         if not self.CORS_ALLOW_ORIGINS or "*" in self.CORS_ALLOW_ORIGINS:
             missing.append("CORS_ALLOW_ORIGINS explícito")
         if any(not origin.startswith("https://") for origin in self.CORS_ALLOW_ORIGINS):

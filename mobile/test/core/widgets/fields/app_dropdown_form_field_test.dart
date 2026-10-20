@@ -32,9 +32,7 @@ void main() {
     await tester.tap(find.byType(TextField));
     await tester.pumpAndSettle();
 
-    final firstOption = find
-        .widgetWithText(MenuItemButton, 'Aberdeen Angus')
-        .hitTestable();
+    final firstOption = find.widgetWithText(MenuItemButton, 'Aberdeen Angus').hitTestable();
     expect(firstOption, findsOneWidget);
     expect(tester.getTopLeft(firstOption).dy, greaterThanOrEqualTo(fieldBottom));
   });

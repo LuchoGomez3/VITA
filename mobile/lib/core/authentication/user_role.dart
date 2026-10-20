@@ -9,6 +9,10 @@ enum UserRole {
   /// Empleado sin acceso financiero.
   employee,
 
+  /// Veterinario. Por ahora opera como empleado: sin finanzas ni gestion de
+  /// equipo (adr-0012).
+  veterinarian,
+
   /// Rol ausente o no reconocido por esta version de la app.
   unknown,
 }
@@ -18,11 +22,30 @@ extension UserRolePermissions on UserRole {
   /// Solo administradores y propietarios pueden consultar finanzas.
   bool get canViewFinancialInformation => this == UserRole.admin || this == UserRole.owner;
 
+  /// Solo propietarios y administradores invitan, reenvian, cancelan y quitan
+  /// gente del equipo. El backend aplica la misma regla.
+  bool get canManageTeam => this == UserRole.admin || this == UserRole.owner;
+
+  /// Roles que este rol puede asignar al invitar (un admin no invita duenos).
+  List<UserRole> get assignableRoles => switch (this) {
+    UserRole.owner => const [UserRole.owner, UserRole.admin, UserRole.employee, UserRole.veterinarian],
+    UserRole.admin => const [UserRole.admin, UserRole.employee, UserRole.veterinarian],
+    _ => const [],
+  };
+
+  /// Roles de la gente que este rol puede quitar del equipo.
+  bool canRemove(UserRole target) => switch (this) {
+    UserRole.owner => true,
+    UserRole.admin => target == UserRole.employee || target == UserRole.veterinarian,
+    _ => false,
+  };
+
   /// Interpreta el rol recibido para un establecimiento.
   static UserRole fromBackend(String? value) => switch (value) {
     'admin' || 'administrator' => UserRole.admin,
     'owner' => UserRole.owner,
     'employee' => UserRole.employee,
+    'veterinarian' => UserRole.veterinarian,
     _ => UserRole.unknown,
   };
 
@@ -31,6 +54,7 @@ extension UserRolePermissions on UserRole {
     UserRole.admin => 'admin',
     UserRole.owner => 'owner',
     UserRole.employee => 'employee',
+    UserRole.veterinarian => 'veterinarian',
     UserRole.unknown => 'unknown',
   };
 }

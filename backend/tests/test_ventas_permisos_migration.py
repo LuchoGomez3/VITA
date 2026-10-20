@@ -26,6 +26,8 @@ _ACCESO_COMERCIAL_POR_ROL = {
     RolUsuario.admin: True,
     RolUsuario.owner: True,
     RolUsuario.employee: False,
+    # Opera como employee (adr-0012): sin acceso a datos comerciales.
+    RolUsuario.veterinarian: False,
 }
 
 

@@ -100,6 +100,18 @@ abstract final class ProfileStrings {
   /// Título de la sección con los datos de la ficha del establecimiento.
   static const establishmentDataSection = 'Datos del establecimiento';
 
+  /// Sección del equipo en la ficha del establecimiento.
+  static const teamSection = 'Equipo';
+
+  /// Fila que abre el equipo del establecimiento.
+  static const teamRowLabel = 'Usuarios del establecimiento';
+
+  /// Subtítulo de la fila para quien gestiona el equipo.
+  static const teamRowManageSubtitle = 'Ver, invitar y quitar personas';
+
+  /// Subtítulo de la fila para el resto del equipo.
+  static const teamRowViewSubtitle = 'Ver quiénes trabajan en el campo';
+
   /// Etiqueta de la superficie que declaró el productor en el alta.
   static const declaredAreaLabel = 'Superficie declarada';
 
