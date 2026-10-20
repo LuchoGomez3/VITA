@@ -105,8 +105,10 @@ _A completar en `feature/pantalla-campos` cuando se maqueten las 3 pantallas._
 - Link "Ver lista →" de animales en potrero (no hay pantalla destino).
 - CTA "Mover animales a otro potrero" (flujo de movimiento entre potreros no
   existe todavía en ningún diseño).
-- Mapa real / GPS / dibujo de polígonos — mismo criterio que el paso 4 de
-  `registrar-establecimiento.md`.
+- Mapa real / GPS para los potreros: siguen en el lienzo esquemático
+  (ADR-0002). El contorno geográfico del establecimiento ya existe (paso 4 de
+  `registrar-establecimiento.md`, ADR-0009); ubicar los potreros dentro de él
+  queda pendiente.
 
 ## Pendiente para Etapas 2 y 3
 
