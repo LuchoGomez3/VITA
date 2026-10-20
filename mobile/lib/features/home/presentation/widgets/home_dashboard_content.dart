@@ -6,7 +6,7 @@ import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.da
 import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_cubit.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_category_metrics_card.dart';
-import 'package:frontend_mayoral/features/home/presentation/widgets/home_daily_gain_card.dart';
+import 'package:frontend_mayoral/features/home/presentation/widgets/home_inventory_metrics.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_kpi_summary_grid.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_lot_metrics_card.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_operating_balance_card.dart';
@@ -53,18 +53,18 @@ class HomeDashboardContent extends StatelessWidget {
               onRegisterIncome: () => context.push(AppRoutes.incomeRegister),
               onViewMovements: () => _openExpenses(context, AppRoutes.expenseRecords),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.sm),
           ],
-          Text(HomeStrings.title, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: AppSpacing.xs),
-          Text(HomeStrings.subtitle, style: Theme.of(context).textTheme.bodyLarge),
-          const SizedBox(height: AppSpacing.lg),
+          Text(HomeStrings.title, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: AppSpacing.sm),
           HomeKpiSummaryGrid(dashboard: dashboard),
-          const SizedBox(height: AppSpacing.md),
-          HomeDailyGainCard(dashboard: dashboard),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.sm),
+          HomeMonthlyMovementsCard(dashboard: dashboard),
+          const SizedBox(height: AppSpacing.sm),
+          HomeLiveWeightCard(dashboard: dashboard),
+          const SizedBox(height: AppSpacing.sm),
           HomeLotMetricsCard(lots: dashboard.lots),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.sm),
           HomeCategoryMetricsCard(categories: dashboard.categories),
         ],
       ),
