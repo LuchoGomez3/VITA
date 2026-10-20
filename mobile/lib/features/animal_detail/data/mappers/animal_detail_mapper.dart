@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/brick/mappers/animal_productive_status_mapper.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
@@ -27,6 +28,7 @@ class AnimalDetailMapper {
       weighingMethod: model.weighingMethod.toDomain(),
       weighingDate: model.weighingDate,
       syncStatus: model.syncStatus.toDomain(),
+      productiveStatus: model.productiveStatus.toDomain(),
       syncErrorCode: model.syncErrorCode,
       updatedAt: model.updatedAt,
       weightHistory: const [],
@@ -67,6 +69,10 @@ class AnimalDetailMapper {
       fatherId: dto.fatherId,
       coat: dto.coat,
       observations: dto.observations,
+      productiveStatus: brickAnimalProductiveStatusFromBackend(
+        dto.productiveStatus,
+      ),
+      productiveStatusChangedAt: dto.productiveStatusChangedAt,
       syncStatus: BrickAnimalSyncStatus.synchronized,
     );
   }
