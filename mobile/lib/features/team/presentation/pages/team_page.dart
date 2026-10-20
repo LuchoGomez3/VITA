@@ -175,7 +175,7 @@ class _TeamView extends StatelessWidget {
       subtitle: TeamStrings.invitationSubtitle,
       role: invitation.role,
       statusLabel: invitation.isExpired ? TeamStrings.expiredStatus : TeamStrings.invitedStatus,
-      statusTone: invitation.isExpired ? AppStatusChipTone.neutral : AppStatusChipTone.warn,
+      statusTone: invitation.isExpired ? AppStatusChipTone.neutral : AppStatusChipTone.warning,
       note: invitation.isExpired
           ? TeamStrings.expiredOn(invitation.expiresAt)
           : (invitation.emailSent ? TeamStrings.expiresOn(invitation.expiresAt) : TeamStrings.emailNotSent),

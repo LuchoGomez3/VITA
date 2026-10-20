@@ -14,7 +14,7 @@ Defensiva: no recrea lo que ya exista. Espejo para el SQL Editor de Supabase:
 ``backend/scripts/personalizacion_perfil_usuario.sql``.
 
 Revision ID: 20261017_01
-Revises: 20261014_01
+Revises: 20261015_01
 Create Date: 2026-10-17
 """
 
@@ -24,7 +24,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision: str = "20261017_01"
-down_revision: str | None = "20261014_01"
+down_revision: str | None = "20261015_01"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

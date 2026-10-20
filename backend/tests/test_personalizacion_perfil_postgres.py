@@ -22,7 +22,7 @@ pytestmark = [requiere_postgres, pytest.mark.anyio]
 _SCRIPT_SQL = (
     Path(__file__).parent.parent / "scripts/personalizacion_perfil_usuario.sql"
 )
-_REVISION_PREVIA = "20261014_01"
+_REVISION_PREVIA = "20261015_01"
 
 # ``usuarios`` antes de la migración, con lo mínimo para insertar.
 _USUARIOS_PREVIO = """

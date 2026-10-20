@@ -38,8 +38,8 @@ def _normalizar(sql: str) -> str:
 
 def test_revision_y_encadenamiento(migracion):
     assert migracion.revision == "20261017_01"
-    # Head de develop al crearla (catálogo global de categorías, adr-0010).
-    assert migracion.down_revision == "20261014_01"
+    # Head de develop al integrarla (fecha del estado productivo, #72).
+    assert migracion.down_revision == "20261015_01"
 
 
 def test_el_check_es_copia_literal_del_modelo(migracion):

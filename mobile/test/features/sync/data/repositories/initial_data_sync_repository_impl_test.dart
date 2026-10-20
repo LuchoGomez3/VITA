@@ -39,7 +39,12 @@ void main() {
     await repository.sync();
     await repository.sync();
 
-    expect(animalStore.pulls, ['establishment-1', 'establishment-1']);
+    expect(animalStore.pulls, [
+      'establishment-1',
+      'establishment-1',
+      'establishment-1',
+      'establishment-1',
+    ]);
     expect(categoryStore.pullCount, 2);
     expect(lotStore.pulls, ['establishment-1', 'establishment-1']);
     expect(lotStore.pushes, ['establishment-1', 'establishment-1']);

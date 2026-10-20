@@ -14,10 +14,16 @@ Future<BrickPesajeModel> _$BrickPesajeModelFromRest(
     date: brickPesajeDateTimeFromBackend(data['fecha']),
     method: brickPesajeMethodFromBackend(data['metodo'] as String?),
     isEstimated: data['es_estimado'] as bool,
-    bodyCondition: data['condicion_corporal'] == null ? null : brickNullablePesoFromBackend(data['condicion_corporal']),
+    bodyCondition: data['condicion_corporal'] == null
+        ? null
+        : brickNullablePesoFromBackend(data['condicion_corporal']),
     photoUrl: data['foto_url'] == null ? null : data['foto_url'] as String?,
-    responsibleId: data['responsable_id'] == null ? null : data['responsable_id'] as String?,
-    observations: data['observaciones'] == null ? null : data['observaciones'] as String?,
+    responsibleId: data['responsable_id'] == null
+        ? null
+        : data['responsable_id'] as String?,
+    observations: data['observaciones'] == null
+        ? null
+        : data['observaciones'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -64,12 +70,20 @@ Future<BrickPesajeModel> _$BrickPesajeModelFromSqlite(
     date: DateTime.parse(data['date'] as String),
     method: BrickPesajeMethod.values[data['method'] as int],
     isEstimated: data['is_estimated'] == 1,
-    bodyCondition: data['body_condition'] == null ? null : data['body_condition'] as double?,
+    bodyCondition: data['body_condition'] == null
+        ? null
+        : data['body_condition'] as double?,
     photoUrl: data['photo_url'] == null ? null : data['photo_url'] as String?,
-    responsibleId: data['responsible_id'] == null ? null : data['responsible_id'] as String?,
-    observations: data['observations'] == null ? null : data['observations'] as String?,
+    responsibleId: data['responsible_id'] == null
+        ? null
+        : data['responsible_id'] as String?,
+    observations: data['observations'] == null
+        ? null
+        : data['observations'] as String?,
     syncStatus: BrickPesajeSyncStatus.values[data['sync_status'] as int],
-    syncErrorCode: data['sync_error_code'] == null ? null : data['sync_error_code'] as String?,
+    syncErrorCode: data['sync_error_code'] == null
+        ? null
+        : data['sync_error_code'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -106,7 +120,8 @@ Future<Map<String, dynamic>> _$BrickPesajeModelToSqlite(
 }
 
 /// Construct a [BrickPesajeModel]
-class BrickPesajeModelAdapter extends OfflineFirstWithRestAdapter<BrickPesajeModel> {
+class BrickPesajeModelAdapter
+    extends OfflineFirstWithRestAdapter<BrickPesajeModel> {
   BrickPesajeModelAdapter();
 
   @override

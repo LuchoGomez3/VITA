@@ -9,8 +9,11 @@ enum AppStatusChipTone {
   /// Estado positivo o confirmado.
   success,
 
-  /// Pendiente de atención (p. ej. una invitación sin aceptar).
-  warn,
+  /// Estado que requiere atencion sin representar un error tecnico.
+  warning,
+
+  /// Estado negativo o no operativo.
+  error,
 }
 
 /// Pill compacta para mostrar un estado o conteo corto, con punto opcional.
@@ -37,7 +40,8 @@ class AppStatusChip extends StatelessWidget {
     final (background, foreground) = switch (tone) {
       AppStatusChipTone.neutral => (AppColors.backgroundTertiary, AppColors.textSecondary),
       AppStatusChipTone.success => (AppColors.backgroundSecondary, AppColors.primary),
-      AppStatusChipTone.warn => (AppColors.syncPendingContainer, AppColors.syncPending),
+      AppStatusChipTone.warning => (AppColors.syncPendingContainer, AppColors.syncPending),
+      AppStatusChipTone.error => (AppColors.errorContainer, AppColors.error),
     };
 
     return DecoratedBox(

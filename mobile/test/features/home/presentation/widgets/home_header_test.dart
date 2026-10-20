@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
-import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
+import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard_source.dart';
 import 'package:frontend_mayoral/features/home/domain/repositories/home_dashboard_repository.dart';
 import 'package:frontend_mayoral/features/home/domain/use_cases/get_home_dashboard_use_case.dart';
 import 'package:frontend_mayoral/features/home/domain/use_cases/get_home_establishments_use_case.dart';
@@ -58,18 +58,9 @@ class _FakeHomeDashboardRepository implements HomeDashboardRepository {
   }
 
   @override
-  Future<Result<HomeDashboard>> getDashboard({Set<String>? establishmentIds}) async {
+  Future<Result<HomeDashboardSource>> getDashboardSource({Set<String>? establishmentIds}) async {
     return const Result.success(
-      HomeDashboard(
-        activeAnimals: 0,
-        monthlyAdditions: 0,
-        monthlyRemovals: 0,
-        knownLiveWeightKg: 0,
-        animalsWithCurrentWeight: 0,
-        animalsWithDailyGain: 0,
-        categories: [],
-        lots: [],
-      ),
+      HomeDashboardSource(animals: [], weighings: [], categoryNamesById: {}, operatingExpensesCents: 0),
     );
   }
 }

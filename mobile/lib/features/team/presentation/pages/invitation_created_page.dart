@@ -293,7 +293,7 @@ class _InviteeCard extends StatelessWidget {
                       AppStatusChip(label: UserRoleStrings.name(invitation.role)),
                       const AppStatusChip(
                         label: TeamStrings.pendingStatus,
-                        tone: AppStatusChipTone.warn,
+                        tone: AppStatusChipTone.warning,
                         showDot: true,
                       ),
                     ],

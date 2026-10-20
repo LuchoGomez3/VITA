@@ -39,6 +39,7 @@ import 'package:frontend_mayoral/features/field/presentation/strings/field_strin
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
+import 'package:frontend_mayoral/features/livestock/livestock_composition.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/financial_access_denied_page.dart';
@@ -146,7 +147,14 @@ class AppRouter {
               routes: [
                 GoRoute(
                   path: AppRoutes.livestock,
-                  builder: (context, state) => const LivestockPage(),
+                  builder: (context, state) => LivestockPage(
+                    createCubit: createLivestockReaderCubit,
+                    onIdentifyAnimal: (establishmentId) async {
+                      await context.push<void>(
+                        AppRoutes.rfidScanForEstablishment(establishmentId),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),

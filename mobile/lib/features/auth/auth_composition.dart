@@ -49,6 +49,7 @@ AuthSessionCubit createAuthSessionCubit() {
   return AuthSessionCubit(
     restoreSessionUseCase: RestoreSessionUseCase(repository),
     signOutUseCase: SignOutUseCase(repository),
+    refreshOfflineData: createOfflineSyncCoordinator().synchronize,
     authRejections: AppBrickRepository.instance.authRejections,
     onClose: client.close,
   );
@@ -64,9 +65,7 @@ LoginBloc createLoginBloc() {
 
   return LoginBloc(
     signInUseCase: SignInUseCase(repository),
-    preparePostAuthentication: createPrepareInitialDataSyncUseCase(
-      client: client,
-    ).call,
+    preparePostAuthentication: createOfflineSyncCoordinator().synchronize,
     onClose: client.close,
   );
 }

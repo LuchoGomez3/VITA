@@ -11,10 +11,12 @@ part of 'schema.g.dart';
 
 const List<MigrationCommand> _migration_20260910133325_up = [
   DropColumn('sync_status', onTable: 'BrickCategoriaModel'),
-  DropColumn('sync_error_code', onTable: 'BrickCategoriaModel'),
+  DropColumn('sync_error_code', onTable: 'BrickCategoriaModel')
 ];
 
-const List<MigrationCommand> _migration_20260910133325_down = [];
+const List<MigrationCommand> _migration_20260910133325_down = [
+  
+];
 
 //
 // DO NOT EDIT BELOW THIS LINE

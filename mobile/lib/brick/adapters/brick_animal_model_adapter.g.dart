@@ -16,7 +16,9 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromRest(
     categoryId: brickStringFromBackend(data['categoria_id']),
     lotId: brickStringFromBackend(data['lote_id']),
     establishmentId: data['establecimiento_id'] as String,
-    initialWeight: data['peso_inicial'] == null ? null : brickNullableDoubleFromBackend(data['peso_inicial']),
+    initialWeight: data['peso_inicial'] == null
+        ? null
+        : brickNullableDoubleFromBackend(data['peso_inicial']),
     weighingMethod: brickAnimalWeighingMethodFromBackend(
       data['metodo_pesaje'] as String?,
     ),
@@ -24,7 +26,13 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromRest(
     motherId: data['madre_id'] == null ? null : data['madre_id'] as String?,
     fatherId: data['padre_id'] == null ? null : data['padre_id'] as String?,
     coat: data['pelaje'] == null ? null : data['pelaje'] as String?,
-    observations: data['observaciones'] == null ? null : data['observaciones'] as String?,
+    observations: data['observaciones'] == null
+        ? null
+        : data['observaciones'] as String?,
+    productiveStatus: brickAnimalProductiveStatusFromBackend(data['estado']),
+    productiveStatusChangedAt: data['estado_actualizado_en'] == null
+        ? null
+        : brickNullableDateTimeFromBackend(data['estado_actualizado_en']),
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -82,15 +90,30 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromSqlite(
     lotId: data['lot_id'] as String,
     lotName: data['lot_name'] as String,
     establishmentId: data['establishment_id'] as String,
-    initialWeight: data['initial_weight'] == null ? null : data['initial_weight'] as double?,
-    weighingMethod: BrickAnimalWeighingMethod.values[data['weighing_method'] as int],
+    initialWeight: data['initial_weight'] == null
+        ? null
+        : data['initial_weight'] as double?,
+    weighingMethod:
+        BrickAnimalWeighingMethod.values[data['weighing_method'] as int],
     weighingDate: DateTime.parse(data['weighing_date'] as String),
     motherId: data['mother_id'] == null ? null : data['mother_id'] as String?,
     fatherId: data['father_id'] == null ? null : data['father_id'] as String?,
     coat: data['coat'] == null ? null : data['coat'] as String?,
-    observations: data['observations'] == null ? null : data['observations'] as String?,
+    observations: data['observations'] == null
+        ? null
+        : data['observations'] as String?,
+    productiveStatus: brickAnimalProductiveStatusFromSqlite(
+      data['productive_status'],
+    ),
+    productiveStatusChangedAt: data['productive_status_changed_at'] == null
+        ? null
+        : data['productive_status_changed_at'] == null
+        ? null
+        : DateTime.tryParse(data['productive_status_changed_at'] as String),
     syncStatus: BrickAnimalSyncStatus.values[data['sync_status'] as int],
-    syncErrorCode: data['sync_error_code'] == null ? null : data['sync_error_code'] as String?,
+    syncErrorCode: data['sync_error_code'] == null
+        ? null
+        : data['sync_error_code'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -127,6 +150,11 @@ Future<Map<String, dynamic>> _$BrickAnimalModelToSqlite(
     'father_id': instance.fatherId,
     'coat': instance.coat,
     'observations': instance.observations,
+    'productive_status': brickAnimalProductiveStatusToSqlite(
+      instance.productiveStatus,
+    ),
+    'productive_status_changed_at': instance.productiveStatusChangedAt
+        ?.toIso8601String(),
     'sync_status': BrickAnimalSyncStatus.values.indexOf(instance.syncStatus),
     'sync_error_code': instance.syncErrorCode,
     'created_at': instance.createdAt.toIso8601String(),
@@ -136,7 +164,8 @@ Future<Map<String, dynamic>> _$BrickAnimalModelToSqlite(
 }
 
 /// Construct a [BrickAnimalModel]
-class BrickAnimalModelAdapter extends OfflineFirstWithRestAdapter<BrickAnimalModel> {
+class BrickAnimalModelAdapter
+    extends OfflineFirstWithRestAdapter<BrickAnimalModel> {
   BrickAnimalModelAdapter();
 
   @override
@@ -256,6 +285,18 @@ class BrickAnimalModelAdapter extends OfflineFirstWithRestAdapter<BrickAnimalMod
       columnName: 'observations',
       iterable: false,
       type: String,
+    ),
+    'productiveStatus': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'productive_status',
+      iterable: false,
+      type: BrickAnimalProductiveStatus,
+    ),
+    'productiveStatusChangedAt': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'productive_status_changed_at',
+      iterable: false,
+      type: DateTime,
     ),
     'syncStatus': const RuntimeSqliteColumnDefinition(
       association: false,
