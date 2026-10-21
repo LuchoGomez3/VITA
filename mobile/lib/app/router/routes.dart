@@ -77,6 +77,9 @@ class AppRoutes {
   /// Ruta de la pantalla de detalle de animal.
   static const animalDetail = '/animals/:animalId';
 
+  /// "Mover animales" arrancando con el animal de la ficha.
+  static const animalGroupMovement = '/animals/:animalId/mover';
+
   /// Ruta de identificacion de animales mediante caravana RFID.
   static const rfidScan = '/identificar-animal';
 
@@ -141,6 +144,9 @@ class AppRoutes {
   static String animalDetailById(String animalId) {
     return '/animals/$animalId';
   }
+
+  /// "Mover animales" con [animalId] ya en la lista.
+  static String animalGroupMovementById(String animalId) => '/animals/$animalId/mover';
 
   /// Ruta de la pantalla de estado vacio de establecimiento.
   static const establishmentRegisterEmpty = '/registrar-establecimiento';

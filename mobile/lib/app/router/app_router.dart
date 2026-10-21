@@ -9,6 +9,8 @@ import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
+import 'package:frontend_mayoral/features/animal_movement/animal_movement_composition.dart';
+import 'package:frontend_mayoral/features/animal_movement/presentation/pages/group_movement_page.dart';
 import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
@@ -296,8 +298,16 @@ class AppRouter {
             return AnimalDetailPage(
               animalId: animalId,
               createCubit: createAnimalDetailCubit,
+              createMovementHistoryCubit: createMovementHistoryCubit,
             );
           },
+        ),
+        GoRoute(
+          path: AppRoutes.animalGroupMovement,
+          builder: (context, state) => GroupMovementPage(
+            animalId: state.pathParameters['animalId']!,
+            createCubit: createGroupMovementCubit,
+          ),
         ),
         // Maquetas (Etapa 1) de pesaje y sanidad, con datos ficticios.
         GoRoute(
