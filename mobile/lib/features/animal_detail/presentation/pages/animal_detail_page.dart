@@ -9,6 +9,7 @@ import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/anima
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_ficha_header.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_ficha_section.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_genealogy_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_general_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_weighings_tab.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/mock/weighing_mock.dart';
@@ -29,6 +30,7 @@ class AnimalDetailPage extends StatelessWidget {
   const AnimalDetailPage({
     required this.animalId,
     required this.createCubit,
+    required this.loadGenealogy,
     super.key,
   });
 
@@ -38,11 +40,14 @@ class AnimalDetailPage extends StatelessWidget {
   /// Crea el Cubit con dependencias resueltas fuera de presentation.
   final AnimalDetailCubitFactory createCubit;
 
+  /// Lee padres, abuelos y crías para la pestaña Genealogía.
+  final LoadAnimalGenealogy loadGenealogy;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => createCubit()..loadAnimalData(animalId),
-      child: const _AnimalDetailView(),
+      child: _AnimalDetailView(loadGenealogy: loadGenealogy),
     );
   }
 }
@@ -71,7 +76,9 @@ enum AnimalFichaTab {
 }
 
 class _AnimalDetailView extends StatefulWidget {
-  const _AnimalDetailView();
+  const _AnimalDetailView({required this.loadGenealogy});
+
+  final LoadAnimalGenealogy loadGenealogy;
 
   @override
   State<_AnimalDetailView> createState() => _AnimalDetailViewState();
@@ -133,11 +140,7 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
               animal: data,
               onRetrySync: () => context.read<AnimalDetailCubit>().retrySync(data.id),
             ),
-            const AnimalFichaComingSoon(
-              icon: Icons.account_tree_outlined,
-              title: AnimalDetailStrings.comingSoonTitle,
-              message: AnimalDetailStrings.genealogyComingSoon,
-            ),
+            AnimalGenealogyTab(animal: data, loadGenealogy: widget.loadGenealogy),
             AnimalWeighingsTab(animal: data),
             const AnimalFichaComingSoon(
               icon: Icons.vaccines_outlined,
