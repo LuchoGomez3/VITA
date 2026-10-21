@@ -16,31 +16,52 @@ class GetAnimalMovementHistoryUseCase {
   Future<Result<List<MovementHistoryEntry>>> call(String animalId) => _repository.getHistory(animalId);
 }
 
-/// Carga el animal con el que se abre "Mover animales" y los potreros de su campo.
+/// Carga los animales con los que se abre "Mover animales" (uno desde la ficha
+/// o varios desde el lector de caravanas) y los potreros de su campo.
 class PrepareGroupMovementUseCase {
   /// Crea el caso de uso.
   const PrepareGroupMovementUseCase(this._repository);
 
   final AnimalMovementRepository _repository;
 
-  /// Devuelve el animal inicial y los destinos posibles.
-  Future<Result<({MovementAnimal animal, List<MovementDestination> destinations})>> call(String animalId) async {
-    final animalResult = await _repository.getAnimal(animalId);
-    if (animalResult is Failure<MovementAnimal?>) {
-      return Result.failure(animalResult.error);
+  /// Devuelve los animales iniciales y los destinos posibles. Tienen que ser
+  /// todos del mismo establecimiento: un potrero es de un solo campo.
+  Future<Result<({List<MovementAnimal> animals, List<MovementDestination> destinations})>> call(
+    List<String> animalIds,
+  ) async {
+    final animals = <MovementAnimal>[];
+    for (final animalId in animalIds.toSet()) {
+      final animalResult = await _repository.getAnimal(animalId);
+      if (animalResult is Failure<MovementAnimal?>) {
+        return Result.failure(animalResult.error);
+      }
+      final animal = (animalResult as Success<MovementAnimal?>).data;
+      if (animal == null) {
+        return const Result.failure(
+          DomainException(
+            message: 'Uno de los animales no se puede mover: no está activo o no tiene potrero.',
+            code: DomainErrorCode.validation,
+          ),
+        );
+      }
+      animals.add(animal);
     }
-    final animal = (animalResult as Success<MovementAnimal?>).data;
-    if (animal == null) {
+    if (animals.isEmpty) {
+      return const Result.failure(
+        DomainException(message: 'Agregá al menos un animal.', code: DomainErrorCode.validation),
+      );
+    }
+    if (animals.any((animal) => animal.establishmentId != animals.first.establishmentId)) {
       return const Result.failure(
         DomainException(
-          message: 'Este animal no se puede mover: no está activo o no tiene potrero.',
+          message: 'Los animales son de establecimientos distintos: los potreros son de un solo campo.',
           code: DomainErrorCode.validation,
         ),
       );
     }
-    final destinations = await _repository.getDestinations(animal.establishmentId);
+    final destinations = await _repository.getDestinations(animals.first.establishmentId);
     return switch (destinations) {
-      Success(:final data) => Result.success((animal: animal, destinations: data)),
+      Success(:final data) => Result.success((animals: animals, destinations: data)),
       Failure(:final error) => Result.failure(error),
       _ => const Result.failure(DomainException(message: 'No se pudieron leer los potreros.')),
     };

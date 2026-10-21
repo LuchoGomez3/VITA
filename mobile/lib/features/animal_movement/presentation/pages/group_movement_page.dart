@@ -19,11 +19,11 @@ typedef GroupMovementCubitFactory = GroupMovementCubit Function();
 /// Funciona sin conexión: el movimiento se guarda en el celular y se sincroniza
 /// después. Devuelve el [GroupMovementSummary] al cerrar.
 class GroupMovementPage extends StatelessWidget {
-  /// Crea la pantalla arrancando con [animalId] en la lista.
-  const GroupMovementPage({required this.animalId, required this.createCubit, super.key});
+  /// Crea la pantalla arrancando con [animalIds] en la lista.
+  const GroupMovementPage({required this.animalIds, required this.createCubit, super.key});
 
-  /// Animal desde cuya ficha se abrió.
-  final String animalId;
+  /// Animales con los que arranca (el de la ficha o los leídos en el lector).
+  final List<String> animalIds;
 
   /// Crea el cubit con sus dependencias.
   final GroupMovementCubitFactory createCubit;
@@ -31,7 +31,7 @@ class GroupMovementPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => createCubit()..start(animalId),
+      create: (_) => createCubit()..start(animalIds),
       child: const _GroupMovementView(),
     );
   }

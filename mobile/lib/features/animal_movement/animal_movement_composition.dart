@@ -11,7 +11,8 @@ import 'package:frontend_mayoral/features/field/data/repositories/lot_animal_mov
 import 'package:frontend_mayoral/features/field/data/repositories/lot_repository_impl.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/move_lot_animals_use_case.dart';
 
-AnimalMovementRepositoryImpl _repository() => AnimalMovementRepositoryImpl(
+/// Repositorio offline de movimientos; también lo usa el lector de caravanas.
+AnimalMovementRepositoryImpl createAnimalMovementRepository() => AnimalMovementRepositoryImpl(
   animalStore: BrickAnimalStore.instance,
   lotStore: BrickLotStore.instance,
   categoryStore: BrickCategoriaStore.instance,
@@ -20,12 +21,12 @@ AnimalMovementRepositoryImpl _repository() => AnimalMovementRepositoryImpl(
 
 /// Construye el cubit del historial de potreros de la ficha.
 MovementHistoryCubit createMovementHistoryCubit() =>
-    MovementHistoryCubit(GetAnimalMovementHistoryUseCase(_repository()));
+    MovementHistoryCubit(GetAnimalMovementHistoryUseCase(createAnimalMovementRepository()));
 
 /// Construye el cubit de "Mover animales" sobre el movimiento entre lotes de
 /// "Campo y potreros" (mismo registro offline y misma sincronización).
 GroupMovementCubit createGroupMovementCubit() {
-  final repository = _repository();
+  final repository = createAnimalMovementRepository();
   return GroupMovementCubit(
     prepare: PrepareGroupMovementUseCase(repository),
     resolveTag: ResolveMovementTagUseCase(repository),

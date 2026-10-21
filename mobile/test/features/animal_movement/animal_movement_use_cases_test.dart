@@ -79,6 +79,24 @@ void main() {
     });
   });
 
+  group('PrepareGroupMovementUseCase', () {
+    test('carga todos los animales de la lista sin repetir y los potreros del campo', () async {
+      final result = await PrepareGroupMovementUseCase(_FakeRepository())(['a1', 'a2', 'a1']);
+
+      final data = (result as Success<({List<MovementAnimal> animals, List<MovementDestination> destinations})>).data;
+      expect(data.animals.map((animal) => animal.id), ['a1', 'a2']);
+      expect(data.destinations.single.id, 'cumbre');
+    });
+
+    test('rechaza animales de campos distintos, inactivos o una lista vacía', () async {
+      final prepare = PrepareGroupMovementUseCase(_FakeRepository());
+
+      expect(((await prepare(['a1', 'b1'])) as Failure).error.code, DomainErrorCode.validation);
+      expect(((await prepare(['a1', 'baja'])) as Failure).error.code, DomainErrorCode.validation);
+      expect(((await prepare([])) as Failure).error.code, DomainErrorCode.validation);
+    });
+  });
+
   group('ResolveMovementTagUseCase', () {
     Future<Result<MovementAnimal>> resolve(String tag, {Set<String> selected = const {}}) =>
         ResolveMovementTagUseCase(_FakeRepository())(tag: tag, establishmentId: 'campo-1', selectedIds: selected);
@@ -114,6 +132,18 @@ class _FakeRepository implements AnimalMovementRepository {
     'otro' => _animal('b1', lotId: 'x', establishmentId: 'campo-2'),
     _ => null,
   });
+
+  @override
+  Future<Result<MovementAnimal?>> getAnimal(String animalId) async => Result.success(switch (animalId) {
+    'a1' => _animal('a1', lotId: 'bajo'),
+    'a2' => _animal('a2', lotId: 'sauces'),
+    'b1' => _animal('b1', lotId: 'x', establishmentId: 'campo-2'),
+    _ => null,
+  });
+
+  @override
+  Future<Result<List<MovementDestination>>> getDestinations(String establishmentId) async =>
+      const Result.success([MovementDestination(id: 'cumbre', name: 'La Cumbre', animalCount: 3)]);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName}');

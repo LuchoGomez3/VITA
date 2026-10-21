@@ -189,18 +189,8 @@ class AnimalDetailStrings {
   /// Botón flotante para registrar un pesaje del animal.
   static const newWeighingTooltip = 'Registrar pesaje';
 
-  /// Título de la hoja para elegir cómo pesar.
-  static const weighingMethodSheetTitle = '¿Cómo querés pesarlo?';
 
-  /// Opción de pesaje con balanza Bluetooth.
-  static const weighingWithBluetooth = 'Balanza Bluetooth';
 
-  /// Opción de pesaje manual.
-  static const weighingManual = 'Carga manual';
 
-  /// Opción de pesaje por foto.
-  static const weighingWithPhoto = 'Foto (Pesaje IA)';
 
-  /// Error al abrir la cámara.
-  static const cameraError = 'No se pudo abrir la cámara. Revisá los permisos e intentá nuevamente.';
 }

@@ -261,6 +261,7 @@ class AppRouter {
             createBloc: createRegisterAnimalBloc,
             initialRfid: state.uri.queryParameters['rfid'] ?? '',
             initialEstablishmentId: state.uri.queryParameters['establecimientoId'],
+            returnToCaller: state.uri.queryParameters['origen'] == 'lector',
           ),
         ),
         GoRoute(
@@ -292,6 +293,13 @@ class AppRouter {
           },
         ),
         GoRoute(
+          path: AppRoutes.animalRegisterSuccessToReader,
+          builder: (context, state) => RegistrarAnimalSuccessPage(
+            registeredAnimal: state.extra! as RegisteredAnimal,
+            returnToReader: true,
+          ),
+        ),
+        GoRoute(
           path: AppRoutes.animalDetail,
           builder: (context, state) {
             final animalId = state.pathParameters['animalId']!;
@@ -305,7 +313,14 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.animalGroupMovement,
           builder: (context, state) => GroupMovementPage(
-            animalId: state.pathParameters['animalId']!,
+            animalIds: [state.pathParameters['animalId']!],
+            createCubit: createGroupMovementCubit,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.groupMovement,
+          builder: (context, state) => GroupMovementPage(
+            animalIds: state.extra is List<String> ? state.extra! as List<String> : const [],
             createCubit: createGroupMovementCubit,
           ),
         ),

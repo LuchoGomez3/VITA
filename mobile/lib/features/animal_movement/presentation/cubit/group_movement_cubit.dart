@@ -107,17 +107,17 @@ class GroupMovementCubit extends Cubit<GroupMovementState> {
   final ResolveMovementTagUseCase _resolveTag;
   final RegisterGroupMovementUseCase _register;
 
-  /// Arranca con [animalId] ya en la lista.
-  Future<void> start(String animalId) async {
-    final result = await _prepare(animalId);
+  /// Arranca con [animalIds] ya en la lista.
+  Future<void> start(List<String> animalIds) async {
+    final result = await _prepare(animalIds);
     if (isClosed) return;
     switch (result) {
       case Success(:final data):
         emit(
           state._copy(
             isLoading: false,
-            establishmentId: data.animal.establishmentId,
-            animals: [data.animal],
+            establishmentId: data.animals.first.establishmentId,
+            animals: data.animals,
             destinations: data.destinations,
           ),
         );

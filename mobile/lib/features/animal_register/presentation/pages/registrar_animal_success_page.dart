@@ -12,11 +12,15 @@ class RegistrarAnimalSuccessPage extends StatelessWidget {
   /// Crea la pantalla de exito del flujo de alta.
   const RegistrarAnimalSuccessPage({
     required this.registeredAnimal,
+    this.returnToReader = false,
     super.key,
   });
 
   /// Animal persisted locally through Brick.
   final RegisteredAnimal registeredAnimal;
+
+  /// Si el alta se abrió desde el lector de caravanas.
+  final bool returnToReader;
 
   @override
   Widget build(BuildContext context) {
@@ -63,9 +67,13 @@ class RegistrarAnimalSuccessPage extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.lg),
               TextButton(
-                onPressed: () => context.go(AppRoutes.home),
-                child: const Text(
-                  AnimalRegisterStrings.successBackHomeButton,
+                // Desde el lector se vuelve a la lectura: el alta devuelve el
+                // id del animal y la caravana pasa a "registrada".
+                onPressed: () => returnToReader ? context.pop(true) : context.go(AppRoutes.home),
+                child: Text(
+                  returnToReader
+                      ? AnimalRegisterStrings.successBackToReaderButton
+                      : AnimalRegisterStrings.successBackHomeButton,
                   style: AppTypography.outlinedButton,
                 ),
               ),
