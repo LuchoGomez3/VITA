@@ -20,22 +20,22 @@ import 'package:go_router/go_router.dart';
 ///
 /// Se dibuja sobre la pestaña actual, por encima de la barra de navegación.
 /// El bastón HID llega como teclado: cada lectura (dígitos + Enter) se suma a
-/// la sesión. Cerrar el panel descarta la sesión; lo registrado ya quedó
-/// guardado en el celular.
+/// la sesión. La sesión ([cubit]) vive en la barra: cerrar el panel no
+/// pierde las caravanas leídas, solo "Descartar" las borra.
 class QuickReadPanel extends StatelessWidget {
-  /// Crea el panel.
-  const QuickReadPanel({required this.createCubit, required this.onClose, super.key});
+  /// Crea el panel sobre la sesión [cubit].
+  const QuickReadPanel({required this.cubit, required this.onClose, super.key});
 
-  /// Construye el cubit de la sesión.
-  final QuickReadCubit Function() createCubit;
+  /// Sesión de lectura, compartida entre aperturas del panel.
+  final QuickReadCubit cubit;
 
-  /// Cierra el panel (tocar el fondo o el botón "Cerrar").
+  /// Cierra el panel (botón "Cerrar", atrás o tocar el fondo sin lecturas).
   final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => createCubit()..start(),
+    return BlocProvider.value(
+      value: cubit,
       child: _QuickReadPanelView(onClose: onClose),
     );
   }
@@ -82,10 +82,15 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
     return Stack(
       children: [
         Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.onClose,
-            child: const ColoredBox(color: Color(0x7319140A)),
+          // Con caravanas leídas, un toque sin querer en la manga no cierra
+          // el panel (el bastón dejaría de escuchar): se cierra con "Cerrar".
+          child: BlocSelector<QuickReadCubit, QuickReadState, bool>(
+            selector: (state) => state.items.isEmpty,
+            builder: (context, isEmpty) => GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: isEmpty ? widget.onClose : null,
+              child: const ColoredBox(color: Color(0x7319140A)),
+            ),
           ),
         ),
         Align(

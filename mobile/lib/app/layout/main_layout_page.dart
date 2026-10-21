@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_strings.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
@@ -40,6 +41,10 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
   static const double _navigationBarHeight = 65;
 
   bool _isReading = false;
+
+  /// Sesión del lector: se crea al abrirlo por primera vez y sobrevive a
+  /// cerrar el panel o cambiar de pestaña.
+  QuickReadCubit? _readerCubit;
   late final AnimationController _indicatorController;
   late int _indicatorFromIndex;
   late int _indicatorToIndex;
@@ -73,6 +78,7 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
   @override
   void dispose() {
     _indicatorController.dispose();
+    _readerCubit?.close();
     super.dispose();
   }
 
@@ -99,7 +105,7 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
           if (_isReading)
             Positioned.fill(
               child: QuickReadPanel(
-                createCubit: widget.createReaderCubit,
+                cubit: _readerSession,
                 onClose: _closeReader,
               ),
             ),
@@ -123,7 +129,12 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
           foregroundColor: AppColors.onPrimary,
           elevation: 2,
           shape: const CircleBorder(),
-          child: Icon(_isReading ? Icons.close : Icons.contactless_outlined, size: 30),
+          child: _isReading
+              ? const Icon(Icons.close, size: 30)
+              : _ReadCountBadge(
+                  cubit: _readerCubit,
+                  child: const Icon(Icons.contactless_outlined, size: 30),
+                ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -220,12 +231,40 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
     );
   }
 
+  QuickReadCubit get _readerSession => _readerCubit ??= widget.createReaderCubit()..start();
+
   void _toggleReader() => setState(() => _isReading = !_isReading);
 
   void _closeReader() {
     if (_isReading) {
       setState(() => _isReading = false);
     }
+  }
+}
+
+/// Cantidad de caravanas leídas sobre el botón central con el panel cerrado.
+class _ReadCountBadge extends StatelessWidget {
+  const _ReadCountBadge({required this.cubit, required this.child});
+
+  final QuickReadCubit? cubit;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = cubit;
+    if (session == null) {
+      return child;
+    }
+    return BlocBuilder<QuickReadCubit, QuickReadState>(
+      bloc: session,
+      buildWhen: (previous, current) => previous.items.length != current.items.length,
+      builder: (context, state) => Badge(
+        isLabelVisible: state.items.isNotEmpty,
+        label: Text('${state.items.length}'),
+        backgroundColor: AppColors.warning,
+        child: child,
+      ),
+    );
   }
 }
 

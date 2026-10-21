@@ -10,9 +10,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/quick_read/fake_quick_read_repository.dart';
 
+const _rfid = '982000412884005';
+
 void main() {
   Future<void> pumpLayout(WidgetTester tester) async {
-    final repository = FakeQuickReadRepository();
+    final repository = FakeQuickReadRepository(byTag: {_rfid: quickReadAnimal('a1')});
     final router = GoRouter(
       initialLocation: '/inicio',
       routes: [
@@ -79,5 +81,34 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(QuickReadPanel), findsNothing);
     expect(find.text('pantalla /hacienda'), findsOneWidget);
+  });
+
+  testWidgets('cerrar el panel o cambiar de pestaña conserva las caravanas leídas', (tester) async {
+    await pumpLayout(tester);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(QuickReadStrings.manualEntry));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), _rfid);
+    await tester.tap(find.text(QuickReadStrings.add));
+    await tester.pumpAndSettle();
+    expect(find.text('004 0028'), findsOneWidget);
+
+    // Un toque sin querer fuera de la hoja no la cierra.
+    await tester.tapAt(const Offset(20, 20));
+    await tester.pumpAndSettle();
+    expect(find.byType(QuickReadPanel), findsOneWidget);
+
+    await tester.tap(find.text(MainLayoutStrings.livestock));
+    await tester.pumpAndSettle();
+    expect(find.byType(QuickReadPanel), findsNothing);
+    // El botón muestra cuántas hay leídas.
+    expect(find.descendant(of: find.byType(Badge), matching: find.text('1')), findsOneWidget);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    expect(find.text('004 0028'), findsOneWidget);
+    expect(find.text(QuickReadStrings.oneRead), findsOneWidget);
   });
 }

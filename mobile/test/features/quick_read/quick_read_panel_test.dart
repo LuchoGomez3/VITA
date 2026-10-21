@@ -35,6 +35,13 @@ void main() {
   });
 
   Future<void> pumpPanel(WidgetTester tester) async {
+    final session = QuickReadCubit(
+      resolveTag: ResolveQuickReadTagUseCase(repository),
+      refresh: RefreshQuickReadUseCase(repository),
+      getEstablishments: GetQuickReadEstablishmentsUseCase(repository),
+    );
+    addTearDown(session.close);
+    await session.start();
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -43,14 +50,7 @@ void main() {
         GoRoute(
           path: '/',
           builder: (_, _) => Scaffold(
-            body: QuickReadPanel(
-              createCubit: () => QuickReadCubit(
-                resolveTag: ResolveQuickReadTagUseCase(repository),
-                refresh: RefreshQuickReadUseCase(repository),
-                getEstablishments: GetQuickReadEstablishmentsUseCase(repository),
-              ),
-              onClose: () => closed++,
-            ),
+            body: QuickReadPanel(cubit: session, onClose: () => closed++),
           ),
         ),
         GoRoute(
@@ -196,10 +196,16 @@ void main() {
     expect(find.text(QuickReadStrings.waitingTitle), findsOneWidget);
   });
 
-  testWidgets('tocar el fondo cierra el panel', (tester) async {
+  testWidgets('tocar el fondo cierra el panel solo si no hay caravanas leídas', (tester) async {
     await pumpPanel(tester);
 
     await tester.tapAt(const Offset(20, 20));
     expect(closed, 1);
+
+    await readWithStick(tester, _rfidA1);
+    await tester.tapAt(const Offset(20, 20));
+    await tester.pumpAndSettle();
+    expect(closed, 1);
+    expect(find.text('004 0028'), findsOneWidget);
   });
 }
