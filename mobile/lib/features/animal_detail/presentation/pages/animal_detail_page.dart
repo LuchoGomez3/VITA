@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
@@ -15,11 +14,8 @@ import 'package:frontend_mayoral/features/animal_movement/domain/entities/moveme
 import 'package:frontend_mayoral/features/animal_movement/presentation/cubit/movement_history_cubit.dart';
 import 'package:frontend_mayoral/features/animal_movement/presentation/strings/animal_movement_strings.dart';
 import 'package:frontend_mayoral/features/animal_movement/presentation/widgets/animal_movements_tab.dart';
-import 'package:frontend_mayoral/features/weighing/presentation/mock/weighing_mock.dart';
-import 'package:frontend_mayoral/features/weighing/presentation/pages/weighing_page.dart';
-import 'package:frontend_mayoral/features/weighing/presentation/widgets/weighing_tab_selector.dart';
+import 'package:frontend_mayoral/features/weighing/presentation/widgets/weighing_method_sheet.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
 /// Factory usada por composition root/router para construir el Cubit.
 typedef AnimalDetailCubitFactory = AnimalDetailCubit Function();
@@ -222,82 +218,19 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
     context.go(AppRoutes.livestock);
   }
 
-  /// Ofrece las tres formas de pesar que ya existen: balanza Bluetooth, carga
-  /// manual y foto (Pesaje IA).
   Future<void> _chooseWeighingMethod(BuildContext context, AnimalDetail animal) async {
-    final method = await showModalBottomSheet<_WeighingMethod>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.xs),
-              child: Text(AnimalDetailStrings.weighingMethodSheetTitle, style: AppTypography.pageTitle),
-            ),
-            for (final method in _WeighingMethod.values)
-              ListTile(
-                leading: Icon(method.icon, color: AppColors.primary),
-                title: Text(method.label, style: AppTypography.mediumEmphasis),
-                onTap: () => Navigator.of(sheetContext).pop(method),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (method == null || !context.mounted) {
-      return;
-    }
-
-    switch (method) {
-      case _WeighingMethod.bluetooth || _WeighingMethod.manual:
-        final cubit = context.read<AnimalDetailCubit>();
-        final saved = await context.push<bool>(
-          AppRoutes.weighing,
-          extra: WeighingRequest(
-            animalId: animal.id,
-            establishmentId: animal.establishmentId,
-            animal: WeighingAnimalMock(
-              visualTag: animal.visualTag,
-              rfid: animal.rfidTagNumber,
-              breedAndCategory: [animal.breed, animal.categoryName].where((part) => part.isNotEmpty).join(' · '),
-              weightKg: animal.currentWeight.round(),
-            ),
-            initialTab: method == _WeighingMethod.bluetooth ? WeighingCaptureTab.bluetooth : WeighingCaptureTab.manual,
-          ),
-        );
-        // Un pesaje nuevo cambia el gráfico, el histórico y el último peso.
-        if (saved ?? false) {
-          await cubit.loadAnimalData(animal.id);
-        }
-      case _WeighingMethod.photo:
-        await _openCamera(context);
+    final cubit = context.read<AnimalDetailCubit>();
+    final saved = await startWeighing(context, (
+      animalId: animal.id,
+      establishmentId: animal.establishmentId,
+      visualTag: animal.visualTag,
+      rfidTagNumber: animal.rfidTagNumber,
+      breedAndCategory: [animal.breed, animal.categoryName].where((part) => part.isNotEmpty).join(' · '),
+      currentWeightKg: animal.currentWeight.round(),
+    ));
+    // Un pesaje nuevo cambia el gráfico, el histórico y el último peso.
+    if (saved) {
+      await cubit.loadAnimalData(animal.id);
     }
   }
-
-  /// Igual que el botón "Pesaje IA" de la barra: por ahora solo abre la
-  /// cámara (la estimación del peso está en desarrollo).
-  Future<void> _openCamera(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await ImagePicker().pickImage(source: ImageSource.camera, requestFullMetadata: false);
-    } on PlatformException {
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text(AnimalDetailStrings.cameraError)));
-    }
-  }
-}
-
-enum _WeighingMethod {
-  bluetooth(AnimalDetailStrings.weighingWithBluetooth, Icons.bluetooth),
-  manual(AnimalDetailStrings.weighingManual, Icons.dialpad),
-  photo(AnimalDetailStrings.weighingWithPhoto, Icons.photo_camera_outlined);
-
-  const _WeighingMethod(this.label, this.icon);
-
-  final String label;
-  final IconData icon;
 }

@@ -1,26 +1,36 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_strings.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/features/quick_read/presentation/cubit/quick_read_cubit.dart';
+import 'package:frontend_mayoral/features/quick_read/presentation/strings/quick_read_strings.dart';
+import 'package:frontend_mayoral/features/quick_read/presentation/widgets/quick_read_panel.dart';
+import 'package:frontend_mayoral/features/quick_read/quick_read_composition.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
 /// Cascaron principal que mantiene visibles y aisladas las ramas de navegacion.
 ///
 /// [StatefulNavigationShell] conserva un `Navigator` independiente por pestaña,
 /// por lo que cada rama mantiene su historial y su posicion de scroll.
+///
+/// El boton central abre y cierra el lector de caravanas sobre la pestaña
+/// actual.
 class MainLayoutPage extends StatefulWidget {
   /// Crea el layout que envuelve las cuatro ramas principales de la app.
   const MainLayoutPage({
     required this.navigationShell,
     super.key,
+    this.createReaderCubit = createQuickReadCubit,
   });
 
   /// Controlador y contenido de las ramas creado por `StatefulShellRoute`.
   final StatefulNavigationShell navigationShell;
+
+  /// Construye la sesion del lector de caravanas.
+  final QuickReadCubit Function() createReaderCubit;
 
   @override
   State<MainLayoutPage> createState() => _MainLayoutPageState();
@@ -30,7 +40,11 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
   // Altura exterior de la barra; modificar este valor cambia su grosor real.
   static const double _navigationBarHeight = 65;
 
-  final _imagePicker = ImagePicker();
+  bool _isReading = false;
+
+  /// Sesión del lector: se crea al abrirlo por primera vez y sobrevive a
+  /// cerrar el panel o cambiar de pestaña.
+  QuickReadCubit? _readerCubit;
   late final AnimationController _indicatorController;
   late int _indicatorFromIndex;
   late int _indicatorToIndex;
@@ -64,41 +78,63 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
   @override
   void dispose() {
     _indicatorController.dispose();
+    _readerCubit?.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      // Atras cierra el lector antes de salir de la pestaña.
+      canPop: !_isReading,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          _closeReader();
+        }
+      },
+      child: _buildScaffold(),
+    );
+  }
+
+  Widget _buildScaffold() {
     return Scaffold(
       extendBody: true,
-      body: widget.navigationShell,
+      body: Stack(
+        children: [
+          Positioned.fill(child: widget.navigationShell),
+          if (_isReading)
+            Positioned.fill(
+              child: QuickReadPanel(
+                cubit: _readerSession,
+                onClose: _closeReader,
+              ),
+            ),
+        ],
+      ),
       floatingActionButton: DecoratedBox(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.33),
+              color: (_isReading ? AppColors.textPrimary : AppColors.primary).withValues(alpha: 0.33),
               blurRadius: 20,
               spreadRadius: 3,
             ),
           ],
         ),
         child: FloatingActionButton(
-          tooltip: MainLayoutStrings.openCamera,
-          onPressed: _openCamera,
-          backgroundColor: AppColors.primary,
+          tooltip: _isReading ? QuickReadStrings.close : QuickReadStrings.readTooltip,
+          onPressed: _toggleReader,
+          backgroundColor: _isReading ? AppColors.textPrimary : AppColors.primary,
           foregroundColor: AppColors.onPrimary,
           elevation: 2,
           shape: const CircleBorder(),
-          child: SvgPicture.asset(
-            'assets/icons/camera.svg',
-            width: 28,
-            height: 28,
-            colorFilter: const ColorFilter.mode(
-              AppColors.onPrimary,
-              BlendMode.srcIn,
-            ),
-          ),
+          child: _isReading
+              ? const Icon(Icons.close, size: 30)
+              : _ReadCountBadge(
+                  cubit: _readerCubit,
+                  child: const Icon(Icons.contactless_outlined, size: 30),
+                ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -149,15 +185,17 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
                         selected: widget.navigationShell.currentIndex == 1,
                         onTap: () => _selectDestination(1),
                       ),
-                      const SizedBox(
+                      SizedBox(
                         width: 76,
                         child: Align(
                           alignment: Alignment.bottomCenter,
                           child: Padding(
-                            padding: EdgeInsets.only(bottom: AppSpacing.xs),
+                            padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                             child: Text(
-                              MainLayoutStrings.artificialIntelligenceWeighing,
-                              style: AppTypography.mediumEmphasis,
+                              _isReading ? QuickReadStrings.close : QuickReadStrings.read,
+                              style: AppTypography.mediumEmphasis.copyWith(
+                                color: _isReading ? AppColors.textPrimary : AppColors.primary,
+                              ),
                             ),
                           ),
                         ),
@@ -186,29 +224,47 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
   }
 
   void _selectDestination(int index) {
+    _closeReader();
     widget.navigationShell.goBranch(
       index,
       initialLocation: index == widget.navigationShell.currentIndex,
     );
   }
 
-  Future<void> _openCamera() async {
-    try {
-      await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        requestFullMetadata: false,
-      );
-    } on PlatformException {
-      if (!mounted) {
-        return;
-      }
+  QuickReadCubit get _readerSession => _readerCubit ??= widget.createReaderCubit()..start();
 
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text(MainLayoutStrings.cameraError)),
-        );
+  void _toggleReader() => setState(() => _isReading = !_isReading);
+
+  void _closeReader() {
+    if (_isReading) {
+      setState(() => _isReading = false);
     }
+  }
+}
+
+/// Cantidad de caravanas leídas sobre el botón central con el panel cerrado.
+class _ReadCountBadge extends StatelessWidget {
+  const _ReadCountBadge({required this.cubit, required this.child});
+
+  final QuickReadCubit? cubit;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = cubit;
+    if (session == null) {
+      return child;
+    }
+    return BlocBuilder<QuickReadCubit, QuickReadState>(
+      bloc: session,
+      buildWhen: (previous, current) => previous.items.length != current.items.length,
+      builder: (context, state) => Badge(
+        isLabelVisible: state.items.isNotEmpty,
+        label: Text('${state.items.length}'),
+        backgroundColor: AppColors.warning,
+        child: child,
+      ),
+    );
   }
 }
 

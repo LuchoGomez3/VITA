@@ -61,4 +61,19 @@ abstract final class WeighingStrings {
 
   /// Guardar sin haber ingresado un peso.
   static const enterWeight = 'Ingresá el peso con el teclado.';
+
+  /// Título de la hoja para elegir cómo pesar.
+  static const methodSheetTitle = '¿Cómo querés pesarlo?';
+
+  /// Opción de la balanza Bluetooth.
+  static const methodBluetooth = 'Balanza Bluetooth';
+
+  /// Opción de carga manual.
+  static const methodManual = 'Carga manual';
+
+  /// Opción del Pesaje IA por foto.
+  static const methodPhoto = 'Foto (Pesaje IA)';
+
+  /// Aviso mientras el Pesaje IA no está integrado en esta versión.
+  static const photoComingSoon = 'El Pesaje IA por foto llega pronto a esta pantalla.';
 }

@@ -30,7 +30,7 @@ void main() {
         GoRoute(
           path: '/mover',
           builder: (_, _) => GroupMovementPage(
-            animalId: 'a1',
+            animalIds: const ['a1'],
             createCubit: () {
               final repository = _FakeRepository();
               return GroupMovementCubit(

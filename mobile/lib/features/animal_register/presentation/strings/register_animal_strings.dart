@@ -269,6 +269,9 @@ class AnimalRegisterStrings {
   /// Texto de la accion para volver al inicio.
   static const successBackHomeButton = 'Volver al inicio';
 
+  /// Vuelve al lector de caravanas después de un alta iniciada desde ahí.
+  static const successBackToReaderButton = 'Volver a la lectura';
+
   /// Mensaje de validacion del lote de destino.
   static const destinationRequired = 'Seleccioná el potrero de destino antes de guardar.';
 

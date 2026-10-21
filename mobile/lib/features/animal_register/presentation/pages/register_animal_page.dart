@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -29,6 +31,7 @@ class RegisterAnimalPage extends StatelessWidget {
     this.initialStep = RegisterAnimalStep.identification,
     this.initialRfid = '',
     this.initialEstablishmentId,
+    this.returnToCaller = false,
     super.key,
   });
 
@@ -44,6 +47,10 @@ class RegisterAnimalPage extends StatelessWidget {
   /// Establecimiento opcional recibido desde el flujo que inicia el alta.
   final String? initialEstablishmentId;
 
+  /// Si el alta se abrió desde el lector de caravanas: al terminar se vuelve a
+  /// él con el id del animal nuevo en lugar de ir al inicio.
+  final bool returnToCaller;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -52,13 +59,15 @@ class RegisterAnimalPage extends StatelessWidget {
         initialRfid: initialRfid,
         initialEstablishmentId: initialEstablishmentId,
       ),
-      child: const _RegisterAnimalView(),
+      child: _RegisterAnimalView(returnToCaller: returnToCaller),
     );
   }
 }
 
 class _RegisterAnimalView extends StatelessWidget {
-  const _RegisterAnimalView();
+  const _RegisterAnimalView({required this.returnToCaller});
+
+  final bool returnToCaller;
 
   @override
   Widget build(BuildContext context) {
@@ -67,10 +76,7 @@ class _RegisterAnimalView extends StatelessWidget {
       listener: (context, state) {
         switch (state.submitResult) {
           case Data<RegisteredAnimal>(:final data):
-            context.push(
-              AppRoutes.animalRegisterSuccess,
-              extra: data,
-            );
+            unawaited(_showSuccess(context, data));
           case ResultError<RegisteredAnimal>(:final error):
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
@@ -131,6 +137,17 @@ class _RegisterAnimalView extends StatelessWidget {
         },
       ),
     );
+  }
+
+  /// Muestra el éxito; si vino del lector y elige volver, devuelve el id nuevo.
+  Future<void> _showSuccess(BuildContext context, RegisteredAnimal animal) async {
+    final backToReader = await context.push<bool>(
+      returnToCaller ? AppRoutes.animalRegisterSuccessToReader : AppRoutes.animalRegisterSuccess,
+      extra: animal,
+    );
+    if ((backToReader ?? false) && context.mounted) {
+      context.pop(animal.id);
+    }
   }
 
   static String _stepTitle(RegisterAnimalStep step) {

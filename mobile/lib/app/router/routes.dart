@@ -145,6 +145,9 @@ class AppRoutes {
     return '/animals/$animalId';
   }
 
+  /// "Mover animales" con una lista de animales en `extra` (`List<String>`).
+  static const groupMovement = '/mover-animales';
+
   /// "Mover animales" con [animalId] ya en la lista.
   static String animalGroupMovementById(String animalId) => '/animals/$animalId/mover';
 
@@ -175,13 +178,20 @@ class AppRoutes {
   }
 
   /// Construye la ruta de alta con una caravana RFID ya leida.
+  ///
+  /// Con [fromReader] el alta vuelve al lector de caravanas al terminar.
   static String animalRegisterWithRfid({
     required String rfidTagNumber,
     required String establishmentId,
+    bool fromReader = false,
   }) {
     return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}'
-        '&establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
+        '&establecimientoId=${Uri.encodeQueryComponent(establishmentId)}'
+        '${fromReader ? '&origen=lector' : ''}';
   }
+
+  /// Éxito del alta cuando se abrió desde el lector de caravanas.
+  static const animalRegisterSuccessToReader = '$animalRegisterSuccess/lector';
 
   /// Obtiene la ruta de detalle de un lote por su id.
   static String fieldDetailById(String lotId) {
