@@ -120,6 +120,9 @@ BrickAnimalModel _animal(
 }
 
 class _CapturingMovementStore implements AnimalLotMovementBrickStore {
+  @override
+  Future<List<BrickAnimalLotMovementModel>> getLocalMovements(String establishmentId) async => const [];
+
   List<BrickAnimalModel> savedAnimals = const [];
   BrickAnimalLotMovementModel? savedMovement;
 

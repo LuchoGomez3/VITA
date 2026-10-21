@@ -203,6 +203,9 @@ class _FakeLotStore implements LotBrickStore {
 }
 
 class _FakeMovementStore implements AnimalLotMovementBrickStore {
+  @override
+  Future<List<BrickAnimalLotMovementModel>> getLocalMovements(String establishmentId) async => const [];
+
   final List<String> pulls = [];
   final List<String> pushes = [];
 

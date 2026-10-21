@@ -11,6 +11,10 @@ import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/ani
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_ficha_section.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_general_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_weighings_tab.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/presentation/cubit/movement_history_cubit.dart';
+import 'package:frontend_mayoral/features/animal_movement/presentation/strings/animal_movement_strings.dart';
+import 'package:frontend_mayoral/features/animal_movement/presentation/widgets/animal_movements_tab.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/mock/weighing_mock.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/pages/weighing_page.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/widgets/weighing_tab_selector.dart';
@@ -19,6 +23,9 @@ import 'package:image_picker/image_picker.dart';
 
 /// Factory usada por composition root/router para construir el Cubit.
 typedef AnimalDetailCubitFactory = AnimalDetailCubit Function();
+
+/// Factory del cubit del historial de potreros (pestaña Movim.).
+typedef MovementHistoryCubitFactory = MovementHistoryCubit Function();
 
 /// Ficha del animal (diseño "Ficha · General" y sus pestañas).
 ///
@@ -29,6 +36,7 @@ class AnimalDetailPage extends StatelessWidget {
   const AnimalDetailPage({
     required this.animalId,
     required this.createCubit,
+    required this.createMovementHistoryCubit,
     super.key,
   });
 
@@ -38,10 +46,16 @@ class AnimalDetailPage extends StatelessWidget {
   /// Crea el Cubit con dependencias resueltas fuera de presentation.
   final AnimalDetailCubitFactory createCubit;
 
+  /// Crea el cubit del historial de potreros.
+  final MovementHistoryCubitFactory createMovementHistoryCubit;
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => createCubit()..loadAnimalData(animalId),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => createCubit()..loadAnimalData(animalId)),
+        BlocProvider(create: (_) => createMovementHistoryCubit()..load(animalId)),
+      ],
       child: const _AnimalDetailView(),
     );
   }
@@ -99,7 +113,7 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
       Data<AnimalDetail>(:final data) => data,
       _ => null,
     };
-    final isWeighingsTab = AnimalFichaTab.values[_tabs.index] == AnimalFichaTab.weighings;
+    final currentTab = AnimalFichaTab.values[_tabs.index];
 
     return Scaffold(
       appBar: AppBar(
@@ -144,24 +158,60 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
               title: AnimalDetailStrings.comingSoonTitle,
               message: AnimalDetailStrings.healthComingSoon,
             ),
-            _MovementsPlaceholder(animal: data),
+            const AnimalMovementsTab(),
           ],
         ),
         ResultError<AnimalDetail>(:final error) => Center(child: Text(error.message)),
         _ => const Center(child: CircularProgressIndicator()),
       },
-      floatingActionButton: animal != null && isWeighingsTab
-          ? FloatingActionButton(
-              heroTag: 'animal-ficha-new-weighing',
-              tooltip: AnimalDetailStrings.newWeighingTooltip,
-              shape: const CircleBorder(),
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.onPrimary,
-              onPressed: () => _chooseWeighingMethod(context, animal),
-              child: const Icon(Icons.add),
-            )
-          : null,
+      floatingActionButton: switch ((animal, currentTab)) {
+        (final animal?, AnimalFichaTab.weighings) => FloatingActionButton(
+          heroTag: 'animal-ficha-new-weighing',
+          tooltip: AnimalDetailStrings.newWeighingTooltip,
+          shape: const CircleBorder(),
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.onPrimary,
+          onPressed: () => _chooseWeighingMethod(context, animal),
+          child: const Icon(Icons.add),
+        ),
+        (final animal?, AnimalFichaTab.movements) => FloatingActionButton(
+          heroTag: 'animal-ficha-move',
+          tooltip: AnimalMovementStrings.moveTooltip,
+          shape: const CircleBorder(),
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.onPrimary,
+          onPressed: () => _moveAnimals(context, animal),
+          child: const Icon(Icons.add),
+        ),
+        _ => null,
+      },
     );
+  }
+
+  /// Abre "Mover animales" con este animal y, al volver, recarga la ficha (el
+  /// potrero cambió) y el historial.
+  Future<void> _moveAnimals(BuildContext context, AnimalDetail animal) async {
+    final detailCubit = context.read<AnimalDetailCubit>();
+    final historyCubit = context.read<MovementHistoryCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final summary = await context.push<GroupMovementSummary>(AppRoutes.animalGroupMovementById(animal.id));
+    if (summary == null) {
+      return;
+    }
+    await Future.wait([detailCubit.loadAnimalData(animal.id), historyCubit.load(animal.id)]);
+    final destination = switch (detailCubit.state) {
+      Data<AnimalDetail>(:final data) => data.lotName,
+      _ => '',
+    };
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            '${AnimalMovementStrings.moved(summary.movedCount, destination)} ${AnimalMovementStrings.savedOffline}',
+          ),
+        ),
+      );
   }
 
   void _close(BuildContext context) {
@@ -250,31 +300,4 @@ enum _WeighingMethod {
 
   final String label;
   final IconData icon;
-}
-
-/// Movimientos: por ahora muestra el potrero actual. El historial y el cambio
-/// de potrero se agregan en el próximo paso.
-class _MovementsPlaceholder extends StatelessWidget {
-  const _MovementsPlaceholder({required this.animal});
-
-  final AnimalDetail animal;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      children: [
-        const AnimalFichaSectionTitle(AnimalDetailStrings.currentLotLabel),
-        const SizedBox(height: AppSpacing.xs),
-        AnimalFichaDataGroup(
-          rows: [
-            AnimalFichaDataRow(
-              label: AnimalDetailStrings.currentLotLabel,
-              value: animal.lotName.isEmpty ? AnimalDetailStrings.noLot : animal.lotName,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 }
