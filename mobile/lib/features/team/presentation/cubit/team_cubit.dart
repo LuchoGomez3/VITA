@@ -181,7 +181,20 @@ class TeamCubit extends Cubit<TeamState> {
     if (!_canPresent || revision != _revision) return;
     switch (result) {
       case Success<TeamSnapshot>(:final data):
-        emit(state.copyWith(snapshot: data, refresh: ResultState.data(data)));
+        emit(
+          state.copyWith(
+            snapshot: data,
+            refresh: ResultState.data(data),
+            action: switch (state.action) {
+              Data<TeamActionResult>(:final data) when data.persistenceError != null => ResultState.data((
+                notice: data.notice,
+                created: data.created,
+                persistenceError: null,
+              )),
+              _ => state.action,
+            },
+          ),
+        );
       case Failure<TeamSnapshot>(:final error):
         emit(state.copyWith(refresh: ResultState.error(error)));
     }

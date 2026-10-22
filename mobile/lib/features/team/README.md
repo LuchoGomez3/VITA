@@ -1,5 +1,24 @@
 # Equipo e invitaciones
 
+## Correcciones de revisión del 2026-10-22
+
+Se agregaron regresiones para renovación rechazada en HTTP directo, descarte de
+rechazos de una identidad anterior, publicación del catálogo durable y recuperación
+del aviso local tras cancelar, quitar o reenviar. Cada hallazgo tiene su commit.
+
+Validación conjunta:
+
+```powershell
+fvm flutter test --no-pub test/brick test/features/auth test/features/team test/features/sync test/features/home test/app/router test/core/widgets test/core/authentication/establishment_catalog_test.dart --reporter expanded
+fvm dart run melos run build
+```
+
+Resultado: **261 tests aprobados**, generación exitosa sin diferencias en archivos
+generados y análisis de los archivos modificados y de Team sin incidencias. No se
+realizó validación manual en dispositivo ni contra servicios reales.
+
+## Arquitectura
+
 La UI consume casos de uso de `domain/use_cases/team_use_cases.dart`. El contexto
 local se obtiene por `TeamRepository.findEstablishment`; ninguna factory ni
 callback de presentación consulta el catálogo. Los casos de uso validan email,
@@ -50,6 +69,10 @@ el refresco cuando vuelva a funcionar el almacenamiento. Si tampoco puede leerse
 la base, no se sobrescribe y el efecto confirmado se aplica a los datos que la UI
 ya tenía. No se reejecuta la mutación
 solo por este error.
+
+El aviso de persistencia se retira cuando un refresco consigue guardar el
+snapshot completo. Si el refresco falla, permanece visible. La recuperación
+conserva la confirmación y cualquier código efímero aún pendiente de compartir.
 
 `TeamAcceptance` separa membresía otorgada y error al guardarla. El flujo sigue
 mostrando aceptación y permite recuperar catálogo/descarga con la sincronización
