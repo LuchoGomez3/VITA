@@ -2,17 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/app/composition/team_session_composition.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
-import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
-import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_case.dart';
-import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
-import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
@@ -71,7 +68,6 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senas
 import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
 import 'package:frontend_mayoral/features/sync/sync_composition.dart';
 import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
-import 'package:frontend_mayoral/features/team/domain/repositories/team_repository.dart';
 import 'package:frontend_mayoral/features/team/presentation/cubit/join_establishment_cubit.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/invitation_created_page.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/invite_team_member_page.dart';
@@ -95,25 +91,7 @@ class AppRouter {
     LoginBlocFactory loginBlocFactory = createLoginBloc,
     JoinEstablishmentCubit Function()? joinCubitFactory,
   }) {
-    TeamRepository? teamRepository;
-    int? teamSession;
-    TeamRepository repositoryForSession() {
-      final generation = SessionBackendAccessTokenProvider.instance.sessionGeneration;
-      if (teamRepository == null || generation != teamSession) {
-        teamSession = generation;
-        final coordinator = createOfflineSyncCoordinator();
-        teamRepository = createTeamRepository(
-          updateCatalog: (persist) => coordinator.updateCatalog(() async {
-            await persist();
-            final memberships = await const EstablishmentCatalog(
-              secureStorage: FlutterSecureStorageService(),
-            ).getMemberships();
-            return PostAuthenticationSummary(establishmentIds: memberships.map((m) => m.id).toList());
-          }),
-        );
-      }
-      return teamRepository!;
-    }
+    final repositoryForSession = createSessionTeamRepositoryFactory();
 
     return GoRouter(
       initialLocation: AppRoutes.authCheck,

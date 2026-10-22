@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:frontend_mayoral/core/authentication/data/establishment_remote_summary.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
+import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -27,7 +28,7 @@ class TeamRepositoryImpl implements TeamRepository {
     DateTime Function()? clock,
     TeamOperationQueue? operations,
     Future<void> Function(Future<void> Function())? persistSessionData,
-    Future<void> Function(Future<void> Function())? updateCatalog,
+    Future<void> Function(Future<PostAuthenticationSummary> Function())? updateCatalog,
     bool Function()? isSessionCurrent,
   }) : _remote = remote,
        _secureStorage = secureStorage,
@@ -35,14 +36,18 @@ class TeamRepositoryImpl implements TeamRepository {
        _clock = clock ?? DateTime.now,
        _operations = operations ?? TeamOperationQueue(),
        _persistSessionData = persistSessionData ?? ((persist) => persist()),
-       _updateCatalog = updateCatalog ?? ((persist) => persist()),
+       _updateCatalog =
+           updateCatalog ??
+           ((persist) async {
+             await persist();
+           }),
        _isSessionCurrent = isSessionCurrent ?? (() => true);
 
   final TeamRemoteDataSource _remote;
   final SecureStorageService _secureStorage;
   final EstablishmentCatalog _catalog;
   final DateTime Function() _clock;
-  final Future<void> Function(Future<void> Function()) _updateCatalog;
+  final Future<void> Function(Future<PostAuthenticationSummary> Function()) _updateCatalog;
   final bool Function() _isSessionCurrent;
   final Future<void> Function(Future<void> Function()) _persistSessionData;
 
@@ -168,6 +173,8 @@ class TeamRepositoryImpl implements TeamRepository {
             _requireSession();
             await _catalog.upsert(membership, metadata: data.toJson());
           });
+          final memberships = await _catalog.getMemberships();
+          return PostAuthenticationSummary(establishmentIds: memberships.map((membership) => membership.id).toList());
         }),
       );
       return Result.success(

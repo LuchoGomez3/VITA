@@ -24,6 +24,9 @@ Una mutación ya enviada no se deshace al salir. Su repositorio termina el reque
 la persistencia. El transporte cierra los clientes que crea por request; un cliente
 inyectado pertenece al llamador. La descarga tras el canje pertenece al coordinador
 de sincronización de la sesión, que libera sus recursos al cerrarse la aplicación.
+El repositorio de datos guarda y relee el catálogo, y entrega su resumen al
+coordinador mediante un callback inyectado. La composición de aplicación conecta
+ese callback y mantiene el repositorio por sesión; el router no accede a storage.
 El guardado del catálogo espera el ciclo anterior, publica la membresía persistida
 y luego inicia otro ciclo para incluirla en la descarga. Inicio escucha también
 esta publicación temprana, sin recrear el shell.
@@ -35,7 +38,7 @@ snapshot reconciliado y un posible
 error local. Cancelar/quitar eliminan la fila conocida; invitar/reenviar reemplazan
 la invitación por ID. El GET posterior reconcilia, pero no es necesario para guardar
 el resultado confirmado. Una cola explícita por sesión serializa lecturas, mutaciones y escrituras
-de Team. El router comparte el repositorio entre sus rutas y lo reemplaza al cambiar
+de Team. La composición comparte el repositorio entre rutas y lo reemplaza al cambiar
 la identidad, evitando estado global adicional y pérdidas entre establecimientos.
 Los snapshots copian y protegen sus listas. Si no había un listado completo, el
 snapshot parcial se identifica como tal. No se persiste el código en claro.

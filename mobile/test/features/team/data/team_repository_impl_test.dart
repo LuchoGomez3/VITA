@@ -89,6 +89,7 @@ void main() {
   TeamRepositoryImpl repository(
     http.Response Function(http.Request request) handler, {
     TeamOperationQueue? operations,
+    Future<void> Function(Future<PostAuthenticationSummary> Function())? updateCatalog,
   }) {
     return TeamRepositoryImpl(
       remote: TeamRemoteDataSource(
@@ -103,6 +104,7 @@ void main() {
       establishmentCatalog: EstablishmentCatalog(secureStorage: storage),
       clock: () => now,
       operations: operations,
+      updateCatalog: updateCatalog,
     );
   }
 
@@ -111,6 +113,36 @@ void main() {
     requests = [];
     now = DateTime.utc(2026, 10, 17, 12);
   });
+
+  for (final storageAvailable in [true, false]) {
+    test('canje publica solo el catálogo durable completo (storage: $storageAvailable)', () async {
+      final catalog = EstablishmentCatalog(secureStorage: storage);
+      await catalog.upsert(const EstablishmentMembership(id: 'previous', name: 'Campo previo', role: UserRole.owner));
+      final published = <PostAuthenticationSummary>[];
+      final repo = repository(
+        (_) => _ok(_accepted()),
+        updateCatalog: (persist) async {
+          final summary = await persist();
+          expect((await catalog.getMemberships()).map((membership) => membership.id), summary.establishmentIds);
+          published.add(summary);
+        },
+      );
+      if (!storageAvailable) storage.writeFailure = PlatformException(code: 'storage-unavailable');
+
+      final result = await repo.accept('7K4P2M');
+
+      expect(result, isA<Success<TeamAcceptance>>());
+      final accepted = (result as Success<TeamAcceptance>).data;
+      expect(accepted.persistenceError == null, storageAvailable);
+      if (storageAvailable) {
+        expect(published.single.establishmentIds, ['previous', _campo]);
+      } else {
+        expect(published, isEmpty);
+        expect(await catalog.getById(_campo), isNull);
+      }
+      expect(requests, hasLength(1));
+    });
+  }
 
   test('trae el equipo, lo guarda en el celular y lo lee sin conexión', () async {
     final repo = repository(

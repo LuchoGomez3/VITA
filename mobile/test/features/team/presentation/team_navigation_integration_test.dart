@@ -233,12 +233,7 @@ class _Harness {
           ),
           secureStorage: storage,
           establishmentCatalog: catalog,
-          updateCatalog: (persist) => coordinator.updateCatalog(() async {
-            await persist();
-            return PostAuthenticationSummary(
-              establishmentIds: (await catalog.getMemberships()).map((m) => m.id).toList(),
-            );
-          }),
+          updateCatalog: coordinator.updateCatalog,
         );
         return join = JoinEstablishmentCubit(
           JoinEstablishmentUseCase(repository, prepareData: coordinator.synchronize),

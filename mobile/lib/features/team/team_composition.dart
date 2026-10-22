@@ -17,7 +17,9 @@ const _storage = FlutterSecureStorageService();
 const _catalog = EstablishmentCatalog(secureStorage: _storage);
 
 /// Crea el repositorio compartido por las rutas de una sesión.
-TeamRepository createTeamRepository({Future<void> Function(Future<void> Function())? updateCatalog}) {
+TeamRepository createTeamRepository({
+  Future<void> Function(Future<PostAuthenticationSummary> Function())? updateCatalog,
+}) {
   final provider = SessionBackendAccessTokenProvider.instance;
   final generation = provider.sessionGeneration;
   bool isCurrent() => generation == provider.sessionGeneration;
