@@ -23,23 +23,23 @@ class AuthSessionCubit extends Cubit<AuthSessionState> {
     required RestoreSessionUseCase restoreSessionUseCase,
     required SignOutUseCase signOutUseCase,
     PreparePostAuthentication? refreshOfflineData,
-    Stream<void>? authRejections,
+    Iterable<Stream<void>> authRejections = const [],
     void Function()? onClose,
   }) : _restoreSessionUseCase = restoreSessionUseCase,
        _signOutUseCase = signOutUseCase,
        _refreshOfflineData = refreshOfflineData,
        _onClose = onClose,
        super(const AuthSessionState.checking()) {
-    _authRejectionSubscription = authRejections?.listen((_) {
-      unawaited(_invalidateSession());
-    });
+    for (final source in authRejections) {
+      _authRejectionSubscriptions.add(source.listen((_) => unawaited(_invalidateSession())));
+    }
   }
 
   final RestoreSessionUseCase _restoreSessionUseCase;
   final SignOutUseCase _signOutUseCase;
   final PreparePostAuthentication? _refreshOfflineData;
   final void Function()? _onClose;
-  StreamSubscription<void>? _authRejectionSubscription;
+  final List<StreamSubscription<void>> _authRejectionSubscriptions = [];
   bool _isSigningOut = false;
 
   /// Restaura la sesion guardada durante el arranque de la app.
@@ -86,7 +86,7 @@ class AuthSessionCubit extends Cubit<AuthSessionState> {
 
   @override
   Future<void> close() async {
-    await _authRejectionSubscription?.cancel();
+    await Future.wait(_authRejectionSubscriptions.map((subscription) => subscription.cancel()));
     _onClose?.call();
     return super.close();
   }

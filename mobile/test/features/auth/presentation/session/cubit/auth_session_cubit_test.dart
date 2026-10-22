@@ -12,6 +12,29 @@ import 'package:frontend_mayoral/features/auth/domain/use_cases/sign_out_use_cas
 import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
 
 void main() {
+  test('escucha ambas fuentes de rechazo y cancela suscripciones al cerrar', () async {
+    final brick = StreamController<void>.broadcast(sync: true);
+    final direct = StreamController<void>.broadcast(sync: true);
+    addTearDown(brick.close);
+    addTearDown(direct.close);
+    final repository = _AuthRepository();
+    final cubit = AuthSessionCubit(
+      restoreSessionUseCase: RestoreSessionUseCase(repository),
+      signOutUseCase: SignOutUseCase(repository),
+      authRejections: [brick.stream, direct.stream],
+    )..setAuthenticated(_session);
+    final invalidated = cubit.stream.firstWhere((state) => state is AuthSessionUnauthenticated);
+    direct.add(null);
+    brick.add(null);
+    await invalidated;
+    expect(repository.signOutCalls, 1);
+    expect(brick.hasListener, isTrue);
+    expect(direct.hasListener, isTrue);
+    await cubit.close();
+    expect(brick.hasListener, isFalse);
+    expect(direct.hasListener, isFalse);
+  });
+
   test('restores locally before starting the non-blocking sync', () async {
     final syncStarted = Completer<void>();
     final syncFinished = Completer<Result<PostAuthenticationSummary>>();
@@ -53,11 +76,12 @@ final _session = AuthSession(
 );
 
 class _AuthRepository implements AuthRepository {
+  int signOutCalls = 0;
   @override
   Future<Result<AuthSession>> restoreSession() async => Result.success(_session);
 
   @override
-  Future<void> signOut() async {}
+  Future<void> signOut() async => signOutCalls++;
 
   @override
   Future<Result<AuthSession>> signIn({

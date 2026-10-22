@@ -15,6 +15,11 @@ Los pasos que muestran preview/membresía requieren esos datos en su constructor
 Las revisiones de lectura descartan respuestas superpuestas o de un código borrado.
 Después del cierre se descartan emisiones y navegación.
 
+Si la renovación del token se rechaza definitivamente, el provider notifica a
+Auth también para los requests HTTP directos de Team. Auth cierra la sesión y el
+router retira las rutas protegidas; los guards siguen descartando resultados de
+otra identidad. Una falla transitoria de red conserva la sesión offline.
+
 Una mutación ya enviada no se deshace al salir. Su repositorio termina el request y
 la persistencia. El transporte cierra los clientes que crea por request; un cliente
 inyectado pertenece al llamador. La descarga tras el canje pertenece al coordinador

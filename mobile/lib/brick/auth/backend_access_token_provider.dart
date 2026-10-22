@@ -62,6 +62,11 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
   Future<BackendTokenSession?>? _refreshInFlight;
   int _sessionGeneration = 0;
   final Set<Future<void>> _pendingWrites = {};
+  final _authRejections = StreamController<void>.broadcast(sync: true);
+
+  /// Rechazos definitivos de la sesión, también para HTTP fuera de Brick.
+  /// Se publican sin demora para no invalidar una identidad iniciada después.
+  Stream<void> get authRejections => _authRejections.stream;
 
   /// Mantiene una escritura ya iniciada hasta que pueda limpiarse la sesión.
   Future<void> persistSessionData(Future<void> Function() persist) async {
@@ -135,6 +140,11 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
     _refreshInFlight = null;
   }
 
+  void _rejectSession() {
+    clearAccessToken();
+    _authRejections.add(null);
+  }
+
   @override
   Future<String?> getAccessToken() async {
     final token = _accessToken;
@@ -150,6 +160,7 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
     final refreshToken = _refreshToken;
     final refreshCallback = this.refreshCallback;
     if (refreshToken == null || refreshToken.isEmpty || refreshCallback == null) {
+      _rejectSession();
       throw const DomainException(
         message: 'La sesion expiro. Inicia sesion nuevamente.',
         code: DomainErrorCode.unauthorized,
@@ -162,7 +173,7 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
       refreshed = await (_refreshInFlight ??= refreshCallback(refreshToken));
     } on DomainException catch (error) {
       if (error.code == DomainErrorCode.unauthorized && generation == _sessionGeneration) {
-        clearAccessToken();
+        _rejectSession();
       }
       rethrow;
     } finally {
@@ -192,7 +203,7 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
     final refreshToken = _refreshToken;
     final refreshCallback = this.refreshCallback;
     if (refreshToken == null || refreshToken.isEmpty || refreshCallback == null) {
-      clearAccessToken();
+      _rejectSession();
       return null;
     }
 
@@ -201,7 +212,7 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
     try {
       refreshed = await (_refreshInFlight ??= refreshCallback(refreshToken));
     } on DomainException catch (error) {
-      if (error.code == DomainErrorCode.unauthorized && generation == _sessionGeneration) clearAccessToken();
+      if (error.code == DomainErrorCode.unauthorized && generation == _sessionGeneration) _rejectSession();
       rethrow;
     } finally {
       if (generation == _sessionGeneration) _refreshInFlight = null;

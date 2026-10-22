@@ -156,7 +156,6 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final storedSession = await _localDataSource.readSession();
       if (storedSession == null) {
-        _tokenProvider.clearAccessToken();
         return const Result.failure(
           DomainException(
             message: 'No hay una sesion guardada en este dispositivo.',
