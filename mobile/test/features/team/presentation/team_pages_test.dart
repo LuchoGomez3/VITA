@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,10 +8,12 @@ import 'package:frontend_mayoral/core/authentication/post_authentication_summary
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
 import 'package:frontend_mayoral/features/team/domain/errors/team_error.dart';
 import 'package:frontend_mayoral/features/team/domain/use_cases/team_use_cases.dart';
+import 'package:frontend_mayoral/features/team/presentation/cubit/invitation_created_cubit.dart';
 import 'package:frontend_mayoral/features/team/presentation/cubit/invite_team_member_cubit.dart';
 import 'package:frontend_mayoral/features/team/presentation/cubit/join_establishment_cubit.dart';
 import 'package:frontend_mayoral/features/team/presentation/cubit/team_cubit.dart';
@@ -57,7 +61,9 @@ TeamPage _teamPage(FakeTeamRepository repository, UserRole role) => TeamPage(
   establishmentId: 'campo-1',
   createCubit: (id) => TeamCubit(
     establishmentId: id,
-    findEstablishment: (_) async => EstablishmentMembership(id: id, name: 'La Sirena', role: role),
+    getMembership: GetTeamMembershipUseCase(
+      repository..membershipResult = Result.success(EstablishmentMembership(id: id, name: 'La Sirena', role: role)),
+    ),
     readCached: ReadCachedTeamUseCase(repository),
     refreshTeam: RefreshTeamUseCase(repository),
     manageTeam: ManageTeamUseCase(repository),
@@ -141,13 +147,14 @@ void main() {
   group('InviteTeamMemberPage', () {
     InviteTeamMemberPage invitePage(FakeTeamRepository repository, UserRole inviter) => InviteTeamMemberPage(
       establishmentId: 'campo-1',
-      createCubit: (id) async => inviter.canManageTeam
-          ? InviteTeamMemberCubit(
-              establishmentId: id,
-              assignableRoles: inviter.assignableRoles,
-              invite: InviteTeamMemberUseCase(repository),
-            )
-          : null,
+      createCubit: (id) => InviteTeamMemberCubit(
+        establishmentId: id,
+        getMembership: GetTeamMembershipUseCase(
+          repository
+            ..membershipResult = Result.success(EstablishmentMembership(id: id, name: 'La Sirena', role: inviter)),
+        ),
+        invite: InviteTeamMemberUseCase(repository),
+      ),
     );
 
     testWidgets('un admin no ve la opción de invitar dueños', (tester) async {
@@ -173,7 +180,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(repository.calls, ['invite:vet@example.com:veterinarian']);
-      expect((popped.single! as CreatedInvitation).code, '7K4-P2M');
+      expect((popped.single! as TeamMutation<CreatedInvitation>).value.code, '7K4-P2M');
     });
 
     testWidgets('quien no puede invitar vuelve sin ver el formulario', (tester) async {
@@ -200,7 +207,11 @@ void main() {
         InvitationCreatedPage(
           created: created,
           establishmentName: 'La Sirena',
-          cancelInvitation: () async => const Result.success(null),
+          createCubit: () => InvitationCreatedCubit(
+            establishmentId: 'campo-1',
+            invitation: pendingVet,
+            manageTeam: ManageTeamUseCase(FakeTeamRepository()),
+          ),
         ),
       );
 
@@ -233,7 +244,11 @@ void main() {
             code: '7K4-P2M',
           ),
           establishmentName: 'La Sirena',
-          cancelInvitation: () async => const Result.success(null),
+          createCubit: () => InvitationCreatedCubit(
+            establishmentId: 'campo-1',
+            invitation: pendingVet,
+            manageTeam: ManageTeamUseCase(FakeTeamRepository()),
+          ),
         ),
       );
 
@@ -243,16 +258,17 @@ void main() {
     });
 
     testWidgets('cancelar pide confirmación y vuelve a Equipo', (tester) async {
-      var cancelled = 0;
+      final repository = FakeTeamRepository();
       final popped = await _pump(
         tester,
         InvitationCreatedPage(
           created: created,
           establishmentName: 'La Sirena',
-          cancelInvitation: () async {
-            cancelled++;
-            return const Result.success(null);
-          },
+          createCubit: () => InvitationCreatedCubit(
+            establishmentId: 'campo-1',
+            invitation: pendingVet,
+            manageTeam: ManageTeamUseCase(repository),
+          ),
         ),
       );
 
@@ -262,16 +278,18 @@ void main() {
       await tester.tap(find.text(TeamStrings.confirmCancelCta).last);
       await tester.pumpAndSettle();
 
-      expect(cancelled, 1);
-      expect(popped, [true]);
+      expect(repository.calls, ['cancel:inv-1']);
+      expect(popped.single, isA<TeamMutation<void>>());
     });
   });
 
   group('JoinEstablishmentPage', () {
     JoinEstablishmentPage joinPage(FakeTeamRepository repository) => JoinEstablishmentPage(
       createCubit: () => JoinEstablishmentCubit(
-        JoinEstablishmentUseCase(repository),
-        syncData: () async => Result.success(PostAuthenticationSummary(establishmentIds: const ['campo-1'])),
+        JoinEstablishmentUseCase(
+          repository,
+          prepareData: () async => Result.success(PostAuthenticationSummary(establishmentIds: const ['campo-1'])),
+        ),
       ),
     );
 
@@ -327,5 +345,59 @@ void main() {
       expect(find.text(TeamStrings.enterCodeIntro), findsOneWidget);
       expect(find.text('7'), findsNothing);
     });
+  });
+  testWidgets('salir de Invitar durante inicialización cierra la instancia y descarta la respuesta', (tester) async {
+    final pending = Completer<Result<EstablishmentMembership?>>();
+    final repository = FakeTeamRepository()..membershipPending = pending.future;
+    late InviteTeamMemberCubit cubit;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: InviteTeamMemberPage(
+          establishmentId: 'campo-1',
+          createCubit: (id) => cubit = InviteTeamMemberCubit(
+            establishmentId: id,
+            getMembership: GetTeamMembershipUseCase(repository),
+            invite: InviteTeamMemberUseCase(repository),
+          ),
+        ),
+      ),
+    );
+    expect(cubit.state.initialization, isA<Loading<List<UserRole>>>());
+    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    expect(cubit.isClosed, isTrue);
+    pending.complete(repository.membershipResult);
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(repository.calls, isEmpty);
+  });
+
+  testWidgets('Ir al inicio durante descarga cierra el Cubit y la descarga termina sin error', (tester) async {
+    final pending = Completer<Result<PostAuthenticationSummary>>();
+    final started = Completer<void>();
+    final repository = FakeTeamRepository();
+    final cubit = JoinEstablishmentCubit(
+      JoinEstablishmentUseCase(
+        repository,
+        prepareData: () {
+          started.complete();
+          return pending.future;
+        },
+      ),
+    );
+    await _pump(tester, JoinEstablishmentPage(createCubit: () => cubit));
+    await tester.enterText(find.byType(TextField), '7K4P2M');
+    await tester.pump();
+    await tester.tap(find.text(TeamStrings.validateCta));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(TeamStrings.joinEstablishmentCta('La Sirena')));
+    await started.future;
+    await tester.pump();
+    expect(find.text(TeamStrings.downloadRunning), findsOneWidget);
+    await tester.tap(find.text(TeamStrings.goHomeCta));
+    await tester.pumpAndSettle();
+    expect(cubit.isClosed, isTrue);
+    pending.complete(Result.success(PostAuthenticationSummary(establishmentIds: ['campo-1'])));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
   });
 }

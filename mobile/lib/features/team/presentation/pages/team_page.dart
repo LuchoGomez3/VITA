@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
-import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
@@ -40,210 +39,97 @@ class _TeamView extends StatelessWidget {
   const _TeamView();
 
   @override
-  Widget build(BuildContext context) {
-    return BlocConsumer<TeamCubit, TeamState>(
-      listenWhen: (previous, current) =>
-          current.notice != null ||
-          current.error != null ||
-          (current.created != null && current.created != previous.created),
-      listener: (context, state) {
-        final created = state.created;
-        if (created != null) {
-          unawaited(_openCreated(context, context.read<TeamCubit>(), created));
-          return;
-        }
-        _showFeedback(context, state);
-      },
-      builder: (context, state) {
-        final cubit = context.read<TeamCubit>();
-        return Scaffold(
-          appBar: AppHeader(title: TeamStrings.title, headline: state.establishment?.name),
-          floatingActionButton: state.canManage
-              ? FloatingActionButton.extended(
-                  onPressed: state.actionsEnabled ? () => _openInvite(context, cubit) : null,
-                  backgroundColor: state.actionsEnabled ? null : AppColors.backgroundTertiary,
-                  label: const Text(TeamStrings.inviteFab),
-                  icon: const Icon(Icons.add),
-                )
-              : null,
-          body: SafeArea(child: _body(context, state, cubit)),
-        );
-      },
-    );
-  }
-
-  Widget _body(BuildContext context, TeamState state, TeamCubit cubit) {
-    if (state.establishmentMissing) {
-      return const _Message(text: TeamStrings.establishmentMissing);
-    }
-    final snapshot = state.snapshot;
-    if (snapshot == null) {
-      // Cargando: todavía no se resolvió el establecimiento o se está pidiendo.
-      if (state.isLoading || state.establishment == null) {
-        return const Center(child: CircularProgressIndicator());
+  Widget build(BuildContext context) => BlocConsumer<TeamCubit, TeamState>(
+    listenWhen: (previous, current) => previous.action != current.action || previous.error != current.error,
+    listener: (context, state) {
+      final created = state.created;
+      if (created != null) {
+        final cubit = context.read<TeamCubit>()..consumeCreated();
+        unawaited(_openCreated(context, cubit, created));
+        return;
       }
-      // No hay nada guardado y no se pudo traer: aviso y reintento, nunca un
-      // spinner eterno.
-      return RefreshIndicator(
-        onRefresh: cubit.refresh,
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          children: [
-            if (state.isOffline) const _OfflineBanner(fetchedAt: null),
-            _Message(text: state.isOffline ? TeamStrings.emptyOffline : TeamStrings.loadFailed),
-            Center(
-              child: AppOutlinedButton(label: TeamStrings.retryCta, onPressed: cubit.refresh),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final myRole = state.establishment?.role ?? UserRole.unknown;
-    return RefreshIndicator(
-      onRefresh: cubit.refresh,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xl * 3),
-        children: [
-          if (state.isOffline) ...[
-            _OfflineBanner(fetchedAt: snapshot.fetchedAt),
-            const SizedBox(height: AppSpacing.md),
-          ],
-          Text(TeamStrings.membersSection(snapshot.members.length), style: AppTypography.pageTitle),
-          const SizedBox(height: AppSpacing.sm),
-          for (final member in snapshot.members) ...[
-            _memberCard(context, state, cubit, member, myRole),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-          if (snapshot.invitations.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-            Text(TeamStrings.invitationsSection(snapshot.invitations.length), style: AppTypography.pageTitle),
-            const SizedBox(height: AppSpacing.sm),
-            for (final invitation in snapshot.invitations) ...[
-              _invitationCard(context, state, cubit, invitation, myRole),
-              const SizedBox(height: AppSpacing.sm),
-            ],
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _memberCard(BuildContext context, TeamState state, TeamCubit cubit, TeamMember member, UserRole myRole) {
-    final canRemove = state.actionsEnabled && !member.isHolder && myRole.canRemove(member.role);
-    return TeamPersonCard(
-      title: '${member.firstName} ${member.lastName}'.trim(),
-      subtitle: member.email,
-      role: member.role,
-      statusLabel: TeamStrings.activeStatus,
-      statusTone: AppStatusChipTone.success,
-      initials: _initials(member),
-      avatarColor: _color(member.headerColor),
-      note: member.isHolder ? TeamStrings.holderNote : null,
-      isBusy: state.busyId == member.userId,
-      actions: [
-        if (canRemove)
-          (
-            label: TeamStrings.removeAction,
-            icon: Icons.person_remove_outlined,
-            onSelected: () async {
-              final name = '${member.firstName} ${member.lastName}'.trim();
+      final message = state.persistenceError != null
+          ? TeamStrings.mutationStorageWarning
+          : state.error != null
+          ? TeamStrings.error(state.error!)
+          : switch (state.notice) {
+              TeamNotice.resent => TeamStrings.resentNotice,
+              TeamNotice.resentWithoutEmail => TeamStrings.resentWithoutEmailNotice,
+              TeamNotice.cancelled => TeamStrings.cancelledNotice,
+              TeamNotice.removed => TeamStrings.removedNotice,
+              null => null,
+            };
+      if (message != null) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(message)));
+      }
+    },
+    builder: (context, state) {
+      final cubit = context.read<TeamCubit>();
+      return Scaffold(
+        appBar: AppHeader(title: TeamStrings.title, headline: state.establishment?.name),
+        floatingActionButton: state.canManage
+            ? FloatingActionButton.extended(
+                onPressed: state.actionsEnabled ? () => _openInvite(context, cubit) : null,
+                backgroundColor: state.actionsEnabled ? null : AppColors.backgroundTertiary,
+                label: const Text(TeamStrings.inviteFab),
+                icon: const Icon(Icons.add),
+              )
+            : null,
+        body: SafeArea(
+          child: _TeamBody(
+            state: state,
+            onRefresh: cubit.refresh,
+            onRemove: (member) async {
               if (await _confirm(
-                context,
-                title: TeamStrings.removeConfirmTitle(name),
-                message: TeamStrings.removeConfirmMessage,
-                cta: TeamStrings.confirmRemoveCta,
-              )) {
+                    context,
+                    title: TeamStrings.removeConfirmTitle('${member.firstName} ${member.lastName}'.trim()),
+                    message: TeamStrings.removeConfirmMessage,
+                    cta: TeamStrings.confirmRemoveCta,
+                  ) &&
+                  context.mounted) {
                 await cubit.remove(member);
               }
             },
-          ),
-      ],
-    );
-  }
-
-  Widget _invitationCard(
-    BuildContext context,
-    TeamState state,
-    TeamCubit cubit,
-    TeamInvitation invitation,
-    UserRole myRole,
-  ) {
-    final canManage = state.actionsEnabled && myRole.assignableRoles.contains(invitation.role);
-    return TeamPersonCard(
-      title: invitation.email,
-      subtitle: TeamStrings.invitationSubtitle,
-      role: invitation.role,
-      statusLabel: invitation.isExpired ? TeamStrings.expiredStatus : TeamStrings.invitedStatus,
-      statusTone: invitation.isExpired ? AppStatusChipTone.neutral : AppStatusChipTone.warning,
-      note: invitation.isExpired
-          ? TeamStrings.expiredOn(invitation.expiresAt)
-          : (invitation.emailSent ? TeamStrings.expiresOn(invitation.expiresAt) : TeamStrings.emailNotSent),
-      noteIsWarning: invitation.isExpired || !invitation.emailSent,
-      isBusy: state.busyId == invitation.id,
-      actions: [
-        if (canManage) ...[
-          (
-            label: TeamStrings.resendAction,
-            icon: Icons.forward_to_inbox_outlined,
-            onSelected: () => cubit.resend(invitation),
-          ),
-          (
-            label: TeamStrings.cancelAction,
-            icon: Icons.cancel_outlined,
-            onSelected: () async {
+            onCancel: (invitation) async {
               if (await _confirm(
-                context,
-                title: TeamStrings.cancelConfirmTitle(invitation.email),
-                message: TeamStrings.cancelConfirmMessage,
-                cta: TeamStrings.confirmCancelCta,
-              )) {
+                    context,
+                    title: TeamStrings.cancelConfirmTitle(invitation.email),
+                    message: TeamStrings.cancelConfirmMessage,
+                    cta: TeamStrings.confirmCancelCta,
+                  ) &&
+                  context.mounted) {
                 await cubit.cancel(invitation);
               }
             },
+            onResend: cubit.resend,
           ),
-        ],
-      ],
-    );
-  }
+        ),
+      );
+    },
+  );
 
   Future<void> _openInvite(BuildContext context, TeamCubit cubit) async {
-    final created = await context.push<CreatedInvitation>(AppRoutes.teamInviteFor(cubit.establishmentId));
-    if (created == null || !context.mounted) {
-      return;
+    final mutation = await context.push<TeamMutation<CreatedInvitation>>(
+      AppRoutes.teamInviteFor(cubit.establishmentId),
+    );
+    if (mutation == null || !context.mounted) return;
+    cubit.invitationCreated(mutation);
+    if (mutation.persistenceError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(TeamStrings.mutationStorageWarning)));
     }
-    await cubit.refresh();
-    if (context.mounted) {
-      await _openCreated(context, cubit, created);
-    }
+    await _openCreated(context, cubit, mutation.value);
   }
 
-  /// "Invitación creada": el código para compartir. Al volver se refresca por
-  /// si la cancelaron desde ahí.
   Future<void> _openCreated(BuildContext context, TeamCubit cubit, CreatedInvitation created) async {
-    await context.push<bool>(
+    final result = await context.push<Object?>(
       AppRoutes.teamInvitationCreatedFor(cubit.establishmentId),
       extra: (created: created, establishmentName: cubit.state.establishment?.name ?? ''),
     );
+    if (!context.mounted) return;
+    if (result is TeamMutation<void>) cubit.reconcileMutation(result);
     await cubit.refresh();
-  }
-
-  static void _showFeedback(BuildContext context, TeamState state) {
-    final error = state.error;
-    final message = error != null
-        ? TeamStrings.error(error)
-        : switch (state.notice) {
-            TeamNotice.resent => TeamStrings.resentNotice,
-            TeamNotice.resentWithoutEmail => TeamStrings.resentWithoutEmailNotice,
-            TeamNotice.cancelled => TeamStrings.cancelledNotice,
-            TeamNotice.removed => TeamStrings.removedNotice,
-            null => null,
-          };
-    if (message != null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(message)));
-    }
   }
 
   static Future<bool> _confirm(
@@ -251,21 +137,119 @@ class _TeamView extends StatelessWidget {
     required String title,
     required String message,
     required String cta,
-  }) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(title),
-            content: Text(message),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text(TeamStrings.keepCta)),
-              FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(cta)),
-            ],
-          ),
-        ) ??
-        false;
-  }
+  }) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text(TeamStrings.keepCta)),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(cta)),
+          ],
+        ),
+      ) ??
+      false;
+}
 
+class _TeamBody extends StatelessWidget {
+  const _TeamBody({
+    required this.state,
+    required this.onRefresh,
+    required this.onRemove,
+    required this.onCancel,
+    required this.onResend,
+  });
+  final TeamState state;
+  final Future<void> Function() onRefresh;
+  final Future<void> Function(TeamMember) onRemove;
+  final Future<void> Function(TeamInvitation) onCancel;
+  final Future<void> Function(TeamInvitation) onResend;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.establishmentMissing) return const _Message(text: TeamStrings.establishmentMissing);
+    final snapshot = state.snapshot;
+    if (snapshot == null) {
+      if (state.isLoading) return const Center(child: CircularProgressIndicator());
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          children: [
+            if (state.isOffline) const _OfflineBanner(fetchedAt: null),
+            _Message(text: state.isOffline ? TeamStrings.emptyOffline : TeamStrings.loadFailed),
+            Center(
+              child: AppOutlinedButton(label: TeamStrings.retryCta, onPressed: onRefresh),
+            ),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xl * 3),
+        children: [
+          if (state.isOffline) ...[
+            _OfflineBanner(fetchedAt: snapshot.fetchedAt),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          if (!snapshot.isComplete) const _Message(text: TeamStrings.partialCache),
+          if (state.persistenceError != null) const _Message(text: TeamStrings.mutationStorageWarning),
+          Text(TeamStrings.membersSection(snapshot.members.length), style: AppTypography.pageTitle),
+          const SizedBox(height: AppSpacing.sm),
+          for (final member in snapshot.members) ...[
+            _MemberCard(
+              member: member,
+              canRemove: state.canRemove(member),
+              isBusy: state.busyId == member.userId,
+              onRemove: () => onRemove(member),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+          if (snapshot.invitations.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(TeamStrings.invitationsSection(snapshot.invitations.length), style: AppTypography.pageTitle),
+            const SizedBox(height: AppSpacing.sm),
+            for (final invitation in snapshot.invitations) ...[
+              _InvitationCard(
+                invitation: invitation,
+                canManage: state.canManageInvitation(invitation),
+                isBusy: state.busyId == invitation.id,
+                onResend: () => onResend(invitation),
+                onCancel: () => onCancel(invitation),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MemberCard extends StatelessWidget {
+  const _MemberCard({required this.member, required this.canRemove, required this.isBusy, required this.onRemove});
+  final TeamMember member;
+  final bool canRemove;
+  final bool isBusy;
+  final VoidCallback onRemove;
+  @override
+  Widget build(BuildContext context) => TeamPersonCard(
+    title: '${member.firstName} ${member.lastName}'.trim(),
+    subtitle: member.email,
+    role: member.role,
+    statusLabel: TeamStrings.activeStatus,
+    statusTone: AppStatusChipTone.success,
+    initials: _initials(member),
+    avatarColor: _color(member.headerColor),
+    note: member.isHolder ? TeamStrings.holderNote : null,
+    isBusy: isBusy,
+    actions: [
+      if (canRemove) (label: TeamStrings.removeAction, icon: Icons.person_remove_outlined, onSelected: onRemove),
+    ],
+  );
   static String _initials(TeamMember member) {
     final first = member.firstName.trim();
     final last = member.lastName.trim();
@@ -277,6 +261,40 @@ class _TeamView extends StatelessWidget {
     final value = hex == null || hex.length != 7 ? null : int.tryParse(hex.substring(1), radix: 16);
     return value == null ? AppColors.primary : Color(0xFF000000 | value);
   }
+}
+
+class _InvitationCard extends StatelessWidget {
+  const _InvitationCard({
+    required this.invitation,
+    required this.canManage,
+    required this.isBusy,
+    required this.onResend,
+    required this.onCancel,
+  });
+  final TeamInvitation invitation;
+  final bool canManage;
+  final bool isBusy;
+  final VoidCallback onResend;
+  final VoidCallback onCancel;
+  @override
+  Widget build(BuildContext context) => TeamPersonCard(
+    title: invitation.email,
+    subtitle: TeamStrings.invitationSubtitle,
+    role: invitation.role,
+    statusLabel: invitation.isExpired ? TeamStrings.expiredStatus : TeamStrings.invitedStatus,
+    statusTone: invitation.isExpired ? AppStatusChipTone.neutral : AppStatusChipTone.warning,
+    note: invitation.isExpired
+        ? TeamStrings.expiredOn(invitation.expiresAt)
+        : (invitation.emailSent ? TeamStrings.expiresOn(invitation.expiresAt) : TeamStrings.emailNotSent),
+    noteIsWarning: invitation.isExpired || !invitation.emailSent,
+    isBusy: isBusy,
+    actions: [
+      if (canManage) ...[
+        (label: TeamStrings.resendAction, icon: Icons.forward_to_inbox_outlined, onSelected: onResend),
+        (label: TeamStrings.cancelAction, icon: Icons.cancel_outlined, onSelected: onCancel),
+      ],
+    ],
+  );
 }
 
 class _OfflineBanner extends StatelessWidget {

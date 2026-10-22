@@ -61,7 +61,9 @@ class AppStatusChip extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.xxs),
             ],
-            Text(label, style: AppTypography.smallEmphasis.copyWith(color: foreground)),
+            Flexible(
+              child: Text(label, style: AppTypography.smallEmphasis.copyWith(color: foreground)),
+            ),
           ],
         ),
       ),

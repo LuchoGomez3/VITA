@@ -349,6 +349,24 @@ abstract final class TeamStrings {
     };
   }
 
+  /// Confirmación remota sin persistencia offline.
+  static const mutationStorageWarning =
+      'El servidor confirmó el cambio, pero no pudimos guardarlo en el celular. Actualizá el equipo cuando se recupere el almacenamiento.';
+
+  /// El código ya fue consumido: recuperar, no canjear de nuevo.
+  static const acceptedStorageWarning =
+      'Ya sos parte del campo. No pudimos guardar el acceso en este celular. Recuperá los datos sin volver a usar el código.';
+
+  /// Recuperación del catálogo autorizado.
+  static const recoverCta = 'Recuperar datos del campo';
+
+  /// Resultado remoto incierto.
+  static const acceptanceRecovery =
+      'No pudimos confirmar si ya te sumaste. Cuando tengas señal, recuperá los datos del campo para verificar el acceso.';
+
+  /// Datos conocidos sin un listado completo.
+  static const partialCache = 'Este equipo está incompleto. Actualizá la lista cuando tengas señal.';
+
   // ─── Errores ──────────────────────────────────────────────────────────────
 
   /// Mensaje para el usuario de un error del equipo.
@@ -357,6 +375,11 @@ abstract final class TeamStrings {
     final reason = failure is TeamFailure ? failure.reason : null;
     if (reason != null) {
       return switch (reason) {
+        TeamErrorReason.storageUnavailable => 'No pudimos acceder al almacenamiento del celular. Volvé a intentar.',
+        TeamErrorReason.invalidResponse => 'No pudimos leer los datos del equipo. Actualizá la lista.',
+        TeamErrorReason.acceptanceNeedsRecovery => acceptanceRecovery,
+        TeamErrorReason.emailRequired => emailRequired,
+        TeamErrorReason.emailInvalid => emailInvalid,
         TeamErrorReason.notAllowed => 'Solo el dueño o un administrador pueden gestionar el equipo.',
         TeamErrorReason.roleNotAssignable => 'Tu rol no te permite gestionar a alguien con ese rol.',
         TeamErrorReason.alreadyMember => 'Esa persona ya forma parte del equipo.',
@@ -377,7 +400,10 @@ abstract final class TeamStrings {
     if (error.code == DomainErrorCode.offline) {
       return 'Sin conexión. Para esto hace falta señal; probá cuando vuelva.';
     }
-    return error.message;
+    return switch (error.code) {
+      DomainErrorCode.unauthorized => 'Tu sesión no está disponible. Volvé a iniciar sesión.',
+      _ => 'No pudimos completar la operación. Volvé a intentar.',
+    };
   }
 
   static String _two(int value) => value.toString().padLeft(2, '0');

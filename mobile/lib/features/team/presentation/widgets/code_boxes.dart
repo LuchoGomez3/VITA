@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/features/team/presentation/strings/team_strings.dart';
 
 /// Cómo se pinta el código.
 enum CodeBoxesState {
@@ -96,30 +97,42 @@ class _CodeBoxesState extends State<CodeBoxes> {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
             child: Container(width: 8, height: 3, color: AppColors.border),
           ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 3),
-          child: _Box(
-            char: i < widget.code.length ? widget.code[i] : null,
-            focused: editable && _focus.hasFocus && i == widget.code.length,
-            state: widget.state,
-            compact: widget.compact,
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: _Box(
+              char: i < widget.code.length ? widget.code[i] : null,
+              focused: editable && _focus.hasFocus && i == widget.code.length,
+              state: widget.state,
+              compact: widget.compact,
+            ),
           ),
         ),
       ],
     ];
 
     return Semantics(
-      label: 'Código de invitación',
+      label: TeamStrings.codeLabel,
       value: widget.code,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: boxes),
-          if (editable)
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: widget.compact ? 292 : 328),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            ExcludeSemantics(
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: boxes),
+            ),
+            if (editable)
+              Positioned.fill(
                 child: TextField(
+                  style: const TextStyle(color: Colors.transparent),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
+                    isCollapsed: true,
+                  ),
                   controller: _controller,
                   focusNode: _focus,
                   autofocus: widget.autofocus,
@@ -137,8 +150,8 @@ class _CodeBoxesState extends State<CodeBoxes> {
                   onSubmitted: (_) => widget.onSubmitted?.call(),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -165,8 +178,7 @@ class _Box extends StatelessWidget {
             CodeBoxesState.idle => AppColors.border,
           };
     return Container(
-      width: compact ? 40 : 46,
-      height: compact ? 52 : 60,
+      height: (compact ? 52 : 60) * MediaQuery.textScalerOf(context).scale(1),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: state == CodeBoxesState.invalid ? AppColors.errorContainer : AppColors.surface,
@@ -174,11 +186,17 @@ class _Box extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.sm),
         boxShadow: focused ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.18), spreadRadius: 3)] : null,
       ),
-      child: Text(
-        char ?? '',
-        style: AppTypography.monoValueEmphasis.copyWith(
-          fontSize: compact ? 22 : 26,
-          color: state == CodeBoxesState.invalid ? AppColors.error : AppColors.textPrimary,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            char ?? '',
+            style: AppTypography.monoValueEmphasis.copyWith(
+              fontSize: compact ? 22 : 26,
+              color: state == CodeBoxesState.invalid ? AppColors.error : AppColors.textPrimary,
+            ),
+          ),
         ),
       ),
     );

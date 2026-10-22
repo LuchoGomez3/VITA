@@ -134,7 +134,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       final session = storedSession.toDomain();
-      _hydrateTokenProvider(session);
+      _hydrateTokenProvider(session, newSession: true);
       return Result.success(session);
     } on FormatException {
       await _localDataSource.clearSession();
@@ -152,6 +152,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<AuthSession>> refreshSession({
     String? refreshTokenOverride,
   }) async {
+    final generation = _tokenProvider.sessionGeneration;
     try {
       final storedSession = await _localDataSource.readSession();
       if (storedSession == null) {
@@ -168,9 +169,12 @@ class AuthRepositoryImpl implements AuthRepository {
       final remoteSession = await _remoteDataSource.refreshSession(
         refreshToken: refreshToken,
       );
+      if (generation != _tokenProvider.sessionGeneration) {
+        throw const DomainException(message: 'Session changed', code: DomainErrorCode.unauthorized);
+      }
       final session = _sessionFromRemote(remoteSession);
 
-      await _persistAndHydrate(session);
+      await _persistAndHydrate(session, newSession: false);
       return Result.success(session);
     } on DomainException catch (error) {
       return Result.failure(error);
@@ -239,8 +243,9 @@ class AuthRepositoryImpl implements AuthRepository {
     } on FormatException catch (error, stackTrace) {
       _logRemoteSignOutFailure(error, stackTrace);
     } finally {
-      await _localDataSource.clearSession();
       _tokenProvider.clearAccessToken();
+      await _tokenProvider.waitForSessionWrites();
+      await _localDataSource.clearSession();
     }
   }
 
@@ -255,11 +260,15 @@ class AuthRepositoryImpl implements AuthRepository {
     );
   }
 
-  Future<void> _persistAndHydrate(AuthSession session) async {
-    await _localDataSource.saveSession(
-      StoredAuthSession.fromDomain(session),
-    );
-    _hydrateTokenProvider(session);
+  Future<void> _persistAndHydrate(AuthSession session, {bool newSession = true}) async {
+    final generation = _tokenProvider.sessionGeneration;
+    await _tokenProvider.persistSessionData(() async {
+      await _localDataSource.saveSession(StoredAuthSession.fromDomain(session));
+      if (generation != _tokenProvider.sessionGeneration) {
+        throw const DomainException(message: 'Session changed', code: DomainErrorCode.unauthorized);
+      }
+      _hydrateTokenProvider(session, newSession: newSession);
+    });
   }
 
   AuthSession _sessionFromRemote(AuthRemoteSession remoteSession) {
@@ -273,11 +282,16 @@ class AuthRepositoryImpl implements AuthRepository {
     );
   }
 
-  void _hydrateTokenProvider(AuthSession session) {
-    _tokenProvider.session = BackendTokenSession(
+  void _hydrateTokenProvider(AuthSession session, {required bool newSession}) {
+    final value = BackendTokenSession(
       accessToken: session.accessToken,
       refreshToken: session.refreshToken,
       accessTokenExpiresAt: session.accessTokenExpiresAt,
     );
+    if (newSession) {
+      _tokenProvider.startSession(value);
+    } else {
+      _tokenProvider.session = value;
+    }
   }
 }

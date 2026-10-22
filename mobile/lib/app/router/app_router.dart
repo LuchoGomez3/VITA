@@ -5,10 +5,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_case.dart';
+import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
+import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
@@ -65,7 +69,10 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senas
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
+import 'package:frontend_mayoral/features/sync/sync_composition.dart';
 import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
+import 'package:frontend_mayoral/features/team/domain/repositories/team_repository.dart';
+import 'package:frontend_mayoral/features/team/presentation/cubit/join_establishment_cubit.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/invitation_created_page.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/invite_team_member_page.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/join_establishment_page.dart';
@@ -84,7 +91,30 @@ class AppRouter {
     required AuthSessionCubit authSessionCubit,
     required Listenable refreshListenable,
     required GetEstablishmentRoleUseCase getEstablishmentRole,
+    HomeDashboardCubitFactory createHomeCubit = createHomeDashboardCubit,
+    LoginBlocFactory loginBlocFactory = createLoginBloc,
+    JoinEstablishmentCubit Function()? joinCubitFactory,
   }) {
+    TeamRepository? teamRepository;
+    int? teamSession;
+    TeamRepository repositoryForSession() {
+      final generation = SessionBackendAccessTokenProvider.instance.sessionGeneration;
+      if (teamRepository == null || generation != teamSession) {
+        teamSession = generation;
+        final coordinator = createOfflineSyncCoordinator();
+        teamRepository = createTeamRepository(
+          updateCatalog: (persist) => coordinator.updateCatalog(() async {
+            await persist();
+            final memberships = await const EstablishmentCatalog(
+              secureStorage: FlutterSecureStorageService(),
+            ).getMemberships();
+            return PostAuthenticationSummary(establishmentIds: memberships.map((m) => m.id).toList());
+          }),
+        );
+      }
+      return teamRepository!;
+    }
+
     return GoRouter(
       initialLocation: AppRoutes.authCheck,
       refreshListenable: refreshListenable,
@@ -102,7 +132,7 @@ class AppRouter {
           path: AppRoutes.login,
           pageBuilder: (context, state) => BackwardPage(
             state: state,
-            child: const LoginPage(createBloc: createLoginBloc),
+            child: LoginPage(createBloc: loginBlocFactory),
           ),
         ),
         GoRoute(
@@ -139,7 +169,7 @@ class AppRouter {
                     return FadePage(
                       state: state,
                       child: HomePage(
-                        createCubit: createHomeDashboardCubit,
+                        createCubit: createHomeCubit,
                         userName: userName,
                       ),
                     );
@@ -222,14 +252,14 @@ class AppRouter {
           path: AppRoutes.team,
           builder: (context, state) => TeamPage(
             establishmentId: state.pathParameters['establishmentId']!,
-            createCubit: createTeamCubit,
+            createCubit: (id) => createTeamCubit(id, repository: repositoryForSession()),
           ),
         ),
         GoRoute(
           path: AppRoutes.teamInvite,
           builder: (context, state) => InviteTeamMemberPage(
             establishmentId: state.pathParameters['establishmentId']!,
-            createCubit: createInviteTeamMemberCubit,
+            createCubit: (id) => createInviteTeamMemberCubit(id, repository: repositoryForSession()),
           ),
         ),
         GoRoute(
@@ -245,13 +275,27 @@ class AppRouter {
             return InvitationCreatedPage(
               created: extra.created,
               establishmentName: extra.establishmentName,
-              cancelInvitation: () => cancelTeamInvitation(establishmentId, extra.created.invitation.id),
+              createCubit: () => createInvitationCreatedCubit(
+                establishmentId,
+                extra.created.invitation,
+                repository: repositoryForSession(),
+              ),
             );
           },
         ),
         GoRoute(
           path: AppRoutes.joinEstablishment,
-          builder: (context, state) => const JoinEstablishmentPage(createCubit: createJoinEstablishmentCubit),
+          builder: (context, state) => JoinEstablishmentPage(
+            createCubit:
+                joinCubitFactory ??
+                () {
+                  final coordinator = createOfflineSyncCoordinator();
+                  return createJoinEstablishmentCubit(
+                    prepareData: coordinator.synchronize,
+                    repository: repositoryForSession(),
+                  );
+                },
+          ),
         ),
         GoRoute(
           path: AppRoutes.animalRegisterStep1,
