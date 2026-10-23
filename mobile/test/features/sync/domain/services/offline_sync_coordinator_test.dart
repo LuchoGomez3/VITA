@@ -63,11 +63,32 @@ void main() {
     final previous = coordinator.synchronize();
     identity++;
     final current = coordinator.synchronize();
-    expect(repository.calls, 2);
+    expect(repository.calls, 1);
     repository.completer.complete(Result.success(PostAuthenticationSummary(establishmentIds: [])));
     await Future.wait([previous, current]);
+    expect(repository.calls, 2);
     await Future<void>.delayed(Duration.zero);
     expect(results, hasLength(1));
+  });
+
+  test('una sesión reemplazada durante la espera no inicia el ciclo de otra cuenta', () async {
+    var identity = 1;
+    final repository = _DeferredSyncRepository(identity: () => identity);
+    final coordinator = OfflineSyncCoordinator(
+      prepareInitialDataSyncUseCase: PrepareInitialDataSyncUseCase(repository),
+      sessionIdentity: () => identity,
+    );
+    addTearDown(coordinator.dispose);
+    final first = coordinator.synchronize();
+    identity = 2;
+    final replaced = coordinator.synchronize();
+    identity = 3;
+    final current = coordinator.synchronize();
+    repository.completer.complete(Result.success(PostAuthenticationSummary(establishmentIds: [])));
+    await first;
+    expect(await replaced, isA<Failure<PostAuthenticationSummary>>());
+    expect(await current, isA<Success<PostAuthenticationSummary>>());
+    expect(repository.sessions, [1, 3]);
   });
 
   test('cancelar la sesión mientras espera el catálogo impide la escritura', () async {
@@ -94,12 +115,16 @@ void main() {
 }
 
 class _DeferredSyncRepository implements InitialDataSyncRepository {
+  _DeferredSyncRepository({this.identity});
+  final Object? Function()? identity;
+  final List<Object?> sessions = [];
   final completer = Completer<Result<PostAuthenticationSummary>>();
   int calls = 0;
 
   @override
   Future<Result<PostAuthenticationSummary>> sync() {
     calls += 1;
+    sessions.add(identity?.call());
     return completer.future;
   }
 }

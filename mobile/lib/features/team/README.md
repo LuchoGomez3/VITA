@@ -8,6 +8,17 @@ hasta completarla. Los errores esperables de plataforma y timeout se registran
 y se traducen a dominio. Los borrados nativos pendientes permanecen ordenados
 por clave aunque el llamador reciba un timeout.
 
+La sincronización también espera el ciclo de la identidad anterior, incluidas
+las escrituras que realizan sus stores. Después inicia un ciclo propio de la
+cuenta vigente. Las solicitudes cuya sesión cambió durante la espera terminan
+como sesión inválida. Una prueba con HTTP controlado, stores reales y SQLite
+reproduce la respuesta vieja tardía y verifica que la versión final sea la nueva.
+
+Validación conjunta: `fvm flutter test --no-pub --reporter expanded`, **617 pruebas
+aprobadas**, incluyendo las del commit `6207c77`. El análisis de los archivos
+modificados no informa incidencias y la generación de Auth se ejecutó mediante
+`fvm dart run melos run build`. No se probó contra un dispositivo o backend real.
+
 ## Correcciones de revisión del 2026-10-22
 
 Se agregaron regresiones para renovación rechazada en HTTP directo, descarte de

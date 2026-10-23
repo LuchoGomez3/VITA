@@ -40,11 +40,16 @@ class OfflineSyncCoordinator {
         const Result.failure(DomainException(message: 'Session ended', code: DomainErrorCode.unauthorized)),
       );
     }
-    final catalogUpdate = _catalogUpdate;
-    if (catalogUpdate != null) return catalogUpdate.then((_) => synchronize());
-    final activeSync = _activeSync;
     final session = _sessionIdentity();
-    if (activeSync != null && _activeSession == session) return activeSync;
+    final catalogUpdate = _catalogUpdate;
+    if (catalogUpdate != null) return _synchronizeAfter(catalogUpdate, session);
+    final activeSync = _activeSync;
+    if (activeSync != null) {
+      if (_activeSession == session) return activeSync;
+      // Los stores pueden persistir dentro del Future. Descartar solamente su
+      // resultado no basta: hay que esperar sus escrituras antes del ciclo nuevo.
+      return _synchronizeAfter(activeSync, session);
+    }
 
     late final Future<Result<PostAuthenticationSummary>> operation;
     operation = _prepareInitialDataSyncUseCase()
@@ -58,6 +63,14 @@ class OfflineSyncCoordinator {
     _activeSync = operation;
     _activeSession = session;
     return operation;
+  }
+
+  Future<Result<PostAuthenticationSummary>> _synchronizeAfter<T>(Future<T> previous, Object? session) async {
+    await previous;
+    if (_isDisposed || session != _sessionIdentity()) {
+      return const Result.failure(DomainException(message: 'Session ended', code: DomainErrorCode.unauthorized));
+    }
+    return synchronize();
   }
 
   /// Serializa el guardado con el ciclo anterior y avisa antes de descargar.
@@ -84,9 +97,9 @@ class OfflineSyncCoordinator {
 
   /// Fuerza un ciclo posterior a una mutación de membresía confirmada.
   /// Un ciclo que ya estaba en curso puede haber leído el catálogo anterior.
-  Future<Result<PostAuthenticationSummary>> synchronizeAfterCurrent() async {
+  Future<Result<PostAuthenticationSummary>> synchronizeAfterCurrent() {
     final active = _activeSync;
-    if (active != null) await active;
+    if (active != null) return _synchronizeAfter(active, _sessionIdentity());
     return synchronize();
   }
 
