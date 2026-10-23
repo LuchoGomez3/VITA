@@ -179,6 +179,7 @@ void main() {
 
   test('si la recuperación guardó catálogo pero falló la descarga, solo queda pendiente la descarga', () async {
     final repository = FakeTeamRepository()
+      ..membershipResult = const Result.success(null)
       ..acceptResult = Result.success(
         TeamAcceptance(
           membership: const EstablishmentMembership(id: 'campo-1', name: 'La Sirena', role: UserRole.employee),
@@ -186,7 +187,15 @@ void main() {
         ),
       );
     final cubit = JoinEstablishmentCubit(
-      JoinEstablishmentUseCase(repository, prepareData: () async => const Result.failure(offlineError)),
+      JoinEstablishmentUseCase(
+        repository,
+        prepareData: () async {
+          repository.membershipResult = const Result.success(
+            EstablishmentMembership(id: 'campo-1', name: 'La Sirena', role: UserRole.employee),
+          );
+          return const Result.failure(offlineError);
+        },
+      ),
     )..edit('7K4P2M');
     addTearDown(cubit.close);
     await cubit.check();

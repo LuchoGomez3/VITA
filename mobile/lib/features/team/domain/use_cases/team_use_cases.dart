@@ -117,8 +117,19 @@ class JoinEstablishmentUseCase {
   /// Confirma en backend y conserva por separado el resultado del storage.
   Future<Result<TeamAcceptance>> accept(String code) => _repository.accept(code);
 
-  /// Comprueba la membresía recuperada por la sincronización de sesión.
-  Future<Result<EstablishmentMembership?>> findMembership(String id) => _repository.findEstablishment(id);
+  /// Comprueba que el catálogo conserva todos los datos de la membresía confirmada.
+  Future<Result<bool>> hasPersistedMembership(EstablishmentMembership confirmed) async {
+    final result = await _repository.findEstablishment(confirmed.id);
+    return result.when(
+      success: (persisted) => Result.success(
+        persisted != null &&
+            persisted.id == confirmed.id &&
+            persisted.name == confirmed.name &&
+            persisted.role == confirmed.role,
+      ),
+      failure: Result.failure,
+    );
+  }
 
   /// Recupera membresías desde backend y descarga datos sin volver a canjear.
   Future<Result<PostAuthenticationSummary>> synchronize() => _prepareData();

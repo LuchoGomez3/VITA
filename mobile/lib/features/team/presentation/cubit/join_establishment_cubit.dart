@@ -263,12 +263,14 @@ class JoinEstablishmentCubit extends Cubit<JoinEstablishmentState> {
   }
 
   Future<void> _publishSync(Result<PostAuthenticationSummary> result) async {
-    if (result is Failure<PostAuthenticationSummary> && state.persistence is ResultError<void>) {
-      // La sync guarda el catálogo antes de descargar las tablas productivas.
-      // Un fallo de descarga no implica que el acceso siga sin persistirse.
-      final membership = await _join.findMembership(state.preview!.establishmentId);
+    if (state.flow case JoinedEstablishment(
+      :final membership,
+    ) when result is Failure<PostAuthenticationSummary> && state.persistence is ResultError<void>) {
+      // La descarga puede fallar después de guardar el catálogo. Una entrada
+      // anterior con otro rol o nombre no acredita el guardado de este canje.
+      final persisted = await _join.hasPersistedMembership(membership);
       if (!_canPresent) return;
-      if (membership case Success<EstablishmentMembership?>(data: EstablishmentMembership())) {
+      if (persisted case Success<bool>(data: true)) {
         emit(state.copyWith(persistence: const ResultState.data(null)));
       }
     }

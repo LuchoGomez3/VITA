@@ -76,8 +76,10 @@ conserva la confirmación y cualquier código efímero aún pendiente de compart
 
 `TeamAcceptance` separa membresía otorgada y error al guardarla. El flujo sigue
 mostrando aceptación y permite recuperar catálogo/descarga con la sincronización
-existente, sin canjear otra vez cuando la aceptación ya se confirmó. Una respuesta
-ilegible o perdida conserva el código y la preview en el estado de recuperación.
+existente, sin canjear otra vez cuando la aceptación ya se confirmó. Si la descarga
+falla, el aviso de guardado solo se retira cuando el catálogo durable coincide en
+ID, nombre y rol con la membresía confirmada; una entrada anterior no alcanza.
+Una respuesta ilegible o perdida conserva el código y la preview en el estado de recuperación.
 Recuperar repite el comando autorizado: backend solo devuelve un resultado consumido
 al mismo ID y email, con membresía aún activa y su rol actual. Un 409 no es éxito,
 aunque la caché conserve acceso. El backend permite previsualizar ese mismo resultado

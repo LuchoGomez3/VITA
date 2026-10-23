@@ -10,6 +10,7 @@ import 'package:frontend_mayoral/core/authentication/post_authentication_summary
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/team/data/datasources/team_remote_data_source.dart';
 import 'package:frontend_mayoral/features/team/data/repositories/team_repository_impl.dart';
@@ -552,6 +553,67 @@ void main() {
     expect(membershipCount, 1);
     expect(notifications, 1);
   });
+
+  for (final entry in <String, EstablishmentMembership?>{
+    'rol anterior': const EstablishmentMembership(id: _campo, name: 'La Sirena', role: UserRole.owner),
+    'nombre anterior': const EstablishmentMembership(id: _campo, name: 'Nombre anterior', role: UserRole.employee),
+    'sin membresía': null,
+  }.entries) {
+    test('canje conserva el aviso con ${entry.key} hasta guardar la membresía confirmada', () async {
+      final catalog = EstablishmentCatalog(secureStorage: storage);
+      if (entry.value case final membership?) await catalog.upsert(membership);
+      final previousCatalog = storage.values[SecureStorageKeys.establishmentCatalog];
+      final repo = repository((request) {
+        if (request.url.path.endsWith('/validaciones')) {
+          return _ok({
+            'establecimiento_id': _campo,
+            'establecimiento_nombre': 'La Sirena',
+            'rol': 'employee',
+            'expira_en': '2026-10-27T00:00:00Z',
+          });
+        }
+        return _ok(_accepted());
+      });
+      var syncCalls = 0;
+      final flow = JoinEstablishmentCubit(
+        JoinEstablishmentUseCase(
+          repo,
+          prepareData: () async {
+            syncCalls++;
+            if (syncCalls > 1) {
+              await catalog.upsert(
+                const EstablishmentMembership(id: _campo, name: 'La Sirena', role: UserRole.employee),
+              );
+            }
+            return const Result.failure(offlineError);
+          },
+        ),
+      )..edit('7K4P2M');
+      addTearDown(flow.close);
+      storage.writeFailure = PlatformException(code: 'storage-unavailable');
+
+      await flow.check();
+      await flow.confirm();
+
+      expect(flow.state.step, JoinStep.joined);
+      expect(flow.state.joined?.role, UserRole.employee);
+      expect(flow.state.persistence, isA<ResultError<void>>());
+      expect(flow.state.download, isA<ResultError<PostAuthenticationSummary>>());
+      expect(storage.values[SecureStorageKeys.establishmentCatalog], previousCatalog);
+
+      storage.writeFailure = null;
+      await flow.recover();
+
+      expect(flow.state.persistence, isA<Data<void>>());
+      expect(flow.state.download, isA<ResultError<PostAuthenticationSummary>>());
+      final persisted = await catalog.getById(_campo);
+      expect(persisted?.id, _campo);
+      expect(persisted?.name, 'La Sirena');
+      expect(persisted?.role, UserRole.employee);
+      expect(syncCalls, 2);
+      expect(requests.where((request) => request.url.path.endsWith('/aceptaciones')), hasLength(1));
+    });
+  }
 
   test('una respuesta de otra sesión no escribe el catálogo ni el equipo', () async {
     var current = true;
