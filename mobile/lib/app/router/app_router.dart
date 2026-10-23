@@ -599,7 +599,7 @@ class AppRouter {
     required String location,
     bool hasSignUpSuccessData = false,
   }) {
-    if (authState is AuthSessionChecking) {
+    if (authState is AuthSessionChecking || authState is AuthSessionCleanupFailed) {
       return location == AppRoutes.authCheck ? null : AppRoutes.authCheck;
     }
 

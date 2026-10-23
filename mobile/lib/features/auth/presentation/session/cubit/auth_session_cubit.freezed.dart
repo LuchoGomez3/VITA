@@ -55,13 +55,14 @@ extension AuthSessionStatePatterns on AuthSessionState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AuthSessionChecking value)?  checking,TResult Function( AuthSessionAuthenticated value)?  authenticated,TResult Function( AuthSessionUnauthenticated value)?  unauthenticated,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AuthSessionChecking value)?  checking,TResult Function( AuthSessionAuthenticated value)?  authenticated,TResult Function( AuthSessionUnauthenticated value)?  unauthenticated,TResult Function( AuthSessionCleanupFailed value)?  cleanupFailed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case AuthSessionChecking() when checking != null:
 return checking(_that);case AuthSessionAuthenticated() when authenticated != null:
 return authenticated(_that);case AuthSessionUnauthenticated() when unauthenticated != null:
-return unauthenticated(_that);case _:
+return unauthenticated(_that);case AuthSessionCleanupFailed() when cleanupFailed != null:
+return cleanupFailed(_that);case _:
   return orElse();
 
 }
@@ -79,16 +80,14 @@ return unauthenticated(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AuthSessionChecking value)  checking,required TResult Function( AuthSessionAuthenticated value)  authenticated,required TResult Function( AuthSessionUnauthenticated value)  unauthenticated,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AuthSessionChecking value)  checking,required TResult Function( AuthSessionAuthenticated value)  authenticated,required TResult Function( AuthSessionUnauthenticated value)  unauthenticated,required TResult Function( AuthSessionCleanupFailed value)  cleanupFailed,}){
 final _that = this;
 switch (_that) {
 case AuthSessionChecking():
 return checking(_that);case AuthSessionAuthenticated():
 return authenticated(_that);case AuthSessionUnauthenticated():
-return unauthenticated(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
+return unauthenticated(_that);case AuthSessionCleanupFailed():
+return cleanupFailed(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -102,13 +101,14 @@ return unauthenticated(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AuthSessionChecking value)?  checking,TResult? Function( AuthSessionAuthenticated value)?  authenticated,TResult? Function( AuthSessionUnauthenticated value)?  unauthenticated,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AuthSessionChecking value)?  checking,TResult? Function( AuthSessionAuthenticated value)?  authenticated,TResult? Function( AuthSessionUnauthenticated value)?  unauthenticated,TResult? Function( AuthSessionCleanupFailed value)?  cleanupFailed,}){
 final _that = this;
 switch (_that) {
 case AuthSessionChecking() when checking != null:
 return checking(_that);case AuthSessionAuthenticated() when authenticated != null:
 return authenticated(_that);case AuthSessionUnauthenticated() when unauthenticated != null:
-return unauthenticated(_that);case _:
+return unauthenticated(_that);case AuthSessionCleanupFailed() when cleanupFailed != null:
+return cleanupFailed(_that);case _:
   return null;
 
 }
@@ -125,12 +125,13 @@ return unauthenticated(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  checking,TResult Function( AuthSession session)?  authenticated,TResult Function()?  unauthenticated,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  checking,TResult Function( AuthSession session)?  authenticated,TResult Function()?  unauthenticated,TResult Function()?  cleanupFailed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case AuthSessionChecking() when checking != null:
 return checking();case AuthSessionAuthenticated() when authenticated != null:
 return authenticated(_that.session);case AuthSessionUnauthenticated() when unauthenticated != null:
-return unauthenticated();case _:
+return unauthenticated();case AuthSessionCleanupFailed() when cleanupFailed != null:
+return cleanupFailed();case _:
   return orElse();
 
 }
@@ -148,15 +149,13 @@ return unauthenticated();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  checking,required TResult Function( AuthSession session)  authenticated,required TResult Function()  unauthenticated,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  checking,required TResult Function( AuthSession session)  authenticated,required TResult Function()  unauthenticated,required TResult Function()  cleanupFailed,}) {final _that = this;
 switch (_that) {
 case AuthSessionChecking():
 return checking();case AuthSessionAuthenticated():
 return authenticated(_that.session);case AuthSessionUnauthenticated():
-return unauthenticated();case _:
-  throw StateError('Unexpected subclass');
-
-}
+return unauthenticated();case AuthSessionCleanupFailed():
+return cleanupFailed();}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -170,12 +169,13 @@ return unauthenticated();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  checking,TResult? Function( AuthSession session)?  authenticated,TResult? Function()?  unauthenticated,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  checking,TResult? Function( AuthSession session)?  authenticated,TResult? Function()?  unauthenticated,TResult? Function()?  cleanupFailed,}) {final _that = this;
 switch (_that) {
 case AuthSessionChecking() when checking != null:
 return checking();case AuthSessionAuthenticated() when authenticated != null:
 return authenticated(_that.session);case AuthSessionUnauthenticated() when unauthenticated != null:
-return unauthenticated();case _:
+return unauthenticated();case AuthSessionCleanupFailed() when cleanupFailed != null:
+return cleanupFailed();case _:
   return null;
 
 }
@@ -314,6 +314,38 @@ int get hashCode => runtimeType.hashCode;
 @override
 String toString() {
   return 'AuthSessionState.unauthenticated()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class AuthSessionCleanupFailed implements AuthSessionState {
+  const AuthSessionCleanupFailed();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthSessionCleanupFailed);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'AuthSessionState.cleanupFailed()';
 }
 
 

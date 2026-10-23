@@ -1,5 +1,13 @@
 # Equipo e invitaciones
 
+## Recuperación de sesión del 2026-10-23
+
+El cierre retira primero las rutas protegidas. Si falla la limpieza local, Auth
+muestra un error con reintento y mantiene bloqueados el login y la restauración
+hasta completarla. Los errores esperables de plataforma y timeout se registran
+y se traducen a dominio. Los borrados nativos pendientes permanecen ordenados
+por clave aunque el llamador reciba un timeout.
+
 ## Correcciones de revisión del 2026-10-22
 
 Se agregaron regresiones para renovación rechazada en HTTP directo, descarte de

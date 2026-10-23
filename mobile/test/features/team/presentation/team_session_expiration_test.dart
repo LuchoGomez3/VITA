@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/app/router/app_router.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -35,9 +37,17 @@ void main() {
       ..refreshCallback = null;
   });
 
-  for (final operation in ['equipo', 'validar', 'aceptar', 'invitar', 'cancelar', 'equipo sin sesión local']) {
-    test('$operation sale a autenticación si el refresh fue revocado', () async {
-      final storage = MemoryStorage();
+  for (final (operation, cleanupFailure) in [
+    for (final operation in ['equipo', 'validar', 'aceptar', 'invitar', 'cancelar', 'equipo sin sesión local'])
+      for (final failure in [null, PlatformException(code: 'storage-unavailable'), TimeoutException('delete')])
+        (operation, failure),
+  ]) {
+    test('$operation sale de la ruta protegida (limpieza: ${cleanupFailure?.runtimeType})', () async {
+      final storage = _DeleteFailingStorage()
+        ..failure = cleanupFailure
+        ..failedKey = cleanupFailure is TimeoutException
+            ? SecureStorageKeys.teamSnapshot
+            : SecureStorageKeys.authSession;
       storage.values[SecureStorageKeys.authSession] = StoredAuthSession.fromDomain(_session).toEncodedJson();
       storage.values[SecureStorageKeys.establishmentCatalog] = jsonEncode([
         {'id': 'campo-1', 'name': 'Campo sintético', 'role': 'owner'},
@@ -122,7 +132,9 @@ void main() {
         expect(join.state.step, JoinStep.confirm);
       }
       final requestsBeforeExpiry = teamRequests;
-      final signedOut = auth.stream.firstWhere((state) => state is AuthSessionUnauthenticated);
+      final signedOut = auth.stream.firstWhere(
+        (state) => state is AuthSessionUnauthenticated || state is AuthSessionCleanupFailed,
+      );
       if (operation == 'equipo sin sesión local') storage.values.remove(SecureStorageKeys.authSession);
       provider.session = BackendTokenSession(
         accessToken: 'expired',
@@ -144,6 +156,17 @@ void main() {
       }
       await signedOut;
 
+      if (cleanupFailure != null) {
+        expect(auth.state, isA<AuthSessionCleanupFailed>());
+        for (final route in [AppRoutes.home, AppRoutes.joinEstablishment, AppRoutes.login, AppRoutes.signUpForm]) {
+          expect(AppRouter.redirectFor(authState: auth.state, location: route), AppRoutes.authCheck);
+        }
+        await auth.restoreSession();
+        auth.setAuthenticated(_session);
+        expect(auth.state, isA<AuthSessionCleanupFailed>(), reason: 'La limpieza pendiente no permite otra cuenta');
+        storage.failure = null;
+        await auth.signOut();
+      }
       expect(auth.state, isA<AuthSessionUnauthenticated>());
       expect(provider.session, isNull);
       expect(teamRequests, requestsBeforeExpiry, reason: 'No se envía HTTP con el token vencido');
@@ -158,6 +181,17 @@ void main() {
         AppRoutes.signUp,
       );
     });
+  }
+}
+
+class _DeleteFailingStorage extends MemoryStorage {
+  Exception? failure;
+  String? failedKey;
+
+  @override
+  Future<void> delete(String key) async {
+    if (failure case final error? when key == failedKey) throw error;
+    await super.delete(key);
   }
 }
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/restore_session_use_case.dart';
@@ -44,6 +45,7 @@ class AuthSessionCubit extends Cubit<AuthSessionState> {
 
   /// Restaura la sesion guardada durante el arranque de la app.
   Future<void> restoreSession() async {
+    if (_isSigningOut || state is AuthSessionCleanupFailed) return;
     emit(const AuthSessionState.checking());
 
     final result = await _restoreSessionUseCase();
@@ -62,6 +64,7 @@ class AuthSessionCubit extends Cubit<AuthSessionState> {
   /// El repositorio ya persistio la sesion y alimento el token provider de
   /// Brick. Aca solo reflejamos el nuevo estado para la UI/router.
   void setAuthenticated(AuthSession session) {
+    if (_isSigningOut || state is AuthSessionCleanupFailed) return;
     emit(AuthSessionState.authenticated(session));
   }
 
@@ -76,9 +79,12 @@ class AuthSessionCubit extends Cubit<AuthSessionState> {
     }
 
     _isSigningOut = true;
+    emit(const AuthSessionState.checking());
     try {
       await _signOutUseCase();
-      emit(const AuthSessionState.unauthenticated());
+      if (!isClosed) emit(const AuthSessionState.unauthenticated());
+    } on DomainException {
+      if (!isClosed) emit(const AuthSessionState.cleanupFailed());
     } finally {
       _isSigningOut = false;
     }

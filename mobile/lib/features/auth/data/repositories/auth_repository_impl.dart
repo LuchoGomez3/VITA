@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -15,6 +16,7 @@ import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart
 import 'package:frontend_mayoral/features/auth/domain/entities/registration_request.dart';
 import 'package:frontend_mayoral/features/auth/domain/repositories/auth_repository.dart';
 import 'package:http/http.dart' as http;
+import 'package:logging/logging.dart';
 
 /// Implementacion de autenticacion que combina backend, secure storage y Brick.
 ///
@@ -244,8 +246,19 @@ class AuthRepositoryImpl implements AuthRepository {
     } finally {
       _tokenProvider.clearAccessToken();
       await _tokenProvider.waitForSessionWrites();
-      await _localDataSource.clearSession();
+      try {
+        await _localDataSource.clearSession();
+      } on PlatformException catch (_, stackTrace) {
+        throw _sessionCleanupFailure(stackTrace);
+      } on TimeoutException catch (_, stackTrace) {
+        throw _sessionCleanupFailure(stackTrace);
+      }
     }
+  }
+
+  DomainException _sessionCleanupFailure(StackTrace stackTrace) {
+    Logger('AuthRepository').warning('Session cleanup failed', null, stackTrace);
+    return const DomainException(message: 'Session cleanup failed');
   }
 
   void _logRemoteSignOutFailure(Object error, StackTrace stackTrace) {
