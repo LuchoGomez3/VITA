@@ -237,3 +237,22 @@ Barrel files are allowed in this project, but they must be used in a simple and 
 * **Unit Tests:** Write unit tests for domain logic, data layer, and state management.
 * **Presentation Layer Tests:** Tests for the presentation layer (widgets/pages) are optional and not required by default. Add them only when explicitly requested or when a critical UI flow requires coverage.
 * **Mocks:** Use `mockito` or `mocktail` to create mocks for dependencies.
+
+## 6. Flutter Review Workflows
+
+When an architecture review of Flutter code is requested, read and follow
+`docs/codex/flutter_architecture_review.md` completely.
+
+When a Flutter QA/technical review is requested, read and follow
+`docs/codex/flutter_qa_review.md` completely.
+
+If both reviews are requested, treat them as complementary analyses:
+
+* The architecture review evaluates layers, responsibilities, dependency
+  direction, infrastructure boundaries, and project conventions.
+* The QA/technical review evaluates observable defects, lifecycle,
+  offline-first behavior, performance, synchronization, and UX.
+* Do not duplicate the same root cause as separate findings in both reports.
+
+These guides apply only to review tasks. Do not read them for ordinary Flutter
+implementation or consultation tasks unless the user explicitly requests it.

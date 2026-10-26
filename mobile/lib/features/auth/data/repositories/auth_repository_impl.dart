@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -15,6 +16,7 @@ import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart
 import 'package:frontend_mayoral/features/auth/domain/entities/registration_request.dart';
 import 'package:frontend_mayoral/features/auth/domain/repositories/auth_repository.dart';
 import 'package:http/http.dart' as http;
+import 'package:logging/logging.dart';
 
 /// Implementacion de autenticacion que combina backend, secure storage y Brick.
 ///
@@ -134,7 +136,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       final session = storedSession.toDomain();
-      _hydrateTokenProvider(session);
+      _hydrateTokenProvider(session, newSession: true);
       return Result.success(session);
     } on FormatException {
       await _localDataSource.clearSession();
@@ -152,10 +154,10 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<AuthSession>> refreshSession({
     String? refreshTokenOverride,
   }) async {
+    final generation = _tokenProvider.sessionGeneration;
     try {
       final storedSession = await _localDataSource.readSession();
       if (storedSession == null) {
-        _tokenProvider.clearAccessToken();
         return const Result.failure(
           DomainException(
             message: 'No hay una sesion guardada en este dispositivo.',
@@ -168,9 +170,12 @@ class AuthRepositoryImpl implements AuthRepository {
       final remoteSession = await _remoteDataSource.refreshSession(
         refreshToken: refreshToken,
       );
+      if (generation != _tokenProvider.sessionGeneration) {
+        throw const DomainException(message: 'Session changed', code: DomainErrorCode.unauthorized);
+      }
       final session = _sessionFromRemote(remoteSession);
 
-      await _persistAndHydrate(session);
+      await _persistAndHydrate(session, newSession: false);
       return Result.success(session);
     } on DomainException catch (error) {
       return Result.failure(error);
@@ -239,9 +244,21 @@ class AuthRepositoryImpl implements AuthRepository {
     } on FormatException catch (error, stackTrace) {
       _logRemoteSignOutFailure(error, stackTrace);
     } finally {
-      await _localDataSource.clearSession();
       _tokenProvider.clearAccessToken();
+      await _tokenProvider.waitForSessionWrites();
+      try {
+        await _localDataSource.clearSession();
+      } on PlatformException catch (_, stackTrace) {
+        throw _sessionCleanupFailure(stackTrace);
+      } on TimeoutException catch (_, stackTrace) {
+        throw _sessionCleanupFailure(stackTrace);
+      }
     }
+  }
+
+  DomainException _sessionCleanupFailure(StackTrace stackTrace) {
+    Logger('AuthRepository').warning('Session cleanup failed', null, stackTrace);
+    return const DomainException(message: 'Session cleanup failed');
   }
 
   void _logRemoteSignOutFailure(Object error, StackTrace stackTrace) {
@@ -255,11 +272,15 @@ class AuthRepositoryImpl implements AuthRepository {
     );
   }
 
-  Future<void> _persistAndHydrate(AuthSession session) async {
-    await _localDataSource.saveSession(
-      StoredAuthSession.fromDomain(session),
-    );
-    _hydrateTokenProvider(session);
+  Future<void> _persistAndHydrate(AuthSession session, {bool newSession = true}) async {
+    final generation = _tokenProvider.sessionGeneration;
+    await _tokenProvider.persistSessionData(() async {
+      await _localDataSource.saveSession(StoredAuthSession.fromDomain(session));
+      if (generation != _tokenProvider.sessionGeneration) {
+        throw const DomainException(message: 'Session changed', code: DomainErrorCode.unauthorized);
+      }
+      _hydrateTokenProvider(session, newSession: newSession);
+    });
   }
 
   AuthSession _sessionFromRemote(AuthRemoteSession remoteSession) {
@@ -273,11 +294,16 @@ class AuthRepositoryImpl implements AuthRepository {
     );
   }
 
-  void _hydrateTokenProvider(AuthSession session) {
-    _tokenProvider.session = BackendTokenSession(
+  void _hydrateTokenProvider(AuthSession session, {required bool newSession}) {
+    final value = BackendTokenSession(
       accessToken: session.accessToken,
       refreshToken: session.refreshToken,
       accessTokenExpiresAt: session.accessTokenExpiresAt,
     );
+    if (newSession) {
+      _tokenProvider.startSession(value);
+    } else {
+      _tokenProvider.session = value;
+    }
   }
 }

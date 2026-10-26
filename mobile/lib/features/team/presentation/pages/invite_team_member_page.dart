@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/authentication/user_role_strings.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/team/presentation/cubit/invite_team_member_cubit.dart';
@@ -20,55 +21,21 @@ IconData _roleIcon(UserRole role) => switch (role) {
 ///
 /// Vuelve a Equipo con la invitación creada (`CreatedInvitation`) cuando la invitación quedó
 /// creada (aunque el email no haya salido), para mostrar el código.
-class InviteTeamMemberPage extends StatefulWidget {
+class InviteTeamMemberPage extends StatelessWidget {
   /// Crea la pantalla para [establishmentId].
   const InviteTeamMemberPage({required this.establishmentId, required this.createCubit, super.key});
 
   /// Establecimiento al que se invita.
   final String establishmentId;
 
-  /// Construye el Cubit (inyectado para los tests). `null` si la persona no
-  /// puede invitar en este establecimiento.
-  final Future<InviteTeamMemberCubit?> Function(String establishmentId) createCubit;
+  /// Factory sincrónica; el provider cierra su Cubit.
+  final InviteTeamMemberCubit Function(String establishmentId) createCubit;
 
   @override
-  State<InviteTeamMemberPage> createState() => _InviteTeamMemberPageState();
-}
-
-class _InviteTeamMemberPageState extends State<InviteTeamMemberPage> {
-  late final Future<InviteTeamMemberCubit?> _cubit = widget.createCubit(widget.establishmentId);
-  InviteTeamMemberCubit? _created;
-
-  @override
-  void initState() {
-    super.initState();
-    _cubit.then((cubit) {
-      _created = cubit;
-      if (cubit == null && mounted) {
-        context.pop();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _created?.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<InviteTeamMemberCubit?>(
-      future: _cubit,
-      builder: (context, snapshot) {
-        final cubit = snapshot.data;
-        if (cubit == null) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
-        }
-        return BlocProvider.value(value: cubit, child: const _InviteView());
-      },
-    );
-  }
+  Widget build(BuildContext context) => BlocProvider(
+    create: (_) => createCubit(establishmentId)..initialize(),
+    child: const _InviteView(),
+  );
 }
 
 class _InviteView extends StatefulWidget {
@@ -90,8 +57,13 @@ class _InviteViewState extends State<_InviteView> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<InviteTeamMemberCubit, InviteTeamMemberState>(
-      listenWhen: (previous, current) => current.sent != null || current.error != null,
+      listenWhen: (previous, current) =>
+          previous.submission != current.submission || previous.initialization != current.initialization,
       listener: (context, state) {
+        if (state.initialization is Data<List<UserRole>> && state.assignableRoles.isEmpty) {
+          context.pop();
+          return;
+        }
         final sent = state.sent;
         final messenger = ScaffoldMessenger.of(context);
         if (sent != null) {
@@ -100,7 +72,7 @@ class _InviteViewState extends State<_InviteView> {
           return;
         }
         final error = state.error;
-        if (error != null) {
+        if (error != null && state.emailError == null) {
           messenger
             ..hideCurrentSnackBar()
             ..showSnackBar(SnackBar(content: Text(TeamStrings.error(error))));
@@ -108,6 +80,15 @@ class _InviteViewState extends State<_InviteView> {
       },
       builder: (context, state) {
         final cubit = context.read<InviteTeamMemberCubit>();
+        if (state.initialization is! Data<List<UserRole>>) {
+          return Scaffold(
+            body: Center(
+              child: state.error == null
+                  ? const CircularProgressIndicator()
+                  : AppOutlinedButton(label: TeamStrings.retryCta, onPressed: cubit.initialize),
+            ),
+          );
+        }
         return Scaffold(
           body: SafeArea(
             child: Column(

@@ -9,6 +9,7 @@ import re
 from uuid import UUID, uuid4
 
 import pytest
+from httpx import ASGITransport, AsyncBaseTransport, AsyncClient, ReadTimeout
 from sqlalchemy import select, update
 
 from api.auth.dependencies import get_current_user
@@ -372,16 +373,32 @@ async def test_la_previsualizacion_no_consume_el_codigo(
         assert previa.status_code == 200
 
 
-async def test_un_codigo_se_usa_una_sola_vez(app, auth_client, escenario, emails):
-    codigo = await _invitar_y_cambiar_a_la_invitada(app, auth_client, escenario, emails)
-    await auth_client.post("/api/v1/invitaciones/aceptaciones", json={"codigo": codigo})
-
-    segunda = await auth_client.post(
-        "/api/v1/invitaciones/aceptaciones", json={"codigo": codigo}
+async def test_acceptance_retry_returns_current_access_without_repeating_effects(
+    app, auth_client, session, escenario, emails
+):
+    code = await _invitar_y_cambiar_a_la_invitada(app, auth_client, escenario, emails)
+    first = await auth_client.post(
+        "/api/v1/invitaciones/aceptaciones", json={"codigo": code}
     )
-
-    assert segunda.status_code == 409
-    assert segunda.json()["errors"][0]["code"] == "codigo_usado"
+    email_count = len(emails.enviados)
+    second = await auth_client.post(
+        "/api/v1/invitaciones/aceptaciones", json={"codigo": code}
+    )
+    assert first.status_code == second.status_code == 201
+    assert second.json()["data"] == first.json()["data"]
+    assert len(emails.enviados) == email_count
+    memberships = (
+        (
+            await session.execute(
+                select(UsuarioEstablecimiento).where(
+                    UsuarioEstablecimiento.usuario_id == escenario["invitada"].id
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert len(memberships) == 1
 
 
 async def test_el_codigo_exige_la_sesion_del_email_invitado(
@@ -675,3 +692,125 @@ async def test_si_el_aviso_no_sale_el_canje_igual_funciona(
     )
 
     assert respuesta.status_code == 201
+
+
+class _LostAcceptanceResponse(AsyncBaseTransport):
+    """Ejecuta y confirma el endpoint antes de perder la primera respuesta."""
+
+    def __init__(self, app):
+        self.transport = ASGITransport(app=app)
+        self.dropped = False
+
+    async def handle_async_request(self, request):
+        response = await self.transport.handle_async_request(request)
+        if not self.dropped and request.url.path.endswith("/aceptaciones"):
+            self.dropped = True
+            assert response.status_code == 201
+            await response.aclose()
+            raise ReadTimeout("Response lost after commit", request=request)
+        return response
+
+
+async def test_retry_recovers_an_acceptance_committed_before_transport_error(
+    app, auth_client, session, escenario, emails
+):
+    code = await _invitar_y_cambiar_a_la_invitada(app, auth_client, escenario, emails)
+    async with AsyncClient(
+        transport=_LostAcceptanceResponse(app), base_url="http://test"
+    ) as client:
+        with pytest.raises(ReadTimeout):
+            await client.post(
+                "/api/v1/invitaciones/aceptaciones", json={"codigo": code}
+            )
+        invitation = (
+            await session.execute(select(InvitacionEstablecimiento))
+        ).scalar_one()
+        await session.refresh(invitation)
+        assert invitation.aceptada_por_id == escenario["invitada"].id
+        email_count = len(emails.enviados)
+        recovered = await client.post(
+            "/api/v1/invitaciones/aceptaciones", json={"codigo": code}
+        )
+        assert recovered.status_code == 201
+        assert recovered.json()["data"]["id"] == str(escenario["campo"].id)
+        assert len(emails.enviados) == email_count
+        preview = await client.post(
+            "/api/v1/invitaciones/validaciones", json={"codigo": code}
+        )
+        assert preview.status_code == 200
+
+
+@pytest.mark.parametrize("same_email", [False, True])
+async def test_used_code_is_not_recoverable_by_another_account(
+    app, auth_client, session, escenario, emails, same_email
+):
+    code = await _invitar_y_cambiar_a_la_invitada(app, auth_client, escenario, emails)
+    await auth_client.post("/api/v1/invitaciones/aceptaciones", json={"codigo": code})
+    # Misma casilla pero otra identidad también debe rechazarse.
+    other = Usuario(
+        id=uuid4(),
+        nombre="Other",
+        apellido="Synthetic",
+        email=escenario["invitada"].email if same_email else "other@example.com",
+    )
+    _como(app, other)
+    for endpoint in ("aceptaciones", "validaciones"):
+        result = await auth_client.post(
+            f"/api/v1/invitaciones/{endpoint}", json={"codigo": code}
+        )
+        assert result.status_code == 409
+        assert result.json()["errors"][0]["code"] == "codigo_usado"
+
+
+async def test_retry_does_not_reactivate_revoked_access(
+    app, auth_client, session, escenario, emails
+):
+    code = await _invitar_y_cambiar_a_la_invitada(app, auth_client, escenario, emails)
+    await auth_client.post("/api/v1/invitaciones/aceptaciones", json={"codigo": code})
+    await session.execute(
+        update(UsuarioEstablecimiento)
+        .where(UsuarioEstablecimiento.usuario_id == escenario["invitada"].id)
+        .values(activo=False)
+    )
+    await session.commit()
+    for endpoint in ("aceptaciones", "validaciones"):
+        result = await auth_client.post(
+            f"/api/v1/invitaciones/{endpoint}", json={"codigo": code}
+        )
+        assert result.status_code == 409
+    active = (
+        (
+            await session.execute(
+                select(UsuarioEstablecimiento).where(
+                    UsuarioEstablecimiento.usuario_id == escenario["invitada"].id,
+                    UsuarioEstablecimiento.activo.is_(True),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert active == []
+
+
+async def test_retry_reports_current_role_without_restoring_invited_role(
+    app, auth_client, session, escenario, emails
+):
+    code = await _invitar_y_cambiar_a_la_invitada(
+        app, auth_client, escenario, emails, rol="admin"
+    )
+    await auth_client.post("/api/v1/invitaciones/aceptaciones", json={"codigo": code})
+    await session.execute(
+        update(UsuarioEstablecimiento)
+        .where(UsuarioEstablecimiento.usuario_id == escenario["invitada"].id)
+        .values(rol="employee")
+    )
+    await session.commit()
+    email_count = len(emails.enviados)
+    for endpoint in ("aceptaciones", "validaciones"):
+        result = await auth_client.post(
+            f"/api/v1/invitaciones/{endpoint}", json={"codigo": code}
+        )
+        assert result.status_code in (200, 201)
+        assert result.json()["data"]["rol"] == "employee"
+    assert len(emails.enviados) == email_count

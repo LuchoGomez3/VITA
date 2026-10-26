@@ -97,7 +97,7 @@ class EstablishmentEmptyStatePage extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               AppOutlinedButton(
                 label: EstablishmentRegisterStrings.emptyStateJoinExistingButton,
-                onPressed: () {},
+                onPressed: () => context.push(AppRoutes.joinEstablishment),
               ),
             ],
           ),

@@ -28,6 +28,6 @@ abstract class AuthRepository {
   /// Devuelve el usuario de la sesion actual disponible localmente.
   Future<Result<AppUser>> getCurrentUser();
 
-  /// Intenta revocar la sesion remota y siempre elimina la copia local.
+  /// Invalida la sesión y limpia su copia local; informa si la limpieza falla.
   Future<void> signOut();
 }

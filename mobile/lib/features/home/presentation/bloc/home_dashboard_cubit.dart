@@ -33,7 +33,7 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
       if (isConnected) unawaited(refresh());
     });
     _syncResultSubscription = syncResults?.listen((result) {
-      if (!_refreshInProgress) unawaited(_applyExternalSyncResult(result));
+      unawaited(_applyExternalSyncResult(result));
     });
   }
 
