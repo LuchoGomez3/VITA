@@ -11,8 +11,8 @@ class AnimalDetailPhoto extends StatelessWidget {
   /// Contiene los bytes resueltos por el caso de uso, si existe una foto.
   final AnimalPhoto? photo;
 
-  /// Construye la ficha con una foto válida o con null para el diseño original.
-  /// La misma decisión controla la imagen grande y el círculo del encabezado.
+  /// Construye el espacio de foto con una imagen válida o con null para mostrar
+  /// el placeholder de la pestaña General.
   final Widget Function(Widget? photo) contentBuilder;
 
   @override

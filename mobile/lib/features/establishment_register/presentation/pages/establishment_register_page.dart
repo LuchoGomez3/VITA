@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -5,6 +7,7 @@ import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_draft_validation.dart';
@@ -31,8 +34,13 @@ class EstablishmentRegisterPage extends StatelessWidget {
   const EstablishmentRegisterPage({
     required this.createBloc,
     this.initialStep = RegisterEstablishmentStep.identification,
+    this.showSatelliteImagery = true,
     super.key,
   });
+
+  /// Si los mapas de los pasos piden tiles satelitales. Los tests lo apagan
+  /// para no usar la red.
+  final bool showSatelliteImagery;
 
   /// Crea el BLoC con dependencias ya resueltas fuera de presentation.
   final RegisterEstablishmentBlocFactory createBloc;
@@ -44,13 +52,15 @@ class EstablishmentRegisterPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => createBloc(initialStep: initialStep),
-      child: const _EstablishmentRegisterView(),
+      child: _EstablishmentRegisterView(showSatelliteImagery: showSatelliteImagery),
     );
   }
 }
 
 class _EstablishmentRegisterView extends StatelessWidget {
-  const _EstablishmentRegisterView();
+  const _EstablishmentRegisterView({required this.showSatelliteImagery});
+
+  final bool showSatelliteImagery;
 
   @override
   Widget build(BuildContext context) {
@@ -115,12 +125,12 @@ class _EstablishmentRegisterView extends StatelessWidget {
                 Expanded(
                   child: IndexedStack(
                     index: state.currentStep.index,
-                    children: const [
-                      EstablishmentRegisterIdentificationStep(),
-                      EstablishmentRegisterRenspaStep(),
-                      EstablishmentRegisterLocationStep(),
-                      EstablishmentRegisterSurfaceStep(),
-                      EstablishmentRegisterReviewStep(),
+                    children: [
+                      const EstablishmentRegisterIdentificationStep(),
+                      const EstablishmentRegisterRenspaStep(),
+                      EstablishmentRegisterLocationStep(showSatelliteImagery: showSatelliteImagery),
+                      EstablishmentRegisterSurfaceStep(showSatelliteImagery: showSatelliteImagery),
+                      EstablishmentRegisterReviewStep(showSatelliteImagery: showSatelliteImagery),
                     ],
                   ),
                 ),
@@ -197,10 +207,19 @@ class _EstablishmentRegisterView extends StatelessWidget {
             RegisterEstablishmentStep.renspa,
           ),
         );
+      case DomainErrorCode.unauthorized:
+        // La sesión venció y no se pudo renovar: se cierra como en el resto
+        // de la app (AuthSessionCubit) y el router lleva a iniciar sesión.
+        // El alta es online-only, así que no queda nada pendiente de guardar.
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(content: Text(EstablishmentRegisterStrings.sessionExpiredMessage)),
+          );
+        unawaited(context.read<AuthSessionCubit>().signOut());
       case DomainErrorCode.unknown ||
           DomainErrorCode.validation ||
           DomainErrorCode.notFound ||
-          DomainErrorCode.unauthorized ||
           DomainErrorCode.syncFailed:
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()

@@ -10,6 +10,7 @@ Cada ``models.py`` solo importa de hojas (``database.models`` y
 
 from api.modules.usuarios import models as usuarios_models  # noqa: F401
 from api.modules.establecimientos import models as establecimientos_models  # noqa: F401
+from api.modules.equipo import models as equipo_models  # noqa: F401
 from api.modules.categorias import models as categorias_models  # noqa: F401
 from api.modules.alimentos import models as alimentos_models  # noqa: F401
 from api.modules.planes_alimenticios import models as planes_alimenticios_models  # noqa: F401

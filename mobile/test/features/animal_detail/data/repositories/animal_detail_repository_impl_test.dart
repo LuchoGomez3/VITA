@@ -2,9 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
+import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
@@ -21,6 +23,7 @@ void main() {
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
+        lotBrickStore: _FakeLotBrickStore(),
         remoteDataSource: remoteDataSource,
       );
 
@@ -40,6 +43,7 @@ void main() {
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
+        lotBrickStore: _FakeLotBrickStore(),
         remoteDataSource: remoteDataSource,
       );
 
@@ -66,6 +70,7 @@ void main() {
         brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
         categoriaBrickStore: categoriaStore,
         pesajeBrickStore: pesajeStore,
+        lotBrickStore: _FakeLotBrickStore(),
         remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
       );
 
@@ -81,6 +86,20 @@ void main() {
       expect(detail.weighingMethod, AnimalWeighingMethod.bluetoothScale);
     });
 
+    test('resolves the lot name for animals pulled without it', () async {
+      final repository = AnimalDetailRepositoryImpl(
+        brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal.copyWith(lotName: '')),
+        categoriaBrickStore: _FakeCategoriaBrickStore(),
+        pesajeBrickStore: _FakePesajeBrickStore(),
+        lotBrickStore: _FakeLotBrickStore(lots: {'lot-id': 'El Bajo'}),
+        remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
+      );
+
+      final result = await repository.getById(_animalId);
+
+      expect((result as Success<AnimalDetail>).data.lotName, 'El Bajo');
+    });
+
     test('uses cached related data when remote pulls fail', () async {
       final repository = AnimalDetailRepositoryImpl(
         brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
@@ -91,6 +110,7 @@ void main() {
           pesajes: [_firstPesaje],
           failPull: true,
         ),
+        lotBrickStore: _FakeLotBrickStore(),
         remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
       );
 
@@ -107,6 +127,7 @@ void main() {
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
+        lotBrickStore: _FakeLotBrickStore(),
         remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
       );
 
@@ -323,4 +344,30 @@ class _FakePesajeBrickStore implements PesajeBrickStore {
 class _FakeTokenProvider implements BackendAccessTokenProvider {
   @override
   Future<String?> getAccessToken() async => 'token';
+}
+
+class _FakeLotBrickStore implements LotBrickStore {
+  _FakeLotBrickStore({this.lots = const {}});
+
+  /// Nombre de cada potrero, por id.
+  final Map<String, String> lots;
+
+  @override
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId) async => [
+    for (final MapEntry(key: id, value: name) in lots.entries)
+      BrickLotModel(
+        localId: id,
+        establishmentId: establishmentId,
+        name: name,
+        boundaryJson: '{}',
+        surfaceTenths: 0,
+        hasWater: false,
+        statusCode: 'activo',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      ),
+  ];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName}');
 }

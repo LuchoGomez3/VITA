@@ -3,11 +3,13 @@
 import re
 from uuid import UUID
 
+from shapely.geometry import Polygon
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.modules.establecimientos.exceptions import (
     EstablecimientoNoEncontradoError,
+    PoligonoInvalidoError,
     RenspaDuplicadoError,
     RenspaFormatoInvalidoError,
     RenspaVacioError,
@@ -56,6 +58,8 @@ class EstablecimientoService:
 
         if data.superficie_ha is not None and data.superficie_ha <= 0:
             raise SuperficieInvalidaError()
+
+        _validar_poligono(data.poligono)
 
         # Pre-chequeo de unicidad para un error de dominio claro; la constraint
         # de la DB es la garantía final (manejada abajo ante carreras).
@@ -159,6 +163,7 @@ class EstablecimientoService:
                 setattr(establecimiento, campo, valor)
 
         if data.poligono is not None:
+            _validar_poligono(data.poligono)
             establecimiento.poligono = _poligono_a_dicts(data.poligono)
 
         try:
@@ -205,6 +210,29 @@ class EstablecimientoService:
             raise CuitInvalidoError(cuit)
 
         return cuit_normalizado
+
+
+def _validar_poligono(vertices) -> None:
+    """Exige un polígono cerrable: 3+ vértices WGS84, orden único y sin cruces.
+
+    El polígono es opcional (el alta puede llevar solo `superficie_ha`), así que
+    `None` pasa. Los lados se evalúan en el plano lat/long: para el tamaño de un
+    campo la distorsión no cambia si dos lados se cruzan.
+    """
+    if vertices is None:
+        return
+    if len(vertices) < 3:
+        raise PoligonoInvalidoError("necesita al menos 3 vértices")
+    if len({v.orden for v in vertices}) != len(vertices):
+        raise PoligonoInvalidoError("hay vértices con el mismo orden")
+    for v in vertices:
+        if not (-90 <= v.latitud <= 90 and -180 <= v.longitud <= 180):
+            raise PoligonoInvalidoError("hay coordenadas fuera de rango")
+
+    ordenados = sorted(vertices, key=lambda v: v.orden)
+    poligono = Polygon([(v.longitud, v.latitud) for v in ordenados])
+    if not poligono.is_valid or poligono.area == 0:
+        raise PoligonoInvalidoError("los lados se cruzan o no encierran superficie")
 
 
 def _poligono_a_dicts(vertices) -> list[dict] | None:

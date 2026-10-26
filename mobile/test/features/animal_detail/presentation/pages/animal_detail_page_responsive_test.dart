@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
@@ -14,6 +16,8 @@ import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_ani
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/retry_animal_sync_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_general_tab.dart';
 
 void main() {
   for (final size in [const Size(320, 568), const Size(568, 320)]) {
@@ -43,19 +47,73 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
 
-        expect(find.byType(SingleChildScrollView), findsOneWidget);
+        expect(find.byType(TabBar), findsOneWidget);
+        expect(find.byType(AnimalGeneralTab), findsOneWidget);
         expect(find.byType(Image), findsOneWidget);
       },
     );
   }
+
+  testWidgets('keeps tabs usable while the optional photo is loading', (tester) async {
+    final photoResult = Completer<Result<AnimalPhoto?>>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AnimalDetailPage(
+          animalId: _animal.id,
+          createCubit: () => _createCubit(photoResult: photoResult.future),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(_animal.breed), findsWidgets);
+    expect(find.text(AnimalDetailStrings.photoPlaceholder), findsOneWidget);
+
+    await tester.tap(find.text(AnimalDetailStrings.weighingsTab));
+    await tester.pumpAndSettle();
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+
+    photoResult.complete(Result.success(AnimalPhoto.fromBytes(base64Decode(_onePixelPng))));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TabBar>(find.byType(TabBar)).controller!.index, AnimalFichaTab.weighings.index);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+
+    await tester.tap(find.text(AnimalDetailStrings.generalTab));
+    await tester.pumpAndSettle();
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
+  });
+
+  for (final (name, result) in <(String, Result<AnimalPhoto?>)>[
+    ('absent', const Result.success(null)),
+    ('failed', const Result.failure(DomainException(message: 'Optional photo failed'))),
+    ('invalid', Result.success(AnimalPhoto.fromBytes([1, 2, 3]))),
+  ]) {
+    testWidgets('keeps the new placeholder and animal data when photo is $name', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AnimalDetailPage(
+            animalId: _animal.id,
+            createCubit: () => _createCubit(photoResult: Future.value(result)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AnimalGeneralTab), findsOneWidget);
+      expect(find.text(_animal.breed), findsWidgets);
+      expect(find.text(AnimalDetailStrings.photoPlaceholder), findsOneWidget);
+      expect(find.byType(TabBar), findsOneWidget);
+    });
+  }
 }
 
-AnimalDetailCubit _createCubit() {
+AnimalDetailCubit _createCubit({Future<Result<AnimalPhoto?>>? photoResult}) {
   const detailRepository = _DetailRepository();
-  const photoRepository = _PhotoRepository();
+  final photoRepository = _PhotoRepository(result: photoResult);
   return AnimalDetailCubit(
     getAnimalDetailUseCase: const GetAnimalDetailUseCase(detailRepository),
-    getAnimalPhotoUseCase: const GetAnimalPhotoUseCase(photoRepository),
+    getAnimalPhotoUseCase: GetAnimalPhotoUseCase(photoRepository),
     retryAnimalSyncUseCase: const RetryAnimalSyncUseCase(detailRepository),
   );
 }
@@ -75,16 +133,19 @@ class _DetailRepository implements AnimalDetailRepository {
 }
 
 class _PhotoRepository implements AnimalPhotoRepository {
-  const _PhotoRepository();
+  const _PhotoRepository({this.result});
+
+  final Future<Result<AnimalPhoto?>>? result;
 
   @override
   Future<Result<AnimalPhoto?>> getPhoto({
     required String establishmentId,
     required String animalId,
   }) async {
-    return Result.success(
-      AnimalPhoto.fromBytes(base64Decode(_onePixelPng)),
-    );
+    return result ??
+        Result.success(
+          AnimalPhoto.fromBytes(base64Decode(_onePixelPng)),
+        );
   }
 }
 

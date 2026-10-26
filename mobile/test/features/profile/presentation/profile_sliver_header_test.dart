@@ -82,11 +82,11 @@ void main() {
       controller.jumpTo(collapseDistance + 120);
       await tester.pumpAndSettle();
 
-      // Assert: sigue visible la identidad y ocupa menos altura, sin desbordes.
+      // Assert: queda solo el título, en menos altura y sin desbordes.
       expect(tester.takeException(), isNull);
       expect(tester.getSize(header).height, lessThan(expandedHeight));
       expect(find.text(ProfileStrings.title).hitTestable(), findsOneWidget);
-      expect(find.text('María Alejandra Fernández González').hitTestable(), findsOneWidget);
+      expect(find.text('María Alejandra Fernández González').hitTestable(), findsNothing);
       expect(tester.getTopLeft(header).dy, 0);
       expect(tester.getRect(background), backgroundRect);
       expect(tester.getTopLeft(title).dy, titleTop);

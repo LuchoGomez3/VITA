@@ -36,6 +36,8 @@ import 'package:frontend_mayoral/features/field/presentation/pages/field_detail_
 import 'package:frontend_mayoral/features/field/presentation/pages/field_map_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/lot_editor_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
+import 'package:frontend_mayoral/features/health/presentation/pages/apply_vaccination_page.dart';
+import 'package:frontend_mayoral/features/health/presentation/pages/health_page.dart';
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
@@ -46,6 +48,8 @@ import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expense_history_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expenses_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/strings/operating_expense_strings.dart';
+import 'package:frontend_mayoral/features/profile/domain/entities/establishment_details.dart';
+import 'package:frontend_mayoral/features/profile/presentation/pages/establishment_detail_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
@@ -61,6 +65,14 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senas
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
+import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
+import 'package:frontend_mayoral/features/team/presentation/pages/invitation_created_page.dart';
+import 'package:frontend_mayoral/features/team/presentation/pages/invite_team_member_page.dart';
+import 'package:frontend_mayoral/features/team/presentation/pages/join_establishment_page.dart';
+import 'package:frontend_mayoral/features/team/presentation/pages/team_page.dart';
+import 'package:frontend_mayoral/features/team/team_composition.dart';
+import 'package:frontend_mayoral/features/weighing/presentation/pages/weighing_page.dart';
+import 'package:frontend_mayoral/features/weighing/weighing_composition.dart';
 import 'package:go_router/go_router.dart';
 
 /// Configuracion central de rutas y proteccion de sesion de la aplicacion.
@@ -140,7 +152,8 @@ class AppRouter {
                 GoRoute(
                   path: AppRoutes.livestock,
                   builder: (context, state) => LivestockPage(
-                    createCubit: createLivestockReaderCubit,
+                    createCubit: createAnimalListCubit,
+                    createReaderCubit: createLivestockReaderCubit,
                     onIdentifyAnimal: (establishmentId) async {
                       await context.push<void>(
                         AppRoutes.rfidScanForEstablishment(establishmentId),
@@ -176,6 +189,9 @@ class AppRouter {
                         cuit: session.user.cuit,
                         createCubit: createProfileCubit,
                         signOut: context.read<AuthSessionCubit>().signOut,
+                        readAppVersion: readInstalledAppVersion,
+                        userId: session.user.id,
+                        createAppearanceCubit: createProfileAppearanceCubit,
                       ),
                       _ => ProfilePage(
                         email: ProfileStrings.emptyCredential,
@@ -184,6 +200,9 @@ class AppRouter {
                         cuit: null,
                         createCubit: createProfileCubit,
                         signOut: context.read<AuthSessionCubit>().signOut,
+                        readAppVersion: readInstalledAppVersion,
+                        userId: null,
+                        createAppearanceCubit: createProfileAppearanceCubit,
                       ),
                     };
                   },
@@ -191,6 +210,48 @@ class AppRouter {
               ],
             ),
           ],
+        ),
+        GoRoute(
+          path: AppRoutes.profileEstablishment,
+          // Sin el establecimiento (por ejemplo, al restaurar la app) se
+          // vuelve a Perfil, que tiene la lista.
+          redirect: (context, state) => state.extra is EstablishmentDetails ? null : AppRoutes.profile,
+          builder: (context, state) => EstablishmentDetailPage(establishment: state.extra! as EstablishmentDetails),
+        ),
+        GoRoute(
+          path: AppRoutes.team,
+          builder: (context, state) => TeamPage(
+            establishmentId: state.pathParameters['establishmentId']!,
+            createCubit: createTeamCubit,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.teamInvite,
+          builder: (context, state) => InviteTeamMemberPage(
+            establishmentId: state.pathParameters['establishmentId']!,
+            createCubit: createInviteTeamMemberCubit,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.teamInvitationCreated,
+          // El código solo existe en memoria: sin él (p. ej. al restaurar la
+          // app) se vuelve a Equipo.
+          redirect: (context, state) => state.extra is ({CreatedInvitation created, String establishmentName})
+              ? null
+              : AppRoutes.teamFor(state.pathParameters['establishmentId']!),
+          builder: (context, state) {
+            final establishmentId = state.pathParameters['establishmentId']!;
+            final extra = state.extra! as ({CreatedInvitation created, String establishmentName});
+            return InvitationCreatedPage(
+              created: extra.created,
+              establishmentName: extra.establishmentName,
+              cancelInvitation: () => cancelTeamInvitation(establishmentId, extra.created.invitation.id),
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.joinEstablishment,
+          builder: (context, state) => const JoinEstablishmentPage(createCubit: createJoinEstablishmentCubit),
         ),
         GoRoute(
           path: AppRoutes.animalRegisterStep1,
@@ -237,6 +298,24 @@ class AppRouter {
               createCubit: createAnimalDetailCubit,
             );
           },
+        ),
+        // Maquetas (Etapa 1) de pesaje y sanidad, con datos ficticios.
+        GoRoute(
+          path: AppRoutes.weighing,
+          builder: (context, state) {
+            final request = state.extra;
+            return request is WeighingRequest
+                ? WeighingPage(request: request, recordWeighing: createRecordAnimalWeighingUseCase())
+                : const WeighingPage();
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.health,
+          builder: (context, state) => const HealthPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.applyVaccination,
+          builder: (context, state) => const ApplyVaccinationPage(),
         ),
         GoRoute(
           path: AppRoutes.establishmentRegisterEmpty,

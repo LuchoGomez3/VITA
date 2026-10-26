@@ -21,8 +21,8 @@ directorio o el filesystem fallan, data registra el incidente sin IDs ni rutas
 y responde foto ausente; el detalle del animal permanece disponible.
 
 Si no hay foto, mientras carga o si falla la decodificación, se conserva el
-avatar original y no se reserva un bloque vacío. Cuando la foto se decodifica,
-se muestra arriba de la ficha con proporción 4:3 y `BoxFit.cover`.
+placeholder del rediseño. Cuando la foto se decodifica, se muestra en la parte
+superior de la pestaña General con proporción 4:3 y `BoxFit.cover`.
 La decodificación se limita al ancho físico de la pantalla para evitar mantener
 en memoria el bitmap completo de una captura de alta resolución.
 
@@ -54,8 +54,8 @@ migraciones ni dependencias de red.
 
 ## Presentación
 
-La foto comienza detrás del borde inferior de `AppHeader` y la tarjeta
-principal se superpone sobre ella. Sin foto, la ficha mantiene el avatar y el
-espaciado normal. Las secciones de datos, observaciones, evolución de peso e
-historial conservan separación uniforme y el pie de sincronización permite
-reintentar rechazos.
+La ficha conserva la cabecera y las pestañas del rediseño. General muestra la
+foto local o el placeholder, identificación, estado productivo, observaciones y
+sincronización. Pesajes conserva el gráfico y el historial; las otras pestañas
+mantienen el contenido del rediseño. La carga opcional de la foto no bloquea los
+datos del animal ni la navegación entre pestañas.

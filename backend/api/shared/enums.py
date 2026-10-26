@@ -11,6 +11,21 @@ class RolUsuario(str, Enum):
     admin = "admin"
     owner = "owner"
     employee = "employee"
+    # Por ahora opera como ``employee``: no ve finanzas ni gestiona el equipo.
+    # Acotarlo al módulo Sanidad queda para una historia aparte.
+    veterinarian = "veterinarian"
+
+
+class EstadoInvitacion(str, Enum):
+    """Ciclo de vida de una invitación al equipo de un establecimiento.
+
+    El vencimiento no es un estado: se calcula contra ``expira_en``, así una
+    invitación pendiente vencida se puede reenviar sin cambiar de estado.
+    """
+
+    pendiente = "pendiente"
+    aceptada = "aceptada"
+    cancelada = "cancelada"
 
 
 class SexoAnimal(str, Enum):

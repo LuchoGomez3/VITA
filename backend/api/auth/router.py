@@ -25,6 +25,8 @@ def _token_response(usuario: Usuario, auth_result: AuthResult) -> TokenResponse:
             apellido=usuario.apellido,
             email=usuario.email,
             cuit=usuario.cuit,
+            color_cabecera=usuario.color_cabecera,
+            avatar_actualizado_en=usuario.avatar_actualizado_en,
         ),
     )
 
@@ -88,6 +90,12 @@ async def me(current_user: Usuario = Depends(get_current_user)):
             "apellido": current_user.apellido,
             "email": current_user.email,
             "cuit": current_user.cuit,
+            "color_cabecera": current_user.color_cabecera,
+            "avatar_actualizado_en": (
+                current_user.avatar_actualizado_en.isoformat()
+                if current_user.avatar_actualizado_en
+                else None
+            ),
         },
     )
 

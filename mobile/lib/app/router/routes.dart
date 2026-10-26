@@ -26,6 +26,33 @@ class AppRoutes {
   /// Ruta raiz de la pestaña de perfil y ajustes.
   static const profile = '/perfil';
 
+  /// Ficha de un establecimiento de Perfil (recibe `EstablishmentDetails`
+  /// en `extra`).
+  static const profileEstablishment = '/perfil/establecimiento';
+
+  /// Equipo de un establecimiento. Lleva el id en la ruta (y no en `extra`)
+  /// para sobrevivir a que el sistema restaure la app.
+  static const team = '/perfil/establecimiento/:establishmentId/equipo';
+
+  /// Invitar a alguien al equipo de un establecimiento.
+  static const teamInvite = '/perfil/establecimiento/:establishmentId/equipo/invitar';
+
+  /// Invitación recién creada, con el código para compartir (recibe
+  /// `({CreatedInvitation created, String establishmentName})` en `extra`).
+  static const teamInvitationCreated = '/perfil/establecimiento/:establishmentId/equipo/invitacion';
+
+  /// Sumarse a un establecimiento con el código de una invitación.
+  static const joinEstablishment = '/perfil/sumarme';
+
+  /// Equipo de [establishmentId].
+  static String teamFor(String establishmentId) => '/perfil/establecimiento/$establishmentId/equipo';
+
+  /// Invitación creada en [establishmentId].
+  static String teamInvitationCreatedFor(String establishmentId) => '${teamFor(establishmentId)}/invitacion';
+
+  /// Invitar al equipo de [establishmentId].
+  static String teamInviteFor(String establishmentId) => '${teamFor(establishmentId)}/invitar';
+
   /// Ruta liviana que espera la restauracion de sesion al arrancar.
   static const authCheck = '/auth-check';
 
@@ -88,6 +115,15 @@ class AppRoutes {
 
   /// Ruta de error del reporte SENASA.
   static const senasaReportError = '/senasa-report/error';
+
+  /// Ruta de la pantalla de pesaje en manga.
+  static const weighing = '/pesaje';
+
+  /// Ruta de la pantalla de sanidad.
+  static const health = '/sanidad';
+
+  /// Ruta de la pantalla de aplicar vacunación.
+  static const applyVaccination = '/sanidad/aplicar-vacunacion';
 
   /// Ruta del mapa de potreros.
   static const field = '/campo';

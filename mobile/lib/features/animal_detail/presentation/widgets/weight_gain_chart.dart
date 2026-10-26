@@ -4,6 +4,9 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_formatters.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_ficha_section.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_weighings_tab.dart';
 
 /// Grafico de evolucion de peso usado en la ficha del animal.
 class WeightGainChart extends StatelessWidget {
@@ -18,21 +21,63 @@ class WeightGainChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final last = weightHistory.lastOrNull;
+    final gain = weightHistory.length < 2
+        ? null
+        : dailyGainBetween(weightHistory[weightHistory.length - 2], weightHistory.last);
+
     return AppSurfaceCard(
       elevation: 4,
       shadowColor: AppColors.textPrimary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            AnimalDetailStrings.weightChartTitle,
-            style: AppTypography.pageTitle,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          if (weightHistory.isEmpty)
+          const AnimalFichaSectionTitle(AnimalDetailStrings.weightChartTitle),
+          const SizedBox(height: AppSpacing.sm),
+          if (last == null)
             const Text(AnimalDetailStrings.noWeightHistory)
-          else
+          else ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: last.weightKg.displayWeight),
+                            TextSpan(
+                              text: ' kg',
+                              style: AppTypography.mediumEmphasis.copyWith(color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                        style: AppTypography.bigTitle.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w800,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      Text(
+                        AnimalDetailStrings.lastWeighing(DateDisplayFormatter.shortDate(last.date)),
+                        style: AppTypography.formFieldHelper,
+                      ),
+                    ],
+                  ),
+                ),
+                if (gain != null)
+                  AppStatusChip(
+                    label: AnimalDetailStrings.dailyGain(formatDailyGain(gain)),
+                    tone: dailyGainTone(gain),
+                    showDot: true,
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
             _WeightHistoryLineChart(weightHistory: weightHistory),
+          ],
         ],
       ),
     );

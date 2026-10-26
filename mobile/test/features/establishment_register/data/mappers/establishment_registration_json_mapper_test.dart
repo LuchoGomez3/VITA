@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/features/establishment_register/data/mappers/establishment_registration_json_mapper.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/entities/boundary_point.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
 
 void main() {
@@ -16,11 +17,10 @@ void main() {
     latitud: -33.7242,
     longitud: -64.5891,
     superficieHectareas: 847,
-    cantidadVertices: 7,
   );
 
   group('EstablishmentRegistrationJsonMapper.toJson', () {
-    test('serializes every field in snake_case, without poligono', () {
+    test('omits poligono when the surface was entered by hand', () {
       final json = EstablishmentRegistrationJsonMapper.toJson(registration);
 
       expect(json, {
@@ -37,6 +37,32 @@ void main() {
         'superficie_ha': 847.0,
       });
       expect(json.containsKey('poligono'), isFalse);
+    });
+
+    test('sends the drawn polygon with 1-based orden, in drawing order', () {
+      final json = EstablishmentRegistrationJsonMapper.toJson(
+        registration.copyWith(
+          poligono: const [
+            BoundaryPoint(latitud: -33.10, longitud: -64.10),
+            BoundaryPoint(latitud: -33.10, longitud: -64.20),
+            BoundaryPoint(latitud: -33.20, longitud: -64.20),
+          ],
+        ),
+      );
+
+      expect(json['poligono'], [
+        {'orden': 1, 'latitud': -33.10, 'longitud': -64.10},
+        {'orden': 2, 'latitud': -33.10, 'longitud': -64.20},
+        {'orden': 3, 'latitud': -33.20, 'longitud': -64.20},
+      ]);
+    });
+
+    test('rounds the surface to the 2 decimals the backend stores', () {
+      final json = EstablishmentRegistrationJsonMapper.toJson(
+        registration.copyWith(superficieHectareas: 312.4678),
+      );
+
+      expect(json['superficie_ha'], 312.47);
     });
   });
 
