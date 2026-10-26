@@ -57,8 +57,31 @@ void main() {
     await expectLater(estimator.estimateWeight(Uint8List(0)), throwsA(isA<VisionModelUnavailableException>()));
   });
 
+  test('permite sustituir las rutas del modelo y su margen desde composición', () async {
+    final bundle = _ReplacementAssets();
+    final estimator = TfliteWeightEstimator(
+      bundle: bundle,
+      modelAsset: 'assets/models/replacement.tflite',
+      calibrationAsset: 'assets/models/replacement.json',
+    );
+    await expectLater(estimator.estimateWeight(Uint8List(0)), throwsA(isA<VisionModelUnavailableException>()));
+    expect(bundle.requested, ['assets/models/replacement.tflite', 'assets/models/replacement.json']);
+  });
+
+  test('incluye un modelo TFLite local y su margen real en el bundle', () async {
+    final model = await rootBundle.load(TfliteWeightEstimator.defaultModelAsset);
+    // Identificador del formato FlatBuffer de TFLite, sin cargar librerías nativas.
+    expect(model.buffer.asUint8List(model.offsetInBytes + 4, 4), [84, 70, 76, 51]);
+    expect(model.lengthInBytes, greaterThan(0));
+    final calibration = parseWeightCalibration(
+      await rootBundle.loadString(TfliteWeightEstimator.defaultCalibrationAsset),
+    );
+    expect(calibration.marginKg, closeTo(85.2658, .001));
+    expect(calibration.targetCoverage, .9);
+  });
+
   test('lee el margen empaquetado y limita a cero el extremo inferior', () async {
-    const source = '{"margen_kg":85.26577758789062,"cobertura_objetivo":0.9}';
+    final source = await rootBundle.loadString(TfliteWeightEstimator.defaultCalibrationAsset);
     final calibration = parseWeightCalibration(source);
     final estimate = applyWeightInterval(60, calibration.marginKg, calibration.targetCoverage);
 
@@ -125,4 +148,15 @@ void main() {
 class _MissingAssets extends CachingAssetBundle {
   @override
   Future<ByteData> load(String key) async => throw FlutterError('Missing test asset');
+}
+
+class _ReplacementAssets extends CachingAssetBundle {
+  final requested = <String>[];
+
+  @override
+  Future<ByteData> load(String key) async {
+    requested.add(key);
+    if (key.endsWith('.json')) throw FlutterError('Missing replacement metadata');
+    return ByteData(8);
+  }
 }

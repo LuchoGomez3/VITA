@@ -39,12 +39,12 @@ el sistema emita `inactive → hidden → paused`.
 
 ## Contrato de inferencia local
 
-Esta rama **no incluye un modelo entrenado**, pesos ni margen experimental.
-El flujo instalado permite captura, revisión y calibración de sesión, pero no
-produce kilogramos IA hasta incorporar un paquete aprobado en otra revisión.
+Esta rama incluye como punto de partida el modelo probado en `jornada-poster`
+y su margen experimental de **±85,27 kg**. Los dos archivos se recuperaron sin
+modificaciones desde `c7777a1`; no se incorporan entrenamiento ni checkpoints.
+Su procedencia y hashes están en [assets/models](../../../assets/models/README.md).
 
-El adaptador espera estos recursos locales, que también deberán declararse en
-`pubspec.yaml` cuando se apruebe su distribución:
+El adaptador carga estos recursos, declarados explícitamente en `pubspec.yaml`:
 
 - `assets/models/peso_bovino_mobilenet_v2.tflite`: una entrada float32
   `[1,224,224,3]`, RGB normalizado a `[-1,1]`, y una salida float32 `[1,1]` en kg.
@@ -60,6 +60,25 @@ iniciado al salir; el Cubit descarta su resultado. Ver
 El intervalo muestra `max(0, peso - margen)` y `peso + margen`. La cobertura
 declarada es metadato del modelo, no confianza individual para una fotografía.
 No se acredita precisión de campo ni una latencia menor a tres segundos.
+
+## Reemplazar o retirar el modelo
+
+- Para un modelo compatible, reemplazar **juntos** el `.tflite` y el JSON del
+  margen conservando sus nombres. No cambian cámara, Cubit, dominio ni Brick.
+  Actualizar procedencia/hashes y las expectativas del test del paquete.
+- Para conservar archivos versionados con otros nombres, declarar las nuevas
+  rutas en `pubspec.yaml` y pasarlas mediante `modelAsset`/`calibrationAsset` al
+  construir `TfliteWeightEstimator` en la composición de la feature.
+- Si cambia resolución, normalización o salida, adaptar el preprocesamiento y
+  contrato de tensores en `data/services/tflite_weight_estimator.dart`. No basta
+  con cambiar la extensión: se comprueban forma y tipo de los tensores.
+- Para retirar el paquete, quitar ambos archivos y sus declaraciones de assets.
+  La ausencia mantiene captura/revisión/calibración y deshabilita el pesaje IA
+  con un aviso, sin pesos de reemplazo inventados.
+
+Estos cambios requieren **una nueva compilación de la app**. No hay descarga
+remota ni selector de modelos en la interfaz. Ver
+[ADR-0014](../../../../docs/adr/adr-0014-modelo-inicial-de-pesaje-intercambiable.md).
 
 ## Arquitectura y generación
 
@@ -78,7 +97,7 @@ La selección RFID y el contrato existente de pesajes tienen tests de regresión
 
 Pendiente en Android/iOS físico: permiso inicial/denegado/restringido, volver
 de Ajustes, background/resume, orientación JPEG/EXIF, galería, captura y guardado
-en modo avión. Con un modelo aprobado: compatibilidad nativa, precisión y
+en modo avión. Con el modelo inicial: compatibilidad nativa, precisión y
 latencia en equipos objetivo. La revisión humana de permisos es obligatoria
 según AGENTS.md. No se guarda ni exporta un dataset de calibración.
 

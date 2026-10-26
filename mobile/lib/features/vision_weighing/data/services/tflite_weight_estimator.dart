@@ -12,19 +12,31 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 
 /// Carga exclusivamente recursos locales, sin descargar modelos al capturar.
 class TfliteWeightEstimator implements VisionWeightEstimatorRepository {
-  /// Permite probar assets ausentes sin inicializar bibliotecas nativas.
-  TfliteWeightEstimator({AssetBundle? bundle}) : _bundle = bundle ?? rootBundle;
+  /// Permite sustituir el paquete del modelo sin cambiar cámara, Cubit o guardado.
+  TfliteWeightEstimator({
+    AssetBundle? bundle,
+    String modelAsset = defaultModelAsset,
+    String calibrationAsset = defaultCalibrationAsset,
+  }) : _bundle = bundle ?? rootBundle,
+       _modelAsset = modelAsset,
+       _calibrationAsset = calibrationAsset;
 
   final AssetBundle _bundle;
-  static const _asset = 'assets/models/peso_bovino_mobilenet_v2.tflite';
-  static const _calibrationAsset = 'assets/models/peso_bovino_intervalo.json';
+  final String _modelAsset;
+  final String _calibrationAsset;
+
+  /// Modelo inicial distribuido con la app para inferencia sin conexión.
+  static const defaultModelAsset = 'assets/models/peso_bovino_mobilenet_v2.tflite';
+
+  /// Margen que corresponde al modelo inicial; se reemplazan como un par.
+  static const defaultCalibrationAsset = 'assets/models/peso_bovino_intervalo.json';
 
   @override
   Future<VisionWeightEstimate> estimateWeight(Uint8List jpegBytes) async {
     final ByteData model;
     final ({double marginKg, double targetCoverage}) calibration;
     try {
-      model = await _bundle.load(_asset);
+      model = await _bundle.load(_modelAsset);
       calibration = parseWeightCalibration(await _bundle.loadString(_calibrationAsset));
     } on Object catch (error, stack) {
       developer.log('Modelo local no disponible', name: 'vision_weighing', error: error, stackTrace: stack);

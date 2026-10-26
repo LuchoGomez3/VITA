@@ -7,6 +7,16 @@ No se hace push, PR ni merge a develop.
 Commit de implementación y tests: `5e67842`
 (`feat(pesaje-vision): recuperar captura y pesaje offline VITA-141`).
 
+Actualización de alcance del 2026-10-26: el usuario autorizó incluir **solo el
+TFLite y su JSON originales** para estimar con el modelo inicial y reemplazarlo
+después. Se recuperaron desde `c7777a1`, con blobs idénticos a jornada-poster,
+sin incorporar commits ni entrenamiento. Ver ADR-0014 y el README de assets
+para procedencia, hashes y procedimiento de reemplazo/retiro.
+La suite ampliada pasa **96 tests** e incluye carga del paquete real desde el
+bundle y sustitución de rutas. Se comprobaron también la firma TFLite y los
+tensores del binario: entrada float32 `[1,224,224,3]`, salida float32 `[1,1]`.
+Esto no sustituye ejecutar inferencia nativa en Android/iOS físico.
+
 ## Grafo investigado
 
 El merge-base de develop tanto con jornada-poster como con la rama original
@@ -54,8 +64,9 @@ Se comprobó con diff del subárbol entre `c7777a1` y el tip original.
 | `a2e28ba` (árbol del merge, sin cherry-pick) | Solo enlace del JPEG desde `SaveVisionWeight` a `AnimalPhotoStore` existente, mediante contrato de dominio; tests adaptados | Todo el resto del merge. Infraestructura de fotos, ficha, lotes, backend, datos y assets ya tienen resoluciones independientes en develop |
 
 No se incorporan `97e5698`, `18ae08e`, `8747e6b`, checkpoints, modelos Keras,
-TFLite experimental de 19 MB, logs de entrenamiento, fotos demo ni mapas de
-presentación. Los dobles e imágenes sintéticas se limitan a pruebas automatizadas.
+logs de entrenamiento, fotos demo ni mapas de presentación. El TFLite inicial
+de 19 MB y su JSON son la única excepción autorizada posteriormente a la
+selección inicial de la tabla. Los dobles e imágenes sintéticas se limitan a pruebas automatizadas.
 Los mocks preexistentes de otras pantallas de develop quedan fuera del diff.
 
 ## Ya resuelto en develop
@@ -125,9 +136,9 @@ Validar permisos y Ajustes, background/resume, JPEG/EXIF, rotación, captura,
 galería y guardado en modo avión. El código de permisos requiere revisión humana
 por AGENTS.md; toda la rama debe pasar revisión antes de abrir/integrar la PR.
 
-Sin modelo aprobado, la app no estima kg reales: esta limitación es deliberada
-para excluir artefactos experimentales. Aprobar modelo/margen, declarar sus
-assets y medir precisión y latencia es un paso posterior. La calibración actual
+La app incluye ahora el modelo inicial experimental y su margen autorizado.
+Si se retira o es incompatible, no estima kg reales y conserva revisión y
+calibración. Medir precisión y latencia sigue pendiente. La calibración actual
 solo conserva peso/foto durante la sesión, sin dataset ni entrenamiento.
 
 Foto privada y SQLite no forman una transacción: un fallo de SQLite posterior
