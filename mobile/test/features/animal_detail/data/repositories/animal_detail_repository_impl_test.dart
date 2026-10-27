@@ -2,9 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
+import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
@@ -21,6 +23,7 @@ void main() {
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
+        livestockSaleBrickStore: _FakeLivestockSaleBrickStore(),
         remoteDataSource: remoteDataSource,
       );
 
@@ -40,6 +43,7 @@ void main() {
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
+        livestockSaleBrickStore: _FakeLivestockSaleBrickStore(),
         remoteDataSource: remoteDataSource,
       );
 
@@ -66,6 +70,7 @@ void main() {
         brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
         categoriaBrickStore: categoriaStore,
         pesajeBrickStore: pesajeStore,
+        livestockSaleBrickStore: _FakeLivestockSaleBrickStore(),
         remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
       );
 
@@ -91,6 +96,7 @@ void main() {
           pesajes: [_firstPesaje],
           failPull: true,
         ),
+        livestockSaleBrickStore: _FakeLivestockSaleBrickStore(),
         remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
       );
 
@@ -101,12 +107,35 @@ void main() {
       expect(detail.weightHistory.single.weightKg, 210);
     });
 
+    test('includes locally registered sales in the animal history', () async {
+      final saleStore = _FakeLivestockSaleBrickStore(sales: [_sale]);
+      final repository = AnimalDetailRepositoryImpl(
+        brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
+        categoriaBrickStore: _FakeCategoriaBrickStore(),
+        pesajeBrickStore: _FakePesajeBrickStore(),
+        livestockSaleBrickStore: saleStore,
+        remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
+      );
+
+      final result = await repository.getById(_animalId);
+
+      final detail = (result as Success<AnimalDetail>).data;
+      expect(saleStore.queriedAnimalId, _animalId);
+      expect(detail.saleHistory, hasLength(1));
+      expect(detail.saleHistory.single.id, 'sale-id');
+      expect(
+        detail.saleHistory.single.syncStatus,
+        AnimalSaleSyncStatus.synchronized,
+      );
+    });
+
     test('retries a rejected animal through the Brick store', () async {
       final brickStore = _FakeAnimalBrickStore(localAnimal: _brickAnimal);
       final repository = AnimalDetailRepositoryImpl(
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
+        livestockSaleBrickStore: _FakeLivestockSaleBrickStore(),
         remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
       );
 
@@ -165,6 +194,23 @@ final _latestPesaje = BrickPesajeModel(
   method: BrickPesajeMethod.bluetoothScale,
   createdAt: DateTime(2025, 6),
   updatedAt: DateTime(2025, 6),
+);
+
+final _sale = BrickLivestockSaleModel(
+  localId: 'sale-id',
+  establishmentId: 'establishment-id',
+  operationDate: DateTime(2026, 10, 27),
+  buyerType: 'particular',
+  buyerName: 'Juan',
+  isCompany: false,
+  dteNumber: '001234567-9',
+  saleType: 'al_bulto',
+  totalAmount: '2500000.00',
+  animalIdsJson: '["$_animalId"]',
+  paymentCondition: 'total',
+  createdAt: DateTime(2026, 10, 27),
+  updatedAt: DateTime(2026, 10, 27),
+  syncStatus: BrickLivestockSaleSyncStatus.synchronized,
 );
 
 class _FakeAnimalBrickStore implements AnimalBrickStore {
@@ -316,6 +362,26 @@ class _FakePesajeBrickStore implements PesajeBrickStore {
 
   @override
   Future<BrickPesajeModel> upsertPesaje(BrickPesajeModel pesaje) async => pesaje;
+}
+
+class _FakeLivestockSaleBrickStore implements LivestockSaleBrickStore {
+  _FakeLivestockSaleBrickStore({this.sales = const []});
+
+  final List<BrickLivestockSaleModel> sales;
+  String? queriedAnimalId;
+
+  @override
+  Future<List<BrickLivestockSaleModel>> getLocalSalesByAnimal(
+    String animalId,
+  ) async {
+    queriedAnimalId = animalId;
+    return sales;
+  }
+
+  @override
+  Future<BrickLivestockSaleModel> saveSale(
+    BrickLivestockSaleModel sale,
+  ) async => sale;
 }
 
 class _FakeTokenProvider implements BackendAccessTokenProvider {

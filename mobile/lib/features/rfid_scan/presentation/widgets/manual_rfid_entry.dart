@@ -105,57 +105,39 @@ class _ManualRfidSuggestions extends StatelessWidget {
   final ValueChanged<IdentifiedAnimal> onSelected;
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      color: AppColors.onPrimary,
-      border: Border.all(color: AppColors.border),
-      borderRadius: BorderRadius.circular(AppRadius.sm),
+  Widget build(BuildContext context) => AppSuggestionList<IdentifiedAnimal>(
+    items: animals,
+    itemKeyBuilder: (animal) => ValueKey(
+      'manualRfidSuggestion-${animal.id}',
     ),
-    child: Column(
-      children: [
-        for (var index = 0; index < animals.length; index++) ...[
-          _ManualRfidSuggestionTile(
-            animal: animals[index],
-            onTap: () => onSelected(animals[index]),
-          ),
-          if (index < animals.length - 1) const Divider(height: 1, color: AppColors.border),
-        ],
-      ],
-    ),
+    onSelected: onSelected,
+    itemBuilder: (_, animal) => _ManualRfidSuggestionContent(animal: animal),
   );
 }
 
-class _ManualRfidSuggestionTile extends StatelessWidget {
-  const _ManualRfidSuggestionTile({required this.animal, required this.onTap});
+class _ManualRfidSuggestionContent extends StatelessWidget {
+  const _ManualRfidSuggestionContent({required this.animal});
 
   final IdentifiedAnimal animal;
-  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    key: ValueKey('manualRfidSuggestion-${animal.id}'),
-    onTap: onTap,
-    child: Padding(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      child: Row(
-        children: [
-          _EarTagPreview(visualTag: animal.visualTag),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              [
-                animal.rfidTagNumber,
-                if (animal.categoryName.trim().isNotEmpty) animal.categoryName,
-                if (animal.lotName.trim().isNotEmpty) animal.lotName,
-              ].join(' · '),
-              style: AppTypography.secondaryEmphasis.copyWith(
-                color: AppColors.textPrimary,
-              ),
-            ),
+  Widget build(BuildContext context) => Row(
+    children: [
+      _EarTagPreview(visualTag: animal.visualTag),
+      const SizedBox(width: AppSpacing.sm),
+      Expanded(
+        child: Text(
+          [
+            animal.rfidTagNumber,
+            if (animal.categoryName.trim().isNotEmpty) animal.categoryName,
+            if (animal.lotName.trim().isNotEmpty) animal.lotName,
+          ].join(' · '),
+          style: AppTypography.secondaryEmphasis.copyWith(
+            color: AppColors.textPrimary,
           ),
-        ],
+        ),
       ),
-    ),
+    ],
   );
 }
 

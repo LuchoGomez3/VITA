@@ -68,6 +68,11 @@ class _Store implements LivestockSaleBrickStore {
   BrickLivestockSaleModel? saved;
 
   @override
+  Future<List<BrickLivestockSaleModel>> getLocalSalesByAnimal(
+    String animalId,
+  ) async => const [];
+
+  @override
   Future<BrickLivestockSaleModel> saveSale(BrickLivestockSaleModel sale) async {
     final error = this.error;
     if (error != null) throw error;

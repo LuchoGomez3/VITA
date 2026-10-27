@@ -37,6 +37,9 @@ class LivestockSaleLocalException implements Exception {
 abstract class LivestockSaleBrickStore {
   /// Guarda la venta y da de baja sus animales en una sola transaccion local.
   Future<BrickLivestockSaleModel> saveSale(BrickLivestockSaleModel sale);
+
+  /// Lee desde SQLite las ventas que incluyen al animal indicado.
+  Future<List<BrickLivestockSaleModel>> getLocalSalesByAnimal(String animalId);
 }
 
 /// Store que coordina venta, stock local y resultado de sincronizacion.
@@ -145,6 +148,34 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
       unawaited(_repository.enqueueRemoteUpsert(saved));
     }
     return saved;
+  }
+
+  @override
+  Future<List<BrickLivestockSaleModel>> getLocalSalesByAnimal(
+    String animalId,
+  ) async {
+    final storedSales = await _repository.getLocal<BrickLivestockSaleModel>();
+    final latestSales = <String, BrickLivestockSaleModel>{};
+
+    // Brick puede conservar mas de una revision durante una reconciliacion.
+    // El historial debe usar solamente la version local mas reciente.
+    for (final sale in storedSales) {
+      final current = latestSales[sale.localId];
+      if (current == null || sale.updatedAt.isAfter(current.updatedAt)) {
+        latestSales[sale.localId] = sale;
+      }
+    }
+
+    final animalSales =
+        latestSales.values
+            .where(
+              (sale) => sale.deletedAt == null && _decodeAnimalIds(sale.animalIdsJson).contains(animalId),
+            )
+            .toList(growable: false)
+          ..sort(
+            (first, second) => first.operationDate.compareTo(second.operationDate),
+          );
+    return animalSales;
   }
 
   /// Aplica la aceptacion o rechazo remoto sobre venta y animales atomicos.

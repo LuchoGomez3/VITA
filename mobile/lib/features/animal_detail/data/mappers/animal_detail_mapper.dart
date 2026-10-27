@@ -1,4 +1,5 @@
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
@@ -89,6 +90,21 @@ class AnimalDetailMapper {
         )
         .toList(growable: false);
   }
+
+  /// Convierte ventas Brick en eventos de dominio para el historial.
+  static List<AnimalSaleRecord> saleHistoryFromBrick(
+    List<BrickLivestockSaleModel> models,
+  ) {
+    return models
+        .map(
+          (model) => AnimalSaleRecord(
+            id: model.localId,
+            operationDate: model.operationDate,
+            syncStatus: model.syncStatus.toDomain(),
+          ),
+        )
+        .toList(growable: false);
+  }
 }
 
 extension on BrickAnimalSex {
@@ -119,6 +135,14 @@ extension on BrickAnimalSyncStatus {
     BrickAnimalSyncStatus.pending => AnimalSyncStatus.pending,
     BrickAnimalSyncStatus.synchronized => AnimalSyncStatus.synchronized,
     BrickAnimalSyncStatus.rejected => AnimalSyncStatus.rejected,
+  };
+}
+
+extension on BrickLivestockSaleSyncStatus {
+  AnimalSaleSyncStatus toDomain() => switch (this) {
+    BrickLivestockSaleSyncStatus.pending => AnimalSaleSyncStatus.pending,
+    BrickLivestockSaleSyncStatus.synchronized => AnimalSaleSyncStatus.synchronized,
+    BrickLivestockSaleSyncStatus.rejected => AnimalSaleSyncStatus.rejected,
   };
 }
 

@@ -60,6 +60,17 @@ class AnimalEventHistory extends StatelessWidget {
             iconColor: AppColors.textSecondary,
           ),
         ),
+      for (final saleRecord in animalDetail.saleHistory)
+        _AnimalTimelineEvent(
+          date: saleRecord.operationDate,
+          item: AppTimelineItem(
+            date: DateDisplayFormatter.shortDate(saleRecord.operationDate),
+            title: AnimalDetailStrings.saleEventTitle,
+            description: saleRecord.syncStatus.description,
+            icon: Icons.attach_money,
+            iconColor: saleRecord.syncStatus.color,
+          ),
+        ),
     ];
     return (events..sort((first, second) => second.date.compareTo(first.date)))
         .map((event) => event.item)
@@ -86,5 +97,19 @@ extension on AnimalWeighingMethod {
     AnimalWeighingMethod.manual => AnimalDetailStrings.manualWeighingMethod,
     AnimalWeighingMethod.bluetoothScale => AnimalDetailStrings.bluetoothWeighingMethod,
     AnimalWeighingMethod.artificialIntelligence => AnimalDetailStrings.aiWeighingMethod,
+  };
+}
+
+extension on AnimalSaleSyncStatus {
+  String get description => switch (this) {
+    AnimalSaleSyncStatus.pending => AnimalDetailStrings.pendingSaleEventDescription,
+    AnimalSaleSyncStatus.synchronized => AnimalDetailStrings.synchronizedSaleEventDescription,
+    AnimalSaleSyncStatus.rejected => AnimalDetailStrings.rejectedSaleEventDescription,
+  };
+
+  Color get color => switch (this) {
+    AnimalSaleSyncStatus.pending => AppColors.syncPending,
+    AnimalSaleSyncStatus.synchronized => AppColors.primary,
+    AnimalSaleSyncStatus.rejected => AppColors.error,
   };
 }

@@ -104,6 +104,12 @@ void main() {
     allowFirstRemoteResponse.complete();
   });
 
+  test('encuentra en SQLite las ventas asociadas a un animal', () async {
+    final sales = await store.getLocalSalesByAnimal('animal-a');
+
+    expect(sales.map((sale) => sale.localId), ['sale-a']);
+  });
+
   test('rechaza una segunda venta y no persiste un estado parcial', () async {
     await expectLater(
       store.saveSale(_sale('sale-duplicate', const ['animal-a'])),

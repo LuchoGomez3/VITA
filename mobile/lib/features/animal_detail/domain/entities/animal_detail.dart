@@ -22,6 +22,22 @@ sealed class AnimalWeightRecord with _$AnimalWeightRecord {
   }) = _AnimalWeightRecord;
 }
 
+/// Venta asociada al animal y disponible para su historial de eventos.
+@freezed
+sealed class AnimalSaleRecord with _$AnimalSaleRecord {
+  /// Crea una referencia de venta independiente de Brick.
+  const factory AnimalSaleRecord({
+    /// UUID de la venta.
+    required String id,
+
+    /// Fecha comercial en la que se realizo la operacion.
+    required DateTime operationDate,
+
+    /// Estado local de sincronizacion de la venta.
+    required AnimalSaleSyncStatus syncStatus,
+  }) = _AnimalSaleRecord;
+}
+
 /// Informacion de negocio que necesita la ficha de un animal.
 ///
 /// Se mantiene independiente de Brick y del shape REST para que presentation no
@@ -80,6 +96,9 @@ sealed class AnimalDetail with _$AnimalDetail {
 
     /// Historial real de pesajes ordenado desde el mas antiguo al mas reciente.
     required List<AnimalWeightRecord> weightHistory,
+
+    /// Ventas locales que incluyen al animal, ordenadas cronologicamente.
+    @Default(<AnimalSaleRecord>[]) List<AnimalSaleRecord> saleHistory,
 
     /// ID backend de la madre, si existe.
     String? motherId,

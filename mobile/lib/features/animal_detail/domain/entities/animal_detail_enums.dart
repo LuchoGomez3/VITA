@@ -35,3 +35,15 @@ enum AnimalSyncStatus {
   /// Rechazado por el backend y pendiente de revision del usuario.
   rejected,
 }
+
+/// Estado de sincronizacion de una venta mostrada en el historial del animal.
+enum AnimalSaleSyncStatus {
+  /// La venta existe en SQLite y todavia no fue confirmada por backend.
+  pending,
+
+  /// La venta fue confirmada por backend.
+  synchronized,
+
+  /// Backend rechazo la venta y requiere conciliacion.
+  rejected,
+}

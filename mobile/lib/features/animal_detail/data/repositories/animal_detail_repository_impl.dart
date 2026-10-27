@@ -1,6 +1,7 @@
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -16,15 +17,18 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
     required AnimalBrickStore brickStore,
     required CategoriaBrickStore categoriaBrickStore,
     required PesajeBrickStore pesajeBrickStore,
+    required LivestockSaleBrickStore livestockSaleBrickStore,
     required AnimalDetailRemoteDataSource remoteDataSource,
   }) : _brickStore = brickStore,
        _categoriaBrickStore = categoriaBrickStore,
        _pesajeBrickStore = pesajeBrickStore,
+       _livestockSaleBrickStore = livestockSaleBrickStore,
        _remoteDataSource = remoteDataSource;
 
   final AnimalBrickStore _brickStore;
   final CategoriaBrickStore _categoriaBrickStore;
   final PesajeBrickStore _pesajeBrickStore;
+  final LivestockSaleBrickStore _livestockSaleBrickStore;
   final AnimalDetailRemoteDataSource _remoteDataSource;
 
   @override
@@ -96,15 +100,23 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
     }
 
     final localCategorias = await _categoriaBrickStore.getLocalCategorias();
+    // TODO(equipo): Hidratar ventas desde backend cuando exista un endpoint
+    // de consulta. Hasta entonces el historial refleja las operaciones que
+    // este dispositivo ya registro y conserva en SQLite.
+    final localSales = await _livestockSaleBrickStore.getLocalSalesByAnimal(
+      detail.id,
+    );
     final weightHistory = AnimalDetailMapper.weightHistoryFromBrick(
       localPesajes,
     );
+    final saleHistory = AnimalDetailMapper.saleHistoryFromBrick(localSales);
     final latestWeight = weightHistory.lastOrNull;
     final categoryName = localCategorias.where((category) => category.localId == detail.categoryId).firstOrNull?.name;
 
     return detail.copyWith(
       categoryName: categoryName ?? detail.categoryName,
       weightHistory: weightHistory,
+      saleHistory: saleHistory,
       currentWeight: latestWeight?.weightKg ?? detail.currentWeight,
       weighingMethod: latestWeight?.method ?? detail.weighingMethod,
       weighingDate: latestWeight?.date ?? detail.weighingDate,

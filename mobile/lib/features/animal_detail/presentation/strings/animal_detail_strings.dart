@@ -83,6 +83,18 @@ class AnimalDetailStrings {
     required String method,
   }) => 'Peso registrado: $weight kg · Método: $method.';
 
+  /// Titulo del evento que representa la comercializacion del animal.
+  static const saleEventTitle = 'Venta registrada';
+
+  /// Descripcion de una venta confirmada por backend.
+  static const synchronizedSaleEventDescription = 'El animal fue incluido en una venta.';
+
+  /// Descripcion de una venta guardada localmente y pendiente de envio.
+  static const pendingSaleEventDescription = 'Venta guardada en el dispositivo, pendiente de sincronización.';
+
+  /// Descripcion de una venta rechazada que conserva el progreso local.
+  static const rejectedSaleEventDescription = 'La venta requiere conciliación con el backend.';
+
   /// Estado pendiente de sincronizacion.
   static const pendingSyncStatus = 'Pendiente de sincronización';
 
