@@ -16,6 +16,7 @@ import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/searc
 import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/livestock_sale_bloc.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/steps/livestock_sale_animal_selection_step.dart';
+import '../../support/livestock_sale_draft_test_support.dart';
 
 void main() {
   testWidgets('muestra el estado vacio y los textos centralizados', (
@@ -25,6 +26,7 @@ void main() {
     addTearDown(bloc.close);
 
     await tester.pumpWidget(_TestApp(bloc: bloc));
+    await tester.pump();
 
     expect(
       find.text(LivestockSaleStrings.animalSelectionTitle),
@@ -51,6 +53,7 @@ void main() {
     final bloc = _createBloc();
     addTearDown(bloc.close);
     await tester.pumpWidget(_TestApp(bloc: bloc));
+    await tester.pump();
 
     await tester.enterText(
       find.byKey(const Key('livestockSaleRfidInput')),
@@ -113,6 +116,7 @@ void main() {
         onRfidScanRequested: () async => _rfid,
       ),
     );
+    await tester.pump();
 
     final scanButton = find.byKey(
       const Key('livestockSaleRfidScanButton'),
@@ -147,6 +151,7 @@ void main() {
     final bloc = _createBloc(suggestions: const [suggestion]);
     addTearDown(bloc.close);
     await tester.pumpWidget(_TestApp(bloc: bloc));
+    await tester.pump();
 
     await tester.enterText(
       find.byKey(const Key('livestockSaleRfidInput')),
@@ -168,7 +173,9 @@ LivestockSaleBloc _createBloc({
   List<LivestockSaleAnimal> suggestions = const [],
 }) {
   final repository = _AnimalRepository(suggestions: suggestions);
+  final draftDependencies = LivestockSaleDraftTestDependencies();
   return LivestockSaleBloc(
+    userId: 'user-id',
     establishmentId: 'establishment-id',
     addAnimal: AddAnimalToLivestockSaleSelectionUseCase(
       repository: repository,
@@ -180,6 +187,11 @@ LivestockSaleBloc _createBloc({
     confirmSale: ConfirmLivestockSaleUseCase(
       repository: const _SaleRepository(),
     ),
+    loadDraft: draftDependencies.load,
+    saveDraft: draftDependencies.save,
+    deleteDraft: draftDependencies.delete,
+    draftSaveDebounce: Duration.zero,
+    persistDraftOnClose: false,
   );
 }
 

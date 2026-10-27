@@ -11,4 +11,8 @@ class SecureStorageKeys {
 
   /// Datos completos de los establecimientos disponibles para la sesión.
   static const establishmentCatalog = 'establishment_catalog_v1';
+
+  /// Borrador cifrado y aislado para una venta, usuario y establecimiento.
+  static String livestockSaleDraft(String userId, String establishmentId) =>
+      'livestock_sale_draft_v1_${userId}_$establishmentId';
 }

@@ -15,6 +15,8 @@ import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/live
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/steps/livestock_sale_operation_step.dart';
 
+import '../../support/livestock_sale_draft_test_support.dart';
+
 void main() {
   testWidgets('enfoca el primer campo obligatorio incompleto', (tester) async {
     final bloc = _createBloc();
@@ -305,7 +307,9 @@ Future<void> _scrollToCenter(WidgetTester tester, Finder target) async {
 }
 
 LivestockSaleBloc _createBloc() {
+  final draftDependencies = LivestockSaleDraftTestDependencies();
   return LivestockSaleBloc(
+    userId: 'user-id',
     establishmentId: 'establishment-id',
     addAnimal: const AddAnimalToLivestockSaleSelectionUseCase(
       repository: _AnimalRepository(),
@@ -317,7 +321,12 @@ LivestockSaleBloc _createBloc() {
     confirmSale: ConfirmLivestockSaleUseCase(
       repository: const _SaleRepository(),
     ),
+    loadDraft: draftDependencies.load,
+    saveDraft: draftDependencies.save,
+    deleteDraft: draftDependencies.delete,
     now: () => DateTime(2026, 8, 24),
+    draftSaveDebounce: Duration.zero,
+    persistDraftOnClose: false,
   );
 }
 

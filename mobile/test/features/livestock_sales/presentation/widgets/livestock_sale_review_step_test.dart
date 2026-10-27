@@ -15,6 +15,8 @@ import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/live
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/steps/livestock_sale_review_step.dart';
 
+import '../../support/livestock_sale_draft_test_support.dart';
+
 void main() {
   testWidgets('resume empresa y calculo por kilo con el precio ingresado', (
     tester,
@@ -177,7 +179,9 @@ Future<LivestockSaleBloc> _createReviewBloc({
   required int animalCount,
   required LivestockSaleFormDraft form,
 }) async {
+  final draftDependencies = LivestockSaleDraftTestDependencies();
   final bloc = LivestockSaleBloc(
+    userId: 'user-id',
     establishmentId: 'establishment-id',
     addAnimal: const AddAnimalToLivestockSaleSelectionUseCase(
       repository: _AnimalRepository(),
@@ -189,7 +193,12 @@ Future<LivestockSaleBloc> _createReviewBloc({
     confirmSale: ConfirmLivestockSaleUseCase(
       repository: const _SaleRepository(),
     ),
+    loadDraft: draftDependencies.load,
+    saveDraft: draftDependencies.save,
+    deleteDraft: draftDependencies.delete,
     now: () => DateTime(2026, 8, 24),
+    draftSaveDebounce: Duration.zero,
+    persistDraftOnClose: false,
   );
 
   for (var index = 0; index < animalCount; index++) {

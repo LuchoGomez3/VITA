@@ -395,7 +395,13 @@ class AppRouter {
           path: AppRoutes.livestockSaleRegister,
           builder: (context, state) {
             final establishmentId = state.uri.queryParameters['establecimientoId'];
+            final sessionState = context.read<AuthSessionCubit>().state;
             if (establishmentId == null || establishmentId.trim().isEmpty) {
+              return const ShellPlaceholderPage(
+                title: LivestockSaleStrings.requiredEstablishment,
+              );
+            }
+            if (sessionState is! AuthSessionAuthenticated) {
               return const ShellPlaceholderPage(
                 title: LivestockSaleStrings.requiredEstablishment,
               );
@@ -404,6 +410,7 @@ class AppRouter {
               establishmentId: establishmentId,
               getEstablishmentRole: getEstablishmentRole,
               child: LivestockSaleFlowPage(
+                userId: sessionState.session.user.id,
                 establishmentId: establishmentId,
                 createBloc: createLivestockSaleBloc,
               ),
@@ -552,7 +559,7 @@ class AppRouter {
 }
 
 /// Protege las rutas financieras con la membresia offline del establecimiento.
-class FinancialRouteGuard extends StatelessWidget {
+class FinancialRouteGuard extends StatefulWidget {
   /// Crea el guard que falla cerrado ante permisos ausentes o invalidos.
   const FinancialRouteGuard({
     required this.establishmentId,
@@ -571,19 +578,47 @@ class FinancialRouteGuard extends StatelessWidget {
   final Widget child;
 
   @override
+  State<FinancialRouteGuard> createState() => _FinancialRouteGuardState();
+}
+
+class _FinancialRouteGuardState extends State<FinancialRouteGuard> {
+  late Future<bool> _accessCheck;
+
+  @override
+  void initState() {
+    super.initState();
+    _accessCheck = _checkAccess();
+  }
+
+  @override
+  void didUpdateWidget(covariant FinancialRouteGuard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.establishmentId != widget.establishmentId ||
+        oldWidget.getEstablishmentRole != widget.getEstablishmentRole) {
+      _accessCheck = _checkAccess();
+    }
+  }
+
+  Future<bool> _checkAccess() {
+    return AppRouter.canAccessFinancialRoute(
+      establishmentId: widget.establishmentId,
+      getRole: widget.getEstablishmentRole.call,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<bool>(
-      future: AppRouter.canAccessFinancialRoute(
-        establishmentId: establishmentId,
-        getRole: getEstablishmentRole.call,
-      ),
+      // Conservar el mismo Future evita desmontar el formulario protegido cada
+      // vez que GoRouter reconstruye la ruta al regresar de una subpantalla.
+      future: _accessCheck,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        return (snapshot.data ?? false) ? child : const FinancialAccessDeniedPage();
+        return (snapshot.data ?? false) ? widget.child : const FinancialAccessDeniedPage();
       },
     );
   }
