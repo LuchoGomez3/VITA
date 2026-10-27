@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
 import 'package:frontend_mayoral/brick/models/lot.model.dart';
@@ -82,7 +84,11 @@ class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository
       if (normalizedPrefix.isEmpty) {
         return const Result.success(<LivestockSaleAnimal>[]);
       }
-      await _refreshInventoryOnce();
+
+      // El autocompletado prioriza la copia local para responder en cada tecla.
+      // La sincronizacion mejora búsquedas posteriores sin bloquear el campo
+      // cuando la red está lenta o directamente no está disponible.
+      unawaited(_refreshInventoryOnce());
       final animals = await _animalBrickStore.getLocalAnimals();
       final latestByRfid = <String, BrickAnimalModel>{};
 

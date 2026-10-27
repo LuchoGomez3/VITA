@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
@@ -74,13 +76,23 @@ void main() {
     expect(matches.map((animal) => animal.id), ['first', 'second']);
   });
 
-  test('refreshes the inventory before searching an RFID prefix', () async {
-    store.remoteAnimals = [_animal(id: 'remote-animal')];
+  test('returns local suggestions without waiting for remote refresh', () async {
+    final remotePullCompleter = Completer<void>();
+    addTearDown(() {
+      if (!remotePullCompleter.isCompleted) remotePullCompleter.complete();
+    });
+    store
+      ..animals = [_animal(id: 'local-animal')]
+      ..remotePullCompleter = remotePullCompleter;
 
-    final result = await repository.findLocalByRfidPrefix('9820004');
+    final result = await repository.findLocalByRfidPrefix('9820004').timeout(const Duration(seconds: 1));
 
     final matches = (result as Success<List<LivestockSaleAnimal>>).data;
-    expect(matches.map((animal) => animal.id), ['remote-animal']);
+    expect(matches.map((animal) => animal.id), ['local-animal']);
+    expect(store.remotePullStarted, isTrue);
+
+    remotePullCompleter.complete();
+    await repository.findLocalByRfidTagNumber(rfid);
   });
 
   test('resolves category and lot names from local catalogs', () async {
@@ -184,6 +196,8 @@ BrickLotModel _lot({required String name}) {
 class _FakeAnimalBrickStore implements AnimalBrickStore {
   List<BrickAnimalModel> animals = [];
   List<BrickAnimalModel>? remoteAnimals;
+  Completer<void>? remotePullCompleter;
+  bool remotePullStarted = false;
   bool throwOnRead = false;
 
   @override
@@ -206,6 +220,8 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
 
   @override
   Future<void> pullRemoteAnimals(String establishmentId) async {
+    remotePullStarted = true;
+    await remotePullCompleter?.future;
     final refreshed = remoteAnimals;
     if (refreshed != null) animals = refreshed;
   }

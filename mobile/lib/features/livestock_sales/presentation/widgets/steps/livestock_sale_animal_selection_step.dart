@@ -274,55 +274,37 @@ class _RfidSuggestions extends StatelessWidget {
         style: AppTypography.smallEmphasis,
       ),
       const SizedBox(height: AppSpacing.xs),
-      Container(
-        decoration: BoxDecoration(
-          color: AppColors.onPrimary,
-          border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+      AppSuggestionList<LivestockSaleAnimal>(
+        items: animals,
+        itemKeyBuilder: (animal) => ValueKey(
+          'livestockSaleRfidSuggestion-${animal.id}',
         ),
-        child: Column(
-          children: [
-            for (var index = 0; index < animals.length; index++) ...[
-              _RfidSuggestionTile(
-                animal: animals[index],
-                onTap: () => onSelected(animals[index]),
-              ),
-              if (index < animals.length - 1) const Divider(height: 1, color: AppColors.border),
-            ],
-          ],
-        ),
+        onSelected: onSelected,
+        itemBuilder: (_, animal) => _RfidSuggestionContent(animal: animal),
       ),
     ],
   );
 }
 
-class _RfidSuggestionTile extends StatelessWidget {
-  const _RfidSuggestionTile({required this.animal, required this.onTap});
+class _RfidSuggestionContent extends StatelessWidget {
+  const _RfidSuggestionContent({required this.animal});
 
   final LivestockSaleAnimal animal;
-  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    key: ValueKey('livestockSaleRfidSuggestion-${animal.id}'),
-    onTap: onTap,
-    child: Padding(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      child: Row(
-        children: [
-          _SaleEarTagPreview(visualTag: animal.visualTag),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              _description,
-              style: AppTypography.secondaryEmphasis.copyWith(
-                color: AppColors.textPrimary,
-              ),
-            ),
+  Widget build(BuildContext context) => Row(
+    children: [
+      _SaleEarTagPreview(visualTag: animal.visualTag),
+      const SizedBox(width: AppSpacing.sm),
+      Expanded(
+        child: Text(
+          _description,
+          style: AppTypography.secondaryEmphasis.copyWith(
+            color: AppColors.textPrimary,
           ),
-        ],
+        ),
       ),
-    ),
+    ],
   );
 
   String get _description {

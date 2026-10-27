@@ -59,3 +59,12 @@ foto local o el placeholder, identificación, estado productivo, observaciones y
 sincronización. Pesajes conserva el gráfico y el historial; las otras pestañas
 mantienen el contenido del rediseño. La carga opcional de la foto no bloquea los
 datos del animal ni la navegación entre pestañas.
+
+## Historial comercial pendiente
+
+TODO(equipo): incorporar las ventas del animal cuando la ficha defina el nuevo
+historial unificado de eventos. La versión anterior de la ficha construía una
+línea temporal propia, pero ese widget fue retirado durante el rediseño por
+pestañas. La futura integración debe leer primero las ventas guardadas en
+SQLite y luego completar el historial con la consulta remota cuando backend
+exponga un endpoint de lectura, sin depender de conectividad para renderizar.
