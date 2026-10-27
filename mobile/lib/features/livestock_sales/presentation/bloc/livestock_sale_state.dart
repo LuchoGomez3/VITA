@@ -12,6 +12,30 @@ enum LivestockSaleStep {
   review,
 }
 
+/// Estado de recuperación del borrador cifrado local.
+enum LivestockSaleDraftRecoveryStatus {
+  /// Todavía se está consultando el almacenamiento local.
+  checking,
+
+  /// Existe una venta incompleta y el usuario debe decidir qué hacer.
+  choiceRequired,
+
+  /// El flujo puede mostrarse y editarse normalmente.
+  ready,
+}
+
+/// Resultado de una salida solicitada desde un formulario con cambios.
+enum LivestockSaleExitStatus {
+  /// No existe una salida en curso.
+  idle,
+
+  /// Se está guardando o descartando el borrador antes de salir.
+  working,
+
+  /// La operación previa a la salida terminó correctamente.
+  completed,
+}
+
 /// Campo del segundo paso al que debe dirigirse una validacion.
 enum LivestockSaleFormField {
   /// Nombre de persona o razon social.
@@ -97,6 +121,11 @@ sealed class LivestockSaleState with _$LivestockSaleState {
     @Default(ResultState<List<LivestockSaleAnimal>>.initial()) ResultState<List<LivestockSaleAnimal>> rfidSuggestions,
     @Default('') String rfidPrefix,
     @Default(ResultState<LivestockSale>.initial()) ResultState<LivestockSale> submitResult,
+    @Default(LivestockSaleDraftRecoveryStatus.checking) LivestockSaleDraftRecoveryStatus draftRecoveryStatus,
+    LivestockSaleSavedDraft? savedDraft,
+    @Default(false) bool hasDraftChanges,
+    @Default(LivestockSaleExitStatus.idle) LivestockSaleExitStatus exitStatus,
+    DomainException? draftFeedback,
     DomainException? stepError,
   }) = _LivestockSaleState;
 }

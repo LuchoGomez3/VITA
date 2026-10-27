@@ -28,7 +28,7 @@ class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository
   final CategoriaBrickStore _categoryBrickStore;
   final LotBrickStore _lotBrickStore;
   final String _establishmentId;
-  bool _refreshAttempted = false;
+  Future<void>? _inventoryRefresh;
 
   @override
   Future<Result<LivestockSaleAnimal?>> findLocalByRfidTagNumber(
@@ -82,6 +82,7 @@ class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository
       if (normalizedPrefix.isEmpty) {
         return const Result.success(<LivestockSaleAnimal>[]);
       }
+      await _refreshInventoryOnce();
       final animals = await _animalBrickStore.getLocalAnimals();
       final latestByRfid = <String, BrickAnimalModel>{};
 
@@ -123,13 +124,14 @@ class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository
     }
   }
 
-  Future<void> _refreshInventoryOnce() async {
-    if (_refreshAttempted) return;
-    _refreshAttempted = true;
+  Future<void> _refreshInventoryOnce() {
+    return _inventoryRefresh ??= _refreshInventory();
+  }
 
+  Future<void> _refreshInventory() async {
     // El primer escaneo intenta actualizar estado y catalogos. Cada descarga
-    // falla de forma independiente: sin red la seleccion continua leyendo la
-    // ultima copia consistente disponible en SQLite.
+    // o búsqueda comparte este Future. Así, varias teclas consecutivas no leen
+    // SQLite antes de que termine la misma actualización inicial.
     await Future.wait([
       _ignoreRemoteFailure(
         _animalBrickStore.pullRemoteAnimals(_establishmentId),

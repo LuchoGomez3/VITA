@@ -3,6 +3,15 @@ part of 'livestock_sale_bloc.dart';
 /// Eventos aceptados por [LivestockSaleBloc].
 @freezed
 sealed class LivestockSaleEvent with _$LivestockSaleEvent {
+  /// Busca una venta incompleta al ingresar al flujo.
+  const factory LivestockSaleEvent.draftLoadRequested() = _DraftLoadRequested;
+
+  /// Restaura el borrador que el usuario decidió continuar.
+  const factory LivestockSaleEvent.draftRestoreAccepted() = _DraftRestoreAccepted;
+
+  /// Descarta el borrador encontrado y comienza una venta vacía.
+  const factory LivestockSaleEvent.savedDraftDiscardRequested() = _SavedDraftDiscardRequested;
+
   /// Reemplaza los campos editables conservados entre pasos.
   const factory LivestockSaleEvent.formChanged(
     LivestockSaleFormDraft form,
@@ -29,4 +38,10 @@ sealed class LivestockSaleEvent with _$LivestockSaleEvent {
 
   /// Confirma localmente la venta mostrada en el resumen.
   const factory LivestockSaleEvent.submitRequested() = _SubmitRequested;
+
+  /// Fuerza el último guardado antes de abandonar el flujo.
+  const factory LivestockSaleEvent.saveAndExitRequested() = _SaveAndExitRequested;
+
+  /// Elimina el progreso cuando el usuario confirma que desea descartarlo.
+  const factory LivestockSaleEvent.discardAndExitRequested() = _DiscardAndExitRequested;
 }

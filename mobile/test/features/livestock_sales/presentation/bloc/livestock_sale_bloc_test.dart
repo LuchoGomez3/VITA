@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_saved_draft.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_selection.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_error.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/repositories/livestock_sale_animal_repository.dart';
@@ -14,6 +15,8 @@ import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/remov
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/search_livestock_sale_animals_by_rfid_prefix_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/livestock_sale_bloc.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
+
+import '../../support/livestock_sale_draft_test_support.dart';
 
 void main() {
   group('LivestockSaleBloc', () {
@@ -71,6 +74,95 @@ void main() {
       await _waitUntil(bloc, (state) => state.selection.animals.isEmpty);
 
       expect(bloc.state.animalSelectionResult, isA<Data<LivestockSaleSelection>>());
+      expect(bloc.state.hasDraftChanges, isFalse);
+    });
+
+    test('elimina el borrador al quitar el ultimo animal sin otros datos', () async {
+      final draftDependencies = LivestockSaleDraftTestDependencies();
+      final draftBloc = _createBloc(
+        animalRepository: animalRepository,
+        saleRepository: saleRepository,
+        draftDependencies: draftDependencies,
+      );
+      addTearDown(draftBloc.close);
+
+      draftBloc.add(const LivestockSaleEvent.animalAddRequested(_rfid));
+      await _waitUntil(
+        draftBloc,
+        (state) => state.selection.animals.isNotEmpty,
+      );
+      await _waitUntilDraft(
+        draftDependencies,
+        (draft) => draft.selectedRfidTagNumbers.contains(_rfid),
+      );
+
+      draftBloc.add(
+        const LivestockSaleEvent.animalRemoveRequested('animal-id'),
+      );
+      await _waitUntil(
+        draftBloc,
+        (state) => state.selection.animals.isEmpty && !state.hasDraftChanges,
+      );
+      await _waitUntilDraftDeleted(draftDependencies);
+
+      expect(draftDependencies.repository.draft, isNull);
+    });
+
+    test('autoguarda inmediatamente los animales seleccionados', () async {
+      final draftDependencies = LivestockSaleDraftTestDependencies();
+      final draftBloc = _createBloc(
+        animalRepository: animalRepository,
+        saleRepository: saleRepository,
+        draftDependencies: draftDependencies,
+      );
+      addTearDown(draftBloc.close);
+      await _waitUntil(
+        draftBloc,
+        (state) => state.draftRecoveryStatus == LivestockSaleDraftRecoveryStatus.ready,
+      );
+
+      draftBloc.add(const LivestockSaleEvent.animalAddRequested(_rfid));
+      await _waitUntil(
+        draftBloc,
+        (state) => state.selection.animals.isNotEmpty,
+      );
+      await _waitUntilDraft(
+        draftDependencies,
+        (draft) => draft.selectedRfidTagNumbers.contains(_rfid),
+      );
+
+      expect(
+        draftDependencies.repository.draft?.selectedRfidTagNumbers,
+        [_rfid],
+      );
+    });
+
+    test('ofrece y restaura un borrador validando sus animales', () async {
+      final savedDraft = _savedDraft();
+      final draftDependencies = LivestockSaleDraftTestDependencies(
+        draft: savedDraft,
+      );
+      final draftBloc = _createBloc(
+        animalRepository: animalRepository,
+        saleRepository: saleRepository,
+        draftDependencies: draftDependencies,
+      );
+      addTearDown(draftBloc.close);
+
+      await _waitUntil(
+        draftBloc,
+        (state) => state.draftRecoveryStatus == LivestockSaleDraftRecoveryStatus.choiceRequired,
+      );
+      draftBloc.add(const LivestockSaleEvent.draftRestoreAccepted());
+      await _waitUntil(
+        draftBloc,
+        (state) =>
+            state.draftRecoveryStatus == LivestockSaleDraftRecoveryStatus.ready && state.selection.animals.isNotEmpty,
+      );
+
+      expect(draftBloc.state.form.buyerName, 'Juan');
+      expect(draftBloc.state.currentStep, LivestockSaleStep.operation);
+      expect(draftBloc.state.selection.animals.single.rfidTagNumber, _rfid);
     });
 
     test('oculta animales seleccionados, vendidos y muertos en sugerencias', () async {
@@ -325,8 +417,11 @@ final _today = DateTime(2026, 10, 3);
 LivestockSaleBloc _createBloc({
   required _AnimalRepository animalRepository,
   required _SaleRepository saleRepository,
+  LivestockSaleDraftTestDependencies? draftDependencies,
 }) {
+  final resolvedDraftDependencies = draftDependencies ?? LivestockSaleDraftTestDependencies();
   return LivestockSaleBloc(
+    userId: 'user-id',
     establishmentId: 'establishment-id',
     addAnimal: AddAnimalToLivestockSaleSelectionUseCase(
       repository: animalRepository,
@@ -340,7 +435,35 @@ LivestockSaleBloc _createBloc({
       now: () => _today,
       createId: _SequentialIds().next,
     ),
+    loadDraft: resolvedDraftDependencies.load,
+    saveDraft: resolvedDraftDependencies.save,
+    deleteDraft: resolvedDraftDependencies.delete,
     now: () => _today,
+  );
+}
+
+LivestockSaleSavedDraft _savedDraft() {
+  return LivestockSaleSavedDraft(
+    establishmentId: 'establishment-id',
+    operationDate: _today,
+    buyerType: LivestockSaleBuyerType.slaughterhouse,
+    buyerName: 'Juan',
+    isCompany: false,
+    buyerLastName: 'Perez',
+    dteNumber: '001234567-9',
+    saleType: LivestockSaleType.bulk,
+    bulkTotalAmount: '10000',
+    totalWeight: '',
+    pricePerKg: '',
+    paymentCondition: LivestockSalePaymentCondition.total,
+    paymentMethod: LivestockSalePaymentMethod.cash,
+    amountToCollect: '',
+    paymentDate: _today,
+    observations: '',
+    paymentObservations: '',
+    selectedRfidTagNumbers: const [_rfid],
+    currentStep: LivestockSaleDraftStep.operation,
+    updatedAt: _today,
   );
 }
 
@@ -370,6 +493,28 @@ Future<void> _waitUntil(
 ) async {
   if (predicate(bloc.state)) return;
   await bloc.stream.firstWhere(predicate).timeout(const Duration(seconds: 2));
+}
+
+Future<void> _waitUntilDraft(
+  LivestockSaleDraftTestDependencies dependencies,
+  bool Function(LivestockSaleSavedDraft draft) predicate,
+) async {
+  for (var attempt = 0; attempt < 20; attempt++) {
+    final draft = dependencies.repository.draft;
+    if (draft != null && predicate(draft)) return;
+    await Future<void>.delayed(const Duration(milliseconds: 25));
+  }
+  fail('El borrador esperado no se guardó a tiempo.');
+}
+
+Future<void> _waitUntilDraftDeleted(
+  LivestockSaleDraftTestDependencies dependencies,
+) async {
+  for (var attempt = 0; attempt < 20; attempt++) {
+    if (dependencies.repository.draft == null) return;
+    await Future<void>.delayed(const Duration(milliseconds: 25));
+  }
+  fail('El borrador vacío no se eliminó a tiempo.');
 }
 
 class _AnimalRepository implements LivestockSaleAnimalRepository {

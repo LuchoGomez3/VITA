@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -14,16 +16,24 @@ import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/s
 import 'package:go_router/go_router.dart';
 
 /// Factory del BLoC cuya vida pertenece a la pagina raiz del flujo.
-typedef LivestockSaleBlocFactory = LivestockSaleBloc Function({required String establishmentId});
+typedef LivestockSaleBlocFactory =
+    LivestockSaleBloc Function({
+      required String userId,
+      required String establishmentId,
+    });
 
 /// Mantiene una unica instancia del BLoC durante los tres pasos de la venta.
 class LivestockSaleFlowPage extends StatelessWidget {
   /// Crea el flujo para el establecimiento seleccionado.
   const LivestockSaleFlowPage({
+    required this.userId,
     required this.establishmentId,
     required this.createBloc,
     super.key,
   });
+
+  /// Usuario propietario del borrador local cifrado.
+  final String userId;
 
   /// Establecimiento al que pertenecen venta y animales.
   final String establishmentId;
@@ -36,7 +46,10 @@ class LivestockSaleFlowPage extends StatelessWidget {
     // El provider se ubica sobre los tres pasos para conservar un solo borrador
     // y cerrar automaticamente el BLoC cuando termina el flujo.
     return BlocProvider(
-      create: (_) => createBloc(establishmentId: establishmentId),
+      create: (_) => createBloc(
+        userId: userId,
+        establishmentId: establishmentId,
+      ),
       child: const _LivestockSaleFlowView(),
     );
   }
@@ -53,9 +66,21 @@ class _LivestockSaleFlowView extends StatelessWidget {
       listenWhen: (previous, current) {
         return previous.stepError != current.stepError ||
             previous.animalSelectionResult != current.animalSelectionResult ||
-            previous.submitResult != current.submitResult;
+            previous.submitResult != current.submitResult ||
+            previous.draftRecoveryStatus != current.draftRecoveryStatus ||
+            previous.draftFeedback != current.draftFeedback ||
+            previous.exitStatus != current.exitStatus;
       },
-      listener: _showError,
+      listener: (context, state) {
+        if (state.draftRecoveryStatus == LivestockSaleDraftRecoveryStatus.choiceRequired) {
+          unawaited(_showSavedDraftDialog(context));
+        }
+        if (state.exitStatus == LivestockSaleExitStatus.completed) {
+          _leaveFlow(context);
+          return;
+        }
+        _showError(context, state);
+      },
       child: BlocBuilder<LivestockSaleBloc, LivestockSaleState>(
         builder: (context, state) {
           // Una escritura local exitosa reemplaza el wizard completo. Asi no se
@@ -79,20 +104,25 @@ class _LivestockSaleFlowView extends StatelessWidget {
             );
           }
 
+          if (state.draftRecoveryStatus != LivestockSaleDraftRecoveryStatus.ready) {
+            return const PopScope(
+              canPop: false,
+              child: Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              ),
+            );
+          }
+
           return PopScope(
-            canPop: state.currentStep == LivestockSaleStep.animals,
+            canPop: false,
             onPopInvokedWithResult: (didPop, result) {
-              if (!didPop) {
-                context.read<LivestockSaleBloc>().add(
-                  const LivestockSaleEvent.previousStepRequested(),
-                );
-              }
+              if (!didPop) unawaited(_handleBack(context, state));
             },
             child: Scaffold(
               appBar: AppBar(
                 centerTitle: true,
                 leading: IconButton(
-                  onPressed: () => _goBack(context, state.currentStep),
+                  onPressed: () => unawaited(_handleBack(context, state)),
                   icon: const Icon(Icons.arrow_back),
                 ),
                 title: _FlowTitle(step: state.currentStep),
@@ -124,7 +154,7 @@ class _LivestockSaleFlowView extends StatelessWidget {
                 step: state.currentStep,
                 isSubmitting: state.submitResult is Loading<LivestockSale>,
                 canContinue: state.currentStep != LivestockSaleStep.animals || state.selection.animals.isNotEmpty,
-                onBack: () => _goBack(context, state.currentStep),
+                onBack: () => unawaited(_handleBack(context, state)),
                 onNext: () => _goNext(context, state.currentStep),
               ),
             ),
@@ -138,6 +168,7 @@ class _LivestockSaleFlowView extends StatelessWidget {
     // Los errores de paso tienen prioridad sobre los resultados asincronos de
     // seleccion y persistencia para mostrar el problema mas inmediato.
     final error =
+        state.draftFeedback ??
         state.stepError ??
         switch (state.animalSelectionResult) {
           ResultError(:final error) => error,
@@ -152,15 +183,98 @@ class _LivestockSaleFlowView extends StatelessWidget {
       ..showSnackBar(SnackBar(content: Text(error.message)));
   }
 
-  void _goBack(BuildContext context, LivestockSaleStep step) {
+  Future<void> _handleBack(
+    BuildContext context,
+    LivestockSaleState state,
+  ) async {
     // Dentro del wizard se retrocede por estado; solo el primer paso abandona
     // la feature y vuelve a la ruta anterior o al inicio.
-    if (step != LivestockSaleStep.animals) {
+    if (state.currentStep != LivestockSaleStep.animals) {
       context.read<LivestockSaleBloc>().add(
         const LivestockSaleEvent.previousStepRequested(),
       );
       return;
     }
+
+    if (!state.hasDraftChanges) {
+      _leaveFlow(context);
+      return;
+    }
+
+    final decision = await showDialog<_ExitDraftDecision>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text(LivestockSaleStrings.exitDraftTitle),
+        content: const Text(LivestockSaleStrings.exitDraftMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(
+              dialogContext,
+              _ExitDraftDecision.cancel,
+            ),
+            child: const Text(LivestockSaleStrings.cancelExit),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(
+              dialogContext,
+              _ExitDraftDecision.discard,
+            ),
+            child: const Text(LivestockSaleStrings.discardAndExit),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(
+              dialogContext,
+              _ExitDraftDecision.save,
+            ),
+            child: const Text(LivestockSaleStrings.saveAndExit),
+          ),
+        ],
+      ),
+    );
+    if (!context.mounted) return;
+    switch (decision) {
+      case _ExitDraftDecision.save:
+        context.read<LivestockSaleBloc>().add(
+          const LivestockSaleEvent.saveAndExitRequested(),
+        );
+      case _ExitDraftDecision.discard:
+        context.read<LivestockSaleBloc>().add(
+          const LivestockSaleEvent.discardAndExitRequested(),
+        );
+      case _ExitDraftDecision.cancel || null:
+        return;
+    }
+  }
+
+  Future<void> _showSavedDraftDialog(BuildContext context) async {
+    final restore = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text(LivestockSaleStrings.savedDraftFoundTitle),
+        content: const Text(LivestockSaleStrings.savedDraftFoundMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text(LivestockSaleStrings.discardSavedDraft),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text(LivestockSaleStrings.continueSavedDraft),
+          ),
+        ],
+      ),
+    );
+    if (!context.mounted) return;
+    context.read<LivestockSaleBloc>().add(
+      restore ?? false
+          ? const LivestockSaleEvent.draftRestoreAccepted()
+          : const LivestockSaleEvent.savedDraftDiscardRequested(),
+    );
+  }
+
+  void _leaveFlow(BuildContext context) {
     if (context.canPop()) {
       context.pop();
     } else {
@@ -184,6 +298,8 @@ class _LivestockSaleFlowView extends StatelessWidget {
       ..push(AppRoutes.livestockSaleForEstablishment(establishmentId));
   }
 }
+
+enum _ExitDraftDecision { save, discard, cancel }
 
 class _FlowProgress extends StatelessWidget {
   const _FlowProgress({required this.currentStep});

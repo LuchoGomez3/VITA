@@ -74,6 +74,15 @@ void main() {
     expect(matches.map((animal) => animal.id), ['first', 'second']);
   });
 
+  test('refreshes the inventory before searching an RFID prefix', () async {
+    store.remoteAnimals = [_animal(id: 'remote-animal')];
+
+    final result = await repository.findLocalByRfidPrefix('9820004');
+
+    final matches = (result as Success<List<LivestockSaleAnimal>>).data;
+    expect(matches.map((animal) => animal.id), ['remote-animal']);
+  });
+
   test('resolves category and lot names from local catalogs', () async {
     store.animals = [
       _animal(id: 'animal-id', categoryName: '', lotName: ''),

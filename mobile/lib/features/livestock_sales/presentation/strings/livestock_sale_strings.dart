@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_draft_error.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_error.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_selection_error.dart';
 
@@ -290,6 +291,48 @@ abstract final class LivestockSaleStrings {
 
   /// Accion para abandonar el flujo finalizado.
   static const backHome = 'Volver al inicio';
+
+  /// Título del aviso al intentar abandonar una venta incompleta.
+  static const exitDraftTitle = '¿Salir del registro de venta?';
+
+  /// Explica las alternativas disponibles antes de cerrar el flujo.
+  static const exitDraftMessage =
+      'Tenés una venta sin terminar. Podés guardarla para continuar más tarde o descartar los datos cargados.';
+
+  /// Conserva el autoguardado y abandona el flujo.
+  static const saveAndExit = 'Guardar y salir';
+
+  /// Elimina el autoguardado y abandona el flujo.
+  static const discardAndExit = 'Descartar y salir';
+
+  /// Mantiene al usuario dentro del formulario.
+  static const cancelExit = 'Cancelar';
+
+  /// Título del aviso mostrado cuando existe progreso recuperable.
+  static const savedDraftFoundTitle = 'Encontramos una venta sin terminar';
+
+  /// Explica que el progreso proviene del almacenamiento local.
+  static const savedDraftFoundMessage =
+      'Podés continuar con los datos guardados en este dispositivo o descartarlos y comenzar de nuevo.';
+
+  /// Recupera el formulario y las caravanas todavía disponibles.
+  static const continueSavedDraft = 'Continuar venta';
+
+  /// Elimina el progreso encontrado y abre un formulario vacío.
+  static const discardSavedDraft = 'Descartar borrador';
+
+  /// Informa que algunos animales del borrador dejaron de ser vendibles.
+  static String unavailableRestoredAnimals(int count) => count == 1
+      ? 'Un animal guardado ya no está disponible y no fue agregado.'
+      : '$count animales guardados ya no están disponibles y no fueron agregados.';
+
+  /// Traduce fallas del autoguardado sin filtrar detalles técnicos al usuario.
+  static String draftError(LivestockSaleDraftError error) => switch (error) {
+    LivestockSaleDraftError.invalidData => 'El borrador guardado no es válido y no pudo recuperarse.',
+    LivestockSaleDraftError.localRead => 'No se pudo recuperar la venta guardada.',
+    LivestockSaleDraftError.localWrite => 'No se pudo guardar el borrador de la venta.',
+    LivestockSaleDraftError.localDelete => 'No se pudo descartar el borrador de la venta.',
+  };
 
   /// Explica cuantas bajas de stock produjo la venta.
   static String soldAnimalCount(int count) =>
