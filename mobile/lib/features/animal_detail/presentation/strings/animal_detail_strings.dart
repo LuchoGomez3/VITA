@@ -5,6 +5,9 @@ class AnimalDetailStrings {
   /// Titulo del app bar.
   static const pageTitle = 'Detalle de animal';
 
+  /// Identifica la fotografía tanto visualmente como para lectores de pantalla.
+  static const animalPhotoLabel = 'Foto del animal';
+
   /// Etiqueta del identificador principal.
   static const animalIdLabel = 'Caravana / ID';
 

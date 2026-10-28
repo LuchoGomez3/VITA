@@ -5,6 +5,7 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_photo.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_ficha_header.dart';
@@ -102,7 +103,7 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AnimalDetailCubit>().state;
-    final animal = switch (state) {
+    final animal = switch (state.detail) {
       Data<AnimalDetail>(:final data) => data,
       _ => null,
     };
@@ -132,12 +133,16 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
           tabs: [for (final tab in AnimalFichaTab.values) Tab(text: tab.label)],
         ),
       ),
-      body: switch (state) {
+      body: switch (state.detail) {
         Data<AnimalDetail>(:final data) => TabBarView(
           controller: _tabs,
           children: [
             AnimalGeneralTab(
               animal: data,
+              photo: switch (state.photo) {
+                Data<AnimalPhoto?>(:final data) => data,
+                _ => null,
+              },
               onRetrySync: () => context.read<AnimalDetailCubit>().retrySync(data.id),
             ),
             AnimalGenealogyTab(animal: data, loadGenealogy: widget.loadGenealogy),

@@ -2,6 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 
 void main() {
+  test('permite pesajes a roles conocidos y deniega el rol desconocido', () {
+    expect(UserRole.admin.canRecordWeighing, isTrue);
+    expect(UserRole.owner.canRecordWeighing, isTrue);
+    expect(UserRole.employee.canRecordWeighing, isTrue);
+    expect(UserRole.veterinarian.canRecordWeighing, isTrue);
+    expect(UserRole.unknown.canRecordWeighing, isFalse);
+  });
+
   test('parses the current backend roles and administrator compatibility', () {
     expect(UserRolePermissions.fromBackend('admin'), UserRole.admin);
     expect(UserRolePermissions.fromBackend('administrator'), UserRole.admin);

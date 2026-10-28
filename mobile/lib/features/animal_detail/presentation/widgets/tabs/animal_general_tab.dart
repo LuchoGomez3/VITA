@@ -3,8 +3,10 @@ import 'package:frontend_mayoral/core/formatters/formatters.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_photo.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_formatters.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_photo.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_sync_footer.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_ficha_section.dart';
 
@@ -12,10 +14,13 @@ import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tab
 /// observaciones, más el estado de sincronización del animal.
 class AnimalGeneralTab extends StatelessWidget {
   /// Crea la pestaña para [animal].
-  const AnimalGeneralTab({required this.animal, required this.onRetrySync, super.key});
+  const AnimalGeneralTab({required this.animal, required this.onRetrySync, this.photo, super.key});
 
   /// Animal de la ficha.
   final AnimalDetail animal;
+
+  /// Foto local resuelta independientemente de los datos del animal.
+  final AnimalPhoto? photo;
 
   /// Reintenta sincronizar un alta rechazada.
   final VoidCallback onRetrySync;
@@ -28,7 +33,15 @@ class AnimalGeneralTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
-        const _PhotoPlaceholder(),
+        AnimalDetailPhoto(
+          photo: photo,
+          contentBuilder: (image) => image == null
+              ? const _PhotoPlaceholder()
+              : ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  child: image,
+                ),
+        ),
         const SizedBox(height: AppSpacing.sm),
         // Estado productivo (#72): un animal vendido o muerto sigue teniendo
         // ficha, pero no cuenta en el stock.

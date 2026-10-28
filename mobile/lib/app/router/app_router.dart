@@ -71,6 +71,9 @@ import 'package:frontend_mayoral/features/team/presentation/pages/invite_team_me
 import 'package:frontend_mayoral/features/team/presentation/pages/join_establishment_page.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/team_page.dart';
 import 'package:frontend_mayoral/features/team/team_composition.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/camera_reveal_page.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/vision_weighing_page.dart';
+import 'package:frontend_mayoral/features/vision_weighing/vision_weighing_composition.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/pages/weighing_page.dart';
 import 'package:frontend_mayoral/features/weighing/weighing_composition.dart';
 import 'package:go_router/go_router.dart';
@@ -372,6 +375,18 @@ class AppRouter {
           },
         ),
         GoRoute(
+          path: AppRoutes.visionWeighing,
+          pageBuilder: (context, state) => CameraRevealPage(
+            state: state,
+            child: VisionWeighingPage(
+              createCubit: createVisionCaptureCubit,
+              getAnimalOptions: createVisionAnimalOptionsUseCase(),
+              pickPhoto: createPickVisionPhotoUseCase(),
+              cameraDependencies: createVisionCameraDependencies(),
+            ),
+          ),
+        ),
+        GoRoute(
           path: AppRoutes.rfidScan,
           builder: (context, state) {
             final establishmentId = state.uri.queryParameters['establecimientoId'];
@@ -382,7 +397,9 @@ class AppRouter {
             }
 
             final readingSource = HidRfidReadingSource();
+            final selectingForVision = state.uri.queryParameters['seleccionarParaPesajeIA'] == 'true';
             return RfidScanPage(
+              onAnimalSelected: selectingForVision ? (animalId) => context.pop(animalId) : null,
               establishmentId: establishmentId,
               createBloc: ({required establishmentId}) => createRfidScanBloc(
                 readingSource: readingSource,

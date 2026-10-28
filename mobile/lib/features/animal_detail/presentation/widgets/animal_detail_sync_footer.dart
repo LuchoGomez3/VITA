@@ -30,6 +30,42 @@ class AnimalDetailSyncFooter extends StatelessWidget {
       );
     }
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+        final status = _SyncStatus(status: animalDetail.syncStatus);
+        final lastReading = _LastReading(updatedAt: animalDetail.updatedAt);
+        if (largeText || constraints.maxWidth < 360) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              status,
+              const SizedBox(height: AppSpacing.sm),
+              lastReading,
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: status),
+            const SizedBox(width: AppSpacing.sm),
+            Flexible(child: lastReading),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SyncStatus extends StatelessWidget {
+  const _SyncStatus({required this.status});
+
+  final AnimalSyncStatus status;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -37,22 +73,32 @@ class AnimalDetailSyncFooter extends StatelessWidget {
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Text(
-            animalDetail.syncStatus.label,
+            status.label,
             style: AppTypography.smallEmphasis.copyWith(color: AppColors.primary),
           ),
         ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              AnimalDetailStrings.lastReadingLabel,
-              style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),
-            ),
-            Text(
-              DateDisplayFormatter.shortDate(animalDetail.updatedAt),
-              style: AppTypography.smallEmphasis,
-            ),
-          ],
+      ],
+    );
+  }
+}
+
+class _LastReading extends StatelessWidget {
+  const _LastReading({required this.updatedAt});
+
+  final DateTime updatedAt;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AnimalDetailStrings.lastReadingLabel,
+          style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),
+        ),
+        Text(
+          DateDisplayFormatter.shortDate(updatedAt),
+          style: AppTypography.smallEmphasis,
         ),
       ],
     );
