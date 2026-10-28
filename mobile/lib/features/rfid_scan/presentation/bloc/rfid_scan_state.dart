@@ -4,7 +4,10 @@ part of 'rfid_scan_bloc.dart';
 @freezed
 sealed class RfidScanState with _$RfidScanState {
   /// Aun no hay una lectura activa.
-  const factory RfidScanState.inactive() = _Inactive;
+  const factory RfidScanState.inactive({
+    @Default('') String rfidPrefix,
+    @Default(<IdentifiedAnimal>[]) List<IdentifiedAnimal> suggestions,
+  }) = _Inactive;
 
   /// La app esta lista para recibir los caracteres del baston HID.
   const factory RfidScanState.listening() = _Listening;

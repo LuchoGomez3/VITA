@@ -8,7 +8,7 @@ import 'package:frontend_mayoral/app/config/app_config.dart';
 import 'package:frontend_mayoral/brick/auth/authenticated_backend_client.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/brick.g.dart';
-import 'package:frontend_mayoral/brick/db/schema.g.dart';
+import 'package:frontend_mayoral/brick/db/brick_migrations.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
 import 'package:http/http.dart' as http;
 import 'package:sqflite/sqflite.dart';
@@ -123,7 +123,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     final repository = AppBrickRepository._(
       sqliteProvider: sqliteProvider,
       restProvider: restProvider,
-      migrations: migrations.toSet(),
+      migrations: appBrickMigrations,
       syncResults: syncResults,
       authRejections: authRejections,
       offlineQueueManager: RestRequestSqliteCacheManager(
@@ -236,6 +236,26 @@ class AppBrickTransaction {
   final AppBrickRepository _repository;
   final Transaction _transaction;
   final List<Future<void> Function()> _afterCommit;
+
+  /// Lee todos los registros de [TModel] usando la misma transaccion SQLite.
+  ///
+  /// Las operaciones compuestas deben validar el estado que van a modificar
+  /// dentro del mismo limite transaccional. Leer antes de abrir la transaccion
+  /// dejaria una ventana para confirmar una venta con datos locales obsoletos.
+  Future<List<TModel>> getLocal<TModel extends OfflineFirstWithRestModel>() async {
+    final adapter = _repository.sqliteProvider.modelDictionary.adapterFor[TModel]!;
+    final rows = await _transaction.query(adapter.tableName);
+    final models = <TModel>[];
+    for (final row in rows) {
+      final model = await adapter.fromSqlite(
+        row,
+        provider: _repository.sqliteProvider,
+        repository: _repository,
+      );
+      models.add(model as TModel);
+    }
+    return models;
+  }
 
   /// Inserta o actualiza [model] usando el adapter generado por Brick.
   Future<TModel> upsert<TModel extends OfflineFirstWithRestModel>(
