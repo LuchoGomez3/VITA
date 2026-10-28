@@ -122,8 +122,8 @@ class _LivestockSaleFlowView extends StatelessWidget {
               appBar: AppBar(
                 centerTitle: true,
                 leading: IconButton(
-                  onPressed: () => unawaited(_handleBack(context, state)),
-                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => unawaited(_handleExit(context, state)),
+                  icon: const Icon(Icons.close),
                 ),
                 title: _FlowTitle(step: state.currentStep),
               ),
@@ -196,6 +196,14 @@ class _LivestockSaleFlowView extends StatelessWidget {
       return;
     }
 
+    await _handleExit(context, state);
+  }
+
+  /// Abandona el flujo desde cualquier paso y protege el borrador cargado.
+  Future<void> _handleExit(
+    BuildContext context,
+    LivestockSaleState state,
+  ) async {
     if (!state.hasDraftChanges) {
       _leaveFlow(context);
       return;
@@ -373,29 +381,30 @@ class _FlowNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final nextButton = AppFilledButton(
+      label: step == LivestockSaleStep.review ? LivestockSaleStrings.confirmSale : LivestockSaleStrings.next,
+      icon: Icon(
+        step == LivestockSaleStep.review ? Icons.check : Icons.arrow_forward,
+      ),
+      onPressed: isSubmitting || !canContinue ? null : onNext,
+    );
+
     return SafeArea(
       minimum: const EdgeInsets.all(AppSpacing.lg),
-      child: Row(
-        children: [
-          Expanded(
-            child: AppOutlinedButton(
-              label: LivestockSaleStrings.back,
-              onPressed: onBack,
+      child: step == LivestockSaleStep.animals
+          ? nextButton
+          : Row(
+              children: [
+                Expanded(
+                  child: AppOutlinedButton(
+                    label: LivestockSaleStrings.back,
+                    onPressed: onBack,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(flex: 2, child: nextButton),
+              ],
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            flex: 2,
-            child: AppFilledButton(
-              label: step == LivestockSaleStep.review ? LivestockSaleStrings.confirmSale : LivestockSaleStrings.next,
-              icon: Icon(
-                step == LivestockSaleStep.review ? Icons.check : Icons.arrow_forward,
-              ),
-              onPressed: isSubmitting || !canContinue ? null : onNext,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

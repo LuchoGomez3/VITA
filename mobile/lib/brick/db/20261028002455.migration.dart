@@ -3,13 +3,7 @@
 // This file should be version controlled and can be manually edited.
 part of 'schema.g.dart';
 
-// While migrations are intelligently created, the difference between some commands, such as
-// DropTable vs. RenameTable, cannot be determined. For this reason, please review migrations after
-// they are created to ensure the correct inference was made.
-
-// The migration version must **always** mirror the file name
-
-const List<MigrationCommand> _migration_20261003184650_up = [
+const List<MigrationCommand> _migration_20261028002455_up = [
   InsertTable('BrickLivestockSaleModel'),
   InsertColumn('local_id', Column.varchar, onTable: 'BrickLivestockSaleModel'),
   InsertColumn('establishment_id', Column.varchar, onTable: 'BrickLivestockSaleModel'),
@@ -34,7 +28,7 @@ const List<MigrationCommand> _migration_20261003184650_up = [
   InsertColumn('sync_error_code', Column.varchar, onTable: 'BrickLivestockSaleModel'),
 ];
 
-const List<MigrationCommand> _migration_20261003184650_down = [
+const List<MigrationCommand> _migration_20261028002455_down = [
   DropTable('BrickLivestockSaleModel'),
   DropColumn('local_id', onTable: 'BrickLivestockSaleModel'),
   DropColumn('establishment_id', onTable: 'BrickLivestockSaleModel'),
@@ -59,20 +53,16 @@ const List<MigrationCommand> _migration_20261003184650_down = [
   DropColumn('sync_error_code', onTable: 'BrickLivestockSaleModel'),
 ];
 
-//
-// DO NOT EDIT BELOW THIS LINE
-//
-
 @Migratable(
-  version: '20261003184650',
-  up: _migration_20261003184650_up,
-  down: _migration_20261003184650_down,
+  version: '20261028002455',
+  up: _migration_20261028002455_up,
+  down: _migration_20261028002455_down,
 )
-class Migration20261003184650 extends Migration {
-  const Migration20261003184650()
+class Migration20261028002455 extends Migration {
+  const Migration20261028002455()
     : super(
-        version: 20261003184650,
-        up: _migration_20261003184650_up,
-        down: _migration_20261003184650_down,
+        version: 20261028002455,
+        up: _migration_20261028002455_up,
+        down: _migration_20261028002455_down,
       );
 }

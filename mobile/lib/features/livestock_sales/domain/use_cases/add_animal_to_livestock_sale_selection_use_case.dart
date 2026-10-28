@@ -85,6 +85,7 @@ class AddAnimalToLivestockSaleSelectionUseCase {
   ) {
     return switch (status) {
       LivestockSaleAnimalStatus.active => null,
+      LivestockSaleAnimalStatus.syncRejected => LivestockSaleSelectionError.animalSyncRejected,
       LivestockSaleAnimalStatus.sold => LivestockSaleSelectionError.animalSold,
       LivestockSaleAnimalStatus.dead => LivestockSaleSelectionError.animalDead,
       LivestockSaleAnimalStatus.removed => LivestockSaleSelectionError.animalRemoved,

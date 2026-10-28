@@ -37,7 +37,10 @@ class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository
     String rfidTagNumber,
   ) async {
     try {
-      await _refreshInventoryOnce();
+      // La primera seleccion no debe esperar animales, categorias y lotes del
+      // backend. Se inicia una unica actualizacion compartida, pero la caravana
+      // se resuelve inmediatamente con el inventario durable de SQLite.
+      unawaited(_refreshInventoryOnce());
 
       // La consulta usa solo SQLite. Incluso sin conectividad puede identificar
       // si la caravana esta disponible, vendida o pertenece a otro tenant.
@@ -97,6 +100,7 @@ class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository
       for (final animal in animals) {
         if (animal.establishmentId != _establishmentId ||
             animal.productiveStatus != BrickAnimalProductiveStatus.active ||
+            animal.syncStatus == BrickAnimalSyncStatus.rejected ||
             animal.deletedAt != null ||
             !animal.rfidTagNumber.startsWith(normalizedPrefix)) {
           continue;

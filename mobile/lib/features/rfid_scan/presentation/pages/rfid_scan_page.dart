@@ -158,7 +158,6 @@ class _RfidScanBody extends StatelessWidget {
     required this.onRegisterAnimalRequested,
     this.onAnimalSelected,
     this.returnRfidOnSelection = false,
-    super.key,
   });
 
   final RfidScanState state;

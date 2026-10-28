@@ -388,6 +388,8 @@ abstract final class LivestockSaleStrings {
     LivestockSaleSelectionError.invalidRfid => 'Ingresá una caravana RFID válida.',
     LivestockSaleSelectionError.animalNotFound => 'No se encontró el animal en el dispositivo.',
     LivestockSaleSelectionError.differentEstablishment => 'El animal pertenece a otro establecimiento.',
+    LivestockSaleSelectionError.animalSyncRejected =>
+      'El alta del animal fue rechazada y debe corregirse antes de venderlo.',
     LivestockSaleSelectionError.animalSold => 'El animal ya figura como vendido.',
     LivestockSaleSelectionError.animalDead => 'El animal figura como fallecido.',
     LivestockSaleSelectionError.animalRemoved => 'El animal fue dado de baja.',

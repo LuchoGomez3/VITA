@@ -13,13 +13,21 @@ Future<BrickLivestockSaleModel> _$BrickLivestockSaleModelFromRest(
     buyerType: data['tipo_comprador'] as String,
     buyerName: data['nombre_comprador'] as String,
     isCompany: data['es_empresa'] as bool,
-    buyerLastName: data['apellido_comprador'] == null ? null : data['apellido_comprador'] as String?,
+    buyerLastName: data['apellido_comprador'] == null
+        ? null
+        : data['apellido_comprador'] as String?,
     dteNumber: data['nro_dte'] as String,
     saleType: data['tipo_venta'] as String,
-    totalWeightKg: data['peso_total_kg'] == null ? null : data['peso_total_kg'] as String?,
-    pricePerKg: data['precio_por_kg'] == null ? null : data['precio_por_kg'] as String?,
+    totalWeightKg: data['peso_total_kg'] == null
+        ? null
+        : data['peso_total_kg'] as String?,
+    pricePerKg: data['precio_por_kg'] == null
+        ? null
+        : data['precio_por_kg'] as String?,
     totalAmount: data['monto_total'] as String,
-    observations: data['observaciones'] == null ? null : data['observaciones'] as String?,
+    observations: data['observaciones'] == null
+        ? null
+        : data['observaciones'] as String?,
     animalIdsJson: brickLivestockSaleJsonFromBackend(data['animal_ids']),
     paymentCondition: data['condicion_cobro'] as String,
     initialPaymentJson: data['cobro_inicial'] == null
@@ -77,16 +85,26 @@ Future<BrickLivestockSaleModel> _$BrickLivestockSaleModelFromSqlite(
     buyerType: data['buyer_type'] as String,
     buyerName: data['buyer_name'] as String,
     isCompany: data['is_company'] == 1,
-    buyerLastName: data['buyer_last_name'] == null ? null : data['buyer_last_name'] as String?,
+    buyerLastName: data['buyer_last_name'] == null
+        ? null
+        : data['buyer_last_name'] as String?,
     dteNumber: data['dte_number'] as String,
     saleType: data['sale_type'] as String,
-    totalWeightKg: data['total_weight_kg'] == null ? null : data['total_weight_kg'] as String?,
-    pricePerKg: data['price_per_kg'] == null ? null : data['price_per_kg'] as String?,
+    totalWeightKg: data['total_weight_kg'] == null
+        ? null
+        : data['total_weight_kg'] as String?,
+    pricePerKg: data['price_per_kg'] == null
+        ? null
+        : data['price_per_kg'] as String?,
     totalAmount: data['total_amount'] as String,
-    observations: data['observations'] == null ? null : data['observations'] as String?,
+    observations: data['observations'] == null
+        ? null
+        : data['observations'] as String?,
     animalIdsJson: data['animal_ids_json'] as String,
     paymentCondition: data['payment_condition'] as String,
-    initialPaymentJson: data['initial_payment_json'] == null ? null : data['initial_payment_json'] as String?,
+    initialPaymentJson: data['initial_payment_json'] == null
+        ? null
+        : data['initial_payment_json'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -95,7 +113,9 @@ Future<BrickLivestockSaleModel> _$BrickLivestockSaleModelFromSqlite(
         ? null
         : DateTime.tryParse(data['deleted_at'] as String),
     syncStatus: BrickLivestockSaleSyncStatus.values[data['sync_status'] as int],
-    syncErrorCode: data['sync_error_code'] == null ? null : data['sync_error_code'] as String?,
+    syncErrorCode: data['sync_error_code'] == null
+        ? null
+        : data['sync_error_code'] as String?,
   )..primaryKey = data['_brick_id'] as int;
 }
 
@@ -132,7 +152,8 @@ Future<Map<String, dynamic>> _$BrickLivestockSaleModelToSqlite(
 }
 
 /// Construct a [BrickLivestockSaleModel]
-class BrickLivestockSaleModelAdapter extends OfflineFirstWithRestAdapter<BrickLivestockSaleModel> {
+class BrickLivestockSaleModelAdapter
+    extends OfflineFirstWithRestAdapter<BrickLivestockSaleModel> {
   BrickLivestockSaleModelAdapter();
 
   @override

@@ -12,7 +12,11 @@ abstract final class LivestockSaleAnimalMapper {
       visualTag: animal.visualTag,
       categoryName: animal.categoryName,
       lotName: animal.lotName,
-      status: _statusFromBrick(animal.productiveStatus),
+      // Un rechazo de sincronizacion invalida la seleccion aunque el estado
+      // productivo local haya quedado activo tras guardar el alta offline.
+      status: animal.syncStatus == BrickAnimalSyncStatus.rejected
+          ? LivestockSaleAnimalStatus.syncRejected
+          : _statusFromBrick(animal.productiveStatus),
     );
   }
 

@@ -7,6 +7,9 @@ enum LivestockSaleAnimalStatus {
   /// El animal integra el stock disponible.
   active,
 
+  /// El backend rechazo el alta o la ultima sincronizacion del animal.
+  syncRejected,
+
   /// El animal ya fue vendido.
   sold,
 

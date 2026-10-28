@@ -3,12 +3,9 @@
 // This file should be version controlled and can be manually edited.
 part of 'schema.g.dart';
 
-// While migrations are intelligently created, the difference between some commands, such as
-// DropTable vs. RenameTable, cannot be determined. For this reason, please review migrations after
-// they are created to ensure the correct inference was made.
-
-// The migration version must **always** mirror the file name
-
+// Esta version nacio en la rama original de ventas. Se conserva como version
+// canonica para que los dispositivos que ya la aplicaron no intenten agregar
+// productive_status nuevamente al integrarse con develop.
 const List<MigrationCommand> _migration_20261014141500_up = [
   InsertColumn('productive_status', Column.varchar, onTable: 'BrickAnimalModel'),
 ];
@@ -16,10 +13,6 @@ const List<MigrationCommand> _migration_20261014141500_up = [
 const List<MigrationCommand> _migration_20261014141500_down = [
   DropColumn('productive_status', onTable: 'BrickAnimalModel'),
 ];
-
-//
-// DO NOT EDIT BELOW THIS LINE
-//
 
 @Migratable(
   version: '20261014141500',

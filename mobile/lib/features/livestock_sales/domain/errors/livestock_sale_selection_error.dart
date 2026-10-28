@@ -9,6 +9,9 @@ enum LivestockSaleSelectionError {
   /// El animal pertenece a otro establecimiento.
   differentEstablishment,
 
+  /// El backend rechazo el alta o la ultima sincronizacion del animal.
+  animalSyncRejected,
+
   /// El animal ya fue vendido.
   animalSold,
 

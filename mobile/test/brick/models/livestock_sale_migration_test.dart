@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend_mayoral/brick/db/schema.g.dart';
+import 'package:frontend_mayoral/brick/db/brick_migrations.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
   test('la migracion de ventas permanece registrada en el esquema', () {
-    final migration = migrations.singleWhere(
-      (item) => item.version == 20261003184650,
+    final migration = appBrickMigrations.singleWhere(
+      (item) => item.version == 20261028002455,
     );
 
     expect(
@@ -24,8 +24,8 @@ void main() {
       inMemoryDatabasePath,
     );
     addTearDown(database.close);
-    final migration = migrations.singleWhere(
-      (item) => item.version == 20261003184650,
+    final migration = appBrickMigrations.singleWhere(
+      (item) => item.version == 20261028002455,
     );
 
     for (final statement in migration.upStatement.split(';')) {
@@ -51,5 +51,23 @@ void main() {
         'sync_status',
       ]),
     );
+
+    // Reaplicar la migracion simula un dispositivo que ya tenia la tabla por
+    // la rama original de ventas. La fila debe sobrevivir sin columnas dobles.
+    await database.insert('BrickLivestockSaleModel', {
+      'local_id': 'venta-existente',
+    });
+    for (final statement in migration.upStatement.split(';')) {
+      final sql = statement.trim();
+      if (sql.isNotEmpty) {
+        await database.execute(sql);
+      }
+    }
+    final preservedSales = await database.query(
+      'BrickLivestockSaleModel',
+      where: 'local_id = ?',
+      whereArgs: ['venta-existente'],
+    );
+    expect(preservedSales, hasLength(1));
   });
 }

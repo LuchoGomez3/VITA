@@ -63,6 +63,11 @@ void main() {
       _animal(id: 'first'),
       _animal(id: 'second', rfid: '982000412991417'),
       _animal(
+        id: 'rejected',
+        rfid: '982000412991419',
+        syncStatus: BrickAnimalSyncStatus.rejected,
+      ),
+      _animal(
         id: 'sold',
         rfid: '982000412991418',
         productiveStatus: BrickAnimalProductiveStatus.sold,
@@ -74,6 +79,20 @@ void main() {
 
     final matches = (result as Success<List<LivestockSaleAnimal>>).data;
     expect(matches.map((animal) => animal.id), ['first', 'second']);
+  });
+
+  test('maps a rejected local animal as unavailable for sale', () async {
+    store.animals = [
+      _animal(
+        id: 'rejected',
+        syncStatus: BrickAnimalSyncStatus.rejected,
+      ),
+    ];
+
+    final result = await repository.findLocalByRfidTagNumber(rfid);
+
+    final animal = (result as Success<LivestockSaleAnimal?>).data;
+    expect(animal?.status, LivestockSaleAnimalStatus.syncRejected);
   });
 
   test('returns local suggestions without waiting for remote refresh', () async {
@@ -109,9 +128,14 @@ void main() {
     expect(animal?.lotName, 'Lote Norte');
   });
 
-  test('refreshes productive status before returning the first match', () async {
+  test('returns the first local match without waiting for remote refresh', () async {
+    final remotePullCompleter = Completer<void>();
+    addTearDown(() {
+      if (!remotePullCompleter.isCompleted) remotePullCompleter.complete();
+    });
     store
       ..animals = [_animal(id: 'animal-id')]
+      ..remotePullCompleter = remotePullCompleter
       ..remoteAnimals = [
         _animal(
           id: 'animal-id',
@@ -119,10 +143,13 @@ void main() {
         ),
       ];
 
-    final result = await repository.findLocalByRfidTagNumber(rfid);
+    final result = await repository.findLocalByRfidTagNumber(rfid).timeout(const Duration(seconds: 1));
 
     final animal = (result as Success<LivestockSaleAnimal?>).data;
-    expect(animal?.status, LivestockSaleAnimalStatus.dead);
+    expect(animal?.status, LivestockSaleAnimalStatus.active);
+    expect(store.remotePullStarted, isTrue);
+
+    remotePullCompleter.complete();
   });
 
   test('returns a typed failure when SQLite cannot be read', () async {
@@ -142,6 +169,7 @@ BrickAnimalModel _animal({
   DateTime? updatedAt,
   DateTime? deletedAt,
   BrickAnimalProductiveStatus productiveStatus = BrickAnimalProductiveStatus.active,
+  BrickAnimalSyncStatus syncStatus = BrickAnimalSyncStatus.pending,
   String categoryName = 'Ternera',
   String lotName = 'La Cumbre',
 }) {
@@ -165,6 +193,7 @@ BrickAnimalModel _animal({
     updatedAt: timestamp,
     deletedAt: deletedAt,
     productiveStatus: productiveStatus,
+    syncStatus: syncStatus,
   );
 }
 

@@ -1,11 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/features/livestock/domain/entities/livestock_establishment.dart';
 import 'package:frontend_mayoral/features/livestock/domain/use_cases/get_livestock_sale_establishments_use_case.dart';
 
 /// Carga los establecimientos habilitados para vender desde Hacienda.
-class LivestockAccessCubit extends Cubit<ResultState<List<EstablishmentMembership>>> {
+class LivestockAccessCubit extends Cubit<ResultState<List<LivestockEstablishment>>> {
   /// Crea el cubit con la consulta offline de permisos comerciales.
   LivestockAccessCubit({
     required GetLivestockSaleEstablishmentsUseCase getSaleEstablishments,
@@ -19,9 +19,9 @@ class LivestockAccessCubit extends Cubit<ResultState<List<EstablishmentMembershi
     emit(const ResultState.loading());
     final result = await _getSaleEstablishments();
     switch (result) {
-      case Success<List<EstablishmentMembership>>(:final data):
+      case Success<List<LivestockEstablishment>>(:final data):
         emit(ResultState.data(data));
-      case Failure<List<EstablishmentMembership>>(:final error):
+      case Failure<List<LivestockEstablishment>>(:final error):
         emit(ResultState.error(error));
     }
   }
