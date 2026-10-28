@@ -2,6 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Permite fotografiar bovinos de perfil; no se captura audio. -->
+	<key>NSCameraUsageDescription</key>
+	<string>VITA usa la cámara para capturar el perfil del bovino y preparar su pesaje.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Seleccionamos una foto del bovino para probar la revisión de capturas y el modo calibración.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>VITA utiliza el movimiento del dispositivo para orientar el botón de captura.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
