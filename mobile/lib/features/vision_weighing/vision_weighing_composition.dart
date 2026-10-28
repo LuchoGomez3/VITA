@@ -21,6 +21,7 @@ import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/save_
 import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/watch_vision_camera_orientation.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/bloc/vision_capture_cubit.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/models/vision_camera_dependencies.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/models/vision_camera_preview_adapter.dart';
 
 /// Provee las identidades locales al formulario de revisión de la foto.
 GetVisionAnimalOptions createVisionAnimalOptionsUseCase() => GetVisionAnimalOptions(
@@ -35,13 +36,14 @@ PickVisionPhoto createPickVisionPhotoUseCase() => PickVisionPhoto(ImagePickerVis
 
 /// Crea una sesión independiente para que cada ruta posea su cámara nativa.
 VisionCameraDependencies createVisionCameraDependencies() {
-  final repository = DeviceVisionCameraRepository();
+  final preview = VisionCameraPreviewAdapter();
+  final repository = DeviceVisionCameraRepository(onControllerChanged: (controller) => preview.controller = controller);
   return VisionCameraDependencies(
     initialize: InitializeVisionCamera(repository),
     capture: CaptureVisionPhoto(repository),
     watchOrientation: WatchVisionCameraOrientation(repository),
     dispose: DisposeVisionCamera(repository),
-    previewBuilder: repository.buildPreview,
+    previewBuilder: preview.buildPreview,
   );
 }
 
@@ -50,6 +52,7 @@ VisionCaptureCubit createVisionCaptureCubit() {
   final weightRepository = BrickVisionWeightRepository(
     BrickAnimalStore.instance,
     BrickPesajeStore.instance,
+    const EstablishmentCatalog(secureStorage: FlutterSecureStorageService()),
   );
   return VisionCaptureCubit(
     ProcessVisionCapture(

@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/storage/animal_photo_store.dart';
 import 'package:frontend_mayoral/core/utils/uuid_v4.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/errors/vision_weighing_exception.dart';
@@ -13,13 +15,15 @@ class BrickVisionWeightRepository implements VisionWeightRepository {
   /// Recibe stores compartidos sin exponer modelos Brick al dominio.
   const BrickVisionWeightRepository(
     this._animals,
-    this._weighings, {
+    this._weighings,
+    this._establishments, {
     AnimalPhotoStore photoStore = const AnimalPhotoStore(),
   }) : _photoStore = photoStore;
 
   final AnimalPhotoStore _photoStore;
   final AnimalBrickStore _animals;
   final PesajeBrickStore _weighings;
+  final EstablishmentCatalog _establishments;
 
   @override
   Future<void> saveEstimate({required String animalId, required double weightKg, required Uint8List jpegBytes}) async {
@@ -27,6 +31,10 @@ class BrickVisionWeightRepository implements VisionWeightRepository {
       // El UUID distingue animales con el mismo RFID en establecimientos distintos.
       final animal = await _animals.getAnimalById(animalId);
       if (animal == null) throw const VisionAnimalNotFoundException();
+      final membership = await _establishments.getById(animal.establishmentId);
+      if (membership == null || !membership.role.canRecordWeighing) {
+        throw const VisionWeighingAccessDeniedException();
+      }
       await _photoStore.savePhotoBytes(
         establishmentId: animal.establishmentId,
         animalId: animal.localId,

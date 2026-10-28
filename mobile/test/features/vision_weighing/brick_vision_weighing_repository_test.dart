@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -5,11 +6,39 @@ import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/storage/animal_photo_store.dart';
+import 'package:frontend_mayoral/core/storage/secure_storage_keys.dart';
+import 'package:frontend_mayoral/core/storage/secure_storage_service.dart';
+import 'package:frontend_mayoral/features/vision_weighing/data/repositories/brick_vision_animal_repository.dart';
 import 'package:frontend_mayoral/features/vision_weighing/data/repositories/brick_vision_weight_repository.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/errors/vision_weighing_exception.dart';
+
+class _Storage implements SecureStorageService {
+  final values = <String, String>{};
+
+  @override
+  Future<String?> read(String key) async => values[key];
+
+  @override
+  Future<void> write({required String key, required String value}) async => values[key] = value;
+
+  @override
+  Future<void> delete(String key) async => values.remove(key);
+}
+
+EstablishmentCatalog _catalog({String establishmentId = 'farm-id'}) => EstablishmentCatalog(
+  secureStorage: _Storage()
+    ..values[SecureStorageKeys.establishmentCatalog] = jsonEncode([
+      {'id': establishmentId, 'name': 'Campo', 'role': 'employee'},
+    ]),
+);
 
 class _Animals extends Fake implements AnimalBrickStore {
   List<BrickAnimalModel> animals = [];
+
+  @override
+  Future<List<BrickAnimalModel>> getLocalAnimals() async => animals;
 
   @override
   Future<BrickAnimalModel?> getAnimalById(String animalId) async {
@@ -71,7 +100,7 @@ void main() {
     final animals = _Animals()..animals = [_animal('animal-id', 'farm-id')];
     final weighings = _Weighings();
     final photos = _Photos()..fail = true;
-    final repository = BrickVisionWeightRepository(animals, weighings, photoStore: photos);
+    final repository = BrickVisionWeightRepository(animals, weighings, _catalog(), photoStore: photos);
     await expectLater(
       repository.saveEstimate(animalId: 'animal-id', weightKg: 390, jpegBytes: Uint8List(3)),
       throwsException,
@@ -83,7 +112,7 @@ void main() {
     final animals = _Animals()..animals = [_animal('animal-id', 'farm-id')];
     final weighings = _Weighings();
     final photos = _Photos();
-    final repository = BrickVisionWeightRepository(animals, weighings, photoStore: photos);
+    final repository = BrickVisionWeightRepository(animals, weighings, _catalog(), photoStore: photos);
 
     final beforeSave = DateTime.now().toUtc();
     await repository.saveEstimate(animalId: 'animal-id', weightKg: 390, jpegBytes: Uint8List.fromList([1, 2, 3]));
@@ -109,7 +138,12 @@ void main() {
     final animals = _Animals();
     final weighings = _Weighings();
     final photos = _Photos();
-    final repository = BrickVisionWeightRepository(animals, weighings, photoStore: photos);
+    final repository = BrickVisionWeightRepository(
+      animals,
+      weighings,
+      _catalog(establishmentId: 'farm-b'),
+      photoStore: photos,
+    );
 
     await expectLater(
       repository.saveEstimate(animalId: 'missing', weightKg: 390, jpegBytes: Uint8List.fromList([1, 2, 3])),
@@ -119,5 +153,92 @@ void main() {
     await repository.saveEstimate(animalId: 'two', weightKg: 390, jpegBytes: Uint8List.fromList([1, 2, 3]));
     expect(weighings.saved?.animalId, 'two');
     expect(weighings.saved?.establishmentId, 'farm-b');
+  });
+
+  for (final role in ['admin', 'owner', 'employee', 'veterinarian', null, 'legacy-role', 'unknown']) {
+    test('el catálogo y el guardado aplican el permiso offline para rol $role', () async {
+      final storage = _Storage();
+      await storage.write(
+        key: SecureStorageKeys.establishmentCatalog,
+        value: jsonEncode([
+          {'id': 'farm-id', 'name': 'Campo', if (role != null) 'role': role},
+        ]),
+      );
+      final catalog = EstablishmentCatalog(secureStorage: storage);
+      final animals = _Animals()..animals = [_animal('animal-id', 'farm-id'), _animal('other', 'other-farm')];
+      final photos = _Photos();
+      final weighings = _Weighings();
+      final options = await BrickVisionAnimalRepository(animals, catalog).getOptions();
+      final repository = BrickVisionWeightRepository(animals, weighings, catalog, photoStore: photos);
+      final allowed = ['admin', 'owner', 'employee', 'veterinarian'].contains(role);
+
+      if (allowed) {
+        expect(options.establishments.single.id, 'farm-id');
+        expect(options.animals.single.id, 'animal-id');
+        await repository.saveEstimate(animalId: 'animal-id', weightKg: 390, jpegBytes: Uint8List(3));
+        expect(weighings.saved?.animalId, 'animal-id');
+      } else {
+        expect(options.establishments, isEmpty);
+        expect(options.animals, isEmpty);
+        await expectLater(
+          repository.saveEstimate(animalId: 'animal-id', weightKg: 390, jpegBytes: Uint8List(3)),
+          throwsA(isA<VisionWeighingAccessDeniedException>()),
+        );
+        expect(photos.bytes, isNull);
+        expect(weighings.saved, isNull);
+      }
+    });
+  }
+
+  for (final replacement in [null, 'legacy-role']) {
+    test('revalida la membresía al guardar si cambió después de seleccionar ($replacement)', () async {
+      final storage = _Storage();
+      final catalog = EstablishmentCatalog(secureStorage: storage);
+      await storage.write(
+        key: SecureStorageKeys.establishmentCatalog,
+        value: jsonEncode([
+          {'id': 'farm-id', 'name': 'Campo', 'role': 'employee'},
+        ]),
+      );
+      final animals = _Animals()..animals = [_animal('animal-id', 'farm-id')];
+      final options = await BrickVisionAnimalRepository(animals, catalog).getOptions();
+      final selected = options.animals.single;
+      await storage.write(
+        key: SecureStorageKeys.establishmentCatalog,
+        value: jsonEncode([
+          if (replacement != null) {'id': 'farm-id', 'name': 'Campo', 'role': replacement},
+        ]),
+      );
+      final photos = _Photos();
+      final weighings = _Weighings();
+      final repository = BrickVisionWeightRepository(animals, weighings, catalog, photoStore: photos);
+
+      await expectLater(
+        repository.saveEstimate(animalId: selected.id, weightKg: 390, jpegBytes: Uint8List(3)),
+        throwsA(isA<VisionWeighingAccessDeniedException>()),
+      );
+      expect(photos.bytes, isNull);
+      expect(weighings.saved, isNull);
+    });
+  }
+
+  test('un catálogo corrupto impide efectos persistentes', () async {
+    final storage = _Storage()..values[SecureStorageKeys.establishmentCatalog] = '{invalid';
+    final animals = _Animals()..animals = [_animal('animal-id', 'farm-id')];
+    final photos = _Photos();
+    final weighings = _Weighings();
+    final repository = BrickVisionWeightRepository(
+      animals,
+      weighings,
+      EstablishmentCatalog(secureStorage: storage),
+      photoStore: photos,
+    );
+
+    await expectLater(
+      repository.saveEstimate(animalId: 'animal-id', weightKg: 390, jpegBytes: Uint8List(3)),
+      throwsA(isA<VisionDeviceException>()),
+    );
+    expect(photos.bytes, isNull);
+    expect(weighings.saved, isNull);
   });
 }

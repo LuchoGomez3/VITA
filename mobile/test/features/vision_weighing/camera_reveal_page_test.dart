@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend_mayoral/core/navigation/camera_reveal_page.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/camera_reveal_page.dart';
 import 'package:go_router/go_router.dart';
 
 void main() {

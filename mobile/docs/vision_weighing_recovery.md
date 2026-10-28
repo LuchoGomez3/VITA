@@ -122,7 +122,7 @@ SDK: FVM Flutter 3.44.0 / Dart 3.12.0.
 - Suite focalizada: **94 tests aprobados**, sin modelos experimentales:
 
   ```powershell
-  fvm flutter test --no-pub test/features/vision_weighing test/core/navigation/camera_reveal_page_test.dart test/core/widgets/app_image_preview_test.dart test/core/storage/animal_photo_store_test.dart test/features/rfid_scan test/features/weighing test/brick/models/pesaje_model_test.dart
+  fvm flutter test --no-pub test/features/vision_weighing test/core/widgets/app_image_preview_test.dart test/core/storage/animal_photo_store_test.dart test/features/rfid_scan test/features/weighing test/brick/models/pesaje_model_test.dart
   ```
 
 - `git diff --check` sin hallazgos en archivos escritos por el equipo. Freezed
@@ -144,10 +144,40 @@ SDK: FVM Flutter 3.44.0 / Dart 3.12.0.
   establecimientos verifica selección inequívoca y limpieza al cambiar de campo.
 
 Estas correcciones no modifican modelos ni generado Brick, ni el paquete ML.
-Los hallazgos del informe de arquitectura continúan fuera de esta corrección QA.
+Los hallazgos del informe de arquitectura se resolvieron después de esta
+corrección QA, como se detalla a continuación.
 Validación del 2026-10-28: formatter aplicado, 105 tests de regresión aprobados,
 analyzer sin hallazgos en la feature y sus tests; analyzer global conserva los
 247 avisos preexistentes. No sustituye validar la captura nativa en un teléfono.
+
+### Correcciones del informe de arquitectura sobre 56b278c
+
+- **F1:** `canRecordWeighing` centraliza la política de roles conocidos. Las
+  opciones excluyen roles desconocidos y el guardado vuelve a consultar la
+  membresía offline antes de escribir foto o pesaje. Los tests usan el catálogo
+  real sobre storage en memoria y cubren roles válidos, ausentes, inválidos,
+  catálogo corrupto y pérdida de membresía después de seleccionar.
+- **F2:** la construcción de `CameraPreview` pertenece ahora a
+  `VisionCameraPreviewAdapter`, en presentación. El repositorio conserva el
+  único controlador nativo y comunica su disponibilidad mediante un callback
+  conectado en composición. La referencia visual se retira antes del cierre;
+  la serialización de apertura, captura y liberación se conserva.
+- **F3:** `VisionCaptureViewData.saveResult` representa el guardado mediante
+  `ResultState<void>`. El Cubit emite loading/data/error y el widget renderiza
+  esos estados sin duplicar `_saving` ni capturar excepciones del guardado.
+  Se conserva la captura y selección para reintentar; los tests verifican las
+  transiciones, el bloqueo de duplicados y la salida durante una operación.
+
+Validación de estas correcciones: **125 tests de regresión aprobados**,
+analyzer sin diagnósticos en la feature, sus tests y los archivos de roles
+modificados. Se ejecutaron formatter y `fvm dart run melos run build`; solo
+se conserva el Freezed del estado modificado, sin cambios de esquema Brick.
+El generado añade dos líneas vacías con espacios que informa `git diff --check`;
+no se editan manualmente. No se repitió el analyzer global en esta corrección.
+
+```powershell
+fvm flutter test --no-pub test/features/vision_weighing test/core/widgets/app_image_preview_test.dart test/core/storage/animal_photo_store_test.dart test/features/rfid_scan test/features/weighing test/brick/models/pesaje_model_test.dart test/core/authentication
+```
 
 No se ejecutó cámara física ni compilación nativa Android/iOS en este entorno.
 Validar permisos y Ajustes, background/resume, JPEG/EXIF, rotación, captura,

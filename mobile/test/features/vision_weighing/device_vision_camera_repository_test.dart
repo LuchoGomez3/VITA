@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/features/vision_weighing/data/services/device_vision_camera_repository.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_device_orientation.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/errors/vision_weighing_exception.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/models/vision_camera_preview_adapter.dart';
 
 const _rear = CameraDescription(name: 'rear', lensDirection: CameraLensDirection.back, sensorOrientation: 90);
 
@@ -132,9 +133,15 @@ void main() {
     final first = _Controller(opening: opening, closing: closing);
     final second = _Controller();
     final controllers = [first, second];
+    final preview = VisionCameraPreviewAdapter();
+    final changes = <CameraController?>[];
     final repository = DeviceVisionCameraRepository(
       getCameras: () async => [_rear],
       createController: (_) => controllers.removeAt(0),
+      onControllerChanged: (controller) {
+        changes.add(controller);
+        preview.controller = controller;
+      },
     );
     final initialize = repository.initialize();
     final dispose = repository.dispose();
@@ -147,13 +154,18 @@ void main() {
     expect(first.disposals, 1);
     expect(controllers, hasLength(1));
     final context = _UnusedContext();
-    expect(repository.buildPreview(context), isA<SizedBox>());
+    expect(preview.buildPreview(context), isA<SizedBox>());
+    expect(changes.last, isNull);
     closing.complete();
     await dispose;
     await reopen;
-    expect(repository.buildPreview(context), isA<CameraPreview>());
+    final surface = preview.buildPreview(context);
+    expect(surface, isA<CameraPreview>());
+    expect((surface as CameraPreview).controller, same(second));
     await repository.dispose();
     expect(second.disposals, 1);
+    expect(preview.buildPreview(context), isA<SizedBox>());
+    expect(changes.whereType<CameraController>(), [first, second]);
   });
 }
 

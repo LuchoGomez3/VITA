@@ -8,7 +8,6 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_case.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
-import 'package:frontend_mayoral/core/navigation/camera_reveal_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
 import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
@@ -72,6 +71,7 @@ import 'package:frontend_mayoral/features/team/presentation/pages/invite_team_me
 import 'package:frontend_mayoral/features/team/presentation/pages/join_establishment_page.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/team_page.dart';
 import 'package:frontend_mayoral/features/team/team_composition.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/camera_reveal_page.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/vision_weighing_page.dart';
 import 'package:frontend_mayoral/features/vision_weighing/vision_weighing_composition.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/pages/weighing_page.dart';

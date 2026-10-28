@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_animal.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_capture.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_weight_estimate.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/errors/vision_weighing_exception.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/repositories/vision_animal_repository.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/repositories/vision_capture_repository.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/repositories/vision_weight_estimator_repository.dart';
@@ -36,6 +38,8 @@ class _Repository implements VisionCaptureRepository {
 
 class _WeightRepository implements VisionWeightEstimatorRepository, VisionWeightRepository {
   String? savedAnimalId;
+  Completer<void>? pending;
+  bool fail = false;
 
   @override
   Future<VisionWeightEstimate> estimateWeight(Uint8List jpegBytes) async => const VisionWeightEstimate(
@@ -47,6 +51,8 @@ class _WeightRepository implements VisionWeightEstimatorRepository, VisionWeight
 
   @override
   Future<void> saveEstimate({required String animalId, required double weightKg, required Uint8List jpegBytes}) async {
+    await pending?.future;
+    if (fail) throw const VisionDeviceException();
     savedAnimalId = animalId;
   }
 }
@@ -74,6 +80,56 @@ class _AnimalRepository implements VisionAnimalRepository {
 }
 
 void main() {
+  testWidgets('renderiza progreso, error y reintento desde el estado sin perder la selección', (tester) async {
+    final photo = Uint8List.fromList(img.encodeJpg(img.Image(width: 640, height: 360)));
+    final repository = _WeightRepository()
+      ..pending = Completer<void>()
+      ..fail = true;
+    final cubit = _createCubit(repository);
+    addTearDown(cubit.close);
+    await cubit.process(photo);
+    cubit.confirm(sharpnessConfirmed: true, completeAnimalConfirmed: true, lateralConfirmed: true);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider.value(
+          value: cubit,
+          child: Scaffold(
+            body: BlocBuilder<VisionCaptureCubit, ResultState<VisionCaptureViewData>>(
+              builder: (context, state) => CaptureReview(
+                review: (state as Data<VisionCaptureViewData>).data,
+                getAnimalOptions: GetVisionAnimalOptions(_AnimalRepository()),
+                calibration: false,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Caravana RFID: AR-1'));
+    await tester.tap(find.text('Caravana RFID: AR-1'));
+    await tester.ensureVisible(find.text(VisionWeighingStrings.saveEstimate));
+    await tester.tap(find.text(VisionWeighingStrings.saveEstimate));
+    await tester.pump();
+    expect(find.text(VisionWeighingStrings.saving), findsOneWidget);
+    expect(tester.widget<AppFilledButton>(find.byType(AppFilledButton)).isLoading, isTrue);
+    expect(tester.widget<AppOutlinedButton>(find.byType(AppOutlinedButton).last).onPressed, isNull);
+
+    repository.pending!.complete();
+    await tester.pumpAndSettle();
+    expect(find.text(VisionWeighingStrings.saveError), findsOneWidget);
+    expect(find.text('Caravana RFID: AR-1'), findsOneWidget);
+    expect(find.text(VisionWeighingStrings.saved), findsNothing);
+    repository.fail = false;
+    await tester.ensureVisible(find.text(VisionWeighingStrings.saveEstimate));
+    await tester.tap(find.text(VisionWeighingStrings.saveEstimate));
+    await tester.pumpAndSettle();
+    expect(find.text(VisionWeighingStrings.saveError), findsNothing);
+    expect(find.text(VisionWeighingStrings.saved), findsOneWidget);
+    expect(repository.savedAnimalId, 'animal-1');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('muestra el rango con énfasis y permite revisar la captura', (tester) async {
     final photo = Uint8List.fromList(img.encodeJpg(img.Image(width: 640, height: 360)));
     final repository = _WeightRepository();

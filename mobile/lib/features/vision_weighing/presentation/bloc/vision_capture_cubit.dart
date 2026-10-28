@@ -20,7 +20,10 @@ class VisionCaptureCubit extends Cubit<ResultState<VisionCaptureViewData>> {
   final ConfirmVisionCapture _confirm;
   final SaveVisionWeight _save;
 
-  bool _saving = false;
+  bool get _saving => switch (state) {
+    Data<VisionCaptureViewData>(:final data) => data.saving,
+    _ => false,
+  };
   // Invalida resultados tardíos al reintentar o abandonar la página.
   int _generation = 0;
 
@@ -69,6 +72,7 @@ class VisionCaptureCubit extends Cubit<ResultState<VisionCaptureViewData>> {
     required bool lateralConfirmed,
     double? calibrationWeightKg,
   }) {
+    if (isClosed || _saving) return;
     if (state case Data<VisionCaptureViewData>(:final data)) {
       try {
         final reviewed = _confirm(
@@ -93,20 +97,33 @@ class VisionCaptureCubit extends Cubit<ResultState<VisionCaptureViewData>> {
       final reviewed = data.reviewedCapture;
       if (reviewed == null || data.saved) return;
       final generation = _generation;
-      _saving = true;
+      emit(ResultState.data(data.copyWith(saveResult: const ResultState.loading())));
       try {
         await _save(animalId: animalId, reviewedCapture: reviewed);
         if (!isClosed && generation == _generation && state is Data<VisionCaptureViewData>) {
-          emit(ResultState.data(data.copyWith(saved: true)));
+          emit(ResultState.data(data.copyWith(saveResult: const ResultState.data(null))));
         }
       } on Exception catch (error, stack) {
         developer.log('No se pudo guardar el pesaje IA', name: 'vision_weighing', error: error, stackTrace: stack);
         if (!isClosed && generation == _generation) {
-          emit(ResultState.data(data));
-          throw VisionDeviceException(cause: error);
+          emit(
+            ResultState.data(
+              data.copyWith(
+                saveResult: ResultState.error(
+                  DomainException(
+                    message: error is VisionWeighingAccessDeniedException
+                        ? VisionWeighingStrings.weighingAccessDenied
+                        : VisionWeighingStrings.saveError,
+                    code: error is VisionWeighingAccessDeniedException
+                        ? DomainErrorCode.unauthorized
+                        : DomainErrorCode.unknown,
+                    reason: error,
+                  ),
+                ),
+              ),
+            ),
+          );
         }
-      } finally {
-        _saving = false;
       }
     }
   }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_capture.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_weight_estimate.dart';
@@ -39,12 +40,14 @@ class _Estimator implements VisionWeightEstimatorRepository {
 class _WeightRepository implements VisionWeightRepository {
   Completer<void>? pending;
   bool fail = false;
+  bool denyAccess = false;
   int saves = 0;
 
   @override
   Future<void> saveEstimate({required String animalId, required double weightKg, required Uint8List jpegBytes}) async {
     saves++;
     await pending?.future;
+    if (denyAccess) throw const VisionWeighingAccessDeniedException();
     if (fail) throw const VisionDeviceException();
   }
 }
@@ -177,7 +180,8 @@ void main() {
     );
     final reviewed = (cubit.state as Data<VisionCaptureViewData>).data.reviewedCapture;
     expect(reviewed?.calibrationWeightKg, 410);
-    await expectLater(cubit.save('animal-1'), throwsA(isA<VisionDeviceException>()));
+    await cubit.save('animal-1');
+    expect((cubit.state as Data<VisionCaptureViewData>).data.saveResult, isA<ResultError<void>>());
     expect(weights.saves, 0);
   });
 
@@ -198,6 +202,7 @@ void main() {
     expect(repository.calls, 1);
     expect(weights.saves, 1);
     expect(cubit.state, isA<Data<VisionCaptureViewData>>());
+    expect((cubit.state as Data<VisionCaptureViewData>).data.saving, isTrue);
     await cubit.close();
     weights.pending!.complete();
     await saving;
@@ -215,11 +220,42 @@ void main() {
     addTearDown(cubit.close);
     await cubit.process(bytes);
     cubit.confirm(sharpnessConfirmed: true, completeAnimalConfirmed: true, lateralConfirmed: true);
-    await expectLater(cubit.save('animal-1'), throwsA(isA<VisionDeviceException>()));
+    final results = <ResultState<void>>[];
+    final subscription = cubit.stream.listen((state) {
+      if (state case Data<VisionCaptureViewData>(:final data)) results.add(data.saveResult);
+    });
+    addTearDown(subscription.cancel);
+    final reviewed = (cubit.state as Data<VisionCaptureViewData>).data.reviewedCapture;
+    await cubit.save('animal-1');
     expect((cubit.state as Data<VisionCaptureViewData>).data.saved, isFalse);
+    expect((cubit.state as Data<VisionCaptureViewData>).data.saveResult, isA<ResultError<void>>());
+    expect((cubit.state as Data<VisionCaptureViewData>).data.reviewedCapture, same(reviewed));
     weights.fail = false;
     await cubit.save('animal-1');
     expect((cubit.state as Data<VisionCaptureViewData>).data.saved, isTrue);
     expect(weights.saves, 2);
+    await Future<void>.delayed(Duration.zero);
+    expect(results, [isA<Loading<void>>(), isA<ResultError<void>>(), isA<Loading<void>>(), isA<Data<void>>()]);
+  });
+
+  test('el error de permiso se comunica en el estado de guardado', () async {
+    final repository = _Repository()..result.complete(capture(CaptureQuality.reviewRequired));
+    final weights = _WeightRepository()..denyAccess = true;
+    final cubit = VisionCaptureCubit(
+      ProcessVisionCapture(PrepareVisionCapture(repository), EstimateVisionWeight(_Estimator())),
+      const ConfirmVisionCapture(),
+      SaveVisionWeight(weights),
+    );
+    addTearDown(cubit.close);
+    await cubit.process(bytes);
+    cubit.confirm(sharpnessConfirmed: true, completeAnimalConfirmed: true, lateralConfirmed: true);
+
+    await cubit.save('animal-1');
+
+    final data = (cubit.state as Data<VisionCaptureViewData>).data;
+    expect(data.saving, isFalse);
+    expect(data.saved, isFalse);
+    expect((data.saveResult as ResultError<void>).error.code, DomainErrorCode.unauthorized);
+    expect((data.saveResult as ResultError<void>).error.reason, isA<VisionWeighingAccessDeniedException>());
   });
 }

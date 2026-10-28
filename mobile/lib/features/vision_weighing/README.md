@@ -29,6 +29,9 @@ para capturar, revisar, calibrar o inferir.
    offline. Se resuelve el establecimiento a partir del UUID del animal.
    Si hay varios establecimientos, se exige elegir uno antes de buscar/listar
    animales o abrir RFID. Cambiarlo limpia el animal seleccionado anteriormente.
+   Solo se ofrecen membresías con un rol operativo conocido. El guardado vuelve
+   a leer el catálogo local y deniega la operación si la membresía fue retirada
+   o su rol es desconocido, antes de escribir la foto o el pesaje.
 6. Al guardar, el JPEG se copia mediante `AnimalPhotoStore`, ya presente en
    `develop`: una foto privada por establecimiento/animal, visible en su ficha.
    Después se guarda el pesaje en SQLite con UUID cliente, método
@@ -42,6 +45,14 @@ duplicadas durante el guardado. La página conserva la misma sesión de cámara
 ante reconstrucciones del router. Al salir o pasar a background se cierran
 cámara y suscripciones. El stream de orientación se pausa una sola vez aunque
 el sistema emita `inactive → hidden → paused`.
+
+El guardado tiene un `ResultState<void>` propio dentro del estado de revisión.
+La pantalla renderiza progreso, éxito y error desde ese estado; un fallo conserva
+la captura y la selección para reintentar sin excepciones entre Cubit y widget.
+`DeviceVisionCameraRepository` conserva el único controlador nativo y notifica
+su disponibilidad a `VisionCameraPreviewAdapter`, que construye el preview en
+presentación. El adaptador retira su referencia antes de cerrar el controlador
+y no se encarga de abrirlo ni liberarlo.
 
 ## Contrato de inferencia local
 

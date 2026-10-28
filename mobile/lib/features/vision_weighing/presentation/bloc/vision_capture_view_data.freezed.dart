@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$VisionCaptureViewData {
 
- VisionCapture get capture; int get inferenceMilliseconds; ReviewedVisionCapture? get reviewedCapture; bool get saved;
+ VisionCapture get capture; int get inferenceMilliseconds; ReviewedVisionCapture? get reviewedCapture; ResultState<void> get saveResult;
 /// Create a copy of VisionCaptureViewData
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $VisionCaptureViewDataCopyWith<VisionCaptureViewData> get copyWith => _$VisionCa
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is VisionCaptureViewData&&(identical(other.capture, capture) || other.capture == capture)&&(identical(other.inferenceMilliseconds, inferenceMilliseconds) || other.inferenceMilliseconds == inferenceMilliseconds)&&(identical(other.reviewedCapture, reviewedCapture) || other.reviewedCapture == reviewedCapture)&&(identical(other.saved, saved) || other.saved == saved));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is VisionCaptureViewData&&(identical(other.capture, capture) || other.capture == capture)&&(identical(other.inferenceMilliseconds, inferenceMilliseconds) || other.inferenceMilliseconds == inferenceMilliseconds)&&(identical(other.reviewedCapture, reviewedCapture) || other.reviewedCapture == reviewedCapture)&&(identical(other.saveResult, saveResult) || other.saveResult == saveResult));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,capture,inferenceMilliseconds,reviewedCapture,saved);
+int get hashCode => Object.hash(runtimeType,capture,inferenceMilliseconds,reviewedCapture,saveResult);
 
 @override
 String toString() {
-  return 'VisionCaptureViewData(capture: $capture, inferenceMilliseconds: $inferenceMilliseconds, reviewedCapture: $reviewedCapture, saved: $saved)';
+  return 'VisionCaptureViewData(capture: $capture, inferenceMilliseconds: $inferenceMilliseconds, reviewedCapture: $reviewedCapture, saveResult: $saveResult)';
 }
 
 
@@ -45,11 +45,11 @@ abstract mixin class $VisionCaptureViewDataCopyWith<$Res>  {
   factory $VisionCaptureViewDataCopyWith(VisionCaptureViewData value, $Res Function(VisionCaptureViewData) _then) = _$VisionCaptureViewDataCopyWithImpl;
 @useResult
 $Res call({
- VisionCapture capture, int inferenceMilliseconds, ReviewedVisionCapture? reviewedCapture, bool saved
+ VisionCapture capture, int inferenceMilliseconds, ReviewedVisionCapture? reviewedCapture, ResultState<void> saveResult
 });
 
 
-$VisionCaptureCopyWith<$Res> get capture;$ReviewedVisionCaptureCopyWith<$Res>? get reviewedCapture;
+$VisionCaptureCopyWith<$Res> get capture;$ReviewedVisionCaptureCopyWith<$Res>? get reviewedCapture;$ResultStateCopyWith<void, $Res> get saveResult;
 
 }
 /// @nodoc
@@ -62,13 +62,13 @@ class _$VisionCaptureViewDataCopyWithImpl<$Res>
 
 /// Create a copy of VisionCaptureViewData
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? capture = null,Object? inferenceMilliseconds = null,Object? reviewedCapture = freezed,Object? saved = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? capture = null,Object? inferenceMilliseconds = null,Object? reviewedCapture = freezed,Object? saveResult = null,}) {
   return _then(_self.copyWith(
 capture: null == capture ? _self.capture : capture // ignore: cast_nullable_to_non_nullable
 as VisionCapture,inferenceMilliseconds: null == inferenceMilliseconds ? _self.inferenceMilliseconds : inferenceMilliseconds // ignore: cast_nullable_to_non_nullable
 as int,reviewedCapture: freezed == reviewedCapture ? _self.reviewedCapture : reviewedCapture // ignore: cast_nullable_to_non_nullable
-as ReviewedVisionCapture?,saved: null == saved ? _self.saved : saved // ignore: cast_nullable_to_non_nullable
-as bool,
+as ReviewedVisionCapture?,saveResult: null == saveResult ? _self.saveResult : saveResult // ignore: cast_nullable_to_non_nullable
+as ResultState<void>,
   ));
 }
 /// Create a copy of VisionCaptureViewData
@@ -91,6 +91,15 @@ $ReviewedVisionCaptureCopyWith<$Res>? get reviewedCapture {
 
   return $ReviewedVisionCaptureCopyWith<$Res>(_self.reviewedCapture!, (value) {
     return _then(_self.copyWith(reviewedCapture: value));
+  });
+}/// Create a copy of VisionCaptureViewData
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<void, $Res> get saveResult {
+  
+  return $ResultStateCopyWith<void, $Res>(_self.saveResult, (value) {
+    return _then(_self.copyWith(saveResult: value));
   });
 }
 }
@@ -171,10 +180,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( VisionCapture capture,  int inferenceMilliseconds,  ReviewedVisionCapture? reviewedCapture,  bool saved)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( VisionCapture capture,  int inferenceMilliseconds,  ReviewedVisionCapture? reviewedCapture,  ResultState<void> saveResult)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _VisionCaptureViewData() when $default != null:
-return $default(_that.capture,_that.inferenceMilliseconds,_that.reviewedCapture,_that.saved);case _:
+return $default(_that.capture,_that.inferenceMilliseconds,_that.reviewedCapture,_that.saveResult);case _:
   return orElse();
 
 }
@@ -192,10 +201,10 @@ return $default(_that.capture,_that.inferenceMilliseconds,_that.reviewedCapture,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( VisionCapture capture,  int inferenceMilliseconds,  ReviewedVisionCapture? reviewedCapture,  bool saved)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( VisionCapture capture,  int inferenceMilliseconds,  ReviewedVisionCapture? reviewedCapture,  ResultState<void> saveResult)  $default,) {final _that = this;
 switch (_that) {
 case _VisionCaptureViewData():
-return $default(_that.capture,_that.inferenceMilliseconds,_that.reviewedCapture,_that.saved);}
+return $default(_that.capture,_that.inferenceMilliseconds,_that.reviewedCapture,_that.saveResult);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -209,10 +218,10 @@ return $default(_that.capture,_that.inferenceMilliseconds,_that.reviewedCapture,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( VisionCapture capture,  int inferenceMilliseconds,  ReviewedVisionCapture? reviewedCapture,  bool saved)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( VisionCapture capture,  int inferenceMilliseconds,  ReviewedVisionCapture? reviewedCapture,  ResultState<void> saveResult)?  $default,) {final _that = this;
 switch (_that) {
 case _VisionCaptureViewData() when $default != null:
-return $default(_that.capture,_that.inferenceMilliseconds,_that.reviewedCapture,_that.saved);case _:
+return $default(_that.capture,_that.inferenceMilliseconds,_that.reviewedCapture,_that.saveResult);case _:
   return null;
 
 }
@@ -224,13 +233,13 @@ return $default(_that.capture,_that.inferenceMilliseconds,_that.reviewedCapture,
 
 
 class _VisionCaptureViewData extends VisionCaptureViewData {
-  const _VisionCaptureViewData({required this.capture, required this.inferenceMilliseconds, this.reviewedCapture, this.saved = false}): super._();
+  const _VisionCaptureViewData({required this.capture, required this.inferenceMilliseconds, this.reviewedCapture, this.saveResult = const ResultState<void>.initial()}): super._();
   
 
 @override final  VisionCapture capture;
 @override final  int inferenceMilliseconds;
 @override final  ReviewedVisionCapture? reviewedCapture;
-@override@JsonKey() final  bool saved;
+@override@JsonKey() final  ResultState<void> saveResult;
 
 /// Create a copy of VisionCaptureViewData
 /// with the given fields replaced by the non-null parameter values.
@@ -242,16 +251,16 @@ _$VisionCaptureViewDataCopyWith<_VisionCaptureViewData> get copyWith => __$Visio
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _VisionCaptureViewData&&(identical(other.capture, capture) || other.capture == capture)&&(identical(other.inferenceMilliseconds, inferenceMilliseconds) || other.inferenceMilliseconds == inferenceMilliseconds)&&(identical(other.reviewedCapture, reviewedCapture) || other.reviewedCapture == reviewedCapture)&&(identical(other.saved, saved) || other.saved == saved));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _VisionCaptureViewData&&(identical(other.capture, capture) || other.capture == capture)&&(identical(other.inferenceMilliseconds, inferenceMilliseconds) || other.inferenceMilliseconds == inferenceMilliseconds)&&(identical(other.reviewedCapture, reviewedCapture) || other.reviewedCapture == reviewedCapture)&&(identical(other.saveResult, saveResult) || other.saveResult == saveResult));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,capture,inferenceMilliseconds,reviewedCapture,saved);
+int get hashCode => Object.hash(runtimeType,capture,inferenceMilliseconds,reviewedCapture,saveResult);
 
 @override
 String toString() {
-  return 'VisionCaptureViewData(capture: $capture, inferenceMilliseconds: $inferenceMilliseconds, reviewedCapture: $reviewedCapture, saved: $saved)';
+  return 'VisionCaptureViewData(capture: $capture, inferenceMilliseconds: $inferenceMilliseconds, reviewedCapture: $reviewedCapture, saveResult: $saveResult)';
 }
 
 
@@ -262,11 +271,11 @@ abstract mixin class _$VisionCaptureViewDataCopyWith<$Res> implements $VisionCap
   factory _$VisionCaptureViewDataCopyWith(_VisionCaptureViewData value, $Res Function(_VisionCaptureViewData) _then) = __$VisionCaptureViewDataCopyWithImpl;
 @override @useResult
 $Res call({
- VisionCapture capture, int inferenceMilliseconds, ReviewedVisionCapture? reviewedCapture, bool saved
+ VisionCapture capture, int inferenceMilliseconds, ReviewedVisionCapture? reviewedCapture, ResultState<void> saveResult
 });
 
 
-@override $VisionCaptureCopyWith<$Res> get capture;@override $ReviewedVisionCaptureCopyWith<$Res>? get reviewedCapture;
+@override $VisionCaptureCopyWith<$Res> get capture;@override $ReviewedVisionCaptureCopyWith<$Res>? get reviewedCapture;@override $ResultStateCopyWith<void, $Res> get saveResult;
 
 }
 /// @nodoc
@@ -279,13 +288,13 @@ class __$VisionCaptureViewDataCopyWithImpl<$Res>
 
 /// Create a copy of VisionCaptureViewData
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? capture = null,Object? inferenceMilliseconds = null,Object? reviewedCapture = freezed,Object? saved = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? capture = null,Object? inferenceMilliseconds = null,Object? reviewedCapture = freezed,Object? saveResult = null,}) {
   return _then(_VisionCaptureViewData(
 capture: null == capture ? _self.capture : capture // ignore: cast_nullable_to_non_nullable
 as VisionCapture,inferenceMilliseconds: null == inferenceMilliseconds ? _self.inferenceMilliseconds : inferenceMilliseconds // ignore: cast_nullable_to_non_nullable
 as int,reviewedCapture: freezed == reviewedCapture ? _self.reviewedCapture : reviewedCapture // ignore: cast_nullable_to_non_nullable
-as ReviewedVisionCapture?,saved: null == saved ? _self.saved : saved // ignore: cast_nullable_to_non_nullable
-as bool,
+as ReviewedVisionCapture?,saveResult: null == saveResult ? _self.saveResult : saveResult // ignore: cast_nullable_to_non_nullable
+as ResultState<void>,
   ));
 }
 
@@ -309,6 +318,15 @@ $ReviewedVisionCaptureCopyWith<$Res>? get reviewedCapture {
 
   return $ReviewedVisionCaptureCopyWith<$Res>(_self.reviewedCapture!, (value) {
     return _then(_self.copyWith(reviewedCapture: value));
+  });
+}/// Create a copy of VisionCaptureViewData
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$ResultStateCopyWith<void, $Res> get saveResult {
+  
+  return $ResultStateCopyWith<void, $Res>(_self.saveResult, (value) {
+    return _then(_self.copyWith(saveResult: value));
   });
 }
 }

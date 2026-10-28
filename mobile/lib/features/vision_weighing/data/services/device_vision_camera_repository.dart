@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:camera/camera.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_camera_info.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_device_orientation.dart';
@@ -15,11 +14,14 @@ class DeviceVisionCameraRepository implements VisionCameraRepository {
   DeviceVisionCameraRepository({
     Future<List<CameraDescription>> Function()? getCameras,
     CameraController Function(CameraDescription)? createController,
+    void Function(CameraController?)? onControllerChanged,
   }) : _getCameras = getCameras ?? availableCameras,
-       _createController = createController ?? _newController;
+       _createController = createController ?? _newController,
+       _onControllerChanged = onControllerChanged;
 
   final Future<List<CameraDescription>> Function() _getCameras;
   final CameraController Function(CameraDescription) _createController;
+  final void Function(CameraController?)? _onControllerChanged;
   CameraController? _controller;
 
   static CameraController _newController(CameraDescription description) =>
@@ -32,12 +34,6 @@ class DeviceVisionCameraRepository implements VisionCameraRepository {
     samplingPeriod: SensorInterval.uiInterval,
   ).map(_orientationFor).where((orientation) => orientation != null).cast<VisionDeviceOrientation>().distinct();
 
-  /// Construye exclusivamente la superficie nativa que requiere el plugin.
-  Widget buildPreview(BuildContext context) {
-    final controller = _controller;
-    return controller == null || !controller.value.isInitialized ? const SizedBox.shrink() : CameraPreview(controller);
-  }
-
   @override
   Future<VisionCameraInfo> initialize() => _enqueue(() async {
     await _closeController();
@@ -48,6 +44,7 @@ class DeviceVisionCameraRepository implements VisionCameraRepository {
     try {
       await controller.initialize();
       _controller = controller;
+      _onControllerChanged?.call(controller);
       return VisionCameraInfo(aspectRatio: controller.value.aspectRatio);
     } on CameraException catch (error) {
       await controller.dispose();
@@ -100,6 +97,7 @@ class DeviceVisionCameraRepository implements VisionCameraRepository {
     // Retirar la referencia evita construir previews de un controller descartado.
     final previousController = _controller;
     _controller = null;
+    _onControllerChanged?.call(null);
     await previousController?.dispose();
   }
 

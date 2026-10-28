@@ -4,7 +4,6 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend_mayoral/core/navigation/camera_reveal_page.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_device_orientation.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/get_vision_animal_options.dart';
@@ -12,6 +11,7 @@ import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/pick_
 import 'package:frontend_mayoral/features/vision_weighing/presentation/bloc/vision_capture_cubit.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/bloc/vision_capture_view_data.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/models/vision_camera_dependencies.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/camera_reveal_page.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/strings/vision_weighing_strings.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/widgets/vision_weighing_content.dart';
 

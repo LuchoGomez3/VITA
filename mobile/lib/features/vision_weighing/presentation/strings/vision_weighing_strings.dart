@@ -111,6 +111,12 @@ abstract final class VisionWeighingStrings {
   /// Informa fallos de búsqueda o escritura del pesaje local.
   static const saveError = 'No se pudo guardar el pesaje. Intentá nuevamente.';
 
+  /// Progreso de persistencia local del pesaje revisado.
+  static const saving = 'Guardando pesaje...';
+
+  /// La membresía local falta o tiene un rol no reconocido.
+  static const weighingAccessDenied = 'No tenés permisos para registrar pesajes en este establecimiento.';
+
   /// Estado de una captura revisada cuando el guardado no está configurado.
   static const captureReviewed = 'Captura revisada en esta sesión.';
 

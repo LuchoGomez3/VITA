@@ -7,6 +7,9 @@ import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
+import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/storage/animal_photo_store.dart';
 import 'package:frontend_mayoral/core/widgets/app_image_preview.dart';
 import 'package:frontend_mayoral/features/vision_weighing/data/repositories/brick_vision_weight_repository.dart';
@@ -61,6 +64,12 @@ class _Animals extends Fake implements AnimalBrickStore {
 class _Weights extends Fake implements PesajeBrickStore {
   @override
   Future<BrickPesajeModel> upsertPesaje(BrickPesajeModel pesaje) async => pesaje;
+}
+
+class _Catalog extends Fake implements EstablishmentCatalog {
+  @override
+  Future<EstablishmentMembership?> getById(String establishmentId) async =>
+      const EstablishmentMembership(id: 'farm', name: 'Campo', role: UserRole.employee);
 }
 
 // Cuadrantes distintos permiten detectar giros que una imagen simétrica oculta.
@@ -133,7 +142,9 @@ void main() {
       await tester.tap(find.byTooltip(VisionWeighingStrings.closeExpandedPhoto));
       await tester.pumpAndSettle();
 
-      final save = SaveVisionWeight(BrickVisionWeightRepository(_Animals(), _Weights(), photoStore: photos));
+      final save = SaveVisionWeight(
+        BrickVisionWeightRepository(_Animals(), _Weights(), _Catalog(), photoStore: photos),
+      );
       final reviewed = const ConfirmVisionCapture()(
         capture: capture,
         sharpnessConfirmed: true,

@@ -42,6 +42,12 @@ final class VisionAnimalNotFoundException extends VisionWeighingException {
   const VisionAnimalNotFoundException();
 }
 
+/// La membresía local no permite registrar pesajes en el establecimiento.
+final class VisionWeighingAccessDeniedException extends VisionWeighingException {
+  /// Deniega la escritura antes de guardar la foto o el pesaje.
+  const VisionWeighingAccessDeniedException();
+}
+
 /// Falló una integración local de cámara, galería, codecs o modelo.
 final class VisionDeviceException extends VisionWeighingException {
   /// Envuelve el error técnico conservando una excepción tipada hacia arriba.

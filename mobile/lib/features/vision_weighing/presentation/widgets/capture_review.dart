@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_animal.dart';
@@ -43,7 +46,6 @@ class _CaptureReviewState extends State<CaptureReview> {
   bool _sharpnessConfirmed = false;
   bool _completeAnimalConfirmed = false;
   bool _lateralConfirmed = false;
-  bool _saving = false;
 
   @override
   void dispose() {
@@ -61,8 +63,8 @@ class _CaptureReviewState extends State<CaptureReview> {
     );
   }
 
-  Future<void> _saveWeight() async {
-    if (_saving) return;
+  void _saveWeight() {
+    if (widget.review.saving) return;
     final selectedAnimal = _selectedAnimal;
     if (selectedAnimal == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -70,18 +72,7 @@ class _CaptureReviewState extends State<CaptureReview> {
       );
       return;
     }
-    setState(() => _saving = true);
-    try {
-      await context.read<VisionCaptureCubit>().save(selectedAnimal.id);
-    } on Exception {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(VisionWeighingStrings.saveError)),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+    unawaited(context.read<VisionCaptureCubit>().save(selectedAnimal.id));
   }
 
   @override
@@ -152,7 +143,7 @@ class _CaptureReviewState extends State<CaptureReview> {
               )
             else if (capture.estimatedWeightKg != null)
               AbsorbPointer(
-                absorbing: _saving || widget.review.saved,
+                absorbing: widget.review.saving || widget.review.saved,
                 child: VisionAnimalSelector(
                   getAnimalOptions: widget.getAnimalOptions,
                   selectedAnimal: _selectedAnimal,
@@ -160,13 +151,19 @@ class _CaptureReviewState extends State<CaptureReview> {
                 ),
               ),
             const SizedBox(height: AppSpacing.md),
+            if (widget.review.saveResult case ResultError<void>(:final error)) ...[
+              Text(error.message, style: AppTypography.formFieldError),
+              const SizedBox(height: AppSpacing.sm),
+            ],
             if (widget.review.saved)
               const Text(VisionWeighingStrings.saved, style: AppTypography.formFieldSuccess)
             else if (confirmed && capture.estimatedWeightKg == null)
               const Text(VisionWeighingStrings.draftReady, style: AppTypography.formFieldHelper)
             else
               AppFilledButton(
-                onPressed: _saving
+                isLoading: widget.review.saving,
+                loadingLabel: VisionWeighingStrings.saving,
+                onPressed: widget.review.saving
                     ? null
                     : confirmed
                     ? _saveWeight
@@ -175,7 +172,7 @@ class _CaptureReviewState extends State<CaptureReview> {
               ),
             const SizedBox(height: AppSpacing.xs),
             AppOutlinedButton(
-              onPressed: _saving ? null : context.read<VisionCaptureCubit>().retry,
+              onPressed: widget.review.saving ? null : context.read<VisionCaptureCubit>().retry,
               label: VisionWeighingStrings.retry,
             ),
           ],
