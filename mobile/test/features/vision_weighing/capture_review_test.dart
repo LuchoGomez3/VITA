@@ -8,7 +8,6 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_animal.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_capture.dart';
-import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_device_orientation.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_weight_estimate.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/repositories/vision_animal_repository.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/repositories/vision_capture_repository.dart';
@@ -91,7 +90,6 @@ void main() {
                 review: (state as Data<VisionCaptureViewData>).data,
                 getAnimalOptions: GetVisionAnimalOptions(_AnimalRepository()),
                 calibration: false,
-                captureOrientation: VisionDeviceOrientation.portraitUp,
               ),
             ),
           ),
@@ -140,7 +138,6 @@ void main() {
                 review: (state as Data<VisionCaptureViewData>).data,
                 getAnimalOptions: GetVisionAnimalOptions(_AnimalRepository()),
                 calibration: false,
-                captureOrientation: VisionDeviceOrientation.portraitUp,
               ),
             ),
           ),
@@ -221,7 +218,6 @@ void main() {
             review: VisionCaptureViewData(capture: capture, inferenceMilliseconds: elapsed),
             getAnimalOptions: GetVisionAnimalOptions(_AnimalRepository()),
             calibration: false,
-            captureOrientation: VisionDeviceOrientation.portraitUp,
           ),
         ),
       ),
@@ -249,7 +245,6 @@ void main() {
                 review: (state as Data<VisionCaptureViewData>).data,
                 getAnimalOptions: GetVisionAnimalOptions(_AnimalRepository()),
                 calibration: true,
-                captureOrientation: VisionDeviceOrientation.landscapeRight,
               ),
             ),
           ),
@@ -259,7 +254,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       find.byWidgetPredicate(
-        (widget) => widget is RotatedBox && widget.quarterTurns == 3,
+        (widget) => widget is RotatedBox && widget.quarterTurns == 0,
       ),
       findsOneWidget,
     );

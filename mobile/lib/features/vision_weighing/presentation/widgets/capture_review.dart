@@ -4,7 +4,6 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_animal.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_capture.dart';
-import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_device_orientation.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/get_vision_animal_options.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/parse_calibration_weight.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/bloc/vision_capture_cubit.dart';
@@ -21,7 +20,6 @@ class CaptureReview extends StatefulWidget {
     required this.review,
     required this.getAnimalOptions,
     required this.calibration,
-    required this.captureOrientation,
     super.key,
   });
 
@@ -33,9 +31,6 @@ class CaptureReview extends StatefulWidget {
 
   /// Solicita kilos de balanza si se activó la calibración antes de capturar.
   final bool calibration;
-
-  /// Sentido en que se sostuvo el teléfono al realizar la captura.
-  final VisionDeviceOrientation captureOrientation;
 
   @override
   State<CaptureReview> createState() => _CaptureReviewState();
@@ -103,7 +98,6 @@ class _CaptureReviewState extends State<CaptureReview> {
           children: [
             CapturePhotoPreview(
               capture: capture,
-              orientation: widget.captureOrientation,
             ),
             if (qualityWarning != null) ...[
               const SizedBox(height: AppSpacing.sm),

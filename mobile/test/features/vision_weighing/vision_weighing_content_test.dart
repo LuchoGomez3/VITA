@@ -32,7 +32,6 @@ void main() {
           phoneOrientation: VisionDeviceOrientation.landscapeRight,
           orientationWarningHighlighted: false,
           onPortraitCaptureAttempt: () {},
-          captureOrientation: VisionDeviceOrientation.landscapeRight,
           onCaptured: (bytes, timer) async {},
           onCameraInitializationCompleted: () {},
           onDeviceOrientationChanged: (orientation) {},
@@ -66,7 +65,7 @@ class _CameraRepository implements VisionCameraRepository {
   Stream<VisionDeviceOrientation> get orientationChanges => const Stream.empty();
 
   @override
-  Future<Uint8List> capturePhoto() async => Uint8List(0);
+  Future<Uint8List> capturePhoto({required VisionDeviceOrientation orientation}) async => Uint8List(0);
 
   @override
   Future<void> dispose() async {}

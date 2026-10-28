@@ -26,7 +26,6 @@ class VisionWeighingContent extends StatelessWidget {
     required this.phoneOrientation,
     required this.orientationWarningHighlighted,
     required this.onPortraitCaptureAttempt,
-    required this.captureOrientation,
     required this.onCaptured,
     required this.onCameraInitializationCompleted,
     required this.onDeviceOrientationChanged,
@@ -62,9 +61,6 @@ class VisionWeighingContent extends StatelessWidget {
   /// Comunica una toma bloqueada por sostener el teléfono en vertical.
   final VoidCallback onPortraitCaptureAttempt;
 
-  /// Orientación guardada en el instante en que se tomó la fotografía.
-  final VisionDeviceOrientation captureOrientation;
-
   /// Entrega los bytes capturados a la página para iniciar el análisis.
   final Future<void> Function(Uint8List, Stopwatch) onCaptured;
 
@@ -91,7 +87,6 @@ class VisionWeighingContent extends StatelessWidget {
             review: data,
             getAnimalOptions: getAnimalOptions,
             calibration: calibration,
-            captureOrientation: captureOrientation,
           ),
         ),
       );

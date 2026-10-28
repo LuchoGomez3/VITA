@@ -131,6 +131,24 @@ SDK: FVM Flutter 3.44.0 / Dart 3.12.0.
 
 ## Revisión humana y límites
 
+### Correcciones del informe QA sobre b1709d2
+
+- **QA-1:** la orientación física viaja desde el disparo por el caso de uso al
+  repositorio. Se fija con `lockCaptureOrientation` antes de `takePicture` y se
+  libera en `finally`. El análisis normaliza EXIF; revisión/ampliación/modelo y
+  almacenamiento privado consumen ese mismo JPEG sin una segunda rotación.
+  Tests cubren ambos landscape, fallo/reintento, cambio de sensor durante una
+  captura pendiente y JPEG asimétrico con EXIF 1/6/8/3 hasta foto privada.
+- **QA-2:** con varios establecimientos se exige seleccionar uno antes de
+  buscar/listar animales o abrir RFID. Un test con caravanas idénticas en dos
+  establecimientos verifica selección inequívoca y limpieza al cambiar de campo.
+
+Estas correcciones no modifican modelos ni generado Brick, ni el paquete ML.
+Los hallazgos del informe de arquitectura continúan fuera de esta corrección QA.
+Validación del 2026-10-28: formatter aplicado, 105 tests de regresión aprobados,
+analyzer sin hallazgos en la feature y sus tests; analyzer global conserva los
+247 avisos preexistentes. No sustituye validar la captura nativa en un teléfono.
+
 No se ejecutó cámara física ni compilación nativa Android/iOS en este entorno.
 Validar permisos y Ajustes, background/resume, JPEG/EXIF, rotación, captura,
 galería y guardado en modo avión. El código de permisos requiere revisión humana

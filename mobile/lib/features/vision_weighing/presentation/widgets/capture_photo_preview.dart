@@ -3,34 +3,28 @@ import 'package:flutter/services.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_capture.dart';
-import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_device_orientation.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/strings/vision_weighing_strings.dart';
 
 /// Presenta la captura y su resultado como una unidad visual reutilizable.
 class CapturePhotoPreview extends StatelessWidget {
-  /// Crea la vista previa con la orientación física usada durante la toma.
-  const CapturePhotoPreview({required this.capture, required this.orientation, super.key});
+  /// Muestra el mismo JPEG normalizado que se infiere y se guarda.
+  const CapturePhotoPreview({required this.capture, super.key});
 
   /// Captura procesada que aporta la fotografía y el peso estimado.
   final VisionCapture capture;
 
-  /// Orientación guardada al disparar la cámara.
-  final VisionDeviceOrientation orientation;
-
-  Future<void> _showExpandedPhoto(BuildContext context, int quarterTurns) async {
+  Future<void> _showExpandedPhoto(BuildContext context) async {
     await showDialog<void>(
       context: context,
       useSafeArea: false,
       builder: (_) => _ExpandedPhotoDialog(
         bytes: capture.jpegBytes,
-        quarterTurns: quarterTurns,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final quarterTurns = _quarterTurnsFor(orientation);
     return LayoutBuilder(
       builder: (context, constraints) {
         final previewHeight = (constraints.maxWidth * 9 / 16).clamp(0, 240).toDouble();
@@ -49,11 +43,10 @@ class CapturePhotoPreview extends StatelessWidget {
                 child: AppImagePreview(
                   bytes: capture.jpegBytes,
                   height: previewHeight,
-                  quarterTurns: quarterTurns,
                   fillHeight: true,
                   zoomEnabled: false,
                   borderRadius: BorderRadius.circular(AppRadius.md),
-                  onTap: () => _showExpandedPhoto(context, quarterTurns),
+                  onTap: () => _showExpandedPhoto(context),
                 ),
               ),
             ),
@@ -71,10 +64,9 @@ class CapturePhotoPreview extends StatelessWidget {
 }
 
 class _ExpandedPhotoDialog extends StatelessWidget {
-  const _ExpandedPhotoDialog({required this.bytes, required this.quarterTurns});
+  const _ExpandedPhotoDialog({required this.bytes});
 
   final Uint8List bytes;
-  final int quarterTurns;
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +80,6 @@ class _ExpandedPhotoDialog extends StatelessWidget {
               builder: (context, constraints) => AppImagePreview(
                 bytes: bytes,
                 height: constraints.maxHeight,
-                quarterTurns: quarterTurns,
               ),
             ),
             Align(
@@ -153,10 +144,3 @@ class _PredictionInterval extends StatelessWidget {
     );
   }
 }
-
-int _quarterTurnsFor(VisionDeviceOrientation orientation) => switch (orientation) {
-  VisionDeviceOrientation.portraitUp => 0,
-  VisionDeviceOrientation.landscapeRight => 3,
-  VisionDeviceOrientation.portraitDown => 2,
-  VisionDeviceOrientation.landscapeLeft => 1,
-};

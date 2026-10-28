@@ -107,7 +107,7 @@ class _VisionAnimalSelectorViewState extends State<_VisionAnimalSelectorView> {
             widget.selectedAnimal?.establishmentId ??
             (establishments.length == 1 ? establishments.first.id : null);
         final visibleAnimals = options.animals
-            .where((animal) => activeId == null || animal.establishmentId == activeId)
+            .where((animal) => animal.establishmentId == activeId)
             .where((animal) => animal.rfidTagNumber.contains(_query) || animal.visualTag.contains(_query))
             .take(5)
             .toList();
@@ -122,6 +122,7 @@ class _VisionAnimalSelectorViewState extends State<_VisionAnimalSelectorView> {
             const Text(VisionWeighingStrings.animalSectionHelp, style: AppTypography.formFieldHelper),
             const SizedBox(height: AppSpacing.md),
             AppTextFormField(
+              enabled: activeId != null,
               title: VisionWeighingStrings.searchAnimal,
               hintText: VisionWeighingStrings.searchAnimal,
               onChanged: (value) => setState(() => _query = value.trim()),
@@ -148,7 +149,14 @@ class _VisionAnimalSelectorViewState extends State<_VisionAnimalSelectorView> {
               ),
               const SizedBox(height: AppSpacing.sm),
             ],
-            if (visibleAnimals.isEmpty)
+            if (activeId == null)
+              Text(
+                establishments.isEmpty
+                    ? VisionWeighingStrings.noEstablishments
+                    : VisionWeighingStrings.selectEstablishment,
+                style: AppTypography.formFieldHelper,
+              )
+            else if (visibleAnimals.isEmpty)
               const Text(VisionWeighingStrings.noRecentAnimals, style: AppTypography.formFieldHelper)
             else ...[
               const Text(VisionWeighingStrings.recentAnimals, style: AppTypography.secondaryEmphasis),
@@ -170,8 +178,6 @@ class _VisionAnimalSelectorViewState extends State<_VisionAnimalSelectorView> {
               icon: const Icon(Icons.nfc),
               onPressed: activeId == null ? null : () => unawaited(_scan(activeId)),
             ),
-            if (establishments.isEmpty)
-              const Text(VisionWeighingStrings.noEstablishments, style: AppTypography.formFieldHelper),
           ],
         );
       },

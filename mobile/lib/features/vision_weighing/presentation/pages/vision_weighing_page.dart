@@ -78,7 +78,6 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
   bool _closing = false;
   bool _allowPop = false;
   double _cameraRevealInitialProgress = 0;
-  VisionDeviceOrientation _captureOrientation = VisionDeviceOrientation.portraitUp;
   late final AnimationController _cameraLoadingController;
   late final AnimationController _cameraOpeningController;
   late final AnimationController _cameraClosingController;
@@ -137,7 +136,6 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
   }
 
   Future<void> _processCapture(Uint8List bytes, Stopwatch captureTimer) {
-    _captureOrientation = _phoneOrientation;
     return context.read<VisionCaptureCubit>().process(bytes, captureTimer: captureTimer);
   }
 
@@ -150,7 +148,6 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
       final bytes = await widget.pickPhoto();
       if (bytes == null) return;
       if (!mounted || _closing) return;
-      _captureOrientation = VisionDeviceOrientation.portraitUp;
       await context.read<VisionCaptureCubit>().process(bytes);
     } on Exception catch (error, stack) {
       developer.log('No se pudo adjuntar la foto', name: 'vision_weighing', error: error, stackTrace: stack);
@@ -232,7 +229,6 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
           phoneOrientation: _phoneOrientation,
           orientationWarningHighlighted: _orientationWarningHighlighted,
           onPortraitCaptureAttempt: _flashOrientationWarning,
-          captureOrientation: _captureOrientation,
           onCaptured: _processCapture,
           onCameraInitializationCompleted: _finishCameraInitialization,
           onDeviceOrientationChanged: _updatePhoneOrientation,

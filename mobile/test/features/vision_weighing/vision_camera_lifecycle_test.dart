@@ -140,6 +140,28 @@ void main() {
     unawaited(orientations.close());
     await tester.pump();
   });
+
+  testWidgets('conserva la orientación del disparo aunque el teléfono gire durante la captura', (tester) async {
+    final orientations = StreamController<VisionDeviceOrientation>();
+    final repository = _PendingCameraRepository()
+      ..orientations = orientations.stream
+      ..capture = Completer<Uint8List>();
+    var captures = 0;
+    await tester.pumpWidget(MaterialApp(home: _camera(repository, onCaptured: (_, _) async => captures++)));
+    repository.openings.single.complete(const VisionCameraInfo(aspectRatio: 16 / 9));
+    orientations.add(VisionDeviceOrientation.landscapeRight);
+    await tester.pump();
+    await tester.tap(find.byTooltip(VisionWeighingStrings.capture));
+    orientations.add(VisionDeviceOrientation.portraitUp);
+    await tester.pump();
+    repository.capture!.complete(Uint8List(3));
+    await tester.pump();
+    expect(repository.requestedOrientation, VisionDeviceOrientation.landscapeRight);
+    expect(captures, 1);
+    await tester.pumpWidget(const SizedBox());
+    unawaited(orientations.close());
+    await tester.pump();
+  });
 }
 
 VisionCamera _camera(
@@ -167,6 +189,7 @@ class _PendingCameraRepository implements VisionCameraRepository {
   int disposals = 0;
   Stream<VisionDeviceOrientation> orientations = const Stream.empty();
   Completer<Uint8List>? capture;
+  VisionDeviceOrientation? requestedOrientation;
 
   @override
   Stream<VisionDeviceOrientation> get orientationChanges => orientations;
@@ -184,5 +207,8 @@ class _PendingCameraRepository implements VisionCameraRepository {
   }
 
   @override
-  Future<Uint8List> capturePhoto() async => capture == null ? Uint8List(0) : await capture!.future;
+  Future<Uint8List> capturePhoto({required VisionDeviceOrientation orientation}) async {
+    requestedOrientation = orientation;
+    return capture == null ? Uint8List(0) : await capture!.future;
+  }
 }

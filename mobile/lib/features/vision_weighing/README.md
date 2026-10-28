@@ -10,9 +10,13 @@ para capturar, revisar, calibrar o inferir.
 1. `VisionCamera` coordina permisos, orientación, disparo y lifecycle mediante
    casos de uso. El repositorio serializa apertura, captura y cierre, libera
    controllers fallidos y retira el preview antes de cerrar el recurso nativo.
+   La orientación física se toma al disparar y se bloquea explícitamente en el
+   plugin durante la captura; el bloqueo se libera incluso si la toma falla.
 2. `PrepareVisionCapture` analiza resolución, exposición y nitidez en un
    isolate. Una resolución menor a 640×360 (en cualquier orientación) rechaza
    la captura; exposición y nitidez generan advertencias para revisión humana.
+   El EXIF se normaliza una sola vez: inferencia, revisión, ampliación y foto
+   privada utilizan el mismo JPEG, sin rotaciones visuales adicionales.
 3. `ProcessVisionCapture` intenta inferencia local. Si falta el modelo o su
    contrato no es compatible, conserva la foto para revisión y explica que
    no es posible guardar un pesaje IA. No inventa resultados ni descarga assets.
@@ -23,6 +27,8 @@ para capturar, revisar, calibrar o inferir.
 5. Con una estimación válida, se elige un animal local por caravana manual,
    lista reciente o lector RFID existente. El catálogo se limita a membresías
    offline. Se resuelve el establecimiento a partir del UUID del animal.
+   Si hay varios establecimientos, se exige elegir uno antes de buscar/listar
+   animales o abrir RFID. Cambiarlo limpia el animal seleccionado anteriormente.
 6. Al guardar, el JPEG se copia mediante `AnimalPhotoStore`, ya presente en
    `develop`: una foto privada por establecimiento/animal, visible en su ficha.
    Después se guarda el pesaje en SQLite con UUID cliente, método

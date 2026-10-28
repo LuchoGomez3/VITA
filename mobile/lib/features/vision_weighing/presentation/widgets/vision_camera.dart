@@ -154,10 +154,11 @@ class _VisionCameraState extends State<VisionCamera> with WidgetsBindingObserver
       return;
     }
     final generation = _generation;
+    final orientation = _captureButtonOrientation;
     final captureTimer = Stopwatch()..start();
     setState(() => _capturing = true);
     try {
-      final bytes = await widget.dependencies.capture();
+      final bytes = await widget.dependencies.capture(orientation);
       if (mounted && generation == _generation) await widget.onCaptured(bytes, captureTimer);
     } on Exception catch (error, stack) {
       developer.log('Falló la captura', name: 'vision_weighing', error: error, stackTrace: stack);

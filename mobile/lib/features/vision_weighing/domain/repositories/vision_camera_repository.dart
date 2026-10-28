@@ -11,8 +11,9 @@ abstract interface class VisionCameraRepository {
   /// Abre la cámara trasera y devuelve los datos necesarios para presentarla.
   Future<VisionCameraInfo> initialize();
 
-  /// Captura y lee la fotografía actual completamente en memoria.
-  Future<Uint8List> capturePhoto();
+  /// Captura con la orientación física del disparo, expresada en el EXIF.
+  /// Los consumidores normalizan esos metadatos antes de procesar los píxeles.
+  Future<Uint8List> capturePhoto({required VisionDeviceOrientation orientation});
 
   /// Libera la cámara cuando la ruta pierde actividad o se cierra.
   Future<void> dispose();

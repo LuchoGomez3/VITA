@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:typed_data';
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_camera_info.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_device_orientation.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/errors/vision_weighing_exception.dart';
@@ -68,17 +67,31 @@ class DeviceVisionCameraRepository implements VisionCameraRepository {
   });
 
   @override
-  Future<Uint8List> capturePhoto() => _enqueue(() async {
+  Future<Uint8List> capturePhoto({required VisionDeviceOrientation orientation}) => _enqueue(() async {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) {
       throw const VisionDeviceException();
     }
     try {
-      return await (await controller.takePicture()).readAsBytes();
+      // CameraX no debe usar la rotación portrait de la interfaz como fallback.
+      // El bloqueo también fija AVFoundation aunque el teléfono se mueva luego.
+      await controller.lockCaptureOrientation(_captureOrientationFor(orientation));
+      try {
+        return await (await controller.takePicture()).readAsBytes();
+      } finally {
+        await controller.unlockCaptureOrientation();
+      }
     } on Exception catch (error) {
       throw VisionDeviceException(cause: error);
     }
   });
+
+  DeviceOrientation _captureOrientationFor(VisionDeviceOrientation orientation) => switch (orientation) {
+    VisionDeviceOrientation.portraitUp => DeviceOrientation.portraitUp,
+    VisionDeviceOrientation.portraitDown => DeviceOrientation.portraitDown,
+    VisionDeviceOrientation.landscapeLeft => DeviceOrientation.landscapeLeft,
+    VisionDeviceOrientation.landscapeRight => DeviceOrientation.landscapeRight,
+  };
 
   @override
   Future<void> dispose() => _enqueue(_closeController);
