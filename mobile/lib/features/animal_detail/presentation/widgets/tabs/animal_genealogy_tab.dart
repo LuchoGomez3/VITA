@@ -1,66 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
-import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_genealogy.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_genealogy_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_ficha_section.dart';
 import 'package:go_router/go_router.dart';
 
-/// Lee la genealogía del animal [animalId].
-typedef LoadAnimalGenealogy = Future<Result<AnimalGenealogy>> Function(String animalId);
+/// Construye el Cubit con dependencias resueltas fuera del widget.
+typedef AnimalGenealogyCubitFactory = AnimalGenealogyCubit Function();
 
 /// Pestaña Genealogía (diseño "Ficha · Genealogía"): el animal, sus padres y
 /// sus abuelos, y debajo sus crías. Tocar un nodo abre la ficha de ese animal.
 ///
 /// Se arma con los animales guardados en el celular, así funciona sin señal.
-class AnimalGenealogyTab extends StatefulWidget {
+class AnimalGenealogyTab extends StatelessWidget {
   /// Crea la pestaña para [animal].
-  const AnimalGenealogyTab({required this.animal, required this.loadGenealogy, super.key});
+  const AnimalGenealogyTab({required this.animal, required this.createCubit, super.key});
 
   /// Animal de la ficha.
   final AnimalDetail animal;
 
-  /// Lee padres, abuelos y crías.
-  final LoadAnimalGenealogy loadGenealogy;
-
-  @override
-  State<AnimalGenealogyTab> createState() => _AnimalGenealogyTabState();
-}
-
-class _AnimalGenealogyTabState extends State<AnimalGenealogyTab> {
-  late Future<Result<AnimalGenealogy>> _genealogy = widget.loadGenealogy(widget.animal.id);
-
-  @override
-  void didUpdateWidget(AnimalGenealogyTab oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // La ficha recarga el animal (p. ej. al volver de un pesaje): se relee por
-    // si cambió algún dato de la genealogía.
-    if (oldWidget.animal != widget.animal) {
-      _genealogy = widget.loadGenealogy(widget.animal.id);
-    }
-  }
+  /// Crea una instancia que será cerrada por el provider de esta pestaña.
+  final AnimalGenealogyCubitFactory createCubit;
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Result<AnimalGenealogy>>(
-      future: _genealogy,
-      builder: (context, snapshot) {
-        final result = snapshot.data;
-        return switch (result) {
-          null => const Center(child: CircularProgressIndicator()),
-          Success<AnimalGenealogy>(:final data) => _GenealogyTree(animal: widget.animal, genealogy: data),
-          Failure<AnimalGenealogy>(:final error) => Center(
+    return BlocProvider(
+      // Un cambio en los datos de la ficha crea una lectura independiente.
+      key: ValueKey(animal),
+      create: (_) => createCubit()..load(animal.id),
+      child: BlocBuilder<AnimalGenealogyCubit, ResultState<AnimalGenealogy>>(
+        builder: (context, state) => switch (state) {
+          Data<AnimalGenealogy>(:final data) => _GenealogyTree(animal: animal, genealogy: data),
+          ResultError<AnimalGenealogy>(:final error) => Center(
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Text(error.message, textAlign: TextAlign.center),
             ),
           ),
-          _ => const SizedBox.shrink(),
-        };
-      },
+          _ => const Center(child: CircularProgressIndicator()),
+        },
+      ),
     );
   }
 }
@@ -159,15 +144,22 @@ class _NodePair extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(child: _relativeNode(context, left)),
+          Expanded(child: _RelativeNode(entry: left)),
           const SizedBox(width: AppSpacing.xs),
-          Expanded(child: _relativeNode(context, right)),
+          Expanded(child: _RelativeNode(entry: right)),
         ],
       ),
     );
   }
+}
 
-  Widget _relativeNode(BuildContext context, (String, GenealogyAnimal?, Color) entry) {
+class _RelativeNode extends StatelessWidget {
+  const _RelativeNode({required this.entry});
+
+  final (String, GenealogyAnimal?, Color) entry;
+
+  @override
+  Widget build(BuildContext context) {
     final (role, animal, color) = entry;
     if (animal == null) {
       return _GenealogyNode(label: AnimalDetailStrings.genealogyMissing(role), isMissing: true);

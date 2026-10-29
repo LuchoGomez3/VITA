@@ -11,11 +11,14 @@ import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_d
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_genealogy.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_photo.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/repositories/animal_detail_repository.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/repositories/animal_genealogy_repository.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/repositories/animal_photo_repository.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_detail_use_case.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_genealogy_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_photo_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/retry_animal_sync_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_genealogy_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_general_tab.dart';
@@ -42,7 +45,7 @@ void main() {
             home: AnimalDetailPage(
               animalId: _animal.id,
               createCubit: _createCubit,
-              loadGenealogy: _loadGenealogy,
+              createGenealogyCubit: _createGenealogyCubit,
             ),
           ),
         );
@@ -63,7 +66,7 @@ void main() {
         home: AnimalDetailPage(
           animalId: _animal.id,
           createCubit: () => _createCubit(photoResult: photoResult.future),
-          loadGenealogy: _loadGenealogy,
+          createGenealogyCubit: _createGenealogyCubit,
         ),
       ),
     );
@@ -98,7 +101,7 @@ void main() {
           home: AnimalDetailPage(
             animalId: _animal.id,
             createCubit: () => _createCubit(photoResult: Future.value(result)),
-            loadGenealogy: _loadGenealogy,
+            createGenealogyCubit: _createGenealogyCubit,
           ),
         ),
       );
@@ -112,8 +115,15 @@ void main() {
   }
 }
 
-Future<Result<AnimalGenealogy>> _loadGenealogy(String animalId) async {
-  return const Result.success(AnimalGenealogy());
+AnimalGenealogyCubit _createGenealogyCubit() => AnimalGenealogyCubit(
+  const GetAnimalGenealogyUseCase(_EmptyFamilyRepository()),
+);
+
+class _EmptyFamilyRepository implements AnimalGenealogyRepository {
+  const _EmptyFamilyRepository();
+
+  @override
+  Future<Result<List<GenealogyAnimalRecord>>> getLocalFamily(String animalId) async => const Result.success([]);
 }
 
 AnimalDetailCubit _createCubit({Future<Result<AnimalPhoto?>>? photoResult}) {

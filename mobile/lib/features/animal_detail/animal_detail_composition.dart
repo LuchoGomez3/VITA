@@ -3,18 +3,17 @@ import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
-import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/animal_photo_store.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_detail_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_genealogy_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_photo_repository_impl.dart';
-import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_genealogy.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_detail_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_genealogy_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_photo_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/retry_animal_sync_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_genealogy_cubit.dart';
 
 /// Crea el Cubit de detalle de animal con dependencias offline-first.
 ///
@@ -40,11 +39,11 @@ AnimalDetailCubit createAnimalDetailCubit() {
   );
 }
 
-/// Lee la genealogía de un animal desde los animales guardados en el celular.
-Future<Result<AnimalGenealogy>> loadAnimalGenealogy(String animalId) {
+/// Construye el Cubit de genealogía con lectura exclusivamente local.
+AnimalGenealogyCubit createAnimalGenealogyCubit() {
   final repository = AnimalGenealogyRepositoryImpl(
     animalStore: BrickAnimalStore.instance,
     categoryStore: BrickCategoriaStore.instance,
   );
-  return GetAnimalGenealogyUseCase(repository)(animalId);
+  return AnimalGenealogyCubit(GetAnimalGenealogyUseCase(repository));
 }

@@ -31,7 +31,7 @@ class AnimalDetailPage extends StatelessWidget {
   const AnimalDetailPage({
     required this.animalId,
     required this.createCubit,
-    required this.loadGenealogy,
+    required this.createGenealogyCubit,
     super.key,
   });
 
@@ -41,14 +41,14 @@ class AnimalDetailPage extends StatelessWidget {
   /// Crea el Cubit con dependencias resueltas fuera de presentation.
   final AnimalDetailCubitFactory createCubit;
 
-  /// Lee padres, abuelos y crías para la pestaña Genealogía.
-  final LoadAnimalGenealogy loadGenealogy;
+  /// Crea el Cubit que carga padres, abuelos y crías.
+  final AnimalGenealogyCubitFactory createGenealogyCubit;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => createCubit()..loadAnimalData(animalId),
-      child: _AnimalDetailView(loadGenealogy: loadGenealogy),
+      child: _AnimalDetailView(createGenealogyCubit: createGenealogyCubit),
     );
   }
 }
@@ -58,7 +58,7 @@ enum AnimalFichaTab {
   /// Identificación, observaciones y sincronización.
   general(AnimalDetailStrings.generalTab),
 
-  /// Árbol genealógico (todavía no desarrollado).
+  /// Árbol genealógico y crías.
   genealogy(AnimalDetailStrings.genealogyTab),
 
   /// Evolución del peso e histórico.
@@ -77,9 +77,9 @@ enum AnimalFichaTab {
 }
 
 class _AnimalDetailView extends StatefulWidget {
-  const _AnimalDetailView({required this.loadGenealogy});
+  const _AnimalDetailView({required this.createGenealogyCubit});
 
-  final LoadAnimalGenealogy loadGenealogy;
+  final AnimalGenealogyCubitFactory createGenealogyCubit;
 
   @override
   State<_AnimalDetailView> createState() => _AnimalDetailViewState();
@@ -145,7 +145,7 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
               },
               onRetrySync: () => context.read<AnimalDetailCubit>().retrySync(data.id),
             ),
-            AnimalGenealogyTab(animal: data, loadGenealogy: widget.loadGenealogy),
+            AnimalGenealogyTab(animal: data, createCubit: widget.createGenealogyCubit),
             AnimalWeighingsTab(animal: data),
             const AnimalFichaComingSoon(
               icon: Icons.vaccines_outlined,

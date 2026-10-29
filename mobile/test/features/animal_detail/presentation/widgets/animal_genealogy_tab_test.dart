@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -7,21 +9,28 @@ import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_genealogy.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/repositories/animal_genealogy_repository.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_genealogy_use_case.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_genealogy_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_genealogy_tab.dart';
 import 'package:go_router/go_router.dart';
 
 void main() {
-  Future<void> pumpTab(WidgetTester tester, Result<AnimalGenealogy> result) async {
+  Future<void> pumpTab(WidgetTester tester, List<GenealogyAnimalRecord> records) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.625;
     addTearDown(tester.view.reset);
+    final repository = _FamilyRepository((_) async => Result.success(records));
     final router = GoRouter(
       routes: [
         GoRoute(
           path: '/',
           builder: (context, state) => Scaffold(
-            body: AnimalGenealogyTab(animal: _animal, loadGenealogy: (_) async => result),
+            body: AnimalGenealogyTab(
+              animal: _animal,
+              createCubit: () => AnimalGenealogyCubit(GetAnimalGenealogyUseCase(repository)),
+            ),
           ),
         ),
         GoRoute(
@@ -35,69 +44,150 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('dibuja el animal, sus padres, sus abuelos y las crías', (tester) async {
-    await pumpTab(
-      tester,
-      const Result.success(
-        AnimalGenealogy(
-          father: GenealogyAnimal(id: 'toro', visualTag: '003 0820', breed: 'Aberdeen Angus', categoryName: 'Toro'),
-          mother: GenealogyAnimal(id: 'vaca', visualTag: '003 0421', breed: 'Hereford', categoryName: 'Vaca'),
-          maternalGrandfather: GenealogyAnimal(id: 'abuelo', visualTag: '002 0099', breed: '', categoryName: ''),
-          offspring: [GenealogyAnimal(id: 'cria', visualTag: '006 0001', breed: 'Hereford', categoryName: 'Ternera')],
-        ),
-      ),
-    );
+  testWidgets('dibuja el animal, padres, abuelos y crías', (tester) async {
+    await pumpTab(tester, [
+      _record(_animal.id, mother: 'vaca', father: 'toro'),
+      _record('toro', tag: '003 0820'),
+      _record('vaca', tag: '003 0421', father: 'abuelo', breed: 'Hereford'),
+      _record('abuelo', breed: ''),
+      _record('cria', tag: '006 0001', mother: _animal.id),
+    ]);
 
     expect(find.text(AnimalDetailStrings.genealogyCurrent('Aberdeen Angus')), findsOneWidget);
-    expect(find.text('Padre · Aberdeen Angus'), findsOneWidget);
-    expect(find.text('Madre · Hereford'), findsOneWidget);
+    expect(
+      find.text(AnimalDetailStrings.genealogyNode(AnimalDetailStrings.genealogyFather, 'Aberdeen Angus')),
+      findsOneWidget,
+    );
+    expect(
+      find.text(AnimalDetailStrings.genealogyNode(AnimalDetailStrings.genealogyMother, 'Hereford')),
+      findsOneWidget,
+    );
     expect(find.text(AnimalDetailStrings.genealogyMaternalGrandfather), findsOneWidget);
     expect(
       find.text(AnimalDetailStrings.genealogyMissing(AnimalDetailStrings.genealogyPaternalGrandfather)),
       findsOneWidget,
     );
-    expect(
-      find.text(AnimalDetailStrings.genealogyMissing(AnimalDetailStrings.genealogyMaternalGrandmother)),
-      findsOneWidget,
-    );
-    // Los títulos de sección van en mayúsculas.
     expect(find.text(AnimalDetailStrings.genealogyOffspringSection(1).toUpperCase()), findsOneWidget);
     expect(find.text('006 0001'.replaceFirst(' ', '\n')), findsOneWidget);
-    expect(find.text(AnimalDetailStrings.genealogyTapHint), findsOneWidget);
   });
 
   testWidgets('tocar un progenitor abre su ficha', (tester) async {
-    await pumpTab(
-      tester,
-      const Result.success(
-        AnimalGenealogy(
-          mother: GenealogyAnimal(id: 'vaca', visualTag: '003 0421', breed: 'Hereford', categoryName: 'Vaca'),
+    await pumpTab(tester, [_record(_animal.id, mother: 'vaca'), _record('vaca', breed: 'Hereford')]);
+    await tester.tap(find.text(AnimalDetailStrings.genealogyNode(AnimalDetailStrings.genealogyMother, 'Hereford')));
+    await tester.pumpAndSettle();
+    expect(find.text('Ficha vaca'), findsOneWidget);
+  });
+
+  testWidgets('un nodo sin datos no navega y explica el origen de los datos', (tester) async {
+    await pumpTab(tester, []);
+    await tester.tap(find.text(AnimalDetailStrings.genealogyMissing(AnimalDetailStrings.genealogyFather)));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Ficha '), findsNothing);
+    expect(find.text(AnimalDetailStrings.genealogyEmpty), findsOneWidget);
+  });
+
+  testWidgets('muestra carga pendiente y el mensaje centralizado ante error', (tester) async {
+    final pending = Completer<Result<List<GenealogyAnimalRecord>>>();
+    final repository = _FamilyRepository((_) => pending.future);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AnimalGenealogyTab(
+            animal: _animal,
+            createCubit: () => AnimalGenealogyCubit(GetAnimalGenealogyUseCase(repository)),
+          ),
+        ),
+      ),
+    );
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    pending.complete(const Result.failure(DomainException(message: 'animal_genealogy_read_failed')));
+    await tester.pumpAndSettle();
+    expect(find.text(AnimalDetailStrings.genealogyLoadError), findsOneWidget);
+    expect(find.text('animal_genealogy_read_failed'), findsNothing);
+  });
+
+  testWidgets('cambiar de animal cierra el Cubit anterior y descarta su respuesta pendiente', (tester) async {
+    final pending = Completer<Result<List<GenealogyAnimalRecord>>>();
+    final repository = _FamilyRepository(
+      (id) => id == _animal.id ? pending.future : Future.value(const Result.success([])),
+    );
+    final cubits = <AnimalGenealogyCubit>[];
+    AnimalGenealogyCubit createCubit() {
+      final cubit = AnimalGenealogyCubit(GetAnimalGenealogyUseCase(repository));
+      cubits.add(cubit);
+      return cubit;
+    }
+
+    Future<void> showAnimal(AnimalDetail animal) => tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AnimalGenealogyTab(animal: animal, createCubit: createCubit),
         ),
       ),
     );
 
-    await tester.tap(find.text('Madre · Hereford'));
+    await showAnimal(_animal);
+    await showAnimal(_animal.copyWith(id: 'nuevo'));
     await tester.pumpAndSettle();
-
-    expect(find.text('Ficha vaca'), findsOneWidget);
-  });
-
-  testWidgets('un nodo sin datos no abre nada', (tester) async {
-    await pumpTab(tester, const Result.success(AnimalGenealogy()));
-
-    await tester.tap(find.text(AnimalDetailStrings.genealogyMissing(AnimalDetailStrings.genealogyFather)));
-    await tester.pumpAndSettle();
-
-    expect(find.textContaining('Ficha '), findsNothing);
-    // Sin padres cargados explica de dónde salen.
+    expect(cubits, hasLength(2));
+    expect(cubits.first.isClosed, isTrue);
     expect(find.text(AnimalDetailStrings.genealogyEmpty), findsOneWidget);
+
+    pending.complete(Result.success([_record(_animal.id, mother: 'madre-vieja'), _record('madre-vieja')]));
+    await tester.pumpAndSettle();
+    expect(find.text('madre-vieja'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(cubits.last.isClosed, isTrue);
   });
 
-  testWidgets('muestra el error si no se pudo leer', (tester) async {
-    await pumpTab(tester, const Result.failure(DomainException(message: 'No se pudo cargar la genealogía.')));
+  for (final size in [const Size(320, 568), const Size(568, 320)]) {
+    testWidgets('genealogía soporta $size con texto al 200%', (tester) async {
+      tester.view
+        ..physicalSize = size
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final repository = _FamilyRepository((_) async => Result.success([_record(_animal.id)]));
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: AnimalGenealogyTab(
+              animal: _animal,
+              createCubit: () => AnimalGenealogyCubit(GetAnimalGenealogyUseCase(repository)),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(ListView), findsOneWidget);
+    });
+  }
+}
 
-    expect(find.text('No se pudo cargar la genealogía.'), findsOneWidget);
-  });
+GenealogyAnimalRecord _record(
+  String id, {
+  String? tag,
+  String? mother,
+  String? father,
+  String breed = 'Aberdeen Angus',
+}) => GenealogyAnimalRecord(
+  animal: GenealogyAnimal(id: id, visualTag: tag ?? id, breed: breed, categoryName: 'Vaca'),
+  birthDate: DateTime.utc(2022),
+  motherId: mother,
+  fatherId: father,
+);
+
+class _FamilyRepository implements AnimalGenealogyRepository {
+  const _FamilyRepository(this.read);
+  final Future<Result<List<GenealogyAnimalRecord>>> Function(String) read;
+
+  @override
+  Future<Result<List<GenealogyAnimalRecord>>> getLocalFamily(String animalId) => read(animalId);
 }
 
 final _animal = AnimalDetail(

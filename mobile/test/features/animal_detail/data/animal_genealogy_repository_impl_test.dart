@@ -3,102 +3,88 @@ import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_genealogy_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_genealogy.dart';
 
 void main() {
-  Future<AnimalGenealogy> genealogyOf(String id, List<BrickAnimalModel> animals) async {
-    final repository = AnimalGenealogyRepositoryImpl(
-      animalStore: _FakeAnimalStore(animals),
-      categoryStore: _FakeCategoryStore(),
-    );
-    final result = await repository.getGenealogy(id);
-    return (result as Success<AnimalGenealogy>).data;
+  late _LocalAnimalStore animalStore;
+  late _LocalCategoryStore categoryStore;
+  late AnimalGenealogyRepositoryImpl repository;
+
+  setUp(() {
+    animalStore = _LocalAnimalStore();
+    categoryStore = _LocalCategoryStore();
+    repository = AnimalGenealogyRepositoryImpl(animalStore: animalStore, categoryStore: categoryStore);
+  });
+
+  test('lee solo animales vigentes del establecimiento del sujeto sin usar red', () async {
+    animalStore.animals = [
+      _animal('ternero', mother: 'vaca', father: 'toro'),
+      _animal('vaca'),
+      _animal('toro', establishmentId: 'otro-campo'),
+      _animal('borrado', deletedAt: DateTime.utc(2026)),
+    ];
+
+    final result = await repository.getLocalFamily('ternero');
+    final records = (result as Success<List<GenealogyAnimalRecord>>).data;
+
+    expect(records.map((record) => record.animal.id), ['ternero', 'vaca']);
+    expect(records.first.motherId, 'vaca');
+    expect(records.first.fatherId, 'toro');
+    expect(records.first.birthDate, DateTime.utc(2022));
+    expect(records.first.animal.categoryName, 'Vaca');
+  });
+
+  test('conserva nombre local y permite catálogo vacío', () async {
+    animalStore.animals = [_animal('vaca', categoryName: 'Categoría local')];
+    categoryStore.categories = [];
+
+    final result = await repository.getLocalFamily('vaca');
+
+    expect((result as Success<List<GenealogyAnimalRecord>>).data.single.animal.categoryName, 'Categoría local');
+  });
+
+  test('una categoría sin resolver no inventa un nombre', () async {
+    animalStore.animals = [_animal('vaca')];
+    categoryStore.categories = [];
+
+    final result = await repository.getLocalFamily('vaca');
+
+    expect((result as Success<List<GenealogyAnimalRecord>>).data.single.animal.categoryName, isEmpty);
+  });
+
+  for (final deleted in [false, true]) {
+    test('sujeto ${deleted ? 'borrado' : 'ausente'} no expone animales de otro contexto', () async {
+      animalStore.animals = [
+        _animal('otro'),
+        if (deleted) _animal('sujeto', deletedAt: DateTime.utc(2026)),
+      ];
+
+      final result = await repository.getLocalFamily('sujeto');
+
+      expect(result, const Result<List<GenealogyAnimalRecord>>.success([]));
+    });
   }
 
-  test('arma padres y abuelos paternos y maternos', () async {
-    final genealogy = await genealogyOf('ternero', [
-      _animal('ternero', tag: '005 0001', mother: 'vaca', father: 'toro'),
-      _animal('vaca', tag: '003 0421', mother: 'abuela-m', father: 'abuelo-m'),
-      _animal('toro', tag: '003 0820', mother: 'abuela-p', father: 'abuelo-p'),
-      _animal('abuela-m', tag: '002 0001'),
-      _animal('abuelo-m', tag: '002 0002'),
-      _animal('abuela-p', tag: '002 0003'),
-      _animal('abuelo-p', tag: '002 0004'),
-    ]);
+  for (final categoryFailure in [false, true]) {
+    test('traduce el fallo local de ${categoryFailure ? 'categorías' : 'animales'}', () async {
+      animalStore
+        ..animals = [_animal('vaca')]
+        ..fail = !categoryFailure;
+      categoryStore.fail = categoryFailure;
 
-    expect(genealogy.mother?.visualTag, '003 0421');
-    expect(genealogy.father?.visualTag, '003 0820');
-    expect(genealogy.maternalGrandmother?.id, 'abuela-m');
-    expect(genealogy.maternalGrandfather?.id, 'abuelo-m');
-    expect(genealogy.paternalGrandmother?.id, 'abuela-p');
-    expect(genealogy.paternalGrandfather?.id, 'abuelo-p');
-    expect(genealogy.mother?.categoryName, 'Vaca');
-  });
+      final result = await repository.getLocalFamily('vaca');
 
-  test('un progenitor sin cargar queda como dato faltante', () async {
-    final genealogy = await genealogyOf('ternero', [
-      _animal('ternero', mother: 'vaca'),
-      _animal('vaca'),
-    ]);
-
-    expect(genealogy.mother?.id, 'vaca');
-    expect(genealogy.father, isNull);
-    expect(genealogy.maternalGrandmother, isNull);
-    expect(genealogy.paternalGrandfather, isNull);
-  });
-
-  test('no muestra progenitores borrados ni de otro establecimiento', () async {
-    final genealogy = await genealogyOf('ternero', [
-      _animal('ternero', mother: 'vaca', father: 'toro'),
-      _animal('vaca', deletedAt: DateTime.utc(2026, 9)),
-      _animal('toro', establishmentId: 'otro-campo'),
-    ]);
-
-    expect(genealogy.mother, isNull);
-    expect(genealogy.father, isNull);
-  });
-
-  test('corta los ciclos: un animal no aparece como su propio ancestro', () async {
-    final genealogy = await genealogyOf('vaca', [
-      // Datos mal cargados: la madre de la vaca es su propia hija.
-      _animal('vaca', mother: 'hija'),
-      _animal('hija', mother: 'vaca'),
-    ]);
-
-    expect(genealogy.mother?.id, 'hija');
-    expect(genealogy.maternalGrandmother, isNull);
-  });
-
-  test('un animal que es su propia madre no se dibuja', () async {
-    final genealogy = await genealogyOf('vaca', [_animal('vaca', mother: 'vaca')]);
-
-    expect(genealogy.mother, isNull);
-  });
-
-  test('lista las crías vigentes del mismo establecimiento, la más nueva primero', () async {
-    final genealogy = await genealogyOf('vaca', [
-      _animal('vaca'),
-      _animal('cria-vieja', mother: 'vaca', birthDate: DateTime.utc(2024)),
-      _animal('cria-nueva', mother: 'vaca', birthDate: DateTime.utc(2026)),
-      _animal('cria-borrada', mother: 'vaca', deletedAt: DateTime.utc(2026, 9)),
-      _animal('cria-ajena', mother: 'vaca', establishmentId: 'otro-campo'),
-    ]);
-
-    expect(genealogy.offspring.map((child) => child.id), ['cria-nueva', 'cria-vieja']);
-  });
-
-  test('si falla la lectura local devuelve un error entendible', () async {
-    final repository = AnimalGenealogyRepositoryImpl(
-      animalStore: _FakeAnimalStore(const [], fail: true),
-      categoryStore: _FakeCategoryStore(),
-    );
-
-    final result = await repository.getGenealogy('vaca');
-
-    expect(result, isA<Failure<AnimalGenealogy>>());
-  });
+      expect(
+        result,
+        const Result<List<GenealogyAnimalRecord>>.failure(
+          DomainException(message: 'animal_genealogy_read_failed'),
+        ),
+      );
+    });
+  }
 }
 
 BrickAnimalModel _animal(
@@ -107,6 +93,7 @@ BrickAnimalModel _animal(
   String? mother,
   String? father,
   String establishmentId = 'campo-1',
+  String categoryName = '',
   DateTime? deletedAt,
   DateTime? birthDate,
 }) {
@@ -118,6 +105,7 @@ BrickAnimalModel _animal(
     breed: 'Aberdeen Angus',
     birthDate: birthDate ?? DateTime.utc(2022),
     categoryId: 'cat-vaca',
+    categoryName: categoryName,
     lotId: 'lote-1',
     establishmentId: establishmentId,
     initialWeight: 300,
@@ -131,27 +119,41 @@ BrickAnimalModel _animal(
   );
 }
 
-class _FakeAnimalStore implements AnimalBrickStore {
-  _FakeAnimalStore(this.animals, {this.fail = false});
-
-  final List<BrickAnimalModel> animals;
-  final bool fail;
+class _LocalAnimalStore implements AnimalBrickStore {
+  List<BrickAnimalModel> animals = [];
+  bool fail = false;
 
   @override
   Future<List<BrickAnimalModel>> getLocalAnimals() async {
-    if (fail) {
-      throw StateError('SQLite no disponible');
-    }
+    if (fail) throw StateError('SQLite unavailable');
     return animals;
   }
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName}');
+  Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) => throw UnimplementedError();
+
+  @override
+  Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) => throw UnimplementedError();
+
+  @override
+  Future<BrickAnimalModel?> getAnimalById(String animalId) => throw UnimplementedError();
+
+  @override
+  Future<BrickAnimalModel?> getAnimalByRfidTagNumber({
+    required String rfidTagNumber,
+    required String establishmentId,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> pullRemoteAnimals(String establishmentId) => throw StateError('Unexpected network access');
+
+  @override
+  Future<void> retryRejectedAnimal(String animalId) => throw UnimplementedError();
 }
 
-class _FakeCategoryStore implements CategoriaBrickStore {
-  @override
-  Future<List<BrickCategoriaModel>> getLocalCategorias() async => [
+class _LocalCategoryStore implements CategoriaBrickStore {
+  bool fail = false;
+  List<BrickCategoriaModel> categories = [
     BrickCategoriaModel(
       localId: 'cat-vaca',
       name: 'Vaca',
@@ -161,5 +163,11 @@ class _FakeCategoryStore implements CategoriaBrickStore {
   ];
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName}');
+  Future<List<BrickCategoriaModel>> getLocalCategorias() async {
+    if (fail) throw StateError('SQLite unavailable');
+    return categories;
+  }
+
+  @override
+  Future<void> pullRemoteCategorias() => throw StateError('Unexpected network access');
 }

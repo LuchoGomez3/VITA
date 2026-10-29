@@ -177,6 +177,9 @@ class AnimalDetailStrings {
   /// Título del árbol genealógico.
   static const genealogyTreeTitle = 'Árbol genealógico · 3 generaciones';
 
+  /// Error de lectura de los datos locales de parentesco.
+  static const genealogyLoadError = 'No se pudo cargar la genealogía del animal.';
+
   /// Sección de padre y madre.
   static const genealogyParentsSection = 'Progenitores';
 

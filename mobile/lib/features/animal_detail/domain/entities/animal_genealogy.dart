@@ -1,75 +1,69 @@
-import 'package:meta/meta.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-/// Un animal del árbol genealógico, con lo necesario para dibujar su nodo.
-@immutable
-class GenealogyAnimal {
-  /// Crea el nodo.
-  const GenealogyAnimal({
-    required this.id,
-    required this.visualTag,
-    required this.breed,
-    required this.categoryName,
-  });
+part 'animal_genealogy.freezed.dart';
 
-  /// ID del animal (abre su ficha).
-  final String id;
+/// Identidad de un animal dentro del árbol genealógico.
+@freezed
+sealed class GenealogyAnimal with _$GenealogyAnimal {
+  /// Crea la identidad visible del animal.
+  const factory GenealogyAnimal({
+    /// UUID utilizado para abrir su ficha.
+    required String id,
 
-  /// Caravana visual.
-  final String visualTag;
+    /// Caravana visual.
+    required String visualTag,
 
-  /// Raza declarada.
-  final String breed;
+    /// Raza declarada.
+    required String breed,
 
-  /// Categoría actual; vacía si no se pudo resolver.
-  final String categoryName;
-
-  @override
-  bool operator ==(Object other) =>
-      other is GenealogyAnimal &&
-      other.id == id &&
-      other.visualTag == visualTag &&
-      other.breed == breed &&
-      other.categoryName == categoryName;
-
-  @override
-  int get hashCode => Object.hash(id, visualTag, breed, categoryName);
+    /// Categoría actual; vacía si no se pudo resolver.
+    required String categoryName,
+  }) = _GenealogyAnimal;
 }
 
-/// Árbol de tres generaciones de un animal (él, padres y abuelos) y sus crías.
-///
-/// Un progenitor en `null` es un dato que falta: no se cargó en el alta, es de
-/// otro establecimiento o se dio de baja.
-@immutable
-class AnimalGenealogy {
-  /// Crea el árbol.
-  const AnimalGenealogy({
-    this.father,
-    this.mother,
-    this.paternalGrandfather,
-    this.paternalGrandmother,
-    this.maternalGrandfather,
-    this.maternalGrandmother,
-    this.offspring = const [],
-  });
+/// Datos de parentesco necesarios para construir el árbol sin infraestructura.
+@freezed
+sealed class GenealogyAnimalRecord with _$GenealogyAnimalRecord {
+  /// Crea un registro de parentesco local.
+  const factory GenealogyAnimalRecord({
+    /// Identidad del animal.
+    required GenealogyAnimal animal,
 
-  /// Padre.
-  final GenealogyAnimal? father;
+    /// Fecha utilizada para ordenar las crías.
+    required DateTime birthDate,
 
-  /// Madre.
-  final GenealogyAnimal? mother;
+    /// UUID de la madre, si fue registrado.
+    String? motherId,
 
-  /// Padre del padre.
-  final GenealogyAnimal? paternalGrandfather;
+    /// UUID del padre, si fue registrado.
+    String? fatherId,
+  }) = _GenealogyAnimalRecord;
+}
 
-  /// Madre del padre.
-  final GenealogyAnimal? paternalGrandmother;
+/// Árbol de tres generaciones y crías; un pariente nulo no está disponible.
+@freezed
+sealed class AnimalGenealogy with _$AnimalGenealogy {
+  /// Crea el árbol inmutable.
+  const factory AnimalGenealogy({
+    /// Padre.
+    GenealogyAnimal? father,
 
-  /// Padre de la madre.
-  final GenealogyAnimal? maternalGrandfather;
+    /// Madre.
+    GenealogyAnimal? mother,
 
-  /// Madre de la madre.
-  final GenealogyAnimal? maternalGrandmother;
+    /// Padre del padre.
+    GenealogyAnimal? paternalGrandfather,
 
-  /// Animales que tienen a este como madre o padre.
-  final List<GenealogyAnimal> offspring;
+    /// Madre del padre.
+    GenealogyAnimal? paternalGrandmother,
+
+    /// Padre de la madre.
+    GenealogyAnimal? maternalGrandfather,
+
+    /// Madre de la madre.
+    GenealogyAnimal? maternalGrandmother,
+
+    /// Animales que tienen a este como madre o padre.
+    @Default([]) List<GenealogyAnimal> offspring,
+  }) = _AnimalGenealogy;
 }
