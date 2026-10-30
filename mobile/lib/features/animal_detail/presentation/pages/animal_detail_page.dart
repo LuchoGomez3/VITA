@@ -10,6 +10,7 @@ import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/anima
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_ficha_header.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_ficha_section.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_genealogy_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_general_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_weighings_tab.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/mock/weighing_mock.dart';
@@ -30,6 +31,7 @@ class AnimalDetailPage extends StatelessWidget {
   const AnimalDetailPage({
     required this.animalId,
     required this.createCubit,
+    required this.createGenealogyCubit,
     super.key,
   });
 
@@ -39,11 +41,14 @@ class AnimalDetailPage extends StatelessWidget {
   /// Crea el Cubit con dependencias resueltas fuera de presentation.
   final AnimalDetailCubitFactory createCubit;
 
+  /// Crea el Cubit que carga padres, abuelos y crías.
+  final AnimalGenealogyCubitFactory createGenealogyCubit;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => createCubit()..loadAnimalData(animalId),
-      child: const _AnimalDetailView(),
+      child: _AnimalDetailView(createGenealogyCubit: createGenealogyCubit),
     );
   }
 }
@@ -53,7 +58,7 @@ enum AnimalFichaTab {
   /// Identificación, observaciones y sincronización.
   general(AnimalDetailStrings.generalTab),
 
-  /// Árbol genealógico (todavía no desarrollado).
+  /// Árbol genealógico y crías.
   genealogy(AnimalDetailStrings.genealogyTab),
 
   /// Evolución del peso e histórico.
@@ -72,7 +77,9 @@ enum AnimalFichaTab {
 }
 
 class _AnimalDetailView extends StatefulWidget {
-  const _AnimalDetailView();
+  const _AnimalDetailView({required this.createGenealogyCubit});
+
+  final AnimalGenealogyCubitFactory createGenealogyCubit;
 
   @override
   State<_AnimalDetailView> createState() => _AnimalDetailViewState();
@@ -138,11 +145,7 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
               },
               onRetrySync: () => context.read<AnimalDetailCubit>().retrySync(data.id),
             ),
-            const AnimalFichaComingSoon(
-              icon: Icons.account_tree_outlined,
-              title: AnimalDetailStrings.comingSoonTitle,
-              message: AnimalDetailStrings.genealogyComingSoon,
-            ),
+            AnimalGenealogyTab(animal: data, createCubit: widget.createGenealogyCubit),
             AnimalWeighingsTab(animal: data),
             const AnimalFichaComingSoon(
               icon: Icons.vaccines_outlined,

@@ -299,6 +299,7 @@ class AppRouter {
             return AnimalDetailPage(
               animalId: animalId,
               createCubit: createAnimalDetailCubit,
+              createGenealogyCubit: createAnimalGenealogyCubit,
             );
           },
         ),

@@ -59,3 +59,48 @@ foto local o el placeholder, identificación, estado productivo, observaciones y
 sincronización. Pesajes conserva el gráfico y el historial; las otras pestañas
 mantienen el contenido del rediseño. La carga opcional de la foto no bloquea los
 datos del animal ni la navegación entre pestañas.
+
+## Genealogía
+
+La genealogía se consulta sin red y tiene un estado independiente de la ficha y
+de su foto:
+
+```text
+AnimalGenealogyTab
+  -> AnimalGenealogyCubit (ResultState<AnimalGenealogy>)
+  -> GetAnimalGenealogyUseCase
+  -> AnimalGenealogyRepository
+  -> AnimalGenealogyRepositoryImpl / AnimalGenealogyMapper
+  -> stores locales de animales y categorías -> SQLite
+```
+
+El repository resuelve el establecimiento del sujeto y devuelve únicamente
+animales locales sin baja lógica de ese establecimiento. El mapper conserva
+identidad, fecha y referencias a los progenitores. No se consultan endpoints ni
+se modifica la cola de sincronización.
+
+El caso de uso construye padres y abuelos, evita repetir al sujeto o al
+progenitor en su propia línea y ordena las crías por nacimiento descendente.
+Un ancestro compartido entre ambas líneas sigue siendo válido.
+
+La cabecera y los ancestros tienen tamaño acotado; las crías se renderizan bajo
+demanda con `SliverList.builder` dentro del mismo desplazamiento. La cantidad de
+descendientes no obliga a construir todos sus widgets al abrir la pestaña.
+
+Las entidades usan Freezed y la lista de crías no se puede modificar desde sus
+consumidores. Los parientes ausentes del caché se muestran como datos faltantes;
+los registros con soft delete no participan del árbol.
+
+Composition construye las dependencias y el provider de la pestaña es dueño del
+Cubit. Al cambiar los datos del animal se crea una lectura nueva y se cierra la
+anterior. El Cubit descarta respuestas anteriores y no emite después del cierre.
+Los errores técnicos se registran en data; el Cubit los traduce al mensaje
+centralizado en `AnimalDetailStrings`.
+
+Las pruebas de data verifican mapeo, aislamiento, ausencia de red y errores; las
+de dominio cubren relaciones, ciclos, orden e inmutabilidad; las de Cubit y
+widgets cubren estados, navegación, respuestas tardías y lifecycle.
+
+El caso de mil crías comprueba que el delegado construya widgets por callback,
+además del montaje acotado y la navegación. Así detecta una regresión a una lista
+de widgets preconstruidos, que también podría montar solo los elementos visibles.

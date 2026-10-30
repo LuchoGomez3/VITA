@@ -174,8 +174,54 @@ class AnimalDetailStrings {
   /// Pestaña que todavía no está desarrollada.
   static const comingSoonTitle = 'Próximamente';
 
-  /// Genealogía todavía no desarrollada.
-  static const genealogyComingSoon = 'Acá vas a ver el árbol genealógico del animal: padres y abuelos.';
+  /// Título del árbol genealógico.
+  static const genealogyTreeTitle = 'Árbol genealógico · 3 generaciones';
+
+  /// Error de lectura de los datos locales de parentesco.
+  static const genealogyLoadError = 'No se pudo cargar la genealogía del animal.';
+
+  /// Sección de padre y madre.
+  static const genealogyParentsSection = 'Progenitores';
+
+  /// Sección de los abuelos.
+  static const genealogyGrandparentsSection = 'Abuelos';
+
+  /// Sección de los hijos del animal.
+  static String genealogyOffspringSection(int count) => 'Crías · $count';
+
+  /// Ayuda al pie del árbol.
+  static const genealogyTapHint = 'Tocá cualquier progenitor para abrir su ficha.';
+
+  /// Nodo del animal de la ficha.
+  static String genealogyCurrent(String breed) => breed.isEmpty ? 'Actual' : 'Actual · $breed';
+
+  /// Rol del padre.
+  static const genealogyFather = 'Padre';
+
+  /// Rol de la madre.
+  static const genealogyMother = 'Madre';
+
+  /// Rol del abuelo paterno.
+  static const genealogyPaternalGrandfather = 'Abuelo paterno';
+
+  /// Rol de la abuela paterna.
+  static const genealogyPaternalGrandmother = 'Abuela paterna';
+
+  /// Rol del abuelo materno.
+  static const genealogyMaternalGrandfather = 'Abuelo materno';
+
+  /// Rol de la abuela materna.
+  static const genealogyMaternalGrandmother = 'Abuela materna';
+
+  /// Etiqueta de un nodo con datos: "Madre · Aberdeen Angus".
+  static String genealogyNode(String role, String detail) => detail.isEmpty ? role : '$role · $detail';
+
+  /// Etiqueta de un nodo sin datos.
+  static String genealogyMissing(String role) => '$role · sin datos';
+
+  /// Cuando no hay ningún dato de padres ni crías.
+  static const genealogyEmpty =
+      'No hay madre ni padre cargados. Se asignan al dar de alta el animal, entre los animales del mismo establecimiento.';
 
   /// Sanidad todavía no desarrollada.
   static const healthComingSoon = 'Acá vas a ver los tratamientos y vacunaciones del animal.';
