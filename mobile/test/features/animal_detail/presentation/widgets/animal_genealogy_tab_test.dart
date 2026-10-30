@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/widgets/app_ear_tag_badge.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_genealogy.dart';
@@ -76,6 +77,37 @@ void main() {
     await tester.tap(find.text(AnimalDetailStrings.genealogyNode(AnimalDetailStrings.genealogyMother, 'Hereford')));
     await tester.pumpAndSettle();
     expect(find.text('Ficha vaca'), findsOneWidget);
+  });
+
+  testWidgets('permite recorrer mil crías y abrir la última sin montar toda la lista', (tester) async {
+    await pumpTab(tester, [
+      _record(_animal.id),
+      for (var index = 0; index < 1000; index++)
+        _record(
+          'cria-$index',
+          tag: '006 ${index.toString().padLeft(4, '0')}',
+          mother: _animal.id,
+          birthDate: DateTime.utc(2026).subtract(Duration(days: index)),
+        ),
+    ]);
+    final mountedOffspring = find.byWidgetPredicate(
+      (widget) => widget is AppEarTagBadge && widget.visualTag.startsWith('006 '),
+    );
+    final lastChild = find.byWidgetPredicate(
+      (widget) => widget is AppEarTagBadge && widget.visualTag == '006 0999',
+    );
+
+    expect(mountedOffspring.evaluate().length, inExclusiveRange(0, 1000));
+    expect(lastChild, findsNothing);
+
+    await tester.scrollUntilVisible(lastChild, 500, maxScrolls: 200);
+    expect(mountedOffspring.evaluate().length, inExclusiveRange(0, 1000));
+    expect(lastChild.hitTestable(), findsOneWidget);
+
+    await tester.tap(lastChild);
+    await tester.pumpAndSettle();
+    expect(find.text('Ficha cria-999'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('un nodo sin datos no navega y explica el origen de los datos', (tester) async {
@@ -164,7 +196,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.byType(ListView), findsOneWidget);
+      expect(find.byType(CustomScrollView), findsOneWidget);
     });
   }
 }
@@ -174,10 +206,11 @@ GenealogyAnimalRecord _record(
   String? tag,
   String? mother,
   String? father,
+  DateTime? birthDate,
   String breed = 'Aberdeen Angus',
 }) => GenealogyAnimalRecord(
   animal: GenealogyAnimal(id: id, visualTag: tag ?? id, breed: breed, categoryName: 'Vaca'),
-  birthDate: DateTime.utc(2022),
+  birthDate: birthDate ?? DateTime.utc(2022),
   motherId: mother,
   fatherId: father,
 );

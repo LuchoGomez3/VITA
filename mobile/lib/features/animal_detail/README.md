@@ -83,6 +83,10 @@ El caso de uso construye padres y abuelos, evita repetir al sujeto o al
 progenitor en su propia línea y ordena las crías por nacimiento descendente.
 Un ancestro compartido entre ambas líneas sigue siendo válido.
 
+La cabecera y los ancestros tienen tamaño acotado; las crías se renderizan bajo
+demanda con `SliverList.builder` dentro del mismo desplazamiento. La cantidad de
+descendientes no obliga a construir todos sus widgets al abrir la pestaña.
+
 Las entidades usan Freezed y la lista de crías no se puede modificar desde sus
 consumidores. Los parientes ausentes del caché se muestran como datos faltantes;
 los registros con soft delete no participan del árbol.

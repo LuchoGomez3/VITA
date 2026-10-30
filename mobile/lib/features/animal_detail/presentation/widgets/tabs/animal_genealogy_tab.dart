@@ -58,10 +58,48 @@ class _GenealogyTree extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 0),
+          sliver: SliverToBoxAdapter(
+            child: _GenealogyAncestors(animal: animal, genealogy: genealogy),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
+          sliver: SliverList.builder(
+            itemCount: genealogy.offspring.length,
+            itemBuilder: (context, index) {
+              final child = genealogy.offspring[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                child: _GenealogyNode(
+                  visualTag: child.visualTag,
+                  label: AnimalDetailStrings.genealogyNode(child.categoryName, child.breed),
+                  onTap: () => _open(context, child),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GenealogyAncestors extends StatelessWidget {
+  const _GenealogyAncestors({required this.animal, required this.genealogy});
+
+  final AnimalDetail animal;
+  final AnimalGenealogy genealogy;
+
+  @override
+  Widget build(BuildContext context) {
     final hasParents = genealogy.father != null || genealogy.mother != null;
 
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const AnimalFichaSectionTitle(AnimalDetailStrings.genealogyTreeTitle),
         const SizedBox(height: AppSpacing.sm),
@@ -113,14 +151,6 @@ class _GenealogyTree extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           AnimalFichaSectionTitle(AnimalDetailStrings.genealogyOffspringSection(genealogy.offspring.length)),
           const SizedBox(height: AppSpacing.xs),
-          for (final child in genealogy.offspring) ...[
-            _GenealogyNode(
-              visualTag: child.visualTag,
-              label: AnimalDetailStrings.genealogyNode(child.categoryName, child.breed),
-              onTap: () => _open(context, child),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-          ],
         ],
       ],
     );
