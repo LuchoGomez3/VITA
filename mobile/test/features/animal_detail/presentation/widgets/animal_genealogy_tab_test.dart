@@ -79,7 +79,7 @@ void main() {
     expect(find.text('Ficha vaca'), findsOneWidget);
   });
 
-  testWidgets('permite recorrer mil crías y abrir la última sin montar toda la lista', (tester) async {
+  testWidgets('crea mil crías bajo demanda y permite abrir la última', (tester) async {
     await pumpTab(tester, [
       _record(_animal.id),
       for (var index = 0; index < 1000; index++)
@@ -97,6 +97,12 @@ void main() {
       (widget) => widget is AppEarTagBadge && widget.visualTag == '006 0999',
     );
 
+    expect(
+      tester.widget<SliverList>(find.byType(SliverList)).delegate,
+      isA<SliverChildBuilderDelegate>(),
+      reason:
+          'Una lista eager también monta solo elementos visibles; el delegado debe construir los widgets por demanda.',
+    );
     expect(mountedOffspring.evaluate().length, inExclusiveRange(0, 1000));
     expect(lastChild, findsNothing);
 

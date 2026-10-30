@@ -100,3 +100,7 @@ centralizado en `AnimalDetailStrings`.
 Las pruebas de data verifican mapeo, aislamiento, ausencia de red y errores; las
 de dominio cubren relaciones, ciclos, orden e inmutabilidad; las de Cubit y
 widgets cubren estados, navegación, respuestas tardías y lifecycle.
+
+El caso de mil crías comprueba que el delegado construya widgets por callback,
+además del montaje acotado y la navegación. Así detecta una regresión a una lista
+de widgets preconstruidos, que también podría montar solo los elementos visibles.
