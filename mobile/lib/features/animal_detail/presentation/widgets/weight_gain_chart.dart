@@ -27,6 +27,8 @@ class WeightGainChart extends StatelessWidget {
         : dailyGainBetween(weightHistory[weightHistory.length - 2], weightHistory.last);
 
     return AppSurfaceCard(
+      elevation: 4,
+      shadowColor: AppColors.textPrimary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

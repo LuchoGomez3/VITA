@@ -179,6 +179,7 @@ final _firstPesaje = BrickPesajeModel(
 
 final _latestPesaje = BrickPesajeModel(
   localId: 'weighing-2',
+  photoUrl: 'https://example.com/ignored-backend-photo.jpg',
   establishmentId: 'establishment-id',
   animalId: _animalId,
   weightKg: 245,

@@ -19,6 +19,12 @@ enum UserRole {
 
 /// Traduccion del contrato backend y reglas de permisos por membresia.
 extension UserRolePermissions on UserRole {
+  /// Los roles operativos conocidos pueden registrar pesajes sin conexión.
+  bool get canRecordWeighing => switch (this) {
+    UserRole.admin || UserRole.owner || UserRole.employee || UserRole.veterinarian => true,
+    UserRole.unknown => false,
+  };
+
   /// Solo administradores y propietarios pueden consultar finanzas.
   bool get canViewFinancialInformation => this == UserRole.admin || this == UserRole.owner;
 
