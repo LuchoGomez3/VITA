@@ -120,6 +120,9 @@ BrickAnimalModel _animal(
 }
 
 class _CapturingMovementStore implements AnimalLotMovementBrickStore {
+  @override
+  Future<List<BrickAnimalLotMovementModel>> getLocalMovements(String establishmentId) async => const [];
+
   List<BrickAnimalModel> savedAnimals = const [];
   BrickAnimalLotMovementModel? savedMovement;
 
@@ -213,7 +216,8 @@ class _FakeLotStore implements LotBrickStore {
   Future<BrickLotModel> upsertLocalLot(BrickLotModel lot) => throw StateError('Unexpected upsertLocalLot call');
 
   @override
-  Future<List<BrickLotModel>> getLocalLots(String establishmentId) => throw StateError('Unexpected getLocalLots call');
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId, {bool includeDeleted = false}) =>
+      throw StateError('Unexpected getLocalLots call');
 
   @override
   Future<void> pullRemoteLots(String establishmentId) => throw StateError('Unexpected pullRemoteLots call');

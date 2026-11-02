@@ -252,4 +252,44 @@ class AnimalDetailStrings {
 
   /// Error al abrir la cámara.
   static const cameraError = 'No se pudo abrir la cámara. Revisá los permisos e intentá nuevamente.';
+
+  /// Título del historial en la ficha.
+  static String historyTitle(int count) =>
+      count == 1 ? 'Historial de potreros · 1 movim.' : 'Historial de potreros · $count movim.';
+
+  /// Historial vacío.
+  static const historyEmpty = 'Este animal todavía no tiene movimientos entre potreros.';
+
+  /// Error del historial.
+  static const historyError = 'No se pudo leer el historial de movimientos.';
+
+  /// Potrero actual en la primera fila del historial.
+  static const currentLot = '(actual)';
+
+  /// Origen de la primera asignación.
+  static const noOrigin = '—';
+
+  /// Movimiento que todavía no llegó al servidor.
+  static const pendingSync = 'Pendiente de sincronizar';
+
+  /// Un rechazo funcional no se reenvía como una operación pendiente.
+  static const movementRejected = 'Movimiento rechazado por el servidor';
+
+  /// Recuperación después de un rechazo del traslado.
+  static const movementRejectionHint = 'Revisá el potrero actual antes de registrar un nuevo movimiento.';
+
+  /// Confirmación al volver a la ficha.
+  static String moved(int count, String destination) =>
+      count == 1 ? 'Se movió 1 animal a $destination.' : 'Se movieron $count animales a $destination.';
+
+  /// La confirmación describe los destinos guardados aunque el animal de la
+  /// ficha haya sido quitado de la selección o falle la recarga del detalle.
+  static String movementConfirmation(int count, Map<String, String> destinations) {
+    if (destinations.length == 1) return moved(count, destinations.values.single);
+    if (destinations.isEmpty) return count == 1 ? 'Se movió 1 animal.' : 'Se movieron $count animales.';
+    return 'Se movieron $count animales a ${destinations.length} potreros.';
+  }
+
+  /// Aclaración offline de la confirmación.
+  static const savedOffline = 'Queda guardado en el celular y se sincroniza con señal.';
 }

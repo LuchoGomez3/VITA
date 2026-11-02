@@ -97,48 +97,49 @@ class AppDropdownFormField<T> extends StatelessWidget {
           key: ValueKey(initialValue),
           initialValue: initialValue,
           validator: validator,
-          builder: (field) => LayoutBuilder(
-            builder: (context, constraints) => DropdownMenu<T>(
-              initialSelection: field.value,
-              enabled: enabled,
-              width: constraints.maxWidth,
-              menuHeight: 280,
-              textStyle: AppTypography.formFieldValue,
-              hintText: hintText,
-              helperText: helperText,
-              errorText: errorText ?? field.errorText,
-              trailingIcon:
-                  icon ??
-                  const Icon(
-                    Icons.keyboard_arrow_down,
-                    color: AppColors.textSecondary,
-                  ),
-              selectedTrailingIcon:
-                  icon ??
-                  const Icon(
-                    Icons.keyboard_arrow_up,
-                    color: AppColors.textSecondary,
-                  ),
-              dropdownMenuEntries: options
-                  .map(
-                    (option) => DropdownMenuEntry<T>(
-                      value: option.value,
-                      label: option.label,
-                      labelWidget: Text(
-                        option.label,
-                        style: AppTypography.mediumEmphasis,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+          // `expandedInsets` ocupa todo el ancho disponible sin LayoutBuilder:
+          // un LayoutBuilder rompe el layout dentro de un AlertDialog, que mide
+          // el contenido con anchos intrínsecos (la pantalla quedaba en negro).
+          builder: (field) => DropdownMenu<T>(
+            initialSelection: field.value,
+            enabled: enabled,
+            expandedInsets: EdgeInsets.zero,
+            menuHeight: 280,
+            textStyle: AppTypography.formFieldValue,
+            hintText: hintText,
+            helperText: helperText,
+            errorText: errorText ?? field.errorText,
+            trailingIcon:
+                icon ??
+                const Icon(
+                  Icons.keyboard_arrow_down,
+                  color: AppColors.textSecondary,
+                ),
+            selectedTrailingIcon:
+                icon ??
+                const Icon(
+                  Icons.keyboard_arrow_up,
+                  color: AppColors.textSecondary,
+                ),
+            dropdownMenuEntries: options
+                .map(
+                  (option) => DropdownMenuEntry<T>(
+                    value: option.value,
+                    label: option.label,
+                    labelWidget: Text(
+                      option.label,
+                      style: AppTypography.mediumEmphasis,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  )
-                  .toList(),
-              onSelected: enabled
-                  ? (value) {
-                      field.didChange(value);
-                      onChanged?.call(value);
-                    }
-                  : null,
-            ),
+                  ),
+                )
+                .toList(),
+            onSelected: enabled
+                ? (value) {
+                    field.didChange(value);
+                    onChanged?.call(value);
+                  }
+                : null,
           ),
         ),
       ],

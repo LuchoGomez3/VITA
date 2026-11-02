@@ -4,6 +4,24 @@ import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 
 void main() {
   group('BrickLotStore.selectLocalLots', () {
+    test('el historial conserva el último tombstone y mantiene el aislamiento', () {
+      final lots = [
+        _lot(id: '1', establishmentId: 'est-1', name: 'Viejo'),
+        _lot(
+          id: '1',
+          establishmentId: 'est-1',
+          name: 'Lote eliminado',
+          updatedAt: DateTime.utc(2026, 9),
+          deletedAt: DateTime.utc(2026, 9),
+        ),
+        _lot(id: 'ajeno', establishmentId: 'est-2', name: 'Ajeno'),
+      ];
+
+      expect(BrickLotStore.selectLocalLots(lots, establishmentId: 'est-1'), isEmpty);
+      final historyLots = BrickLotStore.selectLocalLots(lots, establishmentId: 'est-1', includeDeleted: true);
+      expect(historyLots.single.name, 'Lote eliminado');
+      expect(historyLots.single.deletedAt, isNotNull);
+    });
     test('aísla por establecimiento y ordena por nombre', () {
       final selected = BrickLotStore.selectLocalLots(
         [

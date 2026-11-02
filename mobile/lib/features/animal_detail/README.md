@@ -104,3 +104,36 @@ widgets cubren estados, navegación, respuestas tardías y lifecycle.
 El caso de mil crías comprueba que el delegado construya widgets por callback,
 además del montaje acotado y la navegación. Así detecta una regresión a una lista
 de widgets preconstruidos, que también podría montar solo los elementos visibles.
+
+## Historial de movimientos
+
+La pestaña `AnimalMovementsTab`, su `MovementHistoryCubit` y
+`GetAnimalMovementHistoryUseCase` pertenecen a esta feature porque presentan
+el historial de la ficha. Comparten únicamente las entidades y el contrato
+`AnimalMovementRepository` del dominio de movimientos; no importan su data ni
+su presentación. Los textos del historial y la confirmación de retorno viven
+en `AnimalDetailStrings`.
+
+La construcción que conecta ficha, movimientos y repositorios de campo está
+en `lib/app/composition/animal_movement_composition.dart`. El router inyecta
+las factories y los providers de la ficha siguen siendo dueños de sus Cubits.
+La navegación al traslado conserva la ruta `/animals/:animalId/mover` y el
+resultado de dominio `GroupMovementSummary`.
+
+El historial conserva estados pendiente, sincronizado y rechazado sin
+confundirlos. La llegada marcada como actual corresponde al potrero local del
+animal; las filas siguen ordenadas por fecha efectiva aunque un movimiento
+retroactivo aparezca después. Los nombres se resuelven incluyendo lotes con
+tombstone, que permanecen excluidos de las opciones de destino.
+
+Al volver del traslado, incluso tras guardar solo algunos orígenes, se recargan
+la ficha y el historial. La confirmación utiliza los destinos del resumen
+guardado; el animal inicial puede haber sido quitado de la selección.
+
+Mientras la ficha permanece abierta, el Cubit observa invalidaciones locales
+a través del caso de uso y del contrato de dominio. Data filtra los cambios de
+animales, movimientos y lotes persistidos por Brick después del commit. Así,
+una confirmación o rechazo actualiza el historial y una reconciliación posterior
+del animal recalcula el potrero actual, sin depender del orden de respuestas
+HTTP. El cierre cancela la suscripción y las lecturas anteriores no reemplazan
+una lectura más reciente.

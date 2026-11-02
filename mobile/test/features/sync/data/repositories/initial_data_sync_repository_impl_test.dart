@@ -186,7 +186,7 @@ class _FakeLotStore implements LotBrickStore {
   Future<BrickLotModel?> getLocalLot(String lotId) async => null;
 
   @override
-  Future<List<BrickLotModel>> getLocalLots(String establishmentId) async => [];
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId, {bool includeDeleted = false}) async => [];
 
   @override
   Future<void> pullRemoteLots(String establishmentId) async {
@@ -203,6 +203,9 @@ class _FakeLotStore implements LotBrickStore {
 }
 
 class _FakeMovementStore implements AnimalLotMovementBrickStore {
+  @override
+  Future<List<BrickAnimalLotMovementModel>> getLocalMovements(String establishmentId) async => const [];
+
   final List<String> pulls = [];
   final List<String> pushes = [];
 
