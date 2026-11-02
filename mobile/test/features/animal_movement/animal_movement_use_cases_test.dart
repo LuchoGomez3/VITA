@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/errors/movement_failure.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/use_cases/animal_movement_use_cases.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_animal_movement.dart';
@@ -75,7 +76,13 @@ void main() {
         reason: 'Rotación',
       );
 
-      expect((result as Failure<GroupMovementSummary>).error.message, startsWith('Se movieron 1 animales'));
+      final error = (result as Failure<GroupMovementSummary>).error;
+      expect(
+        error.reason,
+        isA<MovementPartialFailure>()
+            .having((reason) => reason.movedCount, 'movedCount', 1)
+            .having((reason) => reason.cause, 'cause', isA<DomainException>()),
+      );
     });
   });
 

@@ -1,6 +1,7 @@
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/errors/movement_failure.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_animal_movement.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/move_lot_animals_use_case.dart';
@@ -24,25 +25,25 @@ class PrepareGroupMovementUseCase {
   final AnimalMovementRepository _repository;
 
   /// Devuelve el animal inicial y los destinos posibles.
-  Future<Result<({MovementAnimal animal, List<MovementDestination> destinations})>> call(String animalId) async {
+  Future<Result<GroupMovementPreparation>> call(String animalId) async {
     final animalResult = await _repository.getAnimal(animalId);
     if (animalResult is Failure<MovementAnimal?>) {
       return Result.failure(animalResult.error);
     }
     final animal = (animalResult as Success<MovementAnimal?>).data;
     if (animal == null) {
-      return const Result.failure(
-        DomainException(
-          message: 'Este animal no se puede mover: no está activo o no tiene potrero.',
-          code: DomainErrorCode.validation,
-        ),
-      );
+      return Result.failure(movementException(const MovementFailure.animalUnavailable()));
     }
     final destinations = await _repository.getDestinations(animal.establishmentId);
     return switch (destinations) {
-      Success(:final data) => Result.success((animal: animal, destinations: data)),
+      Success(:final data) => Result.success(GroupMovementPreparation(animal: animal, destinations: data)),
       Failure(:final error) => Result.failure(error),
-      _ => const Result.failure(DomainException(message: 'No se pudieron leer los potreros.')),
+      _ => Result.failure(
+        movementException(
+          const MovementFailure.localRead(MovementReadTarget.destinations),
+          code: DomainErrorCode.unknown,
+        ),
+      ),
     };
   }
 }
@@ -63,9 +64,7 @@ class ResolveMovementTagUseCase {
   }) async {
     final trimmed = tag.trim();
     if (trimmed.isEmpty) {
-      return const Result.failure(
-        DomainException(message: 'Leé o escribí una caravana.', code: DomainErrorCode.validation),
-      );
+      return Result.failure(movementException(const MovementFailure.tagRequired()));
     }
     final found = await _repository.findAnimalByTag(trimmed);
     if (found is Failure<MovementAnimal?>) {
@@ -74,26 +73,15 @@ class ResolveMovementTagUseCase {
     final animal = (found as Success<MovementAnimal?>).data;
     if (animal == null) {
       return Result.failure(
-        DomainException(
-          message: 'No hay ningún animal activo con la caravana $trimmed en el celular.',
-          code: DomainErrorCode.notFound,
-        ),
+        movementException(MovementFailure.tagNotFound(trimmed), code: DomainErrorCode.notFound),
       );
     }
     if (animal.establishmentId != establishmentId) {
-      return const Result.failure(
-        DomainException(
-          message: 'Ese animal es de otro establecimiento: los potreros son de un solo campo.',
-          code: DomainErrorCode.validation,
-        ),
-      );
+      return Result.failure(movementException(const MovementFailure.differentEstablishment()));
     }
     if (selectedIds.contains(animal.id)) {
       return Result.failure(
-        DomainException(
-          message: 'La caravana ${animal.visualTag} ya está en la lista.',
-          code: DomainErrorCode.conflict,
-        ),
+        movementException(MovementFailure.alreadySelected(animal.visualTag), code: DomainErrorCode.conflict),
       );
     }
     return Result.success(animal);
@@ -120,14 +108,10 @@ class RegisterGroupMovementUseCase {
     required String reason,
   }) async {
     if (animals.isEmpty) {
-      return const Result.failure(
-        DomainException(message: 'Agregá al menos un animal.', code: DomainErrorCode.validation),
-      );
+      return Result.failure(movementException(const MovementFailure.animalsRequired()));
     }
     if (reason.trim().isEmpty) {
-      return const Result.failure(
-        DomainException(message: 'Ingresá el motivo del movimiento.', code: DomainErrorCode.validation),
-      );
+      return Result.failure(movementException(const MovementFailure.reasonRequired()));
     }
 
     final bySourceLot = <String, List<String>>{};
@@ -140,12 +124,7 @@ class RegisterGroupMovementUseCase {
       bySourceLot.putIfAbsent(animal.lotId, () => []).add(animal.id);
     }
     if (bySourceLot.isEmpty) {
-      return const Result.failure(
-        DomainException(
-          message: 'Todos los animales ya están en ese potrero.',
-          code: DomainErrorCode.validation,
-        ),
-      );
+      return Result.failure(movementException(const MovementFailure.allAlreadyThere()));
     }
 
     var moved = 0;
@@ -162,12 +141,7 @@ class RegisterGroupMovementUseCase {
         return Result.failure(
           moved == 0
               ? result.error
-              : DomainException(
-                  message:
-                      'Se movieron $moved animales, pero el resto no: ${result.error.message} '
-                      'Revisá la lista y volvé a intentar con los que faltan.',
-                  code: result.error.code,
-                ),
+              : movementException(MovementFailure.partial(moved, result.error), code: result.error.code),
         );
       }
       moved += animalIds.length;
