@@ -227,6 +227,13 @@ encolan siempre para sincronización; el login también envía pendientes y lueg
 descarga la representación autoritativa en el orden lotes, animales y
 movimientos.
 
+Los pulls de animales, lotes y movimientos persisten cada tanda en una
+transacción local. Después del commit se actualiza toda la caché en memoria y
+se notifica una vez por tipo de modelo modificado, no por fila. Un rollback no
+publica invalidaciones. Las lecturas del historial también agrupan eventos
+recibidos durante una consulta: mantienen una sola lectura activa y una recarga
+pendiente con el último estado.
+
 La lectura `LotBrickStore.getLocalLots` excluye tombstones por defecto.
 El historial de movimientos usa `includeDeleted: true` para conservar los
 nombres de potreros anteriores. La deduplicación y el filtro de establecimiento

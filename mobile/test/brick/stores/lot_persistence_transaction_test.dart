@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -28,6 +29,7 @@ void main() {
   late AppBrickRepository repository;
   late BrickLotStore lotStore;
   late BrickAnimalLotMovementStore movementStore;
+  final remoteBodies = <String, String>{};
 
   setUpAll(() async {
     sqfliteFfiInit();
@@ -42,7 +44,12 @@ void main() {
       localDatabaseFactory: databaseFactoryFfi,
       tokenProvider: const _TestTokenProvider(),
       client: MockClient(
-        (request) async => http.Response('server unavailable', 503),
+        (request) async {
+          final body = remoteBodies[request.url.path];
+          return request.method == 'GET' && body != null
+              ? http.Response(body, 200, headers: {'content-type': 'application/json'})
+              : http.Response('server unavailable', 503);
+        },
       ),
     );
     repository = AppBrickRepository.instance;
@@ -56,6 +63,8 @@ void main() {
     lotStore = BrickLotStore.instance;
     movementStore = BrickAnimalLotMovementStore.instance;
   });
+
+  tearDown(remoteBodies.clear);
 
   tearDownAll(() async {
     await databaseFactoryFfi.deleteDatabase(sqlitePath);
@@ -159,6 +168,89 @@ void main() {
     );
     await Future<void>.delayed(Duration.zero);
     expect(changes, isEmpty);
+  });
+
+  test('500 animales y un movimiento notifican una vez por tipo después del commit', () async {
+    final changes = <Type>[];
+    final subscription = repository.localChanges.listen(changes.add);
+    addTearDown(subscription.cancel);
+
+    await repository.runLocalTransaction((transaction) async {
+      for (var i = 0; i < 500; i++) {
+        await transaction.upsert(_animal(id: 'batch-$i', lotId: 'source-lot'));
+      }
+      await transaction.upsert(_movement(id: 'batch-movement', animalId: 'batch-0'));
+    });
+    await Future<void>.delayed(Duration.zero);
+
+    expect(changes, [BrickAnimalModel, BrickAnimalLotMovementModel]);
+    final saved = await BrickAnimalStore.instance.getLocalAnimals();
+    expect(saved.where((animal) => animal.localId.startsWith('batch-')), hasLength(500));
+  });
+
+  test('un pull de animales persiste toda la tanda con una sola invalidación', () async {
+    final adapter = repository.remoteProvider.modelDictionary.adapterFor[BrickAnimalModel]!;
+    final data = [
+      for (var i = 0; i < 50; i++)
+        await adapter.toRest(
+          _animal(id: 'pulled-$i', lotId: 'source-lot'),
+          provider: repository.remoteProvider,
+          repository: repository,
+        ),
+    ];
+    remoteBodies['/api/v1/animales'] = jsonEncode({'success': true, 'data': data});
+    final changes = <Type>[];
+    final subscription = repository.localChanges.listen(changes.add);
+    addTearDown(subscription.cancel);
+
+    await BrickAnimalStore.instance.pullRemoteAnimals('establishment-id');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(changes, [BrickAnimalModel]);
+    final saved = await BrickAnimalStore.instance.getLocalAnimals();
+    expect(saved.where((animal) => animal.localId.startsWith('pulled-')), hasLength(50));
+  });
+
+  test('los pulls de lotes y movimientos notifican una sola vez por tanda', () async {
+    final lotAdapter = repository.remoteProvider.modelDictionary.adapterFor[BrickLotModel]!;
+    final movementAdapter = repository.remoteProvider.modelDictionary.adapterFor[BrickAnimalLotMovementModel]!;
+    final lots = [
+      for (var i = 0; i < 30; i++)
+        await lotAdapter.toRest(
+          _lot(id: 'pulled-lot-$i', name: 'Potrero $i'),
+          provider: repository.remoteProvider,
+          repository: repository,
+        ),
+    ];
+    final movements = [
+      for (var i = 0; i < 30; i++)
+        await movementAdapter.toRest(
+          _movement(id: 'pulled-movement-$i'),
+          provider: repository.remoteProvider,
+          repository: repository,
+        ),
+    ];
+    remoteBodies['/api/v1/lotes'] = jsonEncode({'success': true, 'data': lots});
+    remoteBodies['/api/v1/movimientos_lotes'] = jsonEncode({'success': true, 'data': movements});
+    final changes = <Type>[];
+    final subscription = repository.localChanges.listen(changes.add);
+    addTearDown(subscription.cancel);
+
+    await lotStore.pullRemoteLots('establishment-id');
+    await movementStore.pullRemoteMovements('establishment-id');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(changes, [BrickLotModel, BrickAnimalLotMovementModel]);
+    expect(
+      (await lotStore.getLocalLots('establishment-id')).where((lot) => lot.localId.startsWith('pulled-lot-')),
+      hasLength(30),
+    );
+    expect(
+      (await movementStore.getLocalMovements(
+        'establishment-id',
+      )).where((movement) => movement.localId.startsWith('pulled-movement-')),
+      hasLength(30),
+    );
   });
 
   test('la lectura histórica puede resolver un lote borrado en SQLite', () async {

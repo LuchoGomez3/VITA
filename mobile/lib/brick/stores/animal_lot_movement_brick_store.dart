@@ -124,19 +124,21 @@ class BrickAnimalLotMovementStore implements AnimalLotMovementBrickStore {
     );
     final localMovements = await _repository.getLocal<BrickAnimalLotMovementModel>();
     final localById = {for (final movement in localMovements) movement.localId: movement};
-    for (final remote in remoteMovements) {
-      final local = localById[remote.localId];
-      if (local != null && local.syncStatus != BrickAnimalLotMovementSyncStatus.synchronized) {
-        continue;
+    await _repository.runLocalTransaction((transaction) async {
+      for (final remote in remoteMovements) {
+        final local = localById[remote.localId];
+        if (local != null && local.syncStatus != BrickAnimalLotMovementSyncStatus.synchronized) {
+          continue;
+        }
+        remote.primaryKey = local?.primaryKey;
+        await transaction.upsert(
+          remote.copyWith(
+            syncStatus: BrickAnimalLotMovementSyncStatus.synchronized,
+            syncErrorCode: null,
+          ),
+        );
       }
-      remote.primaryKey = local?.primaryKey;
-      await _repository.upsertLocal(
-        remote.copyWith(
-          syncStatus: BrickAnimalLotMovementSyncStatus.synchronized,
-          syncErrorCode: null,
-        ),
-      );
-    }
+    });
   }
 
   @override
