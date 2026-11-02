@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -12,7 +13,10 @@ import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.da
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
+import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_location_repository_impl.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_location.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_movement_history_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/movement_history_cubit.dart';
 import 'package:frontend_mayoral/features/animal_movement/data/repositories/animal_movement_repository_impl.dart';
@@ -123,6 +127,16 @@ void main() {
         ),
       );
       addTearDown(cubit.close);
+      final location = StreamIterator(
+        AnimalLocationRepositoryImpl(
+          animalStore: BrickAnimalStore.instance,
+          lotStore: lotStore,
+          localChanges: repository.localChanges,
+        ).watchLocation(animalId, establishmentId: 'establishment-id'),
+      );
+      addTearDown(location.cancel);
+      expect(await location.moveNext(), isTrue);
+      expect((location.current as Success<AnimalLocation?>).data?.lotId, 'destination-lot');
       await cubit.load(animalId);
       final initial = (cubit.state as Data<List<MovementHistoryEntry>>).data;
       expect(initial.singleWhere((entry) => entry.isCurrent).movementId, movementId);
@@ -150,8 +164,11 @@ void main() {
             state is Data<List<MovementHistoryEntry>> &&
             state.data.any((entry) => entry.movementId == 'previous-$synchronized' && entry.isCurrent),
       );
+      final locationChanged = location.moveNext();
       await repository.upsertLocal(original.copyWith(lotId: 'source-lot'));
       await reconciled;
+      expect(await locationChanged, isTrue);
+      expect((location.current as Success<AnimalLocation?>).data?.lotId, 'source-lot');
     });
   }
 

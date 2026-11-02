@@ -137,3 +137,15 @@ una confirmación o rechazo actualiza el historial y una reconciliación posteri
 del animal recalcula el potrero actual, sin depender del orden de respuestas
 HTTP. El cierre cancela la suscripción y las lecturas anteriores no reemplazan
 una lectura más reciente.
+
+General observa la ubicación mediante `WatchAnimalLocationUseCase` y el contrato
+`AnimalLocationRepository`. La implementación lee solo animales y lotes locales,
+incluye el establecimiento de la ficha y agrupa invalidaciones durante una
+lectura. No descarga pesajes ni vuelve a cargar la foto. Así, un rechazo tardío
+y el pull autoritativo actualizan el potrero de General y el del historial sin
+cerrar la página. Una lectura local fallida conserva la última ubicación conocida
+y se registra en data; un animal ausente deja de mostrarse como disponible.
+
+El Cubit cancela la escucha al recargar o cerrar la ficha y descarta respuestas
+anteriores de detalle y foto. Las pruebas cubren el retorno optimista seguido de
+reconciliación, SQLite real, aislamiento, ráfagas de eventos y cancelación.

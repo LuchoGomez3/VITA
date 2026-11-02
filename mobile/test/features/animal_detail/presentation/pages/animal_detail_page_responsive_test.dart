@@ -10,15 +10,18 @@ import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_genealogy.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_location.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_photo.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/repositories/animal_detail_repository.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/repositories/animal_genealogy_repository.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/repositories/animal_location_repository.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/repositories/animal_photo_repository.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_detail_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_genealogy_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_movement_history_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_photo_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/retry_animal_sync_use_case.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/watch_animal_location_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_genealogy_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/movement_history_cubit.dart';
@@ -126,6 +129,8 @@ void main() {
     testWidgets('genealogía y retorno del traslado, animal inicial movido: $movedInitial', (tester) async {
       final detailRepository = _MovingDetailRepository();
       final movementRepository = _MovementRepository();
+      final locationChanges = StreamController<Result<AnimalLocation?>>.broadcast();
+      addTearDown(locationChanges.close);
       final router = GoRouter(
         initialLocation: AppRoutes.animalDetailById(_animal.id),
         routes: [
@@ -133,7 +138,10 @@ void main() {
             path: AppRoutes.animalDetail,
             builder: (context, state) => AnimalDetailPage(
               animalId: state.pathParameters['animalId']!,
-              createCubit: () => _createCubit(detailRepository: detailRepository),
+              createCubit: () => _createCubit(
+                detailRepository: detailRepository,
+                locationRepository: _LocationRepository(locationChanges.stream),
+              ),
               createGenealogyCubit: _createGenealogyCubit,
               createMovementHistoryCubit: () => MovementHistoryCubit(
                 GetAnimalMovementHistoryUseCase(movementRepository),
@@ -201,6 +209,34 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(movedInitial ? 'Potrero destino' : _animal.lotName), findsOneWidget);
       expect(find.byType(Image), findsOneWidget);
+
+      if (movedInitial) {
+        // El rechazo y la ubicación autoritativa llegan después del retorno.
+        movementRepository.history = [
+          movementRepository.history.single.copyWith(syncStatus: MovementSyncStatus.rejected),
+        ];
+        movementRepository.changes.add(null);
+        locationChanges.add(
+          Result.success(
+            AnimalLocation(
+              animalId: _animal.id,
+              establishmentId: _animal.establishmentId,
+              lotId: 'authoritative-id',
+              lotName: 'Potrero autoritativo',
+              updatedAt: DateTime.utc(2026, 11),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Potrero autoritativo'), findsOneWidget);
+        expect(find.text('Potrero destino'), findsNothing);
+        expect(find.byType(Image), findsOneWidget);
+        await tester.tap(find.text(AnimalDetailStrings.movementsTab));
+        await tester.pumpAndSettle();
+        expect(find.text(AnimalDetailStrings.movementRejected), findsOneWidget);
+      }
+      await tester.pumpWidget(const SizedBox());
+      await movementRepository.changes.close();
     });
   }
 }
@@ -223,9 +259,11 @@ MovementHistoryCubit _createMovementHistoryCubit() => MovementHistoryCubit(
 AnimalDetailCubit _createCubit({
   Future<Result<AnimalPhoto?>>? photoResult,
   AnimalDetailRepository detailRepository = const _DetailRepository(),
+  AnimalLocationRepository locationRepository = const _LocationRepository(),
 }) {
   final photoRepository = _PhotoRepository(result: photoResult);
   return AnimalDetailCubit(
+    watchAnimalLocationUseCase: WatchAnimalLocationUseCase(locationRepository),
     getAnimalDetailUseCase: GetAnimalDetailUseCase(detailRepository),
     getAnimalPhotoUseCase: GetAnimalPhotoUseCase(photoRepository),
     retryAnimalSyncUseCase: RetryAnimalSyncUseCase(detailRepository),
@@ -257,8 +295,9 @@ class _MovingDetailRepository implements AnimalDetailRepository {
 }
 
 class _MovementRepository implements AnimalMovementRepository {
+  final changes = StreamController<void>.broadcast();
   @override
-  Stream<void> get historyChanges => const Stream.empty();
+  Stream<void> get historyChanges => changes.stream;
 
   List<MovementHistoryEntry> history = [];
   final loadedAnimalIds = <String>[];
@@ -278,6 +317,14 @@ class _MovementRepository implements AnimalMovementRepository {
 
   @override
   Future<Result<List<MovementDestination>>> getDestinations(String establishmentId) => throw UnimplementedError();
+}
+
+class _LocationRepository implements AnimalLocationRepository {
+  const _LocationRepository([this.changes = const Stream.empty()]);
+  final Stream<Result<AnimalLocation?>> changes;
+
+  @override
+  Stream<Result<AnimalLocation?>> watchLocation(String animalId, {required String establishmentId}) => changes;
 }
 
 class _PhotoRepository implements AnimalPhotoRepository {
