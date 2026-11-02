@@ -50,6 +50,15 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
   final _tagController = TextEditingController();
   final _tagFocus = FocusNode();
   final _reasonController = TextEditingController();
+  int _tagRevision = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tagController.addListener(_onTagEdited);
+  }
+
+  void _onTagEdited() => _tagRevision++;
 
   @override
   void dispose() {
@@ -60,12 +69,21 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
   }
 
   Future<void> _addTag() async {
-    final added = await context.read<GroupMovementCubit>().addTag(_tagController.text);
-    if (added) {
-      _tagController.clear();
+    final tag = _tagController.text;
+    _tagRevision++;
+    _tagController.clear();
+    final revision = _tagRevision;
+    // Cada Enter entrega una captura independiente al Cubit y deja el campo
+    // listo para la siguiente lectura antes de consultar SQLite.
+    _tagFocus.requestFocus();
+    final added = await context.read<GroupMovementCubit>().addTag(tag);
+    if (!mounted) return;
+    if (!added && revision == _tagRevision) {
+      _tagController.value = TextEditingValue(
+        text: tag,
+        selection: TextSelection.collapsed(offset: tag.length),
+      );
     }
-    // El bastón lee una caravana tras otra: el foco vuelve al campo.
-    if (mounted) _tagFocus.requestFocus();
   }
 
   Future<void> _pickDate(DateTime current) async {

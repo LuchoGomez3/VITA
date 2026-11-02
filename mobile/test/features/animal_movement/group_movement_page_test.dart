@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
@@ -103,6 +105,102 @@ void main() {
       });
       if (partial) expect(move.sourceCalls, ['bajo', 'sauces', if (retry) 'sauces']);
     });
+  }
+
+  testWidgets('la respuesta de A no borra B y dos Enter capturan caravanas independientes', (tester) async {
+    final repository = _DelayedRepository();
+    final cubit = _createCubit(repository);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GroupMovementPage(animalId: 'a1', createCubit: () => cubit),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final field = find.byType(TextField).first;
+
+    await tester.enterText(field, '002');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+    await tester.enterText(field, '00');
+    repository.first.complete(Result.success(_animal('a2', '002', 'bajo')));
+    await tester.pump();
+    expect(tester.widget<TextField>(field).controller!.text, '00');
+
+    await tester.enterText(field, '003');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    repository.second.complete(Result.success(_animal('a3', '003', 'bajo')));
+    await tester.pumpAndSettle();
+
+    expect(repository.tags, ['002', '003']);
+    expect(cubit.state.animals.map((animal) => animal.id), ['a1', 'a2', 'a3']);
+    expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+  });
+
+  for (final editDuringLookup in [false, true]) {
+    testWidgets('una lectura fallida solo restaura texto sin ediciones posteriores: $editDuringLookup', (tester) async {
+      final repository = _DelayedRepository();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: GroupMovementPage(
+            animalId: 'a1',
+            createCubit: () => _createCubit(repository),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final field = find.byType(TextField).first;
+      await tester.enterText(field, '002');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+      if (editDuringLookup) await tester.enterText(field, '003');
+
+      repository.first.complete(const Result.success(null));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<TextField>(field).controller!.text, editDuringLookup ? '003' : '002');
+      expect(find.text(AnimalMovementStrings.tagNotFound('002')), findsOneWidget);
+    });
+  }
+
+  testWidgets('cerrar durante la búsqueda no accede al controller descartado', (tester) async {
+    final repository = _DelayedRepository();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GroupMovementPage(
+          animalId: 'a1',
+          createCubit: () => _createCubit(repository),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, '002');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox());
+
+    repository.first.complete(Result.success(_animal('a2', '002', 'bajo')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+}
+
+GroupMovementCubit _createCubit(AnimalMovementRepository repository) => GroupMovementCubit(
+  prepare: PrepareGroupMovementUseCase(repository),
+  resolveTag: ResolveMovementTagUseCase(repository),
+  register: RegisterGroupMovementUseCase(_FakeMove()),
+);
+
+class _DelayedRepository extends _FakeRepository {
+  final first = Completer<Result<MovementAnimal?>>();
+  final second = Completer<Result<MovementAnimal?>>();
+  final tags = <String>[];
+
+  @override
+  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) {
+    tags.add(tag);
+    return tag == '002' ? first.future : second.future;
   }
 }
 
