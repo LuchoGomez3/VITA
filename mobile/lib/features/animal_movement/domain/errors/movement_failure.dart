@@ -30,6 +30,9 @@ sealed class MovementFailure with _$MovementFailure {
   /// No existe una coincidencia local para la identificación.
   const factory MovementFailure.tagNotFound(String tag) = MovementTagNotFound;
 
+  /// La identificación no permite elegir un único animal del establecimiento.
+  const factory MovementFailure.ambiguousTag(String tag) = MovementAmbiguousTag;
+
   /// El animal identificado pertenece a otro establecimiento.
   const factory MovementFailure.differentEstablishment() = MovementDifferentEstablishment;
 

@@ -12,6 +12,8 @@ import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_movement/data/repositories/animal_movement_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/errors/movement_failure.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/use_cases/animal_movement_use_cases.dart';
 
 void main() {
   AnimalMovementRepositoryImpl repository({
@@ -29,6 +31,59 @@ void main() {
   T data<T>(Result<T> result) => (result as Success<T>).data;
 
   group('findAnimalByTag', () {
+    for (final reverseOrder in [false, true]) {
+      test('prioriza RFID sobre visual coincidente, orden invertido=$reverseOrder', () async {
+        final animals = [
+          _animal('visual', visualTag: '982000412884005', rfid: '982000000000001'),
+          _animal('electronic', visualTag: '002'),
+        ];
+        final subject = repository(animals: reverseOrder ? animals.reversed.toList() : animals);
+        final found = data(await subject.findAnimalByTag('982 000412 884005', establishmentId: 'campo-1'));
+        expect(found?.id, 'electronic');
+      });
+    }
+
+    test('una visual de quince dígitos sigue siendo válida si no hay RFID coincidente', () async {
+      final subject = repository(
+        animals: [_animal('visual', visualTag: '982000412884005', rfid: '982000000000001')],
+      );
+      expect(data(await subject.findAnimalByTag('982000412884005', establishmentId: 'campo-1'))?.id, 'visual');
+    });
+
+    for (final rfid in [false, true]) {
+      for (final reverseOrder in [false, true]) {
+        test('no elige entre duplicados RFID=$rfid, orden invertido=$reverseOrder', () async {
+          final animals = [
+            _animal('a1'),
+            _animal('a2', rfid: rfid ? '982000412884005' : '982000000000002'),
+          ];
+          final subject = repository(animals: reverseOrder ? animals.reversed.toList() : animals);
+          final tag = rfid ? '982000412884005' : '0040028';
+          final result = await ResolveMovementTagUseCase(subject)(
+            tag: tag,
+            establishmentId: 'campo-1',
+            selectedIds: {},
+          );
+          expect(result, isA<Failure<MovementAnimal>>());
+          expect((result as Failure<MovementAnimal>).error.reason, MovementFailure.ambiguousTag(tag));
+        });
+      }
+    }
+
+    test('los duplicados inactivos o ajenos no generan ambigüedad', () async {
+      final subject = repository(
+        animals: [
+          _animal('ajeno', establishmentId: 'campo-2'),
+          _animal('vendido', status: BrickAnimalProductiveStatus.sold),
+          _animal('borrado', deletedAt: DateTime.utc(2026)),
+          _animal('propio'),
+        ],
+      );
+      for (final tag in ['982000412884005', '0040028']) {
+        expect(data(await subject.findAnimalByTag(tag, establishmentId: 'campo-1'))?.id, 'propio');
+      }
+    });
+
     test('una caravana visual repetida en otro campo no oculta al animal propio', () async {
       final subject = repository(
         animals: [

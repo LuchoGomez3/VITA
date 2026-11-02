@@ -35,6 +35,13 @@ vigente. El guardado espera a que terminen y bloquea un segundo envío o cambios
 de selección mientras la operación está en curso. La búsqueda siempre incluye
 el establecimiento antes de elegir una coincidencia de caravana.
 
+La captura se separa del campo editable antes de consultar: una respuesta
+tardía no borra la siguiente lectura. Si falla, solo se restaura el texto si no
+hubo nuevas ediciones o capturas. Un RFID exacto tiene prioridad sobre una
+caravana visual con los mismos dígitos, sin depender del orden de las filas.
+Si varios animales válidos coinciden por visual o RFID, se informa ambigüedad
+y no se agrega ninguno; hay que leer un RFID único o revisar los datos.
+
 Los casos de uso y data entregan `DomainException` con un motivo Freezed
 `MovementFailure` en `reason`. Su `message` es un identificador técnico;
 `AnimalMovementStrings.errorMessage` traduce el motivo y sus parámetros en

@@ -9,6 +9,7 @@ void main() {
       const MovementFailure.animalUnavailable(): AnimalMovementStrings.animalUnavailable,
       const MovementFailure.tagRequired(): AnimalMovementStrings.tagRequired,
       const MovementFailure.tagNotFound('123'): AnimalMovementStrings.tagNotFound('123'),
+      const MovementFailure.ambiguousTag('123'): AnimalMovementStrings.ambiguousTag('123'),
       const MovementFailure.differentEstablishment(): AnimalMovementStrings.differentEstablishment,
       const MovementFailure.alreadySelected('001'): AnimalMovementStrings.alreadySelected('001'),
       const MovementFailure.animalsRequired(): AnimalMovementStrings.animalsRequired,

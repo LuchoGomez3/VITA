@@ -97,6 +97,17 @@ void main() {
     expect(cubit.state.animals, [_animal]);
   });
 
+  test('una caravana ambigua conserva la selección sin agregar animales', () async {
+    await cubit.start('a1');
+    final error = movementException(const MovementFailure.ambiguousTag('002'));
+    repository.tagResult = Future.value(Result.failure(error));
+
+    expect(await cubit.addTag('002'), isFalse);
+    expect((cubit.state.tagResolution as ResultError<MovementAnimal>).error, error);
+    expect(cubit.state.animals, [_animal]);
+    expect(move.calls, 0);
+  });
+
   test('guardar expone loading, error y luego permite un envío exitoso', () async {
     await cubit.start('a1');
     cubit.selectDestination('destino');

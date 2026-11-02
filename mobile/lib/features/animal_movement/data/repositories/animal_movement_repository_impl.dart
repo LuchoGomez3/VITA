@@ -55,16 +55,21 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
       _guard(MovementReadTarget.tag, () async {
         final digits = tag.replaceAll(RegExp(r'\D'), '');
         final visual = _normalizeVisualTag(tag);
-        for (final animal in await _animalStore.getLocalAnimals()) {
-          if (!_isMovable(animal) || animal.establishmentId != establishmentId) {
-            continue;
-          }
-          final matchesRfid = digits.length == 15 && animal.rfidTagNumber.replaceAll(RegExp(r'\D'), '') == digits;
-          if (matchesRfid || _normalizeVisualTag(animal.visualTag) == visual) {
-            return _toMovementAnimal(animal);
-          }
+        final animals = (await _animalStore.getLocalAnimals())
+            .where((animal) => _isMovable(animal) && animal.establishmentId == establishmentId)
+            .toList();
+        final rfidMatches = digits.length == 15
+            ? animals.where((animal) => animal.rfidTagNumber.replaceAll(RegExp(r'\D'), '') == digits).toList()
+            : <BrickAnimalModel>[];
+        // El RFID tiene prioridad aunque otra caravana visual contenga los
+        // mismos dígitos. El orden de SQLite no define la identidad.
+        final matches = rfidMatches.isNotEmpty
+            ? rfidMatches
+            : animals.where((animal) => _normalizeVisualTag(animal.visualTag) == visual).toList();
+        if (matches.length > 1) {
+          throw movementException(MovementFailure.ambiguousTag(tag));
         }
-        return null;
+        return matches.isEmpty ? null : _toMovementAnimal(matches.single);
       });
 
   @override
@@ -172,6 +177,8 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
   Future<Result<T>> _guard<T>(MovementReadTarget target, Future<T> Function() action) async {
     try {
       return Result.success(await action());
+    } on DomainException catch (error) {
+      return Result.failure(error);
     } on Object catch (error, stackTrace) {
       _logger.severe('Local movement read failed: ${target.name}', error, stackTrace);
       return Result.failure(movementException(MovementFailure.localRead(target), code: DomainErrorCode.unknown));

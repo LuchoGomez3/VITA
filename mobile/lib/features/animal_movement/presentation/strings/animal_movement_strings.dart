@@ -63,6 +63,10 @@ abstract final class AnimalMovementStrings {
   /// Caravana sin coincidencia en el caché.
   static String tagNotFound(String tag) => 'No hay ningún animal activo con la caravana $tag en el celular.';
 
+  /// Evita agregar un animal arbitrario cuando hay identificaciones repetidas.
+  static String ambiguousTag(String tag) =>
+      'La identificación $tag coincide con varios animales. Leé un RFID único o revisá las caravanas.';
+
   /// La selección no puede mezclar establecimientos.
   static const differentEstablishment = 'Ese animal es de otro establecimiento: los potreros son de un solo campo.';
 
@@ -109,6 +113,7 @@ abstract final class AnimalMovementStrings {
     MovementAnimalUnavailable() => animalUnavailable,
     MovementTagRequired() => tagRequired,
     MovementTagNotFound(:final tag) => tagNotFound(tag),
+    MovementAmbiguousTag(:final tag) => ambiguousTag(tag),
     MovementDifferentEstablishment() => differentEstablishment,
     MovementAlreadySelected(:final visualTag) => alreadySelected(visualTag),
     MovementAnimalsRequired() => animalsRequired,

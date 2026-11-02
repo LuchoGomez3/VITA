@@ -12,6 +12,7 @@ abstract interface class AnimalMovementRepository {
   Future<Result<MovementAnimal?>> getAnimal(String animalId);
 
   /// Busca por RFID o caravana visual únicamente en [establishmentId].
+  /// El RFID exacto tiene prioridad. Las coincidencias ambiguas devuelven error.
   Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId});
 
   /// Potreros activos de [establishmentId] con cuántos animales tiene cada uno.
