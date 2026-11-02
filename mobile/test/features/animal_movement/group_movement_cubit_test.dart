@@ -159,7 +159,8 @@ class _Repository extends Fake implements AnimalMovementRepository {
       animalResult ?? Future.value(const Result.success(_animal));
 
   @override
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag) => tagResult ?? Future.value(const Result.success(null));
+  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) =>
+      tagResult ?? Future.value(const Result.success(null));
 
   @override
   Future<Result<List<MovementDestination>>> getDestinations(String establishmentId) async => const Result.success([

@@ -42,20 +42,21 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
   });
 
   @override
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag) => _guard(MovementReadTarget.tag, () async {
-    final digits = tag.replaceAll(RegExp(r'\D'), '');
-    final visual = _normalizeVisualTag(tag);
-    for (final animal in await _animalStore.getLocalAnimals()) {
-      if (!_isMovable(animal)) {
-        continue;
-      }
-      final matchesRfid = digits.length == 15 && animal.rfidTagNumber.replaceAll(RegExp(r'\D'), '') == digits;
-      if (matchesRfid || _normalizeVisualTag(animal.visualTag) == visual) {
-        return _toMovementAnimal(animal);
-      }
-    }
-    return null;
-  });
+  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) =>
+      _guard(MovementReadTarget.tag, () async {
+        final digits = tag.replaceAll(RegExp(r'\D'), '');
+        final visual = _normalizeVisualTag(tag);
+        for (final animal in await _animalStore.getLocalAnimals()) {
+          if (!_isMovable(animal) || animal.establishmentId != establishmentId) {
+            continue;
+          }
+          final matchesRfid = digits.length == 15 && animal.rfidTagNumber.replaceAll(RegExp(r'\D'), '') == digits;
+          if (matchesRfid || _normalizeVisualTag(animal.visualTag) == visual) {
+            return _toMovementAnimal(animal);
+          }
+        }
+        return null;
+      });
 
   @override
   Future<Result<List<MovementDestination>>> getDestinations(String establishmentId) => _guard(

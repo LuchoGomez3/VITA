@@ -106,7 +106,7 @@ class _FakeRepository implements AnimalMovementRepository {
   ]);
 
   @override
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag) async =>
+  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) async =>
       Result.success(tag == '982000412884920' ? _animal('a2', '004 0023', 'sauces') : null);
 
   @override

@@ -27,8 +27,28 @@ void main() {
   T data<T>(Result<T> result) => (result as Success<T>).data;
 
   group('findAnimalByTag', () {
+    test('una caravana visual repetida en otro campo no oculta al animal propio', () async {
+      final subject = repository(
+        animals: [
+          _animal('ajeno', establishmentId: 'campo-2'),
+          _animal('propio'),
+        ],
+      );
+
+      final found = data(await subject.findAnimalByTag('004 0028', establishmentId: 'campo-1'));
+
+      expect(found?.id, 'propio');
+      expect(data(await subject.findAnimalByTag('0040028', establishmentId: 'campo-3')), isNull);
+    });
+
+    test('un RFID de otro campo no se devuelve a la selección', () async {
+      final subject = repository(animals: [_animal('ajeno', establishmentId: 'campo-2')]);
+
+      expect(data(await subject.findAnimalByTag('982000412884005', establishmentId: 'campo-1')), isNull);
+    });
+
     test('encuentra por RFID aunque venga con espacios', () async {
-      final found = data(await repository().findAnimalByTag('982 000412 884 005'));
+      final found = data(await repository().findAnimalByTag('982 000412 884 005', establishmentId: 'campo-1'));
 
       expect(found?.id, 'a1');
       expect(found?.categoryName, 'Novillo');
@@ -36,8 +56,8 @@ void main() {
     });
 
     test('encuentra por caravana visual sin importar los espacios', () async {
-      expect(data(await repository().findAnimalByTag('0040028'))?.id, 'a1');
-      expect(data(await repository().findAnimalByTag('004 0028'))?.id, 'a1');
+      expect(data(await repository().findAnimalByTag('0040028', establishmentId: 'campo-1'))?.id, 'a1');
+      expect(data(await repository().findAnimalByTag('004 0028', establishmentId: 'campo-1'))?.id, 'a1');
     });
 
     test('no devuelve animales borrados, vendidos o sin potrero', () async {
@@ -50,7 +70,7 @@ void main() {
       );
 
       for (final tag in ['1', '2', '3']) {
-        expect(data(await subject.findAnimalByTag(tag)), isNull, reason: tag);
+        expect(data(await subject.findAnimalByTag(tag, establishmentId: 'campo-1')), isNull, reason: tag);
       }
     });
   });
@@ -97,7 +117,7 @@ void main() {
       movementStore: _FakeMovementStore(const []),
     );
 
-    final result = await subject.findAnimalByTag('004 0028');
+    final result = await subject.findAnimalByTag('004 0028', establishmentId: 'campo-1');
 
     expect(result, isA<Failure<MovementAnimal?>>());
   });
@@ -110,6 +130,7 @@ BrickAnimalModel _animal(
   String visualTag = '004 0028',
   String rfid = '982000412884005',
   String lotId = 'lote-bajo',
+  String establishmentId = 'campo-1',
   BrickAnimalProductiveStatus status = BrickAnimalProductiveStatus.active,
   DateTime? deletedAt,
 }) => BrickAnimalModel(
@@ -121,7 +142,7 @@ BrickAnimalModel _animal(
   birthDate: DateTime.utc(2024, 6, 12),
   categoryId: 'cat-novillo',
   lotId: lotId,
-  establishmentId: 'campo-1',
+  establishmentId: establishmentId,
   initialWeight: 300,
   weighingMethod: BrickAnimalWeighingMethod.manual,
   weighingDate: DateTime.utc(2026, 5),

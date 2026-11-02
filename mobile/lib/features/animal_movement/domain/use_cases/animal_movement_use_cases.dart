@@ -55,7 +55,7 @@ class ResolveMovementTagUseCase {
     if (trimmed.isEmpty) {
       return Result.failure(movementException(const MovementFailure.tagRequired()));
     }
-    final found = await _repository.findAnimalByTag(trimmed);
+    final found = await _repository.findAnimalByTag(trimmed, establishmentId: establishmentId);
     if (found is Failure<MovementAnimal?>) {
       return Result.failure(found.error);
     }

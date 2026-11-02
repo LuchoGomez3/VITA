@@ -116,11 +116,12 @@ MovementAnimal _animal(String id, {required String lotId, String establishmentId
 
 class _FakeRepository implements AnimalMovementRepository {
   @override
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag) async => Result.success(switch (tag) {
-    '004 0028' => _animal('a1', lotId: 'bajo'),
-    'otro' => _animal('b1', lotId: 'x', establishmentId: 'campo-2'),
-    _ => null,
-  });
+  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) async =>
+      Result.success(switch (tag) {
+        '004 0028' => _animal('a1', lotId: 'bajo'),
+        'otro' => _animal('b1', lotId: 'x', establishmentId: 'campo-2'),
+        _ => null,
+      });
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName}');

@@ -7,8 +7,8 @@ abstract interface class AnimalMovementRepository {
   /// El animal [animalId] si se puede mover; `null` si no está activo o no existe.
   Future<Result<MovementAnimal?>> getAnimal(String animalId);
 
-  /// Busca un animal activo por RFID (15 dígitos) o por caravana visual.
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag);
+  /// Busca por RFID o caravana visual únicamente en [establishmentId].
+  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId});
 
   /// Potreros activos de [establishmentId] con cuántos animales tiene cada uno.
   Future<Result<List<MovementDestination>>> getDestinations(String establishmentId);

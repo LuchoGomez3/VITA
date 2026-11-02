@@ -259,7 +259,8 @@ class _MovementRepository implements AnimalMovementRepository {
   Future<Result<MovementAnimal?>> getAnimal(String animalId) => throw UnimplementedError();
 
   @override
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag) => throw UnimplementedError();
+  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) =>
+      throw UnimplementedError();
 
   @override
   Future<Result<List<MovementDestination>>> getDestinations(String establishmentId) => throw UnimplementedError();
