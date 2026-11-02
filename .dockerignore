@@ -1,0 +1,19 @@
+# Contexto de build del backend (backend/Dockerfile). Solo necesita backend/ y database/.
+.git
+.github
+.claude
+.vscode
+mobile
+ai_models
+docs
+scripts
+
+**/.env
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.coverage
+**/*.pyc
+
+backend/tests

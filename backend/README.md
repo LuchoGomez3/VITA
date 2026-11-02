@@ -122,3 +122,31 @@ Los valores reales dependen de la red del proveedor de despliegue.
 
 `SessionMiddleware` fue eliminado porque VITA usa tokens Bearer y ningún
 endpoint utiliza sesiones basadas en cookies.
+
+## Despliegue (Render)
+
+El backend corre en Render (plan free) como un único entorno `production` que sale de
+`main`. La decisión y sus limitaciones están en
+`docs/adr/adr-0004-despliegue-backend-render.md`.
+
+- **Imagen:** `backend/Dockerfile`, construida con la raíz del monorepo como contexto
+  porque el backend importa `database/`:
+
+  ```bash
+  docker build -f backend/Dockerfile -t vita-api .
+  docker run --env-file backend/.env -e PORT=8000 -p 8000:8000 vita-api
+  ```
+
+- **Servicio:** `render.yaml` (Blueprint). Solo redespliega si cambian `backend/` o
+  `database/`. Los secretos (`sync: false`) se cargan en el dashboard de Render.
+- **Pipeline:** en cada push a `main`, el job `deploy` de `.github/workflows/ci-cd.yml`
+  corre después de lint y tests: aplica `alembic upgrade head`, dispara el deploy hook
+  de Render y espera hasta que `/version` reporte el commit nuevo. Las migraciones
+  corren **antes** que el código nuevo, así que tienen que ser compatibles hacia atrás.
+- **Configuración en GitHub** (environment `production`): secrets `DATABASE_URL` y
+  `RENDER_DEPLOY_HOOK_URL`, variable `API_BASE_URL` (p. ej. `https://vita-api.onrender.com`).
+- **Keepalive:** `.github/workflows/keepalive.yml` pinguea `/api/health` cada 14 min
+  para que el plan free no duerma el servicio. Solo corre si `API_BASE_URL` está definida.
+- **Proxy:** `FORWARDED_ALLOW_IPS` tiene que cubrir la red privada desde la que el proxy
+  de Render llega al contenedor. Si no la cubre, uvicorn ignora `X-Forwarded-Proto` y
+  cada request recibe un 307.

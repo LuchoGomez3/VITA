@@ -75,3 +75,62 @@ jobs:
       - name: Run tests with coverage
         working-directory: ./backend
         run: uv run pytest tests --cov --cov-report=term-missing
+
+  # -------------------------
+  # DEPLOY (solo main): migrar la base y después desplegar en Render.
+  # Render Free no tiene pre-deploy command, así que la migración corre acá.
+  # -------------------------
+  deploy:
+    needs: [lint, tests]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: uv sync --no-dev
+
+      - name: Apply Alembic migrations
+        working-directory: ./backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ENVIRONMENT: production
+        run: uv run alembic upgrade head
+
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL" > /dev/null
+
+      - name: Smoke test
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: |
+          # Build + arranque en frío en el plan free: hasta ~15 min.
+          for i in $(seq 1 60); do
+            commit=$(curl -fsS "$API_BASE_URL/version" | jq -r .commit || true)
+            if [ "$commit" = "$GITHUB_SHA" ]; then
+              curl -fsS "$API_BASE_URL/api/health" > /dev/null
+              echo "Desplegado $GITHUB_SHA"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "El servicio no reporta el commit $GITHUB_SHA" >&2
+          exit 1
