@@ -131,6 +131,59 @@ void main() {
     expect(cubit.state.preparation, isA<Loading<GroupMovementPreparation>>());
   });
 
+  test('dos lecturas simultáneas de la misma caravana agregan un solo animal', () async {
+    await cubit.start('a1');
+    final pending = Completer<Result<MovementAnimal?>>();
+    repository.tagResult = pending.future;
+
+    final first = cubit.addTag('002');
+    final repeated = cubit.addTag('002');
+    await cubit.submit('Rotación');
+    expect(move.calls, 0);
+    pending.complete(Result.success(_animal.copyWith(id: 'a2', visualTag: '002')));
+
+    expect(await Future.wait([first, repeated]), [true, false]);
+    expect(cubit.state.animals.map((animal) => animal.id), ['a1', 'a2']);
+    expect(
+      (cubit.state.tagResolution as ResultError<MovementAnimal>).error.reason,
+      const MovementFailure.alreadySelected('002'),
+    );
+  });
+
+  test('guardar dos veces y editar durante el guardado no duplica la operación', () async {
+    await cubit.start('a1');
+    cubit.selectDestination('destino');
+    final pending = Completer<Result<LotAnimalMovement>>();
+    move.result = pending.future;
+
+    final saving = cubit.submit('Rotación');
+    await cubit.submit('Rotación');
+    cubit.remove('a1');
+    cubit.selectDestination('otro');
+    cubit.selectDate(DateTime.utc(2026));
+    expect(await cubit.addTag('002'), isFalse);
+
+    expect(move.calls, 1);
+    expect(cubit.state.destinationId, 'destino');
+    expect(cubit.state.animals, [_animal]);
+    expect(cubit.state.occurredAt, isNull);
+    pending.complete(const Result.failure(DomainException(message: 'offline')));
+    await saving;
+  });
+
+  test('cerrar con lecturas en cola descarta ambas sin emitir tarde', () async {
+    await cubit.start('a1');
+    final pending = Completer<Result<MovementAnimal?>>();
+    repository.tagResult = pending.future;
+    final first = cubit.addTag('002');
+    final second = cubit.addTag('003');
+    await cubit.close();
+    pending.complete(Result.success(_animal.copyWith(id: 'a2')));
+
+    expect(await Future.wait([first, second]), [false, false]);
+    expect(cubit.state.animals, [_animal]);
+  });
+
   test('las copias tienen igualdad por valor y permiten limpiar campos nulos', () {
     const state = GroupMovementState(animals: [_animal], destinationId: 'destino');
     expect(state.copyWith(), state);

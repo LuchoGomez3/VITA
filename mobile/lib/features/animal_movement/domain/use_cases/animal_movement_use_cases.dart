@@ -105,7 +105,8 @@ class RegisterGroupMovementUseCase {
 
     final bySourceLot = <String, List<String>>{};
     var alreadyThere = 0;
-    for (final animal in animals) {
+    final uniqueAnimals = {for (final animal in animals) animal.id: animal};
+    for (final animal in uniqueAnimals.values) {
       if (animal.lotId == destinationLotId) {
         alreadyThere++;
         continue;

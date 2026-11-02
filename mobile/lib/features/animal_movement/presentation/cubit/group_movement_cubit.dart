@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
@@ -21,6 +23,8 @@ class GroupMovementCubit extends Cubit<GroupMovementState> {
   final PrepareGroupMovementUseCase _prepare;
   final ResolveMovementTagUseCase _resolveTag;
   final RegisterGroupMovementUseCase _register;
+  Future<void> _tagReads = Future<void>.value();
+  int _pendingTagReads = 0;
 
   /// Carga el animal inicial y los destinos locales.
   Future<void> start(String animalId) async {
@@ -37,6 +41,25 @@ class GroupMovementCubit extends Cubit<GroupMovementState> {
 
   /// Resuelve una lectura; indica si la pantalla puede limpiar el campo.
   Future<bool> addTag(String tag) async {
+    if (isClosed || state.submission is Loading<GroupMovementSummary>) return false;
+    final previous = _tagReads;
+    final completed = Completer<void>();
+    _tagReads = completed.future;
+    _pendingTagReads++;
+    emit(state.copyWith(tagResolution: const ResultState.loading()));
+    try {
+      // El bastón puede repetir Enter antes de que termine SQLite. Resolver en
+      // orden hace que el caso de uso vea siempre la selección más reciente.
+      await previous;
+      if (isClosed) return false;
+      return await _resolveAndAddTag(tag);
+    } finally {
+      _pendingTagReads--;
+      completed.complete();
+    }
+  }
+
+  Future<bool> _resolveAndAddTag(String tag) async {
     emit(state.copyWith(tagResolution: const ResultState.loading()));
     final result = await _resolveTag(
       tag: tag,
@@ -62,24 +85,33 @@ class GroupMovementCubit extends Cubit<GroupMovementState> {
   }
 
   /// Quita un animal de la selección.
-  void remove(String animalId) => emit(
-    state.copyWith(
-      animals: [
-        for (final animal in state.animals)
-          if (animal.id != animalId) animal,
-      ],
-    ),
-  );
+  void remove(String animalId) {
+    if (state.submission is Loading<GroupMovementSummary>) return;
+    emit(
+      state.copyWith(
+        animals: [
+          for (final animal in state.animals)
+            if (animal.id != animalId) animal,
+        ],
+      ),
+    );
+  }
 
   /// Elige el potrero de destino.
-  void selectDestination(String lotId) =>
-      emit(state.copyWith(destinationId: lotId, submission: const ResultState.initial()));
+  void selectDestination(String lotId) {
+    if (state.submission is Loading<GroupMovementSummary>) return;
+    emit(state.copyWith(destinationId: lotId, submission: const ResultState.initial()));
+  }
 
   /// Cambia la fecha efectiva del movimiento.
-  void selectDate(DateTime date) => emit(state.copyWith(occurredAt: date));
+  void selectDate(DateTime date) {
+    if (state.submission is Loading<GroupMovementSummary>) return;
+    emit(state.copyWith(occurredAt: date));
+  }
 
   /// Registra la selección con el motivo indicado.
   Future<void> submit(String reason) async {
+    if (state.submission is Loading<GroupMovementSummary> || _pendingTagReads > 0) return;
     final destinationId = state.destinationId;
     if (destinationId == null) {
       emit(

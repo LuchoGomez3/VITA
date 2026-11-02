@@ -99,13 +99,16 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
             title: const Text(AnimalMovementStrings.pageTitle, style: AppTypography.appBarTitle),
           ),
           body: switch (state.preparation) {
-            Data<GroupMovementPreparation>() => _GroupMovementForm(
-              state: state,
-              onAddTag: _addTag,
-              tagController: _tagController,
-              tagFocus: _tagFocus,
-              reasonController: _reasonController,
-              onPickDate: _pickDate,
+            Data<GroupMovementPreparation>() => AbsorbPointer(
+              absorbing: state.submission is Loading<GroupMovementSummary>,
+              child: _GroupMovementForm(
+                state: state,
+                onAddTag: _addTag,
+                tagController: _tagController,
+                tagFocus: _tagFocus,
+                reasonController: _reasonController,
+                onPickDate: _pickDate,
+              ),
             ),
             ResultError<GroupMovementPreparation>(:final error) => Center(
               child: Padding(
@@ -129,7 +132,10 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
                         state.destinationId == null ? state.animals.length : state.movableCount,
                       ),
                       isLoading: state.submission is Loading<GroupMovementSummary>,
-                      onPressed: state.animals.isEmpty || state.submission is Loading<GroupMovementSummary>
+                      onPressed:
+                          state.animals.isEmpty ||
+                              state.submission is Loading<GroupMovementSummary> ||
+                              state.tagResolution is Loading<MovementAnimal>
                           ? null
                           : () => context.read<GroupMovementCubit>().submit(_reasonController.text),
                     ),

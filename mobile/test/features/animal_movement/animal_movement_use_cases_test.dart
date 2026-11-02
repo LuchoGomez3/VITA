@@ -10,6 +10,23 @@ import 'package:frontend_mayoral/features/field/domain/use_cases/move_lot_animal
 
 void main() {
   group('RegisterGroupMovementUseCase', () {
+    test('una selección con UUID repetido se guarda y cuenta una sola vez', () async {
+      final move = _FakeMove();
+      final animal = _animal('a1', lotId: 'bajo');
+
+      final result = await RegisterGroupMovementUseCase(move)(
+        establishmentId: 'campo-1',
+        animals: [animal, animal],
+        destinationLotId: 'cumbre',
+        occurredAt: DateTime.utc(2026, 10),
+        reason: 'Rotación',
+      );
+
+      expect((result as Success<GroupMovementSummary>).data.movedCount, 1);
+      expect(move.calls, {
+        'bajo': ['a1'],
+      });
+    });
     test('arma un movimiento por potrero de origen y saltea los que ya están en el destino', () async {
       final move = _FakeMove();
 
