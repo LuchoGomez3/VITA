@@ -152,7 +152,7 @@ void main() {
                     toLotName: 'Potrero destino',
                     occurredAt: DateTime.utc(2026, 10, 29),
                     reason: 'Rotación de pastoreo',
-                    isPending: true,
+                    syncStatus: MovementSyncStatus.pending,
                   ),
                 ];
                 context.pop(const GroupMovementSummary(movedCount: 1, alreadyThereCount: 0));

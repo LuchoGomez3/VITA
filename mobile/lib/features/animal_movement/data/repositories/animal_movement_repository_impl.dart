@@ -103,7 +103,11 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
               toLotName: lotNames[movement.destinationLotId] ?? '',
               occurredAt: movement.occurredAt,
               reason: movement.reason,
-              isPending: movement.syncStatus != BrickAnimalLotMovementSyncStatus.synchronized,
+              syncStatus: switch (movement.syncStatus) {
+                BrickAnimalLotMovementSyncStatus.pending => MovementSyncStatus.pending,
+                BrickAnimalLotMovementSyncStatus.synchronized => MovementSyncStatus.synchronized,
+                BrickAnimalLotMovementSyncStatus.rejected => MovementSyncStatus.rejected,
+              },
             ),
           );
         }

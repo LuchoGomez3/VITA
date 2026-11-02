@@ -104,9 +104,9 @@ void main() {
     expect(history.map((entry) => entry.movementId), ['m3', 'm1']);
     expect(history.first.fromLotName, 'El Bajo');
     expect(history.first.toLotName, 'La Cumbre');
-    expect(history.first.isPending, isFalse);
+    expect(history.first.syncStatus, MovementSyncStatus.synchronized);
     expect(history.last.fromLotName, isNull);
-    expect(history.last.isPending, isTrue);
+    expect(history.last.syncStatus, MovementSyncStatus.pending);
   });
 
   test('un error de SQLite se informa con un mensaje entendible', () async {
@@ -120,6 +120,25 @@ void main() {
     final result = await subject.findAnimalByTag('004 0028', establishmentId: 'campo-1');
 
     expect(result, isA<Failure<MovementAnimal?>>());
+  });
+
+  test('un movimiento rechazado conserva su estado y no se convierte en pendiente', () async {
+    final history = data(
+      await repository(
+        movements: [
+          _movement(
+            'rechazado',
+            ['a1'],
+            from: 'lote-bajo',
+            to: 'lote-cumbre',
+            on: DateTime.utc(2026, 6),
+            status: BrickAnimalLotMovementSyncStatus.rejected,
+          ),
+        ],
+      ).getHistory('a1'),
+    );
+
+    expect(history.single.syncStatus, MovementSyncStatus.rejected);
   });
 }
 

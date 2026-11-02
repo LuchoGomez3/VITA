@@ -272,6 +272,12 @@ class AnimalDetailStrings {
   /// Movimiento que todavía no llegó al servidor.
   static const pendingSync = 'Pendiente de sincronizar';
 
+  /// Un rechazo funcional no se reenvía como una operación pendiente.
+  static const movementRejected = 'Movimiento rechazado por el servidor';
+
+  /// Recuperación después de un rechazo del traslado.
+  static const movementRejectionHint = 'Revisá el potrero actual antes de registrar un nuevo movimiento.';
+
   /// Confirmación al volver a la ficha.
   static String moved(int count, String destination) =>
       count == 1 ? 'Se movió 1 animal a $destination.' : 'Se movieron $count animales a $destination.';

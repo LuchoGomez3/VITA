@@ -91,7 +91,7 @@ class _MovementRow extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          '$from → ${entry.toLotName}${isCurrent ? ' ${AnimalDetailStrings.currentLot}' : ''}',
+                          '$from → ${entry.toLotName}${isCurrent && entry.syncStatus != MovementSyncStatus.rejected ? ' ${AnimalDetailStrings.currentLot}' : ''}',
                           style: AppTypography.mediumEmphasis.copyWith(fontWeight: FontWeight.w800),
                         ),
                       ),
@@ -103,13 +103,22 @@ class _MovementRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(entry.reason, style: AppTypography.formFieldHelper),
-                  if (entry.isPending) ...[
+                  if (entry.syncStatus == MovementSyncStatus.pending) ...[
                     const SizedBox(height: AppSpacing.xxs),
                     const AppStatusChip(
                       label: AnimalDetailStrings.pendingSync,
                       tone: AppStatusChipTone.warning,
                       showDot: true,
                     ),
+                  ],
+                  if (entry.syncStatus == MovementSyncStatus.rejected) ...[
+                    const SizedBox(height: AppSpacing.xxs),
+                    const AppStatusChip(
+                      label: AnimalDetailStrings.movementRejected,
+                      tone: AppStatusChipTone.error,
+                      showDot: true,
+                    ),
+                    const Text(AnimalDetailStrings.movementRejectionHint, style: AppTypography.formFieldHelper),
                   ],
                 ],
               ),

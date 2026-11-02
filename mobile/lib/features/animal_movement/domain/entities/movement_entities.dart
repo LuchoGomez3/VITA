@@ -49,8 +49,20 @@ sealed class MovementHistoryEntry with _$MovementHistoryEntry {
     required String toLotName,
     required DateTime occurredAt,
     required String reason,
-    required bool isPending,
+    required MovementSyncStatus syncStatus,
   }) = _MovementHistoryEntry;
+}
+
+/// Estado de confirmación del movimiento independiente de Brick.
+enum MovementSyncStatus {
+  /// Guardado localmente y pendiente de envío o reintento.
+  pending,
+
+  /// Confirmado por el servidor.
+  synchronized,
+
+  /// Rechazado definitivamente por una regla del servidor.
+  rejected,
 }
 
 /// Resultado de registrar el traslado de una selección de animales.
