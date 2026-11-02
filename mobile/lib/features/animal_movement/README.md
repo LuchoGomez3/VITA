@@ -41,6 +41,9 @@ hubo nuevas ediciones o capturas. Un RFID exacto tiene prioridad sobre una
 caravana visual con los mismos dígitos, sin depender del orden de las filas.
 Si varios animales válidos coinciden por visual o RFID, se informa ambigüedad
 y no se agrega ninguno; hay que leer un RFID único o revisar los datos.
+La identidad RFID se resuelve antes de filtrar la elegibilidad: si corresponde
+a un animal vendido, borrado o sin potrero, se informa que no puede moverse,
+sin reinterpretar el número como la visual de otro animal activo.
 
 Los casos de uso y data entregan `DomainException` con un motivo Freezed
 `MovementFailure` en `reason`. Su `message` es un identificador técnico;

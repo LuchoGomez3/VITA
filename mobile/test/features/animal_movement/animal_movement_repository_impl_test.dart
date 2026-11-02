@@ -31,6 +31,34 @@ void main() {
   T data<T>(Result<T> result) => (result as Success<T>).data;
 
   group('findAnimalByTag', () {
+    for (final unavailable in [
+      _animal('unavailable', status: BrickAnimalProductiveStatus.sold),
+      _animal('unavailable', lotId: ''),
+      _animal('unavailable', deletedAt: DateTime.utc(2026)),
+    ]) {
+      for (final reverseOrder in [false, true]) {
+        test(
+          'un RFID no trasladable no se reinterpreta como visual: ${unavailable.productiveStatus}/${unavailable.lotId}/${unavailable.deletedAt}, invertido=$reverseOrder',
+          () async {
+            final animals = [
+              unavailable,
+              _animal('visual', visualTag: unavailable.rfidTagNumber, rfid: '982000000000002'),
+            ];
+            final subject = repository(animals: reverseOrder ? animals.reversed.toList() : animals);
+
+            final result = await ResolveMovementTagUseCase(subject)(
+              tag: unavailable.rfidTagNumber,
+              establishmentId: 'campo-1',
+              selectedIds: {},
+            );
+
+            expect(result, isA<Failure<MovementAnimal>>());
+            expect((result as Failure<MovementAnimal>).error.reason, const MovementFailure.animalUnavailable());
+          },
+        );
+      }
+    }
+
     for (final reverseOrder in [false, true]) {
       test('prioriza RFID sobre visual coincidente, orden invertido=$reverseOrder', () async {
         final animals = [

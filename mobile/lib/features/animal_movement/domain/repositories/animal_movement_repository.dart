@@ -13,6 +13,7 @@ abstract interface class AnimalMovementRepository {
 
   /// Busca por RFID o caravana visual únicamente en [establishmentId].
   /// El RFID exacto tiene prioridad. Las coincidencias ambiguas devuelven error.
+  /// Si el RFID corresponde a un animal no trasladable, no se busca por visual.
   Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId});
 
   /// Potreros activos de [establishmentId] con cuántos animales tiene cada uno.

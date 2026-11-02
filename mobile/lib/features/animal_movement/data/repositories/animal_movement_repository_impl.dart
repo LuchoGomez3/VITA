@@ -56,16 +56,20 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
         final digits = tag.replaceAll(RegExp(r'\D'), '');
         final visual = _normalizeVisualTag(tag);
         final animals = (await _animalStore.getLocalAnimals())
-            .where((animal) => _isMovable(animal) && animal.establishmentId == establishmentId)
+            .where((animal) => animal.establishmentId == establishmentId)
             .toList();
         final rfidMatches = digits.length == 15
             ? animals.where((animal) => animal.rfidTagNumber.replaceAll(RegExp(r'\D'), '') == digits).toList()
             : <BrickAnimalModel>[];
-        // El RFID tiene prioridad aunque otra caravana visual contenga los
-        // mismos dígitos. El orden de SQLite no define la identidad.
-        final matches = rfidMatches.isNotEmpty
+        // Un RFID reconocido no se reinterpreta como visual de otro animal
+        // aunque su dueño ya no pueda trasladarse.
+        final candidates = rfidMatches.isNotEmpty
             ? rfidMatches
             : animals.where((animal) => _normalizeVisualTag(animal.visualTag) == visual).toList();
+        final matches = candidates.where(_isMovable).toList();
+        if (rfidMatches.isNotEmpty && matches.isEmpty) {
+          throw movementException(const MovementFailure.animalUnavailable());
+        }
         if (matches.length > 1) {
           throw movementException(MovementFailure.ambiguousTag(tag));
         }
