@@ -12,14 +12,18 @@ import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_movement/data/repositories/animal_movement_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/errors/movement_failure.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/use_cases/animal_movement_use_cases.dart';
 
 void main() {
   AnimalMovementRepositoryImpl repository({
     List<BrickAnimalModel>? animals,
+    List<BrickLotModel>? lots,
     List<BrickAnimalLotMovementModel> movements = const [],
   }) => AnimalMovementRepositoryImpl(
+    localChanges: const Stream.empty(),
     animalStore: _FakeAnimalStore(animals ?? _animals),
-    lotStore: _FakeLotStore(),
+    lotStore: _FakeLotStore(lots: lots),
     categoryStore: _FakeCategoryStore(),
     movementStore: _FakeMovementStore(movements),
   );
@@ -27,8 +31,81 @@ void main() {
   T data<T>(Result<T> result) => (result as Success<T>).data;
 
   group('findAnimalByTag', () {
+    for (final reverseOrder in [false, true]) {
+      test('prioriza RFID sobre visual coincidente, orden invertido=$reverseOrder', () async {
+        final animals = [
+          _animal('visual', visualTag: '982000412884005', rfid: '982000000000001'),
+          _animal('electronic', visualTag: '002'),
+        ];
+        final subject = repository(animals: reverseOrder ? animals.reversed.toList() : animals);
+        final found = data(await subject.findAnimalByTag('982 000412 884005', establishmentId: 'campo-1'));
+        expect(found?.id, 'electronic');
+      });
+    }
+
+    test('una visual de quince dígitos sigue siendo válida si no hay RFID coincidente', () async {
+      final subject = repository(
+        animals: [_animal('visual', visualTag: '982000412884005', rfid: '982000000000001')],
+      );
+      expect(data(await subject.findAnimalByTag('982000412884005', establishmentId: 'campo-1'))?.id, 'visual');
+    });
+
+    for (final rfid in [false, true]) {
+      for (final reverseOrder in [false, true]) {
+        test('no elige entre duplicados RFID=$rfid, orden invertido=$reverseOrder', () async {
+          final animals = [
+            _animal('a1'),
+            _animal('a2', rfid: rfid ? '982000412884005' : '982000000000002'),
+          ];
+          final subject = repository(animals: reverseOrder ? animals.reversed.toList() : animals);
+          final tag = rfid ? '982000412884005' : '0040028';
+          final result = await ResolveMovementTagUseCase(subject)(
+            tag: tag,
+            establishmentId: 'campo-1',
+            selectedIds: {},
+          );
+          expect(result, isA<Failure<MovementAnimal>>());
+          expect((result as Failure<MovementAnimal>).error.reason, MovementFailure.ambiguousTag(tag));
+        });
+      }
+    }
+
+    test('los duplicados inactivos o ajenos no generan ambigüedad', () async {
+      final subject = repository(
+        animals: [
+          _animal('ajeno', establishmentId: 'campo-2'),
+          _animal('vendido', status: BrickAnimalProductiveStatus.sold),
+          _animal('borrado', deletedAt: DateTime.utc(2026)),
+          _animal('propio'),
+        ],
+      );
+      for (final tag in ['982000412884005', '0040028']) {
+        expect(data(await subject.findAnimalByTag(tag, establishmentId: 'campo-1'))?.id, 'propio');
+      }
+    });
+
+    test('una caravana visual repetida en otro campo no oculta al animal propio', () async {
+      final subject = repository(
+        animals: [
+          _animal('ajeno', establishmentId: 'campo-2'),
+          _animal('propio'),
+        ],
+      );
+
+      final found = data(await subject.findAnimalByTag('004 0028', establishmentId: 'campo-1'));
+
+      expect(found?.id, 'propio');
+      expect(data(await subject.findAnimalByTag('0040028', establishmentId: 'campo-3')), isNull);
+    });
+
+    test('un RFID de otro campo no se devuelve a la selección', () async {
+      final subject = repository(animals: [_animal('ajeno', establishmentId: 'campo-2')]);
+
+      expect(data(await subject.findAnimalByTag('982000412884005', establishmentId: 'campo-1')), isNull);
+    });
+
     test('encuentra por RFID aunque venga con espacios', () async {
-      final found = data(await repository().findAnimalByTag('982 000412 884 005'));
+      final found = data(await repository().findAnimalByTag('982 000412 884 005', establishmentId: 'campo-1'));
 
       expect(found?.id, 'a1');
       expect(found?.categoryName, 'Novillo');
@@ -36,8 +113,8 @@ void main() {
     });
 
     test('encuentra por caravana visual sin importar los espacios', () async {
-      expect(data(await repository().findAnimalByTag('0040028'))?.id, 'a1');
-      expect(data(await repository().findAnimalByTag('004 0028'))?.id, 'a1');
+      expect(data(await repository().findAnimalByTag('0040028', establishmentId: 'campo-1'))?.id, 'a1');
+      expect(data(await repository().findAnimalByTag('004 0028', establishmentId: 'campo-1'))?.id, 'a1');
     });
 
     test('no devuelve animales borrados, vendidos o sin potrero', () async {
@@ -50,7 +127,7 @@ void main() {
       );
 
       for (final tag in ['1', '2', '3']) {
-        expect(data(await subject.findAnimalByTag(tag)), isNull, reason: tag);
+        expect(data(await subject.findAnimalByTag(tag, establishmentId: 'campo-1')), isNull, reason: tag);
       }
     });
   });
@@ -84,32 +161,124 @@ void main() {
     expect(history.map((entry) => entry.movementId), ['m3', 'm1']);
     expect(history.first.fromLotName, 'El Bajo');
     expect(history.first.toLotName, 'La Cumbre');
-    expect(history.first.isPending, isFalse);
+    expect(history.first.syncStatus, MovementSyncStatus.synchronized);
     expect(history.last.fromLotName, isNull);
-    expect(history.last.isPending, isTrue);
+    expect(history.last.syncStatus, MovementSyncStatus.pending);
   });
 
   test('un error de SQLite se informa con un mensaje entendible', () async {
     final subject = AnimalMovementRepositoryImpl(
+      localChanges: const Stream.empty(),
       animalStore: _FakeAnimalStore(const [], fail: true),
       lotStore: _FakeLotStore(),
       categoryStore: _FakeCategoryStore(),
       movementStore: _FakeMovementStore(const []),
     );
 
-    final result = await subject.findAnimalByTag('004 0028');
+    final result = await subject.findAnimalByTag('004 0028', establishmentId: 'campo-1');
 
     expect(result, isA<Failure<MovementAnimal?>>());
   });
+
+  test('un movimiento rechazado conserva su estado y no se convierte en pendiente', () async {
+    final history = data(
+      await repository(
+        movements: [
+          _movement(
+            'rechazado',
+            ['a1'],
+            from: 'lote-bajo',
+            to: 'lote-cumbre',
+            on: DateTime.utc(2026, 6),
+            status: BrickAnimalLotMovementSyncStatus.rejected,
+          ),
+        ],
+      ).getHistory('a1'),
+    );
+
+    expect(history.single.syncStatus, MovementSyncStatus.rejected);
+  });
+
+  test('borrar un potrero vacío conserva su nombre en el historial y lo quita de destinos', () async {
+    final subject = repository(
+      animals: [_animal('a1', lotId: 'lote-cumbre')],
+      lots: [
+        _FakeLotStore._lot('lote-bajo', 'Origen eliminado', deletedAt: DateTime.utc(2026, 7)),
+        _FakeLotStore._lot('lote-cumbre', 'Destino'),
+      ],
+      movements: [
+        _movement('m1', ['a1'], from: 'lote-bajo', to: 'lote-cumbre', on: DateTime.utc(2026, 6)),
+      ],
+    );
+
+    final history = data(await subject.getHistory('a1'));
+    final destinations = data(await subject.getDestinations('campo-1'));
+
+    expect(history.single.fromLotName, 'Origen eliminado');
+    expect(history.single.toLotName, 'Destino');
+    expect(destinations.map((lot) => lot.id), ['lote-cumbre']);
+  });
+
+  test('una fecha retroactiva no hace que el potrero actual sea el primero del historial', () async {
+    final history = data(
+      await repository(
+        animals: [_animal('a1', lotId: 'lote-cumbre')],
+        movements: [
+          _movement('previo', ['a1'], from: 'lote-cumbre', to: 'lote-bajo', on: DateTime.utc(2026, 5)),
+          _movement(
+            'retroactivo',
+            ['a1'],
+            from: 'lote-bajo',
+            to: 'lote-cumbre',
+            on: DateTime.utc(2026, 4),
+            createdAt: DateTime.utc(2026, 6),
+          ),
+          _movement(
+            'rechazado',
+            ['a1'],
+            from: 'lote-cumbre',
+            to: 'lote-bajo',
+            on: DateTime.utc(2026, 7),
+            status: BrickAnimalLotMovementSyncStatus.rejected,
+          ),
+        ],
+      ).getHistory('a1'),
+    );
+
+    expect(history.map((entry) => entry.movementId), ['rechazado', 'previo', 'retroactivo']);
+    expect(history.where((entry) => entry.isCurrent).single.movementId, 'retroactivo');
+    expect(history.last.toLotName, 'La Cumbre');
+  });
+
+  test('múltiples visitas al mismo potrero marcan solo la última llegada registrada', () async {
+    final history = data(
+      await repository(
+        movements: [
+          _movement('viejo', ['a1'], from: null, to: 'lote-bajo', on: DateTime.utc(2026, 5)),
+          _movement(
+            'actual',
+            ['a1'],
+            from: 'lote-cumbre',
+            to: 'lote-bajo',
+            on: DateTime.utc(2026, 4),
+            createdAt: DateTime.utc(2026, 6),
+          ),
+        ],
+      ).getHistory('a1'),
+    );
+
+    expect(history.where((entry) => entry.isCurrent).single.movementId, 'actual');
+  });
 }
 
-final _animals = [_animal('a1'), _animal('a2', visualTag: '004 0023', rfid: '982000412884920')];
+final List<BrickAnimalModel> _animals = [_animal('a1'), _animal('a2', visualTag: '004 0023', rfid: '982000412884920')];
 
 BrickAnimalModel _animal(
   String id, {
   String visualTag = '004 0028',
   String rfid = '982000412884005',
   String lotId = 'lote-bajo',
+  String establishmentId = 'campo-1',
   BrickAnimalProductiveStatus status = BrickAnimalProductiveStatus.active,
   DateTime? deletedAt,
 }) => BrickAnimalModel(
@@ -121,7 +290,7 @@ BrickAnimalModel _animal(
   birthDate: DateTime.utc(2024, 6, 12),
   categoryId: 'cat-novillo',
   lotId: lotId,
-  establishmentId: 'campo-1',
+  establishmentId: establishmentId,
   initialWeight: 300,
   weighingMethod: BrickAnimalWeighingMethod.manual,
   weighingDate: DateTime.utc(2026, 5),
@@ -137,6 +306,7 @@ BrickAnimalLotMovementModel _movement(
   required String? from,
   required String to,
   required DateTime on,
+  DateTime? createdAt,
   BrickAnimalLotMovementSyncStatus status = BrickAnimalLotMovementSyncStatus.pending,
 }) => BrickAnimalLotMovementModel(
   localId: id,
@@ -146,7 +316,7 @@ BrickAnimalLotMovementModel _movement(
   animalIdsJson: jsonEncode(animalIds),
   occurredAt: on,
   reason: 'Rotación',
-  createdAt: on,
+  createdAt: createdAt ?? on,
   updatedAt: on,
   syncStatus: status,
 );
@@ -172,26 +342,34 @@ class _FakeAnimalStore implements AnimalBrickStore {
 }
 
 class _FakeLotStore implements LotBrickStore {
-  final _lots = [
-    _lot('lote-cumbre', 'La Cumbre'),
-    _lot('lote-bajo', 'El Bajo'),
-    _lot('lote-cerrado', 'Clausurado', statusCode: 'inactivo'),
-  ];
+  _FakeLotStore({List<BrickLotModel>? lots})
+    : _lots =
+          lots ??
+          [
+            _lot('lote-cumbre', 'La Cumbre'),
+            _lot('lote-bajo', 'El Bajo'),
+            _lot('lote-cerrado', 'Clausurado', statusCode: 'inactivo'),
+          ];
+  final List<BrickLotModel> _lots;
 
-  static BrickLotModel _lot(String id, String name, {String statusCode = 'activo'}) => BrickLotModel(
-    localId: id,
-    establishmentId: 'campo-1',
-    name: name,
-    boundaryJson: '{}',
-    surfaceTenths: 950,
-    hasWater: false,
-    statusCode: statusCode,
-    createdAt: DateTime.utc(2026),
-    updatedAt: DateTime.utc(2026),
-  );
+  static BrickLotModel _lot(String id, String name, {String statusCode = 'activo', DateTime? deletedAt}) =>
+      BrickLotModel(
+        localId: id,
+        establishmentId: 'campo-1',
+        name: name,
+        boundaryJson: '{}',
+        surfaceTenths: 950,
+        hasWater: false,
+        statusCode: statusCode,
+        createdAt: DateTime.utc(2026),
+        updatedAt: DateTime.utc(2026),
+        deletedAt: deletedAt,
+      );
 
   @override
-  Future<List<BrickLotModel>> getLocalLots(String establishmentId) async => _lots;
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId, {bool includeDeleted = false}) async => _lots
+      .where((lot) => lot.establishmentId == establishmentId && (includeDeleted || lot.deletedAt == null))
+      .toList();
 
   @override
   Future<BrickLotModel?> getLocalLot(String lotId) async => _lots.where((lot) => lot.localId == lotId).firstOrNull;

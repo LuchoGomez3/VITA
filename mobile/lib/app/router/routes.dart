@@ -80,6 +80,9 @@ class AppRoutes {
   /// "Mover animales" arrancando con el animal de la ficha.
   static const animalGroupMovement = '/animals/:animalId/mover';
 
+  /// Cámara lateral y revisión de capturas para pesaje por visión.
+  static const visionWeighing = '/pesar-por-vision';
+
   /// Ruta de identificacion de animales mediante caravana RFID.
   static const rfidScan = '/identificar-animal';
 
@@ -172,7 +175,12 @@ class AppRoutes {
   /// Ruta de la pantalla de exito de registro de establecimiento.
   static const establishmentRegisterSuccess = '/registrar-establecimiento/exito';
 
-  /// Construye la ruta de identificacion para un establecimiento activo.
+  /// Abre identificación en modo selección de animal para un pesaje IA.
+  static String rfidScanForVisionWeighing(String establishmentId) {
+    return '${rfidScanForEstablishment(establishmentId)}&seleccionarParaPesajeIA=true';
+  }
+
+  /// Identifica un animal dentro del establecimiento indicado.
   static String rfidScanForEstablishment(String establishmentId) {
     return '$rfidScan?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
   }

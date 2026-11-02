@@ -5,6 +5,9 @@ class AnimalDetailStrings {
   /// Titulo del app bar.
   static const pageTitle = 'Detalle de animal';
 
+  /// Identifica la fotografía tanto visualmente como para lectores de pantalla.
+  static const animalPhotoLabel = 'Foto del animal';
+
   /// Etiqueta del identificador principal.
   static const animalIdLabel = 'Caravana / ID';
 
@@ -171,8 +174,54 @@ class AnimalDetailStrings {
   /// Pestaña que todavía no está desarrollada.
   static const comingSoonTitle = 'Próximamente';
 
-  /// Genealogía todavía no desarrollada.
-  static const genealogyComingSoon = 'Acá vas a ver el árbol genealógico del animal: padres y abuelos.';
+  /// Título del árbol genealógico.
+  static const genealogyTreeTitle = 'Árbol genealógico · 3 generaciones';
+
+  /// Error de lectura de los datos locales de parentesco.
+  static const genealogyLoadError = 'No se pudo cargar la genealogía del animal.';
+
+  /// Sección de padre y madre.
+  static const genealogyParentsSection = 'Progenitores';
+
+  /// Sección de los abuelos.
+  static const genealogyGrandparentsSection = 'Abuelos';
+
+  /// Sección de los hijos del animal.
+  static String genealogyOffspringSection(int count) => 'Crías · $count';
+
+  /// Ayuda al pie del árbol.
+  static const genealogyTapHint = 'Tocá cualquier progenitor para abrir su ficha.';
+
+  /// Nodo del animal de la ficha.
+  static String genealogyCurrent(String breed) => breed.isEmpty ? 'Actual' : 'Actual · $breed';
+
+  /// Rol del padre.
+  static const genealogyFather = 'Padre';
+
+  /// Rol de la madre.
+  static const genealogyMother = 'Madre';
+
+  /// Rol del abuelo paterno.
+  static const genealogyPaternalGrandfather = 'Abuelo paterno';
+
+  /// Rol de la abuela paterna.
+  static const genealogyPaternalGrandmother = 'Abuela paterna';
+
+  /// Rol del abuelo materno.
+  static const genealogyMaternalGrandfather = 'Abuelo materno';
+
+  /// Rol de la abuela materna.
+  static const genealogyMaternalGrandmother = 'Abuela materna';
+
+  /// Etiqueta de un nodo con datos: "Madre · Aberdeen Angus".
+  static String genealogyNode(String role, String detail) => detail.isEmpty ? role : '$role · $detail';
+
+  /// Etiqueta de un nodo sin datos.
+  static String genealogyMissing(String role) => '$role · sin datos';
+
+  /// Cuando no hay ningún dato de padres ni crías.
+  static const genealogyEmpty =
+      'No hay madre ni padre cargados. Se asignan al dar de alta el animal, entre los animales del mismo establecimiento.';
 
   /// Sanidad todavía no desarrollada.
   static const healthComingSoon = 'Acá vas a ver los tratamientos y vacunaciones del animal.';
@@ -193,4 +242,44 @@ class AnimalDetailStrings {
 
 
 
+
+  /// Título del historial en la ficha.
+  static String historyTitle(int count) =>
+      count == 1 ? 'Historial de potreros · 1 movim.' : 'Historial de potreros · $count movim.';
+
+  /// Historial vacío.
+  static const historyEmpty = 'Este animal todavía no tiene movimientos entre potreros.';
+
+  /// Error del historial.
+  static const historyError = 'No se pudo leer el historial de movimientos.';
+
+  /// Potrero actual en la primera fila del historial.
+  static const currentLot = '(actual)';
+
+  /// Origen de la primera asignación.
+  static const noOrigin = '—';
+
+  /// Movimiento que todavía no llegó al servidor.
+  static const pendingSync = 'Pendiente de sincronizar';
+
+  /// Un rechazo funcional no se reenvía como una operación pendiente.
+  static const movementRejected = 'Movimiento rechazado por el servidor';
+
+  /// Recuperación después de un rechazo del traslado.
+  static const movementRejectionHint = 'Revisá el potrero actual antes de registrar un nuevo movimiento.';
+
+  /// Confirmación al volver a la ficha.
+  static String moved(int count, String destination) =>
+      count == 1 ? 'Se movió 1 animal a $destination.' : 'Se movieron $count animales a $destination.';
+
+  /// La confirmación describe los destinos guardados aunque el animal de la
+  /// ficha haya sido quitado de la selección o falle la recarga del detalle.
+  static String movementConfirmation(int count, Map<String, String> destinations) {
+    if (destinations.length == 1) return moved(count, destinations.values.single);
+    if (destinations.isEmpty) return count == 1 ? 'Se movió 1 animal.' : 'Se movieron $count animales.';
+    return 'Se movieron $count animales a ${destinations.length} potreros.';
+  }
+
+  /// Aclaración offline de la confirmación.
+  static const savedOffline = 'Queda guardado en el celular y se sincroniza con señal.';
 }

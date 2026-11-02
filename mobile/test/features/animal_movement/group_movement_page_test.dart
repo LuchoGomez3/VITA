@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
@@ -12,77 +15,196 @@ import 'package:frontend_mayoral/features/field/domain/use_cases/move_lot_animal
 import 'package:go_router/go_router.dart';
 
 void main() {
-  testWidgets('leer caravanas, elegir destino y mover devuelve el resumen', (tester) async {
-    tester.view.physicalSize = const Size(1080, 2400);
-    tester.view.devicePixelRatio = 2.625;
-    addTearDown(tester.view.reset);
-    final move = _FakeMove();
-    GroupMovementSummary? result;
-    final router = GoRouter(
-      routes: [
-        GoRoute(
-          path: '/',
-          builder: (context, _) => TextButton(
-            onPressed: () async => result = await context.push<GroupMovementSummary>('/mover'),
-            child: const Text('abrir'),
+  for (final (keepInitial, partial, retry) in [
+    (true, false, false),
+    (false, false, false),
+    (true, true, true),
+    (true, true, false),
+  ]) {
+    testWidgets('movimiento inicial=$keepInitial, parcial=$partial, reintento=$retry', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.625;
+      addTearDown(tester.view.reset);
+      final move = _FakeMove()..failOnceSource = partial ? 'sauces' : null;
+      GroupMovementSummary? result;
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, _) => TextButton(
+              onPressed: () async => result = await context.push<GroupMovementSummary>('/mover'),
+              child: const Text('abrir'),
+            ),
           ),
-        ),
-        GoRoute(
-          path: '/mover',
-          builder: (_, _) => GroupMovementPage(
-            animalIds: const ['a1'],
-            createCubit: () {
-              final repository = _FakeRepository();
-              return GroupMovementCubit(
-                prepare: PrepareGroupMovementUseCase(repository),
-                resolveTag: ResolveMovementTagUseCase(repository),
-                register: RegisterGroupMovementUseCase(move),
-              );
-            },
+          GoRoute(
+            path: '/mover',
+            builder: (_, _) => GroupMovementPage(
+              animalIds: const ['a1'],
+              createCubit: () {
+                final repository = _FakeRepository();
+                return GroupMovementCubit(
+                  prepare: PrepareGroupMovementUseCase(repository),
+                  resolveTag: ResolveMovementTagUseCase(repository),
+                  register: RegisterGroupMovementUseCase(move),
+                );
+              },
+            ),
           ),
-        ),
-      ],
-    );
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-    await tester.tap(find.text('abrir'));
-    await tester.pumpAndSettle();
+        ],
+      );
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.tap(find.text('abrir'));
+      await tester.pumpAndSettle();
 
-    expect(find.text(AnimalMovementStrings.animalsTitle(1)), findsOneWidget);
+      expect(find.text(AnimalMovementStrings.animalsTitle(1)), findsOneWidget);
 
-    // El bastón escribe el RFID y manda Enter.
-    await tester.enterText(find.byType(TextField).first, '982000412884920');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-    expect(find.text(AnimalMovementStrings.animalsTitle(2)), findsOneWidget);
+      // El bastón escribe el RFID y manda Enter.
+      await tester.enterText(find.byType(TextField).first, '982000412884920');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(find.text(AnimalMovementStrings.animalsTitle(2)), findsOneWidget);
 
-    // Una caravana desconocida muestra el error y no se agrega.
-    await tester.enterText(find.byType(TextField).first, '999');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-    expect(find.textContaining('No hay ningún animal activo'), findsOneWidget);
-    expect(find.text(AnimalMovementStrings.animalsTitle(2)), findsOneWidget);
+      // Una caravana desconocida muestra el error y no se agrega.
+      await tester.enterText(find.byType(TextField).first, '999');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('No hay ningún animal activo'), findsOneWidget);
+      expect(find.text(AnimalMovementStrings.animalsTitle(2)), findsOneWidget);
 
-    await tester.scrollUntilVisible(find.text('La Cumbre'), 200, scrollable: _list);
-    await tester.tap(find.text('La Cumbre'));
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.widgetWithText(TextFormField, AnimalMovementStrings.reasonHint),
-      200,
-      scrollable: _list,
-    );
-    await tester.enterText(find.widgetWithText(TextFormField, AnimalMovementStrings.reasonHint), 'Rotación');
-    await tester.tap(find.text(AnimalMovementStrings.submit(2)));
-    await tester.pumpAndSettle();
+      if (!keepInitial) {
+        await tester.tap(find.byTooltip(AnimalMovementStrings.removeAnimal).first);
+        await tester.pumpAndSettle();
+      }
+      final count = keepInitial ? 2 : 1;
+      await tester.scrollUntilVisible(find.text('La Cumbre'), 200, scrollable: _list);
+      await tester.tap(find.text('La Cumbre'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.widgetWithText(TextFormField, AnimalMovementStrings.reasonHint),
+        200,
+        scrollable: _list,
+      );
+      await tester.enterText(find.widgetWithText(TextFormField, AnimalMovementStrings.reasonHint), 'Rotación');
+      await tester.tap(find.text(AnimalMovementStrings.submit(count)));
+      await tester.pumpAndSettle();
 
-    expect(result?.movedCount, 2);
-    expect(move.calls, {
-      'bajo': ['a1'],
-      'sauces': ['a2'],
+      if (partial) {
+        expect(find.text(AnimalMovementStrings.animalsTitle(1)), findsOneWidget);
+        if (retry) {
+          await tester.tap(find.text(AnimalMovementStrings.submit(1)));
+        } else {
+          await tester.pageBack();
+        }
+        await tester.pumpAndSettle();
+      }
+      expect(result?.movedCount, partial && !retry ? 1 : count);
+      expect(result?.destinations, {'cumbre': 'La Cumbre'});
+      expect(move.calls, {
+        if (keepInitial) 'bajo': ['a1'],
+        if (!partial || retry) 'sauces': ['a2'],
+      });
+      if (partial) expect(move.sourceCalls, ['bajo', 'sauces', if (retry) 'sauces']);
     });
+  }
+
+  testWidgets('la respuesta de A no borra B y dos Enter capturan caravanas independientes', (tester) async {
+    final repository = _DelayedRepository();
+    final cubit = _createCubit(repository);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GroupMovementPage(animalIds: const ['a1'], createCubit: () => cubit),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final field = find.byType(TextField).first;
+
+    await tester.enterText(field, '002');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+    await tester.enterText(field, '00');
+    repository.first.complete(Result.success(_animal('a2', '002', 'bajo')));
+    await tester.pump();
+    expect(tester.widget<TextField>(field).controller!.text, '00');
+
+    await tester.enterText(field, '003');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    repository.second.complete(Result.success(_animal('a3', '003', 'bajo')));
+    await tester.pumpAndSettle();
+
+    expect(repository.tags, ['002', '003']);
+    expect(cubit.state.animals.map((animal) => animal.id), ['a1', 'a2', 'a3']);
+    expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+  });
+
+  for (final editDuringLookup in [false, true]) {
+    testWidgets('una lectura fallida solo restaura texto sin ediciones posteriores: $editDuringLookup', (tester) async {
+      final repository = _DelayedRepository();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: GroupMovementPage(
+            animalIds: const ['a1'],
+            createCubit: () => _createCubit(repository),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final field = find.byType(TextField).first;
+      await tester.enterText(field, '002');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+      if (editDuringLookup) await tester.enterText(field, '003');
+
+      repository.first.complete(const Result.success(null));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<TextField>(field).controller!.text, editDuringLookup ? '003' : '002');
+      expect(find.text(AnimalMovementStrings.tagNotFound('002')), findsOneWidget);
+    });
+  }
+
+  testWidgets('cerrar durante la búsqueda no accede al controller descartado', (tester) async {
+    final repository = _DelayedRepository();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GroupMovementPage(
+          animalIds: const ['a1'],
+          createCubit: () => _createCubit(repository),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, '002');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox());
+
+    repository.first.complete(Result.success(_animal('a2', '002', 'bajo')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
 }
 
-final _list = find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first;
+GroupMovementCubit _createCubit(AnimalMovementRepository repository) => GroupMovementCubit(
+  prepare: PrepareGroupMovementUseCase(repository),
+  resolveTag: ResolveMovementTagUseCase(repository),
+  register: RegisterGroupMovementUseCase(_FakeMove()),
+);
+
+class _DelayedRepository extends _FakeRepository {
+  final first = Completer<Result<MovementAnimal?>>();
+  final second = Completer<Result<MovementAnimal?>>();
+  final tags = <String>[];
+
+  @override
+  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) {
+    tags.add(tag);
+    return tag == '002' ? first.future : second.future;
+  }
+}
+
+final Finder _list = find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first;
 
 MovementAnimal _animal(String id, String visualTag, String lotId) => MovementAnimal(
   id: id,
@@ -106,7 +228,7 @@ class _FakeRepository implements AnimalMovementRepository {
   ]);
 
   @override
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag) async =>
+  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) async =>
       Result.success(tag == '982000412884920' ? _animal('a2', '004 0023', 'sauces') : null);
 
   @override
@@ -115,6 +237,8 @@ class _FakeRepository implements AnimalMovementRepository {
 
 class _FakeMove implements MoveLotAnimalsUseCase {
   final calls = <String, List<String>>{};
+  final sourceCalls = <String>[];
+  String? failOnceSource;
 
   @override
   Future<Result<LotAnimalMovement>> call({
@@ -126,6 +250,11 @@ class _FakeMove implements MoveLotAnimalsUseCase {
     required String reason,
     String? responsibleId,
   }) async {
+    sourceCalls.add(sourceLotId);
+    if (sourceLotId == failOnceSource) {
+      failOnceSource = null;
+      return const Result.failure(DomainException(message: 'write_failed', code: DomainErrorCode.offline));
+    }
     calls[sourceLotId] = animalIds;
     return Result.success(
       LotAnimalMovement(

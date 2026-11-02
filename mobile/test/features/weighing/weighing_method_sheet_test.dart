@@ -19,10 +19,12 @@ const WeighingSubject _subject = (
 void main() {
   late List<WeighingRequest> requests;
   late List<bool> results;
+  var visionOpened = 0;
 
   Future<void> pumpStarter(WidgetTester tester) async {
     requests = [];
     results = [];
+    visionOpened = 0;
     final router = GoRouter(
       routes: [
         GoRoute(
@@ -33,6 +35,15 @@ void main() {
               child: const Text('pesar'),
             ),
           ),
+        ),
+        GoRoute(
+          path: AppRoutes.visionWeighing,
+          builder: (context, _) {
+            visionOpened++;
+            return Scaffold(
+              body: TextButton(onPressed: () => context.pop(), child: const Text('volver')),
+            );
+          },
         ),
         GoRoute(
           path: AppRoutes.weighing,
@@ -66,14 +77,16 @@ void main() {
     expect(results, [true]);
   });
 
-  testWidgets('foto (IA) avisa que está próximamente y no abre nada', (tester) async {
+  testWidgets('foto (IA) abre el Pesaje IA y al volver pide recargar', (tester) async {
     await pumpStarter(tester);
 
     await tester.tap(find.text(WeighingStrings.methodPhoto));
     await tester.pumpAndSettle();
-
-    expect(find.text(WeighingStrings.photoComingSoon), findsOneWidget);
+    expect(visionOpened, 1);
     expect(requests, isEmpty);
-    expect(results, [false]);
+
+    await tester.tap(find.text('volver'));
+    await tester.pumpAndSettle();
+    expect(results, [true]);
   });
 }

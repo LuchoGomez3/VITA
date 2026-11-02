@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/errors/movement_failure.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/use_cases/animal_movement_use_cases.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_animal_movement.dart';
@@ -9,6 +10,23 @@ import 'package:frontend_mayoral/features/field/domain/use_cases/move_lot_animal
 
 void main() {
   group('RegisterGroupMovementUseCase', () {
+    test('una selección con UUID repetido se guarda y cuenta una sola vez', () async {
+      final move = _FakeMove();
+      final animal = _animal('a1', lotId: 'bajo');
+
+      final result = await RegisterGroupMovementUseCase(move)(
+        establishmentId: 'campo-1',
+        animals: [animal, animal],
+        destinationLotId: 'cumbre',
+        occurredAt: DateTime.utc(2026, 10),
+        reason: 'Rotación',
+      );
+
+      expect((result as Success<GroupMovementSummary>).data.movedCount, 1);
+      expect(move.calls, {
+        'bajo': ['a1'],
+      });
+    });
     test('arma un movimiento por potrero de origen y saltea los que ya están en el destino', () async {
       final move = _FakeMove();
 
@@ -75,7 +93,14 @@ void main() {
         reason: 'Rotación',
       );
 
-      expect((result as Failure<GroupMovementSummary>).error.message, startsWith('Se movieron 1 animales'));
+      final error = (result as Failure<GroupMovementSummary>).error;
+      expect(
+        error.reason,
+        isA<MovementPartialFailure>()
+            .having((reason) => reason.movedCount, 'movedCount', 1)
+            .having((reason) => reason.movedAnimalIds, 'movedAnimalIds', ['a1'])
+            .having((reason) => reason.cause, 'cause', isA<DomainException>()),
+      );
     });
   });
 
@@ -83,7 +108,7 @@ void main() {
     test('carga todos los animales de la lista sin repetir y los potreros del campo', () async {
       final result = await PrepareGroupMovementUseCase(_FakeRepository())(['a1', 'a2', 'a1']);
 
-      final data = (result as Success<({List<MovementAnimal> animals, List<MovementDestination> destinations})>).data;
+      final data = (result as Success<GroupMovementPreparation>).data;
       expect(data.animals.map((animal) => animal.id), ['a1', 'a2']);
       expect(data.destinations.single.id, 'cumbre');
     });
@@ -127,11 +152,12 @@ MovementAnimal _animal(String id, {required String lotId, String establishmentId
 
 class _FakeRepository implements AnimalMovementRepository {
   @override
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag) async => Result.success(switch (tag) {
-    '004 0028' => _animal('a1', lotId: 'bajo'),
-    'otro' => _animal('b1', lotId: 'x', establishmentId: 'campo-2'),
-    _ => null,
-  });
+  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) async =>
+      Result.success(switch (tag) {
+        '004 0028' => _animal('a1', lotId: 'bajo'),
+        'otro' => _animal('b1', lotId: 'x', establishmentId: 'campo-2'),
+        _ => null,
+      });
 
   @override
   Future<Result<MovementAnimal?>> getAnimal(String animalId) async => Result.success(switch (animalId) {

@@ -30,19 +30,23 @@ class ResolveQuickReadTagUseCase {
       );
     }
     final found = await _repository.findByTag(trimmed);
-    if (found is Failure<QuickReadAnimal?>) {
+    if (found is Failure<List<QuickReadAnimal>>) {
       return Result.failure(found.error);
     }
-    final animal = (found as Success<QuickReadAnimal?>).data;
-    if (animal != null) {
-      if (establishmentId != null && animal.animal.establishmentId != establishmentId) {
-        return const Result.failure(
-          DomainException(
-            message: 'Ese animal es de otro establecimiento. Leé solo animales de un mismo campo.',
-            code: DomainErrorCode.validation,
-          ),
-        );
-      }
+    final animals = (found as Success<List<QuickReadAnimal>>).data;
+    final inSession = establishmentId == null
+        ? animals
+        : animals.where((animal) => animal.animal.establishmentId == establishmentId).toList();
+    if (inSession.length > 1) {
+      return Result.failure(
+        DomainException(
+          message: 'La caravana $trimmed coincide con animales de varios establecimientos. Leé el RFID.',
+          code: DomainErrorCode.conflict,
+        ),
+      );
+    }
+    if (inSession.length == 1) {
+      final animal = inSession.single;
       if (items.any((item) => item is RegisteredRead && item.animal.animal.id == animal.animal.id)) {
         return Result.failure(
           DomainException(
@@ -53,6 +57,14 @@ class ResolveQuickReadTagUseCase {
       }
       return Result.success(RegisteredRead(animal));
     }
+    if (animals.isNotEmpty) {
+      return const Result.failure(
+        DomainException(
+          message: 'Ese animal es de otro establecimiento. Leé solo animales de un mismo campo.',
+          code: DomainErrorCode.validation,
+        ),
+      );
+    }
 
     final digits = trimmed.replaceAll(RegExp(r'\s'), '');
     if (!_rfidPattern.hasMatch(digits)) {
@@ -61,6 +73,20 @@ class ResolveQuickReadTagUseCase {
           message:
               'No hay ningún animal activo con la caravana $trimmed. Para darlo de alta leé su RFID de 15 dígitos.',
           code: DomainErrorCode.notFound,
+        ),
+      );
+    }
+    final registered = await _repository.isRfidRegistered(digits);
+    if (registered is Failure<bool>) {
+      return Result.failure(registered.error);
+    }
+    if ((registered as Success<bool>).data) {
+      // El RFID es único (SENASA): si ya existe, no se ofrece un alta que el
+      // servidor rechazaría recién al sincronizar.
+      return Result.failure(
+        DomainException(
+          message: 'La caravana $digits ya está registrada, pero el animal no está activo o no tiene potrero.',
+          code: DomainErrorCode.conflict,
         ),
       );
     }
@@ -87,7 +113,12 @@ class RefreshQuickReadUseCase {
     for (final item in items) {
       final result = switch (item) {
         RegisteredRead(:final animal) => await _repository.getAnimal(animal.animal.id),
-        UnregisteredRead(:final rfidTagNumber) => await _repository.findByTag(rfidTagNumber),
+        // El RFID es único: una caravana dada de alta aparece una sola vez.
+        UnregisteredRead(:final rfidTagNumber) => switch (await _repository.findByTag(rfidTagNumber)) {
+          Success<List<QuickReadAnimal>>(:final data) => Result<QuickReadAnimal?>.success(data.firstOrNull),
+          Failure<List<QuickReadAnimal>>(:final error) => Result<QuickReadAnimal?>.failure(error),
+          _ => const Result<QuickReadAnimal?>.success(null),
+        },
       };
       if (result is Failure<QuickReadAnimal?>) {
         return Result.failure(result.error);

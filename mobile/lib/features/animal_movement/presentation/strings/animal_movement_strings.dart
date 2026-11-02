@@ -1,29 +1,11 @@
+import 'package:frontend_mayoral/core/constants/feature_strings.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/errors/movement_failure.dart';
+
 /// Textos de los movimientos entre potreros.
 abstract final class AnimalMovementStrings {
-  /// Título del historial en la ficha.
-  static String historyTitle(int count) =>
-      count == 1 ? 'Historial de potreros · 1 movim.' : 'Historial de potreros · $count movim.';
-
-  /// Historial vacío.
-  static const historyEmpty = 'Este animal todavía no tiene movimientos entre potreros.';
-
-  /// Error del historial.
-  static const historyError = 'No se pudo leer el historial de movimientos.';
-
-  /// Potrero actual en la primera fila del historial.
-  static const currentLot = '(actual)';
-
-  /// Origen de la primera asignación.
-  static const noOrigin = '—';
-
-  /// Movimiento que todavía no llegó al servidor.
-  static const pendingSync = 'Pendiente de sincronizar';
-
-  /// Ayuda del botón flotante de la pestaña.
-  static const moveTooltip = 'Mover animales';
-
   /// Título de la pantalla de movimiento.
-  static const pageTitle = 'Mover animales';
+  static const String pageTitle = FeatureStrings.moveAnimals;
 
   /// Explicación arriba de la lectura de caravanas.
   static const readHint =
@@ -72,10 +54,83 @@ abstract final class AnimalMovementStrings {
   /// Falta elegir el destino.
   static const chooseDestination = 'Elegí el potrero de destino.';
 
-  /// Confirmación al volver a la ficha.
-  static String moved(int count, String destination) =>
-      count == 1 ? 'Se movió 1 animal a $destination.' : 'Se movieron $count animales a $destination.';
+  /// Animal inicial no disponible para traslado.
+  static const animalUnavailable = 'Este animal no se puede mover: no está activo o no tiene potrero.';
 
-  /// Aclaración offline de la confirmación.
-  static const savedOffline = 'Queda guardado en el celular y se sincroniza con señal.';
+  /// Validación de lectura vacía.
+  static const tagRequired = 'Leé o escribí una caravana.';
+
+  /// Caravana sin coincidencia en el caché.
+  static String tagNotFound(String tag) => 'No hay ningún animal activo con la caravana $tag en el celular.';
+
+  /// Evita agregar un animal arbitrario cuando hay identificaciones repetidas.
+  static String ambiguousTag(String tag) =>
+      'La identificación $tag coincide con varios animales. Leé un RFID único o revisá las caravanas.';
+
+  /// La selección no puede mezclar establecimientos.
+  static const differentEstablishment = 'Ese animal es de otro establecimiento: los potreros son de un solo campo.';
+
+  /// Una identificación repetida no agrega otra fila.
+  static String alreadySelected(String tag) => 'La caravana $tag ya está en la lista.';
+
+  /// Validación de selección vacía.
+  static const animalsRequired = 'Agregá al menos un animal.';
+
+  /// Validación del motivo operativo.
+  static const reasonRequired = 'Ingresá el motivo del movimiento.';
+
+  /// Selección que no cambiaría la ubicación de ningún animal.
+  static const allAlreadyThere = 'Todos los animales ya están en ese potrero.';
+
+  /// Lectura local fallida del animal inicial.
+  static const animalReadError = 'No se pudo leer el animal guardado en el celular.';
+
+  /// Lectura local fallida al identificar una caravana.
+  static const tagReadError = 'No se pudo leer la caravana guardada en el celular.';
+
+  /// Lectura local fallida de los destinos.
+  static const destinationsReadError = 'No se pudieron leer los potreros guardados en el celular.';
+
+  /// Lectura local fallida del historial.
+  static const historyReadError = 'No se pudo leer el historial guardado en el celular.';
+
+  /// Falla de guardado que no tiene un motivo específico del flujo.
+  static const saveError = 'No se pudo guardar el movimiento en el dispositivo.';
+
+  /// Una ubicación cambió desde que se preparó la selección.
+  static const movementConflict = 'La ubicación de un animal cambió. Revisá la selección antes de volver a mover.';
+
+  /// El comando compartido no encontró el destino o dejó de admitir animales.
+  static const destinationUnavailable = 'El potrero de destino no está disponible o no admite animales.';
+
+  /// Operación incompleta después de guardar otros grupos.
+  static String partialFailure(int movedCount, String cause) =>
+      '${movedCount == 1 ? 'Se movió 1 animal' : 'Se movieron $movedCount animales'}, pero el resto no: $cause '
+      'Revisá la lista y volvé a intentar con los que faltan.';
+
+  /// Traduce los motivos del dominio sin mostrar identificadores técnicos.
+  static String errorMessage(DomainException error) => switch (error.reason) {
+    MovementAnimalUnavailable() => animalUnavailable,
+    MovementTagRequired() => tagRequired,
+    MovementTagNotFound(:final tag) => tagNotFound(tag),
+    MovementAmbiguousTag(:final tag) => ambiguousTag(tag),
+    MovementDifferentEstablishment() => differentEstablishment,
+    MovementAlreadySelected(:final visualTag) => alreadySelected(visualTag),
+    MovementAnimalsRequired() => animalsRequired,
+    MovementReasonRequired() => reasonRequired,
+    MovementDestinationRequired() => chooseDestination,
+    MovementAllAlreadyThere() => allAlreadyThere,
+    MovementLocalReadFailure(:final target) => switch (target) {
+      MovementReadTarget.animal => animalReadError,
+      MovementReadTarget.tag => tagReadError,
+      MovementReadTarget.destinations => destinationsReadError,
+      MovementReadTarget.history => historyReadError,
+    },
+    MovementPartialFailure(:final movedCount, :final cause) => partialFailure(movedCount, errorMessage(cause)),
+    _ => switch (error.code) {
+      DomainErrorCode.conflict => movementConflict,
+      DomainErrorCode.notFound || DomainErrorCode.validation => destinationUnavailable,
+      _ => saveError,
+    },
+  };
 }

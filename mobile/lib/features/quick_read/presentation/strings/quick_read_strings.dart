@@ -131,4 +131,18 @@ abstract final class QuickReadStrings {
 
   /// Elegir el campo antes de un alta.
   static const chooseEstablishment = '¿En qué establecimiento lo das de alta?';
+
+  /// Confirmación de un movimiento hecho desde el lector ([destinations]:
+  /// potreros usados, por id y nombre).
+  static String moved(int count, Map<String, String> destinations) {
+    final animals = count == 1 ? 'Se movió 1 animal' : 'Se movieron $count animales';
+    return switch (destinations.length) {
+      0 => '$animals.',
+      1 => '$animals a ${destinations.values.single}.',
+      _ => '$animals a ${destinations.length} potreros.',
+    };
+  }
+
+  /// Aclaración offline de la confirmación.
+  static const savedOffline = 'Queda guardado en el celular y se sincroniza con señal.';
 }

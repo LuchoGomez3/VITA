@@ -33,8 +33,40 @@ class QuickReadRepositoryImpl implements QuickReadRepository {
   final EstablishmentCatalog _establishmentCatalog;
 
   @override
-  Future<Result<QuickReadAnimal?>> findByTag(String tag) async =>
-      _withWeight(await _movementRepository.findAnimalByTag(tag));
+  Future<Result<List<QuickReadAnimal>>> findByTag(String tag) async {
+    final establishments = await getEstablishments();
+    if (establishments is Failure<List<EstablishmentMembership>>) {
+      return Result.failure(establishments.error);
+    }
+    final found = <QuickReadAnimal>[];
+    for (final establishment in (establishments as Success<List<EstablishmentMembership>>).data) {
+      final result = await _withWeight(
+        await _movementRepository.findAnimalByTag(tag, establishmentId: establishment.id),
+      );
+      switch (result) {
+        case Success<QuickReadAnimal?>(:final data):
+          if (data != null) found.add(data);
+        case Failure<QuickReadAnimal?>(:final error):
+          return Result.failure(error);
+      }
+    }
+    return Result.success(found);
+  }
+
+  @override
+  Future<Result<bool>> isRfidRegistered(String rfidTagNumber) async {
+    try {
+      final animals = await _animalStore.getLocalAnimals();
+      return Result.success(
+        animals.any(
+          (animal) => animal.deletedAt == null && animal.rfidTagNumber.replaceAll(RegExp(r'\D'), '') == rfidTagNumber,
+        ),
+      );
+    } on Object catch (error, stackTrace) {
+      _logger.severe('No se pudo buscar el RFID $rfidTagNumber', error, stackTrace);
+      return const Result.failure(DomainException(message: 'No se pudo leer la hacienda del celular.'));
+    }
+  }
 
   @override
   Future<Result<QuickReadAnimal?>> getAnimal(String animalId) async =>

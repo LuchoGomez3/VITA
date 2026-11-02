@@ -36,16 +36,27 @@ class FakeQuickReadRepository implements QuickReadRepository {
     this.establishments = const [
       EstablishmentMembership(id: 'campo-1', name: 'La Sirena', role: UserRole.owner),
     ],
-  }) : byTag = byTag ?? {};
+    Set<String>? inactiveRfids,
+  }) : byTag = byTag ?? {},
+       inactiveRfids = inactiveRfids ?? {};
 
   /// Animales por caravana; se puede cambiar en el test (alta, movimiento).
   final Map<String, QuickReadAnimal> byTag;
+
+  /// RFID de animales registrados que no están activos (vendidos, sin potrero).
+  final Set<String> inactiveRfids;
 
   /// Establecimientos del usuario.
   final List<EstablishmentMembership> establishments;
 
   @override
-  Future<Result<QuickReadAnimal?>> findByTag(String tag) async => Result.success(byTag[tag]);
+  Future<Result<List<QuickReadAnimal>>> findByTag(String tag) async =>
+      Result.success([if (byTag[tag] case final animal?) animal]);
+
+  @override
+  Future<Result<bool>> isRfidRegistered(String rfidTagNumber) async => Result.success(
+    inactiveRfids.contains(rfidTagNumber) || byTag.values.any((animal) => animal.animal.rfidTagNumber == rfidTagNumber),
+  );
 
   @override
   Future<Result<QuickReadAnimal?>> getAnimal(String animalId) async =>

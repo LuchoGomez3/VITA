@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/constants/feature_strings.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_photo.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/movement_history_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_ficha_header.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_ficha_section.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_genealogy_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_general_tab.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_movements_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_weighings_tab.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/cubit/movement_history_cubit.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/strings/animal_movement_strings.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/widgets/animal_movements_tab.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/widgets/weighing_method_sheet.dart';
 import 'package:go_router/go_router.dart';
 
@@ -33,6 +35,7 @@ class AnimalDetailPage extends StatelessWidget {
     required this.animalId,
     required this.createCubit,
     required this.createMovementHistoryCubit,
+    required this.createGenealogyCubit,
     super.key,
   });
 
@@ -45,6 +48,9 @@ class AnimalDetailPage extends StatelessWidget {
   /// Crea el cubit del historial de potreros.
   final MovementHistoryCubitFactory createMovementHistoryCubit;
 
+  /// Crea el Cubit que carga padres, abuelos y crías.
+  final AnimalGenealogyCubitFactory createGenealogyCubit;
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -52,7 +58,7 @@ class AnimalDetailPage extends StatelessWidget {
         BlocProvider(create: (_) => createCubit()..loadAnimalData(animalId)),
         BlocProvider(create: (_) => createMovementHistoryCubit()..load(animalId)),
       ],
-      child: const _AnimalDetailView(),
+      child: _AnimalDetailView(createGenealogyCubit: createGenealogyCubit),
     );
   }
 }
@@ -62,7 +68,7 @@ enum AnimalFichaTab {
   /// Identificación, observaciones y sincronización.
   general(AnimalDetailStrings.generalTab),
 
-  /// Árbol genealógico (todavía no desarrollado).
+  /// Árbol genealógico y crías.
   genealogy(AnimalDetailStrings.genealogyTab),
 
   /// Evolución del peso e histórico.
@@ -81,7 +87,9 @@ enum AnimalFichaTab {
 }
 
 class _AnimalDetailView extends StatefulWidget {
-  const _AnimalDetailView();
+  const _AnimalDetailView({required this.createGenealogyCubit});
+
+  final AnimalGenealogyCubitFactory createGenealogyCubit;
 
   @override
   State<_AnimalDetailView> createState() => _AnimalDetailViewState();
@@ -105,7 +113,7 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AnimalDetailCubit>().state;
-    final animal = switch (state) {
+    final animal = switch (state.detail) {
       Data<AnimalDetail>(:final data) => data,
       _ => null,
     };
@@ -135,19 +143,19 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
           tabs: [for (final tab in AnimalFichaTab.values) Tab(text: tab.label)],
         ),
       ),
-      body: switch (state) {
+      body: switch (state.detail) {
         Data<AnimalDetail>(:final data) => TabBarView(
           controller: _tabs,
           children: [
             AnimalGeneralTab(
               animal: data,
+              photo: switch (state.photo) {
+                Data<AnimalPhoto?>(:final data) => data,
+                _ => null,
+              },
               onRetrySync: () => context.read<AnimalDetailCubit>().retrySync(data.id),
             ),
-            const AnimalFichaComingSoon(
-              icon: Icons.account_tree_outlined,
-              title: AnimalDetailStrings.comingSoonTitle,
-              message: AnimalDetailStrings.genealogyComingSoon,
-            ),
+            AnimalGenealogyTab(animal: data, createCubit: widget.createGenealogyCubit),
             AnimalWeighingsTab(animal: data),
             const AnimalFichaComingSoon(
               icon: Icons.vaccines_outlined,
@@ -172,7 +180,7 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
         ),
         (final animal?, AnimalFichaTab.movements) => FloatingActionButton(
           heroTag: 'animal-ficha-move',
-          tooltip: AnimalMovementStrings.moveTooltip,
+          tooltip: FeatureStrings.moveAnimals,
           shape: const CircleBorder(),
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
@@ -195,16 +203,12 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
       return;
     }
     await Future.wait([detailCubit.loadAnimalData(animal.id), historyCubit.load(animal.id)]);
-    final destination = switch (detailCubit.state) {
-      Data<AnimalDetail>(:final data) => data.lotName,
-      _ => '',
-    };
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           content: Text(
-            '${AnimalMovementStrings.moved(summary.movedCount, destination)} ${AnimalMovementStrings.savedOffline}',
+            '${AnimalDetailStrings.movementConfirmation(summary.movedCount, summary.destinations)} ${AnimalDetailStrings.savedOffline}',
           ),
         ),
       );
@@ -218,6 +222,8 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
     context.go(AppRoutes.livestock);
   }
 
+  /// Ofrece las formas de pesar (balanza Bluetooth, carga manual o Pesaje IA)
+  /// con la misma hoja que usa el lector de caravanas.
   Future<void> _chooseWeighingMethod(BuildContext context, AnimalDetail animal) async {
     final cubit = context.read<AnimalDetailCubit>();
     final saved = await startWeighing(context, (

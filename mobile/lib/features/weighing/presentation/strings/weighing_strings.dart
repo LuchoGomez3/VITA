@@ -73,7 +73,4 @@ abstract final class WeighingStrings {
 
   /// Opción del Pesaje IA por foto.
   static const methodPhoto = 'Foto (Pesaje IA)';
-
-  /// Aviso mientras el Pesaje IA no está integrado en esta versión.
-  static const photoComingSoon = 'El Pesaje IA por foto llega pronto a esta pantalla.';
 }

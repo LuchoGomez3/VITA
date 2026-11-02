@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/formatters/formatters.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/animal_movement/presentation/cubit/group_movement_cubit.dart';
+import 'package:frontend_mayoral/features/animal_movement/presentation/cubit/group_movement_state.dart';
 import 'package:frontend_mayoral/features/animal_movement/presentation/strings/animal_movement_strings.dart';
 import 'package:go_router/go_router.dart';
 
@@ -48,6 +50,15 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
   final _tagController = TextEditingController();
   final _tagFocus = FocusNode();
   final _reasonController = TextEditingController();
+  int _tagRevision = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tagController.addListener(_onTagEdited);
+  }
+
+  void _onTagEdited() => _tagRevision++;
 
   @override
   void dispose() {
@@ -58,12 +69,21 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
   }
 
   Future<void> _addTag() async {
-    final added = await context.read<GroupMovementCubit>().addTag(_tagController.text);
-    if (added) {
-      _tagController.clear();
+    final tag = _tagController.text;
+    _tagRevision++;
+    _tagController.clear();
+    final revision = _tagRevision;
+    // Cada Enter entrega una captura independiente al Cubit y deja el campo
+    // listo para la siguiente lectura antes de consultar SQLite.
+    _tagFocus.requestFocus();
+    final added = await context.read<GroupMovementCubit>().addTag(tag);
+    if (!mounted) return;
+    if (!added && revision == _tagRevision) {
+      _tagController.value = TextEditingValue(
+        text: tag,
+        selection: TextSelection.collapsed(offset: tag.length),
+      );
     }
-    // El bastón lee una caravana tras otra: el foco vuelve al campo.
-    if (mounted) _tagFocus.requestFocus();
   }
 
   Future<void> _pickDate(DateTime current) async {
@@ -81,48 +101,99 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<GroupMovementCubit, GroupMovementState>(
-      listenWhen: (previous, current) => previous.summary == null && current.summary != null,
-      listener: (context, state) => context.pop(state.summary),
+      listenWhen: (previous, current) =>
+          previous.submission is! Data<GroupMovementSummary> && current.submission is Data<GroupMovementSummary>,
+      listener: (context, state) {
+        if (state.submission case Data<GroupMovementSummary>(:final data)) {
+          context.pop(data);
+        }
+      },
       builder: (context, state) {
-        return Scaffold(
-          appBar: AppBar(
-            backgroundColor: AppColors.background,
-            surfaceTintColor: AppColors.background,
-            centerTitle: true,
-            title: const Text(AnimalMovementStrings.pageTitle, style: AppTypography.appBarTitle),
-          ),
-          body: switch (state) {
-            GroupMovementState(isLoading: true) => const Center(child: CircularProgressIndicator()),
-            GroupMovementState(:final loadError?) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Text(loadError, textAlign: TextAlign.center, style: AppTypography.pageBodyTitle),
-              ),
-            ),
-            _ => _buildForm(context, state),
+        final saving = state.submission is Loading<GroupMovementSummary>;
+        final hasSavedChanges = state.savedSummary.movedCount > 0;
+        return PopScope<GroupMovementSummary>(
+          canPop: !saving && !hasSavedChanges,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop && !saving && hasSavedChanges) {
+              context.pop(state.savedSummary);
+            }
           },
-          bottomNavigationBar: state.isLoading || state.loadError != null
-              ? null
-              : SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.xs, AppSpacing.md, AppSpacing.md),
-                    child: AppFilledButton(
-                      label: AnimalMovementStrings.submit(
-                        state.destinationId == null ? state.animals.length : state.movableCount,
-                      ),
-                      isLoading: state.isSubmitting,
-                      onPressed: state.animals.isEmpty || state.isSubmitting
-                          ? null
-                          : () => context.read<GroupMovementCubit>().submit(_reasonController.text),
-                    ),
+          child: Scaffold(
+            appBar: AppBar(
+              backgroundColor: AppColors.background,
+              surfaceTintColor: AppColors.background,
+              centerTitle: true,
+              title: const Text(AnimalMovementStrings.pageTitle, style: AppTypography.appBarTitle),
+            ),
+            body: switch (state.preparation) {
+              Data<GroupMovementPreparation>() => AbsorbPointer(
+                absorbing: state.submission is Loading<GroupMovementSummary>,
+                child: _GroupMovementForm(
+                  state: state,
+                  onAddTag: _addTag,
+                  tagController: _tagController,
+                  tagFocus: _tagFocus,
+                  reasonController: _reasonController,
+                  onPickDate: _pickDate,
+                ),
+              ),
+              ResultError<GroupMovementPreparation>(:final error) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  child: Text(
+                    AnimalMovementStrings.errorMessage(error),
+                    textAlign: TextAlign.center,
+                    style: AppTypography.pageBodyTitle,
                   ),
                 ),
+              ),
+              _ => const Center(child: CircularProgressIndicator()),
+            },
+            bottomNavigationBar: state.preparation is! Data<GroupMovementPreparation>
+                ? null
+                : SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.xs, AppSpacing.md, AppSpacing.md),
+                      child: AppFilledButton(
+                        label: AnimalMovementStrings.submit(
+                          state.destinationId == null ? state.animals.length : state.movableCount,
+                        ),
+                        isLoading: state.submission is Loading<GroupMovementSummary>,
+                        onPressed:
+                            state.animals.isEmpty ||
+                                state.submission is Loading<GroupMovementSummary> ||
+                                state.tagResolution is Loading<MovementAnimal>
+                            ? null
+                            : () => context.read<GroupMovementCubit>().submit(_reasonController.text),
+                      ),
+                    ),
+                  ),
+          ),
         );
       },
     );
   }
+}
 
-  Widget _buildForm(BuildContext context, GroupMovementState state) {
+class _GroupMovementForm extends StatelessWidget {
+  const _GroupMovementForm({
+    required this.state,
+    required this.onAddTag,
+    required this.tagController,
+    required this.tagFocus,
+    required this.reasonController,
+    required this.onPickDate,
+  });
+
+  final GroupMovementState state;
+  final Future<void> Function() onAddTag;
+  final TextEditingController tagController;
+  final FocusNode tagFocus;
+  final TextEditingController reasonController;
+  final Future<void> Function(DateTime) onPickDate;
+
+  @override
+  Widget build(BuildContext context) {
     final cubit = context.read<GroupMovementCubit>();
     final occurredAt = state.occurredAt ?? DateTime.now();
 
@@ -135,17 +206,20 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
           children: [
             Expanded(
               child: TextField(
-                controller: _tagController,
-                focusNode: _tagFocus,
+                controller: tagController,
+                focusNode: tagFocus,
                 autofocus: true,
                 textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _addTag(),
+                onSubmitted: (_) => onAddTag(),
                 style: AppTypography.formFieldValue,
                 decoration: InputDecoration(
                   isDense: true,
                   hintText: AnimalMovementStrings.tagFieldHint,
                   prefixIcon: const Icon(Icons.contactless_outlined, color: AppColors.textHint),
-                  errorText: state.tagError,
+                  errorText: switch (state.tagResolution) {
+                    ResultError<MovementAnimal>(:final error) => AnimalMovementStrings.errorMessage(error),
+                    _ => null,
+                  },
                   errorMaxLines: 3,
                 ),
               ),
@@ -153,7 +227,7 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
             const SizedBox(width: AppSpacing.xs),
             IconButton.filled(
               tooltip: AnimalMovementStrings.addTag,
-              onPressed: _addTag,
+              onPressed: onAddTag,
               icon: const Icon(Icons.add),
             ),
           ],
@@ -187,19 +261,19 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
             ),
         const SizedBox(height: AppSpacing.md),
         AppTextFormField(
-          controller: _reasonController,
+          controller: reasonController,
           title: AnimalMovementStrings.reasonLabel,
           hintText: AnimalMovementStrings.reasonHint,
         ),
         const SizedBox(height: AppSpacing.sm),
         OutlinedButton.icon(
-          onPressed: () => _pickDate(occurredAt),
+          onPressed: () => onPickDate(occurredAt),
           icon: const Icon(Icons.calendar_today_outlined),
           label: Text(AnimalMovementStrings.dateLabel(DateDisplayFormatter.shortDate(occurredAt))),
         ),
-        if (state.submitError case final error?) ...[
+        if (state.submission case ResultError<GroupMovementSummary>(:final error)) ...[
           const SizedBox(height: AppSpacing.sm),
-          Text(error, style: AppTypography.errorBody),
+          Text(AnimalMovementStrings.errorMessage(error), style: AppTypography.errorBody),
         ],
         const SizedBox(height: AppSpacing.xl),
       ],

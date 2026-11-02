@@ -179,6 +179,7 @@ final _firstPesaje = BrickPesajeModel(
 
 final _latestPesaje = BrickPesajeModel(
   localId: 'weighing-2',
+  photoUrl: 'https://example.com/ignored-backend-photo.jpg',
   establishmentId: 'establishment-id',
   animalId: _animalId,
   weightKg: 245,
@@ -352,7 +353,7 @@ class _FakeLotBrickStore implements LotBrickStore {
   final Map<String, String> lots;
 
   @override
-  Future<List<BrickLotModel>> getLocalLots(String establishmentId) async => [
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId, {bool includeDeleted = false}) async => [
     for (final MapEntry(key: id, value: name) in lots.entries)
       BrickLotModel(
         localId: id,

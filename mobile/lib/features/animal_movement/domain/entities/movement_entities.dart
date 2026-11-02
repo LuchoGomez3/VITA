@@ -1,115 +1,92 @@
-import 'package:meta/meta.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-/// Animal que se puede mover: está activo, no fue borrado y está en un potrero.
-@immutable
-class MovementAnimal {
-  /// Crea el animal.
-  const MovementAnimal({
-    required this.id,
-    required this.establishmentId,
-    required this.visualTag,
-    required this.rfidTagNumber,
-    required this.breed,
-    required this.categoryName,
-    required this.lotId,
-    required this.lotName,
-  });
+part 'movement_entities.freezed.dart';
 
-  /// Id local (UUID de cliente).
-  final String id;
-
-  /// Establecimiento al que pertenece.
-  final String establishmentId;
-
-  /// Caravana visual.
-  final String visualTag;
-
-  /// RFID de 15 dígitos.
-  final String rfidTagNumber;
-
-  /// Raza.
-  final String breed;
-
-  /// Categoría (vacía si no se conoce).
-  final String categoryName;
-
-  /// Potrero actual.
-  final String lotId;
-
-  /// Nombre del potrero actual (vacío si no se conoce).
-  final String lotName;
-
-  @override
-  bool operator ==(Object other) => other is MovementAnimal && other.id == id && other.lotId == lotId;
-
-  @override
-  int get hashCode => Object.hash(id, lotId);
+/// Animal activo con potrero que puede participar de un traslado.
+@freezed
+sealed class MovementAnimal with _$MovementAnimal {
+  /// Conserva identidad, establecimiento y ubicación al preparar la selección.
+  const factory MovementAnimal({
+    required String id,
+    required String establishmentId,
+    required String visualTag,
+    required String rfidTagNumber,
+    required String breed,
+    required String categoryName,
+    required String lotId,
+    required String lotName,
+  }) = _MovementAnimal;
 }
 
-/// Potrero al que se pueden mover animales.
-@immutable
-class MovementDestination {
-  /// Crea el potrero.
-  const MovementDestination({required this.id, required this.name, required this.animalCount});
+/// Potrero activo ofrecido como destino del traslado.
+@freezed
+sealed class MovementDestination with _$MovementDestination {
+  /// Crea una opción con la cantidad local de animales.
+  const factory MovementDestination({
+    required String id,
+    required String name,
+    required int animalCount,
+  }) = _MovementDestination;
+}
 
-  /// Id del lote.
-  final String id;
-
-  /// Nombre visible.
-  final String name;
-
-  /// Animales que tiene ahora.
-  final int animalCount;
-
-  @override
-  bool operator ==(Object other) =>
-      other is MovementDestination && other.id == id && other.name == name && other.animalCount == animalCount;
-
-  @override
-  int get hashCode => Object.hash(id, name, animalCount);
+/// Datos locales iniciales del movimiento, independientes de su presentación.
+@freezed
+sealed class GroupMovementPreparation with _$GroupMovementPreparation {
+  /// Agrupa los animales iniciales (el de la ficha o los leídos en el lector)
+  /// y los destinos de su establecimiento.
+  const factory GroupMovementPreparation({
+    required List<MovementAnimal> animals,
+    required List<MovementDestination> destinations,
+  }) = _GroupMovementPreparation;
 }
 
 /// Un paso del historial de potreros de un animal.
-@immutable
-class MovementHistoryEntry {
-  /// Crea la entrada.
-  const MovementHistoryEntry({
-    required this.movementId,
-    required this.fromLotName,
-    required this.toLotName,
-    required this.occurredAt,
-    required this.reason,
-    required this.isPending,
-  });
+@freezed
+sealed class MovementHistoryEntry with _$MovementHistoryEntry {
+  /// Crea la entrada; el origen es nulo en la primera asignación.
+  const factory MovementHistoryEntry({
+    required String movementId,
+    required String? fromLotName,
+    required String toLotName,
+    required DateTime occurredAt,
+    required String reason,
+    required MovementSyncStatus syncStatus,
 
-  /// Id del movimiento.
-  final String movementId;
-
-  /// Potrero de origen; `null` en la primera asignación.
-  final String? fromLotName;
-
-  /// Potrero de destino.
-  final String toLotName;
-
-  /// Cuándo se movió.
-  final DateTime occurredAt;
-
-  /// Motivo cargado.
-  final String reason;
-
-  /// Si todavía no llegó al servidor.
-  final bool isPending;
+    /// Identifica la última llegada al potrero actual, sin inferirla del orden visible.
+    @Default(false) bool isCurrent,
+  }) = _MovementHistoryEntry;
 }
 
-/// Resultado de registrar un movimiento de varios animales.
-@immutable
-class GroupMovementSummary {
-  /// Crea el resumen.
-  const GroupMovementSummary({required this.movedCount, required this.alreadyThereCount});
+/// Estado de confirmación del movimiento independiente de Brick.
+enum MovementSyncStatus {
+  /// Guardado localmente y pendiente de envío o reintento.
+  pending,
 
-  /// Animales que cambiaron de potrero.
-  final int movedCount;
+  /// Confirmado por el servidor.
+  synchronized,
 
-  /// Animales que ya estaban en el potrero de destino (no se tocan).
-  final int alreadyThereCount;
+  /// Rechazado definitivamente por una regla del servidor.
+  rejected,
+}
+
+/// Resultado de registrar el traslado de una selección de animales.
+@freezed
+sealed class GroupMovementSummary with _$GroupMovementSummary {
+  /// Distingue los trasladados de quienes ya estaban en el destino.
+  const factory GroupMovementSummary({
+    required int movedCount,
+    required int alreadyThereCount,
+
+    /// Destinos efectivamente usados, por UUID y nombre al registrar.
+    @Default({}) Map<String, String> destinations,
+  }) = _GroupMovementSummary;
+
+  const GroupMovementSummary._();
+
+  /// Acumula intentos de la misma pantalla sin perder destinos ya guardados.
+  GroupMovementSummary combine(GroupMovementSummary other) => GroupMovementSummary(
+    movedCount: movedCount + other.movedCount,
+    alreadyThereCount: alreadyThereCount + other.alreadyThereCount,
+    destinations: {...destinations, ...other.destinations},
+  );
 }

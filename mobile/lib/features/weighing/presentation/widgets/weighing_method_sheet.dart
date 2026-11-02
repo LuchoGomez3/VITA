@@ -30,8 +30,9 @@ enum _WeighingMethod {
 
 /// Pregunta cómo pesar a [subject] (balanza, manual o foto) y abre el pesaje.
 ///
-/// La usan la ficha del animal y el lector de caravanas. Devuelve `true` si se
-/// guardó un pesaje, para que quien la abrió recargue el último peso.
+/// La usan la ficha del animal y el lector de caravanas. Devuelve `true` si
+/// pudo haberse guardado un pesaje, para que quien la abrió recargue el último
+/// peso.
 Future<bool> startWeighing(BuildContext context, WeighingSubject subject) async {
   final method = await showModalBottomSheet<_WeighingMethod>(
     context: context,
@@ -78,11 +79,9 @@ Future<bool> startWeighing(BuildContext context, WeighingSubject subject) async 
       );
       return saved ?? false;
     case _WeighingMethod.photo:
-      // El Pesaje IA (modelo de visión) está en la rama jornada-poster: cuando
-      // entre a develop, acá se abre AppRoutes.visionWeighing con el animalId.
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text(WeighingStrings.photoComingSoon)));
-      return false;
+      // Pesaje IA (modelo de visión on-device). La pantalla elige el animal por
+      // su cuenta y no informa si guardó: se recarga igual al volver.
+      await context.push<void>(AppRoutes.visionWeighing);
+      return true;
   }
 }

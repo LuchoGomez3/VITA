@@ -61,6 +61,18 @@ void main() {
     });
   });
 
+  test('un RFID registrado de un animal vendido o sin potrero no se ofrece como alta', () async {
+    repository = FakeQuickReadRepository(inactiveRfids: {'982000999000222'});
+
+    final result = await ResolveQuickReadTagUseCase(repository)(
+      tag: '982000999000222',
+      establishmentId: 'campo-1',
+      items: const [],
+    );
+
+    expect((result as Failure).error.code, DomainErrorCode.conflict);
+  });
+
   group('RefreshQuickReadUseCase', () {
     test('actualiza potreros, pasa a registrada la caravana dada de alta y saca las bajas', () async {
       final items = [

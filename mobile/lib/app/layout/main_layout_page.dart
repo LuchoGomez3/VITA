@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_strings.dart';
+import 'package:frontend_mayoral/core/theme/app_navigation_dimensions.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/cubit/quick_read_cubit.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/strings/quick_read_strings.dart';
@@ -38,7 +39,7 @@ class MainLayoutPage extends StatefulWidget {
 
 class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProviderStateMixin {
   // Altura exterior de la barra; modificar este valor cambia su grosor real.
-  static const double _navigationBarHeight = 65;
+  static const double _navigationBarHeight = AppNavigationDimensions.bottomBarHeight;
 
   bool _isReading = false;
 

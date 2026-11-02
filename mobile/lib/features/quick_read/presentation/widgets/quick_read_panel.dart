@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/strings/animal_movement_strings.dart';
 import 'package:frontend_mayoral/features/quick_read/domain/entities/quick_read_item.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/cubit/quick_read_cubit.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/strings/quick_read_strings.dart';
@@ -452,16 +451,12 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
     if (summary == null || !mounted) {
       return;
     }
-    final destination = _cubit.state.registeredItems
-        .where((item) => item.animal.animal.id == animalIds.first)
-        .map((item) => item.animal.animal.lotName)
-        .firstOrNull;
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           content: Text(
-            '${AnimalMovementStrings.moved(summary.movedCount, destination ?? '')} ${AnimalMovementStrings.savedOffline}',
+            '${QuickReadStrings.moved(summary.movedCount, summary.destinations)} ${QuickReadStrings.savedOffline}',
           ),
         ),
       );
