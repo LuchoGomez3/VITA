@@ -32,6 +32,7 @@ void main() {
         occurredAt: DateTime(2026, 10, 20),
         reason: 'Rotación pastoreo',
         syncStatus: MovementSyncStatus.pending,
+        isCurrent: true,
       ),
       MovementHistoryEntry(
         movementId: 'm1',
@@ -54,6 +55,31 @@ void main() {
     await pump(tester, const []);
 
     expect(find.text(AnimalDetailStrings.historyEmpty), findsOneWidget);
+  });
+
+  testWidgets('la fila actual puede estar después de otra con fecha más reciente', (tester) async {
+    await pump(tester, [
+      MovementHistoryEntry(
+        movementId: 'previo',
+        fromLotName: 'La Cumbre',
+        toLotName: 'El Bajo',
+        occurredAt: DateTime(2026, 6),
+        reason: 'Anterior',
+        syncStatus: MovementSyncStatus.synchronized,
+      ),
+      MovementHistoryEntry(
+        movementId: 'actual',
+        fromLotName: 'El Bajo',
+        toLotName: 'La Cumbre',
+        occurredAt: DateTime(2026, 5),
+        reason: 'Retroactivo',
+        syncStatus: MovementSyncStatus.pending,
+        isCurrent: true,
+      ),
+    ]);
+
+    expect(find.text('El Bajo → La Cumbre ${AnimalDetailStrings.currentLot}'), findsOneWidget);
+    expect(find.text('La Cumbre → El Bajo ${AnimalDetailStrings.currentLot}'), findsNothing);
   });
 
   testWidgets('un rechazo se identifica y no se presenta como pendiente o actual', (tester) async {

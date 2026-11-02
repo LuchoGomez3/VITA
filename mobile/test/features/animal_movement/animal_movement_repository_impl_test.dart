@@ -140,6 +140,57 @@ void main() {
 
     expect(history.single.syncStatus, MovementSyncStatus.rejected);
   });
+
+  test('una fecha retroactiva no hace que el potrero actual sea el primero del historial', () async {
+    final history = data(
+      await repository(
+        animals: [_animal('a1', lotId: 'lote-cumbre')],
+        movements: [
+          _movement('previo', ['a1'], from: 'lote-cumbre', to: 'lote-bajo', on: DateTime.utc(2026, 5)),
+          _movement(
+            'retroactivo',
+            ['a1'],
+            from: 'lote-bajo',
+            to: 'lote-cumbre',
+            on: DateTime.utc(2026, 4),
+            createdAt: DateTime.utc(2026, 6),
+          ),
+          _movement(
+            'rechazado',
+            ['a1'],
+            from: 'lote-cumbre',
+            to: 'lote-bajo',
+            on: DateTime.utc(2026, 7),
+            status: BrickAnimalLotMovementSyncStatus.rejected,
+          ),
+        ],
+      ).getHistory('a1'),
+    );
+
+    expect(history.map((entry) => entry.movementId), ['rechazado', 'previo', 'retroactivo']);
+    expect(history.where((entry) => entry.isCurrent).single.movementId, 'retroactivo');
+    expect(history.last.toLotName, 'La Cumbre');
+  });
+
+  test('múltiples visitas al mismo potrero marcan solo la última llegada registrada', () async {
+    final history = data(
+      await repository(
+        movements: [
+          _movement('viejo', ['a1'], from: null, to: 'lote-bajo', on: DateTime.utc(2026, 5)),
+          _movement(
+            'actual',
+            ['a1'],
+            from: 'lote-cumbre',
+            to: 'lote-bajo',
+            on: DateTime.utc(2026, 4),
+            createdAt: DateTime.utc(2026, 6),
+          ),
+        ],
+      ).getHistory('a1'),
+    );
+
+    expect(history.where((entry) => entry.isCurrent).single.movementId, 'actual');
+  });
 }
 
 final List<BrickAnimalModel> _animals = [_animal('a1'), _animal('a2', visualTag: '004 0023', rfid: '982000412884920')];
@@ -177,6 +228,7 @@ BrickAnimalLotMovementModel _movement(
   required String? from,
   required String to,
   required DateTime on,
+  DateTime? createdAt,
   BrickAnimalLotMovementSyncStatus status = BrickAnimalLotMovementSyncStatus.pending,
 }) => BrickAnimalLotMovementModel(
   localId: id,
@@ -186,7 +238,7 @@ BrickAnimalLotMovementModel _movement(
   animalIdsJson: jsonEncode(animalIds),
   occurredAt: on,
   reason: 'Rotación',
-  createdAt: on,
+  createdAt: createdAt ?? on,
   updatedAt: on,
   syncStatus: status,
 );

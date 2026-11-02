@@ -821,7 +821,8 @@ $MovementAnimalCopyWith<$Res> get animal {
 /// @nodoc
 mixin _$MovementHistoryEntry {
 
- String get movementId; String? get fromLotName; String get toLotName; DateTime get occurredAt; String get reason; MovementSyncStatus get syncStatus;
+ String get movementId; String? get fromLotName; String get toLotName; DateTime get occurredAt; String get reason; MovementSyncStatus get syncStatus;/// Identifica la última llegada al potrero actual, sin inferirla del orden visible.
+ bool get isCurrent;
 /// Create a copy of MovementHistoryEntry
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -832,16 +833,16 @@ $MovementHistoryEntryCopyWith<MovementHistoryEntry> get copyWith => _$MovementHi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MovementHistoryEntry&&(identical(other.movementId, movementId) || other.movementId == movementId)&&(identical(other.fromLotName, fromLotName) || other.fromLotName == fromLotName)&&(identical(other.toLotName, toLotName) || other.toLotName == toLotName)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MovementHistoryEntry&&(identical(other.movementId, movementId) || other.movementId == movementId)&&(identical(other.fromLotName, fromLotName) || other.fromLotName == fromLotName)&&(identical(other.toLotName, toLotName) || other.toLotName == toLotName)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.isCurrent, isCurrent) || other.isCurrent == isCurrent));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,movementId,fromLotName,toLotName,occurredAt,reason,syncStatus);
+int get hashCode => Object.hash(runtimeType,movementId,fromLotName,toLotName,occurredAt,reason,syncStatus,isCurrent);
 
 @override
 String toString() {
-  return 'MovementHistoryEntry(movementId: $movementId, fromLotName: $fromLotName, toLotName: $toLotName, occurredAt: $occurredAt, reason: $reason, syncStatus: $syncStatus)';
+  return 'MovementHistoryEntry(movementId: $movementId, fromLotName: $fromLotName, toLotName: $toLotName, occurredAt: $occurredAt, reason: $reason, syncStatus: $syncStatus, isCurrent: $isCurrent)';
 }
 
 
@@ -852,7 +853,7 @@ abstract mixin class $MovementHistoryEntryCopyWith<$Res>  {
   factory $MovementHistoryEntryCopyWith(MovementHistoryEntry value, $Res Function(MovementHistoryEntry) _then) = _$MovementHistoryEntryCopyWithImpl;
 @useResult
 $Res call({
- String movementId, String? fromLotName, String toLotName, DateTime occurredAt, String reason, MovementSyncStatus syncStatus
+ String movementId, String? fromLotName, String toLotName, DateTime occurredAt, String reason, MovementSyncStatus syncStatus, bool isCurrent
 });
 
 
@@ -869,7 +870,7 @@ class _$MovementHistoryEntryCopyWithImpl<$Res>
 
 /// Create a copy of MovementHistoryEntry
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? movementId = null,Object? fromLotName = freezed,Object? toLotName = null,Object? occurredAt = null,Object? reason = null,Object? syncStatus = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? movementId = null,Object? fromLotName = freezed,Object? toLotName = null,Object? occurredAt = null,Object? reason = null,Object? syncStatus = null,Object? isCurrent = null,}) {
   return _then(_self.copyWith(
 movementId: null == movementId ? _self.movementId : movementId // ignore: cast_nullable_to_non_nullable
 as String,fromLotName: freezed == fromLotName ? _self.fromLotName : fromLotName // ignore: cast_nullable_to_non_nullable
@@ -877,7 +878,8 @@ as String?,toLotName: null == toLotName ? _self.toLotName : toLotName // ignore:
 as String,occurredAt: null == occurredAt ? _self.occurredAt : occurredAt // ignore: cast_nullable_to_non_nullable
 as DateTime,reason: null == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
 as String,syncStatus: null == syncStatus ? _self.syncStatus : syncStatus // ignore: cast_nullable_to_non_nullable
-as MovementSyncStatus,
+as MovementSyncStatus,isCurrent: null == isCurrent ? _self.isCurrent : isCurrent // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -959,10 +961,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String movementId,  String? fromLotName,  String toLotName,  DateTime occurredAt,  String reason,  MovementSyncStatus syncStatus)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String movementId,  String? fromLotName,  String toLotName,  DateTime occurredAt,  String reason,  MovementSyncStatus syncStatus,  bool isCurrent)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MovementHistoryEntry() when $default != null:
-return $default(_that.movementId,_that.fromLotName,_that.toLotName,_that.occurredAt,_that.reason,_that.syncStatus);case _:
+return $default(_that.movementId,_that.fromLotName,_that.toLotName,_that.occurredAt,_that.reason,_that.syncStatus,_that.isCurrent);case _:
   return orElse();
 
 }
@@ -980,10 +982,10 @@ return $default(_that.movementId,_that.fromLotName,_that.toLotName,_that.occurre
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String movementId,  String? fromLotName,  String toLotName,  DateTime occurredAt,  String reason,  MovementSyncStatus syncStatus)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String movementId,  String? fromLotName,  String toLotName,  DateTime occurredAt,  String reason,  MovementSyncStatus syncStatus,  bool isCurrent)  $default,) {final _that = this;
 switch (_that) {
 case _MovementHistoryEntry():
-return $default(_that.movementId,_that.fromLotName,_that.toLotName,_that.occurredAt,_that.reason,_that.syncStatus);}
+return $default(_that.movementId,_that.fromLotName,_that.toLotName,_that.occurredAt,_that.reason,_that.syncStatus,_that.isCurrent);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -997,10 +999,10 @@ return $default(_that.movementId,_that.fromLotName,_that.toLotName,_that.occurre
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String movementId,  String? fromLotName,  String toLotName,  DateTime occurredAt,  String reason,  MovementSyncStatus syncStatus)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String movementId,  String? fromLotName,  String toLotName,  DateTime occurredAt,  String reason,  MovementSyncStatus syncStatus,  bool isCurrent)?  $default,) {final _that = this;
 switch (_that) {
 case _MovementHistoryEntry() when $default != null:
-return $default(_that.movementId,_that.fromLotName,_that.toLotName,_that.occurredAt,_that.reason,_that.syncStatus);case _:
+return $default(_that.movementId,_that.fromLotName,_that.toLotName,_that.occurredAt,_that.reason,_that.syncStatus,_that.isCurrent);case _:
   return null;
 
 }
@@ -1012,7 +1014,7 @@ return $default(_that.movementId,_that.fromLotName,_that.toLotName,_that.occurre
 
 
 class _MovementHistoryEntry implements MovementHistoryEntry {
-  const _MovementHistoryEntry({required this.movementId, required this.fromLotName, required this.toLotName, required this.occurredAt, required this.reason, required this.syncStatus});
+  const _MovementHistoryEntry({required this.movementId, required this.fromLotName, required this.toLotName, required this.occurredAt, required this.reason, required this.syncStatus, this.isCurrent = false});
   
 
 @override final  String movementId;
@@ -1021,6 +1023,8 @@ class _MovementHistoryEntry implements MovementHistoryEntry {
 @override final  DateTime occurredAt;
 @override final  String reason;
 @override final  MovementSyncStatus syncStatus;
+/// Identifica la última llegada al potrero actual, sin inferirla del orden visible.
+@override@JsonKey() final  bool isCurrent;
 
 /// Create a copy of MovementHistoryEntry
 /// with the given fields replaced by the non-null parameter values.
@@ -1032,16 +1036,16 @@ _$MovementHistoryEntryCopyWith<_MovementHistoryEntry> get copyWith => __$Movemen
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MovementHistoryEntry&&(identical(other.movementId, movementId) || other.movementId == movementId)&&(identical(other.fromLotName, fromLotName) || other.fromLotName == fromLotName)&&(identical(other.toLotName, toLotName) || other.toLotName == toLotName)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MovementHistoryEntry&&(identical(other.movementId, movementId) || other.movementId == movementId)&&(identical(other.fromLotName, fromLotName) || other.fromLotName == fromLotName)&&(identical(other.toLotName, toLotName) || other.toLotName == toLotName)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.isCurrent, isCurrent) || other.isCurrent == isCurrent));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,movementId,fromLotName,toLotName,occurredAt,reason,syncStatus);
+int get hashCode => Object.hash(runtimeType,movementId,fromLotName,toLotName,occurredAt,reason,syncStatus,isCurrent);
 
 @override
 String toString() {
-  return 'MovementHistoryEntry(movementId: $movementId, fromLotName: $fromLotName, toLotName: $toLotName, occurredAt: $occurredAt, reason: $reason, syncStatus: $syncStatus)';
+  return 'MovementHistoryEntry(movementId: $movementId, fromLotName: $fromLotName, toLotName: $toLotName, occurredAt: $occurredAt, reason: $reason, syncStatus: $syncStatus, isCurrent: $isCurrent)';
 }
 
 
@@ -1052,7 +1056,7 @@ abstract mixin class _$MovementHistoryEntryCopyWith<$Res> implements $MovementHi
   factory _$MovementHistoryEntryCopyWith(_MovementHistoryEntry value, $Res Function(_MovementHistoryEntry) _then) = __$MovementHistoryEntryCopyWithImpl;
 @override @useResult
 $Res call({
- String movementId, String? fromLotName, String toLotName, DateTime occurredAt, String reason, MovementSyncStatus syncStatus
+ String movementId, String? fromLotName, String toLotName, DateTime occurredAt, String reason, MovementSyncStatus syncStatus, bool isCurrent
 });
 
 
@@ -1069,7 +1073,7 @@ class __$MovementHistoryEntryCopyWithImpl<$Res>
 
 /// Create a copy of MovementHistoryEntry
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? movementId = null,Object? fromLotName = freezed,Object? toLotName = null,Object? occurredAt = null,Object? reason = null,Object? syncStatus = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? movementId = null,Object? fromLotName = freezed,Object? toLotName = null,Object? occurredAt = null,Object? reason = null,Object? syncStatus = null,Object? isCurrent = null,}) {
   return _then(_MovementHistoryEntry(
 movementId: null == movementId ? _self.movementId : movementId // ignore: cast_nullable_to_non_nullable
 as String,fromLotName: freezed == fromLotName ? _self.fromLotName : fromLotName // ignore: cast_nullable_to_non_nullable
@@ -1077,7 +1081,8 @@ as String?,toLotName: null == toLotName ? _self.toLotName : toLotName // ignore:
 as String,occurredAt: null == occurredAt ? _self.occurredAt : occurredAt // ignore: cast_nullable_to_non_nullable
 as DateTime,reason: null == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
 as String,syncStatus: null == syncStatus ? _self.syncStatus : syncStatus // ignore: cast_nullable_to_non_nullable
-as MovementSyncStatus,
+as MovementSyncStatus,isCurrent: null == isCurrent ? _self.isCurrent : isCurrent // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

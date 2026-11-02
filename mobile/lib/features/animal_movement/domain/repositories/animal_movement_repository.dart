@@ -14,5 +14,7 @@ abstract interface class AnimalMovementRepository {
   Future<Result<List<MovementDestination>>> getDestinations(String establishmentId);
 
   /// Historial de potreros de [animalId], del más reciente al más viejo.
+  /// La llegada actual se identifica con la ubicación local del animal, no
+  /// con la primera fecha efectiva de la lista.
   Future<Result<List<MovementHistoryEntry>>> getHistory(String animalId);
 }

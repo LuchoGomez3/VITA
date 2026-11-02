@@ -91,10 +91,19 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
           for (final lot in await _lotStore.getLocalLots(animal.establishmentId)) lot.localId: lot.name,
         };
         final entries = <MovementHistoryEntry>[];
-        for (final movement in await _movementStore.getLocalMovements(animal.establishmentId)) {
-          if (!_includesAnimal(movement, animalId)) {
-            continue;
-          }
+        final movements =
+            (await _movementStore.getLocalMovements(
+                animal.establishmentId,
+              )).where((movement) => _includesAnimal(movement, animalId)).toList()
+              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        final current = movements
+            .where(
+              (movement) =>
+                  movement.destinationLotId == animal.lotId &&
+                  movement.syncStatus != BrickAnimalLotMovementSyncStatus.rejected,
+            )
+            .firstOrNull;
+        for (final movement in movements) {
           final sourceLotId = movement.sourceLotId;
           entries.add(
             MovementHistoryEntry(
@@ -108,6 +117,7 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
                 BrickAnimalLotMovementSyncStatus.synchronized => MovementSyncStatus.synchronized,
                 BrickAnimalLotMovementSyncStatus.rejected => MovementSyncStatus.rejected,
               },
+              isCurrent: movement.localId == current?.localId,
             ),
           );
         }

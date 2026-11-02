@@ -30,8 +30,7 @@ class AnimalMovementsTab extends StatelessWidget {
           if (data.isEmpty)
             const Text(AnimalDetailStrings.historyEmpty, style: AppTypography.formFieldHelper)
           else
-            for (final (index, entry) in data.indexed)
-              _MovementRow(entry: entry, isCurrent: index == 0, isLast: index == data.length - 1),
+            for (final (index, entry) in data.indexed) _MovementRow(entry: entry, isLast: index == data.length - 1),
         ],
       ),
       ResultError<List<MovementHistoryEntry>>() => const Center(
@@ -44,10 +43,9 @@ class AnimalMovementsTab extends StatelessWidget {
 
 /// Un punto de la línea de tiempo: "origen → destino", fecha y motivo.
 class _MovementRow extends StatelessWidget {
-  const _MovementRow({required this.entry, required this.isCurrent, required this.isLast});
+  const _MovementRow({required this.entry, required this.isLast});
 
   final MovementHistoryEntry entry;
-  final bool isCurrent;
   final bool isLast;
 
   @override
@@ -91,7 +89,7 @@ class _MovementRow extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          '$from → ${entry.toLotName}${isCurrent && entry.syncStatus != MovementSyncStatus.rejected ? ' ${AnimalDetailStrings.currentLot}' : ''}',
+                          '$from → ${entry.toLotName}${entry.isCurrent && entry.syncStatus != MovementSyncStatus.rejected ? ' ${AnimalDetailStrings.currentLot}' : ''}',
                           style: AppTypography.mediumEmphasis.copyWith(fontWeight: FontWeight.w800),
                         ),
                       ),

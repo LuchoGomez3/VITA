@@ -50,6 +50,9 @@ sealed class MovementHistoryEntry with _$MovementHistoryEntry {
     required DateTime occurredAt,
     required String reason,
     required MovementSyncStatus syncStatus,
+
+    /// Identifica la última llegada al potrero actual, sin inferirla del orden visible.
+    @Default(false) bool isCurrent,
   }) = _MovementHistoryEntry;
 }
 
