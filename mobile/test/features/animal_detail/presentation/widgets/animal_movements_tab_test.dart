@@ -107,6 +107,9 @@ class _FakeRepository implements AnimalMovementRepository {
   final List<MovementHistoryEntry> history;
 
   @override
+  Stream<void> get historyChanges => const Stream.empty();
+
+  @override
   Future<Result<List<MovementHistoryEntry>>> getHistory(String animalId) async => Result.success(history);
 
   @override

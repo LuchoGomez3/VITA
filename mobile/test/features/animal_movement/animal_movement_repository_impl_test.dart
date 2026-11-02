@@ -19,6 +19,7 @@ void main() {
     List<BrickLotModel>? lots,
     List<BrickAnimalLotMovementModel> movements = const [],
   }) => AnimalMovementRepositoryImpl(
+    localChanges: const Stream.empty(),
     animalStore: _FakeAnimalStore(animals ?? _animals),
     lotStore: _FakeLotStore(lots: lots),
     categoryStore: _FakeCategoryStore(),
@@ -112,6 +113,7 @@ void main() {
 
   test('un error de SQLite se informa con un mensaje entendible', () async {
     final subject = AnimalMovementRepositoryImpl(
+      localChanges: const Stream.empty(),
       animalStore: _FakeAnimalStore(const [], fail: true),
       lotStore: _FakeLotStore(),
       categoryStore: _FakeCategoryStore(),

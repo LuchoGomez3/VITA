@@ -129,3 +129,11 @@ tombstone, que permanecen excluidos de las opciones de destino.
 Al volver del traslado, incluso tras guardar solo algunos orígenes, se recargan
 la ficha y el historial. La confirmación utiliza los destinos del resumen
 guardado; el animal inicial puede haber sido quitado de la selección.
+
+Mientras la ficha permanece abierta, el Cubit observa invalidaciones locales
+a través del caso de uso y del contrato de dominio. Data filtra los cambios de
+animales, movimientos y lotes persistidos por Brick después del commit. Así,
+una confirmación o rechazo actualiza el historial y una reconciliación posterior
+del animal recalcula el potrero actual, sin depender del orden de respuestas
+HTTP. El cierre cancela la suscripción y las lecturas anteriores no reemplazan
+una lectura más reciente.

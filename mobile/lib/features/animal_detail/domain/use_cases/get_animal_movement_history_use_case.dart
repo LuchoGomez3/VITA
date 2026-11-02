@@ -9,6 +9,9 @@ class GetAnimalMovementHistoryUseCase {
 
   final AnimalMovementRepository _repository;
 
+  /// Cambios persistidos que requieren releer el historial local.
+  Stream<void> get changes => _repository.historyChanges;
+
   /// Devuelve el historial de [animalId].
   Future<Result<List<MovementHistoryEntry>>> call(String animalId) => _repository.getHistory(animalId);
 }

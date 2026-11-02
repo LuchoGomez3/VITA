@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
@@ -17,6 +18,7 @@ AnimalMovementRepositoryImpl _repository() => AnimalMovementRepositoryImpl(
   lotStore: BrickLotStore.instance,
   categoryStore: BrickCategoriaStore.instance,
   movementStore: BrickAnimalLotMovementStore.instance,
+  localChanges: AppBrickRepository.instance.localChanges,
 );
 
 /// Construye el cubit del historial de potreros de la ficha.

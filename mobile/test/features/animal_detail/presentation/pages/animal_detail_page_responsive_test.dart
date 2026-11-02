@@ -257,6 +257,9 @@ class _MovingDetailRepository implements AnimalDetailRepository {
 }
 
 class _MovementRepository implements AnimalMovementRepository {
+  @override
+  Stream<void> get historyChanges => const Stream.empty();
+
   List<MovementHistoryEntry> history = [];
   final loadedAnimalIds = <String>[];
 

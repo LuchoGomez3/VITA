@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:frontend_mayoral/brick/mappers/animal_productive_status_mapper.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
+import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
@@ -23,10 +24,12 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
     required LotBrickStore lotStore,
     required CategoriaBrickStore categoryStore,
     required AnimalLotMovementBrickStore movementStore,
+    required Stream<Type> localChanges,
   }) : _animalStore = animalStore,
        _lotStore = lotStore,
        _categoryStore = categoryStore,
-       _movementStore = movementStore;
+       _movementStore = movementStore,
+       _localChanges = localChanges;
 
   static final _logger = Logger('AnimalMovementRepository');
 
@@ -34,6 +37,12 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
   final LotBrickStore _lotStore;
   final CategoriaBrickStore _categoryStore;
   final AnimalLotMovementBrickStore _movementStore;
+  final Stream<Type> _localChanges;
+
+  @override
+  Stream<void> get historyChanges => _localChanges
+      .where((type) => type == BrickAnimalModel || type == BrickAnimalLotMovementModel || type == BrickLotModel)
+      .map((_) {});
 
   @override
   Future<Result<MovementAnimal?>> getAnimal(String animalId) => _guard(MovementReadTarget.animal, () async {

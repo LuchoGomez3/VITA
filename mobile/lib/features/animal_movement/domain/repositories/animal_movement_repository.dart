@@ -4,6 +4,10 @@ import 'package:frontend_mayoral/features/animal_movement/domain/entities/moveme
 /// Lee lo que hace falta para mover animales y ver su historial, siempre desde
 /// lo guardado en el celular.
 abstract interface class AnimalMovementRepository {
+  /// Invalida las lecturas del historial cuando cambia su fuente local.
+  /// No implica conectividad ni un resultado HTTP pendiente de persistencia.
+  Stream<void> get historyChanges;
+
   /// El animal [animalId] si se puede mover; `null` si no está activo o no existe.
   Future<Result<MovementAnimal?>> getAnimal(String animalId);
 
