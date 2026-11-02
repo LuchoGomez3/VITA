@@ -29,6 +29,7 @@ import 'package:frontend_mayoral/features/animal_detail/presentation/pages/anima
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_general_tab.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
 import 'package:go_router/go_router.dart';
 
@@ -312,8 +313,11 @@ class _MovementRepository implements AnimalMovementRepository {
   Future<Result<MovementAnimal?>> getAnimal(String animalId) => throw UnimplementedError();
 
   @override
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) =>
-      throw UnimplementedError();
+  Future<Result<MovementAnimal?>> findAnimalByTag(
+    String tag, {
+    required String establishmentId,
+    required MovementTagKind kind,
+  }) => throw UnimplementedError();
 
   @override
   Future<Result<List<MovementDestination>>> getDestinations(String establishmentId) => throw UnimplementedError();

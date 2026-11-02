@@ -10,7 +10,9 @@ import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/errors/movement_failure.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_status.dart';
@@ -51,30 +53,30 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
   });
 
   @override
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) =>
-      _guard(MovementReadTarget.tag, () async {
-        final digits = tag.replaceAll(RegExp(r'\D'), '');
-        final visual = _normalizeVisualTag(tag);
-        final animals = (await _animalStore.getLocalAnimals())
-            .where((animal) => animal.establishmentId == establishmentId)
-            .toList();
-        final rfidMatches = digits.length == 15
-            ? animals.where((animal) => animal.rfidTagNumber.replaceAll(RegExp(r'\D'), '') == digits).toList()
-            : <BrickAnimalModel>[];
-        // Un RFID reconocido no se reinterpreta como visual de otro animal
-        // aunque su dueño ya no pueda trasladarse.
-        final candidates = rfidMatches.isNotEmpty
-            ? rfidMatches
-            : animals.where((animal) => _normalizeVisualTag(animal.visualTag) == visual).toList();
-        final matches = candidates.where(_isMovable).toList();
-        if (rfidMatches.isNotEmpty && matches.isEmpty) {
-          throw movementException(const MovementFailure.animalUnavailable());
-        }
-        if (matches.length > 1) {
-          throw movementException(MovementFailure.ambiguousTag(tag));
-        }
-        return matches.isEmpty ? null : _toMovementAnimal(matches.single);
-      });
+  Future<Result<MovementAnimal?>> findAnimalByTag(
+    String tag, {
+    required String establishmentId,
+    required MovementTagKind kind,
+  }) => _guard(MovementReadTarget.tag, () async {
+    if (kind == MovementTagKind.rfid && !RfidValidator.isValid(tag)) {
+      throw movementException(const MovementFailure.invalidRfid());
+    }
+    final visual = _normalizeVisualTag(tag);
+    final animals = (await _animalStore.getLocalAnimals())
+        .where((animal) => animal.establishmentId == establishmentId)
+        .toList();
+    final candidates = kind == MovementTagKind.rfid
+        ? animals.where((animal) => animal.rfidTagNumber == tag).toList()
+        : animals.where((animal) => _normalizeVisualTag(animal.visualTag) == visual).toList();
+    final matches = candidates.where(_isMovable).toList();
+    if (kind == MovementTagKind.rfid && candidates.isNotEmpty && matches.isEmpty) {
+      throw movementException(const MovementFailure.animalUnavailable());
+    }
+    if (matches.length > 1) {
+      throw movementException(MovementFailure.ambiguousTag(tag));
+    }
+    return matches.isEmpty ? null : _toMovementAnimal(matches.single);
+  });
 
   @override
   Future<Result<List<MovementDestination>>> getDestinations(String establishmentId) => _guard(

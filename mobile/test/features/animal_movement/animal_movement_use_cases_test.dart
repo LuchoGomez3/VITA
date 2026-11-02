@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/errors/movement_failure.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/use_cases/animal_movement_use_cases.dart';
@@ -105,8 +106,21 @@ void main() {
   });
 
   group('ResolveMovementTagUseCase', () {
-    Future<Result<MovementAnimal>> resolve(String tag, {Set<String> selected = const {}}) =>
-        ResolveMovementTagUseCase(_FakeRepository())(tag: tag, establishmentId: 'campo-1', selectedIds: selected);
+    for (final invalid in ['98200041288400', '9820004128840050', 'A982000412884005', '982 000412884005']) {
+      test('el modo RFID exige quince números antes de consultar: $invalid', () async {
+        final subject = ResolveMovementTagUseCase(_FakeRepository());
+        final result = await subject(
+          tag: invalid,
+          kind: MovementTagKind.rfid,
+          establishmentId: 'campo-1',
+          selectedIds: {},
+        );
+        expect((result as Failure<MovementAnimal>).error.reason, const MovementFailure.invalidRfid());
+      });
+    }
+    Future<Result<MovementAnimal>> resolve(String tag, {Set<String> selected = const {}}) => ResolveMovementTagUseCase(
+      _FakeRepository(),
+    )(tag: tag, kind: MovementTagKind.visual, establishmentId: 'campo-1', selectedIds: selected);
 
     test('agrega un animal activo del mismo campo', () async {
       expect(((await resolve('004 0028')) as Success<MovementAnimal>).data.id, 'a1');
@@ -134,12 +148,15 @@ MovementAnimal _animal(String id, {required String lotId, String establishmentId
 
 class _FakeRepository implements AnimalMovementRepository {
   @override
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) async =>
-      Result.success(switch (tag) {
-        '004 0028' => _animal('a1', lotId: 'bajo'),
-        'otro' => _animal('b1', lotId: 'x', establishmentId: 'campo-2'),
-        _ => null,
-      });
+  Future<Result<MovementAnimal?>> findAnimalByTag(
+    String tag, {
+    required String establishmentId,
+    required MovementTagKind kind,
+  }) async => Result.success(switch (tag) {
+    '004 0028' => _animal('a1', lotId: 'bajo'),
+    'otro' => _animal('b1', lotId: 'x', establishmentId: 'campo-2'),
+    _ => null,
+  });
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName}');

@@ -37,13 +37,22 @@ el establecimiento antes de elegir una coincidencia de caravana.
 
 La captura se separa del campo editable antes de consultar: una respuesta
 tardía no borra la siguiente lectura. Si falla, solo se restaura el texto si no
-hubo nuevas ediciones o capturas. Un RFID exacto tiene prioridad sobre una
-caravana visual con los mismos dígitos, sin depender del orden de las filas.
+hubo nuevas ediciones o capturas. El selector explícito determina si se consulta
+por RFID o por caravana visual; una visual no se reinterpreta como RFID aunque
+contenga quince dígitos. El modo RFID solo admite números, hasta quince durante
+la edición y exactamente quince al confirmar. No se quitan letras ni se recortan
+pegados largos para fabricar un identificador válido.
 Si varios animales válidos coinciden por visual o RFID, se informa ambigüedad
 y no se agrega ninguno; hay que leer un RFID único o revisar los datos.
 La identidad RFID se resuelve antes de filtrar la elegibilidad: si corresponde
 a un animal vendido, borrado o sin potrero, se informa que no puede moverse,
 sin reinterpretar el número como la visual de otro animal activo.
+
+`RfidValidator` es la regla compartida con el alta y la identificación manual/HID.
+Los campos electrónicos usan `RfidInputFormatter`, y los casos de uso rechazan
+RFID incompletos o inválidos antes de consultar o persistir. El selector cambia
+solo mobile: el backend conserva sus campos de RFID y visual, y el traslado
+sigue enviando UUID de animales.
 
 Los casos de uso y data entregan `DomainException` con un motivo Freezed
 `MovementFailure` en `reason`. Su `message` es un identificador técnico;

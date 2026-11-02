@@ -1,5 +1,6 @@
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
 
 /// Lee lo que hace falta para mover animales y ver su historial, siempre desde
 /// lo guardado en el celular.
@@ -11,10 +12,13 @@ abstract interface class AnimalMovementRepository {
   /// El animal [animalId] si se puede mover; `null` si no está activo o no existe.
   Future<Result<MovementAnimal?>> getAnimal(String animalId);
 
-  /// Busca por RFID o caravana visual únicamente en [establishmentId].
-  /// El RFID exacto tiene prioridad. Las coincidencias ambiguas devuelven error.
-  /// Si el RFID corresponde a un animal no trasladable, no se busca por visual.
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId});
+  /// Busca el identificador del tipo elegido únicamente en [establishmentId].
+  /// No reinterpreta una visual como RFID ni normaliza un RFID inválido.
+  Future<Result<MovementAnimal?>> findAnimalByTag(
+    String tag, {
+    required String establishmentId,
+    required MovementTagKind kind,
+  });
 
   /// Potreros activos de [establishmentId] con cuántos animales tiene cada uno.
   Future<Result<List<MovementDestination>>> getDestinations(String establishmentId);

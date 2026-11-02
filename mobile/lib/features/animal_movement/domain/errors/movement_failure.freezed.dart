@@ -55,12 +55,13 @@ extension MovementFailurePatterns on MovementFailure {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( MovementAnimalUnavailable value)?  animalUnavailable,TResult Function( MovementTagRequired value)?  tagRequired,TResult Function( MovementTagNotFound value)?  tagNotFound,TResult Function( MovementAmbiguousTag value)?  ambiguousTag,TResult Function( MovementDifferentEstablishment value)?  differentEstablishment,TResult Function( MovementAlreadySelected value)?  alreadySelected,TResult Function( MovementAnimalsRequired value)?  animalsRequired,TResult Function( MovementReasonRequired value)?  reasonRequired,TResult Function( MovementDestinationRequired value)?  destinationRequired,TResult Function( MovementAllAlreadyThere value)?  allAlreadyThere,TResult Function( MovementLocalReadFailure value)?  localRead,TResult Function( MovementPartialFailure value)?  partial,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( MovementAnimalUnavailable value)?  animalUnavailable,TResult Function( MovementTagRequired value)?  tagRequired,TResult Function( MovementInvalidRfid value)?  invalidRfid,TResult Function( MovementTagNotFound value)?  tagNotFound,TResult Function( MovementAmbiguousTag value)?  ambiguousTag,TResult Function( MovementDifferentEstablishment value)?  differentEstablishment,TResult Function( MovementAlreadySelected value)?  alreadySelected,TResult Function( MovementAnimalsRequired value)?  animalsRequired,TResult Function( MovementReasonRequired value)?  reasonRequired,TResult Function( MovementDestinationRequired value)?  destinationRequired,TResult Function( MovementAllAlreadyThere value)?  allAlreadyThere,TResult Function( MovementLocalReadFailure value)?  localRead,TResult Function( MovementPartialFailure value)?  partial,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case MovementAnimalUnavailable() when animalUnavailable != null:
 return animalUnavailable(_that);case MovementTagRequired() when tagRequired != null:
-return tagRequired(_that);case MovementTagNotFound() when tagNotFound != null:
+return tagRequired(_that);case MovementInvalidRfid() when invalidRfid != null:
+return invalidRfid(_that);case MovementTagNotFound() when tagNotFound != null:
 return tagNotFound(_that);case MovementAmbiguousTag() when ambiguousTag != null:
 return ambiguousTag(_that);case MovementDifferentEstablishment() when differentEstablishment != null:
 return differentEstablishment(_that);case MovementAlreadySelected() when alreadySelected != null:
@@ -88,12 +89,13 @@ return partial(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( MovementAnimalUnavailable value)  animalUnavailable,required TResult Function( MovementTagRequired value)  tagRequired,required TResult Function( MovementTagNotFound value)  tagNotFound,required TResult Function( MovementAmbiguousTag value)  ambiguousTag,required TResult Function( MovementDifferentEstablishment value)  differentEstablishment,required TResult Function( MovementAlreadySelected value)  alreadySelected,required TResult Function( MovementAnimalsRequired value)  animalsRequired,required TResult Function( MovementReasonRequired value)  reasonRequired,required TResult Function( MovementDestinationRequired value)  destinationRequired,required TResult Function( MovementAllAlreadyThere value)  allAlreadyThere,required TResult Function( MovementLocalReadFailure value)  localRead,required TResult Function( MovementPartialFailure value)  partial,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( MovementAnimalUnavailable value)  animalUnavailable,required TResult Function( MovementTagRequired value)  tagRequired,required TResult Function( MovementInvalidRfid value)  invalidRfid,required TResult Function( MovementTagNotFound value)  tagNotFound,required TResult Function( MovementAmbiguousTag value)  ambiguousTag,required TResult Function( MovementDifferentEstablishment value)  differentEstablishment,required TResult Function( MovementAlreadySelected value)  alreadySelected,required TResult Function( MovementAnimalsRequired value)  animalsRequired,required TResult Function( MovementReasonRequired value)  reasonRequired,required TResult Function( MovementDestinationRequired value)  destinationRequired,required TResult Function( MovementAllAlreadyThere value)  allAlreadyThere,required TResult Function( MovementLocalReadFailure value)  localRead,required TResult Function( MovementPartialFailure value)  partial,}){
 final _that = this;
 switch (_that) {
 case MovementAnimalUnavailable():
 return animalUnavailable(_that);case MovementTagRequired():
-return tagRequired(_that);case MovementTagNotFound():
+return tagRequired(_that);case MovementInvalidRfid():
+return invalidRfid(_that);case MovementTagNotFound():
 return tagNotFound(_that);case MovementAmbiguousTag():
 return ambiguousTag(_that);case MovementDifferentEstablishment():
 return differentEstablishment(_that);case MovementAlreadySelected():
@@ -117,12 +119,13 @@ return partial(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( MovementAnimalUnavailable value)?  animalUnavailable,TResult? Function( MovementTagRequired value)?  tagRequired,TResult? Function( MovementTagNotFound value)?  tagNotFound,TResult? Function( MovementAmbiguousTag value)?  ambiguousTag,TResult? Function( MovementDifferentEstablishment value)?  differentEstablishment,TResult? Function( MovementAlreadySelected value)?  alreadySelected,TResult? Function( MovementAnimalsRequired value)?  animalsRequired,TResult? Function( MovementReasonRequired value)?  reasonRequired,TResult? Function( MovementDestinationRequired value)?  destinationRequired,TResult? Function( MovementAllAlreadyThere value)?  allAlreadyThere,TResult? Function( MovementLocalReadFailure value)?  localRead,TResult? Function( MovementPartialFailure value)?  partial,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( MovementAnimalUnavailable value)?  animalUnavailable,TResult? Function( MovementTagRequired value)?  tagRequired,TResult? Function( MovementInvalidRfid value)?  invalidRfid,TResult? Function( MovementTagNotFound value)?  tagNotFound,TResult? Function( MovementAmbiguousTag value)?  ambiguousTag,TResult? Function( MovementDifferentEstablishment value)?  differentEstablishment,TResult? Function( MovementAlreadySelected value)?  alreadySelected,TResult? Function( MovementAnimalsRequired value)?  animalsRequired,TResult? Function( MovementReasonRequired value)?  reasonRequired,TResult? Function( MovementDestinationRequired value)?  destinationRequired,TResult? Function( MovementAllAlreadyThere value)?  allAlreadyThere,TResult? Function( MovementLocalReadFailure value)?  localRead,TResult? Function( MovementPartialFailure value)?  partial,}){
 final _that = this;
 switch (_that) {
 case MovementAnimalUnavailable() when animalUnavailable != null:
 return animalUnavailable(_that);case MovementTagRequired() when tagRequired != null:
-return tagRequired(_that);case MovementTagNotFound() when tagNotFound != null:
+return tagRequired(_that);case MovementInvalidRfid() when invalidRfid != null:
+return invalidRfid(_that);case MovementTagNotFound() when tagNotFound != null:
 return tagNotFound(_that);case MovementAmbiguousTag() when ambiguousTag != null:
 return ambiguousTag(_that);case MovementDifferentEstablishment() when differentEstablishment != null:
 return differentEstablishment(_that);case MovementAlreadySelected() when alreadySelected != null:
@@ -149,11 +152,12 @@ return partial(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  animalUnavailable,TResult Function()?  tagRequired,TResult Function( String tag)?  tagNotFound,TResult Function( String tag)?  ambiguousTag,TResult Function()?  differentEstablishment,TResult Function( String visualTag)?  alreadySelected,TResult Function()?  animalsRequired,TResult Function()?  reasonRequired,TResult Function()?  destinationRequired,TResult Function()?  allAlreadyThere,TResult Function( MovementReadTarget target)?  localRead,TResult Function( int movedCount,  DomainException cause,  List<String> movedAnimalIds)?  partial,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  animalUnavailable,TResult Function()?  tagRequired,TResult Function()?  invalidRfid,TResult Function( String tag)?  tagNotFound,TResult Function( String tag)?  ambiguousTag,TResult Function()?  differentEstablishment,TResult Function( String visualTag)?  alreadySelected,TResult Function()?  animalsRequired,TResult Function()?  reasonRequired,TResult Function()?  destinationRequired,TResult Function()?  allAlreadyThere,TResult Function( MovementReadTarget target)?  localRead,TResult Function( int movedCount,  DomainException cause,  List<String> movedAnimalIds)?  partial,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case MovementAnimalUnavailable() when animalUnavailable != null:
 return animalUnavailable();case MovementTagRequired() when tagRequired != null:
-return tagRequired();case MovementTagNotFound() when tagNotFound != null:
+return tagRequired();case MovementInvalidRfid() when invalidRfid != null:
+return invalidRfid();case MovementTagNotFound() when tagNotFound != null:
 return tagNotFound(_that.tag);case MovementAmbiguousTag() when ambiguousTag != null:
 return ambiguousTag(_that.tag);case MovementDifferentEstablishment() when differentEstablishment != null:
 return differentEstablishment();case MovementAlreadySelected() when alreadySelected != null:
@@ -181,11 +185,12 @@ return partial(_that.movedCount,_that.cause,_that.movedAnimalIds);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  animalUnavailable,required TResult Function()  tagRequired,required TResult Function( String tag)  tagNotFound,required TResult Function( String tag)  ambiguousTag,required TResult Function()  differentEstablishment,required TResult Function( String visualTag)  alreadySelected,required TResult Function()  animalsRequired,required TResult Function()  reasonRequired,required TResult Function()  destinationRequired,required TResult Function()  allAlreadyThere,required TResult Function( MovementReadTarget target)  localRead,required TResult Function( int movedCount,  DomainException cause,  List<String> movedAnimalIds)  partial,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  animalUnavailable,required TResult Function()  tagRequired,required TResult Function()  invalidRfid,required TResult Function( String tag)  tagNotFound,required TResult Function( String tag)  ambiguousTag,required TResult Function()  differentEstablishment,required TResult Function( String visualTag)  alreadySelected,required TResult Function()  animalsRequired,required TResult Function()  reasonRequired,required TResult Function()  destinationRequired,required TResult Function()  allAlreadyThere,required TResult Function( MovementReadTarget target)  localRead,required TResult Function( int movedCount,  DomainException cause,  List<String> movedAnimalIds)  partial,}) {final _that = this;
 switch (_that) {
 case MovementAnimalUnavailable():
 return animalUnavailable();case MovementTagRequired():
-return tagRequired();case MovementTagNotFound():
+return tagRequired();case MovementInvalidRfid():
+return invalidRfid();case MovementTagNotFound():
 return tagNotFound(_that.tag);case MovementAmbiguousTag():
 return ambiguousTag(_that.tag);case MovementDifferentEstablishment():
 return differentEstablishment();case MovementAlreadySelected():
@@ -209,11 +214,12 @@ return partial(_that.movedCount,_that.cause,_that.movedAnimalIds);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  animalUnavailable,TResult? Function()?  tagRequired,TResult? Function( String tag)?  tagNotFound,TResult? Function( String tag)?  ambiguousTag,TResult? Function()?  differentEstablishment,TResult? Function( String visualTag)?  alreadySelected,TResult? Function()?  animalsRequired,TResult? Function()?  reasonRequired,TResult? Function()?  destinationRequired,TResult? Function()?  allAlreadyThere,TResult? Function( MovementReadTarget target)?  localRead,TResult? Function( int movedCount,  DomainException cause,  List<String> movedAnimalIds)?  partial,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  animalUnavailable,TResult? Function()?  tagRequired,TResult? Function()?  invalidRfid,TResult? Function( String tag)?  tagNotFound,TResult? Function( String tag)?  ambiguousTag,TResult? Function()?  differentEstablishment,TResult? Function( String visualTag)?  alreadySelected,TResult? Function()?  animalsRequired,TResult? Function()?  reasonRequired,TResult? Function()?  destinationRequired,TResult? Function()?  allAlreadyThere,TResult? Function( MovementReadTarget target)?  localRead,TResult? Function( int movedCount,  DomainException cause,  List<String> movedAnimalIds)?  partial,}) {final _that = this;
 switch (_that) {
 case MovementAnimalUnavailable() when animalUnavailable != null:
 return animalUnavailable();case MovementTagRequired() when tagRequired != null:
-return tagRequired();case MovementTagNotFound() when tagNotFound != null:
+return tagRequired();case MovementInvalidRfid() when invalidRfid != null:
+return invalidRfid();case MovementTagNotFound() when tagNotFound != null:
 return tagNotFound(_that.tag);case MovementAmbiguousTag() when ambiguousTag != null:
 return ambiguousTag(_that.tag);case MovementDifferentEstablishment() when differentEstablishment != null:
 return differentEstablishment();case MovementAlreadySelected() when alreadySelected != null:
@@ -287,6 +293,38 @@ int get hashCode => runtimeType.hashCode;
 @override
 String toString() {
   return 'MovementFailure.tagRequired()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class MovementInvalidRfid implements MovementFailure {
+  const MovementInvalidRfid();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MovementInvalidRfid);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'MovementFailure.invalidRfid()';
 }
 
 

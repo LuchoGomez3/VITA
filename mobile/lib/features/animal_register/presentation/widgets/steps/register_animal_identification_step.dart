@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/formatters/rfid_input_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
@@ -85,6 +87,10 @@ class _RegisterAnimalIdentificationStepState extends State<RegisterAnimalIdentif
               title: AnimalRegisterStrings.rfidFieldTitle,
               hintText: AnimalRegisterStrings.rfidFieldHint,
               keyboardType: TextInputType.number,
+              maxCharacters: RfidValidator.length,
+              inputFormatters: [RfidInputFormatter()],
+              autocorrect: false,
+              enableSuggestions: false,
               helperText: ' ',
               validation: rfidError == null ? AppFieldValidation.neutral : AppFieldValidation.invalid,
               validationMessage: rfidError,

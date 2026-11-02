@@ -10,10 +10,19 @@ abstract final class AnimalMovementStrings {
   /// Explicación arriba de la lectura de caravanas.
   static const readHint =
       'Leé con el bastón las caravanas de los animales que vas a mover. '
-      'También podés escribir la caravana visual o el RFID.';
+      'Elegí RFID para ingresar exactamente 15 números o caravana visual para buscar por ese identificador.';
 
-  /// Placeholder del campo de lectura.
-  static const tagFieldHint = 'Caravana o RFID';
+  /// Opción de lectura electrónica con formato estricto.
+  static const rfidMode = 'RFID';
+
+  /// Opción de identificación visual independiente del RFID.
+  static const visualMode = 'Caravana visual';
+
+  /// Ayuda del ingreso electrónico.
+  static const rfidFieldHint = '15 números RFID';
+
+  /// Validación compartida con los ingresos electrónicos del resto de la app.
+  static const invalidRfid = 'Ingresá exactamente 15 números para el RFID.';
 
   /// Botón para agregar la caravana escrita.
   static const addTag = 'Agregar';
@@ -112,6 +121,7 @@ abstract final class AnimalMovementStrings {
   static String errorMessage(DomainException error) => switch (error.reason) {
     MovementAnimalUnavailable() => animalUnavailable,
     MovementTagRequired() => tagRequired,
+    MovementInvalidRfid() => invalidRfid,
     MovementTagNotFound(:final tag) => tagNotFound(tag),
     MovementAmbiguousTag(:final tag) => ambiguousTag(tag),
     MovementDifferentEstablishment() => differentEstablishment,
