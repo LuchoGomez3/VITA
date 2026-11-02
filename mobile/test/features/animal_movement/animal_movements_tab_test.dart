@@ -37,7 +37,7 @@ void main() {
         movementId: 'm1',
         fromLotName: null,
         toLotName: 'El Bajo',
-        occurredAt: DateTime(2026, 3, 1),
+        occurredAt: DateTime(2026, 3),
         reason: 'Alta',
         isPending: false,
       ),

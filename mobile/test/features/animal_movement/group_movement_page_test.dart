@@ -82,7 +82,7 @@ void main() {
   });
 }
 
-final _list = find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first;
+final Finder _list = find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first;
 
 MovementAnimal _animal(String id, String visualTag, String lotId) => MovementAnimal(
   id: id,

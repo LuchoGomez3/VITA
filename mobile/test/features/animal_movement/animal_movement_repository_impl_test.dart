@@ -103,7 +103,7 @@ void main() {
   });
 }
 
-final _animals = [_animal('a1'), _animal('a2', visualTag: '004 0023', rfid: '982000412884920')];
+final List<BrickAnimalModel> _animals = [_animal('a1'), _animal('a2', visualTag: '004 0023', rfid: '982000412884920')];
 
 BrickAnimalModel _animal(
   String id, {
@@ -172,7 +172,7 @@ class _FakeAnimalStore implements AnimalBrickStore {
 }
 
 class _FakeLotStore implements LotBrickStore {
-  final _lots = [
+  final List<BrickLotModel> _lots = [
     _lot('lote-cumbre', 'La Cumbre'),
     _lot('lote-bajo', 'El Bajo'),
     _lot('lote-cerrado', 'Clausurado', statusCode: 'inactivo'),
