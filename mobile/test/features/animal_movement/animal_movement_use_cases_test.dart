@@ -98,6 +98,7 @@ void main() {
         error.reason,
         isA<MovementPartialFailure>()
             .having((reason) => reason.movedCount, 'movedCount', 1)
+            .having((reason) => reason.movedAnimalIds, 'movedAnimalIds', ['a1'])
             .having((reason) => reason.cause, 'cause', isA<DomainException>()),
       );
     });

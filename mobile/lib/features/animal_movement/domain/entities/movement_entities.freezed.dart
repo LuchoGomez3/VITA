@@ -1280,8 +1280,8 @@ return $default(_that.movedCount,_that.alreadyThereCount,_that.destinations);cas
 /// @nodoc
 
 
-class _GroupMovementSummary implements GroupMovementSummary {
-  const _GroupMovementSummary({required this.movedCount, required this.alreadyThereCount, final  Map<String, String> destinations = const {}}): _destinations = destinations;
+class _GroupMovementSummary extends GroupMovementSummary {
+  const _GroupMovementSummary({required this.movedCount, required this.alreadyThereCount, final  Map<String, String> destinations = const {}}): _destinations = destinations,super._();
   
 
 @override final  int movedCount;

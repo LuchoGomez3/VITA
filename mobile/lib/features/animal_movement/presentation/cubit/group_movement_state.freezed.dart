@@ -14,7 +14,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$GroupMovementState {
 
- ResultState<GroupMovementPreparation> get preparation; ResultState<MovementAnimal> get tagResolution; ResultState<GroupMovementSummary> get submission; List<MovementAnimal> get animals; String? get destinationId; DateTime? get occurredAt;
+ ResultState<GroupMovementPreparation> get preparation; ResultState<MovementAnimal> get tagResolution; ResultState<GroupMovementSummary> get submission; List<MovementAnimal> get animals;/// Cambios durables acumulados, incluso si un grupo posterior falla.
+ GroupMovementSummary get savedSummary; String? get destinationId; DateTime? get occurredAt;
 /// Create a copy of GroupMovementState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +26,16 @@ $GroupMovementStateCopyWith<GroupMovementState> get copyWith => _$GroupMovementS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is GroupMovementState&&(identical(other.preparation, preparation) || other.preparation == preparation)&&(identical(other.tagResolution, tagResolution) || other.tagResolution == tagResolution)&&(identical(other.submission, submission) || other.submission == submission)&&const DeepCollectionEquality().equals(other.animals, animals)&&(identical(other.destinationId, destinationId) || other.destinationId == destinationId)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GroupMovementState&&(identical(other.preparation, preparation) || other.preparation == preparation)&&(identical(other.tagResolution, tagResolution) || other.tagResolution == tagResolution)&&(identical(other.submission, submission) || other.submission == submission)&&const DeepCollectionEquality().equals(other.animals, animals)&&(identical(other.savedSummary, savedSummary) || other.savedSummary == savedSummary)&&(identical(other.destinationId, destinationId) || other.destinationId == destinationId)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,preparation,tagResolution,submission,const DeepCollectionEquality().hash(animals),destinationId,occurredAt);
+int get hashCode => Object.hash(runtimeType,preparation,tagResolution,submission,const DeepCollectionEquality().hash(animals),savedSummary,destinationId,occurredAt);
 
 @override
 String toString() {
-  return 'GroupMovementState(preparation: $preparation, tagResolution: $tagResolution, submission: $submission, animals: $animals, destinationId: $destinationId, occurredAt: $occurredAt)';
+  return 'GroupMovementState(preparation: $preparation, tagResolution: $tagResolution, submission: $submission, animals: $animals, savedSummary: $savedSummary, destinationId: $destinationId, occurredAt: $occurredAt)';
 }
 
 
@@ -45,11 +46,11 @@ abstract mixin class $GroupMovementStateCopyWith<$Res>  {
   factory $GroupMovementStateCopyWith(GroupMovementState value, $Res Function(GroupMovementState) _then) = _$GroupMovementStateCopyWithImpl;
 @useResult
 $Res call({
- ResultState<GroupMovementPreparation> preparation, ResultState<MovementAnimal> tagResolution, ResultState<GroupMovementSummary> submission, List<MovementAnimal> animals, String? destinationId, DateTime? occurredAt
+ ResultState<GroupMovementPreparation> preparation, ResultState<MovementAnimal> tagResolution, ResultState<GroupMovementSummary> submission, List<MovementAnimal> animals, GroupMovementSummary savedSummary, String? destinationId, DateTime? occurredAt
 });
 
 
-$ResultStateCopyWith<GroupMovementPreparation, $Res> get preparation;$ResultStateCopyWith<MovementAnimal, $Res> get tagResolution;$ResultStateCopyWith<GroupMovementSummary, $Res> get submission;
+$ResultStateCopyWith<GroupMovementPreparation, $Res> get preparation;$ResultStateCopyWith<MovementAnimal, $Res> get tagResolution;$ResultStateCopyWith<GroupMovementSummary, $Res> get submission;$GroupMovementSummaryCopyWith<$Res> get savedSummary;
 
 }
 /// @nodoc
@@ -62,13 +63,14 @@ class _$GroupMovementStateCopyWithImpl<$Res>
 
 /// Create a copy of GroupMovementState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? preparation = null,Object? tagResolution = null,Object? submission = null,Object? animals = null,Object? destinationId = freezed,Object? occurredAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? preparation = null,Object? tagResolution = null,Object? submission = null,Object? animals = null,Object? savedSummary = null,Object? destinationId = freezed,Object? occurredAt = freezed,}) {
   return _then(_self.copyWith(
 preparation: null == preparation ? _self.preparation : preparation // ignore: cast_nullable_to_non_nullable
 as ResultState<GroupMovementPreparation>,tagResolution: null == tagResolution ? _self.tagResolution : tagResolution // ignore: cast_nullable_to_non_nullable
 as ResultState<MovementAnimal>,submission: null == submission ? _self.submission : submission // ignore: cast_nullable_to_non_nullable
 as ResultState<GroupMovementSummary>,animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
-as List<MovementAnimal>,destinationId: freezed == destinationId ? _self.destinationId : destinationId // ignore: cast_nullable_to_non_nullable
+as List<MovementAnimal>,savedSummary: null == savedSummary ? _self.savedSummary : savedSummary // ignore: cast_nullable_to_non_nullable
+as GroupMovementSummary,destinationId: freezed == destinationId ? _self.destinationId : destinationId // ignore: cast_nullable_to_non_nullable
 as String?,occurredAt: freezed == occurredAt ? _self.occurredAt : occurredAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
@@ -99,6 +101,15 @@ $ResultStateCopyWith<GroupMovementSummary, $Res> get submission {
   
   return $ResultStateCopyWith<GroupMovementSummary, $Res>(_self.submission, (value) {
     return _then(_self.copyWith(submission: value));
+  });
+}/// Create a copy of GroupMovementState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$GroupMovementSummaryCopyWith<$Res> get savedSummary {
+  
+  return $GroupMovementSummaryCopyWith<$Res>(_self.savedSummary, (value) {
+    return _then(_self.copyWith(savedSummary: value));
   });
 }
 }
@@ -179,10 +190,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<GroupMovementPreparation> preparation,  ResultState<MovementAnimal> tagResolution,  ResultState<GroupMovementSummary> submission,  List<MovementAnimal> animals,  String? destinationId,  DateTime? occurredAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<GroupMovementPreparation> preparation,  ResultState<MovementAnimal> tagResolution,  ResultState<GroupMovementSummary> submission,  List<MovementAnimal> animals,  GroupMovementSummary savedSummary,  String? destinationId,  DateTime? occurredAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _GroupMovementState() when $default != null:
-return $default(_that.preparation,_that.tagResolution,_that.submission,_that.animals,_that.destinationId,_that.occurredAt);case _:
+return $default(_that.preparation,_that.tagResolution,_that.submission,_that.animals,_that.savedSummary,_that.destinationId,_that.occurredAt);case _:
   return orElse();
 
 }
@@ -200,10 +211,10 @@ return $default(_that.preparation,_that.tagResolution,_that.submission,_that.ani
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<GroupMovementPreparation> preparation,  ResultState<MovementAnimal> tagResolution,  ResultState<GroupMovementSummary> submission,  List<MovementAnimal> animals,  String? destinationId,  DateTime? occurredAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<GroupMovementPreparation> preparation,  ResultState<MovementAnimal> tagResolution,  ResultState<GroupMovementSummary> submission,  List<MovementAnimal> animals,  GroupMovementSummary savedSummary,  String? destinationId,  DateTime? occurredAt)  $default,) {final _that = this;
 switch (_that) {
 case _GroupMovementState():
-return $default(_that.preparation,_that.tagResolution,_that.submission,_that.animals,_that.destinationId,_that.occurredAt);}
+return $default(_that.preparation,_that.tagResolution,_that.submission,_that.animals,_that.savedSummary,_that.destinationId,_that.occurredAt);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -217,10 +228,10 @@ return $default(_that.preparation,_that.tagResolution,_that.submission,_that.ani
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<GroupMovementPreparation> preparation,  ResultState<MovementAnimal> tagResolution,  ResultState<GroupMovementSummary> submission,  List<MovementAnimal> animals,  String? destinationId,  DateTime? occurredAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<GroupMovementPreparation> preparation,  ResultState<MovementAnimal> tagResolution,  ResultState<GroupMovementSummary> submission,  List<MovementAnimal> animals,  GroupMovementSummary savedSummary,  String? destinationId,  DateTime? occurredAt)?  $default,) {final _that = this;
 switch (_that) {
 case _GroupMovementState() when $default != null:
-return $default(_that.preparation,_that.tagResolution,_that.submission,_that.animals,_that.destinationId,_that.occurredAt);case _:
+return $default(_that.preparation,_that.tagResolution,_that.submission,_that.animals,_that.savedSummary,_that.destinationId,_that.occurredAt);case _:
   return null;
 
 }
@@ -232,7 +243,7 @@ return $default(_that.preparation,_that.tagResolution,_that.submission,_that.ani
 
 
 class _GroupMovementState extends GroupMovementState {
-  const _GroupMovementState({this.preparation = const ResultState<GroupMovementPreparation>.initial(), this.tagResolution = const ResultState<MovementAnimal>.initial(), this.submission = const ResultState<GroupMovementSummary>.initial(), final  List<MovementAnimal> animals = const [], this.destinationId, this.occurredAt}): _animals = animals,super._();
+  const _GroupMovementState({this.preparation = const ResultState<GroupMovementPreparation>.initial(), this.tagResolution = const ResultState<MovementAnimal>.initial(), this.submission = const ResultState<GroupMovementSummary>.initial(), final  List<MovementAnimal> animals = const [], this.savedSummary = const GroupMovementSummary(movedCount: 0, alreadyThereCount: 0), this.destinationId, this.occurredAt}): _animals = animals,super._();
   
 
 @override@JsonKey() final  ResultState<GroupMovementPreparation> preparation;
@@ -245,6 +256,8 @@ class _GroupMovementState extends GroupMovementState {
   return EqualUnmodifiableListView(_animals);
 }
 
+/// Cambios durables acumulados, incluso si un grupo posterior falla.
+@override@JsonKey() final  GroupMovementSummary savedSummary;
 @override final  String? destinationId;
 @override final  DateTime? occurredAt;
 
@@ -258,16 +271,16 @@ _$GroupMovementStateCopyWith<_GroupMovementState> get copyWith => __$GroupMoveme
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GroupMovementState&&(identical(other.preparation, preparation) || other.preparation == preparation)&&(identical(other.tagResolution, tagResolution) || other.tagResolution == tagResolution)&&(identical(other.submission, submission) || other.submission == submission)&&const DeepCollectionEquality().equals(other._animals, _animals)&&(identical(other.destinationId, destinationId) || other.destinationId == destinationId)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GroupMovementState&&(identical(other.preparation, preparation) || other.preparation == preparation)&&(identical(other.tagResolution, tagResolution) || other.tagResolution == tagResolution)&&(identical(other.submission, submission) || other.submission == submission)&&const DeepCollectionEquality().equals(other._animals, _animals)&&(identical(other.savedSummary, savedSummary) || other.savedSummary == savedSummary)&&(identical(other.destinationId, destinationId) || other.destinationId == destinationId)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,preparation,tagResolution,submission,const DeepCollectionEquality().hash(_animals),destinationId,occurredAt);
+int get hashCode => Object.hash(runtimeType,preparation,tagResolution,submission,const DeepCollectionEquality().hash(_animals),savedSummary,destinationId,occurredAt);
 
 @override
 String toString() {
-  return 'GroupMovementState(preparation: $preparation, tagResolution: $tagResolution, submission: $submission, animals: $animals, destinationId: $destinationId, occurredAt: $occurredAt)';
+  return 'GroupMovementState(preparation: $preparation, tagResolution: $tagResolution, submission: $submission, animals: $animals, savedSummary: $savedSummary, destinationId: $destinationId, occurredAt: $occurredAt)';
 }
 
 
@@ -278,11 +291,11 @@ abstract mixin class _$GroupMovementStateCopyWith<$Res> implements $GroupMovemen
   factory _$GroupMovementStateCopyWith(_GroupMovementState value, $Res Function(_GroupMovementState) _then) = __$GroupMovementStateCopyWithImpl;
 @override @useResult
 $Res call({
- ResultState<GroupMovementPreparation> preparation, ResultState<MovementAnimal> tagResolution, ResultState<GroupMovementSummary> submission, List<MovementAnimal> animals, String? destinationId, DateTime? occurredAt
+ ResultState<GroupMovementPreparation> preparation, ResultState<MovementAnimal> tagResolution, ResultState<GroupMovementSummary> submission, List<MovementAnimal> animals, GroupMovementSummary savedSummary, String? destinationId, DateTime? occurredAt
 });
 
 
-@override $ResultStateCopyWith<GroupMovementPreparation, $Res> get preparation;@override $ResultStateCopyWith<MovementAnimal, $Res> get tagResolution;@override $ResultStateCopyWith<GroupMovementSummary, $Res> get submission;
+@override $ResultStateCopyWith<GroupMovementPreparation, $Res> get preparation;@override $ResultStateCopyWith<MovementAnimal, $Res> get tagResolution;@override $ResultStateCopyWith<GroupMovementSummary, $Res> get submission;@override $GroupMovementSummaryCopyWith<$Res> get savedSummary;
 
 }
 /// @nodoc
@@ -295,13 +308,14 @@ class __$GroupMovementStateCopyWithImpl<$Res>
 
 /// Create a copy of GroupMovementState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? preparation = null,Object? tagResolution = null,Object? submission = null,Object? animals = null,Object? destinationId = freezed,Object? occurredAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? preparation = null,Object? tagResolution = null,Object? submission = null,Object? animals = null,Object? savedSummary = null,Object? destinationId = freezed,Object? occurredAt = freezed,}) {
   return _then(_GroupMovementState(
 preparation: null == preparation ? _self.preparation : preparation // ignore: cast_nullable_to_non_nullable
 as ResultState<GroupMovementPreparation>,tagResolution: null == tagResolution ? _self.tagResolution : tagResolution // ignore: cast_nullable_to_non_nullable
 as ResultState<MovementAnimal>,submission: null == submission ? _self.submission : submission // ignore: cast_nullable_to_non_nullable
 as ResultState<GroupMovementSummary>,animals: null == animals ? _self._animals : animals // ignore: cast_nullable_to_non_nullable
-as List<MovementAnimal>,destinationId: freezed == destinationId ? _self.destinationId : destinationId // ignore: cast_nullable_to_non_nullable
+as List<MovementAnimal>,savedSummary: null == savedSummary ? _self.savedSummary : savedSummary // ignore: cast_nullable_to_non_nullable
+as GroupMovementSummary,destinationId: freezed == destinationId ? _self.destinationId : destinationId // ignore: cast_nullable_to_non_nullable
 as String?,occurredAt: freezed == occurredAt ? _self.occurredAt : occurredAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
@@ -333,6 +347,15 @@ $ResultStateCopyWith<GroupMovementSummary, $Res> get submission {
   
   return $ResultStateCopyWith<GroupMovementSummary, $Res>(_self.submission, (value) {
     return _then(_self.copyWith(submission: value));
+  });
+}/// Create a copy of GroupMovementState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$GroupMovementSummaryCopyWith<$Res> get savedSummary {
+  
+  return $GroupMovementSummaryCopyWith<$Res>(_self.savedSummary, (value) {
+    return _then(_self.copyWith(savedSummary: value));
   });
 }
 }

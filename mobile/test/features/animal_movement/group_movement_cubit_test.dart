@@ -158,9 +158,10 @@ void main() {
 
     final saving = cubit.submit('Rotación');
     await cubit.submit('Rotación');
-    cubit.remove('a1');
-    cubit.selectDestination('otro');
-    cubit.selectDate(DateTime.utc(2026));
+    cubit
+      ..remove('a1')
+      ..selectDestination('otro')
+      ..selectDate(DateTime.utc(2026));
     expect(await cubit.addTag('002'), isFalse);
 
     expect(move.calls, 1);
@@ -190,6 +191,33 @@ void main() {
     expect(state.copyWith(destinationId: null).destinationId, isNull);
     expect(_animal.copyWith(breed: 'Angus'), isNot(_animal));
   });
+
+  for (final changeDestination in [false, true]) {
+    test('un reintento parcial no repite el origen guardado; cambia destino: $changeDestination', () async {
+      await cubit.start('a1');
+      repository.tagResult = Future.value(Result.success(_animal.copyWith(id: 'a2', lotId: 'otro-origen')));
+      await cubit.addTag('002');
+      cubit.selectDestination('destino');
+      move.failOnceSource = 'otro-origen';
+
+      await cubit.submit('Rotación');
+
+      expect(cubit.state.submission, isA<ResultError<GroupMovementSummary>>());
+      expect(cubit.state.animals.map((animal) => animal.id), ['a2']);
+      expect(cubit.state.savedSummary.movedCount, 1);
+      expect(cubit.state.savedSummary.destinations, {'destino': 'Destino'});
+      if (changeDestination) cubit.selectDestination('segundo-destino');
+      await cubit.submit('Rotación');
+
+      final summary = (cubit.state.submission as Data<GroupMovementSummary>).data;
+      expect(summary.movedCount, 2);
+      expect(summary.destinations, {
+        'destino': 'Destino',
+        if (changeDestination) 'segundo-destino': 'Segundo destino',
+      });
+      expect(move.sourceCalls, ['origen', 'otro-origen', 'otro-origen']);
+    });
+  }
 }
 
 const _animal = MovementAnimal(
@@ -218,12 +246,15 @@ class _Repository extends Fake implements AnimalMovementRepository {
   @override
   Future<Result<List<MovementDestination>>> getDestinations(String establishmentId) async => const Result.success([
     MovementDestination(id: 'destino', name: 'Destino', animalCount: 0),
+    MovementDestination(id: 'segundo-destino', name: 'Segundo destino', animalCount: 0),
   ]);
 }
 
 class _Move extends Fake implements MoveLotAnimalsUseCase {
   Future<Result<LotAnimalMovement>>? result;
   int calls = 0;
+  final sourceCalls = <String>[];
+  String? failOnceSource;
 
   @override
   Future<Result<LotAnimalMovement>> call({
@@ -236,6 +267,13 @@ class _Move extends Fake implements MoveLotAnimalsUseCase {
     String? responsibleId,
   }) {
     calls++;
+    sourceCalls.add(sourceLotId);
+    if (sourceLotId == failOnceSource) {
+      failOnceSource = null;
+      return Future.value(
+        const Result.failure(DomainException(message: 'write_failed', code: DomainErrorCode.offline)),
+      );
+    }
     return result ??
         Future.value(
           Result.success(

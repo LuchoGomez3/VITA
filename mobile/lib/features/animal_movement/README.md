@@ -30,12 +30,27 @@ Así, una lectura fallida no reemplaza la selección preparada y un error de
 guardado conserva los datos editables. Las colecciones expuestas por las
 entidades y el estado no se pueden modificar desde sus consumidores.
 
+Las lecturas se resuelven en orden para que cada validación reciba la selección
+vigente. El guardado espera a que terminen y bloquea un segundo envío o cambios
+de selección mientras la operación está en curso. La búsqueda siempre incluye
+el establecimiento antes de elegir una coincidencia de caravana.
+
 Los casos de uso y data entregan `DomainException` con un motivo Freezed
 `MovementFailure` en `reason`. Su `message` es un identificador técnico;
 `AnimalMovementStrings.errorMessage` traduce el motivo y sus parámetros en
 presentación. No se usan esos identificadores ni excepciones técnicas como
 texto visible. Los errores heredados del comando de campo se traducen por
 código, conservando la causa en el resultado parcial.
+
+Cuando un origen se guarda y el siguiente falla, el motivo parcial conserva
+los UUID ya trasladados. El Cubit los quita de la selección pendiente y acumula
+el resultado durable en `savedSummary`. Un reintento procesa solo lo restante;
+volver atrás devuelve los cambios ya guardados para refrescar ficha e historial.
+La pantalla bloquea la salida durante la escritura local en curso.
+
+`GroupMovementSummary` conserva los destinos por UUID y nombre, incluso si se
+quita al animal inicial o un reintento utiliza otro destino. La confirmación
+no deduce el destino desde la ubicación del animal cuya ficha abrió el flujo.
 
 Los textos del formulario y sus errores viven en `AnimalMovementStrings`.
 El nombre del acceso, compartido con la ficha, está en `FeatureStrings`.
@@ -48,7 +63,14 @@ la selección, cierre durante una carga, inmutabilidad, motivos de dominio y
 su traducción a mensajes. El widget test del traslado y el de la ficha cubren
 el recorrido exitoso y la convivencia con genealogía.
 
-Esta reorganización arquitectónica conserva la agrupación por origen y su
-comportamiento ante fallos parciales. No resuelve los hallazgos funcionales
-de QA sobre identificación, concurrencia, retry parcial o representación del
-historial, que requieren sus respectivas correcciones y regresiones.
+Las regresiones de QA cubren caravanas compartidas entre establecimientos,
+lecturas concurrentes y cierre con trabajo en cola, doble submit, rechazo remoto,
+reintento y retorno tras un resultado parcial, y exclusión del animal inicial.
+Las pruebas del historial también cubren fechas retroactivas, visitas repetidas
+y nombres de lotes borrados. Los tests de stores ejercitan SQLite real con
+deduplicación, tombstones y aislamiento entre establecimientos.
+
+La atomicidad se conserva por origen; el contrato backend registra un origen
+por movimiento. Estas correcciones no convierten el conjunto de orígenes en
+una única transacción remota. La prueba con bastón físico, reinicio en modo
+avión y reconciliación concurrente entre dispositivos sigue siendo manual.

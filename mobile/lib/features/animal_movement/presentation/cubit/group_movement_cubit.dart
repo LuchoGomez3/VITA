@@ -134,18 +134,34 @@ class GroupMovementCubit extends Cubit<GroupMovementState> {
     if (isClosed) return;
     switch (result) {
       case Success<GroupMovementSummary>(:final data):
-        final destinationName = state.destinations.where((lot) => lot.id == destinationId).first.name;
-        emit(
-          state.copyWith(
-            submission: ResultState.data(
-              data.copyWith(
-                destinations: {destinationId: destinationName},
-              ),
-            ),
-          ),
-        );
+        final saved = state.savedSummary.combine(_withDestination(data, destinationId));
+        emit(state.copyWith(savedSummary: saved, submission: ResultState.data(saved)));
       case Failure<GroupMovementSummary>(:final error):
+        if (error.reason case MovementPartialFailure(:final movedCount, :final movedAnimalIds)) {
+          final movedIds = movedAnimalIds.toSet();
+          final saved = state.savedSummary.combine(
+            _withDestination(
+              GroupMovementSummary(movedCount: movedCount, alreadyThereCount: 0),
+              destinationId,
+            ),
+          );
+          emit(
+            state.copyWith(
+              savedSummary: saved,
+              animals: [
+                for (final animal in state.animals)
+                  if (!movedIds.contains(animal.id)) animal,
+              ],
+              submission: ResultState.error(error),
+            ),
+          );
+          return;
+        }
         emit(state.copyWith(submission: ResultState.error(error)));
     }
   }
+
+  GroupMovementSummary _withDestination(GroupMovementSummary summary, String destinationId) => summary.copyWith(
+    destinations: {destinationId: state.destinations.where((lot) => lot.id == destinationId).first.name},
+  );
 }

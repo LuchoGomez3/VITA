@@ -119,3 +119,13 @@ en `lib/app/composition/animal_movement_composition.dart`. El router inyecta
 las factories y los providers de la ficha siguen siendo dueños de sus Cubits.
 La navegación al traslado conserva la ruta `/animals/:animalId/mover` y el
 resultado de dominio `GroupMovementSummary`.
+
+El historial conserva estados pendiente, sincronizado y rechazado sin
+confundirlos. La llegada marcada como actual corresponde al potrero local del
+animal; las filas siguen ordenadas por fecha efectiva aunque un movimiento
+retroactivo aparezca después. Los nombres se resuelven incluyendo lotes con
+tombstone, que permanecen excluidos de las opciones de destino.
+
+Al volver del traslado, incluso tras guardar solo algunos orígenes, se recargan
+la ficha y el historial. La confirmación utiliza los destinos del resumen
+guardado; el animal inicial puede haber sido quitado de la selección.

@@ -146,7 +146,7 @@ return partial(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  animalUnavailable,TResult Function()?  tagRequired,TResult Function( String tag)?  tagNotFound,TResult Function()?  differentEstablishment,TResult Function( String visualTag)?  alreadySelected,TResult Function()?  animalsRequired,TResult Function()?  reasonRequired,TResult Function()?  destinationRequired,TResult Function()?  allAlreadyThere,TResult Function( MovementReadTarget target)?  localRead,TResult Function( int movedCount,  DomainException cause)?  partial,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  animalUnavailable,TResult Function()?  tagRequired,TResult Function( String tag)?  tagNotFound,TResult Function()?  differentEstablishment,TResult Function( String visualTag)?  alreadySelected,TResult Function()?  animalsRequired,TResult Function()?  reasonRequired,TResult Function()?  destinationRequired,TResult Function()?  allAlreadyThere,TResult Function( MovementReadTarget target)?  localRead,TResult Function( int movedCount,  DomainException cause,  List<String> movedAnimalIds)?  partial,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case MovementAnimalUnavailable() when animalUnavailable != null:
 return animalUnavailable();case MovementTagRequired() when tagRequired != null:
@@ -159,7 +159,7 @@ return reasonRequired();case MovementDestinationRequired() when destinationRequi
 return destinationRequired();case MovementAllAlreadyThere() when allAlreadyThere != null:
 return allAlreadyThere();case MovementLocalReadFailure() when localRead != null:
 return localRead(_that.target);case MovementPartialFailure() when partial != null:
-return partial(_that.movedCount,_that.cause);case _:
+return partial(_that.movedCount,_that.cause,_that.movedAnimalIds);case _:
   return orElse();
 
 }
@@ -177,7 +177,7 @@ return partial(_that.movedCount,_that.cause);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  animalUnavailable,required TResult Function()  tagRequired,required TResult Function( String tag)  tagNotFound,required TResult Function()  differentEstablishment,required TResult Function( String visualTag)  alreadySelected,required TResult Function()  animalsRequired,required TResult Function()  reasonRequired,required TResult Function()  destinationRequired,required TResult Function()  allAlreadyThere,required TResult Function( MovementReadTarget target)  localRead,required TResult Function( int movedCount,  DomainException cause)  partial,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  animalUnavailable,required TResult Function()  tagRequired,required TResult Function( String tag)  tagNotFound,required TResult Function()  differentEstablishment,required TResult Function( String visualTag)  alreadySelected,required TResult Function()  animalsRequired,required TResult Function()  reasonRequired,required TResult Function()  destinationRequired,required TResult Function()  allAlreadyThere,required TResult Function( MovementReadTarget target)  localRead,required TResult Function( int movedCount,  DomainException cause,  List<String> movedAnimalIds)  partial,}) {final _that = this;
 switch (_that) {
 case MovementAnimalUnavailable():
 return animalUnavailable();case MovementTagRequired():
@@ -190,7 +190,7 @@ return reasonRequired();case MovementDestinationRequired():
 return destinationRequired();case MovementAllAlreadyThere():
 return allAlreadyThere();case MovementLocalReadFailure():
 return localRead(_that.target);case MovementPartialFailure():
-return partial(_that.movedCount,_that.cause);}
+return partial(_that.movedCount,_that.cause,_that.movedAnimalIds);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -204,7 +204,7 @@ return partial(_that.movedCount,_that.cause);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  animalUnavailable,TResult? Function()?  tagRequired,TResult? Function( String tag)?  tagNotFound,TResult? Function()?  differentEstablishment,TResult? Function( String visualTag)?  alreadySelected,TResult? Function()?  animalsRequired,TResult? Function()?  reasonRequired,TResult? Function()?  destinationRequired,TResult? Function()?  allAlreadyThere,TResult? Function( MovementReadTarget target)?  localRead,TResult? Function( int movedCount,  DomainException cause)?  partial,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  animalUnavailable,TResult? Function()?  tagRequired,TResult? Function( String tag)?  tagNotFound,TResult? Function()?  differentEstablishment,TResult? Function( String visualTag)?  alreadySelected,TResult? Function()?  animalsRequired,TResult? Function()?  reasonRequired,TResult? Function()?  destinationRequired,TResult? Function()?  allAlreadyThere,TResult? Function( MovementReadTarget target)?  localRead,TResult? Function( int movedCount,  DomainException cause,  List<String> movedAnimalIds)?  partial,}) {final _that = this;
 switch (_that) {
 case MovementAnimalUnavailable() when animalUnavailable != null:
 return animalUnavailable();case MovementTagRequired() when tagRequired != null:
@@ -217,7 +217,7 @@ return reasonRequired();case MovementDestinationRequired() when destinationRequi
 return destinationRequired();case MovementAllAlreadyThere() when allAlreadyThere != null:
 return allAlreadyThere();case MovementLocalReadFailure() when localRead != null:
 return localRead(_that.target);case MovementPartialFailure() when partial != null:
-return partial(_that.movedCount,_that.cause);case _:
+return partial(_that.movedCount,_that.cause,_that.movedAnimalIds);case _:
   return null;
 
 }
@@ -651,11 +651,18 @@ as MovementReadTarget,
 
 
 class MovementPartialFailure implements MovementFailure {
-  const MovementPartialFailure(this.movedCount, this.cause);
+  const MovementPartialFailure(this.movedCount, this.cause, {final  List<String> movedAnimalIds = const []}): _movedAnimalIds = movedAnimalIds;
   
 
  final  int movedCount;
  final  DomainException cause;
+ final  List<String> _movedAnimalIds;
+@JsonKey() List<String> get movedAnimalIds {
+  if (_movedAnimalIds is EqualUnmodifiableListView) return _movedAnimalIds;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_movedAnimalIds);
+}
+
 
 /// Create a copy of MovementFailure
 /// with the given fields replaced by the non-null parameter values.
@@ -667,16 +674,16 @@ $MovementPartialFailureCopyWith<MovementPartialFailure> get copyWith => _$Moveme
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MovementPartialFailure&&(identical(other.movedCount, movedCount) || other.movedCount == movedCount)&&(identical(other.cause, cause) || other.cause == cause));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MovementPartialFailure&&(identical(other.movedCount, movedCount) || other.movedCount == movedCount)&&(identical(other.cause, cause) || other.cause == cause)&&const DeepCollectionEquality().equals(other._movedAnimalIds, _movedAnimalIds));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,movedCount,cause);
+int get hashCode => Object.hash(runtimeType,movedCount,cause,const DeepCollectionEquality().hash(_movedAnimalIds));
 
 @override
 String toString() {
-  return 'MovementFailure.partial(movedCount: $movedCount, cause: $cause)';
+  return 'MovementFailure.partial(movedCount: $movedCount, cause: $cause, movedAnimalIds: $movedAnimalIds)';
 }
 
 
@@ -687,7 +694,7 @@ abstract mixin class $MovementPartialFailureCopyWith<$Res> implements $MovementF
   factory $MovementPartialFailureCopyWith(MovementPartialFailure value, $Res Function(MovementPartialFailure) _then) = _$MovementPartialFailureCopyWithImpl;
 @useResult
 $Res call({
- int movedCount, DomainException cause
+ int movedCount, DomainException cause, List<String> movedAnimalIds
 });
 
 
@@ -704,11 +711,12 @@ class _$MovementPartialFailureCopyWithImpl<$Res>
 
 /// Create a copy of MovementFailure
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? movedCount = null,Object? cause = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? movedCount = null,Object? cause = null,Object? movedAnimalIds = null,}) {
   return _then(MovementPartialFailure(
 null == movedCount ? _self.movedCount : movedCount // ignore: cast_nullable_to_non_nullable
 as int,null == cause ? _self.cause : cause // ignore: cast_nullable_to_non_nullable
-as DomainException,
+as DomainException,movedAnimalIds: null == movedAnimalIds ? _self._movedAnimalIds : movedAnimalIds // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 

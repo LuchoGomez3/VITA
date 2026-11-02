@@ -117,7 +117,7 @@ class RegisterGroupMovementUseCase {
       return Result.failure(movementException(const MovementFailure.allAlreadyThere()));
     }
 
-    var moved = 0;
+    final movedIds = <String>[];
     for (final MapEntry(key: sourceLotId, value: animalIds) in bySourceLot.entries) {
       final result = await _moveLotAnimals(
         establishmentId: establishmentId,
@@ -129,13 +129,16 @@ class RegisterGroupMovementUseCase {
       );
       if (result is Failure<LotAnimalMovement>) {
         return Result.failure(
-          moved == 0
+          movedIds.isEmpty
               ? result.error
-              : movementException(MovementFailure.partial(moved, result.error), code: result.error.code),
+              : movementException(
+                  MovementFailure.partial(movedIds.length, result.error, movedAnimalIds: movedIds),
+                  code: result.error.code,
+                ),
         );
       }
-      moved += animalIds.length;
+      movedIds.addAll(animalIds);
     }
-    return Result.success(GroupMovementSummary(movedCount: moved, alreadyThereCount: alreadyThere));
+    return Result.success(GroupMovementSummary(movedCount: movedIds.length, alreadyThereCount: alreadyThere));
   }
 }

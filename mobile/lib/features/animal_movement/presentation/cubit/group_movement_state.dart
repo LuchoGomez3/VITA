@@ -13,6 +13,9 @@ sealed class GroupMovementState with _$GroupMovementState {
     @Default(ResultState<MovementAnimal>.initial()) ResultState<MovementAnimal> tagResolution,
     @Default(ResultState<GroupMovementSummary>.initial()) ResultState<GroupMovementSummary> submission,
     @Default([]) List<MovementAnimal> animals,
+
+    /// Cambios durables acumulados, incluso si un grupo posterior falla.
+    @Default(GroupMovementSummary(movedCount: 0, alreadyThereCount: 0)) GroupMovementSummary savedSummary,
     String? destinationId,
     DateTime? occurredAt,
   }) = _GroupMovementState;

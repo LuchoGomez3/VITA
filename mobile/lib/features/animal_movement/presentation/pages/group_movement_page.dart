@@ -91,56 +91,66 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
         }
       },
       builder: (context, state) {
-        return Scaffold(
-          appBar: AppBar(
-            backgroundColor: AppColors.background,
-            surfaceTintColor: AppColors.background,
-            centerTitle: true,
-            title: const Text(AnimalMovementStrings.pageTitle, style: AppTypography.appBarTitle),
-          ),
-          body: switch (state.preparation) {
-            Data<GroupMovementPreparation>() => AbsorbPointer(
-              absorbing: state.submission is Loading<GroupMovementSummary>,
-              child: _GroupMovementForm(
-                state: state,
-                onAddTag: _addTag,
-                tagController: _tagController,
-                tagFocus: _tagFocus,
-                reasonController: _reasonController,
-                onPickDate: _pickDate,
-              ),
+        final saving = state.submission is Loading<GroupMovementSummary>;
+        final hasSavedChanges = state.savedSummary.movedCount > 0;
+        return PopScope<GroupMovementSummary>(
+          canPop: !saving && !hasSavedChanges,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop && !saving && hasSavedChanges) {
+              context.pop(state.savedSummary);
+            }
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              backgroundColor: AppColors.background,
+              surfaceTintColor: AppColors.background,
+              centerTitle: true,
+              title: const Text(AnimalMovementStrings.pageTitle, style: AppTypography.appBarTitle),
             ),
-            ResultError<GroupMovementPreparation>(:final error) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Text(
-                  AnimalMovementStrings.errorMessage(error),
-                  textAlign: TextAlign.center,
-                  style: AppTypography.pageBodyTitle,
+            body: switch (state.preparation) {
+              Data<GroupMovementPreparation>() => AbsorbPointer(
+                absorbing: state.submission is Loading<GroupMovementSummary>,
+                child: _GroupMovementForm(
+                  state: state,
+                  onAddTag: _addTag,
+                  tagController: _tagController,
+                  tagFocus: _tagFocus,
+                  reasonController: _reasonController,
+                  onPickDate: _pickDate,
                 ),
               ),
-            ),
-            _ => const Center(child: CircularProgressIndicator()),
-          },
-          bottomNavigationBar: state.preparation is! Data<GroupMovementPreparation>
-              ? null
-              : SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.xs, AppSpacing.md, AppSpacing.md),
-                    child: AppFilledButton(
-                      label: AnimalMovementStrings.submit(
-                        state.destinationId == null ? state.animals.length : state.movableCount,
-                      ),
-                      isLoading: state.submission is Loading<GroupMovementSummary>,
-                      onPressed:
-                          state.animals.isEmpty ||
-                              state.submission is Loading<GroupMovementSummary> ||
-                              state.tagResolution is Loading<MovementAnimal>
-                          ? null
-                          : () => context.read<GroupMovementCubit>().submit(_reasonController.text),
-                    ),
+              ResultError<GroupMovementPreparation>(:final error) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  child: Text(
+                    AnimalMovementStrings.errorMessage(error),
+                    textAlign: TextAlign.center,
+                    style: AppTypography.pageBodyTitle,
                   ),
                 ),
+              ),
+              _ => const Center(child: CircularProgressIndicator()),
+            },
+            bottomNavigationBar: state.preparation is! Data<GroupMovementPreparation>
+                ? null
+                : SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.xs, AppSpacing.md, AppSpacing.md),
+                      child: AppFilledButton(
+                        label: AnimalMovementStrings.submit(
+                          state.destinationId == null ? state.animals.length : state.movableCount,
+                        ),
+                        isLoading: state.submission is Loading<GroupMovementSummary>,
+                        onPressed:
+                            state.animals.isEmpty ||
+                                state.submission is Loading<GroupMovementSummary> ||
+                                state.tagResolution is Loading<MovementAnimal>
+                            ? null
+                            : () => context.read<GroupMovementCubit>().submit(_reasonController.text),
+                      ),
+                    ),
+                  ),
+          ),
         );
       },
     );

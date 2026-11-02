@@ -52,7 +52,11 @@ sealed class MovementFailure with _$MovementFailure {
   const factory MovementFailure.localRead(MovementReadTarget target) = MovementLocalReadFailure;
 
   /// Algunos grupos fueron persistidos antes de fallar otro origen.
-  const factory MovementFailure.partial(int movedCount, DomainException cause) = MovementPartialFailure;
+  const factory MovementFailure.partial(
+    int movedCount,
+    DomainException cause, {
+    @Default([]) List<String> movedAnimalIds,
+  }) = MovementPartialFailure;
 }
 
 /// Envuelve un motivo tipado sin incorporar lenguaje de producto al dominio.

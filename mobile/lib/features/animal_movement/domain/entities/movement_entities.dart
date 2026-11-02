@@ -79,4 +79,13 @@ sealed class GroupMovementSummary with _$GroupMovementSummary {
     /// Destinos efectivamente usados, por UUID y nombre al registrar.
     @Default({}) Map<String, String> destinations,
   }) = _GroupMovementSummary;
+
+  const GroupMovementSummary._();
+
+  /// Acumula intentos de la misma pantalla sin perder destinos ya guardados.
+  GroupMovementSummary combine(GroupMovementSummary other) => GroupMovementSummary(
+    movedCount: movedCount + other.movedCount,
+    alreadyThereCount: alreadyThereCount + other.alreadyThereCount,
+    destinations: {...destinations, ...other.destinations},
+  );
 }

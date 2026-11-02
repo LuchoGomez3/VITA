@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
@@ -12,12 +13,17 @@ import 'package:frontend_mayoral/features/field/domain/use_cases/move_lot_animal
 import 'package:go_router/go_router.dart';
 
 void main() {
-  for (final keepInitial in [true, false]) {
-    testWidgets('mover devuelve el destino elegido, conservar inicial: $keepInitial', (tester) async {
+  for (final (keepInitial, partial, retry) in [
+    (true, false, false),
+    (false, false, false),
+    (true, true, true),
+    (true, true, false),
+  ]) {
+    testWidgets('movimiento inicial=$keepInitial, parcial=$partial, reintento=$retry', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.625;
       addTearDown(tester.view.reset);
-      final move = _FakeMove();
+      final move = _FakeMove()..failOnceSource = partial ? 'sauces' : null;
       GroupMovementSummary? result;
       final router = GoRouter(
         routes: [
@@ -80,12 +86,22 @@ void main() {
       await tester.tap(find.text(AnimalMovementStrings.submit(count)));
       await tester.pumpAndSettle();
 
-      expect(result?.movedCount, count);
+      if (partial) {
+        expect(find.text(AnimalMovementStrings.animalsTitle(1)), findsOneWidget);
+        if (retry) {
+          await tester.tap(find.text(AnimalMovementStrings.submit(1)));
+        } else {
+          await tester.pageBack();
+        }
+        await tester.pumpAndSettle();
+      }
+      expect(result?.movedCount, partial && !retry ? 1 : count);
       expect(result?.destinations, {'cumbre': 'La Cumbre'});
       expect(move.calls, {
         if (keepInitial) 'bajo': ['a1'],
-        'sauces': ['a2'],
+        if (!partial || retry) 'sauces': ['a2'],
       });
+      if (partial) expect(move.sourceCalls, ['bajo', 'sauces', if (retry) 'sauces']);
     });
   }
 }
@@ -123,6 +139,8 @@ class _FakeRepository implements AnimalMovementRepository {
 
 class _FakeMove implements MoveLotAnimalsUseCase {
   final calls = <String, List<String>>{};
+  final sourceCalls = <String>[];
+  String? failOnceSource;
 
   @override
   Future<Result<LotAnimalMovement>> call({
@@ -134,6 +152,11 @@ class _FakeMove implements MoveLotAnimalsUseCase {
     required String reason,
     String? responsibleId,
   }) async {
+    sourceCalls.add(sourceLotId);
+    if (sourceLotId == failOnceSource) {
+      failOnceSource = null;
+      return const Result.failure(DomainException(message: 'write_failed', code: DomainErrorCode.offline));
+    }
     calls[sourceLotId] = animalIds;
     return Result.success(
       LotAnimalMovement(

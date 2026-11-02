@@ -227,6 +227,12 @@ encolan siempre para sincronización; el login también envía pendientes y lueg
 descarga la representación autoritativa en el orden lotes, animales y
 movimientos.
 
+La lectura `LotBrickStore.getLocalLots` excluye tombstones por defecto.
+El historial de movimientos usa `includeDeleted: true` para conservar los
+nombres de potreros anteriores. La deduplicación y el filtro de establecimiento
+se aplican también en esa lectura; los destinos de nuevos traslados siguen
+usando únicamente lotes vigentes y activos.
+
 ## Codigo generado
 
 Si cambia un modelo Brick, se debe regenerar:
