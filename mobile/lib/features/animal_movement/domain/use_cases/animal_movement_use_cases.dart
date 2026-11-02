@@ -6,17 +6,6 @@ import 'package:frontend_mayoral/features/animal_movement/domain/repositories/an
 import 'package:frontend_mayoral/features/field/domain/entities/lot_animal_movement.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/move_lot_animals_use_case.dart';
 
-/// Historial de potreros de un animal.
-class GetAnimalMovementHistoryUseCase {
-  /// Crea el caso de uso.
-  const GetAnimalMovementHistoryUseCase(this._repository);
-
-  final AnimalMovementRepository _repository;
-
-  /// Devuelve el historial de [animalId].
-  Future<Result<List<MovementHistoryEntry>>> call(String animalId) => _repository.getHistory(animalId);
-}
-
 /// Carga el animal con el que se abre "Mover animales" y los potreros de su campo.
 class PrepareGroupMovementUseCase {
   /// Crea el caso de uso.

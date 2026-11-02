@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_movement_history_use_case.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/movement_history_cubit.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_movements_tab.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
-import 'package:frontend_mayoral/features/animal_movement/domain/use_cases/animal_movement_use_cases.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/cubit/movement_history_cubit.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/strings/animal_movement_strings.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/widgets/animal_movements_tab.dart';
 
 void main() {
   Future<void> pump(WidgetTester tester, List<MovementHistoryEntry> history) async {
@@ -43,17 +43,17 @@ void main() {
       ),
     ]);
 
-    expect(find.text(AnimalMovementStrings.historyTitle(2).toUpperCase()), findsOneWidget);
-    expect(find.text('El Bajo → La Cumbre ${AnimalMovementStrings.currentLot}'), findsOneWidget);
-    expect(find.text('${AnimalMovementStrings.noOrigin} → El Bajo'), findsOneWidget);
-    expect(find.text(AnimalMovementStrings.pendingSync), findsOneWidget);
+    expect(find.text(AnimalDetailStrings.historyTitle(2).toUpperCase()), findsOneWidget);
+    expect(find.text('El Bajo → La Cumbre ${AnimalDetailStrings.currentLot}'), findsOneWidget);
+    expect(find.text('${AnimalDetailStrings.noOrigin} → El Bajo'), findsOneWidget);
+    expect(find.text(AnimalDetailStrings.pendingSync), findsOneWidget);
     expect(find.text('Rotación pastoreo'), findsOneWidget);
   });
 
   testWidgets('sin movimientos lo explica', (tester) async {
     await pump(tester, const []);
 
-    expect(find.text(AnimalMovementStrings.historyEmpty), findsOneWidget);
+    expect(find.text(AnimalDetailStrings.historyEmpty), findsOneWidget);
   });
 }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/app/composition/animal_movement_composition.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -11,7 +12,6 @@ import 'package:frontend_mayoral/core/navigation/backward_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
 import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
-import 'package:frontend_mayoral/features/animal_movement/animal_movement_composition.dart';
 import 'package:frontend_mayoral/features/animal_movement/presentation/pages/group_movement_page.dart';
 import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';

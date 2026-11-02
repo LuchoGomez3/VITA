@@ -16,18 +16,17 @@ import 'package:frontend_mayoral/features/animal_detail/domain/repositories/anim
 import 'package:frontend_mayoral/features/animal_detail/domain/repositories/animal_photo_repository.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_detail_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_genealogy_use_case.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_movement_history_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_photo_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/retry_animal_sync_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_genealogy_cubit.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/movement_history_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_general_tab.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
-import 'package:frontend_mayoral/features/animal_movement/domain/use_cases/animal_movement_use_cases.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/cubit/movement_history_cubit.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/strings/animal_movement_strings.dart';
 import 'package:go_router/go_router.dart';
 
 void main() {
@@ -174,7 +173,7 @@ void main() {
 
     await tester.tap(find.text(AnimalDetailStrings.movementsTab));
     await tester.pumpAndSettle();
-    expect(find.text(AnimalMovementStrings.historyEmpty), findsOneWidget);
+    expect(find.text(AnimalDetailStrings.historyEmpty), findsOneWidget);
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Confirmar movimiento'));
@@ -182,9 +181,9 @@ void main() {
 
     expect(movementRepository.loadedAnimalIds, [_animal.id, _animal.id]);
     expect(find.text('Rotación de pastoreo'), findsOneWidget);
-    expect(find.text(AnimalMovementStrings.pendingSync), findsOneWidget);
+    expect(find.text(AnimalDetailStrings.pendingSync), findsOneWidget);
     expect(
-      find.text('${AnimalMovementStrings.moved(1, 'Potrero destino')} ${AnimalMovementStrings.savedOffline}'),
+      find.text('${AnimalDetailStrings.moved(1, 'Potrero destino')} ${AnimalDetailStrings.savedOffline}'),
       findsOneWidget,
     );
 

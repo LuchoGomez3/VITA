@@ -128,32 +128,4 @@ abstract final class AnimalMovementStrings {
       _ => saveError,
     },
   };
-  /// Título del historial en la ficha.
-  static String historyTitle(int count) =>
-      count == 1 ? 'Historial de potreros · 1 movim.' : 'Historial de potreros · $count movim.';
-
-  /// Historial vacío.
-  static const historyEmpty = 'Este animal todavía no tiene movimientos entre potreros.';
-
-  /// Error del historial.
-  static const historyError = 'No se pudo leer el historial de movimientos.';
-
-  /// Potrero actual en la primera fila del historial.
-  static const currentLot = '(actual)';
-
-  /// Origen de la primera asignación.
-  static const noOrigin = '—';
-
-  /// Movimiento que todavía no llegó al servidor.
-  static const pendingSync = 'Pendiente de sincronizar';
-
-  /// Ayuda del botón flotante de la pestaña.
-  static const moveTooltip = 'Mover animales';
-
-  /// Confirmación al volver a la ficha.
-  static String moved(int count, String destination) =>
-      count == 1 ? 'Se movió 1 animal a $destination.' : 'Se movieron $count animales a $destination.';
-
-  /// Aclaración offline de la confirmación.
-  static const savedOffline = 'Queda guardado en el celular y se sincroniza con señal.';
 }

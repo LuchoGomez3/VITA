@@ -1,8 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_movement_history_use_case.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
-import 'package:frontend_mayoral/features/animal_movement/domain/use_cases/animal_movement_use_cases.dart';
 
 /// Carga el historial de potreros de un animal.
 class MovementHistoryCubit extends Cubit<ResultState<List<MovementHistoryEntry>>> {

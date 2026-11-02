@@ -4,9 +4,9 @@ import 'package:frontend_mayoral/core/formatters/formatters.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/movement_history_cubit.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/cubit/movement_history_cubit.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/strings/animal_movement_strings.dart';
 
 /// Pestaña "Movim." de la ficha: historial de potreros (diseño
 /// `AnimalFichaMovimientos`). Mover animales se hace con el botón flotante.
@@ -23,19 +23,19 @@ class AnimalMovementsTab extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 96),
         children: [
           Text(
-            AnimalMovementStrings.historyTitle(data.length).toUpperCase(),
+            AnimalDetailStrings.historyTitle(data.length).toUpperCase(),
             style: AppTypography.smallEmphasis.copyWith(color: AppColors.textSecondary, letterSpacing: 0.6),
           ),
           const SizedBox(height: AppSpacing.sm),
           if (data.isEmpty)
-            const Text(AnimalMovementStrings.historyEmpty, style: AppTypography.formFieldHelper)
+            const Text(AnimalDetailStrings.historyEmpty, style: AppTypography.formFieldHelper)
           else
             for (final (index, entry) in data.indexed)
               _MovementRow(entry: entry, isCurrent: index == 0, isLast: index == data.length - 1),
         ],
       ),
       ResultError<List<MovementHistoryEntry>>() => const Center(
-        child: Text(AnimalMovementStrings.historyError, style: AppTypography.pageBodyTitle),
+        child: Text(AnimalDetailStrings.historyError, style: AppTypography.pageBodyTitle),
       ),
       _ => const Center(child: CircularProgressIndicator()),
     };
@@ -52,7 +52,7 @@ class _MovementRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final from = entry.fromLotName ?? AnimalMovementStrings.noOrigin;
+    final from = entry.fromLotName ?? AnimalDetailStrings.noOrigin;
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -91,7 +91,7 @@ class _MovementRow extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          '$from → ${entry.toLotName}${isCurrent ? ' ${AnimalMovementStrings.currentLot}' : ''}',
+                          '$from → ${entry.toLotName}${isCurrent ? ' ${AnimalDetailStrings.currentLot}' : ''}',
                           style: AppTypography.mediumEmphasis.copyWith(fontWeight: FontWeight.w800),
                         ),
                       ),
@@ -106,7 +106,7 @@ class _MovementRow extends StatelessWidget {
                   if (entry.isPending) ...[
                     const SizedBox(height: AppSpacing.xxs),
                     const AppStatusChip(
-                      label: AnimalMovementStrings.pendingSync,
+                      label: AnimalDetailStrings.pendingSync,
                       tone: AppStatusChipTone.warning,
                       showDot: true,
                     ),

@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/constants/feature_strings.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_photo.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/movement_history_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_ficha_header.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_ficha_section.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_genealogy_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_general_tab.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_movements_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_weighings_tab.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/cubit/movement_history_cubit.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/strings/animal_movement_strings.dart';
-import 'package:frontend_mayoral/features/animal_movement/presentation/widgets/animal_movements_tab.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/mock/weighing_mock.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/pages/weighing_page.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/widgets/weighing_tab_selector.dart';
@@ -184,7 +184,7 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
         ),
         (final animal?, AnimalFichaTab.movements) => FloatingActionButton(
           heroTag: 'animal-ficha-move',
-          tooltip: AnimalMovementStrings.moveTooltip,
+          tooltip: FeatureStrings.moveAnimals,
           shape: const CircleBorder(),
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
@@ -216,7 +216,7 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
       ..showSnackBar(
         SnackBar(
           content: Text(
-            '${AnimalMovementStrings.moved(summary.movedCount, destination)} ${AnimalMovementStrings.savedOffline}',
+            '${AnimalDetailStrings.moved(summary.movedCount, destination)} ${AnimalDetailStrings.savedOffline}',
           ),
         ),
       );
