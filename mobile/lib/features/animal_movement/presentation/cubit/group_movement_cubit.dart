@@ -26,14 +26,14 @@ class GroupMovementCubit extends Cubit<GroupMovementState> {
   Future<void> _tagReads = Future<void>.value();
   int _pendingTagReads = 0;
 
-  /// Carga el animal inicial y los destinos locales.
-  Future<void> start(String animalId) async {
+  /// Carga los animales iniciales y los destinos locales.
+  Future<void> start(List<String> animalIds) async {
     emit(state.copyWith(preparation: const ResultState.loading()));
-    final result = await _prepare(animalId);
+    final result = await _prepare(animalIds);
     if (isClosed) return;
     switch (result) {
       case Success(:final data):
-        emit(state.copyWith(preparation: ResultState.data(data), animals: [data.animal]));
+        emit(state.copyWith(preparation: ResultState.data(data), animals: data.animals));
       case Failure(:final error):
         emit(state.copyWith(preparation: ResultState.error(error)));
     }

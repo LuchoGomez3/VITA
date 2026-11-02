@@ -39,7 +39,7 @@ void main() {
           GoRoute(
             path: '/mover',
             builder: (_, _) => GroupMovementPage(
-              animalId: 'a1',
+              animalIds: const ['a1'],
               createCubit: () {
                 final repository = _FakeRepository();
                 return GroupMovementCubit(
@@ -112,7 +112,7 @@ void main() {
     final cubit = _createCubit(repository);
     await tester.pumpWidget(
       MaterialApp(
-        home: GroupMovementPage(animalId: 'a1', createCubit: () => cubit),
+        home: GroupMovementPage(animalIds: const ['a1'], createCubit: () => cubit),
       ),
     );
     await tester.pumpAndSettle();
@@ -144,7 +144,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: GroupMovementPage(
-            animalId: 'a1',
+            animalIds: const ['a1'],
             createCubit: () => _createCubit(repository),
           ),
         ),
@@ -169,7 +169,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: GroupMovementPage(
-          animalId: 'a1',
+          animalIds: const ['a1'],
           createCubit: () => _createCubit(repository),
         ),
       ),
