@@ -77,6 +77,36 @@ void main() {
     expect(matches.single.name, 'Editado');
   });
 
+  test('la lectura histórica puede resolver un lote borrado en SQLite', () async {
+    await repository.upsertLocal(_lot(id: 'history-lot', name: 'Potrero anterior', deletedAt: DateTime.utc(2026, 9)));
+
+    final activeLots = await lotStore.getLocalLots('establishment-id');
+    final historyLots = await lotStore.getLocalLots('establishment-id', includeDeleted: true);
+
+    expect(activeLots.where((lot) => lot.localId == 'history-lot'), isEmpty);
+    expect(historyLots.singleWhere((lot) => lot.localId == 'history-lot').name, 'Potrero anterior');
+  });
+
+  test('leer movimientos deduplica antes de aplicar tombstones y filtra el tenant', () async {
+    final old = DateTime.utc(2026, 8);
+    final recent = DateTime.utc(2026, 9);
+    for (final movement in [
+      _movement(id: 'history-deleted', establishmentId: 'history-tenant', updatedAt: old),
+      _movement(id: 'history-deleted', establishmentId: 'history-tenant', updatedAt: recent, deletedAt: recent),
+      _movement(id: 'history-alive', establishmentId: 'history-tenant', updatedAt: old),
+      _movement(id: 'history-alive', establishmentId: 'history-tenant', updatedAt: recent),
+      _movement(id: 'history-other', establishmentId: 'other-tenant'),
+    ]) {
+      await repository.upsertLocal(movement);
+    }
+
+    final history = await movementStore.getLocalMovements('history-tenant');
+
+    expect(history.single.localId, 'history-alive');
+    expect(history.single.updatedAt, recent);
+    expect(history.single.deletedAt, isNull);
+  });
+
   test('revierte todas las escrituras cuando falla la transaccion', () async {
     final original = await repository.upsertLocal<BrickAnimalModel>(
       _animal(id: 'animal-rollback', lotId: 'source-lot'),
@@ -208,6 +238,7 @@ BrickLotModel _lot({
   required String id,
   required String name,
   DateTime? updatedAt,
+  DateTime? deletedAt,
 }) {
   final timestamp = updatedAt ?? DateTime.utc(2026, 8, 31);
   return BrickLotModel(
@@ -220,6 +251,7 @@ BrickLotModel _lot({
     statusCode: 'activo',
     createdAt: DateTime.utc(2026, 8, 31),
     updatedAt: timestamp,
+    deletedAt: deletedAt,
   );
 }
 
@@ -246,18 +278,22 @@ BrickAnimalModel _animal({required String id, required String lotId}) {
 BrickAnimalLotMovementModel _movement({
   required String id,
   String animalId = 'animal-success',
+  String establishmentId = 'establishment-id',
+  DateTime? updatedAt,
+  DateTime? deletedAt,
 }) {
   final timestamp = DateTime.utc(2026, 8, 31);
   return BrickAnimalLotMovementModel(
     localId: id,
-    establishmentId: 'establishment-id',
+    establishmentId: establishmentId,
     sourceLotId: 'source-lot',
     destinationLotId: 'destination-lot',
     animalIdsJson: '["$animalId"]',
     occurredAt: timestamp,
     reason: 'Rotacion',
     createdAt: timestamp,
-    updatedAt: timestamp,
+    updatedAt: updatedAt ?? timestamp,
+    deletedAt: deletedAt,
   );
 }
 

@@ -12,7 +12,8 @@ abstract class LotBrickStore {
   Future<BrickLotModel> upsertLocalLot(BrickLotModel lot);
 
   /// Lista los lotes locales vigentes del establecimiento.
-  Future<List<BrickLotModel>> getLocalLots(String establishmentId);
+  /// [includeDeleted] conserva tombstones para resolver referencias históricas.
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId, {bool includeDeleted = false});
 
   /// Busca un lote local vigente por UUID.
   Future<BrickLotModel?> getLocalLot(String lotId);
@@ -68,9 +69,9 @@ class BrickLotStore implements LotBrickStore {
   }
 
   @override
-  Future<List<BrickLotModel>> getLocalLots(String establishmentId) async {
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId, {bool includeDeleted = false}) async {
     final stored = await _repository.getLocal<BrickLotModel>();
-    return selectLocalLots(stored, establishmentId: establishmentId);
+    return selectLocalLots(stored, establishmentId: establishmentId, includeDeleted: includeDeleted);
   }
 
   @override
@@ -160,6 +161,7 @@ class BrickLotStore implements LotBrickStore {
   static List<BrickLotModel> selectLocalLots(
     Iterable<BrickLotModel> stored, {
     required String establishmentId,
+    bool includeDeleted = false,
   }) {
     final byId = <String, BrickLotModel>{};
     for (final lot in stored.where((item) => item.establishmentId == establishmentId)) {
@@ -168,7 +170,7 @@ class BrickLotStore implements LotBrickStore {
         byId[lot.localId] = lot;
       }
     }
-    return byId.values.where((lot) => lot.deletedAt == null).toList()
+    return byId.values.where((lot) => includeDeleted || lot.deletedAt == null).toList()
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
   }
 }

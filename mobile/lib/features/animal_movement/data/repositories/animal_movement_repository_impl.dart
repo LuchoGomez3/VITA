@@ -88,7 +88,8 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
           return const <MovementHistoryEntry>[];
         }
         final lotNames = {
-          for (final lot in await _lotStore.getLocalLots(animal.establishmentId)) lot.localId: lot.name,
+          for (final lot in await _lotStore.getLocalLots(animal.establishmentId, includeDeleted: true))
+            lot.localId: lot.name,
         };
         final entries = <MovementHistoryEntry>[];
         final movements =

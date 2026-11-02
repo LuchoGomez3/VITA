@@ -16,10 +16,11 @@ import 'package:frontend_mayoral/features/animal_movement/domain/entities/moveme
 void main() {
   AnimalMovementRepositoryImpl repository({
     List<BrickAnimalModel>? animals,
+    List<BrickLotModel>? lots,
     List<BrickAnimalLotMovementModel> movements = const [],
   }) => AnimalMovementRepositoryImpl(
     animalStore: _FakeAnimalStore(animals ?? _animals),
-    lotStore: _FakeLotStore(),
+    lotStore: _FakeLotStore(lots: lots),
     categoryStore: _FakeCategoryStore(),
     movementStore: _FakeMovementStore(movements),
   );
@@ -139,6 +140,26 @@ void main() {
     );
 
     expect(history.single.syncStatus, MovementSyncStatus.rejected);
+  });
+
+  test('borrar un potrero vacío conserva su nombre en el historial y lo quita de destinos', () async {
+    final subject = repository(
+      animals: [_animal('a1', lotId: 'lote-cumbre')],
+      lots: [
+        _FakeLotStore._lot('lote-bajo', 'Origen eliminado', deletedAt: DateTime.utc(2026, 7)),
+        _FakeLotStore._lot('lote-cumbre', 'Destino'),
+      ],
+      movements: [
+        _movement('m1', ['a1'], from: 'lote-bajo', to: 'lote-cumbre', on: DateTime.utc(2026, 6)),
+      ],
+    );
+
+    final history = data(await subject.getHistory('a1'));
+    final destinations = data(await subject.getDestinations('campo-1'));
+
+    expect(history.single.fromLotName, 'Origen eliminado');
+    expect(history.single.toLotName, 'Destino');
+    expect(destinations.map((lot) => lot.id), ['lote-cumbre']);
   });
 
   test('una fecha retroactiva no hace que el potrero actual sea el primero del historial', () async {
@@ -264,26 +285,34 @@ class _FakeAnimalStore implements AnimalBrickStore {
 }
 
 class _FakeLotStore implements LotBrickStore {
-  final List<BrickLotModel> _lots = [
-    _lot('lote-cumbre', 'La Cumbre'),
-    _lot('lote-bajo', 'El Bajo'),
-    _lot('lote-cerrado', 'Clausurado', statusCode: 'inactivo'),
-  ];
+  _FakeLotStore({List<BrickLotModel>? lots})
+    : _lots =
+          lots ??
+          [
+            _lot('lote-cumbre', 'La Cumbre'),
+            _lot('lote-bajo', 'El Bajo'),
+            _lot('lote-cerrado', 'Clausurado', statusCode: 'inactivo'),
+          ];
+  final List<BrickLotModel> _lots;
 
-  static BrickLotModel _lot(String id, String name, {String statusCode = 'activo'}) => BrickLotModel(
-    localId: id,
-    establishmentId: 'campo-1',
-    name: name,
-    boundaryJson: '{}',
-    surfaceTenths: 950,
-    hasWater: false,
-    statusCode: statusCode,
-    createdAt: DateTime.utc(2026),
-    updatedAt: DateTime.utc(2026),
-  );
+  static BrickLotModel _lot(String id, String name, {String statusCode = 'activo', DateTime? deletedAt}) =>
+      BrickLotModel(
+        localId: id,
+        establishmentId: 'campo-1',
+        name: name,
+        boundaryJson: '{}',
+        surfaceTenths: 950,
+        hasWater: false,
+        statusCode: statusCode,
+        createdAt: DateTime.utc(2026),
+        updatedAt: DateTime.utc(2026),
+        deletedAt: deletedAt,
+      );
 
   @override
-  Future<List<BrickLotModel>> getLocalLots(String establishmentId) async => _lots;
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId, {bool includeDeleted = false}) async => _lots
+      .where((lot) => lot.establishmentId == establishmentId && (includeDeleted || lot.deletedAt == null))
+      .toList();
 
   @override
   Future<BrickLotModel?> getLocalLot(String lotId) async => _lots.where((lot) => lot.localId == lotId).firstOrNull;

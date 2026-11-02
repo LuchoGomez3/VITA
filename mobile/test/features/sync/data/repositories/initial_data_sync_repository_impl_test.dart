@@ -186,7 +186,7 @@ class _FakeLotStore implements LotBrickStore {
   Future<BrickLotModel?> getLocalLot(String lotId) async => null;
 
   @override
-  Future<List<BrickLotModel>> getLocalLots(String establishmentId) async => [];
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId, {bool includeDeleted = false}) async => [];
 
   @override
   Future<void> pullRemoteLots(String establishmentId) async {
