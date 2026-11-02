@@ -115,7 +115,7 @@ void main() {
     await cubit.submit('Rotación');
     expect(
       (cubit.state.submission as Data<GroupMovementSummary>).data,
-      const GroupMovementSummary(movedCount: 1, alreadyThereCount: 0),
+      const GroupMovementSummary(movedCount: 1, alreadyThereCount: 0, destinations: {'destino': 'Destino'}),
     );
   });
 

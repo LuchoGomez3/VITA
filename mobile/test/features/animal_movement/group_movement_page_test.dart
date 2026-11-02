@@ -12,74 +12,82 @@ import 'package:frontend_mayoral/features/field/domain/use_cases/move_lot_animal
 import 'package:go_router/go_router.dart';
 
 void main() {
-  testWidgets('leer caravanas, elegir destino y mover devuelve el resumen', (tester) async {
-    tester.view.physicalSize = const Size(1080, 2400);
-    tester.view.devicePixelRatio = 2.625;
-    addTearDown(tester.view.reset);
-    final move = _FakeMove();
-    GroupMovementSummary? result;
-    final router = GoRouter(
-      routes: [
-        GoRoute(
-          path: '/',
-          builder: (context, _) => TextButton(
-            onPressed: () async => result = await context.push<GroupMovementSummary>('/mover'),
-            child: const Text('abrir'),
+  for (final keepInitial in [true, false]) {
+    testWidgets('mover devuelve el destino elegido, conservar inicial: $keepInitial', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.625;
+      addTearDown(tester.view.reset);
+      final move = _FakeMove();
+      GroupMovementSummary? result;
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, _) => TextButton(
+              onPressed: () async => result = await context.push<GroupMovementSummary>('/mover'),
+              child: const Text('abrir'),
+            ),
           ),
-        ),
-        GoRoute(
-          path: '/mover',
-          builder: (_, _) => GroupMovementPage(
-            animalId: 'a1',
-            createCubit: () {
-              final repository = _FakeRepository();
-              return GroupMovementCubit(
-                prepare: PrepareGroupMovementUseCase(repository),
-                resolveTag: ResolveMovementTagUseCase(repository),
-                register: RegisterGroupMovementUseCase(move),
-              );
-            },
+          GoRoute(
+            path: '/mover',
+            builder: (_, _) => GroupMovementPage(
+              animalId: 'a1',
+              createCubit: () {
+                final repository = _FakeRepository();
+                return GroupMovementCubit(
+                  prepare: PrepareGroupMovementUseCase(repository),
+                  resolveTag: ResolveMovementTagUseCase(repository),
+                  register: RegisterGroupMovementUseCase(move),
+                );
+              },
+            ),
           ),
-        ),
-      ],
-    );
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-    await tester.tap(find.text('abrir'));
-    await tester.pumpAndSettle();
+        ],
+      );
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.tap(find.text('abrir'));
+      await tester.pumpAndSettle();
 
-    expect(find.text(AnimalMovementStrings.animalsTitle(1)), findsOneWidget);
+      expect(find.text(AnimalMovementStrings.animalsTitle(1)), findsOneWidget);
 
-    // El bastón escribe el RFID y manda Enter.
-    await tester.enterText(find.byType(TextField).first, '982000412884920');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-    expect(find.text(AnimalMovementStrings.animalsTitle(2)), findsOneWidget);
+      // El bastón escribe el RFID y manda Enter.
+      await tester.enterText(find.byType(TextField).first, '982000412884920');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(find.text(AnimalMovementStrings.animalsTitle(2)), findsOneWidget);
 
-    // Una caravana desconocida muestra el error y no se agrega.
-    await tester.enterText(find.byType(TextField).first, '999');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-    expect(find.textContaining('No hay ningún animal activo'), findsOneWidget);
-    expect(find.text(AnimalMovementStrings.animalsTitle(2)), findsOneWidget);
+      // Una caravana desconocida muestra el error y no se agrega.
+      await tester.enterText(find.byType(TextField).first, '999');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('No hay ningún animal activo'), findsOneWidget);
+      expect(find.text(AnimalMovementStrings.animalsTitle(2)), findsOneWidget);
 
-    await tester.scrollUntilVisible(find.text('La Cumbre'), 200, scrollable: _list);
-    await tester.tap(find.text('La Cumbre'));
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.widgetWithText(TextFormField, AnimalMovementStrings.reasonHint),
-      200,
-      scrollable: _list,
-    );
-    await tester.enterText(find.widgetWithText(TextFormField, AnimalMovementStrings.reasonHint), 'Rotación');
-    await tester.tap(find.text(AnimalMovementStrings.submit(2)));
-    await tester.pumpAndSettle();
+      if (!keepInitial) {
+        await tester.tap(find.byTooltip(AnimalMovementStrings.removeAnimal).first);
+        await tester.pumpAndSettle();
+      }
+      final count = keepInitial ? 2 : 1;
+      await tester.scrollUntilVisible(find.text('La Cumbre'), 200, scrollable: _list);
+      await tester.tap(find.text('La Cumbre'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.widgetWithText(TextFormField, AnimalMovementStrings.reasonHint),
+        200,
+        scrollable: _list,
+      );
+      await tester.enterText(find.widgetWithText(TextFormField, AnimalMovementStrings.reasonHint), 'Rotación');
+      await tester.tap(find.text(AnimalMovementStrings.submit(count)));
+      await tester.pumpAndSettle();
 
-    expect(result?.movedCount, 2);
-    expect(move.calls, {
-      'bajo': ['a1'],
-      'sauces': ['a2'],
+      expect(result?.movedCount, count);
+      expect(result?.destinations, {'cumbre': 'La Cumbre'});
+      expect(move.calls, {
+        if (keepInitial) 'bajo': ['a1'],
+        'sauces': ['a2'],
+      });
     });
-  });
+  }
 }
 
 final Finder _list = find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first;

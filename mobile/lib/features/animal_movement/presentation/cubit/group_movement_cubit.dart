@@ -134,7 +134,16 @@ class GroupMovementCubit extends Cubit<GroupMovementState> {
     if (isClosed) return;
     switch (result) {
       case Success<GroupMovementSummary>(:final data):
-        emit(state.copyWith(submission: ResultState.data(data)));
+        final destinationName = state.destinations.where((lot) => lot.id == destinationId).first.name;
+        emit(
+          state.copyWith(
+            submission: ResultState.data(
+              data.copyWith(
+                destinations: {destinationId: destinationName},
+              ),
+            ),
+          ),
+        );
       case Failure<GroupMovementSummary>(:final error):
         emit(state.copyWith(submission: ResultState.error(error)));
     }

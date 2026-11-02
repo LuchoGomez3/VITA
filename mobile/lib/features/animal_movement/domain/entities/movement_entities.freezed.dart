@@ -1087,7 +1087,8 @@ as MovementSyncStatus,
 /// @nodoc
 mixin _$GroupMovementSummary {
 
- int get movedCount; int get alreadyThereCount;
+ int get movedCount; int get alreadyThereCount;/// Destinos efectivamente usados, por UUID y nombre al registrar.
+ Map<String, String> get destinations;
 /// Create a copy of GroupMovementSummary
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1098,16 +1099,16 @@ $GroupMovementSummaryCopyWith<GroupMovementSummary> get copyWith => _$GroupMovem
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is GroupMovementSummary&&(identical(other.movedCount, movedCount) || other.movedCount == movedCount)&&(identical(other.alreadyThereCount, alreadyThereCount) || other.alreadyThereCount == alreadyThereCount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GroupMovementSummary&&(identical(other.movedCount, movedCount) || other.movedCount == movedCount)&&(identical(other.alreadyThereCount, alreadyThereCount) || other.alreadyThereCount == alreadyThereCount)&&const DeepCollectionEquality().equals(other.destinations, destinations));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,movedCount,alreadyThereCount);
+int get hashCode => Object.hash(runtimeType,movedCount,alreadyThereCount,const DeepCollectionEquality().hash(destinations));
 
 @override
 String toString() {
-  return 'GroupMovementSummary(movedCount: $movedCount, alreadyThereCount: $alreadyThereCount)';
+  return 'GroupMovementSummary(movedCount: $movedCount, alreadyThereCount: $alreadyThereCount, destinations: $destinations)';
 }
 
 
@@ -1118,7 +1119,7 @@ abstract mixin class $GroupMovementSummaryCopyWith<$Res>  {
   factory $GroupMovementSummaryCopyWith(GroupMovementSummary value, $Res Function(GroupMovementSummary) _then) = _$GroupMovementSummaryCopyWithImpl;
 @useResult
 $Res call({
- int movedCount, int alreadyThereCount
+ int movedCount, int alreadyThereCount, Map<String, String> destinations
 });
 
 
@@ -1135,11 +1136,12 @@ class _$GroupMovementSummaryCopyWithImpl<$Res>
 
 /// Create a copy of GroupMovementSummary
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? movedCount = null,Object? alreadyThereCount = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? movedCount = null,Object? alreadyThereCount = null,Object? destinations = null,}) {
   return _then(_self.copyWith(
 movedCount: null == movedCount ? _self.movedCount : movedCount // ignore: cast_nullable_to_non_nullable
 as int,alreadyThereCount: null == alreadyThereCount ? _self.alreadyThereCount : alreadyThereCount // ignore: cast_nullable_to_non_nullable
-as int,
+as int,destinations: null == destinations ? _self.destinations : destinations // ignore: cast_nullable_to_non_nullable
+as Map<String, String>,
   ));
 }
 
@@ -1221,10 +1223,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int movedCount,  int alreadyThereCount)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int movedCount,  int alreadyThereCount,  Map<String, String> destinations)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _GroupMovementSummary() when $default != null:
-return $default(_that.movedCount,_that.alreadyThereCount);case _:
+return $default(_that.movedCount,_that.alreadyThereCount,_that.destinations);case _:
   return orElse();
 
 }
@@ -1242,10 +1244,10 @@ return $default(_that.movedCount,_that.alreadyThereCount);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int movedCount,  int alreadyThereCount)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int movedCount,  int alreadyThereCount,  Map<String, String> destinations)  $default,) {final _that = this;
 switch (_that) {
 case _GroupMovementSummary():
-return $default(_that.movedCount,_that.alreadyThereCount);}
+return $default(_that.movedCount,_that.alreadyThereCount,_that.destinations);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1259,10 +1261,10 @@ return $default(_that.movedCount,_that.alreadyThereCount);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int movedCount,  int alreadyThereCount)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int movedCount,  int alreadyThereCount,  Map<String, String> destinations)?  $default,) {final _that = this;
 switch (_that) {
 case _GroupMovementSummary() when $default != null:
-return $default(_that.movedCount,_that.alreadyThereCount);case _:
+return $default(_that.movedCount,_that.alreadyThereCount,_that.destinations);case _:
   return null;
 
 }
@@ -1274,11 +1276,20 @@ return $default(_that.movedCount,_that.alreadyThereCount);case _:
 
 
 class _GroupMovementSummary implements GroupMovementSummary {
-  const _GroupMovementSummary({required this.movedCount, required this.alreadyThereCount});
+  const _GroupMovementSummary({required this.movedCount, required this.alreadyThereCount, final  Map<String, String> destinations = const {}}): _destinations = destinations;
   
 
 @override final  int movedCount;
 @override final  int alreadyThereCount;
+/// Destinos efectivamente usados, por UUID y nombre al registrar.
+ final  Map<String, String> _destinations;
+/// Destinos efectivamente usados, por UUID y nombre al registrar.
+@override@JsonKey() Map<String, String> get destinations {
+  if (_destinations is EqualUnmodifiableMapView) return _destinations;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_destinations);
+}
+
 
 /// Create a copy of GroupMovementSummary
 /// with the given fields replaced by the non-null parameter values.
@@ -1290,16 +1301,16 @@ _$GroupMovementSummaryCopyWith<_GroupMovementSummary> get copyWith => __$GroupMo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GroupMovementSummary&&(identical(other.movedCount, movedCount) || other.movedCount == movedCount)&&(identical(other.alreadyThereCount, alreadyThereCount) || other.alreadyThereCount == alreadyThereCount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GroupMovementSummary&&(identical(other.movedCount, movedCount) || other.movedCount == movedCount)&&(identical(other.alreadyThereCount, alreadyThereCount) || other.alreadyThereCount == alreadyThereCount)&&const DeepCollectionEquality().equals(other._destinations, _destinations));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,movedCount,alreadyThereCount);
+int get hashCode => Object.hash(runtimeType,movedCount,alreadyThereCount,const DeepCollectionEquality().hash(_destinations));
 
 @override
 String toString() {
-  return 'GroupMovementSummary(movedCount: $movedCount, alreadyThereCount: $alreadyThereCount)';
+  return 'GroupMovementSummary(movedCount: $movedCount, alreadyThereCount: $alreadyThereCount, destinations: $destinations)';
 }
 
 
@@ -1310,7 +1321,7 @@ abstract mixin class _$GroupMovementSummaryCopyWith<$Res> implements $GroupMovem
   factory _$GroupMovementSummaryCopyWith(_GroupMovementSummary value, $Res Function(_GroupMovementSummary) _then) = __$GroupMovementSummaryCopyWithImpl;
 @override @useResult
 $Res call({
- int movedCount, int alreadyThereCount
+ int movedCount, int alreadyThereCount, Map<String, String> destinations
 });
 
 
@@ -1327,11 +1338,12 @@ class __$GroupMovementSummaryCopyWithImpl<$Res>
 
 /// Create a copy of GroupMovementSummary
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? movedCount = null,Object? alreadyThereCount = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? movedCount = null,Object? alreadyThereCount = null,Object? destinations = null,}) {
   return _then(_GroupMovementSummary(
 movedCount: null == movedCount ? _self.movedCount : movedCount // ignore: cast_nullable_to_non_nullable
 as int,alreadyThereCount: null == alreadyThereCount ? _self.alreadyThereCount : alreadyThereCount // ignore: cast_nullable_to_non_nullable
-as int,
+as int,destinations: null == destinations ? _self._destinations : destinations // ignore: cast_nullable_to_non_nullable
+as Map<String, String>,
   ));
 }
 

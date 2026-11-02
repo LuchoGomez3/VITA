@@ -207,16 +207,12 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
       return;
     }
     await Future.wait([detailCubit.loadAnimalData(animal.id), historyCubit.load(animal.id)]);
-    final destination = switch (detailCubit.state.detail) {
-      Data<AnimalDetail>(:final data) => data.lotName,
-      _ => '',
-    };
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           content: Text(
-            '${AnimalDetailStrings.moved(summary.movedCount, destination)} ${AnimalDetailStrings.savedOffline}',
+            '${AnimalDetailStrings.movementConfirmation(summary.movedCount, summary.destinations)} ${AnimalDetailStrings.savedOffline}',
           ),
         ),
       );

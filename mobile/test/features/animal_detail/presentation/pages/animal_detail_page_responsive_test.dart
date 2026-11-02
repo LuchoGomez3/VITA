@@ -122,76 +122,87 @@ void main() {
       expect(find.byType(TabBar), findsOneWidget);
     });
   }
-  testWidgets('genealogía y movimientos conviven y actualizan el destino al volver de mover', (tester) async {
-    final detailRepository = _MovingDetailRepository();
-    final movementRepository = _MovementRepository();
-    final router = GoRouter(
-      initialLocation: AppRoutes.animalDetailById(_animal.id),
-      routes: [
-        GoRoute(
-          path: AppRoutes.animalDetail,
-          builder: (context, state) => AnimalDetailPage(
-            animalId: state.pathParameters['animalId']!,
-            createCubit: () => _createCubit(detailRepository: detailRepository),
-            createGenealogyCubit: _createGenealogyCubit,
-            createMovementHistoryCubit: () => MovementHistoryCubit(
-              GetAnimalMovementHistoryUseCase(movementRepository),
+  for (final movedInitial in [true, false]) {
+    testWidgets('genealogía y retorno del traslado, animal inicial movido: $movedInitial', (tester) async {
+      final detailRepository = _MovingDetailRepository();
+      final movementRepository = _MovementRepository();
+      final router = GoRouter(
+        initialLocation: AppRoutes.animalDetailById(_animal.id),
+        routes: [
+          GoRoute(
+            path: AppRoutes.animalDetail,
+            builder: (context, state) => AnimalDetailPage(
+              animalId: state.pathParameters['animalId']!,
+              createCubit: () => _createCubit(detailRepository: detailRepository),
+              createGenealogyCubit: _createGenealogyCubit,
+              createMovementHistoryCubit: () => MovementHistoryCubit(
+                GetAnimalMovementHistoryUseCase(movementRepository),
+              ),
             ),
           ),
-        ),
-        GoRoute(
-          path: AppRoutes.animalGroupMovement,
-          builder: (context, state) => Scaffold(
-            body: TextButton(
-              onPressed: () {
-                detailRepository.animal = _animal.copyWith(lotId: 'destino-id', lotName: 'Potrero destino');
-                movementRepository.history = [
-                  MovementHistoryEntry(
-                    movementId: 'movimiento-id',
-                    fromLotName: _animal.lotName,
-                    toLotName: 'Potrero destino',
-                    occurredAt: DateTime.utc(2026, 10, 29),
-                    reason: 'Rotación de pastoreo',
-                    syncStatus: MovementSyncStatus.pending,
-                  ),
-                ];
-                context.pop(const GroupMovementSummary(movedCount: 1, alreadyThereCount: 0));
-              },
-              child: const Text('Confirmar movimiento'),
+          GoRoute(
+            path: AppRoutes.animalGroupMovement,
+            builder: (context, state) => Scaffold(
+              body: TextButton(
+                onPressed: () {
+                  detailRepository.animal = movedInitial
+                      ? _animal.copyWith(lotId: 'destino-id', lotName: 'Potrero destino')
+                      : _animal;
+                  movementRepository.history = [
+                    if (movedInitial)
+                      MovementHistoryEntry(
+                        movementId: 'movimiento-id',
+                        fromLotName: _animal.lotName,
+                        toLotName: 'Potrero destino',
+                        occurredAt: DateTime.utc(2026, 10, 29),
+                        reason: 'Rotación de pastoreo',
+                        syncStatus: MovementSyncStatus.pending,
+                      ),
+                  ];
+                  context.pop(
+                    const GroupMovementSummary(
+                      movedCount: 1,
+                      alreadyThereCount: 0,
+                      destinations: {'destino-id': 'Potrero destino'},
+                    ),
+                  );
+                },
+                child: const Text('Confirmar movimiento'),
+              ),
             ),
           ),
-        ),
-      ],
-    );
-    addTearDown(router.dispose);
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-    await tester.pumpAndSettle();
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text(AnimalDetailStrings.genealogyTab));
-    await tester.pumpAndSettle();
-    expect(find.text(AnimalDetailStrings.genealogyEmpty), findsOneWidget);
+      await tester.tap(find.text(AnimalDetailStrings.genealogyTab));
+      await tester.pumpAndSettle();
+      expect(find.text(AnimalDetailStrings.genealogyEmpty), findsOneWidget);
 
-    await tester.tap(find.text(AnimalDetailStrings.movementsTab));
-    await tester.pumpAndSettle();
-    expect(find.text(AnimalDetailStrings.historyEmpty), findsOneWidget);
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Confirmar movimiento'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text(AnimalDetailStrings.movementsTab));
+      await tester.pumpAndSettle();
+      expect(find.text(AnimalDetailStrings.historyEmpty), findsOneWidget);
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Confirmar movimiento'));
+      await tester.pumpAndSettle();
 
-    expect(movementRepository.loadedAnimalIds, [_animal.id, _animal.id]);
-    expect(find.text('Rotación de pastoreo'), findsOneWidget);
-    expect(find.text(AnimalDetailStrings.pendingSync), findsOneWidget);
-    expect(
-      find.text('${AnimalDetailStrings.moved(1, 'Potrero destino')} ${AnimalDetailStrings.savedOffline}'),
-      findsOneWidget,
-    );
+      expect(movementRepository.loadedAnimalIds, [_animal.id, _animal.id]);
+      expect(find.text('Rotación de pastoreo'), movedInitial ? findsOneWidget : findsNothing);
+      expect(find.text(AnimalDetailStrings.pendingSync), movedInitial ? findsOneWidget : findsNothing);
+      expect(
+        find.text('${AnimalDetailStrings.moved(1, 'Potrero destino')} ${AnimalDetailStrings.savedOffline}'),
+        findsOneWidget,
+      );
 
-    await tester.tap(find.text(AnimalDetailStrings.generalTab));
-    await tester.pumpAndSettle();
-    expect(find.text('Potrero destino'), findsOneWidget);
-    expect(find.byType(Image), findsOneWidget);
-  });
+      await tester.tap(find.text(AnimalDetailStrings.generalTab));
+      await tester.pumpAndSettle();
+      expect(find.text(movedInitial ? 'Potrero destino' : _animal.lotName), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
+    });
+  }
 }
 
 AnimalGenealogyCubit _createGenealogyCubit() => AnimalGenealogyCubit(

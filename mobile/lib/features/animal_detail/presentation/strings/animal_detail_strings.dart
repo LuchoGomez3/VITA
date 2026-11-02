@@ -282,6 +282,14 @@ class AnimalDetailStrings {
   static String moved(int count, String destination) =>
       count == 1 ? 'Se movió 1 animal a $destination.' : 'Se movieron $count animales a $destination.';
 
+  /// La confirmación describe los destinos guardados aunque el animal de la
+  /// ficha haya sido quitado de la selección o falle la recarga del detalle.
+  static String movementConfirmation(int count, Map<String, String> destinations) {
+    if (destinations.length == 1) return moved(count, destinations.values.single);
+    if (destinations.isEmpty) return count == 1 ? 'Se movió 1 animal.' : 'Se movieron $count animales.';
+    return 'Se movieron $count animales a ${destinations.length} potreros.';
+  }
+
   /// Aclaración offline de la confirmación.
   static const savedOffline = 'Queda guardado en el celular y se sincroniza con señal.';
 }

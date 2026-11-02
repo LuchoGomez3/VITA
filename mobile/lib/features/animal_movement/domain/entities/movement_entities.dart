@@ -72,5 +72,8 @@ sealed class GroupMovementSummary with _$GroupMovementSummary {
   const factory GroupMovementSummary({
     required int movedCount,
     required int alreadyThereCount,
+
+    /// Destinos efectivamente usados, por UUID y nombre al registrar.
+    @Default({}) Map<String, String> destinations,
   }) = _GroupMovementSummary;
 }
