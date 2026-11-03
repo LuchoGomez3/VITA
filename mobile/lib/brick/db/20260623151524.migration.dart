@@ -10,12 +10,10 @@ part of 'schema.g.dart';
 // The migration version must **always** mirror the file name
 
 const List<MigrationCommand> _migration_20260623151524_up = [
-  InsertColumn('deleted_at', Column.datetime, onTable: 'BrickAnimalModel')
+  InsertColumn('deleted_at', Column.datetime, onTable: 'BrickAnimalModel'),
 ];
 
-const List<MigrationCommand> _migration_20260623151524_down = [
-  DropColumn('deleted_at', onTable: 'BrickAnimalModel')
-];
+const List<MigrationCommand> _migration_20260623151524_down = [DropColumn('deleted_at', onTable: 'BrickAnimalModel')];
 
 //
 // DO NOT EDIT BELOW THIS LINE

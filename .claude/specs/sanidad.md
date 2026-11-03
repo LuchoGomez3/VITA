@@ -113,8 +113,28 @@ comercializados."
 
 ## Estado de la Etapa 1 (maquetado)
 
-_A completar en `feature/pantalla-sanidad`._ Reusa `AppStatusChip` (de
-Campo) y `AppEarTagBadge` (de Pesaje) para las caravanas del grid.
+🧱 Maquetado en `feature/pantalla-sanidad`: `lib/features/health/` implementa
+`HealthPage` (`StatefulWidget`) con `HealthTabSelector` de 3 tabs habilitadas
+(Vacunaciones / Tratamientos / Alertas) y FAB "+ Aplicar" (visible solo en la
+tab Vacunaciones) que navega a `ApplyVaccinationPage`. Acceso vía atajo de
+desarrollo desde `livestock_page.dart`, rutas `/sanidad` y
+`/sanidad/aplicar-vacunacion`.
+
+Reusa `AppStatusChip` (de Campo) y `AppEarTagBadge` (de Pesaje, PR #38) para
+las caravanas del grid de Aplicar vacunación, y `AppTimeline`/`AppTimelineItem`
+(ya existentes en `core/widgets/`) para el historial de tratamientos.
+
+Promueve `FieldSyncBadge` a `core/widgets/app_sync_badge.dart`
+(`AppSyncBadge`) al necesitarse también en el header de Sanidad — mismo
+criterio que `AppEarTagBadge`; `field_list_page.dart`/`field_map_page.dart` se
+actualizaron para usar el widget promovido. Agrega el token
+`AppColors.earTagCeleste` (caravana `005 0772`) y `AppColors.warning` (tono
+`warn` de las alertas) a `core/theme/app_colors.dart`.
+
+**Depende de `feature/pantalla-pesaje` (PR #38) sin mergear todavía**: esta
+rama sale de `develop` con los commits de #38 encima para poder reusar
+`AppEarTagBadge` sin duplicarlo; se debe rebasar sobre `develop` una vez que
+#38 se mergee, antes de abrir el PR de Sanidad.
 
 ## Explícitamente fuera de alcance de esta iniciativa
 

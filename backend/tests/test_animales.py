@@ -1,17 +1,19 @@
 """Tests de PRO-22: registro de animal (+ pesaje inicial)."""
 
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import select
 
+from api.modules.animales.models import Animal
 from api.modules.establecimientos.models import (
     Establecimiento,
     UsuarioEstablecimiento,
 )
-from api.modules.lotes.models import Lote
 from api.modules.pesajes.models import Pesaje
 from api.shared.enums import RolUsuario
+from tests.factories import crear_lote
 
 
 @pytest.fixture
@@ -32,7 +34,7 @@ async def establecimiento_con_lote(session, usuario_actual):
             activo=True,
         )
     )
-    lote = Lote(establecimiento_id=est.id, nombre="Lote 1")
+    lote = crear_lote(est.id, "Lote 1")
     session.add(lote)
     await session.commit()
     return est, lote
@@ -44,13 +46,20 @@ def _payload(est_id, lote_id, **overrides):
         "sexo": "hembra",
         "raza": "Angus",
         "fecha_nacimiento": "2024-01-15",
-        "lote_id": str(lote_id),
+        "lote_id": str(lote_id) if lote_id is not None else None,
         "establecimiento_id": str(est_id),
         "peso_inicial": "120.500",
         "metodo_pesaje": "manual",
     }
     base.update(overrides)
     return base
+
+
+def _timestamp_utc(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
 
 
 @pytest.mark.anyio
@@ -171,7 +180,7 @@ async def test_lote_de_otro_establecimiento(
     )
     session.add(otro_est)
     await session.flush()
-    lote_ajeno = Lote(establecimiento_id=otro_est.id, nombre="Lote B")
+    lote_ajeno = crear_lote(otro_est.id, "Lote B")
     session.add(lote_ajeno)
     await session.commit()
 
@@ -179,6 +188,45 @@ async def test_lote_de_otro_establecimiento(
         "/api/v1/animales",
         json=_payload(est.id, lote_ajeno.id, nro_caravana_rfid="444444444444444"),
     )
+    assert resp.status_code == 422
+    assert resp.json()["errors"][0]["code"] == "lote_no_pertenece_establecimiento"
+
+
+@pytest.mark.anyio
+async def test_alta_sin_lote_deja_el_animal_sin_asignar(
+    auth_client, session, establecimiento_con_lote
+):
+    """El animal puede ingresar sin lote y asignarse después.
+
+    Es el caso del alta en la manga: se identifica la hacienda al entrar y
+    recién más tarde se decide a qué potrero va.
+    """
+    est, _ = establecimiento_con_lote
+    resp = await auth_client.post(
+        "/api/v1/animales",
+        json=_payload(est.id, None, nro_caravana_rfid="555555555555555"),
+    )
+
+    assert resp.status_code == 201
+    creado = resp.json()["data"]
+    assert creado["lote_id"] is None
+
+    guardado = await session.get(Animal, UUID(creado["id"]))
+    assert guardado is not None
+    assert guardado.lote_id is None
+
+
+@pytest.mark.anyio
+async def test_alta_con_lote_conserva_la_validacion_de_pertenencia(
+    auth_client, establecimiento_con_lote
+):
+    """Volver opcional el lote no aflojó el control cuando sí se informa."""
+    est, _ = establecimiento_con_lote
+    resp = await auth_client.post(
+        "/api/v1/animales",
+        json=_payload(est.id, uuid4(), nro_caravana_rfid="666666666666666"),
+    )
+
     assert resp.status_code == 422
     assert resp.json()["errors"][0]["code"] == "lote_no_pertenece_establecimiento"
 
@@ -449,7 +497,7 @@ async def test_put_a_lote_de_otro_establecimiento_falla(
     )
     session.add(otro_est)
     await session.flush()
-    lote_ajeno = Lote(establecimiento_id=otro_est.id, nombre="Lote C")
+    lote_ajeno = crear_lote(otro_est.id, "Lote C")
     session.add(lote_ajeno)
     await session.commit()
 
@@ -476,7 +524,6 @@ async def test_put_actualiza_multiples_campos(auth_client, establecimiento_con_l
             "raza": "Brangus",
             "fecha_nacimiento": "2023-05-05",
             "pelaje": "colorado",
-            "observaciones": "revisar",
             "estado": "vendido",
             "deleted_at": "2025-06-02T00:00:00",
             "updated_at": "2025-06-01T00:00:00",
@@ -487,6 +534,103 @@ async def test_put_actualiza_multiples_campos(auth_client, establecimiento_con_l
     assert data["raza"] == "Brangus"
     assert data["fecha_nacimiento"] == "2023-05-05"
     assert data["pelaje"] == "colorado"
-    assert data["observaciones"] == "revisar"
     assert data["estado"] == "vendido"
+    assert data["estado_actualizado_en"].startswith("2025-06-01T00:00:00")
     assert data["deleted_at"] is not None
+
+
+async def _crear_animal_vendido(auth_client, establecimiento_id, lote_id):
+    animal_id = str(uuid4())
+    alta = await auth_client.post(
+        "/api/v1/animales",
+        json=_payload(
+            establecimiento_id,
+            lote_id,
+            id=animal_id,
+            updated_at="2025-01-01T00:00:00Z",
+        ),
+    )
+    assert alta.status_code == 201
+    venta = await auth_client.put(
+        f"/api/v1/animales/{animal_id}",
+        json={"estado": "vendido", "updated_at": "2025-06-01T00:00:00Z"},
+    )
+    assert venta.status_code == 200
+    return animal_id, venta.json()["data"]["estado_actualizado_en"]
+
+
+@pytest.mark.anyio
+async def test_put_de_otro_campo_conserva_fecha_del_estado(
+    auth_client, establecimiento_con_lote
+):
+    est, lote = establecimiento_con_lote
+    animal_id, fecha_estado = await _crear_animal_vendido(auth_client, est.id, lote.id)
+
+    respuesta = await auth_client.put(
+        f"/api/v1/animales/{animal_id}",
+        json={"raza": "Hereford", "updated_at": "2025-07-01T00:00:00Z"},
+    )
+
+    assert respuesta.status_code == 200
+    data = respuesta.json()["data"]
+    assert data["raza"] == "Hereford"
+    assert data["estado"] == "vendido"
+    assert _timestamp_utc(data["estado_actualizado_en"]) == _timestamp_utc(fecha_estado)
+
+
+@pytest.mark.anyio
+async def test_put_del_mismo_estado_conserva_su_fecha(
+    auth_client, establecimiento_con_lote
+):
+    est, lote = establecimiento_con_lote
+    animal_id, fecha_estado = await _crear_animal_vendido(auth_client, est.id, lote.id)
+
+    respuesta = await auth_client.put(
+        f"/api/v1/animales/{animal_id}",
+        json={"estado": "vendido", "updated_at": "2025-07-01T00:00:00Z"},
+    )
+
+    assert respuesta.status_code == 200
+    data = respuesta.json()["data"]
+    assert data["estado"] == "vendido"
+    assert _timestamp_utc(data["estado_actualizado_en"]) == _timestamp_utc(fecha_estado)
+
+
+@pytest.mark.anyio
+async def test_put_rancio_no_cambia_estado_ni_su_fecha(
+    auth_client, establecimiento_con_lote
+):
+    est, lote = establecimiento_con_lote
+    animal_id, fecha_estado = await _crear_animal_vendido(auth_client, est.id, lote.id)
+
+    respuesta = await auth_client.put(
+        f"/api/v1/animales/{animal_id}",
+        json={"estado": "muerto", "updated_at": "2025-05-01T00:00:00Z"},
+    )
+
+    assert respuesta.status_code == 200
+    data = respuesta.json()["data"]
+    assert data["estado"] == "vendido"
+    assert _timestamp_utc(data["estado_actualizado_en"]) == _timestamp_utc(fecha_estado)
+
+
+@pytest.mark.anyio
+async def test_la_api_ya_no_escribe_observaciones_en_el_animal(
+    auth_client, establecimiento_con_lote
+):
+    """Las notas viven en /observaciones_animales (adr-0007). Un cliente viejo que
+    todavía manda el campo no falla: se ignora."""
+    est, lote = establecimiento_con_lote
+    cid = str(uuid4())
+    alta = await auth_client.post(
+        "/api/v1/animales",
+        json=_payload(est.id, lote.id, id=cid, observaciones="Llegó flaca"),
+    )
+    edicion = await auth_client.put(
+        f"/api/v1/animales/{cid}", json={"observaciones": "Recuperó estado"}
+    )
+
+    assert alta.status_code == 201
+    assert edicion.status_code == 200
+    assert alta.json()["data"]["observaciones"] is None
+    assert edicion.json()["data"]["observaciones"] is None

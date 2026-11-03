@@ -108,6 +108,21 @@ Un modelo Brick describe como se guarda una entidad en SQLite y como se
 serializa contra REST. Por ejemplo, `animal.model.dart` define los campos del
 animal local, los nombres esperados por el backend y que datos son solo mobile.
 
+El animal conserva dos estados distintos:
+
+- `productiveStatus`: indica si esta activo, vendido, muerto o dado de baja.
+- `syncStatus`: indica si el registro local esta pendiente, sincronizado o
+  rechazado por backend.
+
+No deben intercambiarse. En el alcance actual, `productiveStatus` es de lectura:
+se descarga desde backend y no se envia en el POST generico de alta. La futura
+venta, muerte o baja debera tener un comando offline-first especifico que cambie
+SQLite y encole el `PUT /animales/{id}`; esa transicion todavia no esta
+implementada. Las filas creadas antes de incorporar el estado productivo se leen
+como `active`: al introducir esta migracion se verifico que todos los animales
+existentes en backend estaban activos. Un valor desconocido recibido desde
+backend o SQLite se conserva como `unknown`.
+
 Estos modelos no son entidades de dominio. Son modelos tecnicos de
 persistencia/sync.
 
@@ -185,6 +200,38 @@ El alta es offline-first:
 6. `AuthenticatedBackendClient` publica un `BackendSyncResult`.
 7. `AnimalBrickStore` actualiza el registro local:
    `pending -> synchronized` o `pending -> rejected`.
+
+## Flujo offline-first de lotes y movimientos
+
+La gestión de lotes utiliza SQLite como fuente de verdad local y sincroniza
+contra los contratos backend acordados:
+
+```txt
+Field UI
+  -> casos de uso de field
+  -> repositorios de field
+  -> BrickLotStore / BrickAnimalLotMovementStore / AnimalBrickStore
+  -> SQLite + cola REST
+```
+
+`BrickLotModel` conserva la delimitación cartesiana local versionada. Sus
+coordenadas pertenecen al lienzo `0..1000`; no son latitud/longitud ni GeoJSON.
+Además persiste superficie en décimas de hectárea, forraje, agua, estado y los
+timestamps necesarios para el esquema LWW.
+
+El movimiento entre lotes actualiza la ubicación de los animales y guarda un
+`BrickAnimalLotMovementModel` con origen, destino, animales, fecha y motivo.
+Ambas escrituras se ejecutan dentro de una única transacción SQLite para no
+dejar un traslado parcial si alguna operación falla. Lotes y movimientos se
+encolan siempre para sincronización; el login también envía pendientes y luego
+descarga la representación autoritativa en el orden lotes, animales y
+movimientos.
+
+La lectura `LotBrickStore.getLocalLots` excluye tombstones por defecto.
+El historial de movimientos usa `includeDeleted: true` para conservar los
+nombres de potreros anteriores. La deduplicación y el filtro de establecimiento
+se aplican también en esa lectura; los destinos de nuevos traslados siguen
+usando únicamente lotes vigentes y activos.
 
 ## Codigo generado
 

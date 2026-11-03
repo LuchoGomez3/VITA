@@ -62,6 +62,10 @@ class CuitInputFormatter extends TextInputFormatter {
       allDigits.substring(0, acceptedLength),
     );
     final storedValidation = validationError(formattedValue);
+    final selection = _selectionAfterFormatting(
+      source: newValue,
+      formattedText: formattedValue,
+    );
 
     onValidationChanged(
       hasInvalidCharacters
@@ -73,7 +77,59 @@ class CuitInputFormatter extends TextInputFormatter {
 
     return TextEditingValue(
       text: formattedValue,
-      selection: TextSelection.collapsed(offset: formattedValue.length),
+      selection: selection,
     );
+  }
+
+  TextSelection _selectionAfterFormatting({
+    required TextEditingValue source,
+    required String formattedText,
+  }) {
+    if (!source.selection.isValid) {
+      return TextSelection.collapsed(offset: formattedText.length);
+    }
+
+    // La mascara agrega y quita guiones, por eso la posicion se conserva por
+    // cantidad de digitos a la izquierda de cada extremo de la seleccion.
+    return TextSelection(
+      baseOffset: _formattedOffsetFor(
+        source.text,
+        source.selection.baseOffset,
+        formattedText,
+      ),
+      extentOffset: _formattedOffsetFor(
+        source.text,
+        source.selection.extentOffset,
+        formattedText,
+      ),
+      affinity: source.selection.affinity,
+      isDirectional: source.selection.isDirectional,
+    );
+  }
+
+  int _formattedOffsetFor(
+    String sourceText,
+    int sourceOffset,
+    String formattedText,
+  ) {
+    final safeOffset = sourceOffset.clamp(0, sourceText.length);
+    final digitsBeforeCursor = _digitsOnly(
+      sourceText.substring(0, safeOffset),
+    ).length;
+    if (digitsBeforeCursor == 0) {
+      return 0;
+    }
+
+    var seenDigits = 0;
+    for (var index = 0; index < formattedText.length; index++) {
+      if (RegExp(r'\d').hasMatch(formattedText[index])) {
+        seenDigits++;
+        if (seenDigits == digitsBeforeCursor) {
+          return index + 1;
+        }
+      }
+    }
+
+    return formattedText.length;
   }
 }

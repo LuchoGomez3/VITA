@@ -3,7 +3,7 @@ class WelcomeStrings {
   const WelcomeStrings._();
 
   /// Titulo principal de la pantalla de bienvenida.
-  static const title = 'Mayoral';
+  static const title = 'VITA';
 
   /// Subtitulo de la pantalla de bienvenida.
   static const subtitle = 'Trazabilidad ganadera para productores de Córdoba. Funciona también sin señal en el campo.';
@@ -122,6 +122,8 @@ class SignUpStrings {
   /// Texto del boton mientras el backend procesa el registro.
   static const registeringButton = 'Registrando cuenta...';
 
+  /// Texto mostrado durante el inicio automatico de sesion.
+  /// Texto mostrado mientras se preparan los datos locales.
   /// Prefijo del saludo mostrado al completar el registro.
   static const successWelcomePrefix = '¡Bienvenido ';
 
@@ -146,8 +148,8 @@ class SignUpStrings {
   /// Accion para comenzar la configuracion del establecimiento.
   static const configureEstablishmentButton = 'Configurar mi establecimiento';
 
-  /// Accion para iniciar sesion luego de crear la cuenta.
-  static const signInAfterRegistrationButton = 'Ir a iniciar sesion';
+  /// Accion que permite posponer el registro del primer establecimiento.
+  static const goToHomeButton = 'Ir al inicio';
 
   /// Texto previo al link de inicio de sesion para usuarios existentes.
   static const alreadyHaveAccountPrefix = '¿Ya tenés cuenta? ';

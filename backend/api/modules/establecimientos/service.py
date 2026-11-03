@@ -3,11 +3,13 @@
 import re
 from uuid import UUID
 
+from shapely.geometry import Polygon
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.modules.establecimientos.exceptions import (
     EstablecimientoNoEncontradoError,
+    PoligonoInvalidoError,
     RenspaDuplicadoError,
     RenspaFormatoInvalidoError,
     RenspaVacioError,
@@ -22,6 +24,7 @@ from api.modules.establecimientos.repository import (
     UsuarioEstablecimientoRepository,
 )
 from api.modules.establecimientos.schemas import (
+    EstablecimientoConRolRead,
     EstablecimientoCreate,
     EstablecimientoRead,
     EstablecimientoUpdate,
@@ -43,7 +46,7 @@ class EstablecimientoService:
 
     async def crear(
         self, current_user: Usuario, data: EstablecimientoCreate
-    ) -> EstablecimientoRead:
+    ) -> EstablecimientoConRolRead:
         """Crea el establecimiento y la membresía owner en la misma transacción."""
         nro_renspa = data.nro_renspa.strip()
         if not nro_renspa:
@@ -55,6 +58,8 @@ class EstablecimientoService:
 
         if data.superficie_ha is not None and data.superficie_ha <= 0:
             raise SuperficieInvalidaError()
+
+        _validar_poligono(data.poligono)
 
         # Pre-chequeo de unicidad para un error de dominio claro; la constraint
         # de la DB es la garantía final (manejada abajo ante carreras).
@@ -91,28 +96,31 @@ class EstablecimientoService:
             await self.session.rollback()
             raise RenspaDuplicadoError(nro_renspa) from exc
 
-        return EstablecimientoRead.model_validate(establecimiento)
+        return self._representar_con_rol(establecimiento, RolUsuario.owner)
 
-    async def listar(self, current_user: Usuario) -> list[EstablecimientoRead]:
+    async def listar(self, current_user: Usuario) -> list[EstablecimientoConRolRead]:
         establecimientos = await self.repository.list_by_usuario(current_user.id)
-        return [EstablecimientoRead.model_validate(e) for e in establecimientos]
+        return [
+            self._representar_con_rol(establecimiento, rol)
+            for establecimiento, rol in establecimientos
+        ]
 
     async def detalle(
         self, current_user: Usuario, establecimiento_id: UUID
-    ) -> EstablecimientoRead:
-        establecimiento = await self._obtener_con_acceso(
+    ) -> EstablecimientoConRolRead:
+        establecimiento, membership = await self._obtener_con_acceso(
             current_user, establecimiento_id
         )
-        return EstablecimientoRead.model_validate(establecimiento)
+        return self._representar_con_rol(establecimiento, membership.rol)
 
     async def actualizar(
         self,
         current_user: Usuario,
         establecimiento_id: UUID,
         data: EstablecimientoUpdate,
-    ) -> EstablecimientoRead:
+    ) -> EstablecimientoConRolRead:
         """Actualiza los campos provistos, re-validando cada uno igual que en `crear`."""
-        establecimiento = await self._obtener_con_acceso(
+        establecimiento, membership = await self._obtener_con_acceso(
             current_user, establecimiento_id
         )
 
@@ -155,6 +163,7 @@ class EstablecimientoService:
                 setattr(establecimiento, campo, valor)
 
         if data.poligono is not None:
+            _validar_poligono(data.poligono)
             establecimiento.poligono = _poligono_a_dicts(data.poligono)
 
         try:
@@ -163,11 +172,11 @@ class EstablecimientoService:
             await self.session.rollback()
             raise RenspaDuplicadoError(nro_renspa) from exc
 
-        return EstablecimientoRead.model_validate(establecimiento)
+        return self._representar_con_rol(establecimiento, membership.rol)
 
     async def _obtener_con_acceso(
         self, current_user: Usuario, establecimiento_id: UUID
-    ) -> Establecimiento:
+    ) -> tuple[Establecimiento, UsuarioEstablecimiento]:
         establecimiento = await self.repository.get_by_id(establecimiento_id)
         if establecimiento is None:
             raise EstablecimientoNoEncontradoError()
@@ -179,7 +188,14 @@ class EstablecimientoService:
         if membership is None:
             raise EstablecimientoNoEncontradoError()
 
-        return establecimiento
+        return establecimiento, membership
+
+    @staticmethod
+    def _representar_con_rol(
+        establecimiento: Establecimiento, rol: RolUsuario
+    ) -> EstablecimientoConRolRead:
+        datos = EstablecimientoRead.model_validate(establecimiento).model_dump()
+        return EstablecimientoConRolRead(**datos, rol=rol)
 
     def _validar_cuit_opcional(self, cuit: str | None) -> str | None:
         if cuit is None:
@@ -194,6 +210,29 @@ class EstablecimientoService:
             raise CuitInvalidoError(cuit)
 
         return cuit_normalizado
+
+
+def _validar_poligono(vertices) -> None:
+    """Exige un polígono cerrable: 3+ vértices WGS84, orden único y sin cruces.
+
+    El polígono es opcional (el alta puede llevar solo `superficie_ha`), así que
+    `None` pasa. Los lados se evalúan en el plano lat/long: para el tamaño de un
+    campo la distorsión no cambia si dos lados se cruzan.
+    """
+    if vertices is None:
+        return
+    if len(vertices) < 3:
+        raise PoligonoInvalidoError("necesita al menos 3 vértices")
+    if len({v.orden for v in vertices}) != len(vertices):
+        raise PoligonoInvalidoError("hay vértices con el mismo orden")
+    for v in vertices:
+        if not (-90 <= v.latitud <= 90 and -180 <= v.longitud <= 180):
+            raise PoligonoInvalidoError("hay coordenadas fuera de rango")
+
+    ordenados = sorted(vertices, key=lambda v: v.orden)
+    poligono = Polygon([(v.longitud, v.latitud) for v in ordenados])
+    if not poligono.is_valid or poligono.area == 0:
+        raise PoligonoInvalidoError("los lados se cruzan o no encierran superficie")
 
 
 def _poligono_a_dicts(vertices) -> list[dict] | None:

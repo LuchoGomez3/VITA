@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 
-/// Resumen mock de la identificación capturada en el paso anterior.
+/// Resumen de la identificación capturada en el paso anterior.
 class AnimalIdentificationSummary extends StatelessWidget {
   /// Crea un resumen visual de la caravana identificada.
   const AnimalIdentificationSummary({
@@ -42,7 +42,7 @@ class AnimalIdentificationSummary extends StatelessWidget {
                 vertical: AppSpacing.xxs,
               ),
               decoration: BoxDecoration(
-                color: AppColors.earTagYellow,
+                color: AppColors.backgroundSecondary,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Text(

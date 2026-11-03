@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/entities/boundary_point.dart';
+import 'package:frontend_mayoral/features/establishment_register/domain/services/field_boundary_geometry.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_bloc.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_draft_validation.dart';
 
@@ -13,7 +15,15 @@ void main() {
       departamento: 'Río Cuarto',
       localidad: 'Coronel Moldes',
       ubicacionConfirmadaPorGps: true,
+      superficieManualHectareas: 320,
     );
+
+    const square = [
+      BoundaryPoint(latitud: -33.60, longitud: -64.60),
+      BoundaryPoint(latitud: -33.60, longitud: -64.58),
+      BoundaryPoint(latitud: -33.62, longitud: -64.58),
+      BoundaryPoint(latitud: -33.62, longitud: -64.60),
+    ];
 
     test('a freshly initialized draft has every step incomplete', () {
       final draft = RegisterEstablishmentDraft.initial();
@@ -21,7 +31,8 @@ void main() {
       expect(draft.isIdentificationStepValid, isFalse);
       expect(draft.isRenspaStepValid, isFalse);
       expect(draft.isLocationStepValid, isFalse);
-      expect(draft.isSurfaceStepValid, isTrue);
+      expect(draft.isSurfaceStepValid, isFalse);
+      expect(draft.surfaceStepIssue, SurfaceStepIssue.missingSurface);
     });
 
     test('a fully completed draft is valid for every step', () {
@@ -55,6 +66,43 @@ void main() {
       expect(validDraft.copyWith(provincia: '').isLocationStepValid, isFalse);
       expect(validDraft.copyWith(departamento: '').isLocationStepValid, isFalse);
       expect(validDraft.copyWith(localidad: '').isLocationStepValid, isFalse);
+    });
+
+    test('surface step accepts a hand-entered surface without a polygon', () {
+      expect(validDraft.isSurfaceStepValid, isTrue);
+      expect(validDraft.superficieHectareas, 320);
+    });
+
+    test('surface step rejects a missing or non-positive hand-entered surface', () {
+      expect(
+        validDraft.copyWith(superficieManualHectareas: null).surfaceStepIssue,
+        SurfaceStepIssue.missingSurface,
+      );
+      expect(
+        validDraft.copyWith(superficieManualHectareas: 0).surfaceStepIssue,
+        SurfaceStepIssue.missingSurface,
+      );
+    });
+
+    test('surface step rejects a polygon with fewer than 3 vertices, even with a hand-entered surface', () {
+      final draft = validDraft.copyWith(poligono: square.sublist(0, 2));
+
+      expect(draft.surfaceStepIssue, SurfaceStepIssue.tooFewVertices);
+      expect(draft.superficieHectareas, 0);
+    });
+
+    test('surface step rejects a polygon whose sides cross', () {
+      final bowTie = [square[0], square[2], square[1], square[3]];
+
+      expect(validDraft.copyWith(poligono: bowTie).surfaceStepIssue, SurfaceStepIssue.selfIntersecting);
+    });
+
+    test('a valid polygon sets the surface from its area, ignoring the hand-entered one', () {
+      final draft = validDraft.copyWith(poligono: square);
+
+      expect(draft.isSurfaceStepValid, isTrue);
+      expect(draft.superficieHectareas, FieldBoundaryGeometry.areaHectares(square));
+      expect(draft.superficieHectareas, isNot(320));
     });
 
     test('review requires every previous step to be valid', () {

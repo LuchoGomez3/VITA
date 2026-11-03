@@ -12,10 +12,11 @@ class SecureStorageKeys {
   /// Datos completos de los establecimientos disponibles para la sesión.
   static const establishmentCatalog = 'establishment_catalog_v1';
 
-  /// Marker local que evita repetir el bootstrap offline por usuario.
-  static String initialDataSyncCompleted(String userId) {
-    // La versión 4 incorpora el catálogo completo de establecimientos. Cambiar
-    // la versión ejecuta una vez el nuevo bootstrap en instalaciones existentes.
-    return 'initial_data_sync_completed_v4_$userId';
-  }
+  /// Color de la cabecera de Perfil y estado de la foto del usuario, con lo
+  /// que falta subir cuando vuelva la conexión.
+  static const profileAppearance = 'profile_appearance_v1';
+
+  /// Último equipo traído del servidor, por establecimiento, para verlo sin
+  /// conexión. Trae emails de otras personas: se borra al cerrar sesión.
+  static const teamSnapshot = 'team_snapshot_v1';
 }

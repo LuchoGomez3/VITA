@@ -2,9 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
+import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
@@ -21,6 +23,7 @@ void main() {
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
+        lotBrickStore: _FakeLotBrickStore(),
         remoteDataSource: remoteDataSource,
       );
 
@@ -40,6 +43,7 @@ void main() {
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
+        lotBrickStore: _FakeLotBrickStore(),
         remoteDataSource: remoteDataSource,
       );
 
@@ -48,6 +52,10 @@ void main() {
       expect(result, isA<Success<AnimalDetail>>());
       expect(remoteDataSource.calls, 1);
       expect(brickStore.cachedAnimals.single.localId, _animalId);
+      expect(
+        brickStore.cachedAnimals.single.productiveStatus,
+        BrickAnimalProductiveStatus.sold,
+      );
       final detail = (result as Success<AnimalDetail>).data;
       expect(detail.id, _animalId);
       expect(detail.syncStatus, AnimalSyncStatus.synchronized);
@@ -62,6 +70,7 @@ void main() {
         brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
         categoriaBrickStore: categoriaStore,
         pesajeBrickStore: pesajeStore,
+        lotBrickStore: _FakeLotBrickStore(),
         remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
       );
 
@@ -69,7 +78,7 @@ void main() {
 
       final detail = (result as Success<AnimalDetail>).data;
       expect(pesajeStore.pulledAnimalId, _animalId);
-      expect(categoriaStore.pullCalls, 1);
+      expect(categoriaStore.readCalls, 1);
       expect(detail.categoryName, 'Novillito');
       expect(detail.weightHistory.map((record) => record.weightKg), [210, 245]);
       expect(detail.currentWeight, 245);
@@ -77,17 +86,31 @@ void main() {
       expect(detail.weighingMethod, AnimalWeighingMethod.bluetoothScale);
     });
 
+    test('resolves the lot name for animals pulled without it', () async {
+      final repository = AnimalDetailRepositoryImpl(
+        brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal.copyWith(lotName: '')),
+        categoriaBrickStore: _FakeCategoriaBrickStore(),
+        pesajeBrickStore: _FakePesajeBrickStore(),
+        lotBrickStore: _FakeLotBrickStore(lots: {'lot-id': 'El Bajo'}),
+        remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
+      );
+
+      final result = await repository.getById(_animalId);
+
+      expect((result as Success<AnimalDetail>).data.lotName, 'El Bajo');
+    });
+
     test('uses cached related data when remote pulls fail', () async {
       final repository = AnimalDetailRepositoryImpl(
         brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
         categoriaBrickStore: _FakeCategoriaBrickStore(
           categorias: [_categoria],
-          failPull: true,
         ),
         pesajeBrickStore: _FakePesajeBrickStore(
           pesajes: [_firstPesaje],
           failPull: true,
         ),
+        lotBrickStore: _FakeLotBrickStore(),
         remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
       );
 
@@ -96,6 +119,22 @@ void main() {
       final detail = (result as Success<AnimalDetail>).data;
       expect(detail.categoryName, 'Novillito');
       expect(detail.weightHistory.single.weightKg, 210);
+    });
+
+    test('retries a rejected animal through the Brick store', () async {
+      final brickStore = _FakeAnimalBrickStore(localAnimal: _brickAnimal);
+      final repository = AnimalDetailRepositoryImpl(
+        brickStore: brickStore,
+        categoriaBrickStore: _FakeCategoriaBrickStore(),
+        pesajeBrickStore: _FakePesajeBrickStore(),
+        lotBrickStore: _FakeLotBrickStore(),
+        remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
+      );
+
+      final result = await repository.retrySync(_animalId);
+
+      expect(result, const Result<void>.success(null));
+      expect(brickStore.retriedAnimalIds, [_animalId]);
     });
   });
 }
@@ -123,7 +162,6 @@ final _brickAnimal = BrickAnimalModel(
 
 final _categoria = BrickCategoriaModel(
   localId: 'category-id',
-  establishmentId: 'establishment-id',
   name: 'Novillito',
   createdAt: DateTime(2025),
   updatedAt: DateTime(2025),
@@ -141,6 +179,7 @@ final _firstPesaje = BrickPesajeModel(
 
 final _latestPesaje = BrickPesajeModel(
   localId: 'weighing-2',
+  photoUrl: 'https://example.com/ignored-backend-photo.jpg',
   establishmentId: 'establishment-id',
   animalId: _animalId,
   weightKg: 245,
@@ -157,6 +196,7 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
 
   final BrickAnimalModel? localAnimal;
   final List<BrickAnimalModel> cachedAnimals = [];
+  final List<String> retriedAnimalIds = [];
 
   @override
   Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) async {
@@ -195,6 +235,11 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   Future<void> pullRemoteAnimals(String establishmentId) async {}
 
   @override
+  Future<void> retryRejectedAnimal(String animalId) async {
+    retriedAnimalIds.add(animalId);
+  }
+
+  @override
   Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) async {
     return animal;
   }
@@ -225,6 +270,8 @@ class _FakeAnimalDetailRemoteDataSource extends AnimalDetailRemoteDataSource {
       fatherId: null,
       coat: null,
       observations: null,
+      productiveStatus: 'vendido',
+      productiveStatusChangedAt: DateTime(2025, 3, 14),
       createdAt: DateTime(2025, 3, 14),
       updatedAt: DateTime(2025, 3, 14),
     );
@@ -234,30 +281,19 @@ class _FakeAnimalDetailRemoteDataSource extends AnimalDetailRemoteDataSource {
 class _FakeCategoriaBrickStore implements CategoriaBrickStore {
   _FakeCategoriaBrickStore({
     this.categorias = const [],
-    this.failPull = false,
   });
 
   final List<BrickCategoriaModel> categorias;
-  final bool failPull;
-  int pullCalls = 0;
+  int readCalls = 0;
 
   @override
-  Future<List<BrickCategoriaModel>> getLocalCategorias(
-    String establishmentId,
-  ) async => categorias;
-
-  @override
-  Future<void> pullRemoteCategorias(String establishmentId) async {
-    pullCalls += 1;
-    if (failPull) {
-      throw Exception('offline');
-    }
+  Future<List<BrickCategoriaModel>> getLocalCategorias() async {
+    readCalls += 1;
+    return categorias;
   }
 
   @override
-  Future<BrickCategoriaModel> upsertCategoria(
-    BrickCategoriaModel categoria,
-  ) async => categoria;
+  Future<void> pullRemoteCategorias() async {}
 }
 
 class _FakePesajeBrickStore implements PesajeBrickStore {
@@ -308,4 +344,30 @@ class _FakePesajeBrickStore implements PesajeBrickStore {
 class _FakeTokenProvider implements BackendAccessTokenProvider {
   @override
   Future<String?> getAccessToken() async => 'token';
+}
+
+class _FakeLotBrickStore implements LotBrickStore {
+  _FakeLotBrickStore({this.lots = const {}});
+
+  /// Nombre de cada potrero, por id.
+  final Map<String, String> lots;
+
+  @override
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId, {bool includeDeleted = false}) async => [
+    for (final MapEntry(key: id, value: name) in lots.entries)
+      BrickLotModel(
+        localId: id,
+        establishmentId: establishmentId,
+        name: name,
+        boundaryJson: '{}',
+        surfaceTenths: 0,
+        hasWater: false,
+        statusCode: 'activo',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      ),
+  ];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName}');
 }

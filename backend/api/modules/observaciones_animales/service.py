@@ -1,0 +1,271 @@
+"""Lógica de negocio del módulo observaciones de animales."""
+
+from datetime import UTC, datetime
+from uuid import UUID, uuid4
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from api.modules.animales.repository import AnimalRepository
+from api.modules.establecimientos.repository import UsuarioEstablecimientoRepository
+from api.modules.observaciones_animales.exceptions import (
+    AnimalNoPerteneceAlEstablecimientoError,
+    ObservacionBorradoNoPermitidoError,
+    ObservacionInmutableError,
+    ObservacionNoEncontradaError,
+    ObservacionSoloAutorError,
+)
+from api.modules.observaciones_animales.models import ObservacionAnimal
+from api.modules.observaciones_animales.repository import ObservacionAnimalRepository
+from api.modules.observaciones_animales.schemas import (
+    ObservacionAnimalCreate,
+    ObservacionAnimalRead,
+    ObservacionAnimalUpdate,
+)
+from api.modules.usuarios.models import Usuario
+from api.shared.enums import RolUsuario
+from api.shared.exceptions import EstablecimientoNoAutorizadoError
+from api.shared.sync import as_utc, gana_el_entrante
+
+# Pueden borrar cualquier observación del establecimiento, incluidas las migradas
+# sin autor (decisión de Ernesto, PO, en #56).
+ROLES_QUE_BORRAN_CUALQUIERA = {RolUsuario.owner, RolUsuario.admin}
+
+
+class ObservacionAnimalService:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+        self.repository = ObservacionAnimalRepository(session)
+        self.animal_repository = AnimalRepository(session)
+        self.membership_repository = UsuarioEstablecimientoRepository(session)
+
+    async def _es_miembro(
+        self, current_user: Usuario, establecimiento_id: UUID
+    ) -> bool:
+        membership = await self.membership_repository.get_membership(
+            current_user.id, establecimiento_id
+        )
+        return membership is not None
+
+    async def _exigir_acceso(
+        self, current_user: Usuario, establecimiento_id: UUID
+    ) -> None:
+        if not await self._es_miembro(current_user, establecimiento_id):
+            raise EstablecimientoNoAutorizadoError()
+
+    async def _observacion_accesible(
+        self, current_user: Usuario, observacion_id: UUID
+    ) -> ObservacionAnimal:
+        """Observación existente (incluso borrada) de un establecimiento del usuario.
+
+        Sin acceso responde 404, igual que si no existiera: no revela que la
+        observación existe en otro establecimiento.
+        """
+        observacion = await self.repository.get_by_id_including_deleted(observacion_id)
+        if observacion is None or not await self._es_miembro(
+            current_user, observacion.establecimiento_id
+        ):
+            raise ObservacionNoEncontradaError()
+        return observacion
+
+    def _exigir_autor(
+        self, current_user: Usuario, observacion: ObservacionAnimal
+    ) -> None:
+        """Solo el autor edita. Las notas migradas no tienen autor: nadie las edita."""
+        if observacion.autor_id is None or observacion.autor_id != current_user.id:
+            raise ObservacionSoloAutorError()
+
+    async def _exigir_permiso_de_borrado(
+        self, current_user: Usuario, observacion: ObservacionAnimal
+    ) -> None:
+        """El autor borra las suyas; owner y admin, cualquiera del establecimiento.
+
+        El rol sale de ``usuarios_establecimientos``: un usuario puede tener más de
+        uno en el mismo establecimiento.
+        """
+        if observacion.autor_id is not None and observacion.autor_id == current_user.id:
+            return
+        membresias = await self.membership_repository.get_memberships(
+            current_user.id, observacion.establecimiento_id
+        )
+        if not any(m.rol in ROLES_QUE_BORRAN_CUALQUIERA for m in membresias):
+            raise ObservacionBorradoNoPermitidoError()
+
+    async def crear(
+        self, current_user: Usuario, data: ObservacionAnimalCreate
+    ) -> ObservacionAnimalRead:
+        """Agrega una observación sin tocar las demás.
+
+        Idempotente para offline-first: si el ``id`` (UUID del cliente) ya existe se
+        trata como reenvío y se aplica last-write-wins en vez de duplicar.
+        """
+        await self._exigir_acceso(current_user, data.establecimiento_id)
+
+        observacion_id = data.id or uuid4()
+        existente = await self.repository.get_by_id_including_deleted(observacion_id)
+        if existente is not None:
+            if not await self._es_miembro(current_user, existente.establecimiento_id):
+                raise ObservacionNoEncontradaError()
+            if (
+                existente.animal_id != data.animal_id
+                or existente.establecimiento_id != data.establecimiento_id
+            ):
+                raise ObservacionInmutableError()
+            # Un reintento idéntico no exige permisos; cambiar el texto o la
+            # fecha es editar, y cambiar ``deleted_at`` es borrar o restaurar.
+            if data.texto != existente.texto or (
+                data.fecha is not None and as_utc(data.fecha) != as_utc(existente.fecha)
+            ):
+                self._exigir_autor(current_user, existente)
+            if as_utc(data.deleted_at) != as_utc(existente.deleted_at):
+                await self._exigir_permiso_de_borrado(current_user, existente)
+            self._merge_alta_lww(existente, data)
+            await self.repository.save(existente)
+            return ObservacionAnimalRead.model_validate(existente)
+
+        animal = await self.animal_repository.get_by_id(data.animal_id)
+        if animal is None or animal.establecimiento_id != data.establecimiento_id:
+            raise AnimalNoPerteneceAlEstablecimientoError()
+
+        ahora = datetime.now(UTC)
+        observacion = ObservacionAnimal(
+            id=observacion_id,
+            created_at=data.created_at or ahora,
+            updated_at=data.updated_at or ahora,
+            deleted_at=data.deleted_at,
+            establecimiento_id=data.establecimiento_id,
+            animal_id=data.animal_id,
+            texto=data.texto,
+            fecha=data.fecha or data.created_at or ahora,
+            autor_id=current_user.id,
+        )
+        await self.repository.create(observacion)
+        return ObservacionAnimalRead.model_validate(observacion)
+
+    def _merge_alta_lww(
+        self, existente: ObservacionAnimal, data: ObservacionAnimalCreate
+    ) -> None:
+        """Aplica un alta reenviada solo si el cliente trae una versión más nueva."""
+        if not gana_el_entrante(data.updated_at, existente.updated_at):
+            return
+        existente.texto = data.texto
+        if data.fecha is not None:
+            existente.fecha = data.fecha
+        existente.deleted_at = data.deleted_at
+        existente.updated_at = as_utc(data.updated_at)
+
+    async def actualizar(
+        self,
+        current_user: Usuario,
+        observacion_id: UUID,
+        data: ObservacionAnimalUpdate,
+    ) -> ObservacionAnimalRead:
+        """Edita solo la observación indicada, con last-write-wins.
+
+        Los permisos se exigen antes de resolver el conflicto: un cambio no
+        autorizado se rechaza aunque además sea rancio.
+        """
+        observacion = await self._observacion_accesible(current_user, observacion_id)
+        if data.texto is not None or data.fecha is not None:
+            self._exigir_autor(current_user, observacion)
+        if data.deleted_at is not None:
+            await self._exigir_permiso_de_borrado(current_user, observacion)
+
+        entrante = as_utc(data.updated_at) or datetime.now(UTC)
+        if not gana_el_entrante(entrante, observacion.updated_at):
+            # Cambio rancio: gana el servidor.
+            return ObservacionAnimalRead.model_validate(observacion)
+
+        if data.texto is not None:
+            observacion.texto = data.texto
+        if data.fecha is not None:
+            observacion.fecha = data.fecha
+        if data.deleted_at is not None:
+            observacion.deleted_at = data.deleted_at
+        observacion.updated_at = entrante
+
+        await self.repository.save(observacion)
+        return ObservacionAnimalRead.model_validate(observacion)
+
+    async def borrar(
+        self,
+        current_user: Usuario,
+        observacion_id: UUID,
+        *,
+        deleted_at: datetime | None = None,
+        updated_at: datetime | None = None,
+    ) -> ObservacionAnimalRead:
+        """Soft delete (set ``deleted_at``) para que el borrado se propague en sync.
+        Acepta el timestamp local del cliente; si no viene, usa el del servidor."""
+        observacion = await self._observacion_accesible(current_user, observacion_id)
+        await self._exigir_permiso_de_borrado(current_user, observacion)
+
+        ts = as_utc(deleted_at) or datetime.now(UTC)
+        observacion.deleted_at = ts
+        observacion.updated_at = as_utc(updated_at) or ts
+        await self.repository.save(observacion)
+        return ObservacionAnimalRead.model_validate(observacion)
+
+    async def listar(
+        self,
+        current_user: Usuario,
+        establecimiento_id: UUID,
+        *,
+        animal_id: UUID | None = None,
+        updated_since: datetime | None = None,
+        include_deleted: bool = False,
+    ) -> list[ObservacionAnimalRead]:
+        """Observaciones del establecimiento, o de un animal con ``animal_id``."""
+        await self._exigir_acceso(current_user, establecimiento_id)
+        observaciones = await self.repository.list_by_establecimiento(
+            establecimiento_id,
+            animal_id=animal_id,
+            updated_since=updated_since,
+            include_deleted=include_deleted,
+        )
+        return [ObservacionAnimalRead.model_validate(o) for o in observaciones]
+
+    async def propagar_borrado_del_animal(
+        self,
+        animal_id: UUID,
+        antes: datetime | None,
+        despues: datetime | None,
+    ) -> None:
+        """Acompaña en las observaciones un cambio del ``deleted_at`` del animal.
+
+        - Borrar el animal borra lógicamente sus observaciones vivas, con el mismo
+          ``deleted_at`` (decisión de Ernesto, PO, en #56).
+        - Restaurarlo restaura solo las que se borraron en esa cascada, es decir,
+          las que tienen exactamente ese ``deleted_at``. Las que alguien borró a
+          mano antes siguen borradas.
+        - Si el animal ya estaba borrado y cambia la marca, las de la cascada la
+          acompañan, para que una restauración posterior las encuentre.
+
+        ``updated_at`` toma la hora del servidor, no la del cliente: así el pull
+        delta de los demás dispositivos baja el cambio aunque el emisor haya
+        estado offline con el reloj atrasado. No exige permisos de borrado de
+        observaciones: lo decide quien puede borrar el animal.
+
+        No hace flush: solo modifica las observaciones en la sesión, y las persiste
+        el ``save`` del animal. Si la base rechaza el animal en ese flush, el
+        rollback revierte también la cascada, y el rechazo llega al handler que
+        lo traduce. Por eso la consulta corre sin autoflush: si no, mandaría el
+        UPDATE pendiente del animal antes de tiempo, fuera de ese handler.
+        """
+        antes, despues = as_utc(antes), as_utc(despues)
+        if antes == despues:
+            return
+        ahora = datetime.now(UTC)
+        with self.session.no_autoflush:
+            observaciones = await self.repository.list_by_animal_including_deleted(
+                animal_id
+            )
+        for observacion in observaciones:
+            borrada = as_utc(observacion.deleted_at)
+            if antes is None:
+                if borrada is not None:
+                    continue
+            elif borrada != antes:
+                # Borrada a mano, no por la cascada de este borrado.
+                continue
+            observacion.deleted_at = despues
+            observacion.updated_at = ahora

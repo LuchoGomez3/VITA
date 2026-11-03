@@ -3,7 +3,7 @@
 from uuid import UUID, uuid4
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from api.modules.establecimientos.models import (
     Establecimiento,
@@ -36,6 +36,7 @@ async def test_alta_exitosa_crea_membresia_owner(auth_client, session, usuario_a
     est_id = body["data"]["id"]
     assert body["data"]["owner_id"] == str(usuario_actual.id)
     assert body["data"]["nro_renspa"] == "12.345.6.78901/00"
+    assert body["data"]["rol"] == "owner"
 
     # Se creó la membresía owner en la misma operación.
     result = await session.execute(
@@ -119,6 +120,7 @@ async def test_detalle_incluye_auditoria(auth_client, usuario_actual):
     assert resp.status_code == 200
     data = resp.json()["data"]
     assert data["owner_id"] == str(usuario_actual.id)
+    assert data["rol"] == "owner"
     assert data["created_at"]
     assert data["updated_at"]
 
@@ -165,6 +167,34 @@ async def test_listado_solo_del_usuario(auth_client, session):
     detalle = await auth_client.get(f"/api/v1/establecimientos/{ajeno.id}")
     assert detalle.status_code == 404
     assert detalle.json()["errors"][0]["code"] == "establecimiento_no_encontrado"
+
+
+@pytest.mark.anyio
+async def test_listado_y_detalle_incluyen_rol_admin(
+    auth_client, session, usuario_actual
+):
+    creado = await auth_client.post("/api/v1/establecimientos", json=_payload())
+    establecimiento_id = creado.json()["data"]["id"]
+    await session.execute(
+        update(UsuarioEstablecimiento)
+        .where(
+            UsuarioEstablecimiento.usuario_id == usuario_actual.id,
+            UsuarioEstablecimiento.establecimiento_id == UUID(establecimiento_id),
+        )
+        .values(rol=RolUsuario.admin)
+    )
+    await session.commit()
+
+    listado = await auth_client.get("/api/v1/establecimientos")
+    establecimiento = next(
+        item for item in listado.json()["data"] if item["id"] == establecimiento_id
+    )
+    assert listado.status_code == 200
+    assert establecimiento["rol"] == "admin"
+
+    detalle = await auth_client.get(f"/api/v1/establecimientos/{establecimiento_id}")
+    assert detalle.status_code == 200
+    assert detalle.json()["data"]["rol"] == "admin"
 
 
 @pytest.mark.anyio
@@ -235,6 +265,84 @@ async def test_geolocalizacion_y_poligono_persistidos(auth_client):
     assert float(data["latitud"]) == -33.15
     assert float(data["longitud"]) == -64.15
     assert data["poligono"] == poligono
+
+
+_CUADRADO = [
+    {"orden": 1, "latitud": -33.1, "longitud": -64.1},
+    {"orden": 2, "latitud": -33.1, "longitud": -64.2},
+    {"orden": 3, "latitud": -33.2, "longitud": -64.2},
+    {"orden": 4, "latitud": -33.2, "longitud": -64.1},
+]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "poligono",
+    [
+        pytest.param(_CUADRADO[:2], id="menos-de-3-vertices"),
+        pytest.param(
+            # Moño: recorre las esquinas en diagonal y los lados se cruzan.
+            [
+                {**v, "orden": i}
+                for i, v in enumerate(
+                    [_CUADRADO[0], _CUADRADO[2], _CUADRADO[1], _CUADRADO[3]], start=1
+                )
+            ],
+            id="lados-que-se-cruzan",
+        ),
+        pytest.param(
+            [{**v, "orden": 1} for v in _CUADRADO[:3]],
+            id="orden-repetido",
+        ),
+        pytest.param(
+            [_CUADRADO[0], _CUADRADO[1], {"orden": 3, "latitud": -95, "longitud": 0}],
+            id="latitud-fuera-de-rango",
+        ),
+        pytest.param(
+            # Colineales: no encierran superficie.
+            [
+                {"orden": 1, "latitud": -33.1, "longitud": -64.1},
+                {"orden": 2, "latitud": -33.2, "longitud": -64.1},
+                {"orden": 3, "latitud": -33.3, "longitud": -64.1},
+            ],
+            id="sin-superficie",
+        ),
+    ],
+)
+async def test_poligono_invalido_rechazado(auth_client, poligono):
+    resp = await auth_client.post(
+        "/api/v1/establecimientos",
+        json=_payload(poligono=poligono),
+    )
+    assert resp.status_code == 422
+    assert resp.json()["errors"][0]["code"] == "poligono_invalido"
+
+
+@pytest.mark.anyio
+async def test_poligono_en_cualquier_orden_de_envio_se_valida_por_orden(auth_client):
+    # Llega desordenado en la lista, pero por `orden` es el cuadrado válido.
+    desordenado = [_CUADRADO[2], _CUADRADO[0], _CUADRADO[3], _CUADRADO[1]]
+    resp = await auth_client.post(
+        "/api/v1/establecimientos",
+        json=_payload(poligono=desordenado),
+    )
+    assert resp.status_code == 201
+
+
+@pytest.mark.anyio
+async def test_actualizar_con_poligono_invalido_rechazado(auth_client):
+    creado = await auth_client.post("/api/v1/establecimientos", json=_payload())
+    est_id = creado.json()["data"]["id"]
+
+    resp = await auth_client.put(
+        f"/api/v1/establecimientos/{est_id}",
+        json={"poligono": _CUADRADO[:2]},
+    )
+    assert resp.status_code == 422
+    assert resp.json()["errors"][0]["code"] == "poligono_invalido"
+
+    detalle = await auth_client.get(f"/api/v1/establecimientos/{est_id}")
+    assert detalle.json()["data"]["poligono"] is None
 
 
 @pytest.mark.anyio

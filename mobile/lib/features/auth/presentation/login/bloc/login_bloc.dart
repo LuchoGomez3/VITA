@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
@@ -8,9 +9,6 @@ import 'package:frontend_mayoral/features/auth/domain/use_cases/sign_in_use_case
 
 part 'login_bloc.freezed.dart';
 part 'login_state.dart';
-
-/// Callback que prepara datos offline luego de autenticar la sesion.
-typedef PrepareOfflineData = Future<Result<void>> Function(String userId);
 
 /// Bloc que coordina el inicio de sesion mobile.
 ///
@@ -27,17 +25,17 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   /// Crea el bloc con sus casos de uso de autenticacion.
   LoginBloc({
     required SignInUseCase signInUseCase,
-    required PrepareOfflineData prepareOfflineData,
+    required PreparePostAuthentication preparePostAuthentication,
     void Function()? onClose,
   }) : _signInUseCase = signInUseCase,
-       _prepareOfflineData = prepareOfflineData,
+       _preparePostAuthentication = preparePostAuthentication,
        _onClose = onClose,
        super(LoginState.initial()) {
     on<LoginSubmitted>(_onSubmitted);
   }
 
   final SignInUseCase _signInUseCase;
-  final PrepareOfflineData _prepareOfflineData;
+  final PreparePostAuthentication _preparePostAuthentication;
   final void Function()? _onClose;
 
   /// Maneja el submit del formulario de login.
@@ -56,6 +54,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         signInResult: const ResultState<AuthSession>.loading(),
         isPreparingOfflineData: false,
         initialDataSyncError: null,
+        postAuthenticationSummary: null,
       ),
     );
 
@@ -74,18 +73,23 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
         // La sync inicial usa el token que AuthRepositoryImpl acaba de hidratar
         // en SessionBackendAccessTokenProvider durante el signIn exitoso.
-        final syncResult = await _prepareOfflineData(data.user.id);
+        final syncResult = await _preparePostAuthentication();
         final syncError = switch (syncResult) {
-          Failure<void>(:final error) => error,
-          Success<void>() => null,
+          Failure<PostAuthenticationSummary>(:final error) => error,
+          Success<PostAuthenticationSummary>() => null,
           _ => null,
         };
-
+        final syncSummary = switch (syncResult) {
+          Success<PostAuthenticationSummary>(:final data) => data,
+          Failure<PostAuthenticationSummary>() => null,
+          _ => null,
+        };
         emit(
           state.copyWith(
             signInResult: ResultState<AuthSession>.data(data),
             isPreparingOfflineData: false,
             initialDataSyncError: syncError,
+            postAuthenticationSummary: syncSummary,
           ),
         );
       case Failure<AuthSession>(:final error):
@@ -93,6 +97,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           state.copyWith(
             signInResult: ResultState<AuthSession>.error(error),
             isPreparingOfflineData: false,
+            postAuthenticationSummary: null,
           ),
         );
     }

@@ -12,6 +12,15 @@ part 'rfid_scan_bloc.freezed.dart';
 part 'rfid_scan_event.dart';
 part 'rfid_scan_state.dart';
 
+/// Define si la lectura identifica un animal o devuelve solo su RFID.
+enum RfidScanMode {
+  /// Identifica un animal existente en el establecimiento seleccionado.
+  identify,
+
+  /// Devuelve la lectura al flujo que la solicitó.
+  capture,
+}
+
 /// Coordina el ciclo de lectura RFID y los resultados que muestra la UI.
 ///
 /// La validacion de formato y la busqueda offline se incorporan mediante los
@@ -22,13 +31,18 @@ class RfidScanBloc extends Bloc<RfidScanEvent, RfidScanState> {
   RfidScanBloc({
     required RfidReadingSource readingSource,
     required ValidateRfidReadingUseCase validateRfidReadingUseCase,
-    required FindAnimalByRfidUseCase findAnimalByRfidUseCase,
-    required String establishmentId,
+    FindAnimalByRfidUseCase? findAnimalByRfidUseCase,
+    String? establishmentId,
+    this.mode = RfidScanMode.identify,
     this.readingTimeout = const Duration(seconds: 30),
   }) : _readingSource = readingSource,
        _validateRfidReadingUseCase = validateRfidReadingUseCase,
        _findAnimalByRfidUseCase = findAnimalByRfidUseCase,
        _establishmentId = establishmentId,
+       assert(
+         mode == RfidScanMode.capture || (findAnimalByRfidUseCase != null && establishmentId != null),
+         'Identification requires an animal lookup and establishment',
+       ),
        super(const RfidScanState.inactive()) {
     on<_ListeningRequested>(_onListeningRequested);
     on<_Stopped>(_onStopped);
@@ -42,8 +56,11 @@ class RfidScanBloc extends Bloc<RfidScanEvent, RfidScanState> {
 
   final RfidReadingSource _readingSource;
   final ValidateRfidReadingUseCase _validateRfidReadingUseCase;
-  final FindAnimalByRfidUseCase _findAnimalByRfidUseCase;
-  final String _establishmentId;
+  final FindAnimalByRfidUseCase? _findAnimalByRfidUseCase;
+  final String? _establishmentId;
+
+  /// Captura reutilizable sin búsqueda de animal, para otros flujos.
+  final RfidScanMode mode;
 
   /// Tiempo maximo para esperar una lectura antes de informar un timeout.
   final Duration readingTimeout;
@@ -94,9 +111,13 @@ class RfidScanBloc extends Bloc<RfidScanEvent, RfidScanState> {
     }
 
     await _stopReadingSource();
-    final result = await _findAnimalByRfidUseCase(
+    if (mode == RfidScanMode.capture) {
+      emit(RfidScanState.captured(rfid: event.reading));
+      return;
+    }
+    final result = await _findAnimalByRfidUseCase!(
       rfidTagNumber: event.reading,
-      establishmentId: _establishmentId,
+      establishmentId: _establishmentId!,
     );
     switch (result) {
       case Success<IdentifiedAnimal?>(:final data):

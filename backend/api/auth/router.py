@@ -2,13 +2,14 @@ from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.auth.dependencies import get_current_user
+from api.auth.dependencies import get_bearer_token, get_current_user
 from api.auth.providers import AuthProvider, AuthResult, get_auth_provider
 from api.auth.schemas import RefreshRequest, TokenResponse, UsuarioSesion
 from api.auth.service import AuthService
 from api.modules.usuarios.models import Usuario
 from api.shared.schemas import StandardResponse
 from database.database import get_session
+from core.auth_rate_limit import limit_login, limit_refresh
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -23,11 +24,18 @@ def _token_response(usuario: Usuario, auth_result: AuthResult) -> TokenResponse:
             nombre=usuario.nombre,
             apellido=usuario.apellido,
             email=usuario.email,
+            cuit=usuario.cuit,
+            color_cabecera=usuario.color_cabecera,
+            avatar_actualizado_en=usuario.avatar_actualizado_en,
         ),
     )
 
 
-@router.post("/login", response_model=StandardResponse)
+@router.post(
+    "/login",
+    response_model=StandardResponse,
+    dependencies=[Depends(limit_login)],
+)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_session),
@@ -48,7 +56,11 @@ async def login(
     )
 
 
-@router.post("/refresh", response_model=StandardResponse)
+@router.post(
+    "/refresh",
+    response_model=StandardResponse,
+    dependencies=[Depends(limit_refresh)],
+)
 async def refresh(
     body: RefreshRequest,
     session: AsyncSession = Depends(get_session),
@@ -77,5 +89,23 @@ async def me(current_user: Usuario = Depends(get_current_user)):
             "nombre": current_user.nombre,
             "apellido": current_user.apellido,
             "email": current_user.email,
+            "cuit": current_user.cuit,
+            "color_cabecera": current_user.color_cabecera,
+            "avatar_actualizado_en": (
+                current_user.avatar_actualizado_en.isoformat()
+                if current_user.avatar_actualizado_en
+                else None
+            ),
         },
     )
+
+
+@router.post("/logout", response_model=StandardResponse)
+async def logout(
+    token: str = Depends(get_bearer_token),
+    current_user: Usuario = Depends(get_current_user),
+    auth_provider: AuthProvider = Depends(get_auth_provider),
+):
+    """Revoca la sesión remota del usuario autenticado."""
+    await auth_provider.sign_out(token)
+    return StandardResponse(success=True, data={"user_id": str(current_user.id)})

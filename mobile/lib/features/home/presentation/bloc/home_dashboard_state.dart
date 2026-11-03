@@ -9,7 +9,9 @@ abstract class HomeDashboardState with _$HomeDashboardState {
   /// Crea el estado de Inicio con sus valores iniciales.
   const factory HomeDashboardState({
     @Default(ResultState<HomeDashboard>.initial()) ResultState<HomeDashboard> dashboardState,
-    @Default(<String, String>{}) Map<String, String> establishments,
+    @Default(<String, EstablishmentMembership>{}) Map<String, EstablishmentMembership> establishments,
+    @Default(false) bool isRefreshing,
+    DomainException? refreshError,
     String? selectedEstablishmentId,
   }) = _HomeDashboardState;
 }

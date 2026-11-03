@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
@@ -37,7 +38,7 @@ class AuthRepositoryImpl implements AuthRepository {
   final SessionBackendAccessTokenProvider _tokenProvider;
 
   @override
-  Future<Result<AppUser>> register({
+  Future<Result<AuthSession>> register({
     required RegistrationRequest request,
   }) async {
     try {
@@ -49,20 +50,9 @@ class AuthRepositoryImpl implements AuthRepository {
         password: request.password,
       );
 
-      // Hidrata solo el token en memoria (Bearer para el resto de la sesion
-      // de la app, p. ej. registrar el establecimiento a continuacion). A
-      // diferencia de signIn, no persiste sesion local ni corre sync inicial:
-      // el registro sigue sin ser un login real, ver
-      // `.claude/specs/registrar-establecimiento.md`.
-      _tokenProvider.session = BackendTokenSession(
-        accessToken: remoteSession.accessToken,
-        refreshToken: remoteSession.refreshToken,
-        accessTokenExpiresAt: DateTime.now().toUtc().add(
-          Duration(seconds: remoteSession.expiresIn),
-        ),
-      );
-
-      return Result.success(AppUserMapper.fromJson(remoteSession.userJson));
+      final session = _sessionFromRemote(remoteSession);
+      await _persistAndHydrate(session);
+      return Result.success(session);
     } on DomainException catch (error) {
       return Result.failure(error);
     } on SocketException {
@@ -230,8 +220,39 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signOut() async {
-    await _localDataSource.clearSession();
-    _tokenProvider.clearAccessToken();
+    try {
+      // getAccessToken renueva primero una sesión vencida. Así Supabase recibe
+      // un token válido y puede revocar el refresh token remoto antes de que
+      // eliminemos definitivamente la copia local.
+      final accessToken = await _tokenProvider.getAccessToken();
+      if (accessToken != null) {
+        await _remoteDataSource.signOut(accessToken);
+      }
+    } on IOException catch (error, stackTrace) {
+      _logRemoteSignOutFailure(error, stackTrace);
+    } on TimeoutException catch (error, stackTrace) {
+      _logRemoteSignOutFailure(error, stackTrace);
+    } on http.ClientException catch (error, stackTrace) {
+      _logRemoteSignOutFailure(error, stackTrace);
+    } on DomainException catch (error, stackTrace) {
+      _logRemoteSignOutFailure(error, stackTrace);
+    } on FormatException catch (error, stackTrace) {
+      _logRemoteSignOutFailure(error, stackTrace);
+    } finally {
+      await _localDataSource.clearSession();
+      _tokenProvider.clearAccessToken();
+    }
+  }
+
+  void _logRemoteSignOutFailure(Object error, StackTrace stackTrace) {
+    // Cerrar localmente tiene prioridad ante fallas recuperables: la sesion
+    // remota expirara o podra revocarse en otro momento con conectividad.
+    developer.log(
+      'No se pudo cerrar la sesion remota.',
+      name: 'AuthRepositoryImpl',
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   Future<void> _persistAndHydrate(AuthSession session) async {

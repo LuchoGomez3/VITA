@@ -48,7 +48,7 @@ class SyncConflictCard extends StatelessWidget {
                 ),
                 const AppStatusChip(
                   label: SyncStatusStrings.lastWriteWinsChipLabel,
-                  tone: AppStatusChipTone.danger,
+                  tone: AppStatusChipTone.error,
                 ),
               ],
             ),

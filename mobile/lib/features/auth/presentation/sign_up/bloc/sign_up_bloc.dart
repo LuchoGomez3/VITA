@@ -1,28 +1,25 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
-import 'package:frontend_mayoral/core/result/result_state.dart';
-import 'package:frontend_mayoral/features/auth/domain/entities/app_user.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/register_user_use_case.dart';
 import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_event.dart';
-import 'package:frontend_mayoral/features/auth/presentation/sign_up/bloc/sign_up_state.dart';
 
-/// Bloc que coordina el alta online de una cuenta.
-///
-/// El registro es online-only. En el contrato actual crea la cuenta en
-/// backend, hidrata el token de Brick en memoria (para que la pantalla de
-/// exito pueda encadenar el registro del establecimiento sin pedir login) y
-/// emite el [AppUser] confirmado para la pantalla de exito. Login sigue
-/// siendo el unico flujo que persiste sesion local y ejecuta sync inicial.
+part 'sign_up_bloc.freezed.dart';
+part 'sign_up_state.dart';
+
+/// Bloc que coordina el registro y el inicio de sesion automatico.
 class SignUpBloc extends Bloc<SignUpEvent, SignUpState> {
-  /// Crea el bloc con el caso de uso de registro.
+  /// Crea el bloc con las operaciones del flujo post-registro.
   SignUpBloc({
     required RegisterUserUseCase registerUserUseCase,
     void Function()? onClose,
   }) : _registerUserUseCase = registerUserUseCase,
        _onClose = onClose,
-       super(const ResultState<AppUser>.initial()) {
+       super(SignUpState.initial()) {
     on<SignUpSubmitted>(
       _onSubmitted,
       transformer: _droppable(),
@@ -32,22 +29,29 @@ class SignUpBloc extends Bloc<SignUpEvent, SignUpState> {
   final RegisterUserUseCase _registerUserUseCase;
   final void Function()? _onClose;
 
-  /// Ejecuta el registro remoto y transforma el resultado de dominio en estado.
-  ///
-  /// El resultado exitoso transporta [AppUser] para que la UI muestre datos
-  /// confirmados por backend en lugar de reconstruirlos desde controllers.
+  /// Crea la cuenta e inicia una sesion persistida automaticamente.
   Future<void> _onSubmitted(
     SignUpSubmitted event,
     Emitter<SignUpState> emit,
   ) async {
-    emit(const ResultState<AppUser>.loading());
+    emit(const SignUpState(stage: SignUpStage.registering));
 
-    final result = await _registerUserUseCase(request: event.request);
+    final result = await _registerUserUseCase(
+      request: event.request,
+    );
     switch (result) {
-      case Success<AppUser>(:final data):
-        emit(ResultState<AppUser>.data(data));
-      case Failure<AppUser>(:final error):
-        emit(ResultState<AppUser>.error(error));
+      case Success<AuthSession>(:final data):
+        emit(
+          SignUpState(
+            stage: SignUpStage.success,
+            session: data,
+            accountCreated: true,
+          ),
+        );
+      case Failure<AuthSession>(:final error):
+        emit(SignUpState(stage: SignUpStage.failure, error: error));
+      default:
+        break;
     }
   }
 

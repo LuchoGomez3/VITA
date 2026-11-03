@@ -26,6 +26,33 @@ class AppRoutes {
   /// Ruta raiz de la pestaña de perfil y ajustes.
   static const profile = '/perfil';
 
+  /// Ficha de un establecimiento de Perfil (recibe `EstablishmentDetails`
+  /// en `extra`).
+  static const profileEstablishment = '/perfil/establecimiento';
+
+  /// Equipo de un establecimiento. Lleva el id en la ruta (y no en `extra`)
+  /// para sobrevivir a que el sistema restaure la app.
+  static const team = '/perfil/establecimiento/:establishmentId/equipo';
+
+  /// Invitar a alguien al equipo de un establecimiento.
+  static const teamInvite = '/perfil/establecimiento/:establishmentId/equipo/invitar';
+
+  /// Invitación recién creada, con el código para compartir (recibe
+  /// `({CreatedInvitation created, String establishmentName})` en `extra`).
+  static const teamInvitationCreated = '/perfil/establecimiento/:establishmentId/equipo/invitacion';
+
+  /// Sumarse a un establecimiento con el código de una invitación.
+  static const joinEstablishment = '/perfil/sumarme';
+
+  /// Equipo de [establishmentId].
+  static String teamFor(String establishmentId) => '/perfil/establecimiento/$establishmentId/equipo';
+
+  /// Invitación creada en [establishmentId].
+  static String teamInvitationCreatedFor(String establishmentId) => '${teamFor(establishmentId)}/invitacion';
+
+  /// Invitar al equipo de [establishmentId].
+  static String teamInviteFor(String establishmentId) => '${teamFor(establishmentId)}/invitar';
+
   /// Ruta liviana que espera la restauracion de sesion al arrancar.
   static const authCheck = '/auth-check';
 
@@ -50,8 +77,17 @@ class AppRoutes {
   /// Ruta de la pantalla de detalle de animal.
   static const animalDetail = '/animals/:animalId';
 
+  /// "Mover animales" arrancando con el animal de la ficha.
+  static const animalGroupMovement = '/animals/:animalId/mover';
+
+  /// Cámara lateral y revisión de capturas para pesaje por visión.
+  static const visionWeighing = '/pesar-por-vision';
+
   /// Ruta de identificacion de animales mediante caravana RFID.
   static const rfidScan = '/identificar-animal';
+
+  /// Captura RFID para completar un formulario existente.
+  static const rfidCapture = '/capturar-rfid';
 
   /// Ruta de la seccion de registros de gastos.
   static const expenseRecords = '/registros-de-gastos';
@@ -62,8 +98,17 @@ class AppRoutes {
   /// Ruta temporal para registrar un ingreso operativo.
   static const incomeRegister = '/registros-de-gastos/registrar-ingreso';
 
+  /// Construye la ruta de egresos con el establecimiento activo explicito.
+  static String expensesForEstablishment({
+    required String path,
+    required String establishmentId,
+    required String establishmentName,
+  }) =>
+      '$path?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}'
+      '&establecimientoNombre=${Uri.encodeQueryComponent(establishmentName)}';
+
   /// Ruta del menu principal de reportes SENASA.
-  static const senasaMenu = procedures;
+  static const String senasaMenu = procedures;
 
   /// Route for the SENASA report filters.
   static const senasaReport = '/senasa-report';
@@ -77,14 +122,26 @@ class AppRoutes {
   /// Ruta de error del reporte SENASA.
   static const senasaReportError = '/senasa-report/error';
 
+  /// Ruta de la pantalla de pesaje en manga.
+  static const weighing = '/pesaje';
+
+  /// Ruta de la pantalla de sanidad.
+  static const health = '/sanidad';
+
+  /// Ruta de la pantalla de aplicar vacunación.
+  static const applyVaccination = '/sanidad/aplicar-vacunacion';
+
   /// Ruta del mapa de potreros.
   static const field = '/campo';
 
-  /// Ruta de la lista de potreros.
+  /// Alias legado que redirige al visor local de lotes.
   static const fieldList = '/campo/lista';
 
-  /// Ruta del detalle de un potrero.
-  static const fieldDetail = '/campo/:potreroId';
+  /// Ruta del editor local para delimitar un nuevo lote.
+  static const lotRegister = '/campo/nuevo-lote';
+
+  /// Ruta del detalle de un lote.
+  static const fieldDetail = '/campo/:loteId';
 
   /// Ruta de la pantalla de estado de sincronización.
   static const syncStatus = '/sincronizacion';
@@ -93,6 +150,12 @@ class AppRoutes {
   static String animalDetailById(String animalId) {
     return '/animals/$animalId';
   }
+
+  /// "Mover animales" con una lista de animales en `extra` (`List<String>`).
+  static const groupMovement = '/mover-animales';
+
+  /// "Mover animales" con [animalId] ya en la lista.
+  static String animalGroupMovementById(String animalId) => '/animals/$animalId/mover';
 
   /// Ruta de la pantalla de estado vacio de establecimiento.
   static const establishmentRegisterEmpty = '/registrar-establecimiento';
@@ -115,18 +178,34 @@ class AppRoutes {
   /// Ruta de la pantalla de exito de registro de establecimiento.
   static const establishmentRegisterSuccess = '/registrar-establecimiento/exito';
 
-  /// Construye la ruta de identificacion para un establecimiento activo.
+  /// Abre identificación en modo selección de animal para un pesaje IA.
+  static String rfidScanForVisionWeighing(String establishmentId) {
+    return '${rfidScanForEstablishment(establishmentId)}&seleccionarParaPesajeIA=true';
+  }
+
+  /// Identifica un animal dentro del establecimiento indicado.
   static String rfidScanForEstablishment(String establishmentId) {
     return '$rfidScan?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
   }
 
   /// Construye la ruta de alta con una caravana RFID ya leida.
-  static String animalRegisterWithRfid(String rfidTagNumber) {
-    return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}';
+  ///
+  /// Con [fromReader] el alta vuelve al lector de caravanas al terminar.
+  static String animalRegisterWithRfid({
+    required String rfidTagNumber,
+    required String establishmentId,
+    bool fromReader = false,
+  }) {
+    return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}'
+        '&establecimientoId=${Uri.encodeQueryComponent(establishmentId)}'
+        '${fromReader ? '&origen=lector' : ''}';
   }
 
-  /// Obtiene la ruta de detalle de un potrero por su id.
-  static String fieldDetailById(String potreroId) {
-    return '/campo/$potreroId';
+  /// Éxito del alta cuando se abrió desde el lector de caravanas.
+  static const animalRegisterSuccessToReader = '$animalRegisterSuccess/lector';
+
+  /// Obtiene la ruta de detalle de un lote por su id.
+  static String fieldDetailById(String lotId) {
+    return '/campo/$lotId';
   }
 }

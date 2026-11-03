@@ -86,8 +86,11 @@ async def camel_case_to_snake_case_middleware(
     request: Request, call_next: Callable
 ) -> Any:
     """Middleware to convert camelCase request bodies to snake_case."""
-    # Only apply to API routes, not GraphQL routes
-    if not request.url.path.startswith("/api/graphql"):
+    # Only apply to API routes, not GraphQL routes. Multipart uploads are never
+    # JSON: reading them here would load the whole file into memory before the
+    # endpoint can enforce its size limit.
+    is_multipart = request.headers.get("content-type", "").startswith("multipart/")
+    if not request.url.path.startswith("/api/graphql") and not is_multipart:
         try:
             body = await request.body()
             if body:
@@ -134,7 +137,11 @@ async def custom_exception_handler(request: Request, exc: Exception) -> JSONResp
         content: dict[str, Any] = {"error": message, "status": exc.status_code}
         if details is not None:
             content["details"] = details
-        return JSONResponse(status_code=exc.status_code, content=content)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=content,
+            headers=exc.headers,
+        )
     # Handle other types of exceptions — log internally, never expose to client
     logger.error(
         "[ERROR] Unhandled exception on %s %s: %s",

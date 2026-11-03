@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 
 part 'animal_detail.freezed.dart';
@@ -74,6 +75,9 @@ sealed class AnimalDetail with _$AnimalDetail {
 
     /// Estado local de sincronizacion con backend.
     required AnimalSyncStatus syncStatus,
+
+    /// Estado productivo que determina si el animal sigue en stock.
+    required AnimalProductiveStatus productiveStatus,
 
     /// Ultima actualizacion conocida.
     required DateTime updatedAt,

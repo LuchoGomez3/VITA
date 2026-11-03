@@ -98,7 +98,7 @@ async def test_registro_email_duplicado(client):
         json=_payload(cuit="20111111120"),
     )
     assert resp.status_code == 409
-    assert resp.json()["errors"][0]["code"] == "email_ya_registrado"
+    assert resp.json()["errors"][0]["code"] == "usuario_ya_registrado"
 
 
 @pytest.mark.anyio
@@ -110,7 +110,7 @@ async def test_registro_email_duplicado_case_insensitive(client):
         json=_payload(email="JUAN@campo.com", cuit="20111111120"),
     )
     assert resp.status_code == 409
-    assert resp.json()["errors"][0]["code"] == "email_ya_registrado"
+    assert resp.json()["errors"][0]["code"] == "usuario_ya_registrado"
 
 
 @pytest.mark.anyio
@@ -153,7 +153,7 @@ async def test_registro_cuit_duplicado(client):
         json=_payload(email="otro@campo.com"),
     )
     assert resp.status_code == 409
-    assert resp.json()["errors"][0]["code"] == "cuit_ya_registrado"
+    assert resp.json()["errors"][0]["code"] == "usuario_ya_registrado"
 
 
 @pytest.mark.anyio

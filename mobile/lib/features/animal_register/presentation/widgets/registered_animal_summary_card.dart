@@ -42,7 +42,7 @@ class RegisteredAnimalSummaryCard extends StatelessWidget {
               vertical: AppSpacing.sm,
             ),
             decoration: BoxDecoration(
-              color: AppColors.earTagYellow,
+              color: AppColors.backgroundSecondary,
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(

@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
 
 /// Mapper JSON del alta de establecimiento contra `/api/v1/establecimientos`.
@@ -6,10 +7,10 @@ class EstablishmentRegistrationJsonMapper {
 
   /// Arma el body del `POST`, en snake_case (convención de la API).
   ///
-  /// No incluye `poligono`: el paso 4 es una réplica visual estática sin
-  /// coordenadas reales de vértices (ver
-  /// `.claude/specs/registrar-establecimiento.md`), sólo se envía la
-  /// superficie ya calculada.
+  /// `poligono` sólo viaja si se dibujó: si la superficie se cargó a mano, se
+  /// omite y el backend lo guarda como nulo. `orden` arranca en 1, igual que
+  /// la numeración de vértices que ve el productor. La superficie se redondea
+  /// a 2 decimales, la precisión de `superficie_ha` en la base.
   static Map<String, dynamic> toJson(EstablishmentRegistration registration) {
     return {
       'nombre': registration.nombre,
@@ -22,7 +23,12 @@ class EstablishmentRegistrationJsonMapper {
       'localidad': registration.localidad,
       'latitud': registration.latitud,
       'longitud': registration.longitud,
-      'superficie_ha': registration.superficieHectareas,
+      'superficie_ha': double.parse(registration.superficieHectareas.toStringAsFixed(2)),
+      if (registration.poligono.isNotEmpty)
+        'poligono': [
+          for (final (index, point) in registration.poligono.indexed)
+            {'orden': index + 1, 'latitud': point.latitud, 'longitud': point.longitud},
+        ],
     };
   }
 
@@ -40,6 +46,9 @@ class EstablishmentRegistrationJsonMapper {
         id: id,
         registration: registration,
         createdAt: DateTime.parse(createdAt),
+        role: UserRolePermissions.fromBackend(
+          json['rol'] is String ? json['rol'] as String : null,
+        ),
       );
     }
 

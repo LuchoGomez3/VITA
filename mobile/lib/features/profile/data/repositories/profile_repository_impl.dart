@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -9,9 +10,7 @@ import 'package:frontend_mayoral/features/profile/domain/repositories/profile_re
 /// Lee desde storage los establecimientos descargados durante el login.
 class ProfileRepositoryImpl implements ProfileRepository {
   /// Crea el repositorio con el storage seguro compartido.
-  const ProfileRepositoryImpl({
-    required SecureStorageService secureStorage,
-  }) : _secureStorage = secureStorage;
+  const ProfileRepositoryImpl({required SecureStorageService secureStorage}) : _secureStorage = secureStorage;
 
   final SecureStorageService _secureStorage;
 
@@ -31,16 +30,11 @@ class ProfileRepositoryImpl implements ProfileRepository {
       }
 
       return Result.success(
-        decoded
-            .whereType<Map<String, dynamic>>()
-            .map(_mapEstablishment)
-            .toList(),
+        decoded.whereType<Map<String, dynamic>>().map(_mapEstablishment).toList(),
       );
     } on Object {
       return const Result.failure(
-        DomainException(
-          message: 'No se pudieron cargar los establecimientos.',
-        ),
+        DomainException(message: 'No se pudieron cargar los establecimientos.'),
       );
     }
   }
@@ -50,12 +44,22 @@ class ProfileRepositoryImpl implements ProfileRepository {
       id: json['id'] as String,
       ownerId: json['owner_id'] as String,
       name: json['name'] as String,
+      role: UserRolePermissions.fromBackend(
+        json['role'] is String ? json['role'] as String : null,
+      ),
       renspaNumber: json['renspa_number'] as String?,
       cuit: json['cuit'] as String?,
       areaHectares: (json['area_hectares'] as num?)?.toDouble(),
       province: json['province'] as String?,
       department: json['department'] as String?,
       locality: json['locality'] as String?,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      // Los catálogos guardados antes de sumar el mapa no traen el contorno.
+      boundary: [
+        for (final point in (json['boundary'] as List<dynamic>? ?? const []).whereType<Map<String, dynamic>>())
+          (latitude: (point['latitude'] as num).toDouble(), longitude: (point['longitude'] as num).toDouble()),
+      ],
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );

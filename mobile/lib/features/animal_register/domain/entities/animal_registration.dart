@@ -73,9 +73,8 @@ sealed class AnimalRegistration with _$AnimalRegistration {
   /// Crea una solicitud de registro de animal.
   ///
   /// Los IDs (`lotId`, `establishmentId`, `categoryId`, `motherId`, `fatherId`)
-  /// deben llegar ya resueltos a IDs reales o temporalmente mockeados por el
-  /// contexto de registro. La entidad no deberia resolver catalogos por si
-  /// misma.
+  /// deben llegar ya resueltos a IDs reales por el contexto de registro. La
+  /// entidad no deberia resolver catalogos por si misma.
   const factory AnimalRegistration({
     /// Numero de caravana RFID individual.
     required String rfidTagNumber,

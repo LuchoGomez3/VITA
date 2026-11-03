@@ -9,6 +9,8 @@ class AppInfoCell extends StatelessWidget {
     required this.value,
     super.key,
     this.isHighlighted = false,
+    this.highlightColor,
+    this.highlightBackgroundColor,
   });
 
   /// Secondary label that describes the value.
@@ -19,6 +21,12 @@ class AppInfoCell extends StatelessWidget {
 
   /// Whether the value should be visually highlighted.
   final bool isHighlighted;
+
+  /// Color opcional del valor para destacar una fuente de datos específica.
+  final Color? highlightColor;
+
+  /// Fondo opcional del destacado, sin alterar otras pantallas que usan la celda.
+  final Color? highlightBackgroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +41,7 @@ class AppInfoCell extends StatelessWidget {
         if (isHighlighted)
           DecoratedBox(
             decoration: BoxDecoration(
-              color: AppColors.backgroundTertiary,
+              color: highlightBackgroundColor ?? AppColors.backgroundTertiary,
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Padding(
@@ -41,7 +49,7 @@ class AppInfoCell extends StatelessWidget {
                 horizontal: AppSpacing.xs,
                 vertical: AppSpacing.xxs,
               ),
-              child: Text(value, style: AppTypography.mediumEmphasis),
+              child: Text(value, style: AppTypography.mediumEmphasis.copyWith(color: highlightColor)),
             ),
           )
         else

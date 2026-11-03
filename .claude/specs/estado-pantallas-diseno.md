@@ -77,8 +77,8 @@ sólo el resumen de estado.
 
 | Pantalla (diseño) | Estado | Offline | Dónde vive / notas |
 |---|---|---|---|
-| AnimalListScreen | 🎨 | — | No implementada. Hoy se llega a la ficha de un animal por un id hardcodeado desde un atajo de desarrollo en `livestock_page.dart`, no hay listado real. |
-| AnimalFichaGeneral/Pesajes/Genealogía/Sanidad/Movimientos (5 tabs) | 🔌 (parcial, ver nota) | Lectura vía backend real (`animal_detail_remote_data_source.dart`) | Implementada como **una sola pantalla con scroll** (`animal_detail_page.dart`: header + grilla de datos + historial de eventos + gráfico de GPD), no como 5 tabs separados del diseño. Diverge del diseño en layout, no en contenido — evaluar si conviene migrar a tabs o dejarlo así. |
+| AnimalListScreen | 🔌 | Offline-first (Brick: animales, pesajes, categorías y potreros locales) | Pantalla de **Hacienda** (`livestock_page.dart`). Cabecera con selector de establecimiento (`AppEstablishmentPicker`), buscador por caravana/RFID/raza, chips por categoría y botón `+` redondo para el alta. El último peso sale de la serie peso inicial + pesajes. El chip "Potrero ▾" del diseño todavía no está. |
+| AnimalFichaGeneral/Pesajes/Genealogía/Sanidad/Movimientos (5 tabs) | 🔌 (parcial, ver nota) | Offline-first (lee de SQLite; el pesaje se guarda local y se encola) | `animal_detail_page.dart` con cabecera (caravana, raza, categoría · edad) y las 5 pestañas. **General**: identificación, observaciones y sync. **Pesajes**: evolución del peso, histórico con GPD (roja si es negativa) y `+` para pesar por Bluetooth (maqueta), carga manual (guarda de verdad) o foto (abre la cámara). **Genealogía**: árbol de 3 generaciones (animal, padres y abuelos) y sus crías, armado con los animales locales del mismo establecimiento; tocar un nodo abre su ficha y los datos faltantes se ven punteados. **Sanidad**: "Próximamente". **Movimientos**: por ahora solo el potrero actual. |
 | AnimalAltaLectura (Bluetooth) / AnimalAltaManual / AnimalAltaLecturaOK | ✅ (parcial, ver nota) | Offline-first (Brick) | Las variantes Bluetooth y manual están unificadas en un solo `register_animal_identification_step.dart`, no como pantallas separadas. **Falta lectura OCR de caravana visual** (CLAUDE.md la exige como método de lectura válido junto a Bluetooth/manual) — no está ni en este diseño ni en el código. |
 | AnimalAltaDatos (paso 2) | ✅ | Offline-first | `register_animal_basic_data_step.dart` |
 | AnimalAltaGenealogia (paso 3) | ✅ | Offline-first | `register_animal_genealogy_step.dart` |
@@ -89,7 +89,7 @@ sólo el resumen de estado.
 
 | Flujo | Archivo de diseño | Pantallas | Estado |
 |---|---|---|---|
-| Reportes SENASA (wizard de generación) | `screens-senasa.jsx` | 6 | 🔌 Cubierto por el PR #32 (`feature/senasa-reporte-frontend`, abierto): `lib/features/senasa_report/` implementa el wizard de 3 pasos + loading + éxito/error, con generación real de CSV/PDF. También cubre el equivalente de `SenasaScreen`/`SenasaConfirm` de `screens-other.jsx` (`senasa_menu_page.dart`). No se vuelve a maquetar en ninguna otra iniciativa. |
+| Reportes SENASA (wizard de generación) | `screens-senasa.jsx` | 6 | 🔌 Mergeado a `develop` (PR #32): `lib/features/senasa_report/` implementa el wizard de 3 pasos + loading + éxito/error, con generación real de CSV/PDF. También cubre el equivalente de `SenasaScreen`/`SenasaConfirm` de `screens-other.jsx` (`senasa_menu_page.dart`). No se vuelve a maquetar en ninguna otra iniciativa. |
 | Dashboard (Capataz y Owner) | `screens-dashboard.jsx` | 2 | 🔌 (parcial). `home_page.dart` ya es un dashboard real (`HomeDashboardCubit` + `home_page.dart`), no el menú de atajos de desarrollo que tenía antes (eso se movió a `livestock_page.dart`). Pendiente evaluar si el layout actual cubre las 2 variantes por rol del diseño. |
 
 ## Pendientes sin ningún código todavía — cubiertos por esta iniciativa
@@ -97,23 +97,33 @@ sólo el resumen de estado.
 Detalle completo de campos, secciones y datos mock por flujo en su spec
 dedicado (mismo criterio que `registrar-establecimiento.md`).
 
+**Los 6 flujos de esta iniciativa ya están maquetados (🧱)** — cada uno en
+su propia rama, cada uno con PR abierto a `develop` salvo indicación
+contraria. Ninguno queda en 🎨.
+
 | Flujo | Spec | Archivo de diseño | Pantallas | Offline |
 |---|---|---|---|---|
-| Campo / potreros (mapa, lista, detalle) | [`campo-y-potreros.md`](./campo-y-potreros.md) | `screens-campo.jsx` | 3 | Probablemente offline-first (dato productivo de campo), a confirmar en Etapa 3 |
-| Pesaje en manga (Bluetooth/Manual/Foto) | [`pesaje-en-manga.md`](./pesaje-en-manga.md) | `screens-pesaje.jsx` | 3 (una sola página con tabs) | Offline-first (captura en el campo, sin conectividad) |
-| Sanidad (vacunaciones/tratamientos/alertas/aplicar) | [`sanidad.md`](./sanidad.md) | `screens-sanidad.jsx` | 4 | Offline-first |
-| Gestión de equipo | [`gestion-de-equipo.md`](./gestion-de-equipo.md) | `screens-other.jsx` | 2 | Probablemente online-only (afecta permisos de otro usuario), a confirmar |
-| Sincronización 🧱 (maquetada en `feature/pantalla-sync`, rama desde `develop`) | [`sincronizacion.md`](./sincronizacion.md) | `screens-other.jsx` | 1 | Offline-first (es la vista de estado del motor de sync); ojo — `lib/features/sync/` sólo tiene hoy la sincronización inicial post-login, no una cola de operaciones real; la cola y el conflicto de esta pantalla siguen siendo mock |
-| Ajustes (secciones nuevas sobre `ProfilePage`) | [`ajustes.md`](./ajustes.md) | `screens-other.jsx` | Extiende 1 pantalla existente | No aplica (son datos de preferencias/dispositivos, sin sync) |
+| Campo / potreros (mapa, lista, detalle) 🧱 (rama `feature/pantalla-campos`) | [`campo-y-potreros.md`](./campo-y-potreros.md) | `screens-campo.jsx` | 3 | Probablemente offline-first (dato productivo de campo), a confirmar en Etapa 3 |
+| Pesaje en manga (Bluetooth/Manual/Foto) 🧱 (rama `feature/pantalla-pesaje`, PR #38 abierto) | [`pesaje-en-manga.md`](./pesaje-en-manga.md) | `screens-pesaje.jsx` | 3 (una sola página con tabs) | Offline-first (captura en el campo, sin conectividad) |
+| Sanidad (vacunaciones/tratamientos/alertas/aplicar) 🧱 maquetada dentro del PR #40 (`feature/pantalla-sanidad`), que además trae la lista de animales y la ficha con pestañas | [`sanidad.md`](./sanidad.md) | `screens-sanidad.jsx` | 4 | Offline-first |
+| Gestión de equipo ✅ (rama `feature/equipo-establecimiento`, reemplaza a PR #42; se entra desde la ficha del establecimiento en Perfil) | [`gestion-de-equipo.md`](./gestion-de-equipo.md) | `screens-other.jsx` | 2 + Sumarme con código | Online-only con la lista cacheada (adr-0012); roles owner/admin/employee/veterinarian |
+| Sincronización 🧱 (rama `feature/pantalla-sync`, PR #41 abierto) | [`sincronizacion.md`](./sincronizacion.md) | `screens-other.jsx` | 1 | Offline-first (es la vista de estado del motor de sync); ojo — `lib/features/sync/` sólo tiene hoy la sincronización inicial post-login, no una cola de operaciones real |
+| Ajustes (secciones nuevas sobre `ProfilePage`) 🧱 (rama `feature/pantalla-ajustes`) | [`ajustes.md`](./ajustes.md) | `screens-other.jsx` | Extiende 1 pantalla existente | No aplica (son datos de preferencias/dispositivos, sin sync) |
+
+## Pendientes sin spec todavía
+
+| Flujo | Archivo de diseño | Pantallas | Offline |
+|---|---|---|---|
+| Mercado (cotizaciones Liniers/Rosgan, $/kg vivo) | `screens-other.jsx` (`MercadoScreen`) | 1 | Offline-first con caché: la última cotización conocida se muestra con su fecha, y la pantalla renderiza igual sin conectividad. El feed nunca puede ser precondición para operar. |
+
+> `MercadoScreen` estuvo fuera de alcance mientras rigió la prohibición de módulo
+> económico en `CLAUDE.md`. Esa restricción se levantó: el módulo económico (ventas,
+> egresos operativos, flujo de caja, valuación de stock, cotizaciones externas y
+> simulación) está dentro de alcance. Falta escribirle el spec y definir la fuente de
+> datos antes de maquetarla.
 
 ## Explícitamente fuera de alcance
 
-- **`MercadoScreen`** (`screens-other.jsx`): cotizaciones Liniers/Rosgan
-  ($/kg vivo). Existe en el archivo de diseño de referencia, pero choca
-  directo con la restricción dura de CLAUDE.md ("no agregar, mencionar ni
-  scaffoldear ningún módulo económico/de precios"). **No implementar bajo
-  ningún concepto**; si el Product Owner lo pide, primero hay que resolver
-  esa contradicción con el Working Agreement, no programarlo directamente.
 - `screens-dark.jsx`: son las mismas 3 pantallas (`DashboardCapataz`,
   `PesajeShell`, `AplicarVacunacion`) con `dark=true`, no pantallas nuevas a
   trackear aparte.

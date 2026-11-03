@@ -91,6 +91,29 @@ void main() {
       await expectation;
     });
 
+    test('capture mode returns a valid RFID without an animal lookup', () async {
+      final captureBloc = RfidScanBloc(
+        readingSource: readingSource,
+        validateRfidReadingUseCase: ValidateRfidReadingUseCase(),
+        mode: RfidScanMode.capture,
+      );
+      addTearDown(captureBloc.close);
+      final expectation = expectLater(
+        captureBloc.stream,
+        emitsInOrder([
+          const RfidScanState.listening(),
+          const RfidScanState.captured(rfid: '982000412991416'),
+        ]),
+      );
+
+      captureBloc.add(const RfidScanEvent.listeningRequested());
+      await Future<void>.delayed(Duration.zero);
+      readingSource.addReading('982000412991416');
+
+      await expectation;
+      expect(readingSource.isReading, isFalse);
+    });
+
     test('emits invalid when the source completes an invalid reading', () async {
       final expectation = expectLater(
         bloc.stream,

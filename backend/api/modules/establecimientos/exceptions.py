@@ -38,3 +38,10 @@ class SuperficieInvalidaError(ValidationError):
 
     def __init__(self) -> None:
         super().__init__("La superficie debe ser mayor a cero")
+
+
+class PoligonoInvalidoError(ValidationError):
+    code = "poligono_invalido"
+
+    def __init__(self, motivo: str) -> None:
+        super().__init__(f"El polígono del campo no es válido: {motivo}")

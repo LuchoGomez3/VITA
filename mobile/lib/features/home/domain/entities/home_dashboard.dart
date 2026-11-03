@@ -15,6 +15,7 @@ sealed class HomeDashboard with _$HomeDashboard {
     required int animalsWithDailyGain,
     required List<CategoryInventoryMetric> categories,
     required List<LotWeightMetric> lots,
+    @Default(0) int operatingExpensesCents,
     double? averageDailyGainKg,
   }) = _HomeDashboard;
 }

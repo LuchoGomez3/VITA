@@ -13,7 +13,7 @@ class RegisterAnimalReviewRow {
   /// Nombre del campo revisado.
   final String label;
 
-  /// Valor mock o cargado para el campo.
+  /// Valor cargado para el campo.
   final String value;
 }
 
@@ -85,7 +85,6 @@ class RegisterAnimalReviewSection extends StatelessWidget {
                 ),
               ),
               InkWell(
-                // TODO(agus): navegar al paso correspondiente para editar.
                 onTap: onEdit,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
                 child: Padding(

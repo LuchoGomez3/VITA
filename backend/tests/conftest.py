@@ -27,6 +27,7 @@ from api.auth.providers.local_provider import LocalAuthProvider  # noqa: E402
 from api.modules.usuarios.models import Usuario  # noqa: E402
 from api.shared.exceptions import DomainException  # noqa: E402
 from core.middlewares import custom_exception_handler, domain_exception_handler  # noqa: E402
+from core.auth_rate_limit import auth_rate_limiter  # noqa: E402
 from core.router import get_global_router  # noqa: E402
 from database.database import get_session  # noqa: E402
 
@@ -35,6 +36,14 @@ from database.database import get_session  # noqa: E402
 def anyio_backend() -> str:
     # Forzar asyncio: aiosqlite/asyncpg no corren sobre trio.
     return "asyncio"
+
+
+@pytest.fixture(autouse=True)
+def reset_auth_rate_limiter():
+    """Evita que los intentos de un test consuman el cupo de otro."""
+    auth_rate_limiter.reset()
+    yield
+    auth_rate_limiter.reset()
 
 
 @pytest.fixture

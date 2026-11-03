@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$DomainException {
 
- String get message; DomainErrorCode get code;
+ String get message; DomainErrorCode get code; Object? get reason;
 /// Create a copy of DomainException
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $DomainExceptionCopyWith<DomainException> get copyWith => _$DomainExceptionCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DomainException&&(identical(other.message, message) || other.message == message)&&(identical(other.code, code) || other.code == code));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DomainException&&(identical(other.message, message) || other.message == message)&&(identical(other.code, code) || other.code == code)&&const DeepCollectionEquality().equals(other.reason, reason));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,message,code);
+int get hashCode => Object.hash(runtimeType,message,code,const DeepCollectionEquality().hash(reason));
 
 @override
 String toString() {
-  return 'DomainException(message: $message, code: $code)';
+  return 'DomainException(message: $message, code: $code, reason: $reason)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $DomainExceptionCopyWith<$Res>  {
   factory $DomainExceptionCopyWith(DomainException value, $Res Function(DomainException) _then) = _$DomainExceptionCopyWithImpl;
 @useResult
 $Res call({
- String message, DomainErrorCode code
+ String message, DomainErrorCode code, Object? reason
 });
 
 
@@ -62,11 +62,11 @@ class _$DomainExceptionCopyWithImpl<$Res>
 
 /// Create a copy of DomainException
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? message = null,Object? code = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? message = null,Object? code = null,Object? reason = freezed,}) {
   return _then(_self.copyWith(
 message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
 as String,code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
-as DomainErrorCode,
+as DomainErrorCode,reason: freezed == reason ? _self.reason : reason ,
   ));
 }
 
@@ -151,10 +151,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String message,  DomainErrorCode code)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String message,  DomainErrorCode code,  Object? reason)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DomainException() when $default != null:
-return $default(_that.message,_that.code);case _:
+return $default(_that.message,_that.code,_that.reason);case _:
   return orElse();
 
 }
@@ -172,10 +172,10 @@ return $default(_that.message,_that.code);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String message,  DomainErrorCode code)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String message,  DomainErrorCode code,  Object? reason)  $default,) {final _that = this;
 switch (_that) {
 case _DomainException():
-return $default(_that.message,_that.code);case _:
+return $default(_that.message,_that.code,_that.reason);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -192,10 +192,10 @@ return $default(_that.message,_that.code);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String message,  DomainErrorCode code)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String message,  DomainErrorCode code,  Object? reason)?  $default,) {final _that = this;
 switch (_that) {
 case _DomainException() when $default != null:
-return $default(_that.message,_that.code);case _:
+return $default(_that.message,_that.code,_that.reason);case _:
   return null;
 
 }
@@ -207,11 +207,12 @@ return $default(_that.message,_that.code);case _:
 
 
 class _DomainException implements DomainException {
-  const _DomainException({required this.message, this.code = DomainErrorCode.unknown});
+  const _DomainException({required this.message, this.code = DomainErrorCode.unknown, this.reason});
   
 
 @override final  String message;
 @override@JsonKey() final  DomainErrorCode code;
+@override final  Object? reason;
 
 /// Create a copy of DomainException
 /// with the given fields replaced by the non-null parameter values.
@@ -223,16 +224,16 @@ _$DomainExceptionCopyWith<_DomainException> get copyWith => __$DomainExceptionCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DomainException&&(identical(other.message, message) || other.message == message)&&(identical(other.code, code) || other.code == code));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DomainException&&(identical(other.message, message) || other.message == message)&&(identical(other.code, code) || other.code == code)&&const DeepCollectionEquality().equals(other.reason, reason));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,message,code);
+int get hashCode => Object.hash(runtimeType,message,code,const DeepCollectionEquality().hash(reason));
 
 @override
 String toString() {
-  return 'DomainException(message: $message, code: $code)';
+  return 'DomainException(message: $message, code: $code, reason: $reason)';
 }
 
 
@@ -243,7 +244,7 @@ abstract mixin class _$DomainExceptionCopyWith<$Res> implements $DomainException
   factory _$DomainExceptionCopyWith(_DomainException value, $Res Function(_DomainException) _then) = __$DomainExceptionCopyWithImpl;
 @override @useResult
 $Res call({
- String message, DomainErrorCode code
+ String message, DomainErrorCode code, Object? reason
 });
 
 
@@ -260,11 +261,11 @@ class __$DomainExceptionCopyWithImpl<$Res>
 
 /// Create a copy of DomainException
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? message = null,Object? code = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? message = null,Object? code = null,Object? reason = freezed,}) {
   return _then(_DomainException(
 message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
 as String,code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
-as DomainErrorCode,
+as DomainErrorCode,reason: freezed == reason ? _self.reason : reason ,
   ));
 }
 

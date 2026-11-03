@@ -5,8 +5,8 @@ import 'package:frontend_mayoral/features/auth/domain/entities/registration_requ
 
 /// Contrato de autenticacion consumido por los casos de uso.
 abstract class AuthRepository {
-  /// Registra un usuario nuevo y devuelve el perfil creado.
-  Future<Result<AppUser>> register({
+  /// Registra un usuario nuevo y persiste la sesion devuelta por el backend.
+  Future<Result<AuthSession>> register({
     required RegistrationRequest request,
   });
 
@@ -28,6 +28,6 @@ abstract class AuthRepository {
   /// Devuelve el usuario de la sesion actual disponible localmente.
   Future<Result<AppUser>> getCurrentUser();
 
-  /// Cierra la sesion local.
+  /// Intenta revocar la sesion remota y siempre elimina la copia local.
   Future<void> signOut();
 }

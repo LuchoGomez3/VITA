@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/home/domain/repositories/home_dashboard_repository.dart';
 
@@ -8,8 +9,8 @@ class GetHomeEstablishmentsUseCase {
 
   final HomeDashboardRepository _repository;
 
-  /// Devuelve un mapa estable de ID y nombre visible.
-  Future<Result<Map<String, String>>> call() {
+  /// Devuelve un mapa estable de ID y membresia por establecimiento.
+  Future<Result<Map<String, EstablishmentMembership>>> call() {
     return _repository.getEstablishments();
   }
 }

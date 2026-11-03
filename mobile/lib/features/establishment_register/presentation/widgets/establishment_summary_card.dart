@@ -80,7 +80,7 @@ class EstablishmentSummaryCard extends StatelessWidget {
               Expanded(
                 child: AppInfoCell(
                   label: EstablishmentRegisterStrings.successSurfaceStatLabel,
-                  value: '${registration.superficieHectareas.toStringAsFixed(0)} ha',
+                  value: EstablishmentRegisterStrings.hectares(registration.superficieHectareas),
                 ),
               ),
               const Expanded(

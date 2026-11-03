@@ -25,9 +25,10 @@ enum AppFieldValidation {
 class AppTextFormField extends StatelessWidget {
   /// Crea un campo de texto reutilizable para formularios de la app.
   const AppTextFormField({
-    required this.hintText,
     super.key,
     this.controller,
+    this.focusNode,
+    this.hintText,
     this.title,
     this.titleStyle,
     this.validator,
@@ -48,6 +49,7 @@ class AppTextFormField extends StatelessWidget {
     this.onTap,
     this.helperText,
     this.prefixIcon,
+    this.prefixText,
     this.suffixIcon,
     this.titleWidget,
     this.style,
@@ -56,8 +58,11 @@ class AppTextFormField extends StatelessWidget {
   /// El controlador del campo de texto.
   final TextEditingController? controller;
 
+  /// El nodo que permite controlar el foco desde el formulario propietario.
+  final FocusNode? focusNode;
+
   /// El texto de ayuda para el campo.
-  final String hintText;
+  final String? hintText;
 
   /// El titulo del campo.
   final String? title;
@@ -119,6 +124,9 @@ class AppTextFormField extends StatelessWidget {
   /// Icono opcional que se muestra al inicio del campo.
   final Widget? prefixIcon;
 
+  /// Texto fijo que se muestra antes del valor ingresado.
+  final String? prefixText;
+
   /// Icono opcional que se muestra al final del campo.
   final Widget? suffixIcon;
 
@@ -151,6 +159,7 @@ class AppTextFormField extends StatelessWidget {
         ],
         TextFormField(
           controller: controller,
+          focusNode: focusNode,
           validator: validator,
           keyboardType: keyboardType,
           inputFormatters: effectiveFormatters,
@@ -168,6 +177,7 @@ class AppTextFormField extends StatelessWidget {
             hintText: hintText,
             helperText: helperText,
             prefixIcon: prefixIcon,
+            prefixText: prefixText,
             suffixIcon: suffixIcon,
             enabledBorder: _validationBorder(validationColor),
             focusedBorder: _validationBorder(validationColor),

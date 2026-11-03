@@ -30,3 +30,10 @@ class UsuarioRepository:
         await self.session.flush()
         await self.session.refresh(usuario)
         return usuario
+
+    async def guardar(self, usuario: Usuario) -> Usuario:
+        """Persiste los cambios de un usuario ya cargado en esta sesión."""
+        self.session.add(usuario)
+        await self.session.flush()
+        await self.session.refresh(usuario)
+        return usuario
