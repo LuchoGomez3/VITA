@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/use_cases/animal_movement_use_cases.dart';
 import 'package:frontend_mayoral/features/animal_movement/presentation/cubit/group_movement_cubit.dart';
@@ -15,6 +16,54 @@ import 'package:frontend_mayoral/features/field/domain/use_cases/move_lot_animal
 import 'package:go_router/go_router.dart';
 
 void main() {
+  testWidgets('selector separa visual y RFID; solo agrega RFID de quince números', (tester) async {
+    final repository = _RecordingRepository();
+    final cubit = _createCubit(repository);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GroupMovementPage(animalIds: const ['a1'], createCubit: () => cubit),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final field = find.byType(TextField).first;
+    final add = find.widgetWithIcon(IconButton, Icons.add);
+    expect(cubit.state.tagKind, MovementTagKind.rfid);
+    expect(tester.widget<IconButton>(add).onPressed, isNull);
+    await tester.enterText(field, '98200041288400');
+    await tester.pump();
+    for (final invalid in ['9820004128840050', 'A982000412884005']) {
+      await tester.enterText(field, invalid);
+      await tester.pump();
+      expect(tester.widget<TextField>(field).controller!.text, '98200041288400');
+      expect(tester.widget<IconButton>(add).onPressed, isNull);
+    }
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(find.text(AnimalMovementStrings.invalidRfid), findsOneWidget);
+    expect(repository.readings, isEmpty);
+
+    await tester.tap(find.text(AnimalMovementStrings.visualMode));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+    expect(find.text(AnimalMovementStrings.invalidRfid), findsNothing);
+    await tester.enterText(field, 'A 982000412884005');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(AnimalMovementStrings.rfidMode));
+    await tester.pumpAndSettle();
+    await tester.enterText(field, '982000412884005');
+    await tester.pump();
+    expect(tester.widget<IconButton>(add).onPressed, isNotNull);
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(repository.readings, [
+      ('A 982000412884005', MovementTagKind.visual),
+      ('982000412884005', MovementTagKind.rfid),
+    ]);
+    expect(cubit.state.animals.map((animal) => animal.id), ['a1', 'read-1', 'read-2']);
+  });
+
   for (final (keepInitial, partial, retry) in [
     (true, false, false),
     (false, false, false),
@@ -65,7 +114,7 @@ void main() {
       expect(find.text(AnimalMovementStrings.animalsTitle(2)), findsOneWidget);
 
       // Una caravana desconocida muestra el error y no se agrega.
-      await tester.enterText(find.byType(TextField).first, '999');
+      await tester.enterText(find.byType(TextField).first, '999000000000000');
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
       expect(find.textContaining('No hay ningún animal activo'), findsOneWidget);
@@ -116,6 +165,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.tap(find.text(AnimalMovementStrings.visualMode));
+    await tester.pumpAndSettle();
     final field = find.byType(TextField).first;
 
     await tester.enterText(field, '002');
@@ -150,6 +201,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.tap(find.text(AnimalMovementStrings.visualMode));
+      await tester.pumpAndSettle();
       final field = find.byType(TextField).first;
       await tester.enterText(field, '002');
       await tester.testTextInput.receiveAction(TextInputAction.done);
@@ -175,6 +228,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.tap(find.text(AnimalMovementStrings.visualMode));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '002');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
@@ -198,9 +253,27 @@ class _DelayedRepository extends _FakeRepository {
   final tags = <String>[];
 
   @override
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) {
+  Future<Result<MovementAnimal?>> findAnimalByTag(
+    String tag, {
+    required String establishmentId,
+    required MovementTagKind kind,
+  }) {
     tags.add(tag);
     return tag == '002' ? first.future : second.future;
+  }
+}
+
+class _RecordingRepository extends _FakeRepository {
+  final readings = <(String, MovementTagKind)>[];
+
+  @override
+  Future<Result<MovementAnimal?>> findAnimalByTag(
+    String tag, {
+    required String establishmentId,
+    required MovementTagKind kind,
+  }) async {
+    readings.add((tag, kind));
+    return Result.success(_animal('read-${readings.length}', tag, 'bajo'));
   }
 }
 
@@ -228,8 +301,11 @@ class _FakeRepository implements AnimalMovementRepository {
   ]);
 
   @override
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) async =>
-      Result.success(tag == '982000412884920' ? _animal('a2', '004 0023', 'sauces') : null);
+  Future<Result<MovementAnimal?>> findAnimalByTag(
+    String tag, {
+    required String establishmentId,
+    required MovementTagKind kind,
+  }) async => Result.success(tag == '982000412884920' ? _animal('a2', '004 0023', 'sauces') : null);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName}');

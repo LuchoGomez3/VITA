@@ -3,6 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_category.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_parent.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
@@ -215,6 +216,10 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     _RfidCaptured event,
     Emitter<RegisterAnimalState> emit,
   ) async {
+    if (!_isValidRfid(event.rfid)) {
+      await _checkRfid(event.rfid, emit);
+      return;
+    }
     emit(
       state.copyWith(
         draft: state.draft.copyWith(rfid: event.rfid),
@@ -354,7 +359,15 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
       case Success<RegisteredAnimal>(:final data):
         emit(state.copyWith(submitResult: ResultState.data(data)));
       case Failure<RegisteredAnimal>(:final error):
-        emit(state.copyWith(submitResult: ResultState.error(error)));
+        emit(
+          state.copyWith(
+            submitResult: ResultState.error(
+              error.reason == RfidValidationFailure.invalidFormat
+                  ? error.copyWith(message: AnimalRegisterStrings.rfidInvalid)
+                  : error,
+            ),
+          ),
+        );
     }
   }
 
@@ -481,7 +494,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
 
   /// Valida el formato RFID compatible con SENASA usado por el formulario.
   bool _isValidRfid(String value) {
-    return RegExp(r'^\d{15}$').hasMatch(value);
+    return RfidValidator.isValid(value);
   }
 
   /// Parsea kilos ingresados por el usuario, aceptando coma o punto decimal.

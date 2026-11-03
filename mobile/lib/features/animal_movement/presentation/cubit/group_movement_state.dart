@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
 
 part 'group_movement_state.freezed.dart';
 
@@ -13,6 +14,7 @@ sealed class GroupMovementState with _$GroupMovementState {
     @Default(ResultState<MovementAnimal>.initial()) ResultState<MovementAnimal> tagResolution,
     @Default(ResultState<GroupMovementSummary>.initial()) ResultState<GroupMovementSummary> submission,
     @Default([]) List<MovementAnimal> animals,
+    @Default(MovementTagKind.rfid) MovementTagKind tagKind,
 
     /// Cambios durables acumulados, incluso si un grupo posterior falla.
     @Default(GroupMovementSummary(movedCount: 0, alreadyThereCount: 0)) GroupMovementSummary savedSummary,

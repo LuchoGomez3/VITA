@@ -12,6 +12,7 @@ import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/animal_movement/data/repositories/animal_movement_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/errors/movement_failure.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/use_cases/animal_movement_use_cases.dart';
 
@@ -32,22 +33,100 @@ void main() {
 
   group('findAnimalByTag', () {
     for (final reverseOrder in [false, true]) {
+      test('cada modo conserva la identidad con visuales alfanuméricas y numéricas, invertido=$reverseOrder', () async {
+        final animals = [
+          _animal('visual', visualTag: 'A 982000412884005', rfid: '982000000000001'),
+          _animal('rfid', visualTag: '982000000000001'),
+        ];
+        final subject = repository(animals: reverseOrder ? animals.reversed.toList() : animals);
+        expect(
+          data(
+            await subject.findAnimalByTag(
+              'A 982000412884005',
+              establishmentId: 'campo-1',
+              kind: MovementTagKind.visual,
+            ),
+          )?.id,
+          'visual',
+        );
+        expect(
+          data(
+            await subject.findAnimalByTag('982000000000001', establishmentId: 'campo-1', kind: MovementTagKind.visual),
+          )?.id,
+          'rfid',
+        );
+        expect(
+          data(
+            await subject.findAnimalByTag('982000000000001', establishmentId: 'campo-1', kind: MovementTagKind.rfid),
+          )?.id,
+          'visual',
+        );
+      });
+    }
+
+    for (final invalid in ['98200041288400', '9820004128840050', 'A 982000412884005', '982 000412884005']) {
+      test('RFID rechaza una entrada inválida sin reinterpretarla: $invalid', () async {
+        final result = await repository().findAnimalByTag(
+          invalid,
+          establishmentId: 'campo-1',
+          kind: MovementTagKind.rfid,
+        );
+        expect((result as Failure<MovementAnimal?>).error.reason, const MovementFailure.invalidRfid());
+      });
+    }
+    for (final unavailable in [
+      _animal('unavailable', status: BrickAnimalProductiveStatus.sold),
+      _animal('unavailable', lotId: ''),
+      _animal('unavailable', deletedAt: DateTime.utc(2026)),
+    ]) {
+      for (final reverseOrder in [false, true]) {
+        test(
+          'un RFID no trasladable no se reinterpreta como visual: ${unavailable.productiveStatus}/${unavailable.lotId}/${unavailable.deletedAt}, invertido=$reverseOrder',
+          () async {
+            final animals = [
+              unavailable,
+              _animal('visual', visualTag: unavailable.rfidTagNumber, rfid: '982000000000002'),
+            ];
+            final subject = repository(animals: reverseOrder ? animals.reversed.toList() : animals);
+
+            final result = await ResolveMovementTagUseCase(subject)(
+              tag: unavailable.rfidTagNumber,
+              kind: MovementTagKind.rfid,
+              establishmentId: 'campo-1',
+              selectedIds: {},
+            );
+
+            expect(result, isA<Failure<MovementAnimal>>());
+            expect((result as Failure<MovementAnimal>).error.reason, const MovementFailure.animalUnavailable());
+          },
+        );
+      }
+    }
+
+    for (final reverseOrder in [false, true]) {
       test('prioriza RFID sobre visual coincidente, orden invertido=$reverseOrder', () async {
         final animals = [
           _animal('visual', visualTag: '982000412884005', rfid: '982000000000001'),
           _animal('electronic', visualTag: '002'),
         ];
         final subject = repository(animals: reverseOrder ? animals.reversed.toList() : animals);
-        final found = data(await subject.findAnimalByTag('982 000412 884005', establishmentId: 'campo-1'));
+        final found = data(
+          await subject.findAnimalByTag('982000412884005', establishmentId: 'campo-1', kind: MovementTagKind.rfid),
+        );
         expect(found?.id, 'electronic');
       });
     }
 
-    test('una visual de quince dígitos sigue siendo válida si no hay RFID coincidente', () async {
+    test('una visual de quince dígitos se busca explícitamente como visual', () async {
       final subject = repository(
         animals: [_animal('visual', visualTag: '982000412884005', rfid: '982000000000001')],
       );
-      expect(data(await subject.findAnimalByTag('982000412884005', establishmentId: 'campo-1'))?.id, 'visual');
+      expect(
+        data(
+          await subject.findAnimalByTag('982000412884005', establishmentId: 'campo-1', kind: MovementTagKind.visual),
+        )?.id,
+        'visual',
+      );
     });
 
     for (final rfid in [false, true]) {
@@ -61,6 +140,7 @@ void main() {
           final tag = rfid ? '982000412884005' : '0040028';
           final result = await ResolveMovementTagUseCase(subject)(
             tag: tag,
+            kind: rfid ? MovementTagKind.rfid : MovementTagKind.visual,
             establishmentId: 'campo-1',
             selectedIds: {},
           );
@@ -80,7 +160,16 @@ void main() {
         ],
       );
       for (final tag in ['982000412884005', '0040028']) {
-        expect(data(await subject.findAnimalByTag(tag, establishmentId: 'campo-1'))?.id, 'propio');
+        expect(
+          data(
+            await subject.findAnimalByTag(
+              tag,
+              establishmentId: 'campo-1',
+              kind: tag.length == 15 ? MovementTagKind.rfid : MovementTagKind.visual,
+            ),
+          )?.id,
+          'propio',
+        );
       }
     });
 
@@ -92,20 +181,30 @@ void main() {
         ],
       );
 
-      final found = data(await subject.findAnimalByTag('004 0028', establishmentId: 'campo-1'));
+      final found = data(
+        await subject.findAnimalByTag('004 0028', establishmentId: 'campo-1', kind: MovementTagKind.visual),
+      );
 
       expect(found?.id, 'propio');
-      expect(data(await subject.findAnimalByTag('0040028', establishmentId: 'campo-3')), isNull);
+      expect(
+        data(await subject.findAnimalByTag('0040028', establishmentId: 'campo-3', kind: MovementTagKind.visual)),
+        isNull,
+      );
     });
 
     test('un RFID de otro campo no se devuelve a la selección', () async {
       final subject = repository(animals: [_animal('ajeno', establishmentId: 'campo-2')]);
 
-      expect(data(await subject.findAnimalByTag('982000412884005', establishmentId: 'campo-1')), isNull);
+      expect(
+        data(await subject.findAnimalByTag('982000412884005', establishmentId: 'campo-1', kind: MovementTagKind.rfid)),
+        isNull,
+      );
     });
 
-    test('encuentra por RFID aunque venga con espacios', () async {
-      final found = data(await repository().findAnimalByTag('982 000412 884 005', establishmentId: 'campo-1'));
+    test('encuentra por RFID completo de quince numeros', () async {
+      final found = data(
+        await repository().findAnimalByTag('982000412884005', establishmentId: 'campo-1', kind: MovementTagKind.rfid),
+      );
 
       expect(found?.id, 'a1');
       expect(found?.categoryName, 'Novillo');
@@ -113,8 +212,18 @@ void main() {
     });
 
     test('encuentra por caravana visual sin importar los espacios', () async {
-      expect(data(await repository().findAnimalByTag('0040028', establishmentId: 'campo-1'))?.id, 'a1');
-      expect(data(await repository().findAnimalByTag('004 0028', establishmentId: 'campo-1'))?.id, 'a1');
+      expect(
+        data(
+          await repository().findAnimalByTag('0040028', establishmentId: 'campo-1', kind: MovementTagKind.visual),
+        )?.id,
+        'a1',
+      );
+      expect(
+        data(
+          await repository().findAnimalByTag('004 0028', establishmentId: 'campo-1', kind: MovementTagKind.visual),
+        )?.id,
+        'a1',
+      );
     });
 
     test('no devuelve animales borrados, vendidos o sin potrero', () async {
@@ -127,7 +236,17 @@ void main() {
       );
 
       for (final tag in ['1', '2', '3']) {
-        expect(data(await subject.findAnimalByTag(tag, establishmentId: 'campo-1')), isNull, reason: tag);
+        expect(
+          data(
+            await subject.findAnimalByTag(
+              tag,
+              establishmentId: 'campo-1',
+              kind: tag.length == 15 ? MovementTagKind.rfid : MovementTagKind.visual,
+            ),
+          ),
+          isNull,
+          reason: tag,
+        );
       }
     });
   });
@@ -175,7 +294,7 @@ void main() {
       movementStore: _FakeMovementStore(const []),
     );
 
-    final result = await subject.findAnimalByTag('004 0028', establishmentId: 'campo-1');
+    final result = await subject.findAnimalByTag('004 0028', establishmentId: 'campo-1', kind: MovementTagKind.visual);
 
     expect(result, isA<Failure<MovementAnimal?>>());
   });

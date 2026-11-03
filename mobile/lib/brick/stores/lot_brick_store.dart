@@ -99,16 +99,18 @@ class BrickLotStore implements LotBrickStore {
     );
     final localLots = await _repository.getLocal<BrickLotModel>();
     final localById = {for (final lot in localLots) lot.localId: lot};
-    for (final remote in remoteLots) {
-      final local = localById[remote.localId];
-      if (local != null && local.syncStatus != BrickLotSyncStatus.synchronized) {
-        continue;
+    await _repository.runLocalTransaction((transaction) async {
+      for (final remote in remoteLots) {
+        final local = localById[remote.localId];
+        if (local != null && local.syncStatus != BrickLotSyncStatus.synchronized) {
+          continue;
+        }
+        final synchronized = remote.copyWith(
+          syncStatus: BrickLotSyncStatus.synchronized,
+        )..primaryKey = local?.primaryKey;
+        await transaction.upsert<BrickLotModel>(synchronized);
       }
-      final synchronized = remote.copyWith(
-        syncStatus: BrickLotSyncStatus.synchronized,
-      )..primaryKey = local?.primaryKey;
-      await _repository.upsertLocal<BrickLotModel>(synchronized);
-    }
+    });
   }
 
   @override

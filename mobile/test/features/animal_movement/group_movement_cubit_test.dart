@@ -5,6 +5,7 @@ import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/errors/movement_failure.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/use_cases/animal_movement_use_cases.dart';
@@ -25,7 +26,7 @@ void main() {
       prepare: PrepareGroupMovementUseCase(repository),
       resolveTag: ResolveMovementTagUseCase(repository),
       register: RegisterGroupMovementUseCase(move),
-    );
+    )..selectTagKind(MovementTagKind.visual);
     addTearDown(cubit.close);
   });
 
@@ -251,8 +252,11 @@ class _Repository extends Fake implements AnimalMovementRepository {
       animalResult ?? Future.value(const Result.success(_animal));
 
   @override
-  Future<Result<MovementAnimal?>> findAnimalByTag(String tag, {required String establishmentId}) =>
-      tagResult ?? Future.value(const Result.success(null));
+  Future<Result<MovementAnimal?>> findAnimalByTag(
+    String tag, {
+    required String establishmentId,
+    required MovementTagKind kind,
+  }) => tagResult ?? Future.value(const Result.success(null));
 
   @override
   Future<Result<List<MovementDestination>>> getDestinations(String establishmentId) async => const Result.success([

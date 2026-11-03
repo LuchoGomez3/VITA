@@ -172,21 +172,27 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   ///
   /// Los stores de una operacion compuesta, como un movimiento de animales,
   /// usan este limite para evitar estados parciales si alguna escritura falla.
+  /// La caché se actualiza tras el commit y se notifica una vez por tipo.
   Future<T> runLocalTransaction<T>(
     Future<T> Function(AppBrickTransaction transaction) callback,
   ) async {
-    final afterCommit = <Future<void> Function()>[];
+    final afterCommit = <void Function()>[];
+    final notifications = <Type, Future<void> Function()>{};
     final result = await sqliteProvider.transaction(
       (sqliteTransaction) => callback(
         AppBrickTransaction._(
           repository: this,
           transaction: sqliteTransaction,
           afterCommit: afterCommit,
+          notifications: notifications,
         ),
       ),
     );
     for (final action in afterCommit) {
-      await action();
+      action();
+    }
+    for (final notify in notifications.values) {
+      await notify();
     }
     return result;
   }
@@ -234,14 +240,17 @@ class AppBrickTransaction {
   AppBrickTransaction._({
     required AppBrickRepository repository,
     required Transaction transaction,
-    required List<Future<void> Function()> afterCommit,
+    required List<void Function()> afterCommit,
+    required Map<Type, Future<void> Function()> notifications,
   }) : _repository = repository,
        _transaction = transaction,
-       _afterCommit = afterCommit;
+       _afterCommit = afterCommit,
+       _notifications = notifications;
 
   final AppBrickRepository _repository;
   final Transaction _transaction;
-  final List<Future<void> Function()> _afterCommit;
+  final List<void Function()> _afterCommit;
+  final Map<Type, Future<void> Function()> _notifications;
 
   /// Inserta o actualiza [model] usando el adapter generado por Brick.
   Future<TModel> upsert<TModel extends OfflineFirstWithRestModel>(
@@ -287,10 +296,10 @@ class AppBrickTransaction {
       provider: _repository.sqliteProvider,
       repository: _repository,
     );
-    _afterCommit.add(() async {
+    _afterCommit.add(() {
       _repository.memoryCacheProvider.upsert<TModel>(model);
-      await _repository._notifyLocalSubscribers<TModel>();
     });
+    _notifications[TModel] = _repository._notifyLocalSubscribers<TModel>;
     return model;
   }
 }
