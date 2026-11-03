@@ -26,6 +26,7 @@ OfflineSyncCoordinator createOfflineSyncCoordinator() {
       client: client,
     ),
     onClose: client.close,
+    sessionIdentity: () => SessionBackendAccessTokenProvider.instance.sessionGeneration,
   );
 }
 
@@ -60,6 +61,8 @@ PrepareInitialDataSyncUseCase createPrepareInitialDataSyncUseCase({
       weighingStore: BrickPesajeStore.instance,
       movementStore: BrickAnimalLotMovementStore.instance,
       syncOperatingExpenseData: operatingExpenseSync.call,
+      sessionIdentity: () => SessionBackendAccessTokenProvider.instance.sessionGeneration,
+      persistSessionData: SessionBackendAccessTokenProvider.instance.persistSessionData,
     ),
   );
 }

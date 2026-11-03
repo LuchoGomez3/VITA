@@ -39,6 +39,8 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     required PesajeBrickStore weighingStore,
     required AnimalLotMovementBrickStore movementStore,
     required SyncOperatingExpenseData syncOperatingExpenseData,
+    Object? Function()? sessionIdentity,
+    Future<void> Function(Future<void> Function())? persistSessionData,
   }) : _secureStorage = secureStorage,
        _establishmentRemoteDataSource = establishmentRemoteDataSource,
        _animalStore = animalStore,
@@ -46,7 +48,9 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
        _lotStore = lotStore,
        _weighingStore = weighingStore,
        _movementStore = movementStore,
-       _syncOperatingExpenseData = syncOperatingExpenseData;
+       _syncOperatingExpenseData = syncOperatingExpenseData,
+       _sessionIdentity = sessionIdentity,
+       _persistSessionData = persistSessionData;
 
   final SecureStorageService _secureStorage;
   final EstablishmentRemoteDataSource _establishmentRemoteDataSource;
@@ -56,61 +60,94 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
   final PesajeBrickStore _weighingStore;
   final AnimalLotMovementBrickStore _movementStore;
   final SyncOperatingExpenseData _syncOperatingExpenseData;
+  final Object? Function()? _sessionIdentity;
+  final Future<void> Function(Future<void> Function())? _persistSessionData;
 
   @override
   Future<Result<PostAuthenticationSummary>> sync() async {
+    final session = _sessionIdentity?.call();
+    void requireSession() {
+      if (session != _sessionIdentity?.call()) {
+        throw const DomainException(message: 'Session changed', code: DomainErrorCode.unauthorized);
+      }
+    }
+
     try {
       final establishments = await _establishmentRemoteDataSource.fetchEstablishments();
-      await _secureStorage.write(
-        key: SecureStorageKeys.establishmentCatalog,
-        value: jsonEncode(
-          establishments.map((establishment) => establishment.toJson()).toList(),
-        ),
-      );
+      requireSession();
+      Future<void> persistCatalog() async {
+        requireSession();
+        await _secureStorage.write(
+          key: SecureStorageKeys.establishmentCatalog,
+          value: jsonEncode(
+            establishments.map((establishment) => establishment.toJson()).toList(),
+          ),
+        );
+      }
+
+      final persistSessionData = _persistSessionData;
+      if (persistSessionData == null) {
+        await persistCatalog();
+      } else {
+        await persistSessionData(persistCatalog);
+      }
+      requireSession();
       _logInitialSyncStep('establishments=${establishments.length}');
       _logInitialSyncStep('pulling global animal categories');
       await _categoryStore.pullRemoteCategorias();
+      requireSession();
       for (final establishment in establishments) {
         final establishmentId = establishment.id;
         _logInitialSyncStep(
           'pushing pending lots for establishment=$establishmentId',
         );
         await _lotStore.pushPendingLots(establishmentId);
+        requireSession();
         _logInitialSyncStep('pulling lots for establishment=$establishmentId');
         await _lotStore.pullRemoteLots(establishmentId);
+        requireSession();
         _logInitialSyncStep(
           'pulling animals for establishment=$establishmentId',
         );
         await _animalStore.pullRemoteAnimals(establishmentId);
+        requireSession();
         _logInitialSyncStep(
           'pushing pending lot movements for establishment=$establishmentId',
         );
         await _movementStore.pushPendingMovements(establishmentId);
+        requireSession();
         _logInitialSyncStep(
           'reconciling animals after lot movements for establishment=$establishmentId',
         );
         await _animalStore.pullRemoteAnimals(establishmentId);
+        requireSession();
         _logInitialSyncStep(
           'pulling lot movements for establishment=$establishmentId',
         );
         await _movementStore.pullRemoteMovements(establishmentId);
+        requireSession();
         _logInitialSyncStep(
           'pulling weighings for establishment=$establishmentId',
         );
         await _weighingStore.pullRemotePesajes(establishmentId);
+        requireSession();
         if (establishment.role.canViewFinancialInformation) {
           _logInitialSyncStep(
             'pulling operating expense data for establishment=$establishmentId',
           );
           await _syncOperatingExpenseData(establishmentId);
+          requireSession();
         }
       }
 
+      requireSession();
       return Result.success(
         PostAuthenticationSummary(
           establishmentIds: establishments.map((establishment) => establishment.id).toList(growable: false),
         ),
       );
+    } on DomainException catch (error) {
+      return Result.failure(error);
     } on SocketException {
       return const Result.failure(
         DomainException(

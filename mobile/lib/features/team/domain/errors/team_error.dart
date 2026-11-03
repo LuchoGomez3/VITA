@@ -1,3 +1,5 @@
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
+
 /// Falla del equipo tal como la informa el backend.
 ///
 /// Viaja en `DomainException.reason` para que la presentación elija el texto y,
@@ -8,6 +10,21 @@ typedef TeamFailure = ({TeamErrorReason? reason, int? remainingAttempts});
 enum TeamErrorReason {
   /// El usuario no es dueño ni administrador.
   notAllowed,
+
+  /// Lectura o escritura local no disponible.
+  storageUnavailable,
+
+  /// Datos incompatibles con el contrato.
+  invalidResponse,
+
+  /// Recuperar el catálogo antes de repetir un canje de resultado desconocido.
+  acceptanceNeedsRecovery,
+
+  /// Email vacío.
+  emailRequired,
+
+  /// Email inválido.
+  emailInvalid,
 
   /// El rol de quien gestiona no alcanza para el rol elegido.
   roleNotAssignable,
@@ -58,3 +75,9 @@ enum TeamErrorReason {
     _ => null,
   };
 }
+
+/// Construye errores funcionales sin copy de presentación.
+DomainException teamError(TeamErrorReason reason) => DomainException(
+  message: 'Team operation: ${reason.name}',
+  reason: (reason: reason, remainingAttempts: null),
+);

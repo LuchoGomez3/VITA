@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 
 /// Sesion tecnica que Brick necesita para enviar requests autenticadas.
@@ -58,6 +60,37 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
   String? _refreshToken;
   DateTime? _accessTokenExpiresAt;
   Future<BackendTokenSession?>? _refreshInFlight;
+  int _sessionGeneration = 0;
+  final Set<Future<void>> _pendingWrites = {};
+  final _authRejections = StreamController<void>.broadcast(sync: true);
+
+  /// Rechazos definitivos de la sesión, también para HTTP fuera de Brick.
+  /// Se publican sin demora para no invalidar una identidad iniciada después.
+  Stream<void> get authRejections => _authRejections.stream;
+
+  /// Mantiene una escritura ya iniciada hasta que pueda limpiarse la sesión.
+  Future<void> persistSessionData(Future<void> Function() persist) async {
+    final completed = Completer<void>();
+    _pendingWrites.add(completed.future);
+    try {
+      await persist();
+    } finally {
+      _pendingWrites.remove(completed.future);
+      completed.complete();
+    }
+  }
+
+  /// Logout invalida primero la identidad, espera escrituras y borra después.
+  Future<void> waitForSessionWrites() => Future.wait(_pendingWrites.toList());
+
+  /// Cambia al cerrar o iniciar sesión, pero permanece al renovar el JWT.
+  int get sessionGeneration => _sessionGeneration;
+
+  /// Inicia una identidad nueva aunque hubiera otra sesión en memoria.
+  void startSession(BackendTokenSession value) {
+    if (_accessToken != null) _sessionGeneration++;
+    session = value;
+  }
 
   /// Callback configurado por auth para renovar un access token vencido.
   BackendTokenRefreshCallback? refreshCallback;
@@ -70,6 +103,7 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
   /// Se conserva para tests y llamadas legacy. Las integraciones nuevas deben
   /// usar [session] para incluir refresh y expiracion.
   set accessToken(String accessToken) {
+    if (_accessToken == null) _sessionGeneration++;
     _accessToken = accessToken;
   }
 
@@ -91,6 +125,7 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
 
   /// Hidrata todos los datos de sesion que necesita Brick.
   set session(BackendTokenSession session) {
+    if (_accessToken == null) _sessionGeneration++;
     _accessToken = session.accessToken;
     _refreshToken = session.refreshToken;
     _accessTokenExpiresAt = session.accessTokenExpiresAt.toUtc();
@@ -98,10 +133,16 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
 
   /// Elimina el token de la sesion local.
   void clearAccessToken() {
+    _sessionGeneration++;
     _accessToken = null;
     _refreshToken = null;
     _accessTokenExpiresAt = null;
     _refreshInFlight = null;
+  }
+
+  void _rejectSession() {
+    clearAccessToken();
+    _authRejections.add(null);
   }
 
   @override
@@ -119,22 +160,24 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
     final refreshToken = _refreshToken;
     final refreshCallback = this.refreshCallback;
     if (refreshToken == null || refreshToken.isEmpty || refreshCallback == null) {
+      _rejectSession();
       throw const DomainException(
         message: 'La sesion expiro. Inicia sesion nuevamente.',
         code: DomainErrorCode.unauthorized,
       );
     }
 
+    final generation = _sessionGeneration;
     BackendTokenSession? refreshed;
     try {
       refreshed = await (_refreshInFlight ??= refreshCallback(refreshToken));
     } on DomainException catch (error) {
-      if (error.code == DomainErrorCode.unauthorized) {
-        clearAccessToken();
+      if (error.code == DomainErrorCode.unauthorized && generation == _sessionGeneration) {
+        _rejectSession();
       }
       rethrow;
     } finally {
-      _refreshInFlight = null;
+      if (generation == _sessionGeneration) _refreshInFlight = null;
     }
 
     if (refreshed == null) {
@@ -144,6 +187,9 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
       );
     }
 
+    if (generation != _sessionGeneration) {
+      throw const DomainException(message: 'Session changed', code: DomainErrorCode.unauthorized);
+    }
     session = refreshed;
     return refreshed.accessToken;
   }
@@ -157,24 +203,28 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
     final refreshToken = _refreshToken;
     final refreshCallback = this.refreshCallback;
     if (refreshToken == null || refreshToken.isEmpty || refreshCallback == null) {
-      clearAccessToken();
+      _rejectSession();
       return null;
     }
 
+    final generation = _sessionGeneration;
     BackendTokenSession? refreshed;
     try {
       refreshed = await (_refreshInFlight ??= refreshCallback(refreshToken));
     } on DomainException catch (error) {
-      if (error.code == DomainErrorCode.unauthorized) clearAccessToken();
+      if (error.code == DomainErrorCode.unauthorized && generation == _sessionGeneration) _rejectSession();
       rethrow;
     } finally {
-      _refreshInFlight = null;
+      if (generation == _sessionGeneration) _refreshInFlight = null;
     }
     if (refreshed == null) {
       throw const DomainException(
         message: 'No se pudo renovar la sesion por un problema de red.',
         code: DomainErrorCode.offline,
       );
+    }
+    if (generation != _sessionGeneration) {
+      throw const DomainException(message: 'Session changed', code: DomainErrorCode.unauthorized);
     }
     session = refreshed;
     return refreshed.accessToken;

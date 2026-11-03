@@ -2,7 +2,7 @@ part of 'auth_session_cubit.dart';
 
 /// Estado global de autenticacion.
 @freezed
-abstract class AuthSessionState with _$AuthSessionState {
+sealed class AuthSessionState with _$AuthSessionState {
   /// La app esta leyendo secure storage para decidir el destino inicial.
   const factory AuthSessionState.checking() = AuthSessionChecking;
 
@@ -11,4 +11,7 @@ abstract class AuthSessionState with _$AuthSessionState {
 
   /// No hay sesion local utilizable; el usuario debe iniciar sesion con red.
   const factory AuthSessionState.unauthenticated() = AuthSessionUnauthenticated;
+
+  /// La sesión está invalidada, pero falta limpiar sus datos antes de continuar.
+  const factory AuthSessionState.cleanupFailed() = AuthSessionCleanupFailed;
 }

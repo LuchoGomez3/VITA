@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,7 @@ import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/auth/data/datasources/auth_local_data_source.dart';
 import 'package:frontend_mayoral/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:frontend_mayoral/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/registration_request.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -594,6 +596,73 @@ void main() {
         case Failure(:final error):
           expect(error.code, DomainErrorCode.offline);
       }
+    });
+
+    test('logout espera escrituras iniciadas antes de borrar los datos de sesión', () async {
+      final provider = SessionBackendAccessTokenProvider.instance;
+      final pending = Completer<void>();
+      final started = Completer<void>();
+      final writing = provider.persistSessionData(() async {
+        started.complete();
+        await pending.future;
+        await secureStorage.write(key: SecureStorageKeys.establishmentCatalog, value: 'previous-user');
+        await secureStorage.write(key: SecureStorageKeys.teamSnapshot, value: 'previous-team');
+      });
+      await started.future;
+      final repository = _createRepository(
+        secureStorage: secureStorage,
+        client: MockClient((_) async => http.Response('', 204)),
+      );
+      var finished = false;
+      final signingOut = repository.signOut().then((_) => finished = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(finished, isFalse);
+      pending.complete();
+      await writing;
+      await signingOut;
+      expect(await secureStorage.read(SecureStorageKeys.establishmentCatalog), isNull);
+      expect(await secureStorage.read(SecureStorageKeys.teamSnapshot), isNull);
+    });
+
+    test('una renovación de la sesión anterior no guarda ni hidrata credenciales', () async {
+      final pending = Completer<http.Response>();
+      final started = Completer<void>();
+      final repository = _createRepository(
+        secureStorage: secureStorage,
+        client: MockClient((request) {
+          if (request.url.path.endsWith('/refresh')) {
+            started.complete();
+            return pending.future;
+          }
+          return Future.value(
+            http.Response(
+              jsonEncode({'success': true, 'data': _sessionJson(accessToken: 'first', refreshToken: 'refresh-first')}),
+              200,
+            ),
+          );
+        }),
+      );
+      await repository.signIn(email: 'ernesto@example.com', password: 'synthetic-password');
+      final refreshing = repository.refreshSession();
+      await started.future;
+      SessionBackendAccessTokenProvider.instance
+        ..clearAccessToken()
+        ..session = BackendTokenSession(
+          accessToken: 'next-user',
+          refreshToken: 'next-refresh',
+          accessTokenExpiresAt: DateTime.utc(2030),
+        );
+      await secureStorage.write(key: SecureStorageKeys.authSession, value: 'next-session');
+      pending.complete(
+        http.Response(
+          jsonEncode({'success': true, 'data': _sessionJson(accessToken: 'stale', refreshToken: 'stale-refresh')}),
+          200,
+        ),
+      );
+      final result = await refreshing;
+      expect(result, isA<Failure<AuthSession>>());
+      expect(SessionBackendAccessTokenProvider.instance.accessToken, 'next-user');
+      expect(await secureStorage.read(SecureStorageKeys.authSession), 'next-session');
     });
 
     test('refreshSession maps a client exception to an offline failure', () async {

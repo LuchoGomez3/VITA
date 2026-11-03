@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/authentication/user_role_strings.dart';
-import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
+import 'package:frontend_mayoral/features/team/presentation/cubit/invitation_created_cubit.dart';
 import 'package:frontend_mayoral/features/team/presentation/strings/team_strings.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
@@ -14,12 +16,12 @@ import 'package:share_plus/share_plus.dart';
 /// "Invitación creada" (`InvCodigoGenerado`): el código para compartir por otro
 /// medio si el email no llega. Es la única vez que se ve: si se pierde, se
 /// reenvía la invitación y sale uno nuevo.
-class InvitationCreatedPage extends StatefulWidget {
+class InvitationCreatedPage extends StatelessWidget {
   /// Crea la pantalla para [created].
   const InvitationCreatedPage({
     required this.created,
     required this.establishmentName,
-    required this.cancelInvitation,
+    required this.createCubit,
     super.key,
   });
 
@@ -30,15 +32,24 @@ class InvitationCreatedPage extends StatefulWidget {
   final String establishmentName;
 
   /// Cancela la invitación (online-only).
-  final Future<Result<void>> Function() cancelInvitation;
+  final InvitationCreatedCubit Function() createCubit;
 
   @override
-  State<InvitationCreatedPage> createState() => _InvitationCreatedPageState();
+  Widget build(BuildContext context) => BlocProvider(
+    create: (_) => createCubit(),
+    child: _InvitationCreatedView(created: created, establishmentName: establishmentName),
+  );
 }
 
-class _InvitationCreatedPageState extends State<InvitationCreatedPage> {
-  bool _cancelling = false;
+class _InvitationCreatedView extends StatefulWidget {
+  const _InvitationCreatedView({required this.created, required this.establishmentName});
+  final CreatedInvitation created;
+  final String establishmentName;
+  @override
+  State<_InvitationCreatedView> createState() => _InvitationCreatedPageState();
+}
 
+class _InvitationCreatedPageState extends State<_InvitationCreatedView> {
   TeamInvitation get _invitation => widget.created.invitation;
 
   Future<void> _copy() async {
@@ -72,139 +83,148 @@ class _InvitationCreatedPageState extends State<InvitationCreatedPage> {
     if (!confirmed || !mounted) {
       return;
     }
-    setState(() => _cancelling = true);
-    final result = await widget.cancelInvitation();
-    if (!mounted) {
-      return;
-    }
-    setState(() => _cancelling = false);
-    final messenger = ScaffoldMessenger.of(context);
-    switch (result) {
-      case Success():
-        messenger.showSnackBar(const SnackBar(content: Text(TeamStrings.cancelledNotice)));
-        context.pop(true);
-      case Failure(:final error):
-        messenger.showSnackBar(SnackBar(content: Text(TeamStrings.error(error))));
-    }
+    await context.read<InvitationCreatedCubit>().cancel();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    tooltip: TeamStrings.closeTooltip,
-                    onPressed: () => context.pop(true),
-                  ),
-                  const Expanded(
-                    child: Text(
-                      TeamStrings.createdTitle,
-                      textAlign: TextAlign.center,
-                      style: AppTypography.appBarTitle,
-                    ),
-                  ),
-                  const SizedBox(width: 48),
-                ],
+    return BlocConsumer<InvitationCreatedCubit, ResultState<TeamMutation<void>>>(
+      listener: (context, state) {
+        switch (state) {
+          case Data<TeamMutation<void>>(:final data):
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  data.persistenceError == null ? TeamStrings.cancelledNotice : TeamStrings.mutationStorageWarning,
+                ),
               ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                children: [
-                  _InviteeCard(invitation: _invitation),
-                  const SizedBox(height: AppSpacing.md),
-                  // Si el email no salió, se avisa arriba de todo: el código
-                  // sirve igual y hay que mandarlo por otro medio.
-                  if (!_invitation.emailSent) ...[
-                    const _EmailNotSentBanner(),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: AppColors.backgroundSecondaryLight,
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      child: Column(
+            );
+            context.pop(data);
+          case ResultError<TeamMutation<void>>(:final error):
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(TeamStrings.error(error))));
+          default:
+            break;
+        }
+      },
+      builder: (context, state) {
+        final cancelling = state is Loading<TeamMutation<void>>;
+        return Scaffold(
+          body: SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        tooltip: TeamStrings.closeTooltip,
+                        onPressed: () => context.pop(true),
+                      ),
+                      const Expanded(
+                        child: Text(
+                          TeamStrings.createdTitle,
+                          textAlign: TextAlign.center,
+                          style: AppTypography.appBarTitle,
+                        ),
+                      ),
+                      const SizedBox(width: 48),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    children: [
+                      _InviteeCard(invitation: _invitation),
+                      const SizedBox(height: AppSpacing.md),
+                      // Si el email no salió, se avisa arriba de todo: el código
+                      // sirve igual y hay que mandarlo por otro medio.
+                      if (!_invitation.emailSent) ...[
+                        const _EmailNotSentBanner(),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundSecondaryLight,
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          child: Column(
+                            children: [
+                              Text(
+                                TeamStrings.codeLabel.toUpperCase(),
+                                style: AppTypography.smallEmphasis.copyWith(color: AppColors.primary),
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              SelectableText(
+                                widget.created.code,
+                                style: AppTypography.monoValueEmphasis.copyWith(fontSize: 40, letterSpacing: 5),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                TeamStrings.codeValidity(_invitation.expiresAt),
+                                style: AppTypography.smallEmphasis.copyWith(color: AppColors.primary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      if (_invitation.emailSent) ...[
+                        const Text(TeamStrings.createdExplanation, style: AppTypography.secondaryEmphasis),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+                      Row(
                         children: [
-                          Text(
-                            TeamStrings.codeLabel.toUpperCase(),
-                            style: AppTypography.smallEmphasis.copyWith(color: AppColors.primary),
+                          Expanded(
+                            child: AppOutlinedButton(
+                              label: TeamStrings.copyCta,
+                              icon: const Icon(Icons.copy_outlined),
+                              onPressed: () => unawaited(_copy()),
+                            ),
                           ),
-                          const SizedBox(height: AppSpacing.sm),
-                          SelectableText(
-                            widget.created.code,
-                            style: AppTypography.monoValueEmphasis.copyWith(fontSize: 40, letterSpacing: 5),
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            TeamStrings.codeValidity(_invitation.expiresAt),
-                            style: AppTypography.smallEmphasis.copyWith(color: AppColors.primary),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            // Sin email, compartir es el camino principal.
+                            child: _invitation.emailSent
+                                ? AppOutlinedButton(
+                                    label: TeamStrings.shareCta,
+                                    icon: const Icon(Icons.share_outlined),
+                                    onPressed: () => unawaited(_share()),
+                                  )
+                                : AppFilledButton(
+                                    label: TeamStrings.shareCta,
+                                    icon: const Icon(Icons.share_outlined),
+                                    onPressed: () => unawaited(_share()),
+                                  ),
                           ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  if (_invitation.emailSent) ...[
-                    const Text(TeamStrings.createdExplanation, style: AppTypography.secondaryEmphasis),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
-                  Row(
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: AppOutlinedButton(
-                          label: TeamStrings.copyCta,
-                          icon: const Icon(Icons.copy_outlined),
-                          onPressed: () => unawaited(_copy()),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        // Sin email, compartir es el camino principal.
-                        child: _invitation.emailSent
-                            ? AppOutlinedButton(
-                                label: TeamStrings.shareCta,
-                                icon: const Icon(Icons.share_outlined),
-                                onPressed: () => unawaited(_share()),
-                              )
-                            : AppFilledButton(
-                                label: TeamStrings.shareCta,
-                                icon: const Icon(Icons.share_outlined),
-                                onPressed: () => unawaited(_share()),
-                              ),
+                      AppFilledButton(label: TeamStrings.doneCta, onPressed: () => context.pop(true)),
+                      const SizedBox(height: AppSpacing.xs),
+                      TextButton(
+                        onPressed: cancelling ? null : () => unawaited(_cancel()),
+                        style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                        child: Text(cancelling ? TeamStrings.cancellingCta : TeamStrings.cancelAction),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
-              child: Column(
-                children: [
-                  AppFilledButton(label: TeamStrings.doneCta, onPressed: () => context.pop(true)),
-                  const SizedBox(height: AppSpacing.xs),
-                  TextButton(
-                    onPressed: _cancelling ? null : () => unawaited(_cancel()),
-                    style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                    child: Text(_cancelling ? TeamStrings.cancellingCta : TeamStrings.cancelAction),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

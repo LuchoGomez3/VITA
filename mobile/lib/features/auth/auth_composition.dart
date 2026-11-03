@@ -50,7 +50,10 @@ AuthSessionCubit createAuthSessionCubit() {
     restoreSessionUseCase: RestoreSessionUseCase(repository),
     signOutUseCase: SignOutUseCase(repository),
     refreshOfflineData: createOfflineSyncCoordinator().synchronize,
-    authRejections: AppBrickRepository.instance.authRejections,
+    authRejections: [
+      AppBrickRepository.instance.authRejections,
+      SessionBackendAccessTokenProvider.instance.authRejections,
+    ],
     onClose: client.close,
   );
 }

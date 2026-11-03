@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
@@ -9,15 +11,23 @@ import 'package:frontend_mayoral/features/team/domain/repositories/team_reposito
 /// Secure storage en memoria.
 class MemoryStorage implements SecureStorageService {
   final Map<String, String> values = {};
+  Exception? readFailure;
+  Exception? writeFailure;
+  Future<void>? writePending;
 
   @override
   Future<void> delete(String key) async => values.remove(key);
 
   @override
-  Future<String?> read(String key) async => values[key];
+  Future<String?> read(String key) async {
+    if (readFailure case final error?) throw error;
+    return values[key];
+  }
 
   @override
   Future<void> write({required String key, required String value}) async {
+    await writePending;
+    if (writeFailure case final error?) throw error;
     values[key] = value;
   }
 }
@@ -56,7 +66,7 @@ final TeamInvitation pendingVet = (
   createdAt: DateTime.utc(2026, 10, 17),
 );
 
-TeamSnapshot snapshotOf({List<TeamMember>? members, List<TeamInvitation>? invitations}) => (
+TeamSnapshot snapshotOf({List<TeamMember>? members, List<TeamInvitation>? invitations}) => TeamSnapshot(
   members: members ?? [holder, worker],
   invitations: invitations ?? [pendingVet],
   fetchedAt: DateTime.utc(2026, 10, 17, 12),
@@ -82,58 +92,105 @@ class FakeTeamRepository implements TeamRepository {
     invitedByRole: UserRole.owner,
     expiresAt: DateTime.utc(2026, 10, 24),
   ));
-  Result<EstablishmentMembership> acceptResult = const Result.success(
-    EstablishmentMembership(id: 'campo-1', name: 'La Sirena', role: UserRole.veterinarian),
+  Result<TeamAcceptance> acceptResult = const Result.success(
+    TeamAcceptance(
+      membership: EstablishmentMembership(id: 'campo-1', name: 'La Sirena', role: UserRole.veterinarian),
+    ),
   );
+  Result<EstablishmentMembership?> membershipResult = const Result.success(
+    EstablishmentMembership(id: 'campo-1', name: 'La Sirena', role: UserRole.owner),
+  );
+  Future<Result<EstablishmentMembership?>>? membershipPending;
+  Future<Result<TeamSnapshot>>? refreshPending;
+  Future<Result<InvitationPreview>>? previewPending;
+  Future<Result<CreatedInvitation>>? invitePending;
+  Future<Result<TeamAcceptance>>? acceptPending;
 
   final List<String> calls = [];
 
   @override
-  Future<TeamSnapshot?> readCached(String establishmentId) async => cached;
+  Future<Result<TeamSnapshot?>> readCached(String establishmentId) async => Result.success(cached);
+
+  @override
+  Future<Result<EstablishmentMembership?>> findEstablishment(String establishmentId) async =>
+      membershipPending ?? membershipResult;
 
   @override
   Future<Result<TeamSnapshot>> refresh(String establishmentId) async {
     calls.add('refresh');
-    return refreshResult;
+    return refreshPending ?? refreshResult;
   }
 
   @override
-  Future<Result<CreatedInvitation>> invite(
+  Future<Result<TeamMutation<CreatedInvitation>>> invite(
     String establishmentId, {
     required String email,
     required UserRole role,
   }) async {
     calls.add('invite:$email:${role.backendValue}');
-    return inviteResult;
+    final result = await (invitePending ?? Future.value(inviteResult));
+    return result.when(
+      success: (created) {
+        cached = snapshotOf(
+          invitations: [...?cached?.invitations.where((i) => i.id != created.invitation.id), created.invitation],
+        );
+        return Result.success(
+          TeamMutation(value: created, change: TeamChange.invitation(created.invitation), snapshot: cached!),
+        );
+      },
+      failure: Result.failure,
+    );
   }
 
   @override
-  Future<Result<CreatedInvitation>> resend(String establishmentId, String invitationId) async {
+  Future<Result<TeamMutation<CreatedInvitation>>> resend(String establishmentId, String invitationId) async {
     calls.add('resend:$invitationId');
-    return resendResult;
+    return resendResult.when(
+      success: (created) {
+        cached = snapshotOf(invitations: [created.invitation]);
+        return Result.success(
+          TeamMutation(value: created, change: TeamChange.invitation(created.invitation), snapshot: cached!),
+        );
+      },
+      failure: Result.failure,
+    );
   }
 
   @override
-  Future<Result<void>> cancel(String establishmentId, String invitationId) async {
+  Future<Result<TeamMutation<void>>> cancel(String establishmentId, String invitationId) async {
     calls.add('cancel:$invitationId');
-    return cancelResult;
+    return cancelResult.when(
+      success: (_) {
+        cached = snapshotOf(invitations: []);
+        return Result.success(
+          TeamMutation<void>(value: null, change: TeamChange.cancelled(invitationId), snapshot: cached!),
+        );
+      },
+      failure: Result.failure,
+    );
   }
 
   @override
-  Future<Result<void>> removeMember(String establishmentId, String userId) async {
+  Future<Result<TeamMutation<void>>> removeMember(String establishmentId, String userId) async {
     calls.add('remove:$userId');
-    return removeResult;
+    return removeResult.when(
+      success: (_) {
+        cached = snapshotOf(members: [holder]);
+        return Result.success(TeamMutation<void>(value: null, change: TeamChange.removed(userId), snapshot: cached!));
+      },
+      failure: Result.failure,
+    );
   }
 
   @override
   Future<Result<InvitationPreview>> preview(String code) async {
     calls.add('preview:$code');
-    return previewResult;
+    return previewPending ?? previewResult;
   }
 
   @override
-  Future<Result<EstablishmentMembership>> accept(String code) async {
+  Future<Result<TeamAcceptance>> accept(String code) async {
     calls.add('accept:$code');
-    return acceptResult;
+    return acceptPending ?? acceptResult;
   }
 }

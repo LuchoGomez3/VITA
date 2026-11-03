@@ -33,6 +33,7 @@ class FlutterSecureStorageService implements SecureStorageService {
 
   final FlutterSecureStorage _storage;
   final Duration _operationTimeout;
+  static final Map<FlutterSecureStorage, Map<String, Future<void>>> _pendingDeletes = {};
 
   @override
   Future<void> write({
@@ -49,6 +50,24 @@ class FlutterSecureStorageService implements SecureStorageService {
 
   @override
   Future<void> delete(String key) {
-    return _storage.delete(key: key).timeout(_operationTimeout);
+    // Un timeout no cancela la llamada nativa. Los reintentos se ordenan detrás
+    // de ella para que ningún borrado anterior alcance a la sesión siguiente.
+    final pending = _pendingDeletes.putIfAbsent(_storage, () => {});
+    final existing = pending[key];
+    late final Future<void> operation;
+    final deletion = existing == null
+        ? _storage.delete(key: key)
+        : existing.then(
+            (_) => _storage.delete(key: key),
+            onError: (Object _, StackTrace _) => _storage.delete(key: key),
+          );
+    operation = deletion.whenComplete(() {
+      if (identical(pending[key], operation)) {
+        pending.remove(key);
+        if (pending.isEmpty) _pendingDeletes.remove(_storage);
+      }
+    });
+    pending[key] = operation;
+    return operation.timeout(_operationTimeout);
   }
 }

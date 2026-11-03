@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
+import 'package:frontend_mayoral/features/team/data/team_json.dart';
 import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
 import 'package:frontend_mayoral/features/team/domain/errors/team_error.dart';
 import 'package:http/http.dart' as http;
@@ -16,16 +17,25 @@ class TeamRemoteDataSource {
     required String baseUrl,
     required BackendAccessTokenProvider tokenProvider,
     http.Client? client,
+    bool Function()? isSessionCurrent,
   }) : _baseUrl = baseUrl.replaceFirst(RegExp(r'/$'), ''),
        _tokenProvider = tokenProvider,
-       _client = client ?? http.Client();
+       _client = client,
+       _isSessionCurrent = isSessionCurrent ?? (() => true);
 
   /// Invitar espera el envío del email (hasta 10 s del lado del servidor).
   static const _timeout = Duration(seconds: 20);
 
   final String _baseUrl;
   final BackendAccessTokenProvider _tokenProvider;
-  final http.Client _client;
+  final http.Client? _client;
+  final bool Function() _isSessionCurrent;
+
+  void _requireSession() {
+    if (!_isSessionCurrent()) {
+      throw const DomainException(message: 'Session changed', code: DomainErrorCode.unauthorized);
+    }
+  }
 
   Uri _establishment(String id, String path) => Uri.parse('$_baseUrl/api/v1/establecimientos/$id/$path');
 
@@ -34,7 +44,7 @@ class TeamRemoteDataSource {
   /// Miembros activos del equipo.
   Future<List<TeamMember>> fetchMembers(String establishmentId) async {
     final response = await _send(
-      () async => _client.get(_establishment(establishmentId, 'usuarios'), headers: await _headers()),
+      (client) async => client.get(_establishment(establishmentId, 'usuarios'), headers: await _headers()),
     );
     return [for (final json in _dataList(response)) _memberFrom(json)];
   }
@@ -42,7 +52,7 @@ class TeamRemoteDataSource {
   /// Invitaciones pendientes (incluidas las vencidas).
   Future<List<TeamInvitation>> fetchInvitations(String establishmentId) async {
     final response = await _send(
-      () async => _client.get(_establishment(establishmentId, 'invitaciones'), headers: await _headers()),
+      (client) async => client.get(_establishment(establishmentId, 'invitaciones'), headers: await _headers()),
     );
     return [for (final json in _dataList(response)) _invitationFrom(json)];
   }
@@ -50,7 +60,7 @@ class TeamRemoteDataSource {
   /// Crea una invitación y manda el email.
   Future<CreatedInvitation> invite(String establishmentId, {required String email, required UserRole role}) async {
     final response = await _send(
-      () async => _client.post(
+      (client) async => client.post(
         _establishment(establishmentId, 'invitaciones'),
         headers: await _jsonHeaders(),
         body: jsonEncode({'email': email, 'rol': role.backendValue}),
@@ -62,7 +72,7 @@ class TeamRemoteDataSource {
   /// Genera un código nuevo y reenvía el email.
   Future<CreatedInvitation> resend(String establishmentId, String invitationId) async {
     final response = await _send(
-      () async => _client.post(
+      (client) async => client.post(
         _establishment(establishmentId, 'invitaciones/$invitationId/reenvios'),
         headers: await _headers(),
       ),
@@ -73,7 +83,7 @@ class TeamRemoteDataSource {
   /// Cancela una invitación pendiente.
   Future<void> cancel(String establishmentId, String invitationId) async {
     await _send(
-      () async => _client.delete(
+      (client) async => client.delete(
         _establishment(establishmentId, 'invitaciones/$invitationId'),
         headers: await _headers(),
       ),
@@ -83,53 +93,70 @@ class TeamRemoteDataSource {
   /// Quita a una persona del equipo.
   Future<void> removeMember(String establishmentId, String userId) async {
     await _send(
-      () async => _client.delete(_establishment(establishmentId, 'usuarios/$userId'), headers: await _headers()),
+      (client) async => client.delete(_establishment(establishmentId, 'usuarios/$userId'), headers: await _headers()),
     );
   }
 
   /// Previsualiza el código sin consumirlo.
   Future<InvitationPreview> preview(String code) async {
     final response = await _send(
-      () async => _client.post(
+      (client) async => client.post(
         _invitations('validaciones'),
         headers: await _jsonHeaders(),
         body: jsonEncode({'codigo': code}),
       ),
     );
     final json = _data(response);
-    final invitedByRole = json['invitado_por_rol'] as String?;
+    final invitedByRole = teamOptionalString(json, 'invitado_por_rol');
     return (
-      establishmentId: json['establecimiento_id'] as String,
-      establishmentName: json['establecimiento_nombre'] as String,
-      renspa: json['establecimiento_renspa'] as String?,
-      locality: json['establecimiento_localidad'] as String?,
-      province: json['establecimiento_provincia'] as String?,
-      role: UserRolePermissions.fromBackend(json['rol'] as String?),
-      email: (json['email'] as String?) ?? '',
-      invitedBy: (json['invitado_por'] as String?) ?? '',
+      establishmentId: teamString(json, 'establecimiento_id'),
+      establishmentName: teamString(json, 'establecimiento_nombre'),
+      renspa: teamOptionalString(json, 'establecimiento_renspa'),
+      locality: teamOptionalString(json, 'establecimiento_localidad'),
+      province: teamOptionalString(json, 'establecimiento_provincia'),
+      role: UserRolePermissions.fromBackend(teamOptionalString(json, 'rol')),
+      email: (teamOptionalString(json, 'email')) ?? '',
+      invitedBy: (teamOptionalString(json, 'invitado_por')) ?? '',
       invitedByRole: invitedByRole == null ? null : UserRolePermissions.fromBackend(invitedByRole),
-      expiresAt: DateTime.parse(json['expira_en'] as String),
+      expiresAt: DateTime.parse(teamString(json, 'expira_en')),
     );
   }
 
   /// Canjea el código; devuelve el establecimiento con el mismo formato que
   /// `GET /establecimientos`.
   Future<Map<String, dynamic>> accept(String code) async {
-    final response = await _send(
-      () async => _client.post(
-        _invitations('aceptaciones'),
-        headers: await _jsonHeaders(),
-        body: jsonEncode({'codigo': code}),
-      ),
-    );
-    return _data(response);
+    final response = await _acceptRequest(code);
+    try {
+      return _data(response);
+    } on FormatException {
+      throw teamError(TeamErrorReason.acceptanceNeedsRecovery);
+    }
+  }
+
+  Future<http.Response> _acceptRequest(String code) async {
+    try {
+      return await _send(
+        (client) async => client.post(
+          _invitations('aceptaciones'),
+          headers: await _jsonHeaders(),
+          body: jsonEncode({'codigo': code}),
+        ),
+      );
+    } on DomainException catch (error) {
+      if (error.code == DomainErrorCode.offline) {
+        throw teamError(TeamErrorReason.acceptanceNeedsRecovery);
+      }
+      rethrow;
+    }
   }
 
   Future<Map<String, String>> _headers() async {
+    _requireSession();
     final accessToken = await _tokenProvider.getAccessToken();
+    _requireSession();
     if (accessToken == null || accessToken.isEmpty) {
       throw const DomainException(
-        message: 'No hay una sesión iniciada.',
+        message: 'Missing authenticated session',
         code: DomainErrorCode.unauthorized,
       );
     }
@@ -138,24 +165,28 @@ class TeamRemoteDataSource {
 
   Future<Map<String, String>> _jsonHeaders() async => {...await _headers(), 'Content-Type': 'application/json'};
 
-  Future<http.Response> _send(Future<http.Response> Function() request) async {
+  Future<http.Response> _send(Future<http.Response> Function(http.Client) request) async {
     final http.Response response;
+    final client = _client ?? http.Client();
     try {
-      response = await request().timeout(_timeout);
+      response = await request(client).timeout(_timeout);
     } on SocketException {
       throw _offline;
     } on http.ClientException {
       throw _offline;
     } on TimeoutException {
       throw _offline;
+    } finally {
+      if (_client == null) client.close();
     }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
+      _requireSession();
       return response;
     }
-    final (message, backendCode, remaining) = _backendError(response);
+    final (backendCode, remaining) = _backendError(response);
     throw DomainException(
-      message: message ?? 'El servidor no pudo completar la operación (${response.statusCode}).',
+      message: 'Team HTTP request failed: ${response.statusCode}',
       code: switch (response.statusCode) {
         401 => DomainErrorCode.unauthorized,
         404 => DomainErrorCode.notFound,
@@ -173,7 +204,7 @@ class TeamRemoteDataSource {
   }
 
   static const _offline = DomainException(
-    message: 'Sin conexión: para gestionar el equipo hace falta señal.',
+    message: 'Team transport unavailable',
     code: DomainErrorCode.offline,
   );
 
@@ -192,49 +223,44 @@ class TeamRemoteDataSource {
     if (data is! List) {
       throw const FormatException('Respuesta del equipo sin datos.');
     }
-    return data.whereType<Map<String, dynamic>>().toList();
+    return teamObjects(data);
   }
 
   static TeamMember _memberFrom(Map<String, dynamic> json) => (
-    userId: json['usuario_id'] as String,
-    firstName: json['nombre'] as String,
-    lastName: json['apellido'] as String,
-    email: json['email'] as String,
-    role: UserRolePermissions.fromBackend(json['rol'] as String?),
+    userId: teamString(json, 'usuario_id'),
+    firstName: teamString(json, 'nombre'),
+    lastName: teamString(json, 'apellido'),
+    email: teamString(json, 'email'),
+    role: UserRolePermissions.fromBackend(teamOptionalString(json, 'rol')),
     isHolder: json['es_titular'] == true,
-    headerColor: json['color_cabecera'] as String?,
-    memberSince: DateTime.parse(json['miembro_desde'] as String),
+    headerColor: teamOptionalString(json, 'color_cabecera'),
+    memberSince: DateTime.parse(teamString(json, 'miembro_desde')),
   );
 
   static CreatedInvitation _createdFrom(Map<String, dynamic> json) =>
-      (invitation: _invitationFrom(json), code: json['codigo'] as String);
+      (invitation: _invitationFrom(json), code: teamString(json, 'codigo'));
 
   static TeamInvitation _invitationFrom(Map<String, dynamic> json) => (
-    id: json['id'] as String,
-    email: json['email'] as String,
-    role: UserRolePermissions.fromBackend(json['rol'] as String?),
-    expiresAt: DateTime.parse(json['expira_en'] as String),
+    id: teamString(json, 'id'),
+    email: teamString(json, 'email'),
+    role: UserRolePermissions.fromBackend(teamOptionalString(json, 'rol')),
+    expiresAt: DateTime.parse(teamString(json, 'expira_en')),
     isExpired: json['vencida'] == true,
     emailSent: json['email_enviado'] == true,
-    createdAt: DateTime.parse(json['created_at'] as String),
+    createdAt: DateTime.parse(teamString(json, 'created_at')),
   );
 
-  (String?, String?, int?) _backendError(http.Response response) {
+  (String?, int?) _backendError(http.Response response) {
     try {
       final payload = jsonDecode(utf8.decode(response.bodyBytes));
-      final errors = payload is Map<String, dynamic> ? payload['errors'] : null;
-      if (errors is List && errors.isNotEmpty && errors.first is Map<String, dynamic>) {
-        final error = errors.first as Map<String, dynamic>;
+      if (payload case {'errors': [final Map<String, dynamic> error, ...]}) {
         final details = error['details'];
         final remaining = details is Map<String, dynamic> ? details['intentos_restantes'] : null;
-        return (error['message'] as String?, error['code'] as String?, remaining is int ? remaining : null);
+        return (teamOptionalString(error, 'code'), remaining is int ? remaining : null);
       }
-      // Los HTTPException (p. ej. el 429 del límite de intentos) llegan como
-      // `{"error": "..."}`.
-      final error = payload is Map<String, dynamic> ? payload['error'] : null;
-      return (error is String ? error : null, null, null);
+      return (null, null);
     } on FormatException {
-      return (null, null, null);
+      return (null, null);
     }
   }
 }

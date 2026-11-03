@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/authentication/data/establishment_remote_summary.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
-import 'package:frontend_mayoral/features/sync/data/models/establishment_remote_summary.dart';
 
 void main() {
   test('parses and serializes the establishment membership role', () {
