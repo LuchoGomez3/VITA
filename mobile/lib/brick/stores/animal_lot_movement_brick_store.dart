@@ -27,6 +27,10 @@ abstract class AnimalLotMovementBrickStore {
 
   /// Envía los movimientos locales pendientes del establecimiento.
   Future<void> pushPendingMovements(String establishmentId);
+
+  /// Movimientos guardados en el celular para [establishmentId], sin los
+  /// borrados (el historial se arma sin conexión).
+  Future<List<BrickAnimalLotMovementModel>> getLocalMovements(String establishmentId);
 }
 
 /// Persistencia offline-first de movimientos entre lotes.
@@ -83,6 +87,24 @@ class BrickAnimalLotMovementStore implements AnimalLotMovementBrickStore {
     });
     unawaited(_repository.enqueueRemoteUpsert(saved));
     return saved;
+  }
+
+  @override
+  Future<List<BrickAnimalLotMovementModel>> getLocalMovements(String establishmentId) async {
+    final stored = await _repository.getLocal<BrickAnimalLotMovementModel>();
+    // Puede haber más de una fila por movimiento (la local y la que confirmó
+    // el servidor): queda la más reciente.
+    final latestById = <String, BrickAnimalLotMovementModel>{};
+    for (final movement in stored.where((item) => item.establishmentId == establishmentId)) {
+      final current = latestById[movement.localId];
+      if (current == null || movement.updatedAt.isAfter(current.updatedAt)) {
+        latestById[movement.localId] = movement;
+      }
+    }
+    return [
+      for (final movement in latestById.values)
+        if (movement.deletedAt == null) movement,
+    ];
   }
 
   /// Descarga el historial remoto del establecimiento.

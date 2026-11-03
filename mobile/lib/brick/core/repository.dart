@@ -43,6 +43,11 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   /// filtra los recursos que le corresponden y actualiza su estado local.
   final StreamController<BackendSyncResult> _syncResults;
   final StreamController<void> _authRejections;
+  final _localChanges = StreamController<Type>.broadcast();
+
+  /// Modelos modificados después de persistir en SQLite. Las transacciones
+  /// notifican únicamente después del commit, nunca si se revierten.
+  Stream<Type> get localChanges => _localChanges.stream;
 
   /// Instancia unica configurada durante el arranque de la app.
   ///
@@ -158,8 +163,9 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     return savedModel;
   }
 
-  Future<void> _notifyLocalSubscribers<TModel extends OfflineFirstWithRestModel>() {
-    return notifySubscriptionsWithLocalData<TModel>();
+  Future<void> _notifyLocalSubscribers<TModel extends OfflineFirstWithRestModel>() async {
+    await notifySubscriptionsWithLocalData<TModel>();
+    _localChanges.add(TModel);
   }
 
   /// Ejecuta varios upserts locales dentro de una unica transaccion SQLite.

@@ -160,7 +160,7 @@ class _FakeCategoryStore implements CategoriaBrickStore {
 
 class _FakeLotStore implements LotBrickStore {
   @override
-  Future<List<BrickLotModel>> getLocalLots(String establishmentId) async => [
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId, {bool includeDeleted = false}) async => [
     BrickLotModel(
       localId: 'lote-bajo',
       establishmentId: establishmentId,

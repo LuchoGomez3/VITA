@@ -8,8 +8,14 @@ import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
 import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_movement_history_use_case.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/movement_history_cubit.dart';
+import 'package:frontend_mayoral/features/animal_movement/data/repositories/animal_movement_repository_impl.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:path/path.dart' as path;
@@ -42,6 +48,7 @@ void main() {
     repository = AppBrickRepository.instance;
     BrickLotStore.configure(repository);
     BrickAnimalStore.configure(repository);
+    BrickCategoriaStore.configure(repository);
     BrickAnimalLotMovementStore.configure(
       repository,
       animalStore: BrickAnimalStore.instance,
@@ -75,6 +82,113 @@ void main() {
     final matches = stored.where((lot) => lot.localId == 'lot-upsert');
     expect(matches, hasLength(1));
     expect(matches.single.name, 'Editado');
+  });
+
+  for (final synchronized in [true, false]) {
+    test('el historial abierto observa sync=$synchronized y la ubicación reconciliada después', () async {
+      final animalId = 'live-animal-$synchronized';
+      final movementId = 'live-movement-$synchronized';
+      final original = await repository.upsertLocal(_animal(id: animalId, lotId: 'source-lot'));
+      await repository.upsertLocal(
+        _movement(
+          id: 'previous-$synchronized',
+          animalId: animalId,
+          destinationLotId: 'source-lot',
+          createdAt: DateTime.utc(2025),
+          syncStatus: BrickAnimalLotMovementSyncStatus.synchronized,
+        ),
+      );
+      await movementStore.saveWithAnimals(
+        animals: [original.copyWith(lotId: 'destination-lot')],
+        movement: _movement(id: movementId, animalId: animalId),
+      );
+      final cubit = MovementHistoryCubit(
+        GetAnimalMovementHistoryUseCase(
+          AnimalMovementRepositoryImpl(
+            animalStore: BrickAnimalStore.instance,
+            lotStore: lotStore,
+            categoryStore: BrickCategoriaStore.instance,
+            movementStore: movementStore,
+            localChanges: repository.localChanges,
+          ),
+        ),
+      );
+      addTearDown(cubit.close);
+      await cubit.load(animalId);
+      final initial = (cubit.state as Data<List<MovementHistoryEntry>>).data;
+      expect(initial.singleWhere((entry) => entry.isCurrent).movementId, movementId);
+      expect(initial.singleWhere((entry) => entry.movementId == movementId).syncStatus, MovementSyncStatus.pending);
+
+      final expectedStatus = synchronized ? MovementSyncStatus.synchronized : MovementSyncStatus.rejected;
+      final updated = cubit.stream.firstWhere(
+        (state) =>
+            state is Data<List<MovementHistoryEntry>> &&
+            state.data.any((entry) => entry.movementId == movementId && entry.syncStatus == expectedStatus),
+      );
+      await movementStore.applyMovementSyncResult(
+        BackendSyncResult(
+          resourcePath: '/api/v1/movimientos_lotes',
+          localId: movementId,
+          synchronized: synchronized,
+          errorCode: synchronized ? null : 'animales_no_pertenecen_lote_origen',
+        ),
+      );
+      await updated;
+
+      // La ubicación autoritativa puede persistirse después del resultado HTTP.
+      final reconciled = cubit.stream.firstWhere(
+        (state) =>
+            state is Data<List<MovementHistoryEntry>> &&
+            state.data.any((entry) => entry.movementId == 'previous-$synchronized' && entry.isCurrent),
+      );
+      await repository.upsertLocal(original.copyWith(lotId: 'source-lot'));
+      await reconciled;
+    });
+  }
+
+  test('una transacción revertida no invalida lecturas locales', () async {
+    final changes = <Type>[];
+    final subscription = repository.localChanges.listen(changes.add);
+    addTearDown(subscription.cancel);
+    await expectLater(
+      repository.runLocalTransaction<void>((transaction) async {
+        await transaction.upsert(_animal(id: 'no-notification', lotId: 'source-lot'));
+        throw StateError('rollback');
+      }),
+      throwsStateError,
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(changes, isEmpty);
+  });
+
+  test('la lectura histórica puede resolver un lote borrado en SQLite', () async {
+    await repository.upsertLocal(_lot(id: 'history-lot', name: 'Potrero anterior', deletedAt: DateTime.utc(2026, 9)));
+
+    final activeLots = await lotStore.getLocalLots('establishment-id');
+    final historyLots = await lotStore.getLocalLots('establishment-id', includeDeleted: true);
+
+    expect(activeLots.where((lot) => lot.localId == 'history-lot'), isEmpty);
+    expect(historyLots.singleWhere((lot) => lot.localId == 'history-lot').name, 'Potrero anterior');
+  });
+
+  test('leer movimientos deduplica antes de aplicar tombstones y filtra el tenant', () async {
+    final old = DateTime.utc(2026, 8);
+    final recent = DateTime.utc(2026, 9);
+    for (final movement in [
+      _movement(id: 'history-deleted', establishmentId: 'history-tenant', updatedAt: old),
+      _movement(id: 'history-deleted', establishmentId: 'history-tenant', updatedAt: recent, deletedAt: recent),
+      _movement(id: 'history-alive', establishmentId: 'history-tenant', updatedAt: old),
+      _movement(id: 'history-alive', establishmentId: 'history-tenant', updatedAt: recent),
+      _movement(id: 'history-other', establishmentId: 'other-tenant'),
+    ]) {
+      await repository.upsertLocal(movement);
+    }
+
+    final history = await movementStore.getLocalMovements('history-tenant');
+
+    expect(history.single.localId, 'history-alive');
+    expect(history.single.updatedAt, recent);
+    expect(history.single.deletedAt, isNull);
   });
 
   test('revierte todas las escrituras cuando falla la transaccion', () async {
@@ -208,6 +322,7 @@ BrickLotModel _lot({
   required String id,
   required String name,
   DateTime? updatedAt,
+  DateTime? deletedAt,
 }) {
   final timestamp = updatedAt ?? DateTime.utc(2026, 8, 31);
   return BrickLotModel(
@@ -220,6 +335,7 @@ BrickLotModel _lot({
     statusCode: 'activo',
     createdAt: DateTime.utc(2026, 8, 31),
     updatedAt: timestamp,
+    deletedAt: deletedAt,
   );
 }
 
@@ -245,19 +361,27 @@ BrickAnimalModel _animal({required String id, required String lotId}) {
 
 BrickAnimalLotMovementModel _movement({
   required String id,
+  String destinationLotId = 'destination-lot',
+  DateTime? createdAt,
+  BrickAnimalLotMovementSyncStatus syncStatus = BrickAnimalLotMovementSyncStatus.pending,
   String animalId = 'animal-success',
+  String establishmentId = 'establishment-id',
+  DateTime? updatedAt,
+  DateTime? deletedAt,
 }) {
   final timestamp = DateTime.utc(2026, 8, 31);
   return BrickAnimalLotMovementModel(
     localId: id,
-    establishmentId: 'establishment-id',
+    establishmentId: establishmentId,
     sourceLotId: 'source-lot',
-    destinationLotId: 'destination-lot',
+    destinationLotId: destinationLotId,
     animalIdsJson: '["$animalId"]',
     occurredAt: timestamp,
     reason: 'Rotacion',
-    createdAt: timestamp,
-    updatedAt: timestamp,
+    createdAt: createdAt ?? timestamp,
+    updatedAt: updatedAt ?? timestamp,
+    deletedAt: deletedAt,
+    syncStatus: syncStatus,
   );
 }
 
