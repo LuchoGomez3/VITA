@@ -5,13 +5,17 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 void main() {
   test('productive status migrations are additive and latest is registered', () {
     final migration = migrations.singleWhere(
-      (item) => item.version == 20261015043521,
+      (item) => item.version == 20261014141500,
     );
     final statusDateMigration = migrations.singleWhere(
       (item) => item.version == 20261015133521,
     );
 
-    expect(schema.version, 20261015133521);
+    expect(schema.version, 20261028002455);
+    expect(
+      migrations.where((item) => item.version == 20261015043521),
+      isEmpty,
+    );
     expect(
       migration.upStatement,
       contains(
@@ -43,7 +47,7 @@ void main() {
       'local_id': 'legacy-animal',
     });
     final migration = migrations.singleWhere(
-      (item) => item.version == 20261015043521,
+      (item) => item.version == 20261014141500,
     );
     final statusDateMigration = migrations.singleWhere(
       (item) => item.version == 20261015133521,

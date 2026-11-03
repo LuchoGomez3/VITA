@@ -166,67 +166,33 @@ class _GenealogyResults extends StatelessWidget {
   final ValueChanged<GenealogyAnimalOption> onSelected;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.onPrimary,
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 8,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          for (var index = 0; index < options.length; index++) ...[
-            _GenealogyResultTile(
-              animal: options[index],
-              onTap: () => onSelected(options[index]),
-            ),
-            if (index < options.length - 1) const Divider(height: 1, color: AppColors.border),
-          ],
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AppSuggestionList<GenealogyAnimalOption>(
+    items: options,
+    onSelected: onSelected,
+    itemBuilder: (_, animal) => _GenealogyResultContent(animal: animal),
+  );
 }
 
-class _GenealogyResultTile extends StatelessWidget {
-  const _GenealogyResultTile({
-    required this.animal,
-    required this.onTap,
-  });
+class _GenealogyResultContent extends StatelessWidget {
+  const _GenealogyResultContent({required this.animal});
 
   final GenealogyAnimalOption animal;
-  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        child: Row(
-          children: [
-            _EarTagPreview(visualTag: animal.visualTag),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                '${animal.visualTag} · ${animal.breed} · ${animal.rfid}',
-                style: AppTypography.secondaryEmphasis.copyWith(
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-          ],
+  Widget build(BuildContext context) => Row(
+    children: [
+      _EarTagPreview(visualTag: animal.visualTag),
+      const SizedBox(width: AppSpacing.sm),
+      Expanded(
+        child: Text(
+          '${animal.visualTag} · ${animal.breed} · ${animal.rfid}',
+          style: AppTypography.secondaryEmphasis.copyWith(
+            color: AppColors.textPrimary,
+          ),
         ),
       ),
-    );
-  }
+    ],
+  );
 }
 
 class _EarTagPreview extends StatelessWidget {

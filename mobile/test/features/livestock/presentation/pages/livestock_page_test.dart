@@ -12,7 +12,9 @@ import 'package:frontend_mayoral/features/livestock/domain/repositories/animal_l
 import 'package:frontend_mayoral/features/livestock/domain/repositories/livestock_establishment_repository.dart';
 import 'package:frontend_mayoral/features/livestock/domain/use_cases/get_animal_list_use_case.dart';
 import 'package:frontend_mayoral/features/livestock/domain/use_cases/get_livestock_establishments_use_case.dart';
+import 'package:frontend_mayoral/features/livestock/domain/use_cases/get_livestock_sale_establishments_use_case.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/cubit/animal_list_cubit.dart';
+import 'package:frontend_mayoral/features/livestock/presentation/cubit/livestock_access_cubit.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/cubit/livestock_reader_cubit.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/strings/livestock_strings.dart';
@@ -185,16 +187,98 @@ void main() {
 
     expect(selectedIds, ['establishment-1']);
   });
+
+  testWidgets('abre la venta para el unico establecimiento financiero', (
+    tester,
+  ) async {
+    final selectedIds = <String>[];
+    await tester.pumpWidget(
+      _testApp(
+        result: const Result.success([]),
+        saleAccessResult: Result.success([
+          _establishment(id: 'establishment-1', name: 'El Ombú'),
+        ]),
+        onIdentifyAnimal: (_) {},
+        onRegisterSale: (establishmentId) async {
+          selectedIds.add(establishmentId);
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip(LivestockStrings.saleRegisterTitle));
+    await tester.pumpAndSettle();
+
+    expect(selectedIds, ['establishment-1']);
+  });
+
+  testWidgets('no bloquea el acceso mientras la ruta de venta sigue abierta', (
+    tester,
+  ) async {
+    final navigationCompleter = Completer<void>();
+    addTearDown(() {
+      if (!navigationCompleter.isCompleted) navigationCompleter.complete();
+    });
+    await tester.pumpWidget(
+      _testApp(
+        result: const Result.success([]),
+        saleAccessResult: Result.success([
+          _establishment(id: 'establishment-1', name: 'El Ombú'),
+        ]),
+        onIdentifyAnimal: (_) {},
+        onRegisterSale: (_) => navigationCompleter.future,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip(LivestockStrings.saleRegisterTitle));
+    await tester.pump();
+
+    final button = tester.widget<IconButton>(
+      find.widgetWithIcon(IconButton, Icons.attach_money),
+    );
+    expect(button.onPressed, isNotNull);
+  });
+
+  testWidgets('oculta la venta cuando el rol no tiene acceso financiero', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _testApp(
+        result: const Result.success([]),
+        saleAccessResult: Result.success([
+          _establishment(
+            id: 'employee-establishment',
+            name: 'Campo Empleado',
+            role: UserRole.employee,
+          ),
+        ]),
+        onIdentifyAnimal: (_) {},
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byTooltip(LivestockStrings.saleRegisterTitle),
+      findsNothing,
+    );
+  });
 }
 
 Widget _testApp({
   required Result<List<LivestockEstablishment>> result,
   required void Function(String establishmentId) onIdentifyAnimal,
+  Result<List<LivestockEstablishment>> saleAccessResult = const Result.success(
+    [],
+  ),
+  Future<void> Function(String establishmentId)? onRegisterSale,
 }) {
   final repository = _FakeLivestockEstablishmentRepository(result);
   return _testAppWithRepository(
     repository: repository,
+    saleAccessResult: saleAccessResult,
     onIdentifyAnimal: onIdentifyAnimal,
+    onRegisterSale: onRegisterSale,
   );
 }
 
@@ -203,9 +287,16 @@ Widget _testApp({
 Widget _testAppWithRepository({
   required LivestockEstablishmentRepository repository,
   required void Function(String establishmentId) onIdentifyAnimal,
+  Result<List<LivestockEstablishment>> saleAccessResult = const Result.success(
+    [],
+  ),
+  Future<void> Function(String establishmentId)? onRegisterSale,
   List<EstablishmentMembership> listEstablishments = const [],
 }) {
   final listRepository = _FakeAnimalListRepository(listEstablishments);
+  final saleAccessRepository = _FakeLivestockEstablishmentRepository(
+    saleAccessResult,
+  );
   return MaterialApp(
     home: LivestockPage(
       createCubit: () => AnimalListCubit(
@@ -215,8 +306,16 @@ Widget _testAppWithRepository({
       createReaderCubit: () => LivestockReaderCubit(
         GetLivestockEstablishmentsUseCase(repository),
       ),
+      createAccessCubit: () => LivestockAccessCubit(
+        getSaleEstablishments: GetLivestockSaleEstablishmentsUseCase(
+          saleAccessRepository,
+        ),
+      ),
       onIdentifyAnimal: (establishmentId) async {
         onIdentifyAnimal(establishmentId);
+      },
+      onRegisterSale: (establishmentId) async {
+        await onRegisterSale?.call(establishmentId);
       },
     ),
   );

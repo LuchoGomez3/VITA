@@ -14,6 +14,11 @@ sealed class RfidScanEvent with _$RfidScanEvent {
     required String reading,
   }) = _ReadingReceived;
 
+  /// El usuario modifica el prefijo del ingreso manual.
+  const factory RfidScanEvent.rfidPrefixChanged({
+    required String prefix,
+  }) = _RfidPrefixChanged;
+
   /// La capa de validacion rechazo la lectura recibida.
   const factory RfidScanEvent.invalidReadingDetected({
     required String reading,

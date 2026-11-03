@@ -7,6 +7,7 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/livestock/domain/entities/animal_list_entry.dart';
 import 'package:frontend_mayoral/features/livestock/domain/entities/livestock_establishment.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/cubit/animal_list_cubit.dart';
+import 'package:frontend_mayoral/features/livestock/presentation/cubit/livestock_access_cubit.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/cubit/livestock_reader_cubit.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/strings/livestock_strings.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/widgets/animal_list_tile.dart';
@@ -18,8 +19,14 @@ typedef AnimalListCubitFactory = AnimalListCubit Function();
 /// Factory del Cubit que prepara la lectura RFID.
 typedef LivestockReaderCubitFactory = LivestockReaderCubit Function();
 
+/// Factory del Cubit que resuelve los establecimientos habilitados para venta.
+typedef LivestockAccessCubitFactory = LivestockAccessCubit Function();
+
 /// Abre el lector para un establecimiento autorizado.
 typedef IdentifyAnimal = Future<void> Function(String establishmentId);
+
+/// Abre el registro de venta para un establecimiento autorizado.
+typedef RegisterLivestockSale = Future<void> Function(String establishmentId);
 
 /// Hacienda: lista de animales (diseño "Lista de animales").
 ///
@@ -32,7 +39,9 @@ class LivestockPage extends StatelessWidget {
   const LivestockPage({
     required this.createCubit,
     required this.createReaderCubit,
+    required this.createAccessCubit,
     required this.onIdentifyAnimal,
+    required this.onRegisterSale,
     super.key,
   });
 
@@ -42,8 +51,14 @@ class LivestockPage extends StatelessWidget {
   /// Crea el cubit que resuelve en qué campo leer la caravana.
   final LivestockReaderCubitFactory createReaderCubit;
 
+  /// Crea el Cubit que aplica los permisos financieros offline.
+  final LivestockAccessCubitFactory createAccessCubit;
+
   /// Navega al lector dentro del establecimiento elegido.
   final IdentifyAnimal onIdentifyAnimal;
+
+  /// Navega al registro de venta dentro del establecimiento elegido.
+  final RegisterLivestockSale onRegisterSale;
 
   @override
   Widget build(BuildContext context) {
@@ -51,27 +66,50 @@ class LivestockPage extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => createCubit()..load()),
         BlocProvider(create: (_) => createReaderCubit()),
+        BlocProvider(create: (_) => createAccessCubit()..load()),
       ],
-      child: _LivestockView(onIdentifyAnimal: onIdentifyAnimal),
+      child: _LivestockView(
+        onIdentifyAnimal: onIdentifyAnimal,
+        onRegisterSale: onRegisterSale,
+      ),
     );
   }
 }
 
 class _LivestockView extends StatelessWidget {
-  const _LivestockView({required this.onIdentifyAnimal});
+  const _LivestockView({
+    required this.onIdentifyAnimal,
+    required this.onRegisterSale,
+  });
 
   final IdentifyAnimal onIdentifyAnimal;
+  final RegisterLivestockSale onRegisterSale;
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<LivestockReaderCubit, ResultState<List<LivestockEstablishment>>>(
-      listener: (context, state) {
-        if (state is ResultError<List<LivestockEstablishment>>) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text(LivestockStrings.establishmentsError)),
-          );
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<LivestockReaderCubit, ResultState<List<LivestockEstablishment>>>(
+          listener: (context, state) {
+            if (state is ResultError<List<LivestockEstablishment>>) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(LivestockStrings.establishmentsError),
+                ),
+              );
+            }
+          },
+        ),
+        BlocListener<LivestockAccessCubit, ResultState<List<LivestockEstablishment>>>(
+          listener: (context, state) {
+            if (state is ResultError<List<LivestockEstablishment>>) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text(LivestockStrings.saleAccessError)),
+              );
+            }
+          },
+        ),
+      ],
       child: _buildScaffold(context),
     );
   }
@@ -80,7 +118,10 @@ class _LivestockView extends StatelessWidget {
     return Scaffold(
       appBar: AppHeader(
         title: LivestockStrings.animalListTitle,
-        titleWidget: _HeaderTitle(onIdentifyAnimal: onIdentifyAnimal),
+        titleWidget: _HeaderTitle(
+          onIdentifyAnimal: onIdentifyAnimal,
+          onRegisterSale: onRegisterSale,
+        ),
       ),
       body: const Column(
         children: [
@@ -279,9 +320,13 @@ class _Message extends StatelessWidget {
 
 /// Cabecera del diseño: selector de establecimiento a la izquierda y el título.
 class _HeaderTitle extends StatelessWidget {
-  const _HeaderTitle({required this.onIdentifyAnimal});
+  const _HeaderTitle({
+    required this.onIdentifyAnimal,
+    required this.onRegisterSale,
+  });
 
   final IdentifyAnimal onIdentifyAnimal;
+  final RegisterLivestockSale onRegisterSale;
 
   @override
   Widget build(BuildContext context) {
@@ -295,7 +340,7 @@ class _HeaderTitle extends StatelessWidget {
       children: [
         const Padding(
           // Margen para que el selector y los accesos no tapen el título.
-          padding: EdgeInsets.symmetric(horizontal: 96),
+          padding: EdgeInsets.only(left: 96, right: 144),
           child: Text(
             LivestockStrings.animalListTitle,
             textAlign: TextAlign.center,
@@ -315,19 +360,26 @@ class _HeaderTitle extends StatelessWidget {
         ),
         Align(
           alignment: Alignment.centerRight,
-          child: _HeaderActions(onIdentifyAnimal: onIdentifyAnimal),
+          child: _HeaderActions(
+            onIdentifyAnimal: onIdentifyAnimal,
+            onRegisterSale: onRegisterSale,
+          ),
         ),
       ],
     );
   }
 }
 
-/// Leer una caravana y abrir "Campo y potreros", que antes eran tarjetas de
-/// Hacienda.
+/// Accesos comerciales, lectura de caravanas y mapa que antes eran tarjetas
+/// de Hacienda.
 class _HeaderActions extends StatefulWidget {
-  const _HeaderActions({required this.onIdentifyAnimal});
+  const _HeaderActions({
+    required this.onIdentifyAnimal,
+    required this.onRegisterSale,
+  });
 
   final IdentifyAnimal onIdentifyAnimal;
+  final RegisterLivestockSale onRegisterSale;
 
   @override
   State<_HeaderActions> createState() => _HeaderActionsState();
@@ -337,11 +389,21 @@ class _HeaderActionsState extends State<_HeaderActions> {
   /// Evita abrir dos lectores con toques repetidos (#74).
   bool _isOpeningReader = false;
 
+  /// Evita que toques repetidos abran dos selectores o flujos de venta.
+  bool _isOpeningSale = false;
+
   @override
   Widget build(BuildContext context) {
+    final saleAccess = context.watch<LivestockAccessCubit>().state;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (saleAccess case Data<List<LivestockEstablishment>>(:final data) when data.isNotEmpty)
+          IconButton(
+            tooltip: LivestockStrings.saleRegisterTitle,
+            onPressed: _isOpeningSale ? null : () => _openSale(data),
+            icon: const Icon(Icons.attach_money),
+          ),
         IconButton(
           tooltip: LivestockStrings.readTagTitle,
           onPressed: _isOpeningReader ? null : _openReader,
@@ -354,6 +416,41 @@ class _HeaderActionsState extends State<_HeaderActions> {
         ),
       ],
     );
+  }
+
+  /// Usa el establecimiento seleccionado si tiene permiso; si no, solicita
+  /// uno entre los que el catalogo local habilita para operaciones financieras.
+  Future<void> _openSale(List<LivestockEstablishment> establishments) async {
+    if (_isOpeningSale) return;
+    setState(() => _isOpeningSale = true);
+    try {
+      final selectedId = context.read<AnimalListCubit>().state.establishmentId;
+      final selectedIsAllowed = establishments.any(
+        (establishment) => establishment.id == selectedId,
+      );
+      final establishmentId = selectedIsAllowed
+          ? selectedId
+          : establishments.length == 1
+          ? establishments.single.id
+          : await showModalBottomSheet<String>(
+              context: context,
+              showDragHandle: true,
+              useSafeArea: true,
+              builder: (context) => _SaleEstablishmentPicker(
+                establishments: establishments,
+              ),
+            );
+      if (mounted && establishmentId != null) {
+        // `context.push` completa recien cuando se cierra la ruta. No se debe
+        // mantener el acceso deshabilitado durante toda esa espera porque el
+        // shell puede volver a mostrar Hacienda antes de completar el Future.
+        final navigation = widget.onRegisterSale(establishmentId);
+        if (mounted) setState(() => _isOpeningSale = false);
+        await navigation;
+      }
+    } finally {
+      if (mounted) setState(() => _isOpeningSale = false);
+    }
   }
 
   /// Con un campo elegido en el selector lee ahí; si no, pregunta en cuál.
@@ -397,6 +494,38 @@ class _HeaderActionsState extends State<_HeaderActions> {
     if (mounted && establishmentId != null) {
       await widget.onIdentifyAnimal(establishmentId);
     }
+  }
+}
+
+class _SaleEstablishmentPicker extends StatelessWidget {
+  const _SaleEstablishmentPicker({required this.establishments});
+
+  final List<LivestockEstablishment> establishments;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Text(
+              LivestockStrings.saleEstablishmentSelectionTitle,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
+          for (final establishment in establishments)
+            ListTile(
+              leading: const Icon(Icons.agriculture_outlined),
+              title: Text(establishment.name),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).pop(establishment.id),
+            ),
+        ],
+      ),
+    );
   }
 }
 

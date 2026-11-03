@@ -1,0 +1,27 @@
+import 'package:frontend_mayoral/core/authentication/user_role.dart';
+import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/features/livestock/domain/entities/livestock_establishment.dart';
+import 'package:frontend_mayoral/features/livestock/domain/repositories/livestock_establishment_repository.dart';
+
+/// Obtiene los establecimientos donde el usuario puede registrar ventas.
+class GetLivestockSaleEstablishmentsUseCase {
+  /// Crea el caso de uso sobre el catalogo offline de Hacienda.
+  const GetLivestockSaleEstablishmentsUseCase(this._repository);
+
+  final LivestockEstablishmentRepository _repository;
+
+  /// Filtra las membresias con la misma regla comercial aplicada por backend.
+  Future<Result<List<LivestockEstablishment>>> call() async {
+    final result = await _repository.getEstablishments();
+    return result.when(
+      success: (data) => Result.success(
+        data
+            .where(
+              (establishment) => establishment.role.canViewFinancialInformation,
+            )
+            .toList(growable: false),
+      ),
+      failure: Result.failure,
+    );
+  }
+}
