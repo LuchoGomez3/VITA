@@ -1,4 +1,4 @@
-# ADR-0013 — Recuperación de la respuesta de un canje confirmado
+# ADR-0015 — Recuperación de la respuesta de un canje confirmado
 
 - **Estado:** propuesto, pendiente de revisión humana de permisos y validación del PO.
 - **Fecha:** 2026-10-20.

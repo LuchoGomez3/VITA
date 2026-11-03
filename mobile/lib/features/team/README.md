@@ -102,7 +102,7 @@ Una respuesta ilegible o perdida conserva el código y la preview en el estado d
 Recuperar repite el comando autorizado: backend solo devuelve un resultado consumido
 al mismo ID y email, con membresía aún activa y su rol actual. Un 409 no es éxito,
 aunque la caché conserve acceso. El backend permite previsualizar ese mismo resultado
-para retomar el flujo tras reiniciar. Ver [ADR-0013](../../../../docs/adr/adr-0013-recuperacion-de-canje-confirmado.md).
+para retomar el flujo tras reiniciar. Ver [ADR-0015](../../../../docs/adr/adr-0015-recuperacion-de-canje-confirmado.md).
 El código desaparece del estado al confirmar; al reenviar, Equipo entrega
 el código a la ruta de compartir y lo retira de su estado.
 
