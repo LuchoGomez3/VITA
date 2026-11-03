@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/composition/team_session_composition.dart';
+import 'package:frontend_mayoral/app/composition/animal_movement_composition.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -12,6 +13,7 @@ import 'package:frontend_mayoral/core/navigation/backward_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
 import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
+import 'package:frontend_mayoral/features/animal_movement/presentation/pages/group_movement_page.dart';
 import 'package:frontend_mayoral/features/animal_register/animal_register_composition.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
@@ -74,6 +76,9 @@ import 'package:frontend_mayoral/features/team/presentation/pages/invite_team_me
 import 'package:frontend_mayoral/features/team/presentation/pages/join_establishment_page.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/team_page.dart';
 import 'package:frontend_mayoral/features/team/team_composition.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/camera_reveal_page.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/vision_weighing_page.dart';
+import 'package:frontend_mayoral/features/vision_weighing/vision_weighing_composition.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/pages/weighing_page.dart';
 import 'package:frontend_mayoral/features/weighing/weighing_composition.dart';
 import 'package:go_router/go_router.dart';
@@ -281,6 +286,7 @@ class AppRouter {
             createBloc: createRegisterAnimalBloc,
             initialRfid: state.uri.queryParameters['rfid'] ?? '',
             initialEstablishmentId: state.uri.queryParameters['establecimientoId'],
+            returnToCaller: state.uri.queryParameters['origen'] == 'lector',
           ),
         ),
         GoRoute(
@@ -312,14 +318,37 @@ class AppRouter {
           },
         ),
         GoRoute(
+          path: AppRoutes.animalRegisterSuccessToReader,
+          builder: (context, state) => RegistrarAnimalSuccessPage(
+            registeredAnimal: state.extra! as RegisteredAnimal,
+            returnToReader: true,
+          ),
+        ),
+        GoRoute(
           path: AppRoutes.animalDetail,
           builder: (context, state) {
             final animalId = state.pathParameters['animalId']!;
             return AnimalDetailPage(
               animalId: animalId,
               createCubit: createAnimalDetailCubit,
+              createMovementHistoryCubit: createMovementHistoryCubit,
+              createGenealogyCubit: createAnimalGenealogyCubit,
             );
           },
+        ),
+        GoRoute(
+          path: AppRoutes.animalGroupMovement,
+          builder: (context, state) => GroupMovementPage(
+            animalIds: [state.pathParameters['animalId']!],
+            createCubit: createGroupMovementCubit,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.groupMovement,
+          builder: (context, state) => GroupMovementPage(
+            animalIds: state.extra is List<String> ? state.extra! as List<String> : const [],
+            createCubit: createGroupMovementCubit,
+          ),
         ),
         // Maquetas (Etapa 1) de pesaje y sanidad, con datos ficticios.
         GoRoute(
@@ -393,6 +422,18 @@ class AppRouter {
           },
         ),
         GoRoute(
+          path: AppRoutes.visionWeighing,
+          pageBuilder: (context, state) => CameraRevealPage(
+            state: state,
+            child: VisionWeighingPage(
+              createCubit: createVisionCaptureCubit,
+              getAnimalOptions: createVisionAnimalOptionsUseCase(),
+              pickPhoto: createPickVisionPhotoUseCase(),
+              cameraDependencies: createVisionCameraDependencies(),
+            ),
+          ),
+        ),
+        GoRoute(
           path: AppRoutes.rfidScan,
           builder: (context, state) {
             final establishmentId = state.uri.queryParameters['establecimientoId'];
@@ -403,7 +444,9 @@ class AppRouter {
             }
 
             final readingSource = HidRfidReadingSource();
+            final selectingForVision = state.uri.queryParameters['seleccionarParaPesajeIA'] == 'true';
             return RfidScanPage(
+              onAnimalSelected: selectingForVision ? (animalId) => context.pop(animalId) : null,
               establishmentId: establishmentId,
               createBloc: ({required establishmentId}) => createRfidScanBloc(
                 readingSource: readingSource,

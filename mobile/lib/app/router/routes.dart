@@ -77,6 +77,12 @@ class AppRoutes {
   /// Ruta de la pantalla de detalle de animal.
   static const animalDetail = '/animals/:animalId';
 
+  /// "Mover animales" arrancando con el animal de la ficha.
+  static const animalGroupMovement = '/animals/:animalId/mover';
+
+  /// Cámara lateral y revisión de capturas para pesaje por visión.
+  static const visionWeighing = '/pesar-por-vision';
+
   /// Ruta de identificacion de animales mediante caravana RFID.
   static const rfidScan = '/identificar-animal';
 
@@ -142,6 +148,12 @@ class AppRoutes {
     return '/animals/$animalId';
   }
 
+  /// "Mover animales" con una lista de animales en `extra` (`List<String>`).
+  static const groupMovement = '/mover-animales';
+
+  /// "Mover animales" con [animalId] ya en la lista.
+  static String animalGroupMovementById(String animalId) => '/animals/$animalId/mover';
+
   /// Ruta de la pantalla de estado vacio de establecimiento.
   static const establishmentRegisterEmpty = '/registrar-establecimiento';
 
@@ -163,19 +175,31 @@ class AppRoutes {
   /// Ruta de la pantalla de exito de registro de establecimiento.
   static const establishmentRegisterSuccess = '/registrar-establecimiento/exito';
 
-  /// Construye la ruta de identificacion para un establecimiento activo.
+  /// Abre identificación en modo selección de animal para un pesaje IA.
+  static String rfidScanForVisionWeighing(String establishmentId) {
+    return '${rfidScanForEstablishment(establishmentId)}&seleccionarParaPesajeIA=true';
+  }
+
+  /// Identifica un animal dentro del establecimiento indicado.
   static String rfidScanForEstablishment(String establishmentId) {
     return '$rfidScan?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
   }
 
   /// Construye la ruta de alta con una caravana RFID ya leida.
+  ///
+  /// Con [fromReader] el alta vuelve al lector de caravanas al terminar.
   static String animalRegisterWithRfid({
     required String rfidTagNumber,
     required String establishmentId,
+    bool fromReader = false,
   }) {
     return '$animalRegisterStep1?rfid=${Uri.encodeQueryComponent(rfidTagNumber)}'
-        '&establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
+        '&establecimientoId=${Uri.encodeQueryComponent(establishmentId)}'
+        '${fromReader ? '&origen=lector' : ''}';
   }
+
+  /// Éxito del alta cuando se abrió desde el lector de caravanas.
+  static const animalRegisterSuccessToReader = '$animalRegisterSuccess/lector';
 
   /// Obtiene la ruta de detalle de un lote por su id.
   static String fieldDetailById(String lotId) {
