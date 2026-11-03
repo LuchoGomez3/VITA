@@ -10,6 +10,7 @@ import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/brick.g.dart';
 import 'package:frontend_mayoral/brick/db/schema.g.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
+import 'package:frontend_mayoral/brick/sync/queued_request.dart';
 import 'package:http/http.dart' as http;
 import 'package:sqflite/sqflite.dart';
 
@@ -226,6 +227,16 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     return get<TModel>(
       policy: OfflineFirstGetPolicy.localOnly,
     );
+  }
+
+  /// Requests REST que siguen en la cola offline, en el orden en que Brick
+  /// las va a procesar.
+  ///
+  /// Solo devuelve metadatos (método, path, intentos, fechas): los headers y
+  /// el body de cada fila no salen de la infraestructura Brick.
+  Future<List<BrickQueuedRequest>> queuedRequests() async {
+    final rows = await offlineRequestQueue.client.requestManager.unprocessedRequests();
+    return rows.map(BrickQueuedRequest.fromQueueRow).toList(growable: false);
   }
 }
 

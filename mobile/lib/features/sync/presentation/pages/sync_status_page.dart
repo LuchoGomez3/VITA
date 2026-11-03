@@ -1,66 +1,121 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
-import 'package:frontend_mayoral/features/sync/presentation/mock/sync_status_mock.dart';
+import 'package:frontend_mayoral/features/sync/presentation/cubit/sync_queue_cubit.dart';
 import 'package:frontend_mayoral/features/sync/presentation/strings/sync_status_strings.dart';
-import 'package:frontend_mayoral/features/sync/presentation/widgets/sync_conflict_card.dart';
 import 'package:frontend_mayoral/features/sync/presentation/widgets/sync_progress_banner.dart';
 import 'package:frontend_mayoral/features/sync/presentation/widgets/sync_queue_row.dart';
 import 'package:go_router/go_router.dart';
 
-/// Pantalla de estado de sincronización: progreso, cola de operaciones y
-/// resolución de conflictos last-write-wins.
+/// Pantalla de estado de sincronización: muestra en vivo la cola de
+/// operaciones registradas en el teléfono que todavía no llegaron al backend.
 ///
-/// Réplica visual estática del diseño `SyncScreen` (ver
-/// `.claude/specs/sincronizacion.md`); todos los datos son mock. El refresh
-/// manual y la resolución de conflictos no invocan al motor de sync real
-/// todavía — `features/sync/` sólo tiene hoy la sincronización inicial
-/// posterior al login, sin cola de operaciones ni entidad de conflicto.
+/// Lee solo SQLite local, así que funciona igual sin conexión. Ver
+/// `.claude/specs/sincronizacion.md`.
 class SyncStatusPage extends StatelessWidget {
-  /// Crea la pantalla de estado de sincronización.
-  const SyncStatusPage({super.key});
+  /// Crea la pantalla con la fábrica de su cubit.
+  const SyncStatusPage({required this.createCubit, super.key});
 
-  void _showOutOfScopeSnackBar(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text(SyncStatusStrings.outOfScopeMessage)),
+  /// Fábrica del cubit; la pantalla lo cierra al salir.
+  final SyncQueueCubit Function() createCubit;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => createCubit(),
+      child: const _SyncStatusView(),
     );
+  }
+}
+
+class _SyncStatusView extends StatelessWidget {
+  const _SyncStatusView();
+
+  Future<void> _synchronizeNow(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final synchronized = await context.read<SyncQueueCubit>().synchronizeNow();
+    if (!synchronized) {
+      messenger.showSnackBar(const SnackBar(content: Text(SyncStatusStrings.manualSyncFailed)));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Column(
+        child: BlocBuilder<SyncQueueCubit, SyncQueueViewState>(
+          builder: (context, state) {
+            final snapshot = state.snapshot;
+            return Column(
+              children: [
+                _SyncStatusHeader(
+                  subtitle: snapshot == null
+                      ? SyncStatusStrings.loadingSubtitle
+                      : SyncStatusStrings.pendingSubtitle(snapshot.pendingCount),
+                  isSynchronizing: state.isSynchronizing,
+                  onRefresh: () => _synchronizeNow(context),
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.xl),
+                    children: [
+                      if (state.error != null) ...[
+                        const _ReadErrorNotice(),
+                        const SizedBox(height: AppSpacing.sm),
+                      ],
+                      if (snapshot == null && state.error == null)
+                        const Padding(
+                          padding: EdgeInsets.all(AppSpacing.xl),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if (snapshot != null) ...[
+                        SyncProgressBanner(
+                          pendingCount: snapshot.pendingCount,
+                          isSending: snapshot.isSending,
+                          isOnline: state.isOnline,
+                        ),
+                        if (!snapshot.isEmpty) ...[
+                          const SizedBox(height: AppSpacing.lg),
+                          Text(SyncStatusStrings.queueSectionTitle, style: Theme.of(context).textTheme.titleLarge),
+                          const SizedBox(height: AppSpacing.sm),
+                          for (final operation in snapshot.operations) ...[
+                            SyncQueueRow(key: ValueKey(operation.queueId), operation: operation),
+                            const SizedBox(height: AppSpacing.xxs),
+                          ],
+                        ],
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _ReadErrorNotice extends StatelessWidget {
+  const _ReadErrorNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.errorContainer,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Row(
           children: [
-            _SyncStatusHeader(onRefresh: () => _showOutOfScopeSnackBar(context)),
+            const Icon(Icons.error_outline, color: AppColors.error),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.xl),
-                children: [
-                  SyncProgressBanner(
-                    done: syncStatusInProgressCount,
-                    total: syncStatusPendingCount,
-                    connectionLabel: syncStatusConnectionLabel,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(SyncStatusStrings.queueSectionTitle, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: AppSpacing.sm),
-                  for (final entry in syncQueueEntriesMock) ...[
-                    SyncQueueRow(entry: entry),
-                    const SizedBox(height: AppSpacing.xxs),
-                  ],
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    SyncStatusStrings.conflictsSectionTitle(syncConflictsMock.length),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  for (final conflict in syncConflictsMock)
-                    SyncConflictCard(
-                      conflict: conflict,
-                      onKeepServer: () => _showOutOfScopeSnackBar(context),
-                      onApplyMine: () => _showOutOfScopeSnackBar(context),
-                    ),
-                ],
+              child: Text(
+                SyncStatusStrings.readError,
+                style: AppTypography.smallEmphasis.copyWith(color: AppColors.error),
               ),
             ),
           ],
@@ -71,8 +126,14 @@ class SyncStatusPage extends StatelessWidget {
 }
 
 class _SyncStatusHeader extends StatelessWidget {
-  const _SyncStatusHeader({required this.onRefresh});
+  const _SyncStatusHeader({
+    required this.subtitle,
+    required this.isSynchronizing,
+    required this.onRefresh,
+  });
 
+  final String subtitle;
+  final bool isSynchronizing;
   final VoidCallback onRefresh;
 
   @override
@@ -90,20 +151,22 @@ class _SyncStatusHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(SyncStatusStrings.title, style: AppTypography.appBarTitle),
-                Text(
-                  SyncStatusStrings.lastSyncSubtitle(syncStatusLastSyncLabel, syncStatusPendingCount),
-                  style: AppTypography.formFieldHelper,
-                ),
+                const Text(SyncStatusStrings.title, style: AppTypography.appBarTitle),
+                Text(subtitle, style: AppTypography.formFieldHelper),
               ],
             ),
           ),
           DecoratedBox(
             decoration: const BoxDecoration(color: AppColors.backgroundSecondary, shape: BoxShape.circle),
             child: IconButton(
-              icon: const Icon(Icons.refresh, color: AppColors.primary),
+              icon: isSynchronizing
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh, color: AppColors.primary),
               tooltip: SyncStatusStrings.refreshTooltip,
-              onPressed: onRefresh,
+              onPressed: isSynchronizing ? null : onRefresh,
             ),
           ),
         ],

@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
-import 'package:frontend_mayoral/features/sync/presentation/mock/sync_status_mock.dart';
+import 'package:frontend_mayoral/features/sync/domain/entities/sync_queue.dart';
+import 'package:frontend_mayoral/features/sync/presentation/strings/sync_status_strings.dart';
 
 /// Fila de la cola de operaciones de sincronización.
 class SyncQueueRow extends StatelessWidget {
-  /// Crea la fila a partir de una entrada mock de la cola.
-  const SyncQueueRow({required this.entry, super.key});
+  /// Crea la fila de una operación pendiente.
+  const SyncQueueRow({required this.operation, super.key});
 
-  /// Entrada mock representada por esta fila.
-  final SyncQueueEntryMock entry;
+  /// Operación representada por esta fila.
+  final SyncQueueOperation operation;
 
   @override
   Widget build(BuildContext context) {
-    final (icon, background, foreground) = switch (entry.state) {
-      SyncQueueState.syncing => (Icons.sync, AppColors.backgroundSecondary, AppColors.primary),
-      SyncQueueState.pending => (Icons.cloud_queue, AppColors.backgroundTertiary, AppColors.textSecondary),
-      SyncQueueState.error => (Icons.error_outline, AppColors.errorContainer, AppColors.error),
-      SyncQueueState.ok => (Icons.check, AppColors.backgroundSecondary, AppColors.primary),
+    final (icon, background, foreground) = switch (operation.state) {
+      SyncOperationState.sending => (Icons.sync, AppColors.backgroundSecondary, AppColors.primary),
+      SyncOperationState.waiting => (Icons.cloud_queue, AppColors.backgroundTertiary, AppColors.textSecondary),
+      SyncOperationState.retrying => (Icons.schedule, AppColors.syncPendingContainer, AppColors.syncPending),
     };
 
     return DecoratedBox(
@@ -43,28 +43,27 @@ class SyncQueueRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text(entry.operationType, style: AppTypography.mediumEmphasis),
+                        child: Text(
+                          SyncStatusStrings.operationKind(operation.kind),
+                          style: AppTypography.mediumEmphasis,
+                        ),
                       ),
                       Text(
-                        entry.time,
+                        _formatTime(operation.queuedAt),
                         style: AppTypography.monoValue.copyWith(color: AppColors.textHint),
                       ),
                     ],
                   ),
                   Text(
-                    entry.detail,
-                    style: AppTypography.smallEmphasis.copyWith(color: AppColors.textHint),
-                  ),
-                  if (entry.errorMessage != null) ...[
-                    const SizedBox(height: AppSpacing.xxs),
-                    Text(
-                      '⚠ ${entry.errorMessage}',
-                      style: AppTypography.smallEmphasis.copyWith(color: AppColors.error),
+                    SyncStatusStrings.operationState(operation),
+                    style: AppTypography.smallEmphasis.copyWith(
+                      color: operation.state == SyncOperationState.retrying
+                          ? AppColors.syncPending
+                          : AppColors.textHint,
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
@@ -72,5 +71,15 @@ class SyncQueueRow extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// `HH:mm` si es de hoy; `dd/MM HH:mm` si quedó de otro día.
+  static String _formatTime(DateTime value) {
+    final local = value.toLocal();
+    final now = DateTime.now();
+    String two(int number) => number.toString().padLeft(2, '0');
+    final time = '${two(local.hour)}:${two(local.minute)}';
+    final isToday = local.year == now.year && local.month == now.month && local.day == now.day;
+    return isToday ? time : '${two(local.day)}/${two(local.month)} $time';
   }
 }
