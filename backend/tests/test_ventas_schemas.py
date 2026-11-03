@@ -1,6 +1,6 @@
 """Validaciones del contrato HTTP para registrar ventas de hacienda."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
@@ -121,6 +121,21 @@ def test_fecha_futura_es_rechazada():
     manana = datetime.now(ZONA_HORARIA_NEGOCIO).date() + timedelta(days=1)
 
     assert "fecha futura" in mensaje_error(payload_valido(fecha_operacion=manana))
+
+
+def test_alta_de_venta_rechaza_deleted_at_con_o_sin_cobro():
+    eliminada_en = datetime.now(UTC)
+
+    assert "no puede registrarse anulada" in mensaje_error(
+        payload_valido(deleted_at=eliminada_en)
+    )
+    assert "no puede registrarse anulada" in mensaje_error(
+        payload_valido(
+            deleted_at=eliminada_en,
+            condicion_cobro=CondicionCobro.total,
+            cobro_inicial=cobro_valido(),
+        )
+    )
 
 
 @pytest.mark.parametrize("monto", ["0", "-1"])

@@ -1,6 +1,6 @@
 """Reglas del registro atómico de ventas antes de integrar HTTP."""
 
-from datetime import datetime
+from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
@@ -28,6 +28,7 @@ from api.shared.enums import (
     SexoAnimal,
 )
 from api.shared.exceptions import EstablecimientoNoAutorizadoError
+from api.shared.sync import as_utc
 
 
 @pytest.fixture
@@ -107,6 +108,30 @@ async def test_owner_y_admin_pueden_crear_venta_base(
         assert animal.estado == EstadoAnimal.vendido
     detalles = await session.scalar(select(func.count()).select_from(VentaDetalle))
     assert detalles == 2
+
+
+@pytest.mark.anyio
+async def test_venta_fecha_la_salida_productiva_en_el_dia_de_la_operacion(
+    session, usuario_actual, escenario_venta
+):
+    establecimiento, _, animales = escenario_venta
+    fecha_operacion = datetime.now(ZONA_HORARIA_NEGOCIO).date() - timedelta(days=2)
+    datos = crear_datos(
+        establecimiento.id,
+        [animales[0].id],
+        fecha_operacion=fecha_operacion,
+    )
+
+    await VentaService(session).crear(usuario_actual, datos)
+
+    await session.refresh(animales[0])
+    fecha_esperada = datetime.combine(
+        fecha_operacion,
+        time.min,
+        tzinfo=ZONA_HORARIA_NEGOCIO,
+    ).astimezone(UTC)
+    assert animales[0].estado == EstadoAnimal.vendido
+    assert as_utc(animales[0].estado_actualizado_en) == fecha_esperada
 
 
 @pytest.mark.anyio
@@ -204,6 +229,44 @@ async def test_reintento_identico_no_duplica_venta_ni_detalles(
     assert segunda.id == primera.id
     assert await session.scalar(select(func.count()).select_from(Venta)) == 1
     assert await session.scalar(select(func.count()).select_from(VentaDetalle)) == 2
+
+
+@pytest.mark.anyio
+async def test_reintento_que_pierde_la_carrera_recupera_la_venta_existente(
+    session, usuario_actual, escenario_venta, monkeypatch
+):
+    establecimiento, _, animales = escenario_venta
+    datos = crear_datos(establecimiento.id, [animales[0].id])
+    primera = await VentaService(session).crear(usuario_actual, datos)
+    await session.commit()
+
+    service = VentaService(session)
+    get_existente = service.repository.get_including_deleted
+    consultas = 0
+
+    async def simular_lectura_inicial_anterior_al_commit(venta_id):
+        nonlocal consultas
+        consultas += 1
+        if consultas == 1:
+            return None
+        return await get_existente(venta_id)
+
+    monkeypatch.setattr(
+        service.repository,
+        "get_including_deleted",
+        simular_lectura_inicial_anterior_al_commit,
+    )
+
+    segunda = await service.crear(usuario_actual, datos)
+
+    assert segunda.model_dump(exclude={"created_at", "updated_at"}) == (
+        primera.model_dump(exclude={"created_at", "updated_at"})
+    )
+    assert as_utc(segunda.created_at) == as_utc(primera.created_at)
+    assert as_utc(segunda.updated_at) == as_utc(primera.updated_at)
+    assert consultas == 2
+    assert await session.scalar(select(func.count()).select_from(Venta)) == 1
+    assert await session.scalar(select(func.count()).select_from(VentaDetalle)) == 1
 
 
 @pytest.mark.anyio

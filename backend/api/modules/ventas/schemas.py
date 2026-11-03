@@ -209,6 +209,13 @@ class VentaCreate(SyncFields):
         return _normalizar_texto(observaciones) or None
 
     @model_validator(mode="after")
+    def validar_venta_activa(self) -> Self:
+        """Impide mezclar el alta con una futura operación de anulación."""
+        if self.deleted_at is not None:
+            raise ValueError("La venta no puede registrarse anulada")
+        return self
+
+    @model_validator(mode="after")
     def validar_comprador(self) -> Self:
         """Aplica reglas distintas a persona física y razón social."""
         if self.es_empresa:

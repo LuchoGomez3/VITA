@@ -70,8 +70,9 @@ class VentaRepository:
         """Carga y bloquea los animales vigentes del tenant durante la venta.
 
         ``FOR UPDATE`` serializa dos intentos simultáneos sobre la misma
-        caravana. El service revisará el estado después de adquirir el bloqueo;
-        así el segundo intento observa ``vendido`` y rechaza toda su operación.
+        caravana. El service revisa el estado después de adquirir el bloqueo y,
+        si el UUID coincide con la venta ganadora, recupera su respuesta
+        idempotente; una operación distinta conserva el rechazo de stock.
         """
         if not animal_ids:
             return []

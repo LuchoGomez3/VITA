@@ -1,6 +1,6 @@
 """Aceptación HTTP del registro offline e idempotente de ventas."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
@@ -102,6 +102,26 @@ async def test_registra_venta_pendiente_y_actualiza_stock(
 
 
 @pytest.mark.anyio
+async def test_alta_de_venta_eliminada_rechaza_sin_dar_de_baja_el_stock(
+    auth_client, session, escenario_http
+):
+    establecimiento, animales = escenario_http
+    respuesta = await auth_client.post(
+        BASE,
+        json=payload_venta(
+            establecimiento.id,
+            [animales[0].id],
+            deleted_at=datetime.now(UTC).isoformat(),
+        ),
+    )
+
+    assert respuesta.status_code == 422
+    assert await session.scalar(select(func.count()).select_from(Venta)) == 0
+    await session.refresh(animales[0])
+    assert animales[0].estado == EstadoAnimal.activo
+
+
+@pytest.mark.anyio
 async def test_registra_venta_por_kilo_con_cobro_total(
     auth_client, session, escenario_http
 ):
@@ -132,6 +152,41 @@ async def test_registra_venta_por_kilo_con_cobro_total(
     guardado = await session.get(VentaCobro, UUID(cobro["id"]))
     assert guardado is not None
     assert guardado.medio_cobro == "tarjeta"
+
+
+@pytest.mark.anyio
+async def test_uuid_de_cobro_reutilizado_responde_conflicto_y_revierte_stock(
+    auth_client, session, escenario_http
+):
+    establecimiento, animales = escenario_http
+    cobro_id = str(uuid4())
+    primera = await auth_client.post(
+        BASE,
+        json=payload_venta(
+            establecimiento.id,
+            [animales[0].id],
+            condicion_cobro="total",
+            cobro_inicial=cobro_inicial("10000.00", id=cobro_id),
+        ),
+    )
+    segunda = await auth_client.post(
+        BASE,
+        json=payload_venta(
+            establecimiento.id,
+            [animales[1].id],
+            condicion_cobro="total",
+            cobro_inicial=cobro_inicial("10000.00", id=cobro_id),
+        ),
+    )
+
+    assert primera.status_code == 201
+    assert segunda.status_code == 409
+    assert segunda.json()["errors"][0]["code"] == "venta_conflicto_integridad"
+    assert await session.scalar(select(func.count()).select_from(Venta)) == 1
+    assert await session.scalar(select(func.count()).select_from(VentaDetalle)) == 1
+    assert await session.scalar(select(func.count()).select_from(VentaCobro)) == 1
+    await session.refresh(animales[1])
+    assert animales[1].estado == EstadoAnimal.activo
 
 
 @pytest.mark.anyio

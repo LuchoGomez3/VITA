@@ -6,7 +6,7 @@ funcional de una falla transitoria que sí debe permanecer en la cola offline.
 
 from uuid import UUID
 
-from api.shared.exceptions import ConflictError, ForbiddenError, NotFoundError
+from api.shared.exceptions import ConflictError, ForbiddenError
 
 
 class AccesoComercialDenegadoError(ForbiddenError):
@@ -48,10 +48,13 @@ class VentaIdEnConflictoError(ConflictError):
         super().__init__("El identificador de la venta ya existe con datos diferentes")
 
 
-class VentaNoEncontradaError(NotFoundError):
-    """La venta no existe o no pertenece a un establecimiento accesible."""
+class VentaIntegridadEnConflictoError(ConflictError):
+    """La base rechazó una combinación de datos que no cambiará al reintentar."""
 
-    code = "venta_no_encontrada"
+    code = "venta_conflicto_integridad"
 
     def __init__(self) -> None:
-        super().__init__("Venta no encontrada o sin acceso")
+        super().__init__(
+            "La venta no pudo registrarse porque sus datos entraron en "
+            "conflicto con otra operación"
+        )

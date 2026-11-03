@@ -1,9 +1,10 @@
 """Reglas de negocio del registro atómico de ventas de hacienda."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, time
 from decimal import ROUND_DOWN, Decimal
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.modules.animales.models import Animal
@@ -13,10 +14,16 @@ from api.modules.ventas.exceptions import (
     AccesoComercialDenegadoError,
     AnimalesNoDisponiblesVentaError,
     VentaIdEnConflictoError,
+    VentaIntegridadEnConflictoError,
 )
 from api.modules.ventas.models import Venta, VentaCobro
 from api.modules.ventas.repository import VentaRepository
-from api.modules.ventas.schemas import PRECISION_MONETARIA, VentaCreate, VentaRead
+from api.modules.ventas.schemas import (
+    PRECISION_MONETARIA,
+    ZONA_HORARIA_NEGOCIO,
+    VentaCreate,
+    VentaRead,
+)
 from api.shared.enums import EstadoAnimal, EstadoCobro, RolUsuario
 from api.shared.exceptions import EstablecimientoNoAutorizadoError
 from api.shared.sync import as_utc
@@ -71,15 +78,36 @@ class VentaService:
 
         existente = await self.repository.get_including_deleted(datos.id)
         if existente is not None:
-            # Se controla también el tenant persistido: un UUID conocido nunca
-            # permite usar el establecimiento entrante como vía lateral.
-            await self.exigir_acceso_comercial(usuario, existente.establecimiento_id)
-            coincide = await self._coincide_con_existente(existente, datos)
-            if not coincide or not await self._coincide_cobro_inicial(existente, datos):
-                raise VentaIdEnConflictoError()
-            return await self._to_read(existente)
+            return await self._resolver_existente(usuario, existente, datos)
 
-        animales = await self.resolver_animales(datos)
+        try:
+            animales = await self.resolver_animales(datos)
+        except AnimalesNoDisponiblesVentaError:
+            # Un POST concurrente con el mismo UUID puede haber vendido los
+            # animales mientras este request esperaba su FOR UPDATE. Al soltar
+            # el lock, la venta ganadora ya es visible y debe tratarse como el
+            # mismo reintento idempotente, no como un rechazo definitivo.
+            existente = await self.repository.get_including_deleted(datos.id)
+            if existente is None:
+                raise
+            return await self._resolver_existente(usuario, existente, datos)
+
+        try:
+            return await self._crear_nueva(usuario, datos, animales)
+        except IntegrityError as exc:
+            # Las violaciones de unicidad, FK o triggers no cambian al reintentar
+            # el mismo payload. Se revierte todo el agregado y se informa un
+            # conflicto definitivo para que Brick no lo deje en cola como 5xx.
+            await self.session.rollback()
+            raise VentaIntegridadEnConflictoError() from exc
+
+    async def _crear_nueva(
+        self,
+        usuario: Usuario,
+        datos: VentaCreate,
+        animales: list[Animal],
+    ) -> VentaRead:
+        """Persiste el agregado completo dentro de la transacción del request."""
         ahora = datetime.now(UTC)
         venta = Venta(
             id=datos.id,
@@ -104,13 +132,36 @@ class VentaService:
         await self.repository.add_detalles(venta.id, datos.animal_ids)
         await self._guardar_cobro_inicial(usuario, venta, datos, ahora)
 
+        # La salida productiva pertenece a la fecha comercial elegida por el
+        # productor; updated_at conserva por separado el momento de sincronización.
+        fecha_estado = datetime.combine(
+            datos.fecha_operacion,
+            time.min,
+            tzinfo=ZONA_HORARIA_NEGOCIO,
+        ).astimezone(UTC)
         for animal in animales:
             animal.estado = EstadoAnimal.vendido
+            animal.estado_actualizado_en = fecha_estado
             # La baja debe aparecer en el próximo pull aunque la fecha comercial
             # sea histórica o el cliente haya enviado un updated_at antiguo.
             animal.updated_at = ahora
         await self.repository.save_animales(animales)
         return await self._to_read(venta)
+
+    async def _resolver_existente(
+        self,
+        usuario: Usuario,
+        existente: Venta,
+        datos: VentaCreate,
+    ) -> VentaRead:
+        """Devuelve un reintento idéntico o rechaza la reutilización del UUID."""
+        # Se controla también el tenant persistido: un UUID conocido nunca
+        # permite usar el establecimiento entrante como vía lateral.
+        await self.exigir_acceso_comercial(usuario, existente.establecimiento_id)
+        coincide = await self._coincide_con_existente(existente, datos)
+        if not coincide or not await self._coincide_cobro_inicial(existente, datos):
+            raise VentaIdEnConflictoError()
+        return await self._to_read(existente)
 
     async def _guardar_cobro_inicial(
         self,
