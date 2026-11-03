@@ -1,10 +1,9 @@
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
 import 'package:frontend_mayoral/features/quick_read/domain/entities/quick_read_item.dart';
 import 'package:frontend_mayoral/features/quick_read/domain/repositories/quick_read_repository.dart';
-
-final _rfidPattern = RegExp(r'^\d{15}$');
 
 /// Convierte una caravana leída (bastón o teclado) en un ítem de la sesión.
 ///
@@ -66,8 +65,7 @@ class ResolveQuickReadTagUseCase {
       );
     }
 
-    final digits = trimmed.replaceAll(RegExp(r'\s'), '');
-    if (!_rfidPattern.hasMatch(digits)) {
+    if (!RfidValidator.isValid(trimmed)) {
       return Result.failure(
         DomainException(
           message:
@@ -76,7 +74,7 @@ class ResolveQuickReadTagUseCase {
         ),
       );
     }
-    final registered = await _repository.isRfidRegistered(digits);
+    final registered = await _repository.isRfidRegistered(trimmed);
     if (registered is Failure<bool>) {
       return Result.failure(registered.error);
     }
@@ -85,17 +83,17 @@ class ResolveQuickReadTagUseCase {
       // servidor rechazaría recién al sincronizar.
       return Result.failure(
         DomainException(
-          message: 'La caravana $digits ya está registrada, pero el animal no está activo o no tiene potrero.',
+          message: 'La caravana $trimmed ya está registrada, pero el animal no está activo o no tiene potrero.',
           code: DomainErrorCode.conflict,
         ),
       );
     }
-    if (items.any((item) => item is UnregisteredRead && item.rfidTagNumber == digits)) {
+    if (items.any((item) => item is UnregisteredRead && item.rfidTagNumber == trimmed)) {
       return Result.failure(
-        DomainException(message: 'La caravana $digits ya está en la lista.', code: DomainErrorCode.conflict),
+        DomainException(message: 'La caravana $trimmed ya está en la lista.', code: DomainErrorCode.conflict),
       );
     }
-    return Result.success(UnregisteredRead(digits));
+    return Result.success(UnregisteredRead(trimmed));
   }
 }
 

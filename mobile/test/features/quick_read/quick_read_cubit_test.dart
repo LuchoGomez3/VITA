@@ -41,7 +41,7 @@ void main() {
     });
 
     test('un RFID válido que no está en el celular queda para dar de alta', () async {
-      final result = (await resolve('982 000 999 000 111')) as Success<QuickReadItem>;
+      final result = (await resolve(_newRfid)) as Success<QuickReadItem>;
 
       expect(result.data, const UnregisteredRead(_newRfid));
     });
@@ -49,6 +49,7 @@ void main() {
     test('rechaza vacías, desconocidas que no son RFID, de otro campo y repetidas', () async {
       expect(((await resolve('  ')) as Failure).error.code, DomainErrorCode.validation);
       expect(((await resolve('123')) as Failure).error.code, DomainErrorCode.notFound);
+      expect(((await resolve('982 000 999 000 111')) as Failure).error.code, DomainErrorCode.notFound);
       expect(((await resolve('otro', establishmentId: 'campo-1')) as Failure).error.code, DomainErrorCode.validation);
       expect(
         ((await resolve('982000412884005', items: [RegisteredRead(quickReadAnimal('a1'))])) as Failure).error.code,

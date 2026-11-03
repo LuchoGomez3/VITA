@@ -21,7 +21,7 @@ void main() {
     final cubit = _createCubit(repository);
     await tester.pumpWidget(
       MaterialApp(
-        home: GroupMovementPage(animalId: 'a1', createCubit: () => cubit),
+        home: GroupMovementPage(animalIds: const ['a1'], createCubit: () => cubit),
       ),
     );
     await tester.pumpAndSettle();
