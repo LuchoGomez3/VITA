@@ -73,6 +73,10 @@ import 'package:frontend_mayoral/features/team/presentation/pages/invite_team_me
 import 'package:frontend_mayoral/features/team/presentation/pages/join_establishment_page.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/team_page.dart';
 import 'package:frontend_mayoral/features/team/team_composition.dart';
+import 'package:frontend_mayoral/features/user_manual/domain/entities/manual_section.dart';
+import 'package:frontend_mayoral/features/user_manual/presentation/pages/user_manual_page.dart';
+import 'package:frontend_mayoral/features/user_manual/presentation/pages/user_manual_section_page.dart';
+import 'package:frontend_mayoral/features/user_manual/user_manual_composition.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/camera_reveal_page.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/vision_weighing_page.dart';
 import 'package:frontend_mayoral/features/vision_weighing/vision_weighing_composition.dart';
@@ -257,6 +261,17 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.joinEstablishment,
           builder: (context, state) => const JoinEstablishmentPage(createCubit: createJoinEstablishmentCubit),
+        ),
+        GoRoute(
+          path: AppRoutes.userManual,
+          builder: (context, state) => const UserManualPage(createCubit: createUserManualCubit),
+        ),
+        GoRoute(
+          path: AppRoutes.userManualSection,
+          // Sin la sección (por ejemplo, al restaurar la app) se vuelve al
+          // índice, que la vuelve a leer de los assets.
+          redirect: (context, state) => state.extra is ManualSection ? null : AppRoutes.userManual,
+          builder: (context, state) => UserManualSectionPage(section: state.extra! as ManualSection),
         ),
         GoRoute(
           path: AppRoutes.animalRegisterStep1,
