@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/brick/mappers/latest_weight.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
@@ -68,16 +69,7 @@ class AnimalListRepositoryImpl implements AnimalListRepository {
         }
       }
 
-      final lastWeighingByAnimal = <String, BrickPesajeModel>{};
-      for (final weighing in weighings) {
-        if (weighing.weightKg <= 0) {
-          continue;
-        }
-        final current = lastWeighingByAnimal[weighing.animalId];
-        if (current == null || weighing.date.isAfter(current.date)) {
-          lastWeighingByAnimal[weighing.animalId] = weighing;
-        }
-      }
+      final lastWeighingByAnimal = latestWeighingByAnimal(weighings);
 
       return Result.success([
         for (final animal in animals) _toEntry(animal, lastWeighingByAnimal[animal.localId], categoryNames, lotNames),
@@ -96,9 +88,7 @@ class AnimalListRepositoryImpl implements AnimalListRepository {
     Map<String, String> categoryNames,
     Map<String, String> lotNames,
   ) {
-    final initialWeight = animal.initialWeight;
-    final hasInitialWeight = initialWeight != null && initialWeight > 0;
-    final useWeighing = lastWeighing != null && (!hasInitialWeight || !lastWeighing.date.isBefore(animal.weighingDate));
+    final latest = latestKnownWeight(animal, lastWeighing);
 
     return AnimalListEntry(
       id: animal.localId,
@@ -108,8 +98,8 @@ class AnimalListRepositoryImpl implements AnimalListRepository {
       breed: animal.breed,
       categoryName: animal.categoryName.isNotEmpty ? animal.categoryName : categoryNames[animal.categoryId] ?? '',
       lotName: animal.lotName.isNotEmpty ? animal.lotName : lotNames[animal.lotId] ?? '',
-      lastWeightKg: useWeighing ? lastWeighing.weightKg : (hasInitialWeight ? initialWeight : null),
-      lastWeighingDate: useWeighing ? lastWeighing.date : (hasInitialWeight ? animal.weighingDate : null),
+      lastWeightKg: latest.weightKg,
+      lastWeighingDate: latest.date,
     );
   }
 }

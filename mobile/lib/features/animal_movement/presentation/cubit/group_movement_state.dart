@@ -26,7 +26,7 @@ sealed class GroupMovementState with _$GroupMovementState {
 
   /// Establecimiento del animal inicial, disponible después de preparar.
   String get establishmentId => switch (preparation) {
-    Data<GroupMovementPreparation>(:final data) => data.animal.establishmentId,
+    Data<GroupMovementPreparation>(:final data) => data.animals.first.establishmentId,
     _ => '',
   };
 

@@ -34,7 +34,7 @@ void main() {
     final pending = Completer<Result<MovementAnimal?>>();
     repository.animalResult = pending.future;
 
-    final loading = cubit.start('a1');
+    final loading = cubit.start(const ['a1']);
     expect(cubit.state.preparation, isA<Loading<GroupMovementPreparation>>());
     pending.complete(const Result.success(_animal));
     await loading;
@@ -53,14 +53,14 @@ void main() {
     );
     repository.animalResult = Future.value(Result.failure(error));
 
-    await cubit.start('a1');
+    await cubit.start(const ['a1']);
 
     expect((cubit.state.preparation as ResultError<GroupMovementPreparation>).error, error);
     expect(cubit.state.submission, isA<Initial<GroupMovementSummary>>());
   });
 
   test('resolver caravana no sustituye los datos preparados', () async {
-    await cubit.start('a1');
+    await cubit.start(const ['a1']);
     final preparation = cubit.state.preparation;
     final pending = Completer<Result<MovementAnimal?>>();
     repository.tagResult = pending.future;
@@ -80,7 +80,7 @@ void main() {
   });
 
   test('validar destino y motivo no escribe ni elimina la selección', () async {
-    await cubit.start('a1');
+    await cubit.start(const ['a1']);
 
     await cubit.submit('Rotación');
     expect(
@@ -99,7 +99,7 @@ void main() {
   });
 
   test('una caravana ambigua conserva la selección sin agregar animales', () async {
-    await cubit.start('a1');
+    await cubit.start(const ['a1']);
     final error = movementException(const MovementFailure.ambiguousTag('002'));
     repository.tagResult = Future.value(Result.failure(error));
 
@@ -110,7 +110,7 @@ void main() {
   });
 
   test('guardar expone loading, error y luego permite un envío exitoso', () async {
-    await cubit.start('a1');
+    await cubit.start(const ['a1']);
     cubit.selectDestination('destino');
     final pending = Completer<Result<LotAnimalMovement>>();
     move.result = pending.future;
@@ -134,7 +134,7 @@ void main() {
   test('una preparación tardía no emite después del cierre', () async {
     final pending = Completer<Result<MovementAnimal?>>();
     repository.animalResult = pending.future;
-    final loading = cubit.start('a1');
+    final loading = cubit.start(const ['a1']);
     await cubit.close();
 
     pending.complete(const Result.success(_animal));
@@ -144,7 +144,7 @@ void main() {
   });
 
   test('dos lecturas simultáneas de la misma caravana agregan un solo animal', () async {
-    await cubit.start('a1');
+    await cubit.start(const ['a1']);
     final pending = Completer<Result<MovementAnimal?>>();
     repository.tagResult = pending.future;
 
@@ -163,7 +163,7 @@ void main() {
   });
 
   test('guardar dos veces y editar durante el guardado no duplica la operación', () async {
-    await cubit.start('a1');
+    await cubit.start(const ['a1']);
     cubit.selectDestination('destino');
     final pending = Completer<Result<LotAnimalMovement>>();
     move.result = pending.future;
@@ -185,7 +185,7 @@ void main() {
   });
 
   test('cerrar con lecturas en cola descarta ambas sin emitir tarde', () async {
-    await cubit.start('a1');
+    await cubit.start(const ['a1']);
     final pending = Completer<Result<MovementAnimal?>>();
     repository.tagResult = pending.future;
     final first = cubit.addTag('002');
@@ -206,7 +206,7 @@ void main() {
 
   for (final changeDestination in [false, true]) {
     test('un reintento parcial no repite el origen guardado; cambia destino: $changeDestination', () async {
-      await cubit.start('a1');
+      await cubit.start(const ['a1']);
       repository.tagResult = Future.value(Result.success(_animal.copyWith(id: 'a2', lotId: 'otro-origen')));
       await cubit.addTag('002');
       cubit.selectDestination('destino');

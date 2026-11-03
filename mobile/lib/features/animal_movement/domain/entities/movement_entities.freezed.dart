@@ -543,7 +543,7 @@ as int,
 /// @nodoc
 mixin _$GroupMovementPreparation {
 
- MovementAnimal get animal; List<MovementDestination> get destinations;
+ List<MovementAnimal> get animals; List<MovementDestination> get destinations;
 /// Create a copy of GroupMovementPreparation
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -554,16 +554,16 @@ $GroupMovementPreparationCopyWith<GroupMovementPreparation> get copyWith => _$Gr
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is GroupMovementPreparation&&(identical(other.animal, animal) || other.animal == animal)&&const DeepCollectionEquality().equals(other.destinations, destinations));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GroupMovementPreparation&&const DeepCollectionEquality().equals(other.animals, animals)&&const DeepCollectionEquality().equals(other.destinations, destinations));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,animal,const DeepCollectionEquality().hash(destinations));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(animals),const DeepCollectionEquality().hash(destinations));
 
 @override
 String toString() {
-  return 'GroupMovementPreparation(animal: $animal, destinations: $destinations)';
+  return 'GroupMovementPreparation(animals: $animals, destinations: $destinations)';
 }
 
 
@@ -574,11 +574,11 @@ abstract mixin class $GroupMovementPreparationCopyWith<$Res>  {
   factory $GroupMovementPreparationCopyWith(GroupMovementPreparation value, $Res Function(GroupMovementPreparation) _then) = _$GroupMovementPreparationCopyWithImpl;
 @useResult
 $Res call({
- MovementAnimal animal, List<MovementDestination> destinations
+ List<MovementAnimal> animals, List<MovementDestination> destinations
 });
 
 
-$MovementAnimalCopyWith<$Res> get animal;
+
 
 }
 /// @nodoc
@@ -591,23 +591,14 @@ class _$GroupMovementPreparationCopyWithImpl<$Res>
 
 /// Create a copy of GroupMovementPreparation
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? animal = null,Object? destinations = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? animals = null,Object? destinations = null,}) {
   return _then(_self.copyWith(
-animal: null == animal ? _self.animal : animal // ignore: cast_nullable_to_non_nullable
-as MovementAnimal,destinations: null == destinations ? _self.destinations : destinations // ignore: cast_nullable_to_non_nullable
+animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
+as List<MovementAnimal>,destinations: null == destinations ? _self.destinations : destinations // ignore: cast_nullable_to_non_nullable
 as List<MovementDestination>,
   ));
 }
-/// Create a copy of GroupMovementPreparation
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$MovementAnimalCopyWith<$Res> get animal {
-  
-  return $MovementAnimalCopyWith<$Res>(_self.animal, (value) {
-    return _then(_self.copyWith(animal: value));
-  });
-}
+
 }
 
 
@@ -686,10 +677,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( MovementAnimal animal,  List<MovementDestination> destinations)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<MovementAnimal> animals,  List<MovementDestination> destinations)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _GroupMovementPreparation() when $default != null:
-return $default(_that.animal,_that.destinations);case _:
+return $default(_that.animals,_that.destinations);case _:
   return orElse();
 
 }
@@ -707,10 +698,10 @@ return $default(_that.animal,_that.destinations);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( MovementAnimal animal,  List<MovementDestination> destinations)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<MovementAnimal> animals,  List<MovementDestination> destinations)  $default,) {final _that = this;
 switch (_that) {
 case _GroupMovementPreparation():
-return $default(_that.animal,_that.destinations);}
+return $default(_that.animals,_that.destinations);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -724,10 +715,10 @@ return $default(_that.animal,_that.destinations);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( MovementAnimal animal,  List<MovementDestination> destinations)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<MovementAnimal> animals,  List<MovementDestination> destinations)?  $default,) {final _that = this;
 switch (_that) {
 case _GroupMovementPreparation() when $default != null:
-return $default(_that.animal,_that.destinations);case _:
+return $default(_that.animals,_that.destinations);case _:
   return null;
 
 }
@@ -739,10 +730,16 @@ return $default(_that.animal,_that.destinations);case _:
 
 
 class _GroupMovementPreparation implements GroupMovementPreparation {
-  const _GroupMovementPreparation({required this.animal, required final  List<MovementDestination> destinations}): _destinations = destinations;
+  const _GroupMovementPreparation({required final  List<MovementAnimal> animals, required final  List<MovementDestination> destinations}): _animals = animals,_destinations = destinations;
   
 
-@override final  MovementAnimal animal;
+ final  List<MovementAnimal> _animals;
+@override List<MovementAnimal> get animals {
+  if (_animals is EqualUnmodifiableListView) return _animals;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_animals);
+}
+
  final  List<MovementDestination> _destinations;
 @override List<MovementDestination> get destinations {
   if (_destinations is EqualUnmodifiableListView) return _destinations;
@@ -761,16 +758,16 @@ _$GroupMovementPreparationCopyWith<_GroupMovementPreparation> get copyWith => __
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GroupMovementPreparation&&(identical(other.animal, animal) || other.animal == animal)&&const DeepCollectionEquality().equals(other._destinations, _destinations));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GroupMovementPreparation&&const DeepCollectionEquality().equals(other._animals, _animals)&&const DeepCollectionEquality().equals(other._destinations, _destinations));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,animal,const DeepCollectionEquality().hash(_destinations));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_animals),const DeepCollectionEquality().hash(_destinations));
 
 @override
 String toString() {
-  return 'GroupMovementPreparation(animal: $animal, destinations: $destinations)';
+  return 'GroupMovementPreparation(animals: $animals, destinations: $destinations)';
 }
 
 
@@ -781,11 +778,11 @@ abstract mixin class _$GroupMovementPreparationCopyWith<$Res> implements $GroupM
   factory _$GroupMovementPreparationCopyWith(_GroupMovementPreparation value, $Res Function(_GroupMovementPreparation) _then) = __$GroupMovementPreparationCopyWithImpl;
 @override @useResult
 $Res call({
- MovementAnimal animal, List<MovementDestination> destinations
+ List<MovementAnimal> animals, List<MovementDestination> destinations
 });
 
 
-@override $MovementAnimalCopyWith<$Res> get animal;
+
 
 }
 /// @nodoc
@@ -798,24 +795,15 @@ class __$GroupMovementPreparationCopyWithImpl<$Res>
 
 /// Create a copy of GroupMovementPreparation
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? animal = null,Object? destinations = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? animals = null,Object? destinations = null,}) {
   return _then(_GroupMovementPreparation(
-animal: null == animal ? _self.animal : animal // ignore: cast_nullable_to_non_nullable
-as MovementAnimal,destinations: null == destinations ? _self._destinations : destinations // ignore: cast_nullable_to_non_nullable
+animals: null == animals ? _self._animals : animals // ignore: cast_nullable_to_non_nullable
+as List<MovementAnimal>,destinations: null == destinations ? _self._destinations : destinations // ignore: cast_nullable_to_non_nullable
 as List<MovementDestination>,
   ));
 }
 
-/// Create a copy of GroupMovementPreparation
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$MovementAnimalCopyWith<$Res> get animal {
-  
-  return $MovementAnimalCopyWith<$Res>(_self.animal, (value) {
-    return _then(_self.copyWith(animal: value));
-  });
-}
+
 }
 
 /// @nodoc

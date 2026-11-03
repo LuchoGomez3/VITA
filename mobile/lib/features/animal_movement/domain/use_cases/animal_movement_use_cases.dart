@@ -8,26 +8,39 @@ import 'package:frontend_mayoral/features/animal_movement/domain/repositories/an
 import 'package:frontend_mayoral/features/field/domain/entities/lot_animal_movement.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/move_lot_animals_use_case.dart';
 
-/// Carga el animal con el que se abre "Mover animales" y los potreros de su campo.
+/// Carga los animales con los que se abre "Mover animales" (uno desde la ficha
+/// o varios desde el lector de caravanas) y los potreros de su campo.
 class PrepareGroupMovementUseCase {
   /// Crea el caso de uso.
   const PrepareGroupMovementUseCase(this._repository);
 
   final AnimalMovementRepository _repository;
 
-  /// Devuelve el animal inicial y los destinos posibles.
-  Future<Result<GroupMovementPreparation>> call(String animalId) async {
-    final animalResult = await _repository.getAnimal(animalId);
-    if (animalResult is Failure<MovementAnimal?>) {
-      return Result.failure(animalResult.error);
+  /// Devuelve los animales iniciales y los destinos posibles. Tienen que ser
+  /// todos del mismo establecimiento: un potrero es de un solo campo.
+  Future<Result<GroupMovementPreparation>> call(List<String> animalIds) async {
+    final animals = <MovementAnimal>[];
+    for (final animalId in animalIds.toSet()) {
+      final animalResult = await _repository.getAnimal(animalId);
+      if (animalResult is Failure<MovementAnimal?>) {
+        return Result.failure(animalResult.error);
+      }
+      final animal = (animalResult as Success<MovementAnimal?>).data;
+      if (animal == null) {
+        return Result.failure(movementException(const MovementFailure.animalUnavailable()));
+      }
+      animals.add(animal);
     }
-    final animal = (animalResult as Success<MovementAnimal?>).data;
-    if (animal == null) {
-      return Result.failure(movementException(const MovementFailure.animalUnavailable()));
+    if (animals.isEmpty) {
+      return Result.failure(movementException(const MovementFailure.animalsRequired()));
     }
-    final destinations = await _repository.getDestinations(animal.establishmentId);
+    final establishmentId = animals.first.establishmentId;
+    if (animals.any((animal) => animal.establishmentId != establishmentId)) {
+      return Result.failure(movementException(const MovementFailure.differentEstablishment()));
+    }
+    final destinations = await _repository.getDestinations(establishmentId);
     return switch (destinations) {
-      Success(:final data) => Result.success(GroupMovementPreparation(animal: animal, destinations: data)),
+      Success(:final data) => Result.success(GroupMovementPreparation(animals: animals, destinations: data)),
       Failure(:final error) => Result.failure(error),
       _ => Result.failure(
         movementException(

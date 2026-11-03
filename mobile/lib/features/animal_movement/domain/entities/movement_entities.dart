@@ -32,9 +32,10 @@ sealed class MovementDestination with _$MovementDestination {
 /// Datos locales iniciales del movimiento, independientes de su presentación.
 @freezed
 sealed class GroupMovementPreparation with _$GroupMovementPreparation {
-  /// Agrupa el animal inicial y los destinos de su establecimiento.
+  /// Agrupa los animales iniciales (el de la ficha o los leídos en el lector)
+  /// y los destinos de su establecimiento.
   const factory GroupMovementPreparation({
-    required MovementAnimal animal,
+    required List<MovementAnimal> animals,
     required List<MovementDestination> destinations,
   }) = _GroupMovementPreparation;
 }
