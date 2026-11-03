@@ -99,6 +99,7 @@ flutter:
   assets:
     - assets/icons/
     - assets/images/
+    - assets/manual/
     - assets/models/peso_bovino_mobilenet_v2.tflite
     - assets/models/peso_bovino_intervalo.json
   #   - images/a_dot_ham.jpeg
