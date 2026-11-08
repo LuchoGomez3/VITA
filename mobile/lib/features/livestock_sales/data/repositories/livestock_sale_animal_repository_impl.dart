@@ -12,6 +12,7 @@ import 'package:frontend_mayoral/features/livestock_sales/data/mappers/livestock
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_selection.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_selection_error.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/repositories/livestock_sale_animal_repository.dart';
+import 'package:logging/logging.dart';
 
 /// Consulta el inventario Brick/SQLite sin depender de conectividad.
 class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository {
@@ -31,6 +32,7 @@ class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository
   final LotBrickStore _lotBrickStore;
   final String _establishmentId;
   Future<void>? _inventoryRefresh;
+  static final _logger = Logger('LivestockSaleAnimalRepository');
 
   @override
   Future<Result<LivestockSaleAnimal?>> findLocalByRfidTagNumber(
@@ -64,7 +66,8 @@ class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository
           lotName: lotName ?? mappedAnimal.lotName,
         ),
       );
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _logger.severe('No se pudo identificar el animal local.', error.runtimeType, stackTrace);
       // El contrato Result evita que una falla local termine cerrando el flujo
       // de campo y permite mostrar un mensaje recuperable al productor.
       const reason = LivestockSaleSelectionError.localRead;
@@ -122,7 +125,8 @@ class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository
       }).toList()..sort((first, second) => first.rfidTagNumber.compareTo(second.rfidTagNumber));
 
       return Result.success(matches.take(10).toList(growable: false));
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _logger.severe('No se pudieron leer las sugerencias locales.', error.runtimeType, stackTrace);
       const reason = LivestockSaleSelectionError.localRead;
       return const Result.failure(
         DomainException(
@@ -158,8 +162,10 @@ class LivestockSaleAnimalRepositoryImpl implements LivestockSaleAnimalRepository
   Future<void> _ignoreRemoteFailure(Future<void> operation) async {
     try {
       await operation;
-    } on Object {
-      // El flujo de campo conserva la copia local cuando no hay conectividad.
+    } on Object catch (error, stackTrace) {
+      // El tipo y stack permiten diagnosticar sin volcar mensajes que pueden
+      // contener SQL, identificadores o payloads. La copia local sigue disponible.
+      _logger.warning('No se pudo actualizar el inventario remoto.', error.runtimeType, stackTrace);
     }
   }
 

@@ -11,6 +11,7 @@ import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/livestock_sales/data/repositories/livestock_sale_animal_repository_impl.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_selection.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_selection_error.dart';
+import 'package:logging/logging.dart';
 
 void main() {
   const rfid = '982000412991416';
@@ -161,6 +162,45 @@ void main() {
     final error = (result as Failure<LivestockSaleAnimal?>).error;
     expect(error.reason, LivestockSaleSelectionError.localRead);
   });
+
+  test('logs local lookup and suggestion failures without sensitive error messages', () async {
+    final records = <LogRecord>[];
+    final subscription = Logger('LivestockSaleAnimalRepository').onRecord.listen(records.add);
+    addTearDown(subscription.cancel);
+    store.throwOnRead = true;
+
+    await repository.findLocalByRfidTagNumber(rfid);
+    await repository.findLocalByRfidPrefix('982');
+
+    expect(records, hasLength(2));
+    for (final record in records) {
+      expect(record.level, Level.SEVERE);
+      expect(record.error, isA<Type>());
+      expect(record.stackTrace, isNotNull);
+      expect('${record.message} ${record.error}', isNot(contains('SQLite unavailable')));
+      expect('${record.message} ${record.error}', isNot(contains(rfid)));
+    }
+  });
+
+  test('logs remote failures and keeps local inventory available', () async {
+    final logged = Completer<LogRecord>();
+    final subscription = Logger('LivestockSaleAnimalRepository').onRecord.listen((record) {
+      if (!logged.isCompleted) logged.complete(record);
+    });
+    addTearDown(subscription.cancel);
+    store
+      ..throwOnPull = true
+      ..animals = [_animal(id: 'local')];
+
+    final result = await repository.findLocalByRfidTagNumber(rfid);
+    final record = await logged.future.timeout(const Duration(seconds: 2));
+
+    expect((result as Success<LivestockSaleAnimal?>).data?.id, 'local');
+    expect(record.level, Level.WARNING);
+    expect(record.error, isA<Type>());
+    expect(record.stackTrace, isNotNull);
+    expect('${record.message} ${record.error}', isNot(contains('remote payload')));
+  });
 }
 
 BrickAnimalModel _animal({
@@ -228,6 +268,7 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   Completer<void>? remotePullCompleter;
   bool remotePullStarted = false;
   bool throwOnRead = false;
+  bool throwOnPull = false;
 
   @override
   Future<List<BrickAnimalModel>> getLocalAnimals() async {
@@ -250,6 +291,7 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   @override
   Future<void> pullRemoteAnimals(String establishmentId) async {
     remotePullStarted = true;
+    if (throwOnPull) throw const FormatException('remote payload');
     await remotePullCompleter?.future;
     final refreshed = remoteAnimals;
     if (refreshed != null) animals = refreshed;
