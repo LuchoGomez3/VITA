@@ -7,6 +7,7 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_selection.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/livestock_sale_bloc.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/livestock_sale_success_view.dart';
@@ -83,6 +84,8 @@ class _LivestockSaleFlowView extends StatelessWidget {
       },
       child: BlocBuilder<LivestockSaleBloc, LivestockSaleState>(
         builder: (context, state) {
+          final isWorking =
+              state.submitResult is Loading<LivestockSale> || state.exitStatus != LivestockSaleExitStatus.idle;
           // Una escritura local exitosa reemplaza el wizard completo. Asi no se
           // puede confirmar accidentalmente dos veces el mismo borrador.
           if (state.submitResult case Data<LivestockSale>(:final data)) {
@@ -122,9 +125,7 @@ class _LivestockSaleFlowView extends StatelessWidget {
               appBar: AppBar(
                 centerTitle: true,
                 leading: IconButton(
-                  onPressed: state.submitResult is Loading<LivestockSale>
-                      ? null
-                      : () => unawaited(_handleExit(context, state)),
+                  onPressed: isWorking ? null : () => unawaited(_handleExit(context, state)),
                   icon: const Icon(Icons.close),
                 ),
                 title: _FlowTitle(step: state.currentStep),
@@ -136,7 +137,7 @@ class _LivestockSaleFlowView extends StatelessWidget {
                     // IndexedStack conserva el estado visual de cada paso. Al
                     // volver, controladores y posicion interna siguen montados.
                     child: AbsorbPointer(
-                      absorbing: state.submitResult is Loading<LivestockSale>,
+                      absorbing: isWorking,
                       child: IndexedStack(
                         index: state.currentStep.index,
                         children: [
@@ -157,8 +158,10 @@ class _LivestockSaleFlowView extends StatelessWidget {
               ),
               bottomNavigationBar: _FlowNavigation(
                 step: state.currentStep,
-                isSubmitting: state.submitResult is Loading<LivestockSale>,
-                canContinue: state.currentStep != LivestockSaleStep.animals || state.selection.animals.isNotEmpty,
+                isSubmitting: isWorking,
+                canContinue:
+                    state.animalSelectionResult is! Loading<LivestockSaleSelection> &&
+                    (state.currentStep != LivestockSaleStep.animals || state.selection.animals.isNotEmpty),
                 onBack: () => unawaited(_handleBack(context, state)),
                 onNext: () => _goNext(context, state.currentStep),
               ),
@@ -192,7 +195,8 @@ class _LivestockSaleFlowView extends StatelessWidget {
     BuildContext context,
     LivestockSaleState state,
   ) async {
-    if (context.read<LivestockSaleBloc>().state.submitResult is Loading<LivestockSale>) return;
+    final current = context.read<LivestockSaleBloc>().state;
+    if (current.submitResult is Loading<LivestockSale> || current.exitStatus != LivestockSaleExitStatus.idle) return;
     // Dentro del wizard se retrocede por estado; solo el primer paso abandona
     // la feature y vuelve a la ruta anterior o al inicio.
     if (state.currentStep != LivestockSaleStep.animals) {
@@ -210,7 +214,8 @@ class _LivestockSaleFlowView extends StatelessWidget {
     BuildContext context,
     LivestockSaleState state,
   ) async {
-    if (context.read<LivestockSaleBloc>().state.submitResult is Loading<LivestockSale>) return;
+    final current = context.read<LivestockSaleBloc>().state;
+    if (current.submitResult is Loading<LivestockSale> || current.exitStatus != LivestockSaleExitStatus.idle) return;
     if (!state.hasDraftChanges) {
       _leaveFlow(context);
       return;

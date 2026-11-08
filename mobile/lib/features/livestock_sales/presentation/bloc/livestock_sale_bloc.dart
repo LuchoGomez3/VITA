@@ -93,6 +93,17 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
   final bool _persistDraftOnClose;
   Timer? _draftSaveTimer;
   Future<void>? _pendingDraftWrite;
+  // Las lecturas no se cancelan: se invalida su resultado al terminar el flujo.
+  int _selectionRevision = 0;
+  bool _isClosing = false;
+
+  bool get _isInputLocked =>
+      _isClosing ||
+      state.exitStatus != LivestockSaleExitStatus.idle ||
+      state.submitResult is Loading<LivestockSale> ||
+      state.submitResult is Data<LivestockSale>;
+
+  bool get _hasPendingSelection => state.animalSelectionResult is Loading<LivestockSaleSelection>;
 
   Future<void> _onDraftLoadRequested(
     _DraftLoadRequested event,
@@ -126,6 +137,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _DraftRestoreAccepted event,
     Emitter<LivestockSaleState> emit,
   ) async {
+    if (_isInputLocked) return;
+    final selectionRevision = _selectionRevision;
     final savedDraft = state.savedDraft;
     if (savedDraft == null) return;
 
@@ -137,6 +150,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
         establishmentId: state.form.establishmentId,
         selection: selection,
       );
+      if (emit.isDone || selectionRevision != _selectionRevision) return;
       switch (result) {
         case Success<LivestockSaleSelection>(:final data):
           selection = data;
@@ -182,6 +196,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _SavedDraftDiscardRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
+    if (_isInputLocked) return;
+    _selectionRevision++;
     final result = await _deleteCurrentDraft();
     final error = result.when<DomainException?>(
       success: (_) => null,
@@ -201,7 +217,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _FormChanged event,
     Emitter<LivestockSaleState> emit,
   ) async {
-    if (state.submitResult is Loading<LivestockSale>) return;
+    if (_isInputLocked) return;
 
     // Centralizar la normalizacion aca mantiene iguales los datos aunque el
     // cambio venga de otro widget o de una futura restauracion del borrador.
@@ -230,7 +246,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _AnimalAddRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
-    if (state.submitResult is Loading<LivestockSale>) return;
+    if (_isInputLocked) return;
 
     // Bloquea lecturas paralelas para que dos respuestas no alteren el orden de
     // seleccion ni incorporen dos veces la misma caravana.
@@ -242,12 +258,14 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
         stepError: null,
       ),
     );
+    final selectionRevision = _selectionRevision;
     final selectionBeforeLookup = state.selection;
     final result = await _addAnimal(
       rfidTagNumber: event.rfidTagNumber,
       establishmentId: state.form.establishmentId,
       selection: selectionBeforeLookup,
     );
+    if (emit.isDone || selectionRevision != _selectionRevision) return;
     switch (result) {
       // El resultado asincrono se guarda separado del borrador del formulario,
       // permitiendo que la pantalla muestre carga o error sin perder seleccion.
@@ -283,7 +301,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _RfidPrefixChanged event,
     Emitter<LivestockSaleState> emit,
   ) async {
-    if (state.submitResult is Loading<LivestockSale>) return;
+    if (_isInputLocked) return;
 
     final prefix = event.prefix.trim();
     if (prefix.isEmpty) {
@@ -301,11 +319,12 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
         rfidPrefix: prefix,
       ),
     );
+    final selectionRevision = _selectionRevision;
     final result = await _searchAnimalsByRfidPrefix(prefix);
 
     // Una respuesta lenta de un prefijo anterior no debe reemplazar a la
     // búsqueda que el productor está viendo actualmente.
-    if (state.rfidPrefix != prefix) return;
+    if (emit.isDone || selectionRevision != _selectionRevision || state.rfidPrefix != prefix) return;
 
     switch (result) {
       case Success<List<LivestockSaleAnimal>>(:final data):
@@ -329,7 +348,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _AnimalRemoveRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
-    if (state.submitResult is Loading<LivestockSale>) return;
+    if (_isInputLocked) return;
 
     final selection = _removeAnimal(
       animalId: event.animalId,
@@ -361,7 +380,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _NextStepRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
-    if (state.submitResult is Loading<LivestockSale>) return;
+    if (_isInputLocked || _hasPendingSelection) return;
 
     if (state.currentStep == LivestockSaleStep.review) return;
 
@@ -391,7 +410,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _PreviousStepRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
-    if (state.submitResult is Loading<LivestockSale>) return;
+    if (_isInputLocked) return;
 
     if (state.currentStep == LivestockSaleStep.animals) return;
     emit(
@@ -409,7 +428,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
   ) async {
     // Confirmar fuera del resumen o repetir el toque durante una escritura se
     // ignora para conservar una unica venta local idempotente.
-    if (state.currentStep != LivestockSaleStep.review || state.submitResult is Loading<LivestockSale>) {
+    if (_isInputLocked || _hasPendingSelection || state.currentStep != LivestockSaleStep.review) {
       return;
     }
 
@@ -419,6 +438,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
       return;
     }
 
+    _selectionRevision++;
     emit(
       state.copyWith(
         submitResult: const ResultState.loading(),
@@ -708,12 +728,15 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _SaveAndExitRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
-    if (state.submitResult is Loading<LivestockSale>) return;
+    if (_isInputLocked) return;
 
+    _selectionRevision++;
     _draftSaveTimer?.cancel();
     emit(
       state.copyWith(
         exitStatus: LivestockSaleExitStatus.working,
+        animalSelectionResult: const ResultState.initial(),
+        rfidSuggestions: const ResultState.initial(),
         draftFeedback: null,
       ),
     );
@@ -738,12 +761,15 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _DiscardAndExitRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
-    if (state.submitResult is Loading<LivestockSale>) return;
+    if (_isInputLocked) return;
 
+    _selectionRevision++;
     _draftSaveTimer?.cancel();
     emit(
       state.copyWith(
         exitStatus: LivestockSaleExitStatus.working,
+        animalSelectionResult: const ResultState.initial(),
+        rfidSuggestions: const ResultState.initial(),
         draftFeedback: null,
       ),
     );
@@ -866,12 +892,14 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
 
   @override
   Future<void> close() {
+    _isClosing = true;
+    _selectionRevision++;
     _draftSaveTimer?.cancel();
     if (!_persistDraftOnClose) return super.close();
     final shouldPersist =
         state.hasDraftChanges &&
         state.submitResult is! Data<LivestockSale> &&
-        state.exitStatus != LivestockSaleExitStatus.completed;
+        state.exitStatus == LivestockSaleExitStatus.idle;
     if (!shouldPersist && _pendingDraftWrite == null) {
       return super.close();
     }

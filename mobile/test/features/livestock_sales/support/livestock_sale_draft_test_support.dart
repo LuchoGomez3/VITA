@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_saved_draft.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/repositories/livestock_sale_draft_repository.dart';
@@ -39,6 +41,12 @@ class LivestockSaleDraftTestRepository implements LivestockSaleDraftRepository {
   /// Cantidad de eliminaciones solicitadas.
   var deleteCalls = 0;
 
+  /// Cantidad de escrituras para detectar guardados posteriores a una salida.
+  int saveCalls = 0;
+
+  /// Permite demorar una eliminacion para probar el cierre durante la salida.
+  Completer<void>? deleteCompletion;
+
   @override
   Future<Result<LivestockSaleSavedDraft?>> load({
     required String userId,
@@ -50,6 +58,7 @@ class LivestockSaleDraftTestRepository implements LivestockSaleDraftRepository {
     required String userId,
     required LivestockSaleSavedDraft draft,
   }) async {
+    saveCalls++;
     this.draft = draft;
     return const Result.success(null);
   }
@@ -60,6 +69,7 @@ class LivestockSaleDraftTestRepository implements LivestockSaleDraftRepository {
     required String establishmentId,
   }) async {
     deleteCalls++;
+    await deleteCompletion?.future;
     draft = null;
     return const Result.success(null);
   }

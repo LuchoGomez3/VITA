@@ -20,6 +20,7 @@ import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/searc
 import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/livestock_sale_bloc.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/pages/livestock_sale_flow_page.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../support/livestock_sale_draft_test_support.dart';
 
@@ -67,6 +68,162 @@ void main() {
       expect(bloc.state.stepError?.message, LivestockSaleStrings.missingRequiredFields);
       expect(bloc.state.stepError?.reason, LivestockSaleFormField.buyerName);
       expect(errorCount, 2);
+    });
+
+    test('descartar y cerrar invalida el agregado pendiente y no recrea el borrador', () async {
+      final dependencies = LivestockSaleDraftTestDependencies();
+      final saleBloc = _createBloc(
+        animalRepository: animalRepository,
+        saleRepository: saleRepository,
+        draftDependencies: dependencies,
+      );
+      addTearDown(saleBloc.close);
+      await _addAnimal(saleBloc);
+      await _waitUntilDraft(dependencies, (draft) => draft.selectedRfidTagNumbers.contains(_rfid));
+      final lookup = Completer<void>();
+      animalRepository.pendingLookup = lookup;
+      saleBloc.add(const LivestockSaleEvent.animalAddRequested('982000000001296'));
+      await _waitUntil(saleBloc, (state) => state.animalSelectionResult is Loading<LivestockSaleSelection>);
+      saleBloc.add(const LivestockSaleEvent.discardAndExitRequested());
+      await _waitUntil(saleBloc, (state) => state.exitStatus == LivestockSaleExitStatus.completed);
+      await saleBloc.close();
+      lookup.complete();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(dependencies.repository.draft, isNull);
+      expect(dependencies.repository.deleteCalls, 1);
+    });
+
+    test('cerrar mientras se descarta no inicia un autoguardado que compita con la eliminacion', () async {
+      final dependencies = LivestockSaleDraftTestDependencies();
+      final saleBloc = _createBloc(
+        animalRepository: animalRepository,
+        saleRepository: saleRepository,
+        draftDependencies: dependencies,
+      );
+      addTearDown(saleBloc.close);
+      await _addAnimal(saleBloc);
+      await _waitUntilDraft(dependencies, (draft) => draft.selectedRfidTagNumbers.contains(_rfid));
+      final savedCount = dependencies.repository.saveCalls;
+      final deletion = Completer<void>();
+      dependencies.repository.deleteCompletion = deletion;
+      saleBloc.add(const LivestockSaleEvent.discardAndExitRequested());
+      await _waitUntil(saleBloc, (state) => state.exitStatus == LivestockSaleExitStatus.working);
+      await saleBloc.close();
+      deletion.complete();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(dependencies.repository.saveCalls, savedCount);
+      expect(dependencies.repository.draft, isNull);
+    });
+
+    test('guardar y salir conserva solo la seleccion confirmada antes del lookup', () async {
+      final dependencies = LivestockSaleDraftTestDependencies();
+      final saleBloc = _createBloc(
+        animalRepository: animalRepository,
+        saleRepository: saleRepository,
+        draftDependencies: dependencies,
+      );
+      addTearDown(saleBloc.close);
+      await _addAnimal(saleBloc);
+      final lookup = Completer<void>();
+      animalRepository.pendingLookup = lookup;
+      saleBloc.add(const LivestockSaleEvent.animalAddRequested('982000000001296'));
+      await _waitUntil(saleBloc, (state) => state.animalSelectionResult is Loading<LivestockSaleSelection>);
+      saleBloc.add(const LivestockSaleEvent.saveAndExitRequested());
+      await _waitUntil(saleBloc, (state) => state.exitStatus == LivestockSaleExitStatus.completed);
+      lookup.complete();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(saleBloc.state.selection.animals.map((animal) => animal.rfidTagNumber), [_rfid]);
+      expect(dependencies.repository.draft?.selectedRfidTagNumbers, [_rfid]);
+    });
+
+    test('no avanza ni confirma mientras hay animales en proceso de agregado', () async {
+      await _addAnimal(bloc);
+      final lookup = Completer<void>();
+      animalRepository.pendingLookup = lookup;
+      bloc.add(const LivestockSaleEvent.animalAddRequested('982000000001296'));
+      await _waitUntil(bloc, (state) => state.animalSelectionResult is Loading<LivestockSaleSelection>);
+      bloc.add(const LivestockSaleEvent.nextStepRequested());
+      await Future<void>.delayed(Duration.zero);
+      expect(bloc.state.currentStep, LivestockSaleStep.animals);
+      lookup.complete();
+      await _waitUntil(bloc, (state) => state.selection.animals.length == 2);
+      animalRepository.pendingLookup = null;
+      bloc.add(const LivestockSaleEvent.nextStepRequested());
+      await _waitUntil(bloc, (state) => state.currentStep == LivestockSaleStep.operation);
+      final form = _validBulkForm(bloc.state.form);
+      bloc.add(LivestockSaleEvent.formChanged(form));
+      await _waitUntil(bloc, (state) => state.form == form);
+      bloc.add(const LivestockSaleEvent.nextStepRequested());
+      await _waitUntil(bloc, (state) => state.currentStep == LivestockSaleStep.review);
+
+      final lastLookup = Completer<void>();
+      animalRepository.pendingLookup = lastLookup;
+      bloc.add(const LivestockSaleEvent.animalAddRequested('982000000001297'));
+      await _waitUntil(bloc, (state) => state.animalSelectionResult is Loading<LivestockSaleSelection>);
+      bloc.add(const LivestockSaleEvent.submitRequested());
+      await Future<void>.delayed(Duration.zero);
+      expect(saleRepository.createCalls, 0);
+      lastLookup.complete();
+      await _waitUntil(bloc, (state) => state.selection.animals.length == 3);
+      bloc.add(const LivestockSaleEvent.submitRequested());
+      await _waitUntil(bloc, (state) => state.submitResult is Data<LivestockSale>);
+      expect(saleRepository.created?.animalIds, hasLength(3));
+    });
+
+    testWidgets('con un agregado pendiente deshabilita Siguiente y permite descartar sin recuperar el borrador', (
+      tester,
+    ) async {
+      final dependencies = LivestockSaleDraftTestDependencies();
+      late LivestockSaleBloc saleBloc;
+      final router = GoRouter(
+        initialLocation: '/sale',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) => const Scaffold(body: Text('Inicio de prueba')),
+            routes: [
+              GoRoute(
+                path: 'sale',
+                builder: (_, _) => LivestockSaleFlowPage(
+                  userId: 'user-id',
+                  establishmentId: 'establishment-id',
+                  createBloc: ({required userId, required establishmentId}) => saleBloc = _createBloc(
+                    animalRepository: animalRepository,
+                    saleRepository: saleRepository,
+                    draftDependencies: dependencies,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(MaterialApp.router(theme: AppTheme.light(), routerConfig: router));
+      await tester.pumpAndSettle();
+      saleBloc.add(const LivestockSaleEvent.animalAddRequested(_rfid));
+      await tester.pumpAndSettle();
+      final lookup = Completer<void>();
+      animalRepository.pendingLookup = lookup;
+      saleBloc.add(const LivestockSaleEvent.animalAddRequested('982000000001296'));
+      await _waitUntil(saleBloc, (state) => state.animalSelectionResult is Loading<LivestockSaleSelection>);
+      await tester.pump();
+      final nextButton = find.widgetWithText(AppFilledButton, LivestockSaleStrings.next);
+      expect(tester.widget<AppFilledButton>(nextButton).onPressed, isNull);
+
+      await tester.tap(find.widgetWithIcon(IconButton, Icons.close));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.tap(find.text(LivestockSaleStrings.discardAndExit));
+      await tester.pumpAndSettle();
+      expect(find.text('Inicio de prueba'), findsOneWidget);
+      lookup.complete();
+      await tester.pumpAndSettle();
+      expect(dependencies.repository.draft, isNull);
+      expect(dependencies.repository.deleteCalls, 1);
     });
 
     test('agrega y quita animales mediante los casos de uso', () async {
