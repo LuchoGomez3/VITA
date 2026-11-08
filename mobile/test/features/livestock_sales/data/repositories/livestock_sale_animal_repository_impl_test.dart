@@ -259,9 +259,6 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) async => animal;
 
   @override
-  Future<BrickAnimalModel> updateAnimal(BrickAnimalModel animal) async => animal;
-
-  @override
   Future<void> retryRejectedAnimal(String animalId) async {}
 }
 
@@ -282,7 +279,11 @@ class _FakeLotBrickStore implements LotBrickStore {
   Future<BrickLotModel?> getLocalLot(String lotId) async => null;
 
   @override
-  Future<List<BrickLotModel>> getLocalLots(String establishmentId) async => lots;
+  Future<List<BrickLotModel>> getLocalLots(
+    String establishmentId, {
+    bool includeDeleted = false,
+  }) async =>
+      lots.where((lot) => lot.establishmentId == establishmentId && (includeDeleted || lot.deletedAt == null)).toList();
 
   @override
   Future<void> pullRemoteLots(String establishmentId) async {}
