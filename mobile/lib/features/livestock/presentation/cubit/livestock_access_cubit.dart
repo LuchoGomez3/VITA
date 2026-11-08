@@ -18,6 +18,7 @@ class LivestockAccessCubit extends Cubit<ResultState<List<LivestockEstablishment
   Future<void> load() async {
     emit(const ResultState.loading());
     final result = await _getSaleEstablishments();
+    if (isClosed) return;
     switch (result) {
       case Success<List<LivestockEstablishment>>(:final data):
         emit(ResultState.data(data));
