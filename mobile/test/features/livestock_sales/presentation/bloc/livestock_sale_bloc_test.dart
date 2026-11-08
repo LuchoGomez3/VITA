@@ -446,6 +446,53 @@ void main() {
       expect(dependencies.repository.deleteCalls, 0);
     });
 
+    for (final restore in [true, false]) {
+      testWidgets('Atras conserva el borrador hasta elegir ${restore ? 'continuar' : 'descartar'}', (tester) async {
+        final savedDraft = _savedDraft();
+        final dependencies = LivestockSaleDraftTestDependencies(draft: savedDraft);
+        late LivestockSaleBloc recoveryBloc;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.light(),
+            home: LivestockSaleFlowPage(
+              userId: 'user-id',
+              establishmentId: 'establishment-id',
+              createBloc: ({required userId, required establishmentId}) => recoveryBloc = _createBloc(
+                animalRepository: animalRepository,
+                saleRepository: saleRepository,
+                draftDependencies: dependencies,
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
+        expect(find.text(LivestockSaleStrings.savedDraftFoundTitle), findsOneWidget);
+
+        await tester.binding.handlePopRoute();
+        await tester.pump(const Duration(milliseconds: 350));
+
+        expect(dependencies.repository.deleteCalls, 0);
+        expect(dependencies.repository.draft, savedDraft);
+        expect(recoveryBloc.state.draftRecoveryStatus, LivestockSaleDraftRecoveryStatus.choiceRequired);
+        expect(find.text(LivestockSaleStrings.savedDraftFoundTitle), findsOneWidget);
+        await tester.tap(
+          find.text(restore ? LivestockSaleStrings.continueSavedDraft : LivestockSaleStrings.discardSavedDraft),
+        );
+        await tester.pumpAndSettle();
+        expect(recoveryBloc.state.draftRecoveryStatus, LivestockSaleDraftRecoveryStatus.ready);
+        if (restore) {
+          expect(recoveryBloc.state.form.buyerName, savedDraft.buyerName);
+          expect(recoveryBloc.state.selection.animals.single.rfidTagNumber, _rfid);
+          expect(dependencies.repository.deleteCalls, 0);
+        } else {
+          expect(dependencies.repository.draft, isNull);
+          expect(dependencies.repository.deleteCalls, 1);
+        }
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+    }
+
     testWidgets('bloquea cierre, volver y retroceso del sistema durante la confirmacion', (tester) async {
       final pendingRepository = _SaleRepository(waitForCompletion: true);
       final pendingBloc = _createBloc(animalRepository: animalRepository, saleRepository: pendingRepository);

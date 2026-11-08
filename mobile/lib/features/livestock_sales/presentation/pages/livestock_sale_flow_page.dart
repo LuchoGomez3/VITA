@@ -266,26 +266,27 @@ class _LivestockSaleFlowView extends StatelessWidget {
     final restore = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text(LivestockSaleStrings.savedDraftFoundTitle),
-        content: const Text(LivestockSaleStrings.savedDraftFoundMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text(LivestockSaleStrings.discardSavedDraft),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text(LivestockSaleStrings.continueSavedDraft),
-          ),
-        ],
+      builder: (dialogContext) => PopScope<bool>(
+        canPop: false,
+        child: AlertDialog(
+          title: const Text(LivestockSaleStrings.savedDraftFoundTitle),
+          content: const Text(LivestockSaleStrings.savedDraftFoundMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text(LivestockSaleStrings.discardSavedDraft),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text(LivestockSaleStrings.continueSavedDraft),
+            ),
+          ],
+        ),
       ),
     );
-    if (!context.mounted) return;
+    if (!context.mounted || restore == null) return;
     context.read<LivestockSaleBloc>().add(
-      restore ?? false
-          ? const LivestockSaleEvent.draftRestoreAccepted()
-          : const LivestockSaleEvent.savedDraftDiscardRequested(),
+      restore ? const LivestockSaleEvent.draftRestoreAccepted() : const LivestockSaleEvent.savedDraftDiscardRequested(),
     );
   }
 
