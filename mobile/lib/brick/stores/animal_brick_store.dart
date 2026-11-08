@@ -7,6 +7,7 @@ import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/mappers/livestock_sale_productive_status_mapper.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
+import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
 import 'package:meta/meta.dart';
 
@@ -193,7 +194,17 @@ class BrickAnimalStore implements AnimalBrickStore {
         localAnimalsById[animal.localId] = previous == null ? animal : _preferredAnimal(previous, animal);
       }
       final sales = await transaction.getLocal<BrickLivestockSaleModel>();
-      final salesByAnimal = _salesByAnimal(sales);
+      final knownRemoteIds = remoteAnimals.map((animal) => animal.localId).toSet();
+      final reconciledSales = <BrickLivestockSaleModel>[];
+      for (final sale in sales) {
+        final dependencies = (jsonDecode(sale.pendingAnimalIdsJson) as List<Object?>).cast<String>();
+        final remaining = dependencies.where((id) => !knownRemoteIds.contains(id)).toList();
+        final updated = remaining.length == dependencies.length
+            ? sale
+            : await transaction.upsert(sale.copyWith(pendingAnimalIdsJson: jsonEncode(remaining)));
+        reconciledSales.add(updated);
+      }
+      final salesByAnimal = _salesByAnimal(reconciledSales);
       for (final animal in remoteAnimals) {
         final local = localAnimalsById[animal.localId];
         final synchronizedAnimal = reconcileRemoteAnimal(
@@ -303,20 +314,19 @@ class BrickAnimalStore implements AnimalBrickStore {
       return;
     }
 
-    final storedAnimals = await _repository.getLocal<BrickAnimalModel>();
-
-    for (final animal in storedAnimals) {
-      if (animal.localId != result.localId) {
-        continue;
+    await _repository.runLocalTransaction((transaction) async {
+      if (await reconcileLivestockSaleRegistrationResult(transaction, result)) return;
+      final storedAnimals = await transaction.getLocal<BrickAnimalModel>();
+      for (final animal in storedAnimals) {
+        if (animal.localId != result.localId) continue;
+        await transaction.upsert(
+          animal.copyWith(
+            syncStatus: result.synchronized ? BrickAnimalSyncStatus.synchronized : BrickAnimalSyncStatus.rejected,
+            syncErrorCode: result.errorCode,
+          ),
+        );
       }
-
-      final updatedAnimal = animal.copyWith(
-        syncStatus: result.synchronized ? BrickAnimalSyncStatus.synchronized : BrickAnimalSyncStatus.rejected,
-        syncErrorCode: result.errorCode,
-      );
-      await _repository.upsertLocal<BrickAnimalModel>(updatedAnimal);
-      return;
-    }
+    });
   }
 
   /// Libera la subscription interna del store.

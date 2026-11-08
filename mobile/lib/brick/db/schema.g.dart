@@ -1,6 +1,7 @@
 // GENERATED CODE DO NOT EDIT
 // This file should be version controlled
 import 'package:brick_sqlite/db.dart';
+part '20261108032415.migration.dart';
 part '20260622053112.migration.dart';
 part '20260623151524.migration.dart';
 part '20260711234407.migration.dart';
@@ -18,6 +19,7 @@ part '20261028002455.migration.dart';
 
 /// All intelligently-generated migrations from all `@Migratable` classes on disk
 final migrations = <Migration>{
+  const Migration20261108032415(),
   const Migration20260622053112(),
   const Migration20260623151524(),
   const Migration20260711234407(),
@@ -153,6 +155,7 @@ final schema = Schema(
         SchemaColumn('deleted_at', Column.datetime),
         SchemaColumn('sync_status', Column.integer),
         SchemaColumn('sync_error_code', Column.varchar),
+        SchemaColumn('pending_animal_ids_json', Column.varchar),
       },
       indices: <SchemaIndex>{},
     ),

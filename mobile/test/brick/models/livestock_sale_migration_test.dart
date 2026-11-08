@@ -69,5 +69,15 @@ void main() {
       whereArgs: ['venta-existente'],
     );
     expect(preservedSales, hasLength(1));
+
+    final dependenciesMigration = appBrickMigrations.singleWhere(
+      (item) => item.upStatement.contains('pending_animal_ids_json'),
+    );
+    for (final statement in dependenciesMigration.upStatement.split(';')) {
+      if (statement.trim().isNotEmpty) await database.execute(statement);
+    }
+    final legacySale = (await database.query('BrickLivestockSaleModel')).single;
+    expect(legacySale['local_id'], 'venta-existente');
+    expect(legacySale['pending_animal_ids_json'], isNull);
   });
 }

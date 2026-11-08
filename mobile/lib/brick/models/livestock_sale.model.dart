@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart';
 import 'package:brick_rest/brick_rest.dart';
+import 'package:brick_sqlite/brick_sqlite.dart' show Sqlite;
 
 const _unchangedLivestockSaleSyncErrorCode = Object();
 
@@ -71,6 +72,7 @@ class BrickLivestockSaleModel extends OfflineFirstWithRestModel {
     this.deletedAt,
     this.syncStatus = BrickLivestockSaleSyncStatus.pending,
     this.syncErrorCode,
+    this.pendingAnimalIdsJson = '[]',
   });
 
   /// UUID generado por mobile para que los reintentos sean idempotentes.
@@ -171,10 +173,16 @@ class BrickLivestockSaleModel extends OfflineFirstWithRestModel {
   @Rest(ignore: true)
   final String? syncErrorCode;
 
+  /// Altas que deben confirmarse antes de encolar esta venta; solo SQLite.
+  @Rest(ignore: true)
+  @Sqlite(fromGenerator: 'brickLivestockSalePendingIdsFromSqlite(%DATA_PROPERTY%)')
+  final String pendingAnimalIdsJson;
+
   /// Crea una copia reconciliada conservando la fila SQLite existente.
   BrickLivestockSaleModel copyWith({
     BrickLivestockSaleSyncStatus? syncStatus,
     Object? syncErrorCode = _unchangedLivestockSaleSyncErrorCode,
+    String? pendingAnimalIdsJson,
   }) {
     final nextSyncErrorCode =
         identical(
@@ -206,9 +214,13 @@ class BrickLivestockSaleModel extends OfflineFirstWithRestModel {
       deletedAt: deletedAt,
       syncStatus: syncStatus ?? this.syncStatus,
       syncErrorCode: nextSyncErrorCode,
+      pendingAnimalIdsJson: pendingAnimalIdsJson ?? this.pendingAnimalIdsJson,
     )..primaryKey = primaryKey;
   }
 }
+
+/// Las ventas anteriores a la coordinacion de dependencias no tenian este campo.
+String brickLivestockSalePendingIdsFromSqlite(Object? value) => value as String? ?? '[]';
 
 /// Serializa una fecha comercial sin hora ni conversion de zona.
 String brickLivestockSaleDateToBackend(DateTime date) {

@@ -128,6 +128,14 @@ pueden adoptar una version remota mas reciente. Un rechazo requiere conciliacion
 y no reactiva stock automaticamente. Las altas pendientes sin venta siguen
 adoptando el estado productivo remoto.
 
+La venta conserva en `pendingAnimalIdsJson` los UUID cuyas altas todavia no
+fueron confirmadas. Esta dependencia se persiste solo en SQLite y no modifica
+el contrato REST. La venta y la baja local se confirman inmediatamente; el POST
+de ventas se encola cuando todas esas altas tienen ACK o aparecen en un pull.
+La conciliacion del ACK de un alta y sus ventas dependientes comparte una sola
+transaccion, para que una respuesta tardia no reemplace el estado de la venta.
+Al restaurar una sesion, el sync inicial reanuda las ventas del establecimiento.
+
 Las filas creadas antes de incorporar el estado productivo se leen
 como `active`: al introducir esta migracion se verifico que todos los animales
 existentes en backend estaban activos. Un valor desconocido recibido desde

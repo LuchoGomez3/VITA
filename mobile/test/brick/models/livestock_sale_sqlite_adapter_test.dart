@@ -34,6 +34,7 @@ void main() {
       animalIdsJson: animalIds,
       paymentCondition: 'parcial',
       initialPaymentJson: initialPayment,
+      pendingAnimalIdsJson: animalIds,
       createdAt: timestamp,
       updatedAt: timestamp,
     );
@@ -51,7 +52,14 @@ void main() {
     expect(restored.totalAmount, '10126.24');
     expect(restored.animalIdsJson, animalIds);
     expect(restored.initialPaymentJson, initialPayment);
+    expect(restored.pendingAnimalIdsJson, animalIds);
     expect(restored.syncStatus, BrickLivestockSaleSyncStatus.pending);
+
+    final legacy = await adapter.fromSqlite(
+      {...row, '_brick_id': 12, 'pending_animal_ids_json': null},
+      provider: provider,
+    );
+    expect(legacy.pendingAnimalIdsJson, '[]');
   });
 }
 

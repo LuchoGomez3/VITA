@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/brick/mappers/livestock_sale_productive_status_
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
+import 'package:logging/logging.dart';
 
 /// Motivo estable por el que una venta no puede confirmarse localmente.
 enum LivestockSaleLocalErrorCode {
@@ -47,6 +48,9 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
     required bool enableRemoteSync,
   }) : _enableRemoteSync = enableRemoteSync {
     _syncSubscription = _repository.syncResults.listen(applySyncResult);
+    _localSubscription = _repository.localChanges.listen((type) {
+      if (type == BrickLivestockSaleModel) unawaited(_resumePendingSales());
+    });
   }
 
   static BrickLivestockSaleStore? _instance;
@@ -54,6 +58,10 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
   final AppBrickRepository _repository;
   final bool _enableRemoteSync;
   late final StreamSubscription<BackendSyncResult> _syncSubscription;
+  late final StreamSubscription<Type> _localSubscription;
+  final _enqueuedSaleIds = <String>{};
+  static final _logger = Logger('LivestockSaleStore');
+  static const _registrationRejected = 'animal_registration_rejected';
 
   /// Instancia configurada durante el bootstrap de Brick.
   static BrickLivestockSaleStore get instance {
@@ -122,6 +130,10 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
       final pendingSale = sale.copyWith(
         syncStatus: BrickLivestockSaleSyncStatus.pending,
         syncErrorCode: null,
+        pendingAnimalIdsJson: jsonEncode([
+          for (final animal in selectedAnimals)
+            if (animal.syncStatus != BrickAnimalSyncStatus.synchronized) animal.localId,
+        ]),
       )..primaryKey = existingSale?.primaryKey ?? sale.primaryKey;
       final savedSale = await transaction.upsert(pendingSale);
 
@@ -143,10 +155,32 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
 
     // El alta remota empieza solamente despues del commit local. La UX recibe
     // el resultado local sin esperar conectividad ni respuesta del backend.
-    if (_enableRemoteSync) {
-      unawaited(_repository.enqueueRemoteUpsert(saved));
-    }
+    unawaited(_resumePendingSales());
     return saved;
+  }
+
+  /// Reanuda pendientes persistidos despues de restaurar la sesion y el tenant.
+  Future<void> pushPendingSales(String establishmentId) => _resumePendingSales(establishmentId: establishmentId);
+
+  Future<void> _resumePendingSales({String? establishmentId}) async {
+    if (!_enableRemoteSync) return;
+    try {
+      final sales = await _repository.getLocal<BrickLivestockSaleModel>();
+      for (final sale in sales) {
+        if (sale.deletedAt != null ||
+            (establishmentId != null && sale.establishmentId != establishmentId) ||
+            sale.syncStatus != BrickLivestockSaleSyncStatus.pending ||
+            (jsonDecode(sale.pendingAnimalIdsJson) as List<Object?>).isNotEmpty ||
+            !_enqueuedSaleIds.add(sale.localId)) {
+          continue;
+        }
+        // Brick persiste el request antes de enviarlo. En esta instancia se
+        // encola una sola vez; los 5xx quedan a cargo de su cola durable.
+        unawaited(_repository.enqueueRemoteUpsert(sale));
+      }
+    } on Object catch (error, stackTrace) {
+      _logger.severe('No se pudieron reanudar las ventas pendientes.', error.runtimeType, stackTrace);
+    }
   }
 
   /// Aplica la aceptacion o rechazo remoto sobre venta y animales atomicos.
@@ -245,5 +279,49 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
   }
 
   /// Libera la escucha del canal compartido de sincronizacion.
-  Future<void> dispose() => _syncSubscription.cancel();
+  Future<void> dispose() async {
+    await _syncSubscription.cancel();
+    await _localSubscription.cancel();
+    if (identical(_instance, this)) _instance = null;
+  }
+}
+
+/// Concilia un alta dependiente en la misma transaccion que su animal.
+/// Devuelve true si el estado visible del animal pertenece a una venta local.
+Future<bool> reconcileLivestockSaleRegistrationResult(
+  AppBrickTransaction transaction,
+  BackendSyncResult result,
+) async {
+  final sales = await transaction.getLocal<BrickLivestockSaleModel>();
+  final animals = BrickLivestockSaleStore._latestAnimalsById(await transaction.getLocal<BrickAnimalModel>());
+  var owned = false;
+  for (final sale in sales) {
+    if (sale.deletedAt != null) continue;
+    final ids = BrickLivestockSaleStore._decodeAnimalIds(sale.animalIdsJson);
+    if (!ids.contains(result.localId)) continue;
+    owned = true;
+    final dependencies = (jsonDecode(sale.pendingAnimalIdsJson) as List<Object?>).cast<String>().toSet();
+    if (!dependencies.contains(result.localId)) continue;
+    if (result.synchronized) dependencies.remove(result.localId);
+    final updatedSale = sale.copyWith(
+      pendingAnimalIdsJson: jsonEncode(dependencies.toList()),
+      syncStatus: result.synchronized ? sale.syncStatus : BrickLivestockSaleSyncStatus.rejected,
+      syncErrorCode: result.synchronized ? sale.syncErrorCode : BrickLivestockSaleStore._registrationRejected,
+    );
+    await transaction.upsert(updatedSale);
+    for (final id in ids) {
+      final animal = animals[id];
+      if (animal == null) continue;
+      await transaction.upsert(
+        animal.copyWith(
+          productiveStatus: BrickAnimalProductiveStatus.sold,
+          syncStatus: updatedSale.syncStatus == BrickLivestockSaleSyncStatus.rejected
+              ? BrickAnimalSyncStatus.rejected
+              : BrickAnimalSyncStatus.pending,
+          syncErrorCode: updatedSale.syncErrorCode,
+        ),
+      );
+    }
+  }
+  return owned;
 }
