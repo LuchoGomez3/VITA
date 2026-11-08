@@ -136,6 +136,12 @@ La conciliacion del ACK de un alta y sus ventas dependientes comparte una sola
 transaccion, para que una respuesta tardia no reemplace el estado de la venta.
 Al restaurar una sesion, el sync inicial reanuda las ventas del establecimiento.
 
+El reintento desde la ficha consulta primero la venta propietaria. Reenvia el
+mismo agregado, con sus datos y UUID originales, sin volver a dar de alta un
+animal ya registrado. Si fallo un alta dependiente, la recupera antes de enviar
+la venta. Un rechazo comercial definitivo puede repetirse hasta corregir su
+causa; reintentar no edita ni anula la venta y no reactiva el stock.
+
 Las filas creadas antes de incorporar el estado productivo se leen
 como `active`: al introducir esta migracion se verifico que todos los animales
 existentes en backend estaban activos. Un valor desconocido recibido desde

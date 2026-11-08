@@ -8,7 +8,13 @@ import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
+import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_detail_remote_data_source.dart';
+import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_detail_repository_impl.dart';
 import 'package:http/http.dart';
 import 'package:http/testing.dart';
 import 'package:path/path.dart' as path;
@@ -22,6 +28,8 @@ void main() {
   final knownAnimals = <String>{};
   final requests = <Request>[];
   var offline = true;
+  var rejectSale = false;
+  var rejectParent = false;
   Completer<void>? parentStarted;
   Completer<void>? allowParent;
 
@@ -40,6 +48,7 @@ void main() {
         if (request.url.path == '/api/v1/animales') {
           if (parentStarted?.isCompleted == false) parentStarted!.complete();
           await allowParent?.future;
+          if (rejectParent) return Response('{"errors":[{"code":"invalid_animal"}]}', 409, request: request);
           knownAnimals.add(body['id'] as String);
           return Response(
             jsonEncode({
@@ -50,7 +59,7 @@ void main() {
           );
         }
         final ids = (body['animal_ids'] as List<dynamic>).cast<String>();
-        final accepted = ids.every(knownAnimals.contains);
+        final accepted = !rejectSale && ids.every(knownAnimals.contains);
         return Response(
           jsonEncode(
             accepted
@@ -69,6 +78,9 @@ void main() {
     repository = AppBrickRepository.instance;
     BrickAnimalStore.configure(repository);
     BrickLivestockSaleStore.configure(repository);
+    BrickCategoriaStore.configure(repository);
+    BrickLotStore.configure(repository);
+    BrickPesajeStore.configure(repository);
     animals = BrickAnimalStore.instance;
     sales = BrickLivestockSaleStore.instance;
   });
@@ -129,6 +141,34 @@ void main() {
     );
   });
 
+  test('la ficha reintenta la venta rechazada con el mismo payload y UUID', () async {
+    final animal = _animal('retry-sale-animal');
+    await repository.upsertLocal(animal);
+    knownAnimals.add(animal.localId);
+    rejectSale = true;
+    await sales.saveSale(_sale('rejected-sale', [animal.localId]));
+    await waitForSale('rejected-sale', BrickLivestockSaleSyncStatus.rejected);
+    final before = requests.length;
+    final original = requests.last.body;
+    rejectSale = false;
+    final detailRepository = AnimalDetailRepositoryImpl(
+      brickStore: animals,
+      saleSyncRecovery: sales,
+      categoriaBrickStore: BrickCategoriaStore.instance,
+      lotBrickStore: BrickLotStore.instance,
+      pesajeBrickStore: BrickPesajeStore.instance,
+      remoteDataSource: AnimalDetailRemoteDataSource(tokenProvider: const _TokenProvider()),
+    );
+    expect(await detailRepository.retrySync(animal.localId), const Result<void>.success(null));
+    await waitForSale('rejected-sale', BrickLivestockSaleSyncStatus.synchronized);
+    expect(requests.skip(before).map((request) => request.url.path), ['/api/v1/ventas']);
+    expect(requests.last.body, original);
+    final updated = await animals.getAnimalById(animal.localId);
+    expect(updated?.productiveStatus, BrickAnimalProductiveStatus.sold);
+    expect(updated?.syncStatus, BrickAnimalSyncStatus.synchronized);
+    expect(updated?.syncErrorCode, isNull);
+  });
+
   test('espera todas las altas de la tropa antes de enviar la venta', () async {
     final parents = [
       _animal('parent-a').copyWith(syncStatus: BrickAnimalSyncStatus.pending),
@@ -148,6 +188,26 @@ void main() {
     expect(requests.where((request) => request.url.path == '/api/v1/ventas'), hasLength(countBefore));
     await repository.enqueueRemoteUpsert(parents.last);
     await waitForSale('multi-parent-sale', BrickLivestockSaleSyncStatus.synchronized);
+  });
+
+  test('si falla un alta dependiente, recupera primero el alta y luego la misma venta', () async {
+    rejectParent = true;
+    parentStarted = Completer<void>();
+    allowParent = Completer<void>();
+    final parent = _animal('rejected-parent').copyWith(syncStatus: BrickAnimalSyncStatus.pending);
+    await animals.upsertAnimal(parent);
+    await parentStarted!.future;
+    await sales.saveSale(_sale('parent-rejected-sale', [parent.localId]));
+    allowParent!.complete();
+    await waitForSale('parent-rejected-sale', BrickLivestockSaleSyncStatus.rejected);
+    parentStarted = null;
+    allowParent = null;
+    rejectParent = false;
+    final before = requests.length;
+    expect(await sales.retryRejectedSaleForAnimal(parent.localId), isTrue);
+    await waitForSale('parent-rejected-sale', BrickLivestockSaleSyncStatus.synchronized);
+    expect(requests.skip(before).map((request) => request.url.path), ['/api/v1/animales', '/api/v1/ventas']);
+    expect((await animals.getAnimalById(parent.localId))?.productiveStatus, BrickAnimalProductiveStatus.sold);
   });
 }
 

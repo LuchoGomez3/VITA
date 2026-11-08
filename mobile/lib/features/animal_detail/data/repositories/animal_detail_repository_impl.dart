@@ -1,6 +1,7 @@
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
@@ -15,17 +16,20 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
   /// Crea el repository con cache Brick y fuente remota.
   const AnimalDetailRepositoryImpl({
     required AnimalBrickStore brickStore,
+    required LivestockSaleSyncRecovery saleSyncRecovery,
     required CategoriaBrickStore categoriaBrickStore,
     required PesajeBrickStore pesajeBrickStore,
     required LotBrickStore lotBrickStore,
     required AnimalDetailRemoteDataSource remoteDataSource,
   }) : _brickStore = brickStore,
+       _saleSyncRecovery = saleSyncRecovery,
        _categoriaBrickStore = categoriaBrickStore,
        _pesajeBrickStore = pesajeBrickStore,
        _lotBrickStore = lotBrickStore,
        _remoteDataSource = remoteDataSource;
 
   final AnimalBrickStore _brickStore;
+  final LivestockSaleSyncRecovery _saleSyncRecovery;
   final CategoriaBrickStore _categoriaBrickStore;
   final PesajeBrickStore _pesajeBrickStore;
   final LotBrickStore _lotBrickStore;
@@ -69,7 +73,8 @@ class AnimalDetailRepositoryImpl implements AnimalDetailRepository {
   @override
   Future<Result<void>> retrySync(String animalId) async {
     try {
-      await _brickStore.retryRejectedAnimal(animalId);
+      final recoveredSale = await _saleSyncRecovery.retryRejectedSaleForAnimal(animalId);
+      if (!recoveredSale) await _brickStore.retryRejectedAnimal(animalId);
       return const Result.success(null);
     } on Object {
       return const Result.failure(

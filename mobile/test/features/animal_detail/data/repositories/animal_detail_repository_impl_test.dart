@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -20,6 +21,7 @@ void main() {
       final brickStore = _FakeAnimalBrickStore(localAnimal: _brickAnimal);
       final remoteDataSource = _FakeAnimalDetailRemoteDataSource();
       final repository = AnimalDetailRepositoryImpl(
+        saleSyncRecovery: _FakeSaleSyncRecovery(),
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
@@ -40,6 +42,7 @@ void main() {
       final brickStore = _FakeAnimalBrickStore();
       final remoteDataSource = _FakeAnimalDetailRemoteDataSource();
       final repository = AnimalDetailRepositoryImpl(
+        saleSyncRecovery: _FakeSaleSyncRecovery(),
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
@@ -67,6 +70,7 @@ void main() {
         categorias: [_categoria],
       );
       final repository = AnimalDetailRepositoryImpl(
+        saleSyncRecovery: _FakeSaleSyncRecovery(),
         brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
         categoriaBrickStore: categoriaStore,
         pesajeBrickStore: pesajeStore,
@@ -88,6 +92,7 @@ void main() {
 
     test('resolves the lot name for animals pulled without it', () async {
       final repository = AnimalDetailRepositoryImpl(
+        saleSyncRecovery: _FakeSaleSyncRecovery(),
         brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal.copyWith(lotName: '')),
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
@@ -102,6 +107,7 @@ void main() {
 
     test('uses cached related data when remote pulls fail', () async {
       final repository = AnimalDetailRepositoryImpl(
+        saleSyncRecovery: _FakeSaleSyncRecovery(),
         brickStore: _FakeAnimalBrickStore(localAnimal: _brickAnimal),
         categoriaBrickStore: _FakeCategoriaBrickStore(
           categorias: [_categoria],
@@ -121,9 +127,27 @@ void main() {
       expect(detail.weightHistory.single.weightKg, 210);
     });
 
+    test('retries the sale without resending an animal registration', () async {
+      final brickStore = _FakeAnimalBrickStore(localAnimal: _brickAnimal);
+      final recovery = _FakeSaleSyncRecovery()..hasSale = true;
+      final repository = AnimalDetailRepositoryImpl(
+        saleSyncRecovery: recovery,
+        brickStore: brickStore,
+        categoriaBrickStore: _FakeCategoriaBrickStore(),
+        pesajeBrickStore: _FakePesajeBrickStore(),
+        lotBrickStore: _FakeLotBrickStore(),
+        remoteDataSource: _FakeAnimalDetailRemoteDataSource(),
+      );
+      final result = await repository.retrySync(_animalId);
+      expect(result, const Result<void>.success(null));
+      expect(recovery.retriedIds, [_animalId]);
+      expect(brickStore.retriedAnimalIds, isEmpty);
+    });
+
     test('retries a rejected animal through the Brick store', () async {
       final brickStore = _FakeAnimalBrickStore(localAnimal: _brickAnimal);
       final repository = AnimalDetailRepositoryImpl(
+        saleSyncRecovery: _FakeSaleSyncRecovery(),
         brickStore: brickStore,
         categoriaBrickStore: _FakeCategoriaBrickStore(),
         pesajeBrickStore: _FakePesajeBrickStore(),
@@ -370,4 +394,15 @@ class _FakeLotBrickStore implements LotBrickStore {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError('${invocation.memberName}');
+}
+
+class _FakeSaleSyncRecovery implements LivestockSaleSyncRecovery {
+  bool hasSale = false;
+  final retriedIds = <String>[];
+
+  @override
+  Future<bool> retryRejectedSaleForAnimal(String animalId) async {
+    retriedIds.add(animalId);
+    return hasSale;
+  }
 }

@@ -41,8 +41,14 @@ abstract class LivestockSaleBrickStore {
   Future<BrickLivestockSaleModel> saveSale(BrickLivestockSaleModel sale);
 }
 
+/// Recuperacion de una venta propietaria sin reenviar el alta de su animal.
+abstract class LivestockSaleSyncRecovery {
+  /// Devuelve false solo cuando el animal no pertenece a una venta local.
+  Future<bool> retryRejectedSaleForAnimal(String animalId);
+}
+
 /// Store que coordina venta, stock local y resultado de sincronizacion.
-class BrickLivestockSaleStore implements LivestockSaleBrickStore {
+class BrickLivestockSaleStore implements LivestockSaleBrickStore, LivestockSaleSyncRecovery {
   BrickLivestockSaleStore._(
     this._repository, {
     required bool enableRemoteSync,
@@ -183,6 +189,40 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
     }
   }
 
+  @override
+  Future<bool> retryRejectedSaleForAnimal(String animalId) async {
+    final parentsToRetry = <BrickAnimalModel>[];
+    final found = await _repository.runLocalTransaction((transaction) async {
+      final sales = await transaction.getLocal<BrickLivestockSaleModel>();
+      final owned = sales.where(
+        (sale) => sale.deletedAt == null && _decodeAnimalIds(sale.animalIdsJson).contains(animalId),
+      );
+      final sale = owned.isEmpty ? null : owned.reduce((a, b) => a.updatedAt.isAfter(b.updatedAt) ? a : b);
+      if (sale == null) return false;
+      if (sale.syncStatus != BrickLivestockSaleSyncStatus.rejected) return true;
+      final pending = sale.copyWith(syncStatus: BrickLivestockSaleSyncStatus.pending, syncErrorCode: null);
+      await transaction.upsert(pending);
+      final animals = await transaction.getLocal<BrickAnimalModel>();
+      final animalIds = _decodeAnimalIds(sale.animalIdsJson).toSet();
+      final dependencies = (jsonDecode(sale.pendingAnimalIdsJson) as List<Object?>).cast<String>().toSet();
+      for (final animal in _latestAnimalsById(animals).values) {
+        if (!animalIds.contains(animal.localId)) continue;
+        final updated = animal.copyWith(syncStatus: BrickAnimalSyncStatus.pending, syncErrorCode: null);
+        await transaction.upsert(updated);
+        if (dependencies.contains(animal.localId)) parentsToRetry.add(updated);
+      }
+      _enqueuedSaleIds.remove(sale.localId);
+      return true;
+    });
+    if (_enableRemoteSync) {
+      for (final parent in parentsToRetry) {
+        unawaited(_repository.enqueueRemoteUpsert(parent));
+      }
+      await _resumePendingSales();
+    }
+    return found;
+  }
+
   /// Aplica la aceptacion o rechazo remoto sobre venta y animales atomicos.
   Future<void> applySyncResult(BackendSyncResult result) async {
     // El stream es compartido por stores; se ignoran respuestas de cualquier
@@ -197,6 +237,7 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
       final storedSales = await transaction.getLocal<BrickLivestockSaleModel>();
       final sale = _latestSaleById(storedSales, result.localId);
       if (sale == null) return;
+      if (!result.synchronized) _enqueuedSaleIds.remove(sale.localId);
 
       final nextSaleStatus = result.synchronized
           ? BrickLivestockSaleSyncStatus.synchronized

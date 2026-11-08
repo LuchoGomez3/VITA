@@ -18,7 +18,7 @@ class AnimalDetailSyncFooter extends StatelessWidget {
   /// Metadatos de sincronizacion del animal.
   final AnimalDetail animalDetail;
 
-  /// Reintenta la sincronizacion cuando el alta fue rechazada.
+  /// Reintenta el alta o la venta propietaria de la operacion rechazada.
   final VoidCallback onRetry;
 
   @override
