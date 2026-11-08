@@ -25,6 +25,9 @@ void main() {
   late AppBrickRepository repository;
   late BrickLivestockSaleStore store;
   late BrickAnimalStore animalStore;
+  var remoteAnimals = <BrickAnimalModel>[];
+  Completer<void>? remotePullStarted;
+  Completer<void>? allowRemotePull;
   late Completer<Request> firstRemoteRequest;
   late Completer<void> allowFirstRemoteResponse;
 
@@ -43,6 +46,20 @@ void main() {
       localDatabaseFactory: databaseFactoryFfi,
       tokenProvider: const _TokenProvider(),
       client: MockClient((request) async {
+        if (request.method == 'GET') {
+          final data = <Map<String, dynamic>>[];
+          for (final animal in remoteAnimals) {
+            final adapter = repository.remoteProvider.modelDictionary.adapterFor[BrickAnimalModel]!;
+            data.add({
+              ...await adapter.toRest(animal, provider: repository.remoteProvider),
+              'estado': 'activo',
+              'estado_actualizado_en': null,
+            });
+          }
+          remotePullStarted?.complete();
+          await allowRemotePull?.future;
+          return Response(jsonEncode({'data': data}), 200, request: request);
+        }
         if (!firstRemoteRequest.isCompleted) {
           firstRemoteRequest.complete(request);
           await allowFirstRemoteResponse.future;
@@ -128,6 +145,72 @@ void main() {
       storedSales.where((sale) => sale.localId == 'sale-duplicate'),
       isEmpty,
     );
+  });
+
+  test('un pull activo no libera stock de una venta pendiente o rechazada', () async {
+    for (final rejected in [false, true]) {
+      final id = rejected ? 'rejected-pull' : 'pending-pull';
+      final animal = _animal(id);
+      await repository.upsertLocal(animal);
+      await store.saveSale(_sale('sale-$id', [id]));
+      if (rejected) {
+        await store.applySyncResult(
+          BackendSyncResult(
+            resourcePath: '/api/v1/ventas',
+            localId: 'sale-$id',
+            synchronized: false,
+            errorCode: 'conflict',
+          ),
+        );
+      }
+      remoteAnimals = [animal.copyWith(updatedAt: animal.updatedAt.add(const Duration(days: 1)))];
+      await animalStore.pullRemoteAnimals('establishment-id');
+
+      final stored = await animalStore.getAnimalById(id);
+      expect(stored?.productiveStatus, BrickAnimalProductiveStatus.sold);
+      expect(stored?.syncStatus, rejected ? BrickAnimalSyncStatus.rejected : BrickAnimalSyncStatus.pending);
+      await expectLater(
+        store.saveSale(_sale('duplicate-$id', [id])),
+        throwsA(
+          isA<LivestockSaleLocalException>().having(
+            (error) => error.code,
+            'code',
+            LivestockSaleLocalErrorCode.animalNotActive,
+          ),
+        ),
+      );
+    }
+  });
+
+  test('un GET iniciado antes de vender no pisa la venta aceptada mientras esperaba', () async {
+    final animal = _animal('delayed-pull');
+    await repository.upsertLocal(animal);
+    // El dispositivo tiene el reloj atrasado respecto del servidor.
+    remoteAnimals = [animal.copyWith(updatedAt: animal.updatedAt.add(const Duration(days: 1)))];
+    remotePullStarted = Completer<void>();
+    allowRemotePull = Completer<void>();
+    final pull = animalStore.pullRemoteAnimals('establishment-id');
+    await remotePullStarted!.future;
+    await store.saveSale(_sale('delayed-sale', [animal.localId]));
+    await store.applySyncResult(
+      const BackendSyncResult(
+        resourcePath: '/api/v1/ventas',
+        localId: 'delayed-sale',
+        synchronized: true,
+      ),
+    );
+    allowRemotePull!.complete();
+    await pull;
+    remotePullStarted = null;
+    allowRemotePull = null;
+
+    final stored = await animalStore.getAnimalById(animal.localId);
+    expect(stored?.productiveStatus, BrickAnimalProductiveStatus.sold);
+    expect(stored?.syncStatus, BrickAnimalSyncStatus.synchronized);
+
+    // Una consulta posterior al ACK puede adoptar cambios autoritativos nuevos.
+    await animalStore.pullRemoteAnimals('establishment-id');
+    expect((await animalStore.getAnimalById(animal.localId))?.productiveStatus, BrickAnimalProductiveStatus.active);
   });
 
   test('la baja offline cuenta en el mes comercial y conserva la fecha al sincronizar', () async {

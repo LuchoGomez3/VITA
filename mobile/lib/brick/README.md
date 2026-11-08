@@ -120,6 +120,14 @@ envia en el POST generico de alta. Las ventas usan su propio comando atomico
 una transaccion SQLite antes de encolar el agregado. La fecha de salida es la
 fecha comercial a medianoche en Cordoba (03:00 UTC), independiente de `updatedAt`.
 
+El pull de animales consulta la venta propietaria dentro de la misma transaccion
+de reconciliacion. Mientras este pendiente o rechazada, conserva la salida local
+y su estado de sincronizacion. Una vez aceptada, descarta respuestas iniciadas
+antes del ACK o con una version anterior/igual a la local; los pulls posteriores
+pueden adoptar una version remota mas reciente. Un rechazo requiere conciliacion
+y no reactiva stock automaticamente. Las altas pendientes sin venta siguen
+adoptando el estado productivo remoto.
+
 Las filas creadas antes de incorporar el estado productivo se leen
 como `active`: al introducir esta migracion se verifico que todos los animales
 existentes en backend estaban activos. Un valor desconocido recibido desde

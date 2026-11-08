@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:brick_offline_first/brick_offline_first.dart';
 import 'package:brick_rest/brick_rest.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
+import 'package:frontend_mayoral/brick/mappers/livestock_sale_productive_status_mapper.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
 import 'package:meta/meta.dart';
 
@@ -161,6 +164,11 @@ class BrickAnimalStore implements AnimalBrickStore {
 
   @override
   Future<void> pullRemoteAnimals(String establishmentId) async {
+    final salesBeforePull = await _repository.getLocal<BrickLivestockSaleModel>();
+    final synchronizedSaleIds = salesBeforePull
+        .where((sale) => sale.syncStatus == BrickLivestockSaleSyncStatus.synchronized)
+        .map((sale) => sale.localId)
+        .toSet();
     final remoteAnimals = await _repository.remoteProvider.get<BrickAnimalModel>(
       repository: _repository,
       query: Query(
@@ -175,30 +183,71 @@ class BrickAnimalStore implements AnimalBrickStore {
         ],
       ),
     );
-    final localAnimals = await _repository.getLocal<BrickAnimalModel>();
-    final localAnimalsById = {
-      for (final animal in localAnimals) animal.localId: animal,
-    };
-    for (final animal in remoteAnimals) {
-      final local = localAnimalsById[animal.localId];
-      final synchronizedAnimal = reconcileRemoteAnimal(
-        local: local,
-        remote: animal,
-      )..primaryKey = local?.primaryKey;
-      await _repository.upsertLocal<BrickAnimalModel>(synchronizedAnimal);
-    }
+    // Se relee despues del GET y dentro de la transaccion: una venta puede
+    // confirmarse o recibir su ACK mientras la descarga esta en vuelo.
+    await _repository.runLocalTransaction((transaction) async {
+      final localAnimals = await transaction.getLocal<BrickAnimalModel>();
+      final localAnimalsById = <String, BrickAnimalModel>{};
+      for (final animal in localAnimals) {
+        final previous = localAnimalsById[animal.localId];
+        localAnimalsById[animal.localId] = previous == null ? animal : _preferredAnimal(previous, animal);
+      }
+      final sales = await transaction.getLocal<BrickLivestockSaleModel>();
+      final salesByAnimal = _salesByAnimal(sales);
+      for (final animal in remoteAnimals) {
+        final local = localAnimalsById[animal.localId];
+        final synchronizedAnimal = reconcileRemoteAnimal(
+          local: local,
+          remote: animal,
+          sale: salesByAnimal[animal.localId],
+          saleWasSynchronizedBeforePull: synchronizedSaleIds.contains(salesByAnimal[animal.localId]?.localId),
+        )..primaryKey = local?.primaryKey;
+        await transaction.upsert(synchronizedAnimal);
+      }
+    });
   }
 
-  /// Fusiona el estado autoritativo sin pisar un alta local pendiente.
+  static Map<String, BrickLivestockSaleModel> _salesByAnimal(List<BrickLivestockSaleModel> sales) {
+    final byAnimal = <String, BrickLivestockSaleModel>{};
+    for (final sale in sales) {
+      if (sale.deletedAt != null) continue;
+      final ids = (jsonDecode(sale.animalIdsJson) as List<Object?>).cast<String>();
+      for (final id in ids) {
+        final previous = byAnimal[id];
+        if (previous == null || sale.updatedAt.isAfter(previous.updatedAt)) {
+          byAnimal[id] = sale;
+        }
+      }
+    }
+    return byAnimal;
+  }
+
+  /// Fusiona el estado remoto respetando altas y salidas comerciales locales.
   ///
-  /// Los cambios de lote pertenecen al agregado movimiento y ya no marcan al
-  /// animal como pendiente. Esta fusion queda para altas realmente pendientes:
-  /// conserva sus datos locales, pero nunca retiene un estado productivo viejo.
+  /// La venta conserva su salida hasta conciliarse; luego solo una version
+  /// remota posterior puede reemplazarla. Un GET iniciado antes del ACK no
+  /// puede liberar esa salida, aunque el reloj local este atrasado. Las altas
+  /// siguen adoptando el estado productivo remoto.
   @visibleForTesting
   static BrickAnimalModel reconcileRemoteAnimal({
     required BrickAnimalModel? local,
     required BrickAnimalModel remote,
+    BrickLivestockSaleModel? sale,
+    bool saleWasSynchronizedBeforePull = true,
   }) {
+    if (local != null && sale != null && sale.establishmentId == local.establishmentId) {
+      if (sale.syncStatus != BrickLivestockSaleSyncStatus.synchronized) {
+        return local.copyWith(
+          productiveStatus: BrickAnimalProductiveStatus.sold,
+          productiveStatusChangedAt: saleProductiveStatusChangedAt(sale.operationDate),
+          syncStatus: sale.syncStatus == BrickLivestockSaleSyncStatus.pending
+              ? BrickAnimalSyncStatus.pending
+              : BrickAnimalSyncStatus.rejected,
+          syncErrorCode: sale.syncErrorCode,
+        );
+      }
+      if (!saleWasSynchronizedBeforePull || !remote.updatedAt.isAfter(local.updatedAt)) return local;
+    }
     final protectsLocalWrite = local != null && local.syncStatus != BrickAnimalSyncStatus.synchronized;
     if (protectsLocalWrite) {
       return local.copyWith(
