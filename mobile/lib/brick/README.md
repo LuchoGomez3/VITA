@@ -114,11 +114,13 @@ El animal conserva dos estados distintos:
 - `syncStatus`: indica si el registro local esta pendiente, sincronizado o
   rechazado por backend.
 
-No deben intercambiarse. En el alcance actual, `productiveStatus` es de lectura:
-se descarga desde backend y no se envia en el POST generico de alta. La futura
-venta, muerte o baja debera tener un comando offline-first especifico que cambie
-SQLite y encole el `PUT /animales/{id}`; esa transicion todavia no esta
-implementada. Las filas creadas antes de incorporar el estado productivo se leen
+No deben intercambiarse. `productiveStatus` se descarga desde backend y no se
+envia en el POST generico de alta. Las ventas usan su propio comando atomico
+`POST /ventas`: `BrickLivestockSaleStore` guarda venta y animales vendidos en
+una transaccion SQLite antes de encolar el agregado. La fecha de salida es la
+fecha comercial a medianoche en Cordoba (03:00 UTC), independiente de `updatedAt`.
+
+Las filas creadas antes de incorporar el estado productivo se leen
 como `active`: al introducir esta migracion se verifico que todos los animales
 existentes en backend estaban activos. Un valor desconocido recibido desde
 backend o SQLite se conserva como `unknown`.

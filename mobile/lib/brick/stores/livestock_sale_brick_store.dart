@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:frontend_mayoral/brick/core/repository.dart';
+import 'package:frontend_mayoral/brick/mappers/livestock_sale_productive_status_mapper.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
@@ -130,6 +131,7 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore {
         await transaction.upsert(
           animal.copyWith(
             productiveStatus: BrickAnimalProductiveStatus.sold,
+            productiveStatusChangedAt: saleProductiveStatusChangedAt(sale.operationDate),
             syncStatus: BrickAnimalSyncStatus.pending,
             syncErrorCode: null,
             updatedAt: sale.updatedAt,

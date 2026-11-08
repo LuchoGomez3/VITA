@@ -5,10 +5,14 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
+import 'package:frontend_mayoral/brick/mappers/animal_productive_status_mapper.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
+import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
+import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard_source.dart';
+import 'package:frontend_mayoral/features/home/domain/services/home_dashboard_calculator.dart';
 import 'package:http/http.dart';
 import 'package:http/testing.dart';
 import 'package:path/path.dart' as path;
@@ -20,6 +24,7 @@ void main() {
   late String queuePath;
   late AppBrickRepository repository;
   late BrickLivestockSaleStore store;
+  late BrickAnimalStore animalStore;
   late Completer<Request> firstRemoteRequest;
   late Completer<void> allowFirstRemoteResponse;
 
@@ -54,10 +59,13 @@ void main() {
     repository = AppBrickRepository.instance;
     BrickLivestockSaleStore.configure(repository);
     store = BrickLivestockSaleStore.instance;
+    BrickAnimalStore.configure(repository);
+    animalStore = BrickAnimalStore.instance;
   });
 
   tearDownAll(() async {
     await store.dispose();
+    await animalStore.dispose();
     await databaseFactoryFfi.deleteDatabase(sqlitePath);
     await databaseFactoryFfi.deleteDatabase(queuePath);
     if (testDirectory.existsSync()) {
@@ -98,7 +106,6 @@ void main() {
 
     final queueDatabase = await databaseFactoryFfi.openDatabase(queuePath);
     final queuedRequests = await queueDatabase.query('HttpJobs');
-    await queueDatabase.close();
     expect(queuedRequests, hasLength(1));
     expect(queuedRequests.single['body'], contains('"id":"sale-a"'));
     allowFirstRemoteResponse.complete();
@@ -121,6 +128,48 @@ void main() {
       storedSales.where((sale) => sale.localId == 'sale-duplicate'),
       isEmpty,
     );
+  });
+
+  test('la baja offline cuenta en el mes comercial y conserva la fecha al sincronizar', () async {
+    for (final month in [9, 10]) {
+      final id = 'month-$month';
+      await repository.upsertLocal(_animal(id));
+      await store.saveSale(_sale('sale-$id', [id], operationDate: DateTime(2026, month)));
+      final animal = (await animalStore.getAnimalById(id))!;
+      expect(animal.productiveStatusChangedAt, DateTime.utc(2026, month, 1, 3));
+      final dashboard = const HomeDashboardCalculator().calculate(
+        HomeDashboardSource(
+          animals: [
+            HomeDashboardAnimal(
+              id: id,
+              productiveStatus: animal.productiveStatus.toDomain(),
+              createdAt: animal.createdAt,
+              deletedAt: animal.deletedAt,
+              productiveStatusChangedAt: animal.productiveStatusChangedAt,
+              categoryId: animal.categoryId,
+              categoryName: animal.categoryName,
+              lotName: animal.lotName,
+              initialWeightKg: animal.initialWeight,
+              initialWeighingDate: animal.weighingDate,
+            ),
+          ],
+          weighings: const [],
+          categoryNamesById: const {},
+          operatingExpensesCents: 0,
+        ),
+        DateTime(2026, 10, 3),
+      );
+      expect(dashboard.activeAnimals, 0);
+      expect(dashboard.monthlyRemovals, month == 10 ? 1 : 0);
+      await store.applySyncResult(
+        BackendSyncResult(
+          resourcePath: '/api/v1/ventas',
+          localId: 'sale-$id',
+          synchronized: true,
+        ),
+      );
+      expect((await animalStore.getAnimalById(id))?.productiveStatusChangedAt, animal.productiveStatusChangedAt);
+    }
   });
 
   test('rechaza animales de otro establecimiento sin guardar la venta', () async {
@@ -225,12 +274,12 @@ BrickAnimalModel _animal(
   );
 }
 
-BrickLivestockSaleModel _sale(String id, List<String> animalIds) {
+BrickLivestockSaleModel _sale(String id, List<String> animalIds, {DateTime? operationDate}) {
   final timestamp = DateTime.utc(2026, 10, 3, 18, 30);
   return BrickLivestockSaleModel(
     localId: id,
     establishmentId: 'establishment-id',
-    operationDate: DateTime(2026, 10, 3),
+    operationDate: operationDate ?? DateTime(2026, 10, 3),
     buyerType: 'particular',
     buyerName: 'Juan',
     buyerLastName: 'Perez',
