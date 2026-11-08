@@ -232,19 +232,26 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
         stepError: null,
       ),
     );
+    final selectionBeforeLookup = state.selection;
     final result = await _addAnimal(
       rfidTagNumber: event.rfidTagNumber,
       establishmentId: state.form.establishmentId,
-      selection: state.selection,
+      selection: selectionBeforeLookup,
     );
     switch (result) {
       // El resultado asincrono se guarda separado del borrador del formulario,
       // permitiendo que la pantalla muestre carga o error sin perder seleccion.
       case Success<LivestockSaleSelection>(:final data):
+        // Solo se incorpora el animal validado. Las bajas realizadas durante
+        // la lectura ya estan en state y no deben restaurarse desde el snapshot.
+        final previousIds = selectionBeforeLookup.animals.map((animal) => animal.id).toSet();
+        final selection = state.selection.copyWith(
+          animals: [...state.selection.animals, ...data.animals.where((animal) => !previousIds.contains(animal.id))],
+        );
         emit(
           state.copyWith(
-            selection: data,
-            animalSelectionResult: ResultState.data(data),
+            selection: selection,
+            animalSelectionResult: ResultState.data(selection),
             rfidPrefix: '',
             rfidSuggestions: const ResultState.initial(),
             hasDraftChanges: true,
@@ -321,7 +328,9 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     emit(
       state.copyWith(
         selection: selection,
-        animalSelectionResult: ResultState.data(selection),
+        animalSelectionResult: state.animalSelectionResult is Loading<LivestockSaleSelection>
+            ? const ResultState.loading()
+            : ResultState.data(selection),
         stepError: null,
         hasDraftChanges: hasDraftChanges,
       ),

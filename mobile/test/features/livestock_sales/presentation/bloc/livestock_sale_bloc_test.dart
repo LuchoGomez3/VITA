@@ -77,6 +77,34 @@ void main() {
       expect(bloc.state.hasDraftChanges, isFalse);
     });
 
+    test('un agregado lento conserva las bajas y no habilita otro agregado', () async {
+      await _addAnimal(bloc);
+      bloc.add(const LivestockSaleEvent.animalAddRequested('982000000001296'));
+      await _waitUntil(bloc, (state) => state.selection.animals.length == 2);
+      final pendingAnimal = Completer<void>();
+      addTearDown(() {
+        if (!pendingAnimal.isCompleted) pendingAnimal.complete();
+      });
+      animalRepository.pendingLookup = pendingAnimal;
+      bloc.add(const LivestockSaleEvent.animalAddRequested('982000000001297'));
+      await _waitUntil(bloc, (state) => state.animalSelectionResult is Loading<LivestockSaleSelection>);
+
+      bloc.add(const LivestockSaleEvent.animalRemoveRequested('animal-id'));
+      await _waitUntil(bloc, (state) => state.selection.animals.length == 1);
+      expect(bloc.state.animalSelectionResult, isA<Loading<LivestockSaleSelection>>());
+      bloc.add(const LivestockSaleEvent.animalAddRequested('982000000001298'));
+      // La cola de eventos procesa el intento extra mientras C sigue pendiente.
+      await Future<void>.delayed(Duration.zero);
+      expect(animalRepository.lookupCalls, 3);
+
+      pendingAnimal.complete();
+      await _waitUntil(bloc, (state) => state.animalSelectionResult is Data<LivestockSaleSelection>);
+      expect(bloc.state.selection.animals.map((animal) => animal.rfidTagNumber), [
+        '982000000001296',
+        '982000000001297',
+      ]);
+    });
+
     test('elimina el borrador al quitar el ultimo animal sin otros datos', () async {
       final draftDependencies = LivestockSaleDraftTestDependencies();
       final draftBloc = _createBloc(
@@ -519,6 +547,8 @@ Future<void> _waitUntilDraftDeleted(
 
 class _AnimalRepository implements LivestockSaleAnimalRepository {
   List<LivestockSaleAnimal> suggestions = const [];
+  Completer<void>? pendingLookup;
+  int lookupCalls = 0;
 
   @override
   Future<Result<List<LivestockSaleAnimal>>> findLocalByRfidPrefix(
@@ -529,11 +559,13 @@ class _AnimalRepository implements LivestockSaleAnimalRepository {
   Future<Result<LivestockSaleAnimal?>> findLocalByRfidTagNumber(
     String rfidTagNumber,
   ) async {
-    return const Result.success(
+    lookupCalls++;
+    await pendingLookup?.future;
+    return Result.success(
       LivestockSaleAnimal(
-        id: 'animal-id',
+        id: rfidTagNumber == _rfid ? 'animal-id' : 'animal-$rfidTagNumber',
         establishmentId: 'establishment-id',
-        rfidTagNumber: _rfid,
+        rfidTagNumber: rfidTagNumber,
         visualTag: '1295',
         categoryName: 'Novillo',
         lotName: 'Lote Norte',
