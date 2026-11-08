@@ -7,13 +7,14 @@ import 'package:frontend_mayoral/core/formatters/scaled_decimal_formatter.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_amounts.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_saved_draft.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_selection.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_draft_error.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_error.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_selection_error.dart';
-import 'package:frontend_mayoral/features/livestock_sales/domain/services/livestock_sale_amount_calculator.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/add_animal_to_livestock_sale_selection_use_case.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/calculate_livestock_sale_amounts_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/confirm_livestock_sale_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/delete_livestock_sale_draft_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/load_livestock_sale_draft_use_case.dart';
@@ -39,6 +40,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     required LoadLivestockSaleDraftUseCase loadDraft,
     required SaveLivestockSaleDraftUseCase saveDraft,
     required DeleteLivestockSaleDraftUseCase deleteDraft,
+    CalculateLivestockSaleAmountsUseCase calculateAmounts = const CalculateLivestockSaleAmountsUseCase(),
     DateTime Function()? now,
     Duration draftSaveDebounce = const Duration(milliseconds: 400),
     bool persistDraftOnClose = true,
@@ -50,6 +52,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
        _loadDraft = loadDraft,
        _saveDraft = saveDraft,
        _deleteDraft = deleteDraft,
+       _calculateAmounts = calculateAmounts,
        _now = now ?? DateTime.now,
        _draftSaveDebounce = draftSaveDebounce,
        _persistDraftOnClose = persistDraftOnClose,
@@ -84,6 +87,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
   final LoadLivestockSaleDraftUseCase _loadDraft;
   final SaveLivestockSaleDraftUseCase _saveDraft;
   final DeleteLivestockSaleDraftUseCase _deleteDraft;
+  final CalculateLivestockSaleAmountsUseCase _calculateAmounts;
   final DateTime Function() _now;
   final Duration _draftSaveDebounce;
   final bool _persistDraftOnClose;
@@ -147,6 +151,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     emit(
       state.copyWith(
         form: _formFromSavedDraft(savedDraft),
+        amounts: _amountsForForm(_formFromSavedDraft(savedDraft)),
         selection: selection,
         currentStep: restoredStep,
         animalSelectionResult: ResultState.data(selection),
@@ -208,6 +213,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     emit(
       state.copyWith(
         form: normalizedForm,
+        amounts: _amountsForForm(normalizedForm),
         hasDraftChanges: hasDraftChanges,
         stepError: null,
       ),
@@ -436,6 +442,15 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     }
   }
 
+  LivestockSaleAmounts _amountsForForm(LivestockSaleFormDraft form) => _calculateAmounts(
+    saleType: form.saleType,
+    paymentCondition: form.paymentCondition,
+    bulkTotalCents: ScaledDecimalFormatter.tryParse(form.bulkTotalAmount, 2),
+    totalWeightGrams: ScaledDecimalFormatter.tryParse(form.totalWeight, 3),
+    pricePerKgMicros: ScaledDecimalFormatter.tryParse(form.pricePerKg, 6),
+    partialPaymentCents: ScaledDecimalFormatter.tryParse(form.amountToCollect, 2),
+  );
+
   DomainException? _validateCompleteDraft() {
     // Presentation interpreta los textos y dominio aplica las reglas finales;
     // de ese modo no se duplican validaciones comerciales en los widgets.
@@ -472,7 +487,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
             ),
           );
         }
-        totalAmountCents = parsedTotal;
+        totalAmountCents = state.amounts.totalCents ?? parsedTotal;
       } else {
         totalWeightGrams = ScaledDecimalFormatter.tryParse(
           form.totalWeight,
@@ -502,32 +517,16 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
             ),
           );
         }
-        totalAmountCents = LivestockSaleAmountCalculator.totalCents(
-          totalWeightGrams: totalWeightGrams,
-          pricePerKgMicros: pricePerKgMicros,
-        );
+        totalAmountCents = state.amounts.totalCents ?? (throw const FormatException('Incomplete sale amounts.'));
       }
-      int? paymentAmountCents;
-      switch (form.paymentCondition) {
-        case LivestockSalePaymentCondition.total:
-          paymentAmountCents = totalAmountCents;
-        case LivestockSalePaymentCondition.partial:
-          paymentAmountCents = ScaledDecimalFormatter.tryParse(
-            form.amountToCollect,
-            2,
-          );
-          if (paymentAmountCents == null) {
-            return Result.failure(
-              _fieldValidationError(
-                LivestockSaleFormField.amountToCollect,
-                LivestockSaleStrings.saleError(
-                  LivestockSaleError.invalidInitialPaymentAmount,
-                ),
-              ),
-            );
-          }
-        case LivestockSalePaymentCondition.pending:
-          paymentAmountCents = null;
+      final paymentAmountCents = state.amounts.initialPaymentCents;
+      if (form.paymentCondition == LivestockSalePaymentCondition.partial && paymentAmountCents == null) {
+        return Result.failure(
+          _fieldValidationError(
+            LivestockSaleFormField.amountToCollect,
+            LivestockSaleStrings.saleError(LivestockSaleError.invalidInitialPaymentAmount),
+          ),
+        );
       }
       final payment = paymentAmountCents == null
           ? null

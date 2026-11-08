@@ -115,6 +115,7 @@ sealed class LivestockSaleState with _$LivestockSaleState {
   /// Crea el estado compartido por las tres pantallas.
   const factory LivestockSaleState({
     required LivestockSaleFormDraft form,
+    @Default(LivestockSaleAmounts()) LivestockSaleAmounts amounts,
     @Default(LivestockSaleStep.animals) LivestockSaleStep currentStep,
     @Default(LivestockSaleSelection()) LivestockSaleSelection selection,
     @Default(ResultState<LivestockSaleSelection>.initial()) ResultState<LivestockSaleSelection> animalSelectionResult,

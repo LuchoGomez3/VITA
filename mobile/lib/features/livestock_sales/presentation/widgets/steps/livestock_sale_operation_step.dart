@@ -12,7 +12,6 @@ import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestoc
 import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/livestock_sale_bloc.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/formatters/dte_input_formatter.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
-import 'package:frontend_mayoral/features/livestock_sales/presentation/utils/livestock_sale_form_amounts.dart';
 
 /// Segundo paso del registro: comprador, precio y condiciones de cobro.
 class LivestockSaleOperationStep extends StatefulWidget {
@@ -102,7 +101,7 @@ class _LivestockSaleOperationStepState extends State<LivestockSaleOperationStep>
         buildWhen: (previous, current) => previous.form != current.form || previous.stepError != current.stepError,
         builder: (context, state) {
           final form = state.form;
-          final totalCents = LivestockSaleFormAmounts.totalCents(form);
+          final totalCents = state.amounts.totalCents;
           final isRequiredDteError = state.stepError?.reason == LivestockSaleFormField.dteNumber;
           final hasDteError =
               _showDteValidation ||
@@ -340,10 +339,7 @@ class _LivestockSaleOperationStepState extends State<LivestockSaleOperationStep>
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 _PendingBalanceCard(
-                  pendingCents: LivestockSaleFormAmounts.pendingCents(
-                    totalCents: totalCents,
-                    amountToCollect: form.amountToCollect,
-                  ),
+                  pendingCents: state.amounts.pendingCents,
                 ),
               ],
               if (form.paymentCondition != LivestockSalePaymentCondition.pending) ...[

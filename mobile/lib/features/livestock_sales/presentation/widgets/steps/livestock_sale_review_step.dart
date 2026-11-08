@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/formatters/argentine_currency_input_formatter.dart';
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
-import 'package:frontend_mayoral/core/formatters/scaled_decimal_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_amounts.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_selection.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/livestock_sale_bloc.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
-import 'package:frontend_mayoral/features/livestock_sales/presentation/utils/livestock_sale_form_amounts.dart';
 
 /// Tercer paso del flujo: presenta todos los datos antes de confirmar la venta.
 class LivestockSaleReviewStep extends StatefulWidget {
@@ -33,7 +32,7 @@ class _LivestockSaleReviewStepState extends State<LivestockSaleReviewStep> {
       builder: (context, state) {
         final form = state.form;
         final animals = state.selection.animals;
-        final totalCents = LivestockSaleFormAmounts.totalCents(form) ?? 0;
+        final totalCents = state.amounts.totalCents ?? 0;
 
         // El resumen consume el mismo borrador que los pasos anteriores. No
         // genera datos nuevos ni consulta red para poder renderizarse offline.
@@ -67,7 +66,7 @@ class _LivestockSaleReviewStepState extends State<LivestockSaleReviewStep> {
             ),
             const SizedBox(height: AppSpacing.lg),
             // Bloque 4: adapta el detalle a la condicion de cobro elegida.
-            _PaymentSummary(form: form, totalCents: totalCents),
+            _PaymentSummary(form: form, amounts: state.amounts),
           ],
         );
       },
@@ -335,17 +334,15 @@ class _TotalsSummary extends StatelessWidget {
 /// Este bloque es de solo lectura. Para corregirlo se vuelve al formulario,
 /// cuyo borrador sigue conservado por el BLoC.
 class _PaymentSummary extends StatelessWidget {
-  const _PaymentSummary({required this.form, required this.totalCents});
+  const _PaymentSummary({required this.form, required this.amounts});
 
   final LivestockSaleFormDraft form;
-  final int totalCents;
+  final LivestockSaleAmounts amounts;
 
   @override
   Widget build(BuildContext context) {
-    // Total cobra todo, parcial usa el importe ingresado y pendiente no crea un
-    // movimiento inicial.
-    final initialPaymentCents = _initialPaymentCents(form, totalCents);
-    final pendingCents = totalCents - initialPaymentCents;
+    final initialPaymentCents = amounts.initialPaymentCents ?? 0;
+    final pendingCents = amounts.pendingCents ?? 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,14 +394,14 @@ class _PaymentSummary extends StatelessWidget {
                 _HighlightedAmountRow(
                   key: const Key('livestockSaleReviewPendingBalance'),
                   label: LivestockSaleStrings.pendingBalance,
-                  amountCents: totalCents,
+                  amountCents: pendingCents,
                   backgroundColor: AppColors.syncPendingContainer,
                   foregroundColor: AppColors.syncPending,
                 ),
                 const Divider(height: 1, color: AppColors.border),
                 _HighlightedAmountRow(
                   label: LivestockSaleStrings.totalToCollect,
-                  amountCents: totalCents,
+                  amountCents: pendingCents,
                   backgroundColor: AppColors.syncPendingContainer,
                   foregroundColor: AppColors.syncPending,
                 ),
@@ -627,24 +624,6 @@ String _paymentMethodLabel(LivestockSalePaymentMethod method) {
     LivestockSalePaymentMethod.check => LivestockSaleStrings.check,
     LivestockSalePaymentMethod.card => LivestockSaleStrings.card,
   };
-}
-
-/// Obtiene el monto efectivamente cobrado al confirmar la operacion.
-int _initialPaymentCents(LivestockSaleFormDraft form, int totalCents) {
-  return switch (form.paymentCondition) {
-    LivestockSalePaymentCondition.total => totalCents,
-    LivestockSalePaymentCondition.partial => _partialPaymentCents(
-      form.amountToCollect,
-    ),
-    LivestockSalePaymentCondition.pending => 0,
-  };
-}
-
-int _partialPaymentCents(String amount) {
-  // IndexedStack mantiene el resumen montado mientras se edita el paso dos.
-  // Un importe todavia vacio se representa como cero hasta que dominio lo
-  // valide al intentar avanzar, sin lanzar excepciones durante el render.
-  return ScaledDecimalFormatter.tryParse(amount, 2) ?? 0;
 }
 
 /// Aplica el texto alternativo cuando SQLite no tiene categoria local.
