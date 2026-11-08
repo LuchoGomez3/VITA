@@ -13,12 +13,14 @@ class LivestockAccessCubit extends Cubit<ResultState<List<LivestockEstablishment
        super(const ResultState.initial());
 
   final GetLivestockSaleEstablishmentsUseCase _getSaleEstablishments;
+  int _loadRevision = 0;
 
-  /// Actualiza los accesos cada vez que se construye la pestaña Hacienda.
+  /// Actualiza los accesos desde el catálogo local al entrar o refrescar Hacienda.
   Future<void> load() async {
+    final revision = ++_loadRevision;
     emit(const ResultState.loading());
     final result = await _getSaleEstablishments();
-    if (isClosed) return;
+    if (isClosed || revision != _loadRevision) return;
     switch (result) {
       case Success<List<LivestockEstablishment>>(:final data):
         emit(ResultState.data(data));

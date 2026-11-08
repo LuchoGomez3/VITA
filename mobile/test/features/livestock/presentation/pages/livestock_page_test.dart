@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
@@ -18,8 +19,76 @@ import 'package:frontend_mayoral/features/livestock/presentation/cubit/livestock
 import 'package:frontend_mayoral/features/livestock/presentation/cubit/livestock_reader_cubit.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/strings/livestock_strings.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
+  testWidgets('recarga el catalogo al volver de una ruta sin recrear Hacienda', (tester) async {
+    final access = _MutableAccessRepository([
+      _establishment(id: 'employee', name: 'Campo Empleado', role: UserRole.employee),
+    ]);
+    var createCount = 0;
+    final router = _accessRouter(access, onCreateAccess: () => createCount++);
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip(LivestockStrings.saleRegisterTitle), findsNothing);
+
+    unawaited(router.push<void>('/join-test'));
+    await tester.pumpAndSettle();
+    access.establishments = [_establishment(id: 'admin', name: 'Campo Nuevo', role: UserRole.admin)];
+    router.pop();
+    await tester.pumpAndSettle();
+
+    expect(createCount, 1);
+    expect(find.byTooltip(LivestockStrings.saleRegisterTitle), findsOneWidget);
+    router.go(AppRoutes.home);
+    await tester.pumpAndSettle();
+    access.establishments = [_establishment(id: 'admin', name: 'Campo Nuevo', role: UserRole.employee)];
+    router.go(AppRoutes.livestock);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip(LivestockStrings.saleRegisterTitle), findsNothing);
+  });
+
+  testWidgets('recarga el catalogo al reactivar la rama e incluye el nuevo campo en ventas', (tester) async {
+    final access = _MutableAccessRepository([_establishment(id: 'owner-1', name: 'Campo Uno')]);
+    final selectedIds = <String>[];
+    final router = _accessRouter(access, onRegisterSale: (id) async => selectedIds.add(id));
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+    router.go(AppRoutes.home);
+    await tester.pumpAndSettle();
+    access.establishments = [
+      _establishment(id: 'owner-1', name: 'Campo Uno'),
+      _establishment(id: 'owner-2', name: 'Campo Dos'),
+    ];
+    router.go(AppRoutes.livestock);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip(LivestockStrings.saleRegisterTitle));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Campo Dos'), findsOneWidget);
+    await tester.tap(find.text('Campo Dos'));
+    await tester.pumpAndSettle();
+    expect(selectedIds, ['owner-2']);
+  });
+
+  testWidgets('el refresh recarga el catalogo incluso con el stock vacio y la venta oculta', (tester) async {
+    final access = _MutableAccessRepository([]);
+    final router = _accessRouter(access);
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip(LivestockStrings.saleRegisterTitle), findsNothing);
+    access.establishments = [_establishment(id: 'new-owner', name: 'Campo Nuevo')];
+
+    expect(find.byType(RefreshIndicator), findsOneWidget);
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, 400));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip(LivestockStrings.saleRegisterTitle), findsOneWidget);
+  });
+
   testWidgets('ignora aperturas concurrentes del lector', (tester) async {
     final resultCompleter = Completer<Result<List<LivestockEstablishment>>>();
     final repository = _PendingLivestockEstablishmentRepository(resultCompleter);
@@ -365,4 +434,63 @@ class _FakeAnimalListRepository implements AnimalListRepository {
 
   @override
   Future<Result<List<EstablishmentMembership>>> getEstablishments() async => Result.success(establishments);
+}
+
+GoRouter _accessRouter(
+  LivestockEstablishmentRepository access, {
+  VoidCallback? onCreateAccess,
+  Future<void> Function(String)? onRegisterSale,
+}) {
+  final listRepository = _FakeAnimalListRepository(const []);
+  return GoRouter(
+    initialLocation: AppRoutes.livestock,
+    routes: [
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, shell) => Scaffold(body: shell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.home,
+                builder: (_, _) => const Text('Inicio de prueba'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.livestock,
+                builder: (_, _) => LivestockPage(
+                  createCubit: () => AnimalListCubit(
+                    getAnimalListUseCase: GetAnimalListUseCase(listRepository),
+                    getEstablishmentsUseCase: GetAnimalListEstablishmentsUseCase(listRepository),
+                  ),
+                  createReaderCubit: () => LivestockReaderCubit(GetLivestockEstablishmentsUseCase(access)),
+                  createAccessCubit: () {
+                    onCreateAccess?.call();
+                    return LivestockAccessCubit(getSaleEstablishments: GetLivestockSaleEstablishmentsUseCase(access));
+                  },
+                  onIdentifyAnimal: (_) async {},
+                  onRegisterSale: onRegisterSale ?? (_) async {},
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/join-test',
+        builder: (_, _) => const Scaffold(body: Text('Invitacion de prueba')),
+      ),
+    ],
+  );
+}
+
+class _MutableAccessRepository implements LivestockEstablishmentRepository {
+  _MutableAccessRepository(this.establishments);
+
+  List<LivestockEstablishment> establishments;
+
+  @override
+  Future<Result<List<LivestockEstablishment>>> getEstablishments() async => Result.success(establishments);
 }

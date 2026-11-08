@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -76,7 +78,7 @@ class LivestockPage extends StatelessWidget {
   }
 }
 
-class _LivestockView extends StatelessWidget {
+class _LivestockView extends StatefulWidget {
   const _LivestockView({
     required this.onIdentifyAnimal,
     required this.onRegisterSale,
@@ -84,6 +86,39 @@ class _LivestockView extends StatelessWidget {
 
   final IdentifyAnimal onIdentifyAnimal;
   final RegisterLivestockSale onRegisterSale;
+
+  @override
+  State<_LivestockView> createState() => _LivestockViewState();
+}
+
+class _LivestockViewState extends State<_LivestockView> {
+  // indexedStack conserva los providers: reactivar la ruta exige releer el catalogo.
+  GoRouter? _router;
+  bool _wasActive = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final router = GoRouter.maybeOf(context);
+    if (router == _router) return;
+    _router?.routerDelegate.removeListener(_onRouteChanged);
+    _router = router;
+    _wasActive = router?.state.uri.path == AppRoutes.livestock;
+    router?.routerDelegate.addListener(_onRouteChanged);
+  }
+
+  void _onRouteChanged() {
+    final active = _router?.state.uri.path == AppRoutes.livestock;
+    final becameActive = active && !_wasActive;
+    _wasActive = active;
+    if (becameActive) unawaited(context.read<LivestockAccessCubit>().load());
+  }
+
+  @override
+  void dispose() {
+    _router?.routerDelegate.removeListener(_onRouteChanged);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,8 +154,8 @@ class _LivestockView extends StatelessWidget {
       appBar: AppHeader(
         title: LivestockStrings.animalListTitle,
         titleWidget: _HeaderTitle(
-          onIdentifyAnimal: onIdentifyAnimal,
-          onRegisterSale: onRegisterSale,
+          onIdentifyAnimal: widget.onIdentifyAnimal,
+          onRegisterSale: widget.onRegisterSale,
         ),
       ),
       body: const Column(
@@ -261,34 +296,60 @@ class _AnimalList extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AnimalListCubit>().state;
 
-    return switch (state.animals) {
+    final body = switch (state.animals) {
       ResultError<List<AnimalListEntry>>(:final error) => _Message(text: error.message),
-      Data<List<AnimalListEntry>>(:final data) when data.isEmpty => const _Message(
+      Data<List<AnimalListEntry>>(:final data) when data.isEmpty => const _ScrollableMessage(
         title: LivestockStrings.emptyTitle,
         text: LivestockStrings.emptyDescription,
       ),
-      Data<List<AnimalListEntry>>() when state.visibleAnimals.isEmpty => const _Message(
+      Data<List<AnimalListEntry>>() when state.visibleAnimals.isEmpty => const _ScrollableMessage(
         text: LivestockStrings.noResults,
       ),
-      Data<List<AnimalListEntry>>() => RefreshIndicator(
-        onRefresh: context.read<AnimalListCubit>().load,
-        child: ListView.separated(
-          // Deja lugar para que el botón flotante no tape la última fila.
-          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 96),
-          itemCount: state.visibleAnimals.length,
-          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
-          itemBuilder: (context, index) {
-            final animal = state.visibleAnimals[index];
-            return AnimalListTile(
-              animal: animal,
-              onTap: () => _openAndReload(context, AppRoutes.animalDetailById(animal.id)),
-            );
-          },
-        ),
+      Data<List<AnimalListEntry>>() => ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        // Deja lugar para que el botón flotante no tape la última fila.
+        padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 96),
+        itemCount: state.visibleAnimals.length,
+        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
+        itemBuilder: (context, index) {
+          final animal = state.visibleAnimals[index];
+          return AnimalListTile(
+            animal: animal,
+            onTap: () => _openAndReload(context, AppRoutes.animalDetailById(animal.id)),
+          );
+        },
       ),
       _ => const Center(child: CircularProgressIndicator()),
     };
+    if (state.animals is! Data<List<AnimalListEntry>>) return body;
+    return RefreshIndicator(
+      onRefresh: () async {
+        await Future.wait([
+          context.read<AnimalListCubit>().load(),
+          context.read<LivestockAccessCubit>().load(),
+        ]);
+      },
+      child: body,
+    );
   }
+}
+
+class _ScrollableMessage extends StatelessWidget {
+  const _ScrollableMessage({required this.text, this.title});
+
+  final String text;
+  final String? title;
+
+  @override
+  Widget build(BuildContext context) => CustomScrollView(
+    physics: const AlwaysScrollableScrollPhysics(),
+    slivers: [
+      SliverFillRemaining(
+        hasScrollBody: false,
+        child: _Message(text: text, title: title),
+      ),
+    ],
+  );
 }
 
 class _Message extends StatelessWidget {
