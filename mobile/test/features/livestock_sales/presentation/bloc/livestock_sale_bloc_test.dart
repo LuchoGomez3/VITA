@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/app/theme/app_theme.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
@@ -407,6 +408,44 @@ void main() {
       );
     });
 
+    test('un rechazo del alta al confirmar conserva formulario, seleccion y borrador', () async {
+      final dependencies = LivestockSaleDraftTestDependencies();
+      final rejectingRepository = _SaleRepository(
+        error: const DomainException(
+          message: 'animalSyncRejected',
+          code: DomainErrorCode.conflict,
+          reason: LivestockSaleError.animalSyncRejected,
+        ),
+      );
+      final saleBloc = _createBloc(
+        animalRepository: animalRepository,
+        saleRepository: rejectingRepository,
+        draftDependencies: dependencies,
+      );
+      addTearDown(saleBloc.close);
+      await _openOperationStep(saleBloc);
+      final form = _validBulkForm(saleBloc.state.form);
+      saleBloc.add(LivestockSaleEvent.formChanged(form));
+      await _waitUntil(saleBloc, (state) => state.form == form);
+      saleBloc.add(const LivestockSaleEvent.nextStepRequested());
+      await _waitUntil(saleBloc, (state) => state.currentStep == LivestockSaleStep.review);
+      await _waitUntilDraft(dependencies, (draft) => draft.currentStep == LivestockSaleDraftStep.review);
+      final draftBeforeConfirm = dependencies.repository.draft;
+      final selection = saleBloc.state.selection;
+
+      saleBloc.add(const LivestockSaleEvent.submitRequested());
+      await _waitUntil(saleBloc, (state) => state.submitResult is ResultError<LivestockSale>);
+
+      final error = (saleBloc.state.submitResult as ResultError<LivestockSale>).error;
+      expect(error.reason, LivestockSaleError.animalSyncRejected);
+      expect(error.message, LivestockSaleStrings.rejectedAnimalRegistration);
+      expect(saleBloc.state.form, form);
+      expect(saleBloc.state.selection, selection);
+      expect(saleBloc.state.currentStep, LivestockSaleStep.review);
+      expect(dependencies.repository.draft, draftBeforeConfirm);
+      expect(dependencies.repository.deleteCalls, 0);
+    });
+
     testWidgets('bloquea cierre, volver y retroceso del sistema durante la confirmacion', (tester) async {
       final pendingRepository = _SaleRepository(waitForCompletion: true);
       final pendingBloc = _createBloc(animalRepository: animalRepository, saleRepository: pendingRepository);
@@ -624,9 +663,10 @@ class _AnimalRepository implements LivestockSaleAnimalRepository {
 }
 
 class _SaleRepository implements LivestockSaleRepository {
-  _SaleRepository({this.waitForCompletion = false});
+  _SaleRepository({this.waitForCompletion = false, this.error});
 
   final bool waitForCompletion;
+  final DomainException? error;
   final Completer<void> _completer = Completer<void>();
   int createCalls = 0;
   LivestockSale? created;
@@ -636,6 +676,8 @@ class _SaleRepository implements LivestockSaleRepository {
     createCalls += 1;
     created = sale;
     if (waitForCompletion) await _completer.future;
+    final error = this.error;
+    if (error != null) return Result.failure(error);
     return Result.success(sale);
   }
 

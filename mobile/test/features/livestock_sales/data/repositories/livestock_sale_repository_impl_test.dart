@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/livestock_sales/data/repositories/livestock_sale_repository_impl.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale.dart';
@@ -37,6 +38,23 @@ void main() {
       result.when(success: (_) => null, failure: (error) => error.reason),
       LivestockSaleError.animalNotActive,
     );
+  });
+
+  test('traduce el rechazo del alta a un conflicto recuperable de la venta', () async {
+    final repository = LivestockSaleRepositoryImpl(
+      saleStore: _Store(
+        error: const LivestockSaleLocalException(
+          LivestockSaleLocalErrorCode.animalSyncRejected,
+          animalId: 'animal-a',
+        ),
+      ),
+    );
+
+    final result = await repository.createSale(_sale());
+
+    final error = (result as Failure<LivestockSale>).error;
+    expect(error.reason, LivestockSaleError.animalSyncRejected);
+    expect(error.code, DomainErrorCode.conflict);
   });
 }
 

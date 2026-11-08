@@ -21,6 +21,9 @@ enum LivestockSaleLocalErrorCode {
 
   /// Un animal ya no integra el stock activo.
   animalNotActive,
+
+  /// El alta de un animal fue rechazada antes de confirmar la venta.
+  animalSyncRejected,
 }
 
 /// Error de integridad detectado antes de persistir una venta local.
@@ -122,6 +125,12 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore, LivestockSaleS
         if (animal.productiveStatus != BrickAnimalProductiveStatus.active) {
           throw LivestockSaleLocalException(
             LivestockSaleLocalErrorCode.animalNotActive,
+            animalId: animalId,
+          );
+        }
+        if (animal.syncStatus == BrickAnimalSyncStatus.rejected) {
+          throw LivestockSaleLocalException(
+            LivestockSaleLocalErrorCode.animalSyncRejected,
             animalId: animalId,
           );
         }

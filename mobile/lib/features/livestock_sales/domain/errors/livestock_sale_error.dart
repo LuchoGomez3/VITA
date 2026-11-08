@@ -36,6 +36,9 @@ enum LivestockSaleError {
   /// Uno de los animales ya no esta disponible para vender.
   animalNotActive,
 
+  /// El alta de un animal seleccionado fue rechazada antes de confirmar.
+  animalSyncRejected,
+
   /// El total debe ser positivo y caber en la precision del backend.
   invalidTotalAmount,
 

@@ -353,6 +353,9 @@ abstract final class LivestockSaleStrings {
   /// Error cuando el cobro parcial alcanza o supera el total de la venta.
   static const initialPaymentNotLessThanTotal = 'El monto a cobrar ahora debe ser menor que el monto total.';
 
+  /// El alta debe recuperarse antes de confirmar la salida comercial.
+  static const rejectedAnimalRegistration = 'El alta del animal fue rechazada y debe corregirse antes de venderlo.';
+
   /// Traduce errores funcionales de la venta a mensajes para el formulario.
   static String saleError(LivestockSaleError error) => switch (error) {
     LivestockSaleError.requiredEstablishment => requiredEstablishment,
@@ -380,6 +383,7 @@ abstract final class LivestockSaleStrings {
     LivestockSaleError.animalNotFound => 'Uno de los animales ya no está disponible.',
     LivestockSaleError.differentEstablishment => 'Uno de los animales pertenece a otro establecimiento.',
     LivestockSaleError.animalNotActive => 'Uno de los animales ya no está activo.',
+    LivestockSaleError.animalSyncRejected => rejectedAnimalRegistration,
     LivestockSaleError.localSave => 'No se pudo guardar la venta en el dispositivo.',
   };
 
@@ -388,8 +392,7 @@ abstract final class LivestockSaleStrings {
     LivestockSaleSelectionError.invalidRfid => 'Ingresá una caravana RFID válida.',
     LivestockSaleSelectionError.animalNotFound => 'No se encontró el animal en el dispositivo.',
     LivestockSaleSelectionError.differentEstablishment => 'El animal pertenece a otro establecimiento.',
-    LivestockSaleSelectionError.animalSyncRejected =>
-      'El alta del animal fue rechazada y debe corregirse antes de venderlo.',
+    LivestockSaleSelectionError.animalSyncRejected => rejectedAnimalRegistration,
     LivestockSaleSelectionError.animalSold => 'El animal ya figura como vendido.',
     LivestockSaleSelectionError.animalDead => 'El animal figura como fallecido.',
     LivestockSaleSelectionError.animalRemoved => 'El animal fue dado de baja.',

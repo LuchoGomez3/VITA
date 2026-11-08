@@ -209,6 +209,50 @@ void main() {
     expect(requests.skip(before).map((request) => request.url.path), ['/api/v1/animales', '/api/v1/ventas']);
     expect((await animals.getAnimalById(parent.localId))?.productiveStatus, BrickAnimalProductiveStatus.sold);
   });
+
+  test('un alta rechazada despues de seleccionar aborta la venta sin borrar el rechazo', () async {
+    final parent = _animal('rejected-before-sale').copyWith(syncStatus: BrickAnimalSyncStatus.pending);
+    final peer = _animal('valid-selected-peer');
+    await repository.upsertLocal(parent);
+    await repository.upsertLocal(peer);
+    final selectionSnapshot = await animals.getAnimalById(parent.localId);
+    expect(selectionSnapshot?.syncStatus, BrickAnimalSyncStatus.pending);
+
+    final rejectionApplied = repository.localChanges
+        .where((type) => type == BrickAnimalModel)
+        .asyncMap((_) => animals.getAnimalById(parent.localId))
+        .firstWhere((animal) => animal?.syncStatus == BrickAnimalSyncStatus.rejected)
+        .timeout(const Duration(seconds: 2));
+    rejectParent = true;
+    await repository.enqueueRemoteUpsert(parent);
+    final rejected = await rejectionApplied;
+    rejectParent = false;
+    final requestCount = requests.length;
+
+    await expectLater(
+      sales.saveSale(_sale('sale-after-rejection', [peer.localId, parent.localId])),
+      throwsA(
+        isA<LivestockSaleLocalException>().having(
+          (error) => error.code,
+          'code',
+          LivestockSaleLocalErrorCode.animalSyncRejected,
+        ),
+      ),
+    );
+
+    expect(
+      (await repository.getLocal<BrickLivestockSaleModel>()).where((sale) => sale.localId == 'sale-after-rejection'),
+      isEmpty,
+    );
+    expect(requests.skip(requestCount), isEmpty);
+    final preserved = await animals.getAnimalById(parent.localId);
+    expect(preserved?.productiveStatus, BrickAnimalProductiveStatus.active);
+    expect(preserved?.syncStatus, BrickAnimalSyncStatus.rejected);
+    expect(preserved?.syncErrorCode, rejected?.syncErrorCode);
+    expect(preserved?.updatedAt, rejected?.updatedAt);
+    expect((await animals.getAnimalById(peer.localId))?.productiveStatus, BrickAnimalProductiveStatus.active);
+    expect((await animals.getAnimalById(peer.localId))?.syncStatus, BrickAnimalSyncStatus.synchronized);
+  });
 }
 
 BrickAnimalModel _animal(

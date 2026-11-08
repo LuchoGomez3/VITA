@@ -39,6 +39,7 @@ class LivestockSaleRepositoryImpl implements LivestockSaleRepository {
         LivestockSaleLocalErrorCode.animalNotFound => LivestockSaleError.animalNotFound,
         LivestockSaleLocalErrorCode.differentEstablishment => LivestockSaleError.differentEstablishment,
         LivestockSaleLocalErrorCode.animalNotActive => LivestockSaleError.animalNotActive,
+        LivestockSaleLocalErrorCode.animalSyncRejected => LivestockSaleError.animalSyncRejected,
       };
       return Result.failure(
         DomainException(
