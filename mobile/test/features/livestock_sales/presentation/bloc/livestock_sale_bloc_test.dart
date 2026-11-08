@@ -1,8 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/app/theme/app_theme.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_saved_draft.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_selection.dart';
@@ -14,6 +17,7 @@ import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/confi
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/remove_animal_from_livestock_sale_selection_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/search_livestock_sale_animals_by_rfid_prefix_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/bloc/livestock_sale_bloc.dart';
+import 'package:frontend_mayoral/features/livestock_sales/presentation/pages/livestock_sale_flow_page.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
 
 import '../../support/livestock_sale_draft_test_support.dart';
@@ -403,6 +407,40 @@ void main() {
       );
     });
 
+    testWidgets('bloquea cierre, volver y retroceso del sistema durante la confirmacion', (tester) async {
+      final pendingRepository = _SaleRepository(waitForCompletion: true);
+      final pendingBloc = _createBloc(animalRepository: animalRepository, saleRepository: pendingRepository);
+      await _openOperationStep(pendingBloc);
+      final form = _validBulkForm(pendingBloc.state.form);
+      pendingBloc.add(LivestockSaleEvent.formChanged(form));
+      await _waitUntil(pendingBloc, (state) => state.form == form);
+      pendingBloc.add(const LivestockSaleEvent.nextStepRequested());
+      await _waitUntil(pendingBloc, (state) => state.currentStep == LivestockSaleStep.review);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          home: LivestockSaleFlowPage(
+            userId: 'user-id',
+            establishmentId: 'establishment-id',
+            createBloc: ({required userId, required establishmentId}) => pendingBloc,
+          ),
+        ),
+      );
+      pendingBloc.add(const LivestockSaleEvent.submitRequested());
+      await tester.pump();
+      expect(pendingBloc.state.submitResult, isA<Loading<LivestockSale>>());
+      expect(tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.close)).onPressed, isNull);
+      expect(tester.widget<AppOutlinedButton>(find.byType(AppOutlinedButton)).onPressed, isNull);
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      expect(pendingBloc.state.currentStep, LivestockSaleStep.review);
+      expect(find.byType(AlertDialog), findsNothing);
+      pendingRepository.complete();
+      await tester.pumpAndSettle();
+      expect(pendingBloc.state.submitResult, isA<Data<LivestockSale>>());
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
     test('ignora una segunda confirmacion mientras la primera sigue cargando', () async {
       final pendingRepository = _SaleRepository(waitForCompletion: true);
       final pendingBloc = _createBloc(
@@ -429,6 +467,16 @@ void main() {
       );
 
       expect(pendingRepository.createCalls, 1);
+      final submittingState = pendingBloc.state;
+      pendingBloc
+        ..add(const LivestockSaleEvent.previousStepRequested())
+        ..add(LivestockSaleEvent.formChanged(form.copyWith(buyerName: 'Otro')))
+        ..add(const LivestockSaleEvent.animalRemoveRequested('animal-id'))
+        ..add(const LivestockSaleEvent.animalAddRequested('982000000001296'))
+        ..add(const LivestockSaleEvent.saveAndExitRequested())
+        ..add(const LivestockSaleEvent.discardAndExitRequested());
+      await Future<void>.delayed(Duration.zero);
+      expect(pendingBloc.state, submittingState);
       pendingRepository.complete();
       await _waitUntil(
         pendingBloc,

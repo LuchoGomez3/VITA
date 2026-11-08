@@ -196,6 +196,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _FormChanged event,
     Emitter<LivestockSaleState> emit,
   ) async {
+    if (state.submitResult is Loading<LivestockSale>) return;
+
     // Centralizar la normalizacion aca mantiene iguales los datos aunque el
     // cambio venga de otro widget o de una futura restauracion del borrador.
     final normalizedForm = _normalizeChangedForm(event.form);
@@ -222,6 +224,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _AnimalAddRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
+    if (state.submitResult is Loading<LivestockSale>) return;
+
     // Bloquea lecturas paralelas para que dos respuestas no alteren el orden de
     // seleccion ni incorporen dos veces la misma caravana.
     if (state.animalSelectionResult is Loading<LivestockSaleSelection>) return;
@@ -273,6 +277,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _RfidPrefixChanged event,
     Emitter<LivestockSaleState> emit,
   ) async {
+    if (state.submitResult is Loading<LivestockSale>) return;
+
     final prefix = event.prefix.trim();
     if (prefix.isEmpty) {
       emit(
@@ -317,6 +323,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _AnimalRemoveRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
+    if (state.submitResult is Loading<LivestockSale>) return;
+
     final selection = _removeAnimal(
       animalId: event.animalId,
       selection: state.selection,
@@ -347,6 +355,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _NextStepRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
+    if (state.submitResult is Loading<LivestockSale>) return;
+
     if (state.currentStep == LivestockSaleStep.review) return;
 
     // Cada paso valida solo lo que necesita para avanzar. La operacion completa
@@ -375,6 +385,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _PreviousStepRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
+    if (state.submitResult is Loading<LivestockSale>) return;
+
     if (state.currentStep == LivestockSaleStep.animals) return;
     emit(
       state.copyWith(
@@ -697,6 +709,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _SaveAndExitRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
+    if (state.submitResult is Loading<LivestockSale>) return;
+
     _draftSaveTimer?.cancel();
     emit(
       state.copyWith(
@@ -725,6 +739,8 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     _DiscardAndExitRequested event,
     Emitter<LivestockSaleState> emit,
   ) async {
+    if (state.submitResult is Loading<LivestockSale>) return;
+
     _draftSaveTimer?.cancel();
     emit(
       state.copyWith(

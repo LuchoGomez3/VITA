@@ -122,7 +122,9 @@ class _LivestockSaleFlowView extends StatelessWidget {
               appBar: AppBar(
                 centerTitle: true,
                 leading: IconButton(
-                  onPressed: () => unawaited(_handleExit(context, state)),
+                  onPressed: state.submitResult is Loading<LivestockSale>
+                      ? null
+                      : () => unawaited(_handleExit(context, state)),
                   icon: const Icon(Icons.close),
                 ),
                 title: _FlowTitle(step: state.currentStep),
@@ -133,19 +135,22 @@ class _LivestockSaleFlowView extends StatelessWidget {
                   Expanded(
                     // IndexedStack conserva el estado visual de cada paso. Al
                     // volver, controladores y posicion interna siguen montados.
-                    child: IndexedStack(
-                      index: state.currentStep.index,
-                      children: [
-                        LivestockSaleAnimalSelectionStep(
-                          onRfidScanRequested: () => context.push<String>(
-                            AppRoutes.rfidScanForLivestockSale(
-                              state.form.establishmentId,
+                    child: AbsorbPointer(
+                      absorbing: state.submitResult is Loading<LivestockSale>,
+                      child: IndexedStack(
+                        index: state.currentStep.index,
+                        children: [
+                          LivestockSaleAnimalSelectionStep(
+                            onRfidScanRequested: () => context.push<String>(
+                              AppRoutes.rfidScanForLivestockSale(
+                                state.form.establishmentId,
+                              ),
                             ),
                           ),
-                        ),
-                        const LivestockSaleOperationStep(),
-                        const LivestockSaleReviewStep(),
-                      ],
+                          const LivestockSaleOperationStep(),
+                          const LivestockSaleReviewStep(),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -187,6 +192,7 @@ class _LivestockSaleFlowView extends StatelessWidget {
     BuildContext context,
     LivestockSaleState state,
   ) async {
+    if (context.read<LivestockSaleBloc>().state.submitResult is Loading<LivestockSale>) return;
     // Dentro del wizard se retrocede por estado; solo el primer paso abandona
     // la feature y vuelve a la ruta anterior o al inicio.
     if (state.currentStep != LivestockSaleStep.animals) {
@@ -204,6 +210,7 @@ class _LivestockSaleFlowView extends StatelessWidget {
     BuildContext context,
     LivestockSaleState state,
   ) async {
+    if (context.read<LivestockSaleBloc>().state.submitResult is Loading<LivestockSale>) return;
     if (!state.hasDraftChanges) {
       _leaveFlow(context);
       return;
@@ -398,7 +405,7 @@ class _FlowNavigation extends StatelessWidget {
                 Expanded(
                   child: AppOutlinedButton(
                     label: LivestockSaleStrings.back,
-                    onPressed: onBack,
+                    onPressed: isSubmitting ? null : onBack,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
