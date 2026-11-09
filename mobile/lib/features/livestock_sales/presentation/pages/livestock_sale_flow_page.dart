@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
@@ -61,27 +62,44 @@ class _LivestockSaleFlowView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<LivestockSaleBloc, LivestockSaleState>(
-      // Solo los cambios que pueden producir feedback disparan el listener;
-      // las ediciones ordinarias del formulario no repiten SnackBars.
-      listenWhen: (previous, current) {
-        return previous.stepError != current.stepError ||
-            previous.animalSelectionResult != current.animalSelectionResult ||
-            previous.submitResult != current.submitResult ||
-            previous.draftRecoveryStatus != current.draftRecoveryStatus ||
-            previous.draftFeedback != current.draftFeedback ||
-            previous.exitStatus != current.exitStatus;
-      },
-      listener: (context, state) {
-        if (state.draftRecoveryStatus == LivestockSaleDraftRecoveryStatus.choiceRequired) {
-          unawaited(_showSavedDraftDialog(context));
-        }
-        if (state.exitStatus == LivestockSaleExitStatus.completed) {
-          _leaveFlow(context);
-          return;
-        }
-        _showError(context, state);
-      },
+    return MultiBlocListener(
+      // Cada aviso responde al resultado que cambio, sin priorizar errores viejos.
+      listeners: [
+        BlocListener<LivestockSaleBloc, LivestockSaleState>(
+          listenWhen: (previous, current) =>
+              previous.draftRecoveryStatus != current.draftRecoveryStatus || previous.exitStatus != current.exitStatus,
+          listener: (context, state) {
+            if (state.draftRecoveryStatus == LivestockSaleDraftRecoveryStatus.choiceRequired) {
+              unawaited(_showSavedDraftDialog(context));
+            }
+            if (state.exitStatus == LivestockSaleExitStatus.completed) _leaveFlow(context);
+          },
+        ),
+        BlocListener<LivestockSaleBloc, LivestockSaleState>(
+          listenWhen: (previous, current) => previous.draftFeedback != current.draftFeedback,
+          listener: (context, state) {
+            if (state.draftFeedback case final error?) _showError(context, error);
+          },
+        ),
+        BlocListener<LivestockSaleBloc, LivestockSaleState>(
+          listenWhen: (previous, current) => previous.stepError != current.stepError,
+          listener: (context, state) {
+            if (state.stepError case final error?) _showError(context, error);
+          },
+        ),
+        BlocListener<LivestockSaleBloc, LivestockSaleState>(
+          listenWhen: (previous, current) => previous.animalSelectionResult != current.animalSelectionResult,
+          listener: (context, state) {
+            if (state.animalSelectionResult case ResultError(:final error)) _showError(context, error);
+          },
+        ),
+        BlocListener<LivestockSaleBloc, LivestockSaleState>(
+          listenWhen: (previous, current) => previous.submitResult != current.submitResult,
+          listener: (context, state) {
+            if (state.submitResult case ResultError(:final error)) _showError(context, error);
+          },
+        ),
+      ],
       child: BlocBuilder<LivestockSaleBloc, LivestockSaleState>(
         builder: (context, state) {
           final isWorking =
@@ -172,20 +190,7 @@ class _LivestockSaleFlowView extends StatelessWidget {
     );
   }
 
-  void _showError(BuildContext context, LivestockSaleState state) {
-    // Los errores de paso tienen prioridad sobre los resultados asincronos de
-    // seleccion y persistencia para mostrar el problema mas inmediato.
-    final error =
-        state.draftFeedback ??
-        state.stepError ??
-        switch (state.animalSelectionResult) {
-          ResultError(:final error) => error,
-          _ => switch (state.submitResult) {
-            ResultError(:final error) => error,
-            _ => null,
-          },
-        };
-    if (error == null) return;
+  void _showError(BuildContext context, DomainException error) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(error.message)));

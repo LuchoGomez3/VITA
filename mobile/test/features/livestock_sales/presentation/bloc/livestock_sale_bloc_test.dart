@@ -11,6 +11,7 @@ import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livest
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_saved_draft.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_selection.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_error.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_selection_error.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/repositories/livestock_sale_animal_repository.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/repositories/livestock_sale_repository.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/add_animal_to_livestock_sale_selection_use_case.dart';
@@ -603,6 +604,57 @@ void main() {
       expect(dependencies.repository.deleteCalls, 0);
     });
 
+    testWidgets('los avisos de restauracion no tapan errores nuevos de validacion, seleccion o envio', (tester) async {
+      animalRepository.unavailableRfids.add('982000000001296');
+      final dependencies = LivestockSaleDraftTestDependencies(
+        draft: _savedDraft().copyWith(
+          buyerName: '',
+          selectedRfidTagNumbers: [_rfid, '982000000001296'],
+        ),
+      );
+      final failingSales = _SaleRepository(
+        error: const DomainException(
+          message: 'animalNotActive',
+          reason: LivestockSaleError.animalNotActive,
+        ),
+      );
+      late LivestockSaleBloc saleBloc;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          home: LivestockSaleFlowPage(
+            userId: 'user-id',
+            establishmentId: 'establishment-id',
+            createBloc: ({required userId, required establishmentId}) => saleBloc = _createBloc(
+              animalRepository: animalRepository,
+              saleRepository: failingSales,
+              draftDependencies: dependencies,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.tap(find.text(LivestockSaleStrings.continueSavedDraft));
+      await tester.pumpAndSettle();
+      expect(find.text(LivestockSaleStrings.unavailableRestoredAnimals(1)), findsOneWidget);
+
+      saleBloc.add(const LivestockSaleEvent.nextStepRequested());
+      await tester.pumpAndSettle();
+      expect(find.text(LivestockSaleStrings.missingRequiredFields), findsOneWidget);
+      saleBloc.add(const LivestockSaleEvent.animalAddRequested('invalid'));
+      await tester.pumpAndSettle();
+      expect(find.text(LivestockSaleStrings.selectionError(LivestockSaleSelectionError.invalidRfid)), findsOneWidget);
+      saleBloc.add(LivestockSaleEvent.formChanged(_validBulkForm(saleBloc.state.form)));
+      await tester.pumpAndSettle();
+      saleBloc.add(const LivestockSaleEvent.nextStepRequested());
+      await tester.pumpAndSettle();
+      saleBloc.add(const LivestockSaleEvent.submitRequested());
+      await tester.pumpAndSettle();
+      expect(find.text(LivestockSaleStrings.saleError(LivestockSaleError.animalNotActive)), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
     for (final restore in [true, false]) {
       testWidgets('Atras conserva el borrador hasta elegir ${restore ? 'continuar' : 'descartar'}', (tester) async {
         final savedDraft = _savedDraft();
@@ -840,6 +892,7 @@ class _AnimalRepository implements LivestockSaleAnimalRepository {
   List<LivestockSaleAnimal> suggestions = const [];
   Completer<void>? pendingLookup;
   int lookupCalls = 0;
+  final unavailableRfids = <String>{};
 
   @override
   Future<Result<List<LivestockSaleAnimal>>> findLocalByRfidPrefix(
@@ -852,6 +905,7 @@ class _AnimalRepository implements LivestockSaleAnimalRepository {
   ) async {
     lookupCalls++;
     await pendingLookup?.future;
+    if (unavailableRfids.contains(rfidTagNumber)) return const Result.success(null);
     return Result.success(
       LivestockSaleAnimal(
         id: rfidTagNumber == _rfid ? 'animal-id' : 'animal-$rfidTagNumber',
