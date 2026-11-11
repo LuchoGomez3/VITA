@@ -4,6 +4,7 @@ import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/rfid_scan/data/repositories/rfid_animal_lookup_repository_impl.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/entities/identified_animal.dart';
+import 'package:logging/logging.dart';
 
 void main() {
   group('RfidAnimalLookupRepositoryImpl', () {
@@ -53,6 +54,32 @@ void main() {
       );
 
       expect(result, isA<Failure<IdentifiedAnimal?>>());
+    });
+
+    test('returns and logs a sanitized failure when prefix lookup cannot read SQLite', () async {
+      final records = <LogRecord>[];
+      final subscription = Logger('RfidAnimalLookupRepositoryImpl').onRecord.listen(records.add);
+      addTearDown(subscription.cancel);
+      animalBrickStore.throwOnLookup = true;
+
+      final result = await repository.findByRfidPrefix(
+        rfidPrefix: '982',
+        establishmentId: establishmentId,
+      );
+
+      expect(result, isA<Failure<List<IdentifiedAnimal>>>());
+      expect(records.single.message, isNot(contains('sensitive-animal-data')));
+      expect(records.single.error, isNull);
+      expect(records.single.stackTrace, isNotNull);
+    });
+
+    test('returns an empty successful list when no RFID matches', () async {
+      animalBrickStore.animals = [_brickAnimal];
+      final result = await repository.findByRfidPrefix(
+        rfidPrefix: '999',
+        establishmentId: establishmentId,
+      );
+      expect(result, const Result<List<IdentifiedAnimal>>.success([]));
     });
 
     test('returns local animals whose RFID starts with the prefix', () async {
@@ -132,7 +159,10 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   }
 
   @override
-  Future<List<BrickAnimalModel>> getLocalAnimals() async => animals;
+  Future<List<BrickAnimalModel>> getLocalAnimals() async {
+    if (throwOnLookup) throw StateError('sensitive-animal-data');
+    return animals;
+  }
 
   @override
   Future<void> pullRemoteAnimals(String establishmentId) async {}

@@ -806,10 +806,10 @@ return error(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String rfidPrefix,  List<IdentifiedAnimal> suggestions)?  inactive,TResult Function()?  listening,TResult Function( String reading)?  invalid,TResult Function( IdentifiedAnimal animal)?  found,TResult Function( String rfid)?  notFound,TResult Function( String rfid)?  captured,TResult Function()?  timeout,TResult Function()?  error,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String rfidPrefix,  List<IdentifiedAnimal> suggestions,  bool suggestionsFailed)?  inactive,TResult Function()?  listening,TResult Function( String reading)?  invalid,TResult Function( IdentifiedAnimal animal)?  found,TResult Function( String rfid)?  notFound,TResult Function( String rfid)?  captured,TResult Function()?  timeout,TResult Function()?  error,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Inactive() when inactive != null:
-return inactive(_that.rfidPrefix,_that.suggestions);case _Listening() when listening != null:
+return inactive(_that.rfidPrefix,_that.suggestions,_that.suggestionsFailed);case _Listening() when listening != null:
 return listening();case _Invalid() when invalid != null:
 return invalid(_that.reading);case _Found() when found != null:
 return found(_that.animal);case _NotFound() when notFound != null:
@@ -834,10 +834,10 @@ return error();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String rfidPrefix,  List<IdentifiedAnimal> suggestions)  inactive,required TResult Function()  listening,required TResult Function( String reading)  invalid,required TResult Function( IdentifiedAnimal animal)  found,required TResult Function( String rfid)  notFound,required TResult Function( String rfid)  captured,required TResult Function()  timeout,required TResult Function()  error,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String rfidPrefix,  List<IdentifiedAnimal> suggestions,  bool suggestionsFailed)  inactive,required TResult Function()  listening,required TResult Function( String reading)  invalid,required TResult Function( IdentifiedAnimal animal)  found,required TResult Function( String rfid)  notFound,required TResult Function( String rfid)  captured,required TResult Function()  timeout,required TResult Function()  error,}) {final _that = this;
 switch (_that) {
 case _Inactive():
-return inactive(_that.rfidPrefix,_that.suggestions);case _Listening():
+return inactive(_that.rfidPrefix,_that.suggestions,_that.suggestionsFailed);case _Listening():
 return listening();case _Invalid():
 return invalid(_that.reading);case _Found():
 return found(_that.animal);case _NotFound():
@@ -858,10 +858,10 @@ return error();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String rfidPrefix,  List<IdentifiedAnimal> suggestions)?  inactive,TResult? Function()?  listening,TResult? Function( String reading)?  invalid,TResult? Function( IdentifiedAnimal animal)?  found,TResult? Function( String rfid)?  notFound,TResult? Function( String rfid)?  captured,TResult? Function()?  timeout,TResult? Function()?  error,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String rfidPrefix,  List<IdentifiedAnimal> suggestions,  bool suggestionsFailed)?  inactive,TResult? Function()?  listening,TResult? Function( String reading)?  invalid,TResult? Function( IdentifiedAnimal animal)?  found,TResult? Function( String rfid)?  notFound,TResult? Function( String rfid)?  captured,TResult? Function()?  timeout,TResult? Function()?  error,}) {final _that = this;
 switch (_that) {
 case _Inactive() when inactive != null:
-return inactive(_that.rfidPrefix,_that.suggestions);case _Listening() when listening != null:
+return inactive(_that.rfidPrefix,_that.suggestions,_that.suggestionsFailed);case _Listening() when listening != null:
 return listening();case _Invalid() when invalid != null:
 return invalid(_that.reading);case _Found() when found != null:
 return found(_that.animal);case _NotFound() when notFound != null:
@@ -880,7 +880,7 @@ return error();case _:
 
 
 class _Inactive implements RfidScanState {
-  const _Inactive({this.rfidPrefix = '', final  List<IdentifiedAnimal> suggestions = const <IdentifiedAnimal>[]}): _suggestions = suggestions;
+  const _Inactive({this.rfidPrefix = '', final  List<IdentifiedAnimal> suggestions = const <IdentifiedAnimal>[], this.suggestionsFailed = false}): _suggestions = suggestions;
   
 
 @JsonKey() final  String rfidPrefix;
@@ -891,6 +891,7 @@ class _Inactive implements RfidScanState {
   return EqualUnmodifiableListView(_suggestions);
 }
 
+@JsonKey() final  bool suggestionsFailed;
 
 /// Create a copy of RfidScanState
 /// with the given fields replaced by the non-null parameter values.
@@ -902,16 +903,16 @@ _$InactiveCopyWith<_Inactive> get copyWith => __$InactiveCopyWithImpl<_Inactive>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Inactive&&(identical(other.rfidPrefix, rfidPrefix) || other.rfidPrefix == rfidPrefix)&&const DeepCollectionEquality().equals(other._suggestions, _suggestions));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Inactive&&(identical(other.rfidPrefix, rfidPrefix) || other.rfidPrefix == rfidPrefix)&&const DeepCollectionEquality().equals(other._suggestions, _suggestions)&&(identical(other.suggestionsFailed, suggestionsFailed) || other.suggestionsFailed == suggestionsFailed));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,rfidPrefix,const DeepCollectionEquality().hash(_suggestions));
+int get hashCode => Object.hash(runtimeType,rfidPrefix,const DeepCollectionEquality().hash(_suggestions),suggestionsFailed);
 
 @override
 String toString() {
-  return 'RfidScanState.inactive(rfidPrefix: $rfidPrefix, suggestions: $suggestions)';
+  return 'RfidScanState.inactive(rfidPrefix: $rfidPrefix, suggestions: $suggestions, suggestionsFailed: $suggestionsFailed)';
 }
 
 
@@ -922,7 +923,7 @@ abstract mixin class _$InactiveCopyWith<$Res> implements $RfidScanStateCopyWith<
   factory _$InactiveCopyWith(_Inactive value, $Res Function(_Inactive) _then) = __$InactiveCopyWithImpl;
 @useResult
 $Res call({
- String rfidPrefix, List<IdentifiedAnimal> suggestions
+ String rfidPrefix, List<IdentifiedAnimal> suggestions, bool suggestionsFailed
 });
 
 
@@ -939,11 +940,12 @@ class __$InactiveCopyWithImpl<$Res>
 
 /// Create a copy of RfidScanState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? rfidPrefix = null,Object? suggestions = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? rfidPrefix = null,Object? suggestions = null,Object? suggestionsFailed = null,}) {
   return _then(_Inactive(
 rfidPrefix: null == rfidPrefix ? _self.rfidPrefix : rfidPrefix // ignore: cast_nullable_to_non_nullable
 as String,suggestions: null == suggestions ? _self._suggestions : suggestions // ignore: cast_nullable_to_non_nullable
-as List<IdentifiedAnimal>,
+as List<IdentifiedAnimal>,suggestionsFailed: null == suggestionsFailed ? _self.suggestionsFailed : suggestionsFailed // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

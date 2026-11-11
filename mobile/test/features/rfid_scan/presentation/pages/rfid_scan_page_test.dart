@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/entities/identified_animal.dart';
@@ -12,6 +13,37 @@ import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan
 import 'package:frontend_mayoral/features/rfid_scan/presentation/strings/rfid_scan_strings.dart';
 
 void main() {
+  testWidgets('muestra el error de sugerencias y conserva la entrada manual', (tester) async {
+    final source = HidRfidReadingSource();
+    const repository = _FakeRfidAnimalLookupRepository(failPrefix: true);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RfidScanPage(
+          establishmentId: 'establishment-id',
+          createBloc: ({required establishmentId}) => RfidScanBloc(
+            readingSource: source,
+            validateRfidReadingUseCase: const ValidateRfidReadingUseCase(),
+            findAnimalByRfidUseCase: const FindAnimalByRfidUseCase(repository),
+            searchAnimalsByRfidPrefixUseCase: const SearchAnimalsByRfidPrefixUseCase(repository),
+            establishmentId: establishmentId,
+          ),
+          onHidKeyEvent: source.handleKeyEvent,
+          onAnimalDetailRequested: (_) {},
+          onRegisterAnimalRequested: (_) {},
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byKey(const Key('manualRfidInput')), '982');
+    await tester.pumpAndSettle();
+
+    expect(find.text(RfidScanStrings.suggestionsError), findsOneWidget);
+    final input = tester.widget<EditableText>(find.byType(EditableText));
+    expect(input.controller.text, '982');
+    expect(find.text(RfidScanStrings.searchManualRfid), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('starts a HID reading from the identification screen', (tester) async {
     final source = HidRfidReadingSource();
 
@@ -212,8 +244,10 @@ class _FakeRfidAnimalLookupRepository implements RfidAnimalLookupRepository {
   const _FakeRfidAnimalLookupRepository({
     this.animal,
     this.suggestions = const [],
+    this.failPrefix = false,
   });
 
+  final bool failPrefix;
   final IdentifiedAnimal? animal;
   final List<IdentifiedAnimal> suggestions;
 
@@ -227,7 +261,8 @@ class _FakeRfidAnimalLookupRepository implements RfidAnimalLookupRepository {
   Future<Result<List<IdentifiedAnimal>>> findByRfidPrefix({
     required String rfidPrefix,
     required String establishmentId,
-  }) async => Result.success(suggestions);
+  }) async =>
+      failPrefix ? const Result.failure(DomainException(message: 'local_read_failed')) : Result.success(suggestions);
 }
 
 const _rfid = '982000000001295';

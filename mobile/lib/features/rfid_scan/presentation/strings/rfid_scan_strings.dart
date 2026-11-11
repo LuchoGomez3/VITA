@@ -2,6 +2,10 @@
 class RfidScanStrings {
   const RfidScanStrings._();
 
+  /// Error recuperable de la ayuda de autocompletado local.
+  static const suggestionsError =
+      'No se pudieron cargar las sugerencias. Volvé a escribir para reintentar o ingresá la caravana completa.';
+
   static const pageTitle = 'Identificar animal';
 
   /// Título de la captura que devuelve una lectura a otro formulario.

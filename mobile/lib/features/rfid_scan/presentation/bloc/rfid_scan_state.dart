@@ -7,6 +7,7 @@ sealed class RfidScanState with _$RfidScanState {
   const factory RfidScanState.inactive({
     @Default('') String rfidPrefix,
     @Default(<IdentifiedAnimal>[]) List<IdentifiedAnimal> suggestions,
+    @Default(false) bool suggestionsFailed,
   }) = _Inactive;
 
   /// La app esta lista para recibir los caracteres del baston HID.

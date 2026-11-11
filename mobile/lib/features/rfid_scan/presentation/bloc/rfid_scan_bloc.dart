@@ -151,7 +151,7 @@ class RfidScanBloc extends Bloc<RfidScanEvent, RfidScanState> {
     }
 
     final previousSuggestions = state.maybeWhen(
-      inactive: (_, suggestions) => suggestions,
+      inactive: (_, suggestions, _) => suggestions,
       orElse: () => const <IdentifiedAnimal>[],
     );
     emit(
@@ -168,16 +168,16 @@ class RfidScanBloc extends Bloc<RfidScanEvent, RfidScanState> {
     // Evita que una consulta anterior, pero mas lenta, reemplace el listado
     // correspondiente al ultimo prefijo que permanece visible en el campo.
     final isCurrentPrefix = state.maybeWhen(
-      inactive: (currentPrefix, _) => currentPrefix == prefix,
+      inactive: (currentPrefix, _, _) => currentPrefix == prefix,
       orElse: () => false,
     );
-    if (!isCurrentPrefix) return;
+    if (emit.isDone || !isCurrentPrefix) return;
 
     switch (result) {
       case Success<List<IdentifiedAnimal>>(:final data):
         emit(RfidScanState.inactive(rfidPrefix: prefix, suggestions: data));
       case Failure<List<IdentifiedAnimal>>():
-        emit(RfidScanState.inactive(rfidPrefix: prefix));
+        emit(RfidScanState.inactive(rfidPrefix: prefix, suggestionsFailed: true));
     }
   }
 

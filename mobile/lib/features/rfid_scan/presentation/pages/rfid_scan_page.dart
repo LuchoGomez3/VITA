@@ -97,8 +97,12 @@ class _RfidScanView extends StatelessWidget {
               orElse: () => false,
             );
             final suggestions = state.maybeWhen(
-              inactive: (_, suggestions) => suggestions,
+              inactive: (_, suggestions, _) => suggestions,
               orElse: () => const <IdentifiedAnimal>[],
+            );
+            final suggestionsFailed = state.maybeWhen(
+              inactive: (_, _, failed) => failed,
+              orElse: () => false,
             );
             return HidRfidKeyboardListener(
               isListening: isListening,
@@ -160,6 +164,10 @@ class _RfidScanView extends StatelessWidget {
                                   ),
                                 ),
                         ),
+                        if (suggestionsFailed) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          const Text(RfidScanStrings.suggestionsError),
+                        ],
                       ],
                     ),
                   ),
@@ -196,7 +204,7 @@ class _RfidScanBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return state.when(
-      inactive: (_, _) => _MessageAction(
+      inactive: (_, _, _) => _MessageAction(
         title: RfidScanStrings.idleTitle,
         description: RfidScanStrings.idleDescription,
         actionLabel: RfidScanStrings.startReading,
