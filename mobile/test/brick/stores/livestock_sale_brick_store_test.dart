@@ -60,7 +60,7 @@ void main() {
           await allowRemotePull?.future;
           return Response(jsonEncode({'data': data}), 200, request: request);
         }
-        if (!firstRemoteRequest.isCompleted) {
+        if (request.body.contains('"id":"sale-a"') && !firstRemoteRequest.isCompleted) {
           firstRemoteRequest.complete(request);
           await allowFirstRemoteResponse.future;
         }
@@ -78,6 +78,12 @@ void main() {
     store = BrickLivestockSaleStore.instance;
     BrickAnimalStore.configure(repository);
     animalStore = BrickAnimalStore.instance;
+  });
+
+  setUp(() {
+    remoteAnimals = [];
+    remotePullStarted = null;
+    allowRemotePull = null;
   });
 
   tearDownAll(() async {
@@ -122,15 +128,18 @@ void main() {
     expect(body['id'], 'sale-a');
 
     final queueDatabase = await databaseFactoryFfi.openDatabase(queuePath);
-    final queuedRequests = await queueDatabase.query('HttpJobs');
+    final jobs = await queueDatabase.query('HttpJobs');
+    final queuedRequests = jobs.where((job) => (job['body']! as String).contains('"id":"sale-a"')).toList();
     expect(queuedRequests, hasLength(1));
     expect(queuedRequests.single['body'], contains('"id":"sale-a"'));
     allowFirstRemoteResponse.complete();
   });
 
   test('rechaza una segunda venta y no persiste un estado parcial', () async {
+    await repository.upsertLocal(_animal('duplicate-animal'));
+    await store.saveSale(_sale('first-sale', const ['duplicate-animal']));
     await expectLater(
-      store.saveSale(_sale('sale-duplicate', const ['animal-a'])),
+      store.saveSale(_sale('sale-duplicate', const ['duplicate-animal'])),
       throwsA(
         isA<LivestockSaleLocalException>().having(
           (error) => error.code,
@@ -276,20 +285,24 @@ void main() {
   });
 
   test('sincroniza venta y animales cuando backend acepta', () async {
+    await repository.upsertLocal(_animal('sync-animal-a'));
+    await repository.upsertLocal(_animal('sync-animal-b'));
+    await store.saveSale(_sale('sync-sale', const ['sync-animal-a', 'sync-animal-b']));
+
     await store.applySyncResult(
       const BackendSyncResult(
         resourcePath: '/api/v1/ventas',
-        localId: 'sale-a',
+        localId: 'sync-sale',
         synchronized: true,
       ),
     );
 
     final storedSales = await repository.getLocal<BrickLivestockSaleModel>();
-    final sale = storedSales.singleWhere((item) => item.localId == 'sale-a');
+    final sale = storedSales.singleWhere((item) => item.localId == 'sync-sale');
     expect(sale.syncStatus, BrickLivestockSaleSyncStatus.synchronized);
     final storedAnimals = await repository.getLocal<BrickAnimalModel>();
     final animals = storedAnimals.where(
-      (animal) => const {'animal-a', 'animal-b'}.contains(animal.localId),
+      (animal) => const {'sync-animal-a', 'sync-animal-b'}.contains(animal.localId),
     );
     expect(
       animals.every(
