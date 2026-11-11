@@ -65,6 +65,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
          ),
        ) {
     on<_DraftLoadRequested>(_onDraftLoadRequested);
+    on<_DraftSaveRequested>(_onDraftSaveRequested);
     on<_DraftRestoreAccepted>(_onDraftRestoreAccepted);
     on<_SavedDraftDiscardRequested>(_onSavedDraftDiscardRequested);
     on<_FormChanged>(_onFormChanged);
@@ -181,15 +182,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
               ),
       ),
     );
-    await _persistSnapshot(
-      _snapshotFromState(
-        state.copyWith(
-          form: _formFromSavedDraft(savedDraft),
-          selection: selection,
-          currentStep: restoredStep,
-        ),
-      ),
-    );
+    await _persistDraftWithFeedback(emit);
   }
 
   Future<void> _onSavedDraftDiscardRequested(
@@ -285,7 +278,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
             hasDraftChanges: true,
           ),
         );
-        await _persistCurrentDraft();
+        await _persistDraftWithFeedback(emit);
       case Failure<LivestockSaleSelection>(:final error):
         emit(
           state.copyWith(
@@ -369,7 +362,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
       ),
     );
     if (hasDraftChanges) {
-      await _persistCurrentDraft();
+      await _persistDraftWithFeedback(emit);
     } else {
       _draftSaveTimer?.cancel();
       await _deleteCurrentDraft();
@@ -403,7 +396,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
         stepError: null,
       ),
     );
-    await _persistCurrentDraft();
+    await _persistDraftWithFeedback(emit);
   }
 
   Future<void> _onPreviousStepRequested(
@@ -419,7 +412,7 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
         stepError: null,
       ),
     );
-    await _persistCurrentDraft();
+    await _persistDraftWithFeedback(emit);
   }
 
   Future<void> _onSubmitRequested(
@@ -803,13 +796,37 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
     // Las pruebas pueden desactivar la espera sin cambiar la estrategia de
     // produccion, donde el debounce evita escribir por cada tecla ingresada.
     if (_draftSaveDebounce == Duration.zero) {
-      unawaited(_persistCurrentDraft());
+      add(const LivestockSaleEvent.draftSaveRequested());
       return;
     }
     _draftSaveTimer = Timer(
       _draftSaveDebounce,
-      () => unawaited(_persistCurrentDraft()),
+      () => add(const LivestockSaleEvent.draftSaveRequested()),
     );
+  }
+
+  Future<void> _onDraftSaveRequested(
+    _DraftSaveRequested event,
+    Emitter<LivestockSaleState> emit,
+  ) async {
+    if (_isInputLocked || !state.hasDraftChanges) return;
+    await _persistDraftWithFeedback(emit);
+  }
+
+  Future<void> _persistDraftWithFeedback(
+    Emitter<LivestockSaleState> emit,
+  ) async {
+    final result = await _persistCurrentDraft();
+    // Al salir solo queda el registro de data; la UI ya no acepta feedback.
+    if (emit.isDone || _isInputLocked) return;
+    switch (result) {
+      case Failure<void>(:final error):
+        emit(state.copyWith(draftFeedback: _localizedDraftError(error)));
+      case Success<void>():
+        if (state.draftFeedback?.reason == LivestockSaleDraftError.localWrite) {
+          emit(state.copyWith(draftFeedback: null));
+        }
+    }
   }
 
   Future<Result<void>> _persistCurrentDraft() {

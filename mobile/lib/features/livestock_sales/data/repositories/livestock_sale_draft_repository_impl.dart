@@ -7,6 +7,7 @@ import 'package:frontend_mayoral/features/livestock_sales/data/mappers/livestock
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_saved_draft.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_draft_error.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/repositories/livestock_sale_draft_repository.dart';
+import 'package:logging/logging.dart';
 
 /// Guarda borradores con el almacenamiento cifrado disponible en el equipo.
 class LivestockSaleDraftRepositoryImpl implements LivestockSaleDraftRepository {
@@ -16,6 +17,7 @@ class LivestockSaleDraftRepositoryImpl implements LivestockSaleDraftRepository {
   }) : _secureStorage = secureStorage;
 
   final SecureStorageService _secureStorage;
+  static final Logger _logger = Logger('LivestockSaleDraftRepositoryImpl');
 
   @override
   Future<Result<LivestockSaleSavedDraft?>> load({
@@ -61,7 +63,12 @@ class LivestockSaleDraftRepositoryImpl implements LivestockSaleDraftRepository {
         value: jsonEncode(LivestockSaleSavedDraftMapper.toJson(draft)),
       );
       return const Result.success(null);
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _logger.warning(
+        'No se pudo guardar el borrador local (${error.runtimeType}).',
+        null,
+        stackTrace,
+      );
       return const Result.failure(
         DomainException(
           message: 'livestock_sale_draft_write_failed',

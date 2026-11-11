@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_saved_draft.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/repositories/livestock_sale_draft_repository.dart';
@@ -38,6 +39,9 @@ class LivestockSaleDraftTestRepository implements LivestockSaleDraftRepository {
   /// Último borrador almacenado.
   LivestockSaleSavedDraft? draft;
 
+  /// Falla de escritura simulada sin modificar la copia durable.
+  DomainException? saveError;
+
   /// Cantidad de eliminaciones solicitadas.
   var deleteCalls = 0;
 
@@ -59,6 +63,7 @@ class LivestockSaleDraftTestRepository implements LivestockSaleDraftRepository {
     required LivestockSaleSavedDraft draft,
   }) async {
     saveCalls++;
+    if (saveError case final error?) return Result.failure(error);
     this.draft = draft;
     return const Result.success(null);
   }

@@ -6,6 +6,9 @@ sealed class LivestockSaleEvent with _$LivestockSaleEvent {
   /// Busca una venta incompleta al ingresar al flujo.
   const factory LivestockSaleEvent.draftLoadRequested() = _DraftLoadRequested;
 
+  /// Persiste el progreso cuando vence el debounce del autoguardado.
+  const factory LivestockSaleEvent.draftSaveRequested() = _DraftSaveRequested;
+
   /// Restaura el borrador que el usuario decidió continuar.
   const factory LivestockSaleEvent.draftRestoreAccepted() = _DraftRestoreAccepted;
 

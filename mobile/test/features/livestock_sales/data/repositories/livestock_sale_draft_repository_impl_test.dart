@@ -4,8 +4,36 @@ import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/livestock_sales/data/repositories/livestock_sale_draft_repository_impl.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_saved_draft.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_draft_error.dart';
+import 'package:logging/logging.dart';
 
 void main() {
+  test('una falla de escritura conserva el borrador y registra diagnostico sanitizado', () async {
+    final records = <LogRecord>[];
+    final subscription = Logger('LivestockSaleDraftRepositoryImpl').onRecord.listen(records.add);
+    addTearDown(subscription.cancel);
+    final storage = _MemoryStorage();
+    final repository = LivestockSaleDraftRepositoryImpl(secureStorage: storage);
+    final draft = _draft();
+    await repository.save(userId: 'user-id', draft: draft);
+    storage.failWrites = true;
+
+    final result = await repository.save(
+      userId: 'user-id',
+      draft: draft.copyWith(buyerName: 'B'),
+    );
+
+    expect(result, isA<Failure<void>>());
+    expect((result as Failure<void>).error.reason, LivestockSaleDraftError.localWrite);
+    final loaded = await repository.load(userId: 'user-id', establishmentId: 'establishment-id');
+    expect(loaded, Result<LivestockSaleSavedDraft?>.success(draft));
+    final record = records.single;
+    expect(record.message, contains('StateError'));
+    expect(record.message, isNot(contains('sensitive-storage-value')));
+    expect(record.error, isNull);
+    expect(record.stackTrace, isNotNull);
+  });
+
   test('guarda, recupera y elimina un borrador aislado', () async {
     final storage = _MemoryStorage();
     final repository = LivestockSaleDraftRepositoryImpl(
@@ -64,6 +92,7 @@ LivestockSaleSavedDraft _draft() {
 
 class _MemoryStorage implements SecureStorageService {
   final _values = <String, String>{};
+  bool failWrites = false;
 
   @override
   Future<void> delete(String key) async => _values.remove(key);
@@ -73,6 +102,7 @@ class _MemoryStorage implements SecureStorageService {
 
   @override
   Future<void> write({required String key, required String value}) async {
+    if (failWrites) throw StateError('sensitive-storage-value');
     _values[key] = value;
   }
 }

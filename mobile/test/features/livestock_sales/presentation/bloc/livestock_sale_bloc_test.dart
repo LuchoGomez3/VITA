@@ -10,6 +10,7 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_saved_draft.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale_selection.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_draft_error.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_error.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/errors/livestock_sale_selection_error.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/repositories/livestock_sale_animal_repository.dart';
@@ -39,6 +40,63 @@ void main() {
         saleRepository: saleRepository,
       );
       addTearDown(bloc.close);
+    });
+
+    for (final debounce in [Duration.zero, const Duration(milliseconds: 20)]) {
+      test('avisa si falla el autoguardado y permite reintentar ($debounce)', () async {
+        final dependencies = LivestockSaleDraftTestDependencies();
+        final saleBloc = _createBloc(
+          animalRepository: animalRepository,
+          saleRepository: saleRepository,
+          draftDependencies: dependencies,
+          draftSaveDebounce: debounce,
+        );
+        addTearDown(saleBloc.close);
+        await _waitUntil(saleBloc, (state) => state.draftRecoveryStatus == LivestockSaleDraftRecoveryStatus.ready);
+        saleBloc.add(LivestockSaleEvent.formChanged(saleBloc.state.form.copyWith(buyerName: 'A')));
+        await _waitUntilDraft(dependencies, (draft) => draft.buyerName == 'A');
+        final durableDraft = dependencies.repository.draft;
+        dependencies.repository.saveError = const DomainException(
+          message: 'write_failed',
+          reason: LivestockSaleDraftError.localWrite,
+        );
+
+        saleBloc.add(LivestockSaleEvent.formChanged(saleBloc.state.form.copyWith(buyerName: 'B')));
+        await _waitUntil(saleBloc, (state) => state.draftFeedback != null);
+
+        expect(saleBloc.state.form.buyerName, 'B');
+        expect(saleBloc.state.hasDraftChanges, isTrue);
+        expect(saleBloc.state.exitStatus, LivestockSaleExitStatus.idle);
+        expect(
+          saleBloc.state.draftFeedback?.message,
+          LivestockSaleStrings.draftError(LivestockSaleDraftError.localWrite),
+        );
+        expect(dependencies.repository.draft, durableDraft);
+
+        dependencies.repository.saveError = null;
+        saleBloc.add(LivestockSaleEvent.formChanged(saleBloc.state.form.copyWith(buyerName: 'C')));
+        await _waitUntilDraft(dependencies, (draft) => draft.buyerName == 'C');
+        await _waitUntil(saleBloc, (state) => state.draftFeedback == null);
+      });
+    }
+
+    test('avisa si falla el guardado inmediato al agregar un animal', () async {
+      final dependencies = LivestockSaleDraftTestDependencies();
+      dependencies.repository.saveError = const DomainException(
+        message: 'write_failed',
+        reason: LivestockSaleDraftError.localWrite,
+      );
+      final saleBloc = _createBloc(
+        animalRepository: animalRepository,
+        saleRepository: saleRepository,
+        draftDependencies: dependencies,
+      );
+      addTearDown(saleBloc.close);
+      await _waitUntil(saleBloc, (state) => state.draftRecoveryStatus == LivestockSaleDraftRecoveryStatus.ready);
+      await _addAnimal(saleBloc);
+      await _waitUntil(saleBloc, (state) => state.draftFeedback != null);
+      expect(saleBloc.state.selection.animals.single.rfidTagNumber, _rfid);
+      expect(dependencies.repository.draft, isNull);
     });
 
     test('no avanza del primer paso sin animales', () async {
@@ -789,6 +847,7 @@ LivestockSaleBloc _createBloc({
   required _AnimalRepository animalRepository,
   required _SaleRepository saleRepository,
   LivestockSaleDraftTestDependencies? draftDependencies,
+  Duration draftSaveDebounce = const Duration(milliseconds: 400),
 }) {
   final resolvedDraftDependencies = draftDependencies ?? LivestockSaleDraftTestDependencies();
   return LivestockSaleBloc(
@@ -806,6 +865,7 @@ LivestockSaleBloc _createBloc({
       now: () => _today,
       createId: _SequentialIds().next,
     ),
+    draftSaveDebounce: draftSaveDebounce,
     loadDraft: resolvedDraftDependencies.load,
     saveDraft: resolvedDraftDependencies.save,
     deleteDraft: resolvedDraftDependencies.delete,

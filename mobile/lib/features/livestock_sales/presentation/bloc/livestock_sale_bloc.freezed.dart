@@ -55,11 +55,12 @@ extension LivestockSaleEventPatterns on LivestockSaleEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _DraftLoadRequested value)?  draftLoadRequested,TResult Function( _DraftRestoreAccepted value)?  draftRestoreAccepted,TResult Function( _SavedDraftDiscardRequested value)?  savedDraftDiscardRequested,TResult Function( _FormChanged value)?  formChanged,TResult Function( _AnimalAddRequested value)?  animalAddRequested,TResult Function( _RfidPrefixChanged value)?  rfidPrefixChanged,TResult Function( _AnimalRemoveRequested value)?  animalRemoveRequested,TResult Function( _NextStepRequested value)?  nextStepRequested,TResult Function( _PreviousStepRequested value)?  previousStepRequested,TResult Function( _SubmitRequested value)?  submitRequested,TResult Function( _SaveAndExitRequested value)?  saveAndExitRequested,TResult Function( _DiscardAndExitRequested value)?  discardAndExitRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _DraftLoadRequested value)?  draftLoadRequested,TResult Function( _DraftSaveRequested value)?  draftSaveRequested,TResult Function( _DraftRestoreAccepted value)?  draftRestoreAccepted,TResult Function( _SavedDraftDiscardRequested value)?  savedDraftDiscardRequested,TResult Function( _FormChanged value)?  formChanged,TResult Function( _AnimalAddRequested value)?  animalAddRequested,TResult Function( _RfidPrefixChanged value)?  rfidPrefixChanged,TResult Function( _AnimalRemoveRequested value)?  animalRemoveRequested,TResult Function( _NextStepRequested value)?  nextStepRequested,TResult Function( _PreviousStepRequested value)?  previousStepRequested,TResult Function( _SubmitRequested value)?  submitRequested,TResult Function( _SaveAndExitRequested value)?  saveAndExitRequested,TResult Function( _DiscardAndExitRequested value)?  discardAndExitRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _DraftLoadRequested() when draftLoadRequested != null:
-return draftLoadRequested(_that);case _DraftRestoreAccepted() when draftRestoreAccepted != null:
+return draftLoadRequested(_that);case _DraftSaveRequested() when draftSaveRequested != null:
+return draftSaveRequested(_that);case _DraftRestoreAccepted() when draftRestoreAccepted != null:
 return draftRestoreAccepted(_that);case _SavedDraftDiscardRequested() when savedDraftDiscardRequested != null:
 return savedDraftDiscardRequested(_that);case _FormChanged() when formChanged != null:
 return formChanged(_that);case _AnimalAddRequested() when animalAddRequested != null:
@@ -88,11 +89,12 @@ return discardAndExitRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _DraftLoadRequested value)  draftLoadRequested,required TResult Function( _DraftRestoreAccepted value)  draftRestoreAccepted,required TResult Function( _SavedDraftDiscardRequested value)  savedDraftDiscardRequested,required TResult Function( _FormChanged value)  formChanged,required TResult Function( _AnimalAddRequested value)  animalAddRequested,required TResult Function( _RfidPrefixChanged value)  rfidPrefixChanged,required TResult Function( _AnimalRemoveRequested value)  animalRemoveRequested,required TResult Function( _NextStepRequested value)  nextStepRequested,required TResult Function( _PreviousStepRequested value)  previousStepRequested,required TResult Function( _SubmitRequested value)  submitRequested,required TResult Function( _SaveAndExitRequested value)  saveAndExitRequested,required TResult Function( _DiscardAndExitRequested value)  discardAndExitRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _DraftLoadRequested value)  draftLoadRequested,required TResult Function( _DraftSaveRequested value)  draftSaveRequested,required TResult Function( _DraftRestoreAccepted value)  draftRestoreAccepted,required TResult Function( _SavedDraftDiscardRequested value)  savedDraftDiscardRequested,required TResult Function( _FormChanged value)  formChanged,required TResult Function( _AnimalAddRequested value)  animalAddRequested,required TResult Function( _RfidPrefixChanged value)  rfidPrefixChanged,required TResult Function( _AnimalRemoveRequested value)  animalRemoveRequested,required TResult Function( _NextStepRequested value)  nextStepRequested,required TResult Function( _PreviousStepRequested value)  previousStepRequested,required TResult Function( _SubmitRequested value)  submitRequested,required TResult Function( _SaveAndExitRequested value)  saveAndExitRequested,required TResult Function( _DiscardAndExitRequested value)  discardAndExitRequested,}){
 final _that = this;
 switch (_that) {
 case _DraftLoadRequested():
-return draftLoadRequested(_that);case _DraftRestoreAccepted():
+return draftLoadRequested(_that);case _DraftSaveRequested():
+return draftSaveRequested(_that);case _DraftRestoreAccepted():
 return draftRestoreAccepted(_that);case _SavedDraftDiscardRequested():
 return savedDraftDiscardRequested(_that);case _FormChanged():
 return formChanged(_that);case _AnimalAddRequested():
@@ -117,11 +119,12 @@ return discardAndExitRequested(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _DraftLoadRequested value)?  draftLoadRequested,TResult? Function( _DraftRestoreAccepted value)?  draftRestoreAccepted,TResult? Function( _SavedDraftDiscardRequested value)?  savedDraftDiscardRequested,TResult? Function( _FormChanged value)?  formChanged,TResult? Function( _AnimalAddRequested value)?  animalAddRequested,TResult? Function( _RfidPrefixChanged value)?  rfidPrefixChanged,TResult? Function( _AnimalRemoveRequested value)?  animalRemoveRequested,TResult? Function( _NextStepRequested value)?  nextStepRequested,TResult? Function( _PreviousStepRequested value)?  previousStepRequested,TResult? Function( _SubmitRequested value)?  submitRequested,TResult? Function( _SaveAndExitRequested value)?  saveAndExitRequested,TResult? Function( _DiscardAndExitRequested value)?  discardAndExitRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _DraftLoadRequested value)?  draftLoadRequested,TResult? Function( _DraftSaveRequested value)?  draftSaveRequested,TResult? Function( _DraftRestoreAccepted value)?  draftRestoreAccepted,TResult? Function( _SavedDraftDiscardRequested value)?  savedDraftDiscardRequested,TResult? Function( _FormChanged value)?  formChanged,TResult? Function( _AnimalAddRequested value)?  animalAddRequested,TResult? Function( _RfidPrefixChanged value)?  rfidPrefixChanged,TResult? Function( _AnimalRemoveRequested value)?  animalRemoveRequested,TResult? Function( _NextStepRequested value)?  nextStepRequested,TResult? Function( _PreviousStepRequested value)?  previousStepRequested,TResult? Function( _SubmitRequested value)?  submitRequested,TResult? Function( _SaveAndExitRequested value)?  saveAndExitRequested,TResult? Function( _DiscardAndExitRequested value)?  discardAndExitRequested,}){
 final _that = this;
 switch (_that) {
 case _DraftLoadRequested() when draftLoadRequested != null:
-return draftLoadRequested(_that);case _DraftRestoreAccepted() when draftRestoreAccepted != null:
+return draftLoadRequested(_that);case _DraftSaveRequested() when draftSaveRequested != null:
+return draftSaveRequested(_that);case _DraftRestoreAccepted() when draftRestoreAccepted != null:
 return draftRestoreAccepted(_that);case _SavedDraftDiscardRequested() when savedDraftDiscardRequested != null:
 return savedDraftDiscardRequested(_that);case _FormChanged() when formChanged != null:
 return formChanged(_that);case _AnimalAddRequested() when animalAddRequested != null:
@@ -149,10 +152,11 @@ return discardAndExitRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  draftLoadRequested,TResult Function()?  draftRestoreAccepted,TResult Function()?  savedDraftDiscardRequested,TResult Function( LivestockSaleFormDraft form)?  formChanged,TResult Function( String rfidTagNumber)?  animalAddRequested,TResult Function( String prefix)?  rfidPrefixChanged,TResult Function( String animalId)?  animalRemoveRequested,TResult Function()?  nextStepRequested,TResult Function()?  previousStepRequested,TResult Function()?  submitRequested,TResult Function()?  saveAndExitRequested,TResult Function()?  discardAndExitRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  draftLoadRequested,TResult Function()?  draftSaveRequested,TResult Function()?  draftRestoreAccepted,TResult Function()?  savedDraftDiscardRequested,TResult Function( LivestockSaleFormDraft form)?  formChanged,TResult Function( String rfidTagNumber)?  animalAddRequested,TResult Function( String prefix)?  rfidPrefixChanged,TResult Function( String animalId)?  animalRemoveRequested,TResult Function()?  nextStepRequested,TResult Function()?  previousStepRequested,TResult Function()?  submitRequested,TResult Function()?  saveAndExitRequested,TResult Function()?  discardAndExitRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DraftLoadRequested() when draftLoadRequested != null:
-return draftLoadRequested();case _DraftRestoreAccepted() when draftRestoreAccepted != null:
+return draftLoadRequested();case _DraftSaveRequested() when draftSaveRequested != null:
+return draftSaveRequested();case _DraftRestoreAccepted() when draftRestoreAccepted != null:
 return draftRestoreAccepted();case _SavedDraftDiscardRequested() when savedDraftDiscardRequested != null:
 return savedDraftDiscardRequested();case _FormChanged() when formChanged != null:
 return formChanged(_that.form);case _AnimalAddRequested() when animalAddRequested != null:
@@ -181,10 +185,11 @@ return discardAndExitRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  draftLoadRequested,required TResult Function()  draftRestoreAccepted,required TResult Function()  savedDraftDiscardRequested,required TResult Function( LivestockSaleFormDraft form)  formChanged,required TResult Function( String rfidTagNumber)  animalAddRequested,required TResult Function( String prefix)  rfidPrefixChanged,required TResult Function( String animalId)  animalRemoveRequested,required TResult Function()  nextStepRequested,required TResult Function()  previousStepRequested,required TResult Function()  submitRequested,required TResult Function()  saveAndExitRequested,required TResult Function()  discardAndExitRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  draftLoadRequested,required TResult Function()  draftSaveRequested,required TResult Function()  draftRestoreAccepted,required TResult Function()  savedDraftDiscardRequested,required TResult Function( LivestockSaleFormDraft form)  formChanged,required TResult Function( String rfidTagNumber)  animalAddRequested,required TResult Function( String prefix)  rfidPrefixChanged,required TResult Function( String animalId)  animalRemoveRequested,required TResult Function()  nextStepRequested,required TResult Function()  previousStepRequested,required TResult Function()  submitRequested,required TResult Function()  saveAndExitRequested,required TResult Function()  discardAndExitRequested,}) {final _that = this;
 switch (_that) {
 case _DraftLoadRequested():
-return draftLoadRequested();case _DraftRestoreAccepted():
+return draftLoadRequested();case _DraftSaveRequested():
+return draftSaveRequested();case _DraftRestoreAccepted():
 return draftRestoreAccepted();case _SavedDraftDiscardRequested():
 return savedDraftDiscardRequested();case _FormChanged():
 return formChanged(_that.form);case _AnimalAddRequested():
@@ -209,10 +214,11 @@ return discardAndExitRequested();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  draftLoadRequested,TResult? Function()?  draftRestoreAccepted,TResult? Function()?  savedDraftDiscardRequested,TResult? Function( LivestockSaleFormDraft form)?  formChanged,TResult? Function( String rfidTagNumber)?  animalAddRequested,TResult? Function( String prefix)?  rfidPrefixChanged,TResult? Function( String animalId)?  animalRemoveRequested,TResult? Function()?  nextStepRequested,TResult? Function()?  previousStepRequested,TResult? Function()?  submitRequested,TResult? Function()?  saveAndExitRequested,TResult? Function()?  discardAndExitRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  draftLoadRequested,TResult? Function()?  draftSaveRequested,TResult? Function()?  draftRestoreAccepted,TResult? Function()?  savedDraftDiscardRequested,TResult? Function( LivestockSaleFormDraft form)?  formChanged,TResult? Function( String rfidTagNumber)?  animalAddRequested,TResult? Function( String prefix)?  rfidPrefixChanged,TResult? Function( String animalId)?  animalRemoveRequested,TResult? Function()?  nextStepRequested,TResult? Function()?  previousStepRequested,TResult? Function()?  submitRequested,TResult? Function()?  saveAndExitRequested,TResult? Function()?  discardAndExitRequested,}) {final _that = this;
 switch (_that) {
 case _DraftLoadRequested() when draftLoadRequested != null:
-return draftLoadRequested();case _DraftRestoreAccepted() when draftRestoreAccepted != null:
+return draftLoadRequested();case _DraftSaveRequested() when draftSaveRequested != null:
+return draftSaveRequested();case _DraftRestoreAccepted() when draftRestoreAccepted != null:
 return draftRestoreAccepted();case _SavedDraftDiscardRequested() when savedDraftDiscardRequested != null:
 return savedDraftDiscardRequested();case _FormChanged() when formChanged != null:
 return formChanged(_that.form);case _AnimalAddRequested() when animalAddRequested != null:
@@ -255,6 +261,38 @@ int get hashCode => runtimeType.hashCode;
 @override
 String toString() {
   return 'LivestockSaleEvent.draftLoadRequested()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class _DraftSaveRequested implements LivestockSaleEvent {
+  const _DraftSaveRequested();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DraftSaveRequested);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'LivestockSaleEvent.draftSaveRequested()';
 }
 
 
