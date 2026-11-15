@@ -26,6 +26,7 @@ from api.modules.lotes.exceptions import (
 from api.modules.lotes.models import Lote
 from api.modules.lotes.repository import LoteRepository
 from api.modules.lotes.schemas import LoteCreate, LoteRead, LoteUpdate
+from api.modules.recursos_forrajeros.service import RecursoForrajeroService
 from api.modules.usuarios.models import Usuario
 from api.shared.enums import EstadoLote
 from api.shared.exceptions import EstablecimientoNoAutorizadoError
@@ -39,6 +40,7 @@ ESTADOS_SIN_ANIMALES = (EstadoLote.inactivo,)
 
 class LoteService:
     def __init__(self, session: AsyncSession) -> None:
+        self.recursos_service = RecursoForrajeroService(session)
         self.session = session
         self.repository = LoteRepository(session)
         self.membership_repository = UsuarioEstablecimientoRepository(session)
@@ -111,7 +113,7 @@ class LoteService:
         existente = await self.repository.get_by_id_including_deleted(lote_id)
         if existente is not None:
             await self._exigir_acceso(current_user, existente.establecimiento_id)
-            await self._merge_alta_lww(existente, data)
+            await self._merge_alta_lww(current_user, existente, data)
             await self.repository.save(existente)
             return LoteRead.model_validate(existente)
 
@@ -134,6 +136,7 @@ class LoteService:
             geometria_local=data.geometria_local,
             modo_geometria=data.modo_geometria,
             superficie_ha=data.superficie_ha,
+            # Va en el INSERT y además abre el primer período (más abajo).
             recurso_forrajero_codigo=data.recurso_forrajero_codigo,
             tiene_agua=data.tiene_agua,
             estado=data.estado,
@@ -147,9 +150,18 @@ class LoteService:
             await self.session.rollback()
             raise NombreLoteDuplicadoError(data.nombre) from exc
 
+        await self.recursos_service.adoptar_recurso_del_lote(
+            current_user,
+            lote,
+            data.recurso_forrajero_codigo,
+            fecha_desde=as_utc(lote.created_at).date(),
+            lote_nuevo=True,
+        )
         return LoteRead.model_validate(lote)
 
-    async def _merge_alta_lww(self, existente: Lote, data: LoteCreate) -> None:
+    async def _merge_alta_lww(
+        self, current_user: Usuario, existente: Lote, data: LoteCreate
+    ) -> None:
         """Aplica un alta reenviada solo si el cliente trae una versión más nueva.
 
         La geometría se ignora a propósito: queda bloqueada después del alta en
@@ -170,10 +182,18 @@ class LoteService:
         # transición, porque un lote ya borrado no pudo recibir animales después.
         if data.deleted_at is not None and existente.deleted_at is None:
             await self._exigir_lote_vaciable(existente.id)
+        # El recurso no se copia: lo deriva el historial. Si un cliente viejo
+        # manda uno distinto del vigente, se registra como un período nuevo.
+        # Va antes de mutar el lote, por el autoflush de sus consultas.
+        await self.recursos_service.adoptar_recurso_del_lote(
+            current_user,
+            existente,
+            data.recurso_forrajero_codigo,
+            fecha_desde=as_utc(data.updated_at).date(),
+        )
 
         existente.nombre = data.nombre
         existente.superficie_ha = data.superficie_ha
-        existente.recurso_forrajero_codigo = data.recurso_forrajero_codigo
         existente.tiene_agua = data.tiene_agua
         existente.estado = data.estado
         existente.deleted_at = data.deleted_at
@@ -193,6 +213,14 @@ class LoteService:
             # Cambio rancio: gana el servidor.
             return LoteRead.model_validate(lote)
 
+        # Antes de mutar el lote: sus consultas disparan autoflush, y un flush
+        # intermedio dejaría que el ``onupdate`` pise el ``updated_at`` del cliente.
+        await self.recursos_service.adoptar_recurso_del_lote(
+            current_user,
+            lote,
+            data.recurso_forrajero_codigo,
+            fecha_desde=as_utc(data.updated_at).date(),
+        )
         if data.nombre is not None and data.nombre != lote.nombre:
             await self._exigir_nombre_libre(
                 lote.establecimiento_id, data.nombre, lote_id=lote.id
@@ -204,8 +232,6 @@ class LoteService:
             lote.estado = data.estado
         if data.superficie_ha is not None:
             lote.superficie_ha = data.superficie_ha
-        if data.recurso_forrajero_codigo is not None:
-            lote.recurso_forrajero_codigo = data.recurso_forrajero_codigo
         if data.tiene_agua is not None:
             lote.tiene_agua = data.tiene_agua
         if data.deleted_at is not None:
