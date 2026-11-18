@@ -5,8 +5,11 @@ import 'package:frontend_mayoral/features/field/domain/entities/local_point.dart
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_boundary.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_draft.dart';
+import 'package:frontend_mayoral/features/field/domain/entities/lot_forage_period.dart';
+import 'package:frontend_mayoral/features/field/domain/repositories/lot_forage_period_repository.dart';
 import 'package:frontend_mayoral/features/field/domain/repositories/lot_repository.dart';
 import 'package:frontend_mayoral/features/field/domain/services/local_lot_boundary_validator.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/save_lot_forage_period_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/save_lot_use_case.dart';
 
 void main() {
@@ -59,6 +62,66 @@ void main() {
     expect(result, isA<Failure<Lot>>());
     expect(repository.records, hasLength(1));
   });
+
+  test('el recurso elegido en el alta abre el historial del potrero', () async {
+    final periods = _MemoryPeriodRepository();
+    final saveWithForage = SaveLotUseCase(
+      repository: repository,
+      validator: const LocalLotBoundaryValidator(),
+      overlapValidator: const TurfLotOverlapValidator(),
+      createId: () => 'lot-local-1',
+      saveForagePeriod: SaveLotForagePeriodUseCase(
+        repository: periods,
+        createId: () => 'period-1',
+        now: () => DateTime(2026, 8, 28, 14),
+      ),
+      now: () => DateTime(2026, 8, 28, 14),
+    );
+
+    await saveWithForage(
+      establishmentId: 'est-1',
+      draft: _draft('Lote norte').copyWith(forageResourceCode: 'alfalfa'),
+    );
+
+    final period = periods.records.single;
+    expect(period.lotId, 'lot-local-1');
+    expect(period.resourceCode, 'alfalfa');
+    expect(period.startDate, DateTime(2026, 8, 28));
+  });
+
+  test('sin recurso no abre ningún período', () async {
+    final periods = _MemoryPeriodRepository();
+    final saveWithForage = SaveLotUseCase(
+      repository: repository,
+      validator: const LocalLotBoundaryValidator(),
+      overlapValidator: const TurfLotOverlapValidator(),
+      createId: () => 'lot-local-1',
+      saveForagePeriod: SaveLotForagePeriodUseCase(repository: periods, createId: () => 'period-1'),
+    );
+
+    await saveWithForage(establishmentId: 'est-1', draft: _draft('Lote norte'));
+
+    expect(periods.records, isEmpty);
+  });
+}
+
+class _MemoryPeriodRepository implements LotForagePeriodRepository {
+  final List<LotForagePeriod> records = [];
+
+  @override
+  Stream<void> get changes => const Stream.empty();
+
+  @override
+  Future<Result<List<LotForagePeriod>>> getPeriods({
+    required String establishmentId,
+    required String lotId,
+  }) async => Result.success(records.where((p) => p.lotId == lotId).toList());
+
+  @override
+  Future<Result<LotForagePeriod>> savePeriod(LotForagePeriod period) async {
+    records.add(period);
+    return Result.success(period);
+  }
 }
 
 LotDraft _draft(String name) => LotDraft(
