@@ -4,12 +4,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
+import 'package:frontend_mayoral/brick/models/feeding_record.model.dart';
+import 'package:frontend_mayoral/brick/models/food.model.dart';
 import 'package:frontend_mayoral/brick/models/lot.model.dart';
+import 'package:frontend_mayoral/brick/models/lot_forage_period.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/feeding_record_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/food_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_forage_period_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -22,6 +28,9 @@ void main() {
     final animalStore = _FakeAnimalStore();
     final categoryStore = _FakeCategoryStore();
     final lotStore = _FakeLotStore();
+    final foragePeriodStore = _FakeForagePeriodStore();
+    final foodStore = _FakeFoodStore();
+    final feedingRecordStore = _FakeFeedingRecordStore();
     final weighingStore = _FakeWeighingStore();
     final movementStore = _FakeMovementStore();
     final financialSync = _FakeOperatingExpenseSync();
@@ -31,6 +40,9 @@ void main() {
       animalStore: animalStore,
       categoryStore: categoryStore,
       lotStore: lotStore,
+      foragePeriodStore: foragePeriodStore,
+      foodStore: foodStore,
+      feedingRecordStore: feedingRecordStore,
       weighingStore: weighingStore,
       movementStore: movementStore,
       syncOperatingExpenseData: financialSync.call,
@@ -48,6 +60,20 @@ void main() {
     expect(categoryStore.pullCount, 2);
     expect(lotStore.pulls, ['establishment-1', 'establishment-1']);
     expect(lotStore.pushes, ['establishment-1', 'establishment-1']);
+    expect(foragePeriodStore.pushes, ['establishment-1', 'establishment-1']);
+    expect(foragePeriodStore.pulls, ['establishment-1', 'establishment-1']);
+    expect(foodStore.calls, [
+      'push:establishment-1',
+      'pull:establishment-1',
+      'push:establishment-1',
+      'pull:establishment-1',
+    ]);
+    expect(feedingRecordStore.calls, [
+      'push:establishment-1',
+      'pull:establishment-1',
+      'push:establishment-1',
+      'pull:establishment-1',
+    ]);
     expect(weighingStore.pulls, ['establishment-1', 'establishment-1']);
     expect(movementStore.pulls, ['establishment-1', 'establishment-1']);
     expect(movementStore.pushes, ['establishment-1', 'establishment-1']);
@@ -62,6 +88,9 @@ void main() {
       animalStore: _FakeAnimalStore(),
       categoryStore: _FakeCategoryStore(),
       lotStore: _FakeLotStore(),
+      foragePeriodStore: _FakeForagePeriodStore(),
+      foodStore: _FakeFoodStore(),
+      feedingRecordStore: _FakeFeedingRecordStore(),
       weighingStore: _FakeWeighingStore(),
       movementStore: _FakeMovementStore(),
       syncOperatingExpenseData: _FakeOperatingExpenseSync().call,
@@ -84,6 +113,9 @@ void main() {
       animalStore: _FakeAnimalStore(),
       categoryStore: _FakeCategoryStore(),
       lotStore: _FakeLotStore(),
+      foragePeriodStore: _FakeForagePeriodStore(),
+      foodStore: _FakeFoodStore(),
+      feedingRecordStore: _FakeFeedingRecordStore(),
       weighingStore: _FakeWeighingStore(),
       movementStore: _FakeMovementStore(),
       syncOperatingExpenseData: financialSync.call,
@@ -183,6 +215,9 @@ class _FakeLotStore implements LotBrickStore {
   final List<String> pushes = [];
 
   @override
+  Future<void> setLocalForageResource(String lotId, String? forageResourceCode) async {}
+
+  @override
   Future<BrickLotModel?> getLocalLot(String lotId) async => null;
 
   @override
@@ -200,6 +235,56 @@ class _FakeLotStore implements LotBrickStore {
 
   @override
   Future<BrickLotModel> upsertLocalLot(BrickLotModel lot) async => lot;
+}
+
+class _FakeForagePeriodStore implements LotForagePeriodBrickStore {
+  final List<String> pulls = [];
+  final List<String> pushes = [];
+
+  @override
+  Future<List<BrickLotForagePeriodModel>> getLocalPeriods(String establishmentId, {String? lotId}) async => const [];
+
+  @override
+  Future<void> pullRemotePeriods(String establishmentId) async {
+    pulls.add(establishmentId);
+  }
+
+  @override
+  Future<void> pushPendingPeriods(String establishmentId) async {
+    pushes.add(establishmentId);
+  }
+
+  @override
+  Future<BrickLotForagePeriodModel> save(BrickLotForagePeriodModel period) async => period;
+}
+
+class _FakeFoodStore implements FoodBrickStore {
+  final List<String> calls = [];
+
+  @override
+  Future<List<BrickFoodModel>> getLocalFoods(String establishmentId) async => const [];
+
+  @override
+  Future<void> pullRemoteFoods(String establishmentId) async => calls.add('pull:$establishmentId');
+
+  @override
+  Future<void> pushPendingFoods(String establishmentId) async => calls.add('push:$establishmentId');
+}
+
+class _FakeFeedingRecordStore implements FeedingRecordBrickStore {
+  final List<String> calls = [];
+
+  @override
+  Future<List<BrickFeedingRecordModel>> getLocalRecords(String establishmentId) async => const [];
+
+  @override
+  Future<void> pullRemoteRecords(String establishmentId) async => calls.add('pull:$establishmentId');
+
+  @override
+  Future<void> pushPendingRecords(String establishmentId) async => calls.add('push:$establishmentId');
+
+  @override
+  Future<BrickFeedingRecordModel> save(BrickFeedingRecordModel record, {BrickFoodModel? newFood}) async => record;
 }
 
 class _FakeMovementStore implements AnimalLotMovementBrickStore {

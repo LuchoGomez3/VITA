@@ -4,11 +4,13 @@ import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
-import 'package:frontend_mayoral/features/field/domain/entities/forage_resource.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
+import 'package:frontend_mayoral/features/field/domain/entities/lot_forage_period.dart';
 import 'package:frontend_mayoral/features/field/presentation/cubit/lot_detail_cubit.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_edit_dialog.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/lot_forage_period_sheet.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/lot_forage_section.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_movement_dialog.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_overview_canvas.dart';
 import 'package:go_router/go_router.dart';
@@ -85,7 +87,6 @@ class _FieldDetailView extends StatelessWidget {
     await context.read<LotDetailCubit>().update(
       name: input.name,
       surfaceTenths: input.surfaceTenths,
-      forageResourceCode: input.forageResourceCode,
       hasWater: input.hasWater,
       status: input.status,
     );
@@ -150,11 +151,6 @@ class _LotDetailBody extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         AppInfoCell(
-          label: FieldStrings.forageResourceLabel,
-          value: InitialForageResources.displayNameFor(lot.forageResourceCode),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        AppInfoCell(
           label: FieldStrings.waterAvailabilityLabel,
           value: lot.hasWater ? FieldStrings.waterAvailable : FieldStrings.waterUnavailable,
         ),
@@ -174,6 +170,15 @@ class _LotDetailBody extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Text(message, style: AppTypography.errorBody),
         ],
+        const SizedBox(height: AppSpacing.lg),
+        LotForageSection(
+          periods: state.foragePeriods,
+          fallbackResourceCode: lot.forageResourceCode,
+          hasError: state.foragePeriodsState is ResultError<List<LotForagePeriod>>,
+          enabled: !state.isSaving,
+          onAdd: () => _editForage(context),
+          onEdit: (period) => _editForage(context, existing: period),
+        ),
         const SizedBox(height: AppSpacing.lg),
         Text(
           FieldStrings.animalsSectionTitle(state.animals.length),
@@ -237,6 +242,25 @@ class _LotDetailBody extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _editForage(BuildContext context, {LotForagePeriod? existing}) async {
+    final cubit = context.read<LotDetailCubit>();
+    final result = await showLotForagePeriodSheet(context, existing: existing);
+    switch (result) {
+      case LotForagePeriodSaved():
+        await cubit.saveForagePeriod(
+          resourceCode: result.resourceCode,
+          startDate: result.startDate,
+          endDate: result.endDate,
+          description: result.description,
+          existing: existing,
+        );
+      case LotForagePeriodDeleted() when existing != null:
+        await cubit.deleteForagePeriod(existing);
+      case _:
+        return;
+    }
   }
 
   Future<void> _moveAnimals(BuildContext context) async {

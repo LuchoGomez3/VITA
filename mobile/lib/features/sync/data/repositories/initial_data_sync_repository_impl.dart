@@ -6,7 +6,10 @@ import 'package:flutter/foundation.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/feeding_record_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/food_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_forage_period_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
@@ -36,6 +39,9 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     required AnimalBrickStore animalStore,
     required CategoriaBrickStore categoryStore,
     required LotBrickStore lotStore,
+    required LotForagePeriodBrickStore foragePeriodStore,
+    required FoodBrickStore foodStore,
+    required FeedingRecordBrickStore feedingRecordStore,
     required PesajeBrickStore weighingStore,
     required AnimalLotMovementBrickStore movementStore,
     required SyncOperatingExpenseData syncOperatingExpenseData,
@@ -44,6 +50,9 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
        _animalStore = animalStore,
        _categoryStore = categoryStore,
        _lotStore = lotStore,
+       _foragePeriodStore = foragePeriodStore,
+       _foodStore = foodStore,
+       _feedingRecordStore = feedingRecordStore,
        _weighingStore = weighingStore,
        _movementStore = movementStore,
        _syncOperatingExpenseData = syncOperatingExpenseData;
@@ -53,6 +62,9 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
   final AnimalBrickStore _animalStore;
   final CategoriaBrickStore _categoryStore;
   final LotBrickStore _lotStore;
+  final LotForagePeriodBrickStore _foragePeriodStore;
+  final FoodBrickStore _foodStore;
+  final FeedingRecordBrickStore _feedingRecordStore;
   final PesajeBrickStore _weighingStore;
   final AnimalLotMovementBrickStore _movementStore;
   final SyncOperatingExpenseData _syncOperatingExpenseData;
@@ -78,6 +90,13 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
         await _lotStore.pushPendingLots(establishmentId);
         _logInitialSyncStep('pulling lots for establishment=$establishmentId');
         await _lotStore.pullRemoteLots(establishmentId);
+        // Después de los lotes: un período nuevo apunta a un lote que tiene
+        // que haber llegado antes al servidor.
+        _logInitialSyncStep(
+          'syncing forage periods for establishment=$establishmentId',
+        );
+        await _foragePeriodStore.pushPendingPeriods(establishmentId);
+        await _foragePeriodStore.pullRemotePeriods(establishmentId);
         _logInitialSyncStep(
           'pulling animals for establishment=$establishmentId',
         );
@@ -98,6 +117,15 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
           'pulling weighings for establishment=$establishmentId',
         );
         await _weighingStore.pullRemotePesajes(establishmentId);
+        // Alimentos antes que registros: un registro puede apuntar a un
+        // alimento dado de alta sin señal en el mismo formulario.
+        _logInitialSyncStep(
+          'syncing feeding data for establishment=$establishmentId',
+        );
+        await _foodStore.pushPendingFoods(establishmentId);
+        await _foodStore.pullRemoteFoods(establishmentId);
+        await _feedingRecordStore.pushPendingRecords(establishmentId);
+        await _feedingRecordStore.pullRemoteRecords(establishmentId);
         if (establishment.role.canViewFinancialInformation) {
           _logInitialSyncStep(
             'pulling operating expense data for establishment=$establishmentId',
