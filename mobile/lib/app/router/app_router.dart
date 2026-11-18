@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend_mayoral/app/composition/team_session_composition.dart';
 import 'package:frontend_mayoral/app/composition/animal_movement_composition.dart';
+import 'package:frontend_mayoral/app/composition/team_session_composition.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -68,6 +68,9 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senas
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
+import 'package:frontend_mayoral/features/sync/presentation/cubit/sync_queue_cubit.dart';
+import 'package:frontend_mayoral/features/sync/presentation/pages/sync_status_page.dart';
+import 'package:frontend_mayoral/features/sync/presentation/widgets/sync_queue_indicator.dart';
 import 'package:frontend_mayoral/features/sync/sync_composition.dart';
 import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
 import 'package:frontend_mayoral/features/team/presentation/cubit/join_establishment_cubit.dart';
@@ -93,6 +96,7 @@ class AppRouter {
     required Listenable refreshListenable,
     required GetEstablishmentRoleUseCase getEstablishmentRole,
     HomeDashboardCubitFactory createHomeCubit = createHomeDashboardCubit,
+    SyncQueueCubit Function() createSyncCubit = createSyncQueueCubit,
     LoginBlocFactory loginBlocFactory = createLoginBloc,
     JoinEstablishmentCubit Function()? joinCubitFactory,
   }) {
@@ -154,6 +158,10 @@ class AppRouter {
                       child: HomePage(
                         createCubit: createHomeCubit,
                         userName: userName,
+                        syncIndicator: SyncQueueIndicator(
+                          createCubit: createSyncCubit,
+                          onPressed: () => context.push(AppRoutes.syncStatus),
+                        ),
                       ),
                     );
                   },
@@ -362,7 +370,12 @@ class AppRouter {
         ),
         GoRoute(
           path: AppRoutes.health,
-          builder: (context, state) => const HealthPage(),
+          builder: (context, state) => HealthPage(
+            syncIndicator: SyncQueueIndicator(
+              createCubit: createSyncCubit,
+              onPressed: () => context.push(AppRoutes.syncStatus),
+            ),
+          ),
         ),
         GoRoute(
           path: AppRoutes.applyVaccination,
@@ -483,6 +496,10 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.fieldList,
           redirect: (context, state) => AppRoutes.field,
+        ),
+        GoRoute(
+          path: AppRoutes.syncStatus,
+          builder: (context, state) => const SyncStatusPage(createCubit: createSyncStatusCubit),
         ),
         GoRoute(
           path: AppRoutes.lotRegister,

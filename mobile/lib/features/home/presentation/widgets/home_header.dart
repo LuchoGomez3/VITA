@@ -14,6 +14,7 @@ class HomeHeader extends StatelessWidget {
     required this.onSelected,
     required this.onCreateEstablishment,
     required this.onIdentifyAnimal,
+    this.syncIndicator,
     super.key,
   });
 
@@ -34,6 +35,10 @@ class HomeHeader extends StatelessWidget {
 
   /// Abre el flujo de identificacion RFID para el establecimiento activo.
   final VoidCallback onIdentifyAnimal;
+
+  /// Indicador de la cola de sincronización, inyectado por el router para que
+  /// Inicio no dependa del feature `sync`.
+  final Widget? syncIndicator;
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +81,7 @@ class HomeHeader extends StatelessWidget {
                   ],
                 ),
               ),
+              ?syncIndicator,
               IconButton(
                 tooltip: HomeStrings.identifyAnimalTooltip,
                 onPressed: onIdentifyAnimal,

@@ -31,9 +31,12 @@ import 'package:frontend_mayoral/features/home/domain/use_cases/get_home_establi
 import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_cubit.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_establishment_select.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
+import 'package:frontend_mayoral/features/sync/domain/entities/sync_queue.dart';
 import 'package:frontend_mayoral/features/sync/domain/repositories/initial_data_sync_repository.dart';
+import 'package:frontend_mayoral/features/sync/domain/repositories/sync_queue_repository.dart';
 import 'package:frontend_mayoral/features/sync/domain/services/offline_sync_coordinator.dart';
 import 'package:frontend_mayoral/features/sync/domain/use_cases/prepare_initial_data_sync_use_case.dart';
+import 'package:frontend_mayoral/features/sync/presentation/cubit/sync_queue_cubit.dart';
 import 'package:frontend_mayoral/features/team/data/datasources/team_remote_data_source.dart';
 import 'package:frontend_mayoral/features/team/data/repositories/team_repository_impl.dart';
 import 'package:frontend_mayoral/features/team/domain/use_cases/team_use_cases.dart';
@@ -206,6 +209,12 @@ class _Harness {
         refreshOfflineData: coordinator.synchronize,
         syncResults: coordinator.results,
       ),
+      // La nube de Inicio lee la cola de Brick; acá alcanza con una cola vacía.
+      createSyncCubit: () => SyncQueueCubit(
+        repository: _EmptySyncQueue(),
+        connectivityChanges: const Stream.empty(),
+        synchronizeNow: () async => false,
+      ),
       loginBlocFactory: () => LoginBloc(
         signInUseCase: SignInUseCase(authRepository),
         preparePostAuthentication: () async => Result.success(PostAuthenticationSummary(establishmentIds: [])),
@@ -334,4 +343,9 @@ class _AuthRepository implements AuthRepository {
   Future<void> signOut() async {}
   @override
   Object? noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _EmptySyncQueue implements SyncQueueRepository {
+  @override
+  Stream<SyncQueueSnapshot> watch() => Stream.value(SyncQueueSnapshot(operations: const [], readAt: DateTime(2026)));
 }
