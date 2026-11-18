@@ -88,7 +88,14 @@ SyncStatusPage / SyncQueueIndicator
   un 2xx. `SyncHistoryRecorder` escucha `syncResults` desde `main.dart`
   (`startSyncHistoryRecorder()`), así también registra lo que se envió con la
   pantalla cerrada. Vive en memoria y se pierde al cerrar la app, que es lo
-  esperable para "enviados recientemente".
+  esperable para "enviados recientemente". Guarda una fila por registro: si el
+  backend confirma dos veces el mismo `localId` (el ciclo de sincronización
+  reencola los movimientos pendientes mientras la cola ya los está enviando),
+  se actualiza la hora en vez de duplicar la fila.
+- **Conectividad**: `onConnectivityChanged` solo avisa cambios, así que una
+  pantalla abierta ya sin señal nunca se enteraba y mostraba el banner "con
+  señal". `connectivityStatus()` consulta `checkConnectivity()` al suscribirse
+  y después sigue los cambios.
 - **Tipo de operación**: `syncOperationKindFor(path, method:)` lo comparten la
   cola, los rechazados y el historial. Sin método (respuestas del backend,
   rechazos leídos de SQLite) un animal se muestra como "Animal".
@@ -123,10 +130,16 @@ SyncStatusPage / SyncQueueIndicator
   inicial, relectura ante cambios, sin reemisión si nada cambió, recuperación
   tras un error y que deja de leer al cancelar.
 - `test/features/sync/data/sync_history_recorder_test.dart`: solo guarda los
-  aceptados, el más reciente primero, respeta la capacidad y entrega lo
-  enviado antes de que se abra la pantalla.
+  aceptados, el más reciente primero, respeta la capacidad, no duplica un
+  registro confirmado dos veces y entrega lo enviado antes de que se abra la
+  pantalla.
 - `test/features/sync/data/sync_operation_kind_mapper_test.dart`: traducción
   de path y método a tipo.
+- `test/features/sync/data/connectivity_status_test.dart`: al abrir sin señal
+  informa offline aunque no haya cambios, no repite valores y sigue si falla la
+  consulta inicial.
+- `test/features/health/presentation/health_page_test.dart`: Sanidad muestra
+  el indicador que recibe del router en vez del badge mock.
 - `test/features/sync/presentation/`: cubit (cola, conectividad, errores,
   sincronizar ahora sin superponerse, rechazados e historial sin tapar la cola)
   y página (sin señal, lista en vivo hasta vaciarse, al reconectar lo pendiente

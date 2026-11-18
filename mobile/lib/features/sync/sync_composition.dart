@@ -13,6 +13,7 @@ import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
 import 'package:frontend_mayoral/features/sync/data/datasources/brick_rejected_records_reader.dart';
+import 'package:frontend_mayoral/features/sync/data/datasources/connectivity_status.dart';
 import 'package:frontend_mayoral/features/sync/data/datasources/establishment_remote_data_source.dart';
 import 'package:frontend_mayoral/features/sync/data/repositories/initial_data_sync_repository_impl.dart';
 import 'package:frontend_mayoral/features/sync/data/repositories/sync_history_recorder.dart';
@@ -100,9 +101,10 @@ SyncQueueCubit _createCubit({required bool includeActivity}) {
   Stream<void> changes() => _mergeVoid([brick.localChanges, brick.syncResults]);
   return SyncQueueCubit(
     repository: SyncQueueRepositoryImpl(readQueue: brick.queuedRequests, changes: changes()),
-    connectivityChanges: Connectivity().onConnectivityChanged
-        .map((results) => results.any((result) => result != ConnectivityResult.none))
-        .distinct(),
+    connectivityChanges: connectivityStatus(
+      check: Connectivity().checkConnectivity,
+      changes: Connectivity().onConnectivityChanged,
+    ),
     synchronizeNow: () async => await createOfflineSyncCoordinator().synchronize() is Success,
     rejections: includeActivity
         ? SyncRejectionsRepositoryImpl(readRejected: BrickRejectedRecordsReader(brick).read, changes: changes())

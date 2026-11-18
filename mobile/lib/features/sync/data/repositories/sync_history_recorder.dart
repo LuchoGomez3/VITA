@@ -43,7 +43,12 @@ class SyncHistoryRecorder implements SyncHistoryRepository {
       kind: syncOperationKindFor(result.resourcePath),
       sentAt: _now(),
     );
-    _records = List.unmodifiable([record, ..._records].take(capacity));
+    // Un mismo registro puede confirmarse más de una vez (por ejemplo, el
+    // ciclo de sincronización reencola un movimiento pendiente que la cola ya
+    // estaba enviando). El historial es de registros, no de requests: se
+    // conserva una fila por registro, con la confirmación más reciente.
+    final others = _records.where((item) => item.localId != record.localId || item.kind != record.kind);
+    _records = List.unmodifiable([record, ...others].take(capacity));
     _changes.add(_records);
   }
 

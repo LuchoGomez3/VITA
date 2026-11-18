@@ -55,6 +55,21 @@ void main() {
     expect(current.map((record) => record.localId), ['pesaje-5', 'pesaje-4', 'pesaje-3']);
   });
 
+  test('un registro confirmado dos veces aparece una sola vez, con la última hora', () async {
+    recorder.start();
+    results
+      ..add(_result('/api/v1/movimientos_lotes', 'movimiento-1'))
+      ..add(_result('/api/v1/pesajes', 'pesaje-1'));
+    await pumpEventQueue();
+    clock = clock.add(const Duration(seconds: 5));
+    results.add(_result('/api/v1/movimientos_lotes', 'movimiento-1'));
+    await pumpEventQueue();
+
+    final current = await recorder.watch().first;
+    expect(current.map((record) => record.localId), ['movimiento-1', 'pesaje-1']);
+    expect(current.first.sentAt, DateTime(2026, 11, 3, 11, 0, 5));
+  });
+
   test('un suscriptor nuevo recibe lo enviado antes de abrir la pantalla', () async {
     recorder
       ..start()
