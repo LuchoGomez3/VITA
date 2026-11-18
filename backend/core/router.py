@@ -4,6 +4,8 @@ from fastapi import APIRouter
 
 from api.auth.router import router as auth_router
 from api.health.router import router as health_router
+from api.modules.alimentacion.router import router as registros_alimentacion_router
+from api.modules.alimentos.router import router as alimentos_router
 from api.modules.animales.router import router as animales_router
 from api.modules.categorias.router import router as categorias_router
 from api.modules.equipo.router import router as equipo_router
@@ -15,6 +17,9 @@ from api.modules.observaciones_animales.router import (
     router as observaciones_animales_router,
 )
 from api.modules.pesajes.router import router as pesajes_router
+from api.modules.recursos_forrajeros.router import (
+    router as recursos_forrajeros_router,
+)
 from api.modules.usuarios.router import router as usuarios_router
 from api.reportes.router import router as reportes_router
 
@@ -32,6 +37,9 @@ def get_global_router() -> APIRouter:
     router.include_router(animales_router)
     router.include_router(lotes_router)
     router.include_router(movimientos_lotes_router)
+    router.include_router(recursos_forrajeros_router)
+    router.include_router(alimentos_router)
+    router.include_router(registros_alimentacion_router)
     router.include_router(categorias_router)
     router.include_router(pesajes_router)
     router.include_router(observaciones_animales_router)
