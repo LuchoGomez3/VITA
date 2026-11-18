@@ -1,16 +1,14 @@
 import 'package:flutter/services.dart';
+import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
 
+/// Admite hasta quince números y rechaza ediciones inválidas completas.
+/// No convierte un pegado con letras o exceso de dígitos en otro RFID válido.
 class RfidInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final digitsOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
-
-    return newValue.copyWith(
-      text: digitsOnly,
-      selection: TextSelection.collapsed(offset: digitsOnly.length),
-    );
+    return RfidValidator.isEditable(newValue.text) ? newValue : oldValue;
   }
 }

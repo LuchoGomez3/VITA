@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -15,6 +17,8 @@ import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_a
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_animal_parents_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
+import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
+import 'package:frontend_mayoral/features/animal_register/presentation/widgets/steps/register_animal_identification_step.dart';
 
 void main() {
   group('RegisterAnimalBloc', () {
@@ -50,6 +54,40 @@ void main() {
 
       await expectation;
     });
+
+    testWidgets('el campo RFID del alta rechaza letras y un decimosexto número', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlocProvider.value(
+              value: bloc,
+              child: RegisterAnimalIdentificationStep(onBluetoothRequested: () {}),
+            ),
+          ),
+        ),
+      );
+      final field = find.byType(TextFormField).first;
+      await tester.enterText(field, '98200041299141');
+      await tester.pumpAndSettle();
+      for (final invalid in ['9820004129914160', 'A982000412991416']) {
+        await tester.enterText(field, invalid);
+        await tester.pumpAndSettle();
+        expect(tester.widget<TextFormField>(field).controller!.text, '98200041299141');
+        expect(bloc.state.draft.rfid, '98200041299141');
+      }
+      await tester.enterText(field, '982000412991416');
+      await tester.pumpAndSettle();
+      expect(bloc.state.draft.rfid, '982000412991416');
+    });
+
+    for (final invalid in ['98200041299141', '9820004129914160', 'A982000412991416']) {
+      test('una captura RFID inválida no se copia al formulario: $invalid', () async {
+        bloc.add(RegisterAnimalEvent.rfidCaptured(invalid));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.draft.rfid, isEmpty);
+        expect((bloc.state.rfidCheckState as ResultError<bool>).error.message, AnimalRegisterStrings.rfidInvalid);
+      });
+    }
 
     test('initializes the draft with an RFID received from identification', () {
       final prefilledBloc = RegisterAnimalBloc(

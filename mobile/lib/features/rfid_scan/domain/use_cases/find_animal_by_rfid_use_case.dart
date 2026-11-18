@@ -1,4 +1,6 @@
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/entities/identified_animal.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/repositories/rfid_animal_lookup_repository.dart';
 
@@ -14,6 +16,17 @@ class FindAnimalByRfidUseCase {
     required String rfidTagNumber,
     required String establishmentId,
   }) {
+    if (!RfidValidator.isValid(rfidTagNumber)) {
+      return Future.value(
+        const Result.failure(
+          DomainException(
+            message: 'invalid_rfid',
+            code: DomainErrorCode.validation,
+            reason: RfidValidationFailure.invalidFormat,
+          ),
+        ),
+      );
+    }
     return _repository.findByRfidTagNumber(
       rfidTagNumber: rfidTagNumber,
       establishmentId: establishmentId,
