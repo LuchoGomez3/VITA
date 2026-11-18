@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/features/sync/domain/entities/sync_activity.dart';
 import 'package:frontend_mayoral/features/sync/domain/entities/sync_queue.dart';
 import 'package:frontend_mayoral/features/sync/presentation/strings/sync_status_strings.dart';
+import 'package:frontend_mayoral/features/sync/presentation/widgets/sync_record_tile.dart';
 
 /// Fila de la cola de operaciones de sincronización.
 class SyncQueueRow extends StatelessWidget {
@@ -19,67 +21,59 @@ class SyncQueueRow extends StatelessWidget {
       SyncOperationState.retrying => (Icons.schedule, AppColors.syncPendingContainer, AppColors.syncPending),
     };
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(color: background, shape: BoxShape.circle),
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xxs),
-                child: Icon(icon, size: 16, color: foreground),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          SyncStatusStrings.operationKind(operation.kind),
-                          style: AppTypography.mediumEmphasis,
-                        ),
-                      ),
-                      Text(
-                        _formatTime(operation.queuedAt),
-                        style: AppTypography.monoValue.copyWith(color: AppColors.textHint),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    SyncStatusStrings.operationState(operation),
-                    style: AppTypography.smallEmphasis.copyWith(
-                      color: operation.state == SyncOperationState.retrying
-                          ? AppColors.syncPending
-                          : AppColors.textHint,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    return SyncRecordTile(
+      icon: icon,
+      iconBackground: background,
+      iconColor: foreground,
+      title: SyncStatusStrings.operationKind(operation.kind),
+      time: operation.queuedAt,
+      detail: SyncStatusStrings.operationState(operation),
+      detailColor: operation.state == SyncOperationState.retrying ? AppColors.syncPending : AppColors.textHint,
     );
   }
+}
 
-  /// `HH:mm` si es de hoy; `dd/MM HH:mm` si quedó de otro día.
-  static String _formatTime(DateTime value) {
-    final local = value.toLocal();
-    final now = DateTime.now();
-    String two(int number) => number.toString().padLeft(2, '0');
-    final time = '${two(local.hour)}:${two(local.minute)}';
-    final isToday = local.year == now.year && local.month == now.month && local.day == now.day;
-    return isToday ? time : '${two(local.day)}/${two(local.month)} $time';
+/// Fila de un registro que el backend rechazó.
+class SyncRejectedRow extends StatelessWidget {
+  /// Crea la fila.
+  const SyncRejectedRow({required this.record, super.key});
+
+  /// Registro rechazado.
+  final SyncRejectedRecord record;
+
+  @override
+  Widget build(BuildContext context) {
+    return SyncRecordTile(
+      icon: Icons.error_outline,
+      iconBackground: AppColors.errorContainer,
+      iconColor: AppColors.error,
+      title: SyncStatusStrings.operationKind(record.kind),
+      time: record.recordedAt,
+      detail: SyncStatusStrings.rejectedDetail(record.errorCode),
+      detailColor: AppColors.error,
+      borderColor: AppColors.errorBorder,
+    );
+  }
+}
+
+/// Fila de un registro que llegó al backend en esta sesión.
+class SyncSentRow extends StatelessWidget {
+  /// Crea la fila.
+  const SyncSentRow({required this.record, super.key});
+
+  /// Registro enviado.
+  final SyncSentRecord record;
+
+  @override
+  Widget build(BuildContext context) {
+    return SyncRecordTile(
+      icon: Icons.cloud_done_outlined,
+      iconBackground: AppColors.backgroundPositiveContainer,
+      iconColor: AppColors.checkIcon,
+      title: SyncStatusStrings.operationKind(record.kind),
+      time: record.sentAt,
+      detail: SyncStatusStrings.sentState,
+      detailColor: AppColors.positiveText,
+    );
   }
 }

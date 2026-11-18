@@ -2,8 +2,9 @@
 name: sincronizacion
 description: >-
   Pantalla de estado de sincronización offline-first: muestra en vivo la cola
-  de operaciones que el teléfono todavía no envió al backend. Documento vivo,
-  se actualiza en el mismo commit que introduce cada pieza descripta acá.
+  de operaciones que el teléfono todavía no envió al backend, los registros que
+  el backend rechazó y lo enviado en la sesión. Documento vivo, se actualiza en
+  el mismo commit que introduce cada pieza descripta acá.
 ---
 
 # Sincronización
@@ -22,8 +23,9 @@ Ver también **[`estado-pantallas-diseno.md`](./estado-pantallas-diseno.md)**.
 | `SyncScreen` | `SyncStatusPage` | `/sincronizacion` |
 
 Pantalla única, sin bottom nav (push). Se entra desde el ícono de nube del
-encabezado de Inicio (`SyncQueueIndicator`), que muestra la cantidad de
-pendientes en vivo.
+encabezado de Inicio y de Sanidad (`SyncQueueIndicator`), que muestra la
+cantidad de pendientes en vivo. Cada pantalla recibe el indicador ya armado
+desde el router, así no depende de la feature de sincronización.
 
 ## Contenido
 
@@ -35,9 +37,15 @@ pendientes en vivo.
     vuelva la señal";
   - con señal y una request tomada por Brick → "Enviando N registros…";
   - con señal, nada en curso → "N registros esperando su turno".
+- "No se pudieron guardar" (solo si hay): registros que el backend rechazó
+  con un 4xx, con tipo, hora del último cambio y código de error. Van primero
+  porque son los únicos que piden una acción del productor.
 - "Cola de operaciones": una fila por request, en el orden en que Brick las va
   a enviar, con tipo, hora en que se registró y estado (`En espera`,
   `Enviando…`, `Reintentando · N fallos`).
+- "Enviados recientemente" (solo si hay): los últimos 20 registros que el
+  backend aceptó desde que se abrió la app. Al recuperar la señal, cada fila
+  pasa de la cola a esta sección.
 
 ## Cómo funciona
 
@@ -69,6 +77,23 @@ SyncStatusPage / SyncQueueIndicator
   lo limpia. Si falla "Sincronizar ahora" se muestra un SnackBar.
 - "Sincronizar ahora" dispara `OfflineSyncCoordinator.synchronize()`, el mismo
   ciclo que usan la reconexión y el resume. La cola se sigue vaciando sola.
+- **Rechazados**: Brick borra de la cola una request rechazada y cada store
+  marca el modelo como `rejected` en SQLite (con `syncErrorCode`). Ese estado
+  es la única huella del rechazo y sobrevive a reiniciar la app.
+  `BrickRejectedRecordsReader` lo lee de los seis modelos sync-ables y
+  `SyncRejectionsRepositoryImpl` relee ante `localChanges` y `syncResults` (sin
+  consulta periódica: un registro solo cambia de estado por esos dos caminos).
+  Un error leyendo rechazados se registra y no tapa la cola.
+- **Enviados**: Brick no guarda historial, porque borra la request al recibir
+  un 2xx. `SyncHistoryRecorder` escucha `syncResults` desde `main.dart`
+  (`startSyncHistoryRecorder()`), así también registra lo que se envió con la
+  pantalla cerrada. Vive en memoria y se pierde al cerrar la app, que es lo
+  esperable para "enviados recientemente".
+- **Tipo de operación**: `syncOperationKindFor(path, method:)` lo comparten la
+  cola, los rechazados y el historial. Sin método (respuestas del backend,
+  rechazos leídos de SQLite) un animal se muestra como "Animal".
+- El indicador de la nube usa `createSyncQueueCubit()` (solo la cola); la
+  pantalla usa `createSyncStatusCubit()` (cola, rechazados e historial).
 
 ## Fuera de alcance (y por qué)
 
@@ -76,15 +101,11 @@ SyncStatusPage / SyncQueueIndicator
   diseño): el backend resuelve last-write-wins por `updated_at`, así que el
   cliente nunca recibe un conflicto para resolver. Se quitaron la tarjeta y el
   mock.
-- **Rechazos (4xx)**: Brick borra de la cola una request rechazada y el store
-  marca el registro como `rejected` en SQLite. No aparecen en esta pantalla; se
-  ven en cada feature (por ejemplo, el historial de movimientos). Sumarlos acá
-  requiere leer el `syncStatus` de cada modelo Brick.
+- **Corregir un rechazo desde acá**: la pantalla lo informa, pero la
+  corrección se hace en la pantalla de cada registro, que es la que conoce sus
+  reglas.
 - **Archivos**: la cola de Brick descarta los `MultipartRequest`, así que una
   subida de archivo nunca aparece como pendiente.
-- **Badge de Sanidad** (`AppSyncBadge` en `health_page.dart`): sigue con el
-  valor mock de su maqueta; debería pasar a `SyncQueueIndicator` cuando Sanidad
-  deje de ser mock.
 
 ## Tests
 
@@ -95,6 +116,19 @@ SyncStatusPage / SyncQueueIndicator
   de path/método a tipo y de `locked`/`attempts` a estado, emisión inicial,
   relectura ante cambios y por consulta periódica, sin reemisión si nada
   cambió, recuperación tras un error, y que deja de consultar al cancelar.
+- `test/features/sync/data/brick_rejected_records_reader_test.dart`: sobre
+  SQLite real (ffi), devuelve solo los `rejected` de cada modelo, con su
+  código, el más reciente primero.
+- `test/features/sync/data/sync_rejections_repository_impl_test.dart`: emisión
+  inicial, relectura ante cambios, sin reemisión si nada cambió, recuperación
+  tras un error y que deja de leer al cancelar.
+- `test/features/sync/data/sync_history_recorder_test.dart`: solo guarda los
+  aceptados, el más reciente primero, respeta la capacidad y entrega lo
+  enviado antes de que se abra la pantalla.
+- `test/features/sync/data/sync_operation_kind_mapper_test.dart`: traducción
+  de path y método a tipo.
 - `test/features/sync/presentation/`: cubit (cola, conectividad, errores,
-  sincronizar ahora sin superponerse) y página (sin señal, lista en vivo hasta
-  vaciarse, SnackBar si falla la sincronización manual).
+  sincronizar ahora sin superponerse, rechazados e historial sin tapar la cola)
+  y página (sin señal, lista en vivo hasta vaciarse, al reconectar lo pendiente
+  pasa a enviados y los rechazados se destacan, SnackBar si falla la
+  sincronización manual).

@@ -45,6 +45,26 @@ abstract final class SyncStatusStrings {
   /// Título de la sección de cola de operaciones.
   static const queueSectionTitle = 'Cola de operaciones';
 
+  /// Título de la sección de registros rechazados.
+  static const rejectedSectionTitle = 'No se pudieron guardar';
+
+  /// Explicación de la sección de rechazados.
+  static const rejectedSectionDetail =
+      'El servidor los rechazó y no se van a reintentar. Siguen en el teléfono: revisalos desde su pantalla.';
+
+  /// Detalle de un registro rechazado.
+  static String rejectedDetail(String? errorCode) =>
+      errorCode == null || errorCode.isEmpty ? 'Rechazado por el servidor' : 'Rechazado · $errorCode';
+
+  /// Título de la sección de enviados en la sesión.
+  static const sentSectionTitle = 'Enviados recientemente';
+
+  /// Aclaración de la sección de enviados.
+  static const sentSectionDetail = 'Lo que llegó al servidor desde que abriste la app.';
+
+  /// Estado de un registro enviado.
+  static const sentState = 'Guardado en el servidor';
+
   /// Mensaje cuando no se pudo leer la cola local.
   static const readError = 'No pudimos leer la cola. Tus registros siguen guardados en el teléfono.';
 
@@ -55,6 +75,7 @@ abstract final class SyncStatusStrings {
   static String operationKind(SyncOperationKind kind) => switch (kind) {
     SyncOperationKind.animalRegistration => 'Alta de animal',
     SyncOperationKind.animalUpdate => 'Cambio en un animal',
+    SyncOperationKind.animal => 'Animal',
     SyncOperationKind.weighing => 'Pesaje',
     SyncOperationKind.lotMovement => 'Movimiento entre lotes',
     SyncOperationKind.lot => 'Lote',

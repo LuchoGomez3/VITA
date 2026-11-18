@@ -1,14 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:frontend_mayoral/brick/models/animal.model.dart';
-import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
-import 'package:frontend_mayoral/brick/models/lot.model.dart';
-import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
-import 'package:frontend_mayoral/brick/models/operating_expense_category.model.dart';
-import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/sync/queued_request.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
+import 'package:frontend_mayoral/features/sync/data/mappers/sync_operation_kind_mapper.dart';
 import 'package:frontend_mayoral/features/sync/domain/entities/sync_queue.dart';
 import 'package:frontend_mayoral/features/sync/domain/repositories/sync_queue_repository.dart';
 
@@ -101,7 +96,7 @@ class SyncQueueRepositoryImpl implements SyncQueueRepository {
   static SyncQueueOperation operationFromRequest(BrickQueuedRequest request) {
     return SyncQueueOperation(
       queueId: request.queueId,
-      kind: _kindFor(request),
+      kind: syncOperationKindFor(request.path, method: request.method),
       state: request.isLocked
           ? SyncOperationState.sending
           : request.attempts > 1
@@ -111,23 +106,5 @@ class SyncQueueRepositoryImpl implements SyncQueueRepository {
       queuedAt: request.createdAt,
       lastAttemptAt: request.updatedAt,
     );
-  }
-
-  static SyncOperationKind _kindFor(BrickQueuedRequest request) {
-    final path = request.path;
-    bool under(String resource) => path == resource || path.startsWith('$resource/');
-
-    // El orden importa: las categorías cuelgan del path de egresos.
-    if (under(BrickOperatingExpenseCategoryRequestTransformer.categoriesPath)) {
-      return SyncOperationKind.operatingExpenseCategory;
-    }
-    if (under(BrickOperatingExpenseRequestTransformer.expensesPath)) return SyncOperationKind.operatingExpense;
-    if (under(BrickAnimalLotMovementRequestTransformer.movementsPath)) return SyncOperationKind.lotMovement;
-    if (under(BrickLotRequestTransformer.lotsPath)) return SyncOperationKind.lot;
-    if (under(BrickPesajeRequestTransformer.weighingsPath)) return SyncOperationKind.weighing;
-    if (under(BrickAnimalRequestTransformer.animalsPath)) {
-      return request.method == 'POST' ? SyncOperationKind.animalRegistration : SyncOperationKind.animalUpdate;
-    }
-    return SyncOperationKind.other;
   }
 }

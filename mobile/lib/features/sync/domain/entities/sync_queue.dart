@@ -8,6 +8,10 @@ enum SyncOperationKind {
   /// Cambio sobre un animal ya existente.
   animalUpdate,
 
+  /// Animal, cuando no se sabe si fue un alta o un cambio (por ejemplo, en
+  /// un rechazo leído de SQLite).
+  animal,
+
   /// Pesaje individual.
   weighing,
 

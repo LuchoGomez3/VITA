@@ -8,7 +8,8 @@ import 'package:frontend_mayoral/features/sync/presentation/widgets/sync_queue_r
 import 'package:go_router/go_router.dart';
 
 /// Pantalla de estado de sincronización: muestra en vivo la cola de
-/// operaciones registradas en el teléfono que todavía no llegaron al backend.
+/// operaciones registradas en el teléfono que todavía no llegaron al backend,
+/// los registros que el backend rechazó y lo que se envió en esta sesión.
 ///
 /// Lee solo SQLite local, así que funciona igual sin conexión. Ver
 /// `.claude/specs/sincronizacion.md`.
@@ -74,14 +75,32 @@ class _SyncStatusView extends StatelessWidget {
                           isSending: snapshot.isSending,
                           isOnline: state.isOnline,
                         ),
+                        if (state.rejected.isNotEmpty) ...[
+                          const _SectionHeader(
+                            title: SyncStatusStrings.rejectedSectionTitle,
+                            detail: SyncStatusStrings.rejectedSectionDetail,
+                          ),
+                          for (final record in state.rejected) ...[
+                            SyncRejectedRow(key: ValueKey('rejected-${record.localId}'), record: record),
+                            const SizedBox(height: AppSpacing.xxs),
+                          ],
+                        ],
                         if (!snapshot.isEmpty) ...[
-                          const SizedBox(height: AppSpacing.lg),
-                          Text(SyncStatusStrings.queueSectionTitle, style: Theme.of(context).textTheme.titleLarge),
-                          const SizedBox(height: AppSpacing.sm),
+                          const _SectionHeader(title: SyncStatusStrings.queueSectionTitle),
                           for (final operation in snapshot.operations) ...[
                             SyncQueueRow(key: ValueKey(operation.queueId), operation: operation),
                             const SizedBox(height: AppSpacing.xxs),
                           ],
+                        ],
+                      ],
+                      if (state.recentlySent.isNotEmpty) ...[
+                        const _SectionHeader(
+                          title: SyncStatusStrings.sentSectionTitle,
+                          detail: SyncStatusStrings.sentSectionDetail,
+                        ),
+                        for (final (index, record) in state.recentlySent.indexed) ...[
+                          SyncSentRow(key: ValueKey('sent-$index-${record.localId}'), record: record),
+                          const SizedBox(height: AppSpacing.xxs),
                         ],
                       ],
                     ],
@@ -91,6 +110,28 @@ class _SyncStatusView extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.detail});
+
+  final String title;
+  final String? detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final detail = this.detail;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          if (detail != null) Text(detail, style: AppTypography.formFieldHelper),
+        ],
       ),
     );
   }

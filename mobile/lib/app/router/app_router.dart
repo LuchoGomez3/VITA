@@ -347,7 +347,12 @@ class AppRouter {
         ),
         GoRoute(
           path: AppRoutes.health,
-          builder: (context, state) => const HealthPage(),
+          builder: (context, state) => HealthPage(
+            syncIndicator: SyncQueueIndicator(
+              createCubit: createSyncQueueCubit,
+              onPressed: () => context.push(AppRoutes.syncStatus),
+            ),
+          ),
         ),
         GoRoute(
           path: AppRoutes.applyVaccination,
@@ -471,7 +476,7 @@ class AppRouter {
         ),
         GoRoute(
           path: AppRoutes.syncStatus,
-          builder: (context, state) => const SyncStatusPage(createCubit: createSyncQueueCubit),
+          builder: (context, state) => const SyncStatusPage(createCubit: createSyncStatusCubit),
         ),
         GoRoute(
           path: AppRoutes.lotRegister,
