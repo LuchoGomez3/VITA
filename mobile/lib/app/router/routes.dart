@@ -80,6 +80,9 @@ class AppRoutes {
   /// "Mover animales" arrancando con el animal de la ficha.
   static const animalGroupMovement = '/animals/:animalId/mover';
 
+  /// Registrar un suplemento o dieta arrancando por un animal.
+  static const animalFeeding = '/animals/:animalId/alimentacion';
+
   /// Cámara lateral y revisión de capturas para pesaje por visión.
   static const visionWeighing = '/pesar-por-vision';
 
@@ -153,6 +156,9 @@ class AppRoutes {
 
   /// "Mover animales" con [animalId] ya en la lista.
   static String animalGroupMovementById(String animalId) => '/animals/$animalId/mover';
+
+  /// Ruta de "Registrar alimentación" para [animalId].
+  static String animalFeedingById(String animalId) => '/animals/$animalId/alimentacion';
 
   /// Ruta de la pantalla de estado vacio de establecimiento.
   static const establishmentRegisterEmpty = '/registrar-establecimiento';

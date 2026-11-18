@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/composition/animal_movement_composition.dart';
+import 'package:frontend_mayoral/app/composition/feeding_composition.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -32,6 +33,7 @@ import 'package:frontend_mayoral/features/establishment_register/presentation/bl
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_empty_state_page.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_page.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_success_page.dart';
+import 'package:frontend_mayoral/features/feeding/presentation/pages/register_feeding_page.dart';
 import 'package:frontend_mayoral/features/field/field_composition.dart';
 import 'package:frontend_mayoral/features/field/presentation/navigation/lot_editor_route_data.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/field_detail_page.dart';
@@ -311,6 +313,7 @@ class AppRouter {
               createCubit: createAnimalDetailCubit,
               createMovementHistoryCubit: createMovementHistoryCubit,
               createGenealogyCubit: createAnimalGenealogyCubit,
+              createFeedingCubit: createAnimalFeedingCubit,
             );
           },
         ),
@@ -319,6 +322,13 @@ class AppRouter {
           builder: (context, state) => GroupMovementPage(
             animalIds: [state.pathParameters['animalId']!],
             createCubit: createGroupMovementCubit,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.animalFeeding,
+          builder: (context, state) => RegisterFeedingPage(
+            animalIds: [state.pathParameters['animalId']!],
+            createCubit: createRegisterFeedingCubit,
           ),
         ),
         GoRoute(
