@@ -67,6 +67,9 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senas
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
+import 'package:frontend_mayoral/features/sync/presentation/pages/sync_status_page.dart';
+import 'package:frontend_mayoral/features/sync/presentation/widgets/sync_queue_indicator.dart';
+import 'package:frontend_mayoral/features/sync/sync_composition.dart';
 import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/invitation_created_page.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/invite_team_member_page.dart';
@@ -146,6 +149,10 @@ class AppRouter {
                       child: HomePage(
                         createCubit: createHomeDashboardCubit,
                         userName: userName,
+                        syncIndicator: SyncQueueIndicator(
+                          createCubit: createSyncQueueCubit,
+                          onPressed: () => context.push(AppRoutes.syncStatus),
+                        ),
                       ),
                     );
                   },
@@ -340,7 +347,12 @@ class AppRouter {
         ),
         GoRoute(
           path: AppRoutes.health,
-          builder: (context, state) => const HealthPage(),
+          builder: (context, state) => HealthPage(
+            syncIndicator: SyncQueueIndicator(
+              createCubit: createSyncQueueCubit,
+              onPressed: () => context.push(AppRoutes.syncStatus),
+            ),
+          ),
         ),
         GoRoute(
           path: AppRoutes.applyVaccination,
@@ -461,6 +473,10 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.fieldList,
           redirect: (context, state) => AppRoutes.field,
+        ),
+        GoRoute(
+          path: AppRoutes.syncStatus,
+          builder: (context, state) => const SyncStatusPage(createCubit: createSyncStatusCubit),
         ),
         GoRoute(
           path: AppRoutes.lotRegister,
