@@ -10,6 +10,7 @@ sealed class LotDetailState with _$LotDetailState {
     Lot? lot,
     @Default(<LotAnimalSummary>[]) List<LotAnimalSummary> animals,
     @Default(ResultState<List<Lot>>.initial()) ResultState<List<Lot>> destinationsState,
+    @Default(ResultState<List<LotForagePeriod>>.initial()) ResultState<List<LotForagePeriod>> foragePeriodsState,
     @Default(false) bool isDeleted,
   }) = _LotDetailState;
 
@@ -21,6 +22,12 @@ sealed class LotDetailState with _$LotDetailState {
   /// Destinos disponibles cuando su lectura local fue exitosa.
   List<Lot> get availableDestinations => switch (destinationsState) {
     Data<List<Lot>>(:final data) => data,
+    _ => const [],
+  };
+
+  /// Historial de recursos cuando su lectura local fue exitosa.
+  List<LotForagePeriod> get foragePeriods => switch (foragePeriodsState) {
+    Data<List<LotForagePeriod>>(:final data) => data,
     _ => const [],
   };
 

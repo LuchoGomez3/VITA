@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:frontend_mayoral/core/catalogs/forage_resource_catalog.dart';
 
 part 'forage_resource.freezed.dart';
 
@@ -13,26 +14,14 @@ sealed class ForageResource with _$ForageResource {
   }) = _ForageResource;
 }
 
-/// Catálogo inicial disponible sin conectividad.
-// TODO(field-catalog): reemplazar este catálogo inicial por entradas
-// sincronizadas desde backend/Brick, conservándolo sólo como fallback offline.
+/// Catálogo disponible sin conectividad, tomado del catálogo compartido.
 abstract final class InitialForageResources {
-  /// Entradas iniciales ordenadas para presentación.
-  static const values = <ForageResource>[
-    ForageResource(code: 'pasto_natural', displayName: 'Pasto natural'),
-    ForageResource(code: 'alfalfa', displayName: 'Alfalfa'),
-    ForageResource(code: 'sorgo', displayName: 'Sorgo'),
-    ForageResource(code: 'maiz', displayName: 'Maíz'),
-    ForageResource(code: 'avena', displayName: 'Avena'),
-    ForageResource(code: 'otro', displayName: 'Otro'),
+  /// Entradas ordenadas para presentación.
+  static final values = <ForageResource>[
+    for (final option in ForageResourceCatalog.values)
+      ForageResource(code: option.code, displayName: option.displayName),
   ];
 
   /// Busca una etiqueta y conserva legible cualquier código futuro.
-  static String displayNameFor(String? code) {
-    if (code == null || code.isEmpty) return 'Sin especificar';
-    for (final resource in values) {
-      if (resource.code == code) return resource.displayName;
-    }
-    return code.replaceAll('_', ' ');
-  }
+  static String displayNameFor(String? code) => ForageResourceCatalog.displayNameFor(code);
 }

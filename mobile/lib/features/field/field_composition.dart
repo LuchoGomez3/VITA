@@ -1,11 +1,14 @@
+import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_forage_period_brick_store.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/core/utils/uuid_v4.dart';
 import 'package:frontend_mayoral/features/field/data/repositories/field_establishment_repository_impl.dart';
 import 'package:frontend_mayoral/features/field/data/repositories/lot_animal_movement_repository_impl.dart';
 import 'package:frontend_mayoral/features/field/data/repositories/lot_animal_repository_impl.dart';
+import 'package:frontend_mayoral/features/field/data/repositories/lot_forage_period_repository_impl.dart';
 import 'package:frontend_mayoral/features/field/data/repositories/lot_repository_impl.dart';
 import 'package:frontend_mayoral/features/field/data/services/turf_lot_overlap_validator.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
@@ -15,9 +18,11 @@ import 'package:frontend_mayoral/features/field/domain/use_cases/get_available_d
 import 'package:frontend_mayoral/features/field/domain/use_cases/get_field_establishments_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/get_lot_animal_counts_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/get_lot_animals_use_case.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/get_lot_forage_periods_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/get_lot_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/get_lots_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/move_lot_animals_use_case.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/save_lot_forage_period_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/save_lot_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/update_lot_details_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/validate_lot_placement_use_case.dart';
@@ -40,6 +45,10 @@ LotEditorBloc createLotEditorBloc({
     ),
     saveLot: SaveLotUseCase(
       repository: repository,
+      saveForagePeriod: SaveLotForagePeriodUseCase(
+        repository: _createForagePeriodRepository(),
+        createId: generateUuidV4,
+      ),
       validator: validator,
       overlapValidator: overlapValidator,
       createId: generateUuidV4,
@@ -72,6 +81,7 @@ LotOverviewCubit createLotOverviewCubit() {
 /// Construye el estado completo de una ficha de lote.
 LotDetailCubit createLotDetailCubit(String lotId) {
   final lotRepository = LotRepositoryImpl(store: BrickLotStore.instance);
+  final foragePeriodRepository = _createForagePeriodRepository();
   final animalRepository = LotAnimalRepositoryImpl(
     store: BrickAnimalStore.instance,
   );
@@ -100,5 +110,16 @@ LotDetailCubit createLotDetailCubit(String lotId) {
       lotRepository: lotRepository,
       animalRepository: animalRepository,
     ),
+    getForagePeriods: GetLotForagePeriodsUseCase(foragePeriodRepository),
+    saveForagePeriod: SaveLotForagePeriodUseCase(
+      repository: foragePeriodRepository,
+      createId: generateUuidV4,
+    ),
   );
 }
+
+LotForagePeriodRepositoryImpl _createForagePeriodRepository() => LotForagePeriodRepositoryImpl(
+  periodStore: BrickLotForagePeriodStore.instance,
+  lotStore: BrickLotStore.instance,
+  localChanges: AppBrickRepository.instance.localChanges,
+);
