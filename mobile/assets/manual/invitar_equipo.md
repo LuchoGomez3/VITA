@@ -17,7 +17,9 @@ A la persona le llega un email con un código. También lo podés **Copiar** o *
 
 ## Qué hace la persona invitada
 
-Entra a la app con el mismo email, va a **Perfil**, toca **Sumarme a otro establecimiento** e ingresa el código.
+Entra a la app con el mismo email, va a **Perfil**, toca **Sumarme a otro establecimiento** e ingresa el código. Si todavía no tiene ningún campo, toca **Sumarme a uno existente con código** apenas entra.
+
+> Si se corta la señal justo al confirmar, la app no sabe si el código llegó a usarse. Cuando vuelva la conexión, la persona toca **Recuperar datos del campo**: entra al campo sin gastar el código de nuevo.
 
 ## Roles
 

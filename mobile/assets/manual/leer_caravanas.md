@@ -24,7 +24,7 @@ Si la caravana no está registrada, vas a ver **Caravana sin registrar** y el bo
 Podés seguir pasando animales por la manga sin cerrar el lector. Arriba ves cuántas caravanas leíste y cuántas están registradas.
 
 - Con **Mover de lote** movés todos los registrados juntos.
-- Con **Registrar animales nuevos** das de alta las caravanas que no estaban.
+- Con **Registrar N animales nuevos** das de alta las caravanas que no estaban.
 - Con **Descartar** vaciás la lista.
 
 > Descartar solo vacía la lista del lector: no borra nada de lo que ya registraste.

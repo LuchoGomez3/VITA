@@ -21,4 +21,16 @@ roles: owner, admin, employee
 
 > VITA está pensada para la manga, donde casi nunca hay señal. Todo lo que cargás (pesajes, movimientos, altas) queda guardado en el celular y se sincroniza solo cuando vuelve la conexión. No hace falta esperar ni volver a cargarlo.
 
+## Ver qué falta sincronizar
+
+En **Inicio**, el ícono de la nube de arriba muestra cuántos registros esperan señal. Tocalo para abrir **Sincronización**:
+
+- **Cola de operaciones**: lo que todavía está en el celular, en el orden en que se va a enviar.
+- **No se pudieron guardar**: registros que el servidor rechazó. Revisalos y cargalos de nuevo.
+- **Enviados recientemente**: lo que llegó al servidor desde que abriste la app.
+
+Con **Sincronizar ahora** no hace falta esperar al próximo intento automático.
+
+## Qué necesita internet
+
 Hay pocas cosas que sí necesitan internet: iniciar sesión, crear un establecimiento, invitar gente al equipo y sumarte a un campo con un código.
