@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -11,10 +12,12 @@ import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.da
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
+import 'package:frontend_mayoral/core/authentication/data/establishment_remote_summary.dart';
+import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
+import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/sync/data/datasources/establishment_remote_data_source.dart';
-import 'package:frontend_mayoral/features/sync/data/models/establishment_remote_summary.dart';
 import 'package:frontend_mayoral/features/sync/data/repositories/initial_data_sync_repository_impl.dart';
 
 void main() {
@@ -93,6 +96,31 @@ void main() {
 
     expect(financialSync.pulls, isEmpty);
   });
+  test('una consulta de catálogo de otra sesión no persiste ni inicia descargas', () async {
+    final pending = Completer<List<EstablishmentRemoteSummary>>();
+    final remote = _FakeEstablishmentRemoteDataSource(pending: pending.future);
+    var identity = 1;
+    final storage = _MemoryStorage();
+    final categories = _FakeCategoryStore();
+    final repository = InitialDataSyncRepositoryImpl(
+      secureStorage: storage,
+      establishmentRemoteDataSource: remote,
+      animalStore: _FakeAnimalStore(),
+      categoryStore: categories,
+      lotStore: _FakeLotStore(),
+      weighingStore: _FakeWeighingStore(),
+      movementStore: _FakeMovementStore(),
+      syncOperatingExpenseData: _FakeOperatingExpenseSync().call,
+      sessionIdentity: () => identity,
+    );
+    final syncing = repository.sync();
+    identity++;
+    await storage.write(key: SecureStorageKeys.establishmentCatalog, value: 'next-session-catalog');
+    pending.complete(await _FakeEstablishmentRemoteDataSource().fetchEstablishments());
+    expect(await syncing, isA<Failure<PostAuthenticationSummary>>());
+    expect(await storage.read(SecureStorageKeys.establishmentCatalog), 'next-session-catalog');
+    expect(categories.pullCount, 0);
+  });
 }
 
 class _FakeOperatingExpenseSync {
@@ -104,21 +132,25 @@ class _FakeOperatingExpenseSync {
 }
 
 class _FakeEstablishmentRemoteDataSource implements EstablishmentRemoteDataSource {
-  _FakeEstablishmentRemoteDataSource({this.role = UserRole.owner});
+  _FakeEstablishmentRemoteDataSource({this.role = UserRole.owner, this.pending});
+
+  final Future<List<EstablishmentRemoteSummary>>? pending;
 
   final UserRole role;
 
   @override
-  Future<List<EstablishmentRemoteSummary>> fetchEstablishments() async => [
-    EstablishmentRemoteSummary(
-      id: 'establishment-1',
-      ownerId: 'owner-1',
-      name: 'Establecimiento',
-      role: role,
-      createdAt: _date,
-      updatedAt: _date,
-    ),
-  ];
+  Future<List<EstablishmentRemoteSummary>> fetchEstablishments() async =>
+      pending ??
+      [
+        EstablishmentRemoteSummary(
+          id: 'establishment-1',
+          ownerId: 'owner-1',
+          name: 'Establecimiento',
+          role: role,
+          createdAt: _date,
+          updatedAt: _date,
+        ),
+      ];
 }
 
 final _date = DateTime.utc(2026);
