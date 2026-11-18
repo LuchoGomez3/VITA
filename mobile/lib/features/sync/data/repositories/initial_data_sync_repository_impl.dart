@@ -20,6 +20,9 @@ import 'package:http/http.dart' as http;
 /// Sincroniza los datos financieros de un establecimiento habilitado.
 typedef SyncOperatingExpenseData = Future<void> Function(String establishmentId);
 
+/// Reanuda comandos comerciales persistidos despues de preparar el inventario.
+typedef SyncLivestockSaleData = Future<void> Function(String establishmentId);
+
 /// Implementacion que descarga datos iniciales a SQLite para uso offline.
 ///
 /// Esta clase es infraestructura de sync: puede usar secure storage, data
@@ -39,6 +42,7 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     required PesajeBrickStore weighingStore,
     required AnimalLotMovementBrickStore movementStore,
     required SyncOperatingExpenseData syncOperatingExpenseData,
+    required SyncLivestockSaleData syncLivestockSaleData,
   }) : _secureStorage = secureStorage,
        _establishmentRemoteDataSource = establishmentRemoteDataSource,
        _animalStore = animalStore,
@@ -46,7 +50,8 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
        _lotStore = lotStore,
        _weighingStore = weighingStore,
        _movementStore = movementStore,
-       _syncOperatingExpenseData = syncOperatingExpenseData;
+       _syncOperatingExpenseData = syncOperatingExpenseData,
+       _syncLivestockSaleData = syncLivestockSaleData;
 
   final SecureStorageService _secureStorage;
   final EstablishmentRemoteDataSource _establishmentRemoteDataSource;
@@ -56,6 +61,7 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
   final PesajeBrickStore _weighingStore;
   final AnimalLotMovementBrickStore _movementStore;
   final SyncOperatingExpenseData _syncOperatingExpenseData;
+  final SyncLivestockSaleData _syncLivestockSaleData;
 
   @override
   Future<Result<PostAuthenticationSummary>> sync() async {
@@ -99,6 +105,7 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
         );
         await _weighingStore.pullRemotePesajes(establishmentId);
         if (establishment.role.canViewFinancialInformation) {
+          await _syncLivestockSaleData(establishmentId);
           _logInitialSyncStep(
             'pulling operating expense data for establishment=$establishmentId',
           );

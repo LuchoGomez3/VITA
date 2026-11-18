@@ -7,7 +7,7 @@ void main() {
     late ValidateRfidReadingUseCase useCase;
 
     setUp(() {
-      useCase = ValidateRfidReadingUseCase();
+      useCase = const ValidateRfidReadingUseCase();
     });
 
     test('accepts exactly 15 numeric digits', () {

@@ -4,6 +4,7 @@ import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/rfid_scan/data/repositories/rfid_animal_lookup_repository_impl.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/entities/identified_animal.dart';
+import 'package:logging/logging.dart';
 
 void main() {
   group('RfidAnimalLookupRepositoryImpl', () {
@@ -54,12 +55,70 @@ void main() {
 
       expect(result, isA<Failure<IdentifiedAnimal?>>());
     });
+
+    test('returns and logs a sanitized failure when prefix lookup cannot read SQLite', () async {
+      final records = <LogRecord>[];
+      final subscription = Logger('RfidAnimalLookupRepositoryImpl').onRecord.listen(records.add);
+      addTearDown(subscription.cancel);
+      animalBrickStore.throwOnLookup = true;
+
+      final result = await repository.findByRfidPrefix(
+        rfidPrefix: '982',
+        establishmentId: establishmentId,
+      );
+
+      expect(result, isA<Failure<List<IdentifiedAnimal>>>());
+      expect(records.single.message, isNot(contains('sensitive-animal-data')));
+      expect(records.single.error, isNull);
+      expect(records.single.stackTrace, isNotNull);
+    });
+
+    test('returns an empty successful list when no RFID matches', () async {
+      animalBrickStore.animals = [_brickAnimal];
+      final result = await repository.findByRfidPrefix(
+        rfidPrefix: '999',
+        establishmentId: establishmentId,
+      );
+      expect(result, const Result<List<IdentifiedAnimal>>.success([]));
+    });
+
+    test('returns local animals whose RFID starts with the prefix', () async {
+      animalBrickStore.animals = [
+        _brickAnimal,
+        _createBrickAnimal(
+          localId: 'another-animal',
+          rfidTagNumber: '982000499999999',
+        ),
+        _createBrickAnimal(
+          localId: 'other-establishment',
+          establishmentId: 'other-establishment',
+        ),
+      ];
+
+      final result = await repository.findByRfidPrefix(
+        rfidPrefix: '9820004',
+        establishmentId: establishmentId,
+      );
+
+      expect(result, isA<Success<List<IdentifiedAnimal>>>());
+      final animals = (result as Success<List<IdentifiedAnimal>>).data;
+      expect(animals.map((animal) => animal.id), [
+        'animal-id',
+        'another-animal',
+      ]);
+    });
   });
 }
 
-final _brickAnimal = BrickAnimalModel(
-  localId: 'animal-id',
-  rfidTagNumber: '982000412991416',
+final BrickAnimalModel _brickAnimal = _createBrickAnimal();
+
+BrickAnimalModel _createBrickAnimal({
+  String localId = 'animal-id',
+  String rfidTagNumber = '982000412991416',
+  String establishmentId = 'establishment-id',
+}) => BrickAnimalModel(
+  localId: localId,
+  rfidTagNumber: rfidTagNumber,
   visualTag: '003 1295',
   sex: BrickAnimalSex.female,
   breed: 'Aberdeen Angus',
@@ -68,7 +127,7 @@ final _brickAnimal = BrickAnimalModel(
   categoryName: 'Ternera',
   lotId: 'lot-id',
   lotName: 'La Cumbre',
-  establishmentId: 'establishment-id',
+  establishmentId: establishmentId,
   initialWeight: 32.5,
   weighingMethod: BrickAnimalWeighingMethod.manual,
   weighingDate: DateTime(2025, 3, 14),
@@ -78,6 +137,7 @@ final _brickAnimal = BrickAnimalModel(
 
 class _FakeAnimalBrickStore implements AnimalBrickStore {
   BrickAnimalModel? animal;
+  List<BrickAnimalModel> animals = const [];
   bool throwOnLookup = false;
 
   @override
@@ -99,7 +159,10 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
   }
 
   @override
-  Future<List<BrickAnimalModel>> getLocalAnimals() async => const [];
+  Future<List<BrickAnimalModel>> getLocalAnimals() async {
+    if (throwOnLookup) throw StateError('sensitive-animal-data');
+    return animals;
+  }
 
   @override
   Future<void> pullRemoteAnimals(String establishmentId) async {}

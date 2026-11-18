@@ -7,6 +7,7 @@ import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -71,6 +72,7 @@ PrepareInitialDataSyncUseCase createPrepareInitialDataSyncUseCase({
       weighingStore: BrickPesajeStore.instance,
       movementStore: BrickAnimalLotMovementStore.instance,
       syncOperatingExpenseData: operatingExpenseSync.call,
+      syncLivestockSaleData: BrickLivestockSaleStore.instance.pushPendingSales,
     ),
   );
 }
