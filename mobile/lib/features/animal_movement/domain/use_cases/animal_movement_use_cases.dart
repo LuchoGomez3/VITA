@@ -1,6 +1,8 @@
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/errors/movement_failure.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_animal_movement.dart';
@@ -61,14 +63,18 @@ class ResolveMovementTagUseCase {
   /// esté ya en la lista ([selectedIds]).
   Future<Result<MovementAnimal>> call({
     required String tag,
+    required MovementTagKind kind,
     required String establishmentId,
     required Set<String> selectedIds,
   }) async {
-    final trimmed = tag.trim();
+    final trimmed = kind == MovementTagKind.visual ? tag.trim() : tag;
     if (trimmed.isEmpty) {
       return Result.failure(movementException(const MovementFailure.tagRequired()));
     }
-    final found = await _repository.findAnimalByTag(trimmed, establishmentId: establishmentId);
+    if (kind == MovementTagKind.rfid && !RfidValidator.isValid(trimmed)) {
+      return Result.failure(movementException(const MovementFailure.invalidRfid()));
+    }
+    final found = await _repository.findAnimalByTag(trimmed, establishmentId: establishmentId, kind: kind);
     if (found is Failure<MovementAnimal?>) {
       return Result.failure(found.error);
     }

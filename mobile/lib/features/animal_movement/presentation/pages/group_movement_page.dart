@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/formatters/formatters.dart';
+import 'package:frontend_mayoral/core/formatters/rfid_input_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
 import 'package:frontend_mayoral/features/animal_movement/presentation/cubit/group_movement_cubit.dart';
 import 'package:frontend_mayoral/features/animal_movement/presentation/cubit/group_movement_state.dart';
 import 'package:frontend_mayoral/features/animal_movement/presentation/strings/animal_movement_strings.dart';
@@ -70,18 +73,26 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
 
   Future<void> _addTag() async {
     final tag = _tagController.text;
+    final cubit = context.read<GroupMovementCubit>();
+    final kind = cubit.state.tagKind;
     _tagRevision++;
     _tagController.clear();
     final revision = _tagRevision;
     // Cada Enter entrega una captura independiente al Cubit y deja el campo
     // listo para la siguiente lectura antes de consultar SQLite.
     _tagFocus.requestFocus();
-    final added = await context.read<GroupMovementCubit>().addTag(tag);
+    final added = await cubit.addTag(tag);
     if (!mounted) return;
     if (!added && revision == _tagRevision) {
+      // En RFID el texto vuelve seleccionado: el campo ya tiene 15 números y
+      // el formatter rechazaría cada tecla del bastón, así que la próxima
+      // lectura tiene que reemplazarlo. En visual se deja el cursor al final
+      // para corregir lo tipeado.
       _tagController.value = TextEditingValue(
         text: tag,
-        selection: TextSelection.collapsed(offset: tag.length),
+        selection: kind == MovementTagKind.rfid
+            ? TextSelection(baseOffset: 0, extentOffset: tag.length)
+            : TextSelection.collapsed(offset: tag.length),
       );
     }
   }
@@ -96,6 +107,12 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
     if (picked != null && mounted) {
       context.read<GroupMovementCubit>().selectDate(picked);
     }
+  }
+
+  void _changeTagKind(MovementTagKind kind) {
+    context.read<GroupMovementCubit>().selectTagKind(kind);
+    _tagController.clear();
+    _tagFocus.requestFocus();
   }
 
   @override
@@ -131,6 +148,7 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
                 child: _GroupMovementForm(
                   state: state,
                   onAddTag: _addTag,
+                  onTagKindChanged: _changeTagKind,
                   tagController: _tagController,
                   tagFocus: _tagFocus,
                   reasonController: _reasonController,
@@ -179,6 +197,7 @@ class _GroupMovementForm extends StatelessWidget {
   const _GroupMovementForm({
     required this.state,
     required this.onAddTag,
+    required this.onTagKindChanged,
     required this.tagController,
     required this.tagFocus,
     required this.reasonController,
@@ -187,6 +206,7 @@ class _GroupMovementForm extends StatelessWidget {
 
   final GroupMovementState state;
   final Future<void> Function() onAddTag;
+  final ValueChanged<MovementTagKind> onTagKindChanged;
   final TextEditingController tagController;
   final FocusNode tagFocus;
   final TextEditingController reasonController;
@@ -196,11 +216,22 @@ class _GroupMovementForm extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<GroupMovementCubit>();
     final occurredAt = state.occurredAt ?? DateTime.now();
+    final isRfid = state.tagKind == MovementTagKind.rfid;
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
         const Text(AnimalMovementStrings.readHint, style: AppTypography.formFieldHelper),
+        const SizedBox(height: AppSpacing.sm),
+        AppSegmentedFormField<MovementTagKind>(
+          value: state.tagKind,
+          enabled: state.tagResolution is! Loading<MovementAnimal>,
+          options: const [
+            AppSegmentedOption(value: MovementTagKind.rfid, label: AnimalMovementStrings.rfidMode),
+            AppSegmentedOption(value: MovementTagKind.visual, label: AnimalMovementStrings.visualMode),
+          ],
+          onChanged: onTagKindChanged,
+        ),
         const SizedBox(height: AppSpacing.sm),
         Row(
           children: [
@@ -209,12 +240,16 @@ class _GroupMovementForm extends StatelessWidget {
                 controller: tagController,
                 focusNode: tagFocus,
                 autofocus: true,
+                keyboardType: isRfid ? TextInputType.number : TextInputType.text,
+                inputFormatters: isRfid ? [RfidInputFormatter()] : null,
+                autocorrect: false,
+                enableSuggestions: false,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => onAddTag(),
                 style: AppTypography.formFieldValue,
                 decoration: InputDecoration(
                   isDense: true,
-                  hintText: AnimalMovementStrings.tagFieldHint,
+                  hintText: isRfid ? AnimalMovementStrings.rfidFieldHint : AnimalMovementStrings.visualMode,
                   prefixIcon: const Icon(Icons.contactless_outlined, color: AppColors.textHint),
                   errorText: switch (state.tagResolution) {
                     ResultError<MovementAnimal>(:final error) => AnimalMovementStrings.errorMessage(error),
@@ -225,10 +260,15 @@ class _GroupMovementForm extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
-            IconButton.filled(
-              tooltip: AnimalMovementStrings.addTag,
-              onPressed: onAddTag,
-              icon: const Icon(Icons.add),
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: tagController,
+              builder: (context, value, _) => IconButton.filled(
+                tooltip: AnimalMovementStrings.addTag,
+                onPressed: (isRfid ? RfidValidator.isValid(value.text) : value.text.trim().isNotEmpty)
+                    ? onAddTag
+                    : null,
+                icon: const Icon(Icons.add),
+              ),
             ),
           ],
         ),

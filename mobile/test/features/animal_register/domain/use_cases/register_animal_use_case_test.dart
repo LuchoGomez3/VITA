@@ -1,26 +1,24 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_repository.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
 
 void main() {
+  for (final invalid in ['98200041299141', '9820004129914160', 'A982000412991416', '982 000412991416']) {
+    test('no persiste un alta con RFID inválido: $invalid', () async {
+      final repository = _FakeAnimalRegistrationRepository();
+      final result = await RegisterAnimalUseCase(repository)(_registration.copyWith(rfidTagNumber: invalid));
+      expect((result as Failure<RegisteredAnimal>).error.reason, RfidValidationFailure.invalidFormat);
+      expect(repository.receivedRegistration, isNull);
+    });
+  }
+
   test('delegates the registration to the repository', () async {
     final repository = _FakeAnimalRegistrationRepository();
     final useCase = RegisterAnimalUseCase(repository);
-    final registration = AnimalRegistration(
-      rfidTagNumber: '982000412991416',
-      visualTag: '003 1295',
-      sex: AnimalSex.female,
-      breed: 'Aberdeen Angus',
-      birthDate: DateTime(2025, 3, 14),
-      lotId: 'lot-id',
-      lotName: 'La Cumbre',
-      establishmentId: 'establishment-id',
-      categoryId: 'category-id',
-      categoryName: 'Ternera',
-      initialWeight: 32.5,
-    );
+    final registration = _registration;
 
     final result = await useCase(registration);
 
@@ -63,3 +61,17 @@ class _FakeAnimalRegistrationRepository implements AnimalRegistrationRepository 
     );
   }
 }
+
+final _registration = AnimalRegistration(
+  rfidTagNumber: '982000412991416',
+  visualTag: '003 1295',
+  sex: AnimalSex.female,
+  breed: 'Aberdeen Angus',
+  birthDate: DateTime(2025, 3, 14),
+  lotId: 'lot-id',
+  lotName: 'La Cumbre',
+  establishmentId: 'establishment-id',
+  categoryId: 'category-id',
+  categoryName: 'Ternera',
+  initialWeight: 32.5,
+);

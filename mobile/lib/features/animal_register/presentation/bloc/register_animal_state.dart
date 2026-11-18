@@ -94,7 +94,7 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
 extension RegisterAnimalDraftValidation on RegisterAnimalDraft {
   /// Indica si el borrador contiene los datos obligatorios del [step].
   bool isValidForStep(RegisterAnimalStep step) => switch (step) {
-    RegisterAnimalStep.identification => RegExp(r'^\d{15}$').hasMatch(rfid.trim()),
+    RegisterAnimalStep.identification => RfidValidator.isValid(rfid.trim()),
     RegisterAnimalStep.basicData =>
       breed.trim().isNotEmpty && sex.isNotEmpty && birthDate != null && categoryId != null && _hasValidInitialWeight,
     RegisterAnimalStep.genealogy => establishmentId != null && destinationId != null,

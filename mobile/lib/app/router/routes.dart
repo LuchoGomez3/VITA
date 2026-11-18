@@ -149,6 +149,9 @@ class AppRoutes {
   /// Ruta del detalle de un lote.
   static const fieldDetail = '/campo/:loteId';
 
+  /// Ruta de la pantalla de estado de sincronización.
+  static const syncStatus = '/sincronizacion';
+
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {
     return '/animals/$animalId';

@@ -24,21 +24,21 @@ class EstablishmentRemoteSummary {
   /// Construye el establecimiento desde el contrato REST.
   factory EstablishmentRemoteSummary.fromJson(Map<String, dynamic> json) {
     return EstablishmentRemoteSummary(
-      id: json['id'] as String,
-      ownerId: json['owner_id'] as String,
-      name: json['nombre'] as String,
+      id: _requiredString(json, 'id'),
+      ownerId: _requiredString(json, 'owner_id'),
+      name: _requiredString(json, 'nombre'),
       role: UserRolePermissions.fromBackend(_readString(json['rol'])),
-      renspaNumber: json['nro_renspa'] as String?,
-      cuit: json['cuit'] as String?,
+      renspaNumber: _optionalString(json, 'nro_renspa'),
+      cuit: _optionalString(json, 'cuit'),
       areaHectares: _readDouble(json['superficie_ha']),
-      province: json['provincia'] as String?,
-      department: json['departamento'] as String?,
-      locality: json['localidad'] as String?,
+      province: _optionalString(json, 'provincia'),
+      department: _optionalString(json, 'departamento'),
+      locality: _optionalString(json, 'localidad'),
       latitude: _readDouble(json['latitud']),
       longitude: _readDouble(json['longitud']),
       boundary: _readBoundary(json['poligono']),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: DateTime.parse(_requiredString(json, 'created_at')),
+      updatedAt: DateTime.parse(_requiredString(json, 'updated_at')),
     );
   }
 
@@ -129,7 +129,7 @@ class EstablishmentRemoteSummary {
     if (vertices.length != value.length) {
       return const [];
     }
-    vertices.sort((a, b) => ((a['orden'] as num?) ?? 0).compareTo((b['orden'] as num?) ?? 0));
+    vertices.sort((a, b) => (_readDouble(a['orden']) ?? 0).compareTo(_readDouble(b['orden']) ?? 0));
     final points = <({double latitude, double longitude})>[];
     for (final vertex in vertices) {
       final latitude = _readDouble(vertex['latitud']);
@@ -141,6 +141,17 @@ class EstablishmentRemoteSummary {
     }
     return points;
   }
+
+  static String? _optionalString(Map<String, dynamic> json, String key) => switch (json[key]) {
+    null => null,
+    final String value => value,
+    _ => throw FormatException('Invalid establishment field: $key'),
+  };
+
+  static String _requiredString(Map<String, dynamic> json, String key) => switch (json[key]) {
+    final String value => value,
+    _ => throw FormatException('Invalid establishment field: $key'),
+  };
 
   static String? _readString(Object? value) => value is String ? value : null;
 }

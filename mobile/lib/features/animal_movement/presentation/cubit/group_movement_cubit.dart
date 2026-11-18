@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/errors/movement_failure.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/use_cases/animal_movement_use_cases.dart';
 import 'package:frontend_mayoral/features/animal_movement/presentation/cubit/group_movement_state.dart';
@@ -42,6 +43,7 @@ class GroupMovementCubit extends Cubit<GroupMovementState> {
   /// Resuelve una lectura; indica si la pantalla puede limpiar el campo.
   Future<bool> addTag(String tag) async {
     if (isClosed || state.submission is Loading<GroupMovementSummary>) return false;
+    final kind = state.tagKind;
     final previous = _tagReads;
     final completed = Completer<void>();
     _tagReads = completed.future;
@@ -52,17 +54,18 @@ class GroupMovementCubit extends Cubit<GroupMovementState> {
       // orden hace que el caso de uso vea siempre la selección más reciente.
       await previous;
       if (isClosed) return false;
-      return await _resolveAndAddTag(tag);
+      return await _resolveAndAddTag(tag, kind);
     } finally {
       _pendingTagReads--;
       completed.complete();
     }
   }
 
-  Future<bool> _resolveAndAddTag(String tag) async {
+  Future<bool> _resolveAndAddTag(String tag, MovementTagKind kind) async {
     emit(state.copyWith(tagResolution: const ResultState.loading()));
     final result = await _resolveTag(
       tag: tag,
+      kind: kind,
       establishmentId: state.establishmentId,
       selectedIds: {for (final animal in state.animals) animal.id},
     );
@@ -82,6 +85,12 @@ class GroupMovementCubit extends Cubit<GroupMovementState> {
         return false;
     }
     return false;
+  }
+
+  /// Elige el identificador y limpia el error de la captura anterior.
+  void selectTagKind(MovementTagKind kind) {
+    if (_pendingTagReads > 0 || state.submission is Loading<GroupMovementSummary>) return;
+    emit(state.copyWith(tagKind: kind, tagResolution: const ResultState.initial()));
   }
 
   /// Quita un animal de la selección.
