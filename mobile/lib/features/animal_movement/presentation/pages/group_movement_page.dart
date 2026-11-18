@@ -73,18 +73,26 @@ class _GroupMovementViewState extends State<_GroupMovementView> {
 
   Future<void> _addTag() async {
     final tag = _tagController.text;
+    final cubit = context.read<GroupMovementCubit>();
+    final kind = cubit.state.tagKind;
     _tagRevision++;
     _tagController.clear();
     final revision = _tagRevision;
     // Cada Enter entrega una captura independiente al Cubit y deja el campo
     // listo para la siguiente lectura antes de consultar SQLite.
     _tagFocus.requestFocus();
-    final added = await context.read<GroupMovementCubit>().addTag(tag);
+    final added = await cubit.addTag(tag);
     if (!mounted) return;
     if (!added && revision == _tagRevision) {
+      // En RFID el texto vuelve seleccionado: el campo ya tiene 15 números y
+      // el formatter rechazaría cada tecla del bastón, así que la próxima
+      // lectura tiene que reemplazarlo. En visual se deja el cursor al final
+      // para corregir lo tipeado.
       _tagController.value = TextEditingValue(
         text: tag,
-        selection: TextSelection.collapsed(offset: tag.length),
+        selection: kind == MovementTagKind.rfid
+            ? TextSelection(baseOffset: 0, extentOffset: tag.length)
+            : TextSelection.collapsed(offset: tag.length),
       );
     }
   }

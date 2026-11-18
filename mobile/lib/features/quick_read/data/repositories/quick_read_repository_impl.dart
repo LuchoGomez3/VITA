@@ -8,6 +8,7 @@ import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
+import 'package:frontend_mayoral/features/animal_movement/domain/errors/movement_failure.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
 import 'package:frontend_mayoral/features/quick_read/domain/entities/quick_read_item.dart';
 import 'package:frontend_mayoral/features/quick_read/domain/repositories/quick_read_repository.dart';
@@ -53,6 +54,11 @@ class QuickReadRepositoryImpl implements QuickReadRepository {
       switch (result) {
         case Success<QuickReadAnimal?>(:final data):
           if (data != null) found.add(data);
+        // Un RFID registrado pero inactivo o sin potrero no se puede mover, pero
+        // en la lectura rápida no corta la búsqueda: el caso de uso lo informa
+        // con su propio mensaje después de mirar todos los establecimientos.
+        case Failure<QuickReadAnimal?>(error: DomainException(reason: MovementAnimalUnavailable())):
+          continue;
         case Failure<QuickReadAnimal?>(:final error):
           return Result.failure(error);
       }

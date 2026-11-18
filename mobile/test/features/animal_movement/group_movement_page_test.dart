@@ -217,6 +217,37 @@ void main() {
     });
   }
 
+  testWidgets('tras un RFID fallido la próxima lectura del bastón reemplaza al anterior', (tester) async {
+    final repository = _DelayedRepository();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GroupMovementPage(
+          animalIds: const ['a1'],
+          createCubit: () => _createCubit(repository),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final field = find.byType(TextField).first;
+    await tester.enterText(field, '999000000000000');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    repository.second.complete(const Result.success(null));
+    await tester.pumpAndSettle();
+
+    final restored = tester.widget<TextField>(field).controller!.value;
+    expect(restored.text, '999000000000000');
+    expect(restored.selection, const TextSelection(baseOffset: 0, extentOffset: 15));
+
+    // El primer dígito de la lectura siguiente reemplaza la selección: el
+    // formatter lo acepta porque no supera los quince números.
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(text: '9', selection: TextSelection.collapsed(offset: 1)),
+    );
+    await tester.pump();
+    expect(tester.widget<TextField>(field).controller!.text, '9');
+  });
+
   testWidgets('cerrar durante la búsqueda no accede al controller descartado', (tester) async {
     final repository = _DelayedRepository();
     await tester.pumpWidget(
