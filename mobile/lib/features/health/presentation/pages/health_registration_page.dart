@@ -5,6 +5,7 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
 import 'package:frontend_mayoral/features/health/presentation/cubit/health_registration_cubit.dart';
+import 'package:frontend_mayoral/features/health/presentation/widgets/health_manga_capture.dart';
 import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,6 +18,7 @@ class HealthRegistrationPage extends StatelessWidget {
     this.animalIds = const [],
     this.rejected,
     this.refreshCatalog,
+    this.capture = false,
     super.key,
   });
 
@@ -35,6 +37,9 @@ class HealthRegistrationPage extends StatelessWidget {
   /// Solicita una nueva descarga al coordinador de la sesión.
   final Future<void> Function()? refreshCatalog;
 
+  /// Inicia y mantiene una sesión de lectura sucesiva.
+  final bool capture;
+
   @override
   Widget build(BuildContext context) {
     final draft = rejected?.registration;
@@ -49,17 +54,19 @@ class HealthRegistrationPage extends StatelessWidget {
         initialEstablishmentId: establishmentId,
         rejected: rejected,
         refreshCatalog: refreshCatalog,
+        capture: capture,
       ),
     );
   }
 }
 
 class _RegistrationForm extends StatefulWidget {
-  const _RegistrationForm({this.initialEstablishmentId, this.rejected, this.refreshCatalog});
+  const _RegistrationForm({required this.capture, this.initialEstablishmentId, this.rejected, this.refreshCatalog});
 
   final String? initialEstablishmentId;
   final ({String id, HealthRegistration registration})? rejected;
   final Future<void> Function()? refreshCatalog;
+  final bool capture;
 
   @override
   State<_RegistrationForm> createState() => _RegistrationFormState();
@@ -180,6 +187,12 @@ class _RegistrationFormState extends State<_RegistrationForm> {
                       ],
                       _entry(HealthRegistrationStrings.notes, _notes, enabled: !saving),
                       const SizedBox(height: 16),
+                      if (widget.capture)
+                        HealthMangaCapture(
+                          key: ValueKey((state.establishmentId, practice.id)),
+                          enabled: !saving,
+                          onTag: context.read<HealthRegistrationCubit>().addReading,
+                        ),
                       Text(HealthRegistrationStrings.selected(state.recipients.length)),
                       if (state.selectionMessage case final message?) Text(message),
                       if (state.recipients.isEmpty) const Text(HealthRegistrationStrings.noAnimals),

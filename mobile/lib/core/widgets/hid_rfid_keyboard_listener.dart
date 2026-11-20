@@ -35,7 +35,7 @@ class _HidRfidKeyboardListenerState extends State<HidRfidKeyboardListener> {
     super.initState();
     if (widget.isListening) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _focusNode.requestFocus();
+        if (mounted) _focusNode.requestFocus();
       });
     }
   }

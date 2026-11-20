@@ -38,7 +38,7 @@ class _HealthPageState extends State<HealthPage> {
     );
   }
 
-  void _openApplyVaccination() => context.push(AppRoutes.applyVaccination);
+  void _openApplyVaccination() => context.push(AppRoutes.healthRegistration(capture: true));
 
   @override
   Widget build(BuildContext context) {

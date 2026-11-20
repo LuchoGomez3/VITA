@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/quick_read/domain/use_cases/quick_read_use_cases.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/cubit/quick_read_cubit.dart';
@@ -106,6 +107,7 @@ void main() {
     await pumpPanel(tester);
     expect(find.text(QuickReadStrings.waitingTitle), findsOneWidget);
     expect(find.text(QuickReadStrings.ready), findsOneWidget);
+    expect(find.text(HealthRegistrationStrings.capture), findsOneWidget);
 
     await readWithStick(tester, _rfidA1);
 
@@ -116,7 +118,7 @@ void main() {
     expect(tile(tester, QuickReadStrings.registerWeight).onTap, isNotNull);
     expect(tile(tester, QuickReadStrings.moveLot).onTap, isNotNull);
     expect(tile(tester, QuickReadStrings.goToRecord).onTap, isNotNull);
-    expect(tile(tester, QuickReadStrings.registerTreatment).onTap, isNull);
+    expect(tile(tester, HealthRegistrationStrings.register).onTap, isNotNull);
 
     await readWithStick(tester, _rfidA2);
     await readWithStick(tester, _newRfid);
@@ -127,7 +129,7 @@ void main() {
     expect(find.text(QuickReadStrings.unregistered(1)), findsOneWidget);
     expect(find.text(QuickReadStrings.applyTo(2)), findsOneWidget);
     expect(tile(tester, QuickReadStrings.moveLot).onTap, isNotNull);
-    expect(tile(tester, QuickReadStrings.registerTreatment).onTap, isNull);
+    expect(tile(tester, HealthRegistrationStrings.register).onTap, isNotNull);
     expect(find.text(QuickReadStrings.registerNewAnimals(1)), findsOneWidget);
     expect(find.textContaining('Registrar pesos'), findsNothing);
 

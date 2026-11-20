@@ -59,7 +59,7 @@ import 'package:frontend_mayoral/features/profile/presentation/pages/establishme
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
-import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
+import 'package:frontend_mayoral/core/rfid/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_capture_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/strings/rfid_scan_strings.dart';
@@ -403,6 +403,7 @@ class AppRouter {
             final request = state.extra;
             return HealthRegistrationPage(
               establishmentId: query['establecimiento'],
+              capture: query['manga'] == '1',
               animalIds: switch ((query['animal'], request)) {
                 (final animal?, _) => [animal],
                 (_, final List<String> animals) => animals,

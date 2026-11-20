@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
@@ -17,6 +18,54 @@ const _study = HealthPractice(id: 'sampling', name: 'Sangrado', kind: HealthPrac
 const _animal = HealthRecipient(animalId: 'animal', label: '001');
 
 void main() {
+  testWidgets('manga combines consecutive HID and manual readings without duplicate animals', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1300));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _Repository();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HealthRegistrationPage(
+          capture: true,
+          establishmentId: 'farm',
+          createCubit: () => HealthRegistrationCubit(
+            reader: ReadHealthUseCase(repository),
+            register: RegisterHealthEventsUseCase(repository),
+            establishments: () async => const [
+              EstablishmentMembership(id: 'farm', name: 'Campo', role: UserRole.employee),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sangrado').last);
+    await tester.pumpAndSettle();
+
+    for (final rfid in ['000000000000001', '000000000000002']) {
+      for (final digit in rfid.split('')) {
+        final key = LogicalKeyboardKey(LogicalKeyboardKey.digit0.keyId + int.parse(digit));
+        await tester.sendKeyDownEvent(key, character: digit);
+        await tester.sendKeyUpEvent(key);
+      }
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    }
+    await tester.pumpAndSettle();
+    expect(find.text(HealthRegistrationStrings.selected(2)), findsOneWidget);
+
+    await tester.tap(find.text(HealthRegistrationStrings.useManual));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(HealthRegistrationStrings.visual));
+    await tester.pumpAndSettle();
+    await tester.enterText(_entry(HealthRegistrationStrings.visual), '001');
+    await tester.tap(find.text(HealthRegistrationStrings.addTag));
+    await tester.pumpAndSettle();
+    expect(find.text(HealthRegistrationStrings.duplicate), findsOneWidget);
+    expect(find.text(HealthRegistrationStrings.selected(2)), findsOneWidget);
+    expect(repository.registration, isNull);
+  });
+
   testWidgets('registers a preselected animal with the sampling form', (tester) async {
     await tester.binding.setSurfaceSize(const Size(800, 1100));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -139,7 +188,12 @@ class _Repository implements HealthRepository {
       this.result = (event.id, result);
 
   @override
-  Future<HealthRecipient?> findRecipient(String establishmentId, String tag, {required bool electronic}) async => null;
+  Future<HealthRecipient?> findRecipient(String establishmentId, String tag, {required bool electronic}) async =>
+      switch ((electronic, tag)) {
+        (true, '000000000000001') || (false, '001') => _animal,
+        (true, '000000000000002') => const HealthRecipient(animalId: 'second', label: '002'),
+        _ => null,
+      };
 
   @override
   Future<({String id, HealthRegistration registration})?> getRejectedRegistration(HealthEvent event) async => null;

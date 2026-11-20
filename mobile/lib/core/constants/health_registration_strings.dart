@@ -108,6 +108,12 @@ abstract final class HealthRegistrationStrings {
   /// Entrada de una caravana con bastón.
   static const scanHint = 'Leé con el bastón RFID o ingresá una caravana.';
 
+  /// Activa el bastón en la sesión de manga.
+  static const useReader = 'Leer con bastón';
+
+  /// Abre el ingreso con teclado.
+  static const useManual = 'Ingresar caravana manual';
+
   /// CTA que refresca el catálogo.
   static const refresh = 'Actualizar catálogo';
 

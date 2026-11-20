@@ -8,7 +8,7 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/entities/identified_animal.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/bloc/rfid_scan_bloc.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/strings/rfid_scan_strings.dart';
-import 'package:frontend_mayoral/features/rfid_scan/presentation/widgets/hid_rfid_keyboard_listener.dart';
+import 'package:frontend_mayoral/core/widgets/hid_rfid_keyboard_listener.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/widgets/identified_animal_card.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/widgets/manual_rfid_entry.dart';
 

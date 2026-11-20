@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:frontend_mayoral/features/rfid_scan/domain/repositories/rfid_reading_source.dart';
+import 'package:frontend_mayoral/core/rfid/rfid_reading_source.dart';
 
 /// Convierte las teclas emitidas por un baston HID en lecturas RFID completas.
 ///
