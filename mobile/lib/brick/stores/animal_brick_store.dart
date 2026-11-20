@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:brick_offline_first/brick_offline_first.dart';
 import 'package:brick_rest/brick_rest.dart';
+import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
@@ -76,7 +77,9 @@ class BrickAnimalStore implements AnimalBrickStore {
 
   @override
   Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) async {
-    final savedAnimal = await _repository.upsertLocal<BrickAnimalModel>(animal);
+    final savedAnimal = await _repository.upsertLocal<BrickAnimalModel>(
+      animal.copyWith(localRegistrationAuthorId: SessionBackendAccessTokenProvider.instance.userId),
+    );
 
     // El alta ya quedo guardada localmente. El request remoto corre en segundo
     // plano para que la UX siga siendo offline-first y no espere al backend.

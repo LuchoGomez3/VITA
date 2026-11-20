@@ -313,4 +313,14 @@ class AppBrickTransaction {
     _notifications[TModel] = _repository._notifyLocalSubscribers<TModel>;
     return model;
   }
+
+  /// Elimina una fila local y notifica el cambio después del commit.
+  Future<void> delete<TModel extends OfflineFirstWithRestModel>(TModel model) async {
+    final adapter = _repository.sqliteProvider.modelDictionary.adapterFor[TModel]!;
+    await _transaction.delete(adapter.tableName, where: '_brick_id = ?', whereArgs: [model.primaryKey]);
+    _afterCommit.add(() {
+      _repository.memoryCacheProvider.delete<TModel>(model);
+    });
+    _notifications[TModel] = _repository._notifyLocalSubscribers<TModel>;
+  }
 }

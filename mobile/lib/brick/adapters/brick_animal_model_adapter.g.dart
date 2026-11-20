@@ -114,6 +114,9 @@ Future<BrickAnimalModel> _$BrickAnimalModelFromSqlite(
     syncErrorCode: data['sync_error_code'] == null
         ? null
         : data['sync_error_code'] as String?,
+    localRegistrationAuthorId: data['local_registration_author_id'] == null
+        ? null
+        : data['local_registration_author_id'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -157,6 +160,7 @@ Future<Map<String, dynamic>> _$BrickAnimalModelToSqlite(
         ?.toIso8601String(),
     'sync_status': BrickAnimalSyncStatus.values.indexOf(instance.syncStatus),
     'sync_error_code': instance.syncErrorCode,
+    'local_registration_author_id': instance.localRegistrationAuthorId,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),
@@ -307,6 +311,12 @@ class BrickAnimalModelAdapter
     'syncErrorCode': const RuntimeSqliteColumnDefinition(
       association: false,
       columnName: 'sync_error_code',
+      iterable: false,
+      type: String,
+    ),
+    'localRegistrationAuthorId': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'local_registration_author_id',
       iterable: false,
       type: String,
     ),
