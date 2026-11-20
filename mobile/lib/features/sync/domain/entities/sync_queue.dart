@@ -27,6 +27,12 @@ enum SyncOperationKind {
   /// Categoría de egreso operativo.
   operatingExpenseCategory,
 
+  /// Registro sanitario para uno o varios animales.
+  healthEvent,
+
+  /// Primer resultado informado de un estudio sanitario.
+  healthResult,
+
   /// Recurso sin traducción conocida; se muestra igual para no ocultar nada.
   other,
 }

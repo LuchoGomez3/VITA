@@ -91,6 +91,8 @@ sealed class HealthEvent with _$HealthEvent {
     required HealthRecipient recipient,
     @Default(HealthSyncStatus.pending) HealthSyncStatus syncStatus,
     HealthSyncStatus? resultSyncStatus,
+    String? syncErrorCode,
+    String? resultErrorCode,
     HealthStudyResult? result,
     String? notes,
     DateTime? deletedAt,

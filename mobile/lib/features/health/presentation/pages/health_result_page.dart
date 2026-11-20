@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
 import 'package:frontend_mayoral/features/health/presentation/cubit/health_result_cubit.dart';
-import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:go_router/go_router.dart';
 
 /// Permite informar el resultado pendiente de un estudio existente.

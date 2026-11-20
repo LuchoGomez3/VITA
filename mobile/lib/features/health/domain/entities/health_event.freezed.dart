@@ -1148,7 +1148,7 @@ as String,
 /// @nodoc
 mixin _$HealthEvent {
 
- String get id; String get establishmentId; DateTime get occurredAt; DateTime get createdAt; DateTime get updatedAt; HealthPractice get practice; HealthEventDetails get details; String get responsible; String get recordedById; HealthRecipient get recipient; HealthSyncStatus get syncStatus; HealthSyncStatus? get resultSyncStatus; HealthStudyResult? get result; String? get notes; DateTime? get deletedAt;
+ String get id; String get establishmentId; DateTime get occurredAt; DateTime get createdAt; DateTime get updatedAt; HealthPractice get practice; HealthEventDetails get details; String get responsible; String get recordedById; HealthRecipient get recipient; HealthSyncStatus get syncStatus; HealthSyncStatus? get resultSyncStatus; String? get syncErrorCode; String? get resultErrorCode; HealthStudyResult? get result; String? get notes; DateTime? get deletedAt;
 /// Create a copy of HealthEvent
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1159,16 +1159,16 @@ $HealthEventCopyWith<HealthEvent> get copyWith => _$HealthEventCopyWithImpl<Heal
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is HealthEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.practice, practice) || other.practice == practice)&&(identical(other.details, details) || other.details == details)&&(identical(other.responsible, responsible) || other.responsible == responsible)&&(identical(other.recordedById, recordedById) || other.recordedById == recordedById)&&(identical(other.recipient, recipient) || other.recipient == recipient)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.resultSyncStatus, resultSyncStatus) || other.resultSyncStatus == resultSyncStatus)&&(identical(other.result, result) || other.result == result)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is HealthEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.practice, practice) || other.practice == practice)&&(identical(other.details, details) || other.details == details)&&(identical(other.responsible, responsible) || other.responsible == responsible)&&(identical(other.recordedById, recordedById) || other.recordedById == recordedById)&&(identical(other.recipient, recipient) || other.recipient == recipient)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.resultSyncStatus, resultSyncStatus) || other.resultSyncStatus == resultSyncStatus)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode)&&(identical(other.resultErrorCode, resultErrorCode) || other.resultErrorCode == resultErrorCode)&&(identical(other.result, result) || other.result == result)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,establishmentId,occurredAt,createdAt,updatedAt,practice,details,responsible,recordedById,recipient,syncStatus,resultSyncStatus,result,notes,deletedAt);
+int get hashCode => Object.hash(runtimeType,id,establishmentId,occurredAt,createdAt,updatedAt,practice,details,responsible,recordedById,recipient,syncStatus,resultSyncStatus,syncErrorCode,resultErrorCode,result,notes,deletedAt);
 
 @override
 String toString() {
-  return 'HealthEvent(id: $id, establishmentId: $establishmentId, occurredAt: $occurredAt, createdAt: $createdAt, updatedAt: $updatedAt, practice: $practice, details: $details, responsible: $responsible, recordedById: $recordedById, recipient: $recipient, syncStatus: $syncStatus, resultSyncStatus: $resultSyncStatus, result: $result, notes: $notes, deletedAt: $deletedAt)';
+  return 'HealthEvent(id: $id, establishmentId: $establishmentId, occurredAt: $occurredAt, createdAt: $createdAt, updatedAt: $updatedAt, practice: $practice, details: $details, responsible: $responsible, recordedById: $recordedById, recipient: $recipient, syncStatus: $syncStatus, resultSyncStatus: $resultSyncStatus, syncErrorCode: $syncErrorCode, resultErrorCode: $resultErrorCode, result: $result, notes: $notes, deletedAt: $deletedAt)';
 }
 
 
@@ -1179,7 +1179,7 @@ abstract mixin class $HealthEventCopyWith<$Res>  {
   factory $HealthEventCopyWith(HealthEvent value, $Res Function(HealthEvent) _then) = _$HealthEventCopyWithImpl;
 @useResult
 $Res call({
- String id, String establishmentId, DateTime occurredAt, DateTime createdAt, DateTime updatedAt, HealthPractice practice, HealthEventDetails details, String responsible, String recordedById, HealthRecipient recipient, HealthSyncStatus syncStatus, HealthSyncStatus? resultSyncStatus, HealthStudyResult? result, String? notes, DateTime? deletedAt
+ String id, String establishmentId, DateTime occurredAt, DateTime createdAt, DateTime updatedAt, HealthPractice practice, HealthEventDetails details, String responsible, String recordedById, HealthRecipient recipient, HealthSyncStatus syncStatus, HealthSyncStatus? resultSyncStatus, String? syncErrorCode, String? resultErrorCode, HealthStudyResult? result, String? notes, DateTime? deletedAt
 });
 
 
@@ -1196,7 +1196,7 @@ class _$HealthEventCopyWithImpl<$Res>
 
 /// Create a copy of HealthEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? establishmentId = null,Object? occurredAt = null,Object? createdAt = null,Object? updatedAt = null,Object? practice = null,Object? details = null,Object? responsible = null,Object? recordedById = null,Object? recipient = null,Object? syncStatus = null,Object? resultSyncStatus = freezed,Object? result = freezed,Object? notes = freezed,Object? deletedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? establishmentId = null,Object? occurredAt = null,Object? createdAt = null,Object? updatedAt = null,Object? practice = null,Object? details = null,Object? responsible = null,Object? recordedById = null,Object? recipient = null,Object? syncStatus = null,Object? resultSyncStatus = freezed,Object? syncErrorCode = freezed,Object? resultErrorCode = freezed,Object? result = freezed,Object? notes = freezed,Object? deletedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
@@ -1210,7 +1210,9 @@ as String,recordedById: null == recordedById ? _self.recordedById : recordedById
 as String,recipient: null == recipient ? _self.recipient : recipient // ignore: cast_nullable_to_non_nullable
 as HealthRecipient,syncStatus: null == syncStatus ? _self.syncStatus : syncStatus // ignore: cast_nullable_to_non_nullable
 as HealthSyncStatus,resultSyncStatus: freezed == resultSyncStatus ? _self.resultSyncStatus : resultSyncStatus // ignore: cast_nullable_to_non_nullable
-as HealthSyncStatus?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
+as HealthSyncStatus?,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
+as String?,resultErrorCode: freezed == resultErrorCode ? _self.resultErrorCode : resultErrorCode // ignore: cast_nullable_to_non_nullable
+as String?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
 as HealthStudyResult?,notes: freezed == notes ? _self.notes : notes // ignore: cast_nullable_to_non_nullable
 as String?,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
@@ -1334,10 +1336,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String establishmentId,  DateTime occurredAt,  DateTime createdAt,  DateTime updatedAt,  HealthPractice practice,  HealthEventDetails details,  String responsible,  String recordedById,  HealthRecipient recipient,  HealthSyncStatus syncStatus,  HealthSyncStatus? resultSyncStatus,  HealthStudyResult? result,  String? notes,  DateTime? deletedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String establishmentId,  DateTime occurredAt,  DateTime createdAt,  DateTime updatedAt,  HealthPractice practice,  HealthEventDetails details,  String responsible,  String recordedById,  HealthRecipient recipient,  HealthSyncStatus syncStatus,  HealthSyncStatus? resultSyncStatus,  String? syncErrorCode,  String? resultErrorCode,  HealthStudyResult? result,  String? notes,  DateTime? deletedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _HealthEvent() when $default != null:
-return $default(_that.id,_that.establishmentId,_that.occurredAt,_that.createdAt,_that.updatedAt,_that.practice,_that.details,_that.responsible,_that.recordedById,_that.recipient,_that.syncStatus,_that.resultSyncStatus,_that.result,_that.notes,_that.deletedAt);case _:
+return $default(_that.id,_that.establishmentId,_that.occurredAt,_that.createdAt,_that.updatedAt,_that.practice,_that.details,_that.responsible,_that.recordedById,_that.recipient,_that.syncStatus,_that.resultSyncStatus,_that.syncErrorCode,_that.resultErrorCode,_that.result,_that.notes,_that.deletedAt);case _:
   return orElse();
 
 }
@@ -1355,10 +1357,10 @@ return $default(_that.id,_that.establishmentId,_that.occurredAt,_that.createdAt,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String establishmentId,  DateTime occurredAt,  DateTime createdAt,  DateTime updatedAt,  HealthPractice practice,  HealthEventDetails details,  String responsible,  String recordedById,  HealthRecipient recipient,  HealthSyncStatus syncStatus,  HealthSyncStatus? resultSyncStatus,  HealthStudyResult? result,  String? notes,  DateTime? deletedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String establishmentId,  DateTime occurredAt,  DateTime createdAt,  DateTime updatedAt,  HealthPractice practice,  HealthEventDetails details,  String responsible,  String recordedById,  HealthRecipient recipient,  HealthSyncStatus syncStatus,  HealthSyncStatus? resultSyncStatus,  String? syncErrorCode,  String? resultErrorCode,  HealthStudyResult? result,  String? notes,  DateTime? deletedAt)  $default,) {final _that = this;
 switch (_that) {
 case _HealthEvent():
-return $default(_that.id,_that.establishmentId,_that.occurredAt,_that.createdAt,_that.updatedAt,_that.practice,_that.details,_that.responsible,_that.recordedById,_that.recipient,_that.syncStatus,_that.resultSyncStatus,_that.result,_that.notes,_that.deletedAt);}
+return $default(_that.id,_that.establishmentId,_that.occurredAt,_that.createdAt,_that.updatedAt,_that.practice,_that.details,_that.responsible,_that.recordedById,_that.recipient,_that.syncStatus,_that.resultSyncStatus,_that.syncErrorCode,_that.resultErrorCode,_that.result,_that.notes,_that.deletedAt);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1372,10 +1374,10 @@ return $default(_that.id,_that.establishmentId,_that.occurredAt,_that.createdAt,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String establishmentId,  DateTime occurredAt,  DateTime createdAt,  DateTime updatedAt,  HealthPractice practice,  HealthEventDetails details,  String responsible,  String recordedById,  HealthRecipient recipient,  HealthSyncStatus syncStatus,  HealthSyncStatus? resultSyncStatus,  HealthStudyResult? result,  String? notes,  DateTime? deletedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String establishmentId,  DateTime occurredAt,  DateTime createdAt,  DateTime updatedAt,  HealthPractice practice,  HealthEventDetails details,  String responsible,  String recordedById,  HealthRecipient recipient,  HealthSyncStatus syncStatus,  HealthSyncStatus? resultSyncStatus,  String? syncErrorCode,  String? resultErrorCode,  HealthStudyResult? result,  String? notes,  DateTime? deletedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _HealthEvent() when $default != null:
-return $default(_that.id,_that.establishmentId,_that.occurredAt,_that.createdAt,_that.updatedAt,_that.practice,_that.details,_that.responsible,_that.recordedById,_that.recipient,_that.syncStatus,_that.resultSyncStatus,_that.result,_that.notes,_that.deletedAt);case _:
+return $default(_that.id,_that.establishmentId,_that.occurredAt,_that.createdAt,_that.updatedAt,_that.practice,_that.details,_that.responsible,_that.recordedById,_that.recipient,_that.syncStatus,_that.resultSyncStatus,_that.syncErrorCode,_that.resultErrorCode,_that.result,_that.notes,_that.deletedAt);case _:
   return null;
 
 }
@@ -1387,7 +1389,7 @@ return $default(_that.id,_that.establishmentId,_that.occurredAt,_that.createdAt,
 
 
 class _HealthEvent implements HealthEvent {
-  const _HealthEvent({required this.id, required this.establishmentId, required this.occurredAt, required this.createdAt, required this.updatedAt, required this.practice, required this.details, required this.responsible, required this.recordedById, required this.recipient, this.syncStatus = HealthSyncStatus.pending, this.resultSyncStatus, this.result, this.notes, this.deletedAt});
+  const _HealthEvent({required this.id, required this.establishmentId, required this.occurredAt, required this.createdAt, required this.updatedAt, required this.practice, required this.details, required this.responsible, required this.recordedById, required this.recipient, this.syncStatus = HealthSyncStatus.pending, this.resultSyncStatus, this.syncErrorCode, this.resultErrorCode, this.result, this.notes, this.deletedAt});
   
 
 @override final  String id;
@@ -1402,6 +1404,8 @@ class _HealthEvent implements HealthEvent {
 @override final  HealthRecipient recipient;
 @override@JsonKey() final  HealthSyncStatus syncStatus;
 @override final  HealthSyncStatus? resultSyncStatus;
+@override final  String? syncErrorCode;
+@override final  String? resultErrorCode;
 @override final  HealthStudyResult? result;
 @override final  String? notes;
 @override final  DateTime? deletedAt;
@@ -1416,16 +1420,16 @@ _$HealthEventCopyWith<_HealthEvent> get copyWith => __$HealthEventCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _HealthEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.practice, practice) || other.practice == practice)&&(identical(other.details, details) || other.details == details)&&(identical(other.responsible, responsible) || other.responsible == responsible)&&(identical(other.recordedById, recordedById) || other.recordedById == recordedById)&&(identical(other.recipient, recipient) || other.recipient == recipient)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.resultSyncStatus, resultSyncStatus) || other.resultSyncStatus == resultSyncStatus)&&(identical(other.result, result) || other.result == result)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _HealthEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.occurredAt, occurredAt) || other.occurredAt == occurredAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.practice, practice) || other.practice == practice)&&(identical(other.details, details) || other.details == details)&&(identical(other.responsible, responsible) || other.responsible == responsible)&&(identical(other.recordedById, recordedById) || other.recordedById == recordedById)&&(identical(other.recipient, recipient) || other.recipient == recipient)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.resultSyncStatus, resultSyncStatus) || other.resultSyncStatus == resultSyncStatus)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode)&&(identical(other.resultErrorCode, resultErrorCode) || other.resultErrorCode == resultErrorCode)&&(identical(other.result, result) || other.result == result)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,establishmentId,occurredAt,createdAt,updatedAt,practice,details,responsible,recordedById,recipient,syncStatus,resultSyncStatus,result,notes,deletedAt);
+int get hashCode => Object.hash(runtimeType,id,establishmentId,occurredAt,createdAt,updatedAt,practice,details,responsible,recordedById,recipient,syncStatus,resultSyncStatus,syncErrorCode,resultErrorCode,result,notes,deletedAt);
 
 @override
 String toString() {
-  return 'HealthEvent(id: $id, establishmentId: $establishmentId, occurredAt: $occurredAt, createdAt: $createdAt, updatedAt: $updatedAt, practice: $practice, details: $details, responsible: $responsible, recordedById: $recordedById, recipient: $recipient, syncStatus: $syncStatus, resultSyncStatus: $resultSyncStatus, result: $result, notes: $notes, deletedAt: $deletedAt)';
+  return 'HealthEvent(id: $id, establishmentId: $establishmentId, occurredAt: $occurredAt, createdAt: $createdAt, updatedAt: $updatedAt, practice: $practice, details: $details, responsible: $responsible, recordedById: $recordedById, recipient: $recipient, syncStatus: $syncStatus, resultSyncStatus: $resultSyncStatus, syncErrorCode: $syncErrorCode, resultErrorCode: $resultErrorCode, result: $result, notes: $notes, deletedAt: $deletedAt)';
 }
 
 
@@ -1436,7 +1440,7 @@ abstract mixin class _$HealthEventCopyWith<$Res> implements $HealthEventCopyWith
   factory _$HealthEventCopyWith(_HealthEvent value, $Res Function(_HealthEvent) _then) = __$HealthEventCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String establishmentId, DateTime occurredAt, DateTime createdAt, DateTime updatedAt, HealthPractice practice, HealthEventDetails details, String responsible, String recordedById, HealthRecipient recipient, HealthSyncStatus syncStatus, HealthSyncStatus? resultSyncStatus, HealthStudyResult? result, String? notes, DateTime? deletedAt
+ String id, String establishmentId, DateTime occurredAt, DateTime createdAt, DateTime updatedAt, HealthPractice practice, HealthEventDetails details, String responsible, String recordedById, HealthRecipient recipient, HealthSyncStatus syncStatus, HealthSyncStatus? resultSyncStatus, String? syncErrorCode, String? resultErrorCode, HealthStudyResult? result, String? notes, DateTime? deletedAt
 });
 
 
@@ -1453,7 +1457,7 @@ class __$HealthEventCopyWithImpl<$Res>
 
 /// Create a copy of HealthEvent
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? establishmentId = null,Object? occurredAt = null,Object? createdAt = null,Object? updatedAt = null,Object? practice = null,Object? details = null,Object? responsible = null,Object? recordedById = null,Object? recipient = null,Object? syncStatus = null,Object? resultSyncStatus = freezed,Object? result = freezed,Object? notes = freezed,Object? deletedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? establishmentId = null,Object? occurredAt = null,Object? createdAt = null,Object? updatedAt = null,Object? practice = null,Object? details = null,Object? responsible = null,Object? recordedById = null,Object? recipient = null,Object? syncStatus = null,Object? resultSyncStatus = freezed,Object? syncErrorCode = freezed,Object? resultErrorCode = freezed,Object? result = freezed,Object? notes = freezed,Object? deletedAt = freezed,}) {
   return _then(_HealthEvent(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
@@ -1467,7 +1471,9 @@ as String,recordedById: null == recordedById ? _self.recordedById : recordedById
 as String,recipient: null == recipient ? _self.recipient : recipient // ignore: cast_nullable_to_non_nullable
 as HealthRecipient,syncStatus: null == syncStatus ? _self.syncStatus : syncStatus // ignore: cast_nullable_to_non_nullable
 as HealthSyncStatus,resultSyncStatus: freezed == resultSyncStatus ? _self.resultSyncStatus : resultSyncStatus // ignore: cast_nullable_to_non_nullable
-as HealthSyncStatus?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
+as HealthSyncStatus?,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
+as String?,resultErrorCode: freezed == resultErrorCode ? _self.resultErrorCode : resultErrorCode // ignore: cast_nullable_to_non_nullable
+as String?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
 as HealthStudyResult?,notes: freezed == notes ? _self.notes : notes // ignore: cast_nullable_to_non_nullable
 as String?,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,

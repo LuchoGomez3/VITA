@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/hid_rfid_keyboard_listener.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/bloc/rfid_scan_bloc.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/strings/rfid_scan_strings.dart';
-import 'package:frontend_mayoral/core/widgets/hid_rfid_keyboard_listener.dart';
 
 /// Captura una caravana con el mismo lector HID usado para identificar animales.
 class RfidCapturePage extends StatelessWidget {

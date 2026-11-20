@@ -27,8 +27,14 @@ abstract final class HealthRegistrationStrings {
   /// Identificador de la partida.
   static const batch = 'Serie o partida (opcional)';
 
+  /// Partida que se muestra al consultar el evento.
+  static const recordedBatch = 'Serie o partida';
+
   /// Fecha de vencimiento del producto.
   static const expiration = 'Vencimiento (opcional)';
+
+  /// Fecha de vencimiento que se muestra al consultar el evento.
+  static const recordedExpiration = 'Vencimiento';
 
   /// Descripción de una observación o lesión.
   static const description = 'Descripción';
@@ -62,6 +68,9 @@ abstract final class HealthRegistrationStrings {
 
   /// Estado de sincronización.
   static const pending = 'Pendiente de sincronización';
+
+  /// El servidor confirmó el registro.
+  static const synchronized = 'Sincronizado';
 
   /// Estado de sincronización.
   static const rejected = 'Rechazado';
@@ -105,6 +114,9 @@ abstract final class HealthRegistrationStrings {
   /// Se informa la actualización aceptada por otro dispositivo.
   static const resultConflict = 'El resultado ya se había cargado desde otro dispositivo.';
 
+  /// La creación del animal debe corregirse antes de enviar el evento.
+  static const animalRegistrationRejected = 'Revisá el alta del animal antes de sincronizar este registro.';
+
   /// Entrada de una caravana con bastón.
   static const scanHint = 'Leé con el bastón RFID o ingresá una caravana.';
 
@@ -137,6 +149,9 @@ abstract final class HealthRegistrationStrings {
 
   /// La caravana no identifica un animal disponible.
   static const unavailableAnimal = 'El animal no está disponible en este establecimiento.';
+
+  /// El bastón o campo manual debe entregar un RFID completo.
+  static const invalidTag = 'El RFID debe tener 15 dígitos.';
 
   /// Hay más de una coincidencia local.
   static const ambiguousTag = 'Hay más de un animal con esta caravana.';

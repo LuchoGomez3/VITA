@@ -22,6 +22,9 @@ enum HealthProblem {
   /// Un animal de la selección dejó de estar disponible.
   unavailableAnimal,
 
+  /// El RFID todavía no contiene quince dígitos.
+  invalidTag,
+
   /// Hay más de un animal con la misma identificación.
   ambiguousTag,
 

@@ -102,7 +102,7 @@ class _AnimalDetailView extends StatefulWidget {
 }
 
 class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerProviderStateMixin {
-  late final _healthReader = widget.createHealthReader?.call();
+  late final ReadHealthUseCase? _healthReader = widget.createHealthReader?.call();
   late final TabController _tabs = TabController(length: AnimalFichaTab.values.length, vsync: this)
     ..addListener(() {
       // Solo hace falta redibujar para mostrar u ocultar el botón de Pesajes.

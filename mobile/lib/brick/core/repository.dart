@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:brick_offline_first/brick_offline_first.dart';
 import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart';
@@ -243,6 +244,24 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   Future<List<BrickQueuedRequest>> queuedRequests() async {
     final rows = await offlineRequestQueue.client.requestManager.unprocessedRequests();
     return rows.map(BrickQueuedRequest.fromQueueRow).toList(growable: false);
+  }
+
+  /// Indica si la cola ya tiene un alta con este UUID, sin exponer su cuerpo.
+  Future<bool> hasQueuedCreate(String resource, String id) async {
+    final rows = await offlineRequestQueue.client.requestManager.unprocessedRequests();
+    for (final row in rows) {
+      final request = BrickQueuedRequest.fromQueueRow(row);
+      final body = row[HTTP_JOBS_BODY_COLUMN];
+      if (request.method != 'POST' || request.path != resource || body is! String) continue;
+      try {
+        final decoded = jsonDecode(body);
+        if (decoded is Map<String, dynamic> && decoded['id'] == id) return true;
+      } on FormatException {
+        // Una solicitud legacy sin JSON identificable no corresponde a este ID.
+        continue;
+      }
+    }
+    return false;
   }
 }
 

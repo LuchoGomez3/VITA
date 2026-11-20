@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
 import 'package:frontend_mayoral/features/health/domain/use_cases/health_use_cases.dart';
-import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:go_router/go_router.dart';
 
 /// Historial sanitario de un animal y acceso al registro individual.
@@ -148,21 +148,26 @@ class _HealthEventCard extends StatelessWidget {
               ),
               final HealthObservation details => Text(details.description),
             },
-            if (event.details case HealthApplication(:final batch?, :final expirationDate))
+            if (event.details case HealthApplication(:final batch?))
+              Text('${HealthRegistrationStrings.recordedBatch} · $batch'),
+            if (event.details case HealthApplication(:final expirationDate?))
               Text(
-                '${HealthRegistrationStrings.batch.split(' (').first} · $batch'
-                '${expirationDate == null ? '' : ' · ${localizations.formatCompactDate(expirationDate)}'}',
+                '${HealthRegistrationStrings.recordedExpiration} · ${localizations.formatCompactDate(expirationDate)}',
               ),
             if (event.details case HealthObservation(:final sampleType?)) Text(sampleType),
             if (event.recipient.sampleReference case final reference?) Text(reference),
             if (event.notes case final notes?) Text(notes),
             if (syncStatus != null) Text(syncStatus),
+            if (event.syncErrorCode == 'alta_animal_rechazada')
+              const Text(HealthRegistrationStrings.animalRegistrationRejected),
             if (event.syncStatus == HealthSyncStatus.rejected)
               TextButton(onPressed: () => onCorrect(event), child: const Text(HealthRegistrationStrings.correct)),
             if (isStudy) ...[
               Text(result?.value ?? HealthRegistrationStrings.pendingResult),
               if (result != null) Text(localizations.formatCompactDate(result.reportedAt.toLocal())),
               if (resultStatus != null) Text(resultStatus),
+              if (event.resultErrorCode == 'resultado_ya_completado')
+                const Text(HealthRegistrationStrings.resultConflict),
               if ((result == null || event.resultSyncStatus == HealthSyncStatus.rejected) &&
                   event.syncStatus != HealthSyncStatus.rejected)
                 TextButton(onPressed: () => onResult(event), child: const Text(HealthRegistrationStrings.addResult)),
@@ -176,6 +181,7 @@ class _HealthEventCard extends StatelessWidget {
   static String? _status(HealthSyncStatus? status) => switch (status) {
     HealthSyncStatus.pending => HealthRegistrationStrings.pending,
     HealthSyncStatus.rejected => HealthRegistrationStrings.rejected,
-    _ => null,
+    HealthSyncStatus.synchronized => HealthRegistrationStrings.synchronized,
+    null => null,
   };
 }

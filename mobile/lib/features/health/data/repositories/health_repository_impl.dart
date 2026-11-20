@@ -130,7 +130,8 @@ class HealthRepositoryImpl implements HealthRepository {
   Future<HealthRecipient?> findRecipient(String establishmentId, String tag, {required bool electronic}) async {
     final current = await authorize(establishmentId);
     final code = tag.trim();
-    if (code.isEmpty || (electronic && !RfidValidator.isValid(code))) return null;
+    if (electronic && !RfidValidator.isValid(code)) throw const HealthFailure(HealthProblem.invalidTag);
+    if (code.isEmpty) return null;
     final matches = (await _eligibleAnimals(establishmentId, current))
         .where(
           (animal) =>
@@ -168,7 +169,7 @@ class HealthRepositoryImpl implements HealthRepository {
                 .map((event) {
                   final result = event.result;
                   if (event.resultSyncStatus == null || result?.reportedById == current.userId) return event;
-                  return event.copyWith(result: null, resultSyncStatus: null);
+                  return event.copyWith(result: null, resultSyncStatus: null, resultErrorCode: null);
                 })
                 .toList()
               ..sort((left, right) => right.occurredAt.compareTo(left.occurredAt));
@@ -202,6 +203,14 @@ class HealthRepositoryImpl implements HealthRepository {
         throw const HealthFailure(HealthProblem.invalidSelection);
       }
       final previousEvents = previous == null ? <HealthEvent>[] : await _rejectedEvents(establishmentId, previous);
+      if (previousEvents.any(
+        (event) =>
+            event.result != null &&
+            (registration.practice.kind != HealthPracticeKind.sampling ||
+                !selection.containsKey(event.recipient.animalId)),
+      )) {
+        throw const HealthFailure(HealthProblem.invalidResult);
+      }
       final previousByAnimal = {for (final event in previousEvents) event.recipient.animalId: event};
       final participants = [
         for (final animal in selected) animal.copyWith(sampleReference: selection[animal.animalId]?.sampleReference),
@@ -221,6 +230,9 @@ class HealthRepositoryImpl implements HealthRepository {
             recordedById: current.userId,
             recipient: animal,
             notes: registration.notes,
+            result: previousByAnimal[animal.animalId]?.result,
+            resultSyncStatus: previousByAnimal[animal.animalId]?.resultSyncStatus,
+            resultErrorCode: previousByAnimal[animal.animalId]?.resultErrorCode,
           ),
       ];
       final operationId = generateUuidV4();
@@ -335,6 +347,7 @@ class HealthRepositoryImpl implements HealthRepository {
             latest.copyWith(
               result: HealthStudyResult(value: result, reportedAt: reportedAt, reportedById: current.userId),
               resultSyncStatus: HealthSyncStatus.pending,
+              resultErrorCode: null,
             ),
           ),
         ],
@@ -354,4 +367,133 @@ class HealthRepositoryImpl implements HealthRepository {
   }
 
   static HealthEvent _decode(BrickHealthEventModel row) => HealthCodec.eventFrom(HealthCodec.object(row.payload));
+
+  /// Devuelve el cursor aplicado a la base local.
+  Future<String?> cursor(String establishmentId) async => (await _store.catalog(establishmentId))?.cursor;
+
+  /// Operaciones propias de la sesión y de sus establecimientos autorizados.
+  Future<List<BrickHealthOperationModel>> visibleOperations() async {
+    final current = session;
+    if (current == null) return const [];
+    final allowed = (await establishments()).map((item) => item.id).toSet();
+    final operations = await _store.operations(current.userId);
+    if (session != current) return const [];
+    return operations.where((item) => allowed.contains(item.establishmentId)).toList();
+  }
+
+  /// Observa transacciones confirmadas de Sanidad.
+  Stream<void> get changes => _store.changes;
+
+  /// Lee la proyección local para resolver dependencias del envío.
+  Future<HealthEvent?> localEvent(String establishmentId, String eventId) async =>
+      (await _store.events(establishmentId)).where((item) => item.localId == eventId).map(_decode).firstOrNull;
+
+  /// Aplica una página descargada y su cursor en una sola transacción.
+  Future<void> reconcilePage(
+    HealthSession current,
+    String establishmentId,
+    List<HealthEvent> incoming,
+    String cursor,
+  ) => _store.serialize(() async {
+    final cache = await _store.catalog(establishmentId);
+    final local = {for (final row in await _store.events(establishmentId)) row.localId: _decode(row)};
+    if (incoming.any((event) => event.establishmentId != establishmentId)) {
+      throw const FormatException('Health history belongs to a different establishment');
+    }
+    await _store.save(
+      events: [
+        for (final remote in incoming)
+          if (_shouldApply(remote, local[remote.id]))
+            HealthCodec.eventRow(remote.copyWith(resultErrorCode: local[remote.id]?.resultErrorCode)),
+      ],
+      catalog: BrickHealthCatalogModel(establishmentId: establishmentId, payload: cache?.payload, cursor: cursor),
+      requireSession: () => requireSession(current),
+    );
+  });
+
+  static bool _shouldApply(HealthEvent remote, HealthEvent? local) {
+    if (local == null) return true;
+    if (local.syncStatus != HealthSyncStatus.synchronized || local.resultSyncStatus != null) return false;
+    if (local.result != null && remote.result == null && remote.deletedAt == null) return false;
+    return !remote.updatedAt.isBefore(local.updatedAt);
+  }
+
+  /// Reconcilia una aceptación o el resultado que ganó una carrera.
+  Future<void> accept(
+    HealthSession current,
+    BrickHealthOperationModel operation,
+    List<HealthEvent> remote, {
+    bool resultConflict = false,
+  }) => _store.serialize(() async {
+    final resultTarget = operation.resultEventId;
+    final expected = resultTarget == null ? registrationEventIds(operation) : {resultTarget};
+    final ids = remote.map((item) => item.id).toSet();
+    if (expected.length != ids.length ||
+        !expected.containsAll(ids) ||
+        ids.length != remote.length ||
+        remote.any((event) => event.establishmentId != operation.establishmentId) ||
+        (resultTarget != null && remote.single.result == null)) {
+      throw const FormatException('Health response did not acknowledge the requested events');
+    }
+    final previous = {
+      for (final row in await _store.events(operation.establishmentId))
+        if (expected.contains(row.localId)) row.localId: _decode(row),
+    };
+    final rows = remote.map((accepted) {
+      final previousEvent = previous[accepted.id];
+      if (resultTarget == null && previousEvent?.resultSyncStatus != null) {
+        return HealthCodec.eventRow(
+          accepted.copyWith(
+            result: previousEvent?.result,
+            resultSyncStatus: previousEvent?.resultSyncStatus,
+            resultErrorCode: previousEvent?.resultErrorCode,
+          ),
+        );
+      }
+      return HealthCodec.eventRow(
+        accepted.copyWith(resultErrorCode: resultConflict ? 'resultado_ya_completado' : null),
+      );
+    });
+    await _store.save(events: rows, removing: operation, requireSession: () => requireSession(current));
+  });
+
+  /// Conserva un rechazo funcional para que su autor pueda corregirlo.
+  Future<void> reject(
+    HealthSession current,
+    BrickHealthOperationModel operation,
+    String reason, {
+    bool waitingForAnimal = false,
+  }) => _store.serialize(() async {
+    final resultTarget = operation.resultEventId;
+    final ids = resultTarget == null ? registrationEventIds(operation) : {resultTarget};
+    final events = (await _store.events(
+      operation.establishmentId,
+    )).where((row) => ids.contains(row.localId)).map(_decode);
+    await _store.save(
+      events: events
+          .where((event) => !waitingForAnimal || event.syncErrorCode != reason)
+          .map(
+            (event) => HealthCodec.eventRow(
+              resultTarget != null
+                  ? event.copyWith(resultSyncStatus: HealthSyncStatus.rejected, resultErrorCode: reason)
+                  : event.copyWith(
+                      syncStatus: waitingForAnimal ? HealthSyncStatus.pending : HealthSyncStatus.rejected,
+                      syncErrorCode: reason,
+                    ),
+            ),
+          ),
+      operation: waitingForAnimal
+          ? null
+          : BrickHealthOperationModel(
+              localId: operation.localId,
+              establishmentId: operation.establishmentId,
+              authorId: operation.authorId,
+              createdAt: operation.createdAt,
+              payload: operation.payload,
+              resultEventId: resultTarget,
+              rejection: reason,
+            ),
+      requireSession: () => requireSession(current),
+    );
+  });
 }

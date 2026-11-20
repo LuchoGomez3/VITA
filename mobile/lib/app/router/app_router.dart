@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/composition/animal_movement_composition.dart';
+import 'package:frontend_mayoral/app/composition/health_composition.dart';
 import 'package:frontend_mayoral/app/composition/team_session_composition.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
@@ -11,6 +12,7 @@ import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/navigation/backward_page.dart';
 import 'package:frontend_mayoral/core/navigation/fade_page.dart';
+import 'package:frontend_mayoral/core/rfid/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/features/animal_detail/animal_detail_composition.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
 import 'package:frontend_mayoral/features/animal_movement/presentation/pages/group_movement_page.dart';
@@ -39,11 +41,10 @@ import 'package:frontend_mayoral/features/field/presentation/pages/field_detail_
 import 'package:frontend_mayoral/features/field/presentation/pages/field_map_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/lot_editor_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
-import 'package:frontend_mayoral/app/composition/health_composition.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
+import 'package:frontend_mayoral/features/health/presentation/pages/health_page.dart';
 import 'package:frontend_mayoral/features/health/presentation/pages/health_registration_page.dart';
 import 'package:frontend_mayoral/features/health/presentation/pages/health_result_page.dart';
-import 'package:frontend_mayoral/features/health/presentation/pages/health_page.dart';
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
@@ -59,7 +60,6 @@ import 'package:frontend_mayoral/features/profile/presentation/pages/establishme
 import 'package:frontend_mayoral/features/profile/presentation/pages/profile_page.dart';
 import 'package:frontend_mayoral/features/profile/presentation/strings/profile_strings.dart';
 import 'package:frontend_mayoral/features/profile/profile_composition.dart';
-import 'package:frontend_mayoral/core/rfid/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_capture_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/pages/rfid_scan_page.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/strings/rfid_scan_strings.dart';
@@ -411,9 +411,7 @@ class AppRouter {
               },
               rejected: request is ({String id, HealthRegistration registration}) ? request : null,
               createCubit: createHealthRegistrationCubit,
-              refreshCatalog: () async {
-                await createOfflineSyncCoordinator().synchronizeAfterCurrent();
-              },
+              refreshCatalog: requestHealthSync,
             );
           },
         ),

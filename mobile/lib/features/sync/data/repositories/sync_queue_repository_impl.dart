@@ -18,15 +18,18 @@ class SyncQueueRepositoryImpl implements SyncQueueRepository {
   SyncQueueRepositoryImpl({
     required Future<List<BrickQueuedRequest>> Function() readQueue,
     required Stream<void> changes,
+    Future<List<SyncQueueOperation>> Function()? readAdditionalOperations,
     Duration pollInterval = const Duration(seconds: 2),
     DateTime Function() now = DateTime.now,
   }) : _readQueue = readQueue,
        _changes = changes,
+       _readAdditionalOperations = readAdditionalOperations,
        _pollInterval = pollInterval,
        _now = now;
 
   final Future<List<BrickQueuedRequest>> Function() _readQueue;
   final Stream<void> _changes;
+  final Future<List<SyncQueueOperation>> Function()? _readAdditionalOperations;
   final Duration _pollInterval;
   final DateTime Function() _now;
 
@@ -51,9 +54,10 @@ class SyncQueueRepositoryImpl implements SyncQueueRepository {
         do {
           readAgain = false;
           final requests = await _readQueue();
+          final additional = await _readAdditionalOperations?.call() ?? const <SyncQueueOperation>[];
           if (controller.isClosed) return;
           final snapshot = SyncQueueSnapshot(
-            operations: requests.map(operationFromRequest).toList(growable: false),
+            operations: [...requests.map(operationFromRequest), ...additional],
             readAt: _now(),
           );
           if (snapshot != lastSnapshot) {

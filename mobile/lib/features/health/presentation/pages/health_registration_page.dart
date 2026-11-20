@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
 import 'package:frontend_mayoral/features/health/presentation/cubit/health_registration_cubit.dart';
 import 'package:frontend_mayoral/features/health/presentation/widgets/health_manga_capture.dart';
-import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:go_router/go_router.dart';
 
 /// Formulario compartido de registro sanitario.
@@ -150,6 +150,8 @@ class _RegistrationFormState extends State<_RegistrationForm> {
                     const Center(child: CircularProgressIndicator())
                   else if (state.preparation case ResultError<void>(:final error))
                     Text(error.message)
+                  else if (state.establishmentId == null && state.establishments.isEmpty)
+                    const Text(HealthRegistrationStrings.unauthorized)
                   else if (state.establishmentId != null && catalog == null) ...[
                     const Text(HealthRegistrationStrings.catalogUnavailable),
                     if (widget.refreshCatalog != null)
@@ -171,7 +173,7 @@ class _RegistrationFormState extends State<_RegistrationForm> {
                     ),
                     if (practice != null) ...[
                       _entry(HealthRegistrationStrings.responsible, _responsible, enabled: !saving),
-                      _dateButton(HealthRegistrationStrings.date, _date, saving ? null : () => _pickDate()),
+                      _dateButton(HealthRegistrationStrings.date, _date, saving ? null : _pickDate),
                       if (practice.kind == HealthPracticeKind.application)
                         ..._application(catalog, practice, enabled: !saving)
                       else ...[

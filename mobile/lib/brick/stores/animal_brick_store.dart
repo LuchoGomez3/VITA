@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:brick_offline_first/brick_offline_first.dart';
 import 'package:brick_rest/brick_rest.dart';
@@ -55,6 +56,7 @@ class BrickAnimalStore implements AnimalBrickStore {
   static BrickAnimalStore? _instance;
 
   final AppBrickRepository _repository;
+  final _registrationsEnqueuing = <String>{};
   late final StreamSubscription<BackendSyncResult> _syncSubscription;
 
   /// Instancia compartida configurada durante el bootstrap de Brick.
@@ -83,7 +85,7 @@ class BrickAnimalStore implements AnimalBrickStore {
 
     // El alta ya quedo guardada localmente. El request remoto corre en segundo
     // plano para que la UX siga siendo offline-first y no espere al backend.
-    unawaited(_repository.enqueueRemoteUpsert<BrickAnimalModel>(savedAnimal));
+    unawaited(_enqueueRegistration(savedAnimal));
 
     return savedAnimal;
   }
@@ -229,7 +231,48 @@ class BrickAnimalStore implements AnimalBrickStore {
       syncErrorCode: null,
     );
     final savedAnimal = await _repository.upsertLocal<BrickAnimalModel>(pendingAnimal);
-    await _repository.enqueueRemoteUpsert<BrickAnimalModel>(savedAnimal);
+    await _enqueueRegistration(savedAnimal);
+  }
+
+  Future<void> _enqueueRegistration(BrickAnimalModel animal) async {
+    if (!_registrationsEnqueuing.add(animal.localId)) return;
+    try {
+      await _repository.enqueueRemoteUpsert(animal);
+    } finally {
+      _registrationsEnqueuing.remove(animal.localId);
+    }
+  }
+
+  /// Prepara un alta interrumpida que todavía no tiene otro envío pendiente.
+  Future<String?> recoverableRegistrationBody(BrickAnimalModel animal, String authorId) async {
+    if (animal.localRegistrationAuthorId != authorId ||
+        animal.syncStatus != BrickAnimalSyncStatus.pending ||
+        _registrationsEnqueuing.contains(animal.localId) ||
+        await _repository.hasQueuedCreate(BrickAnimalRequestTransformer.animalsPath, animal.localId)) {
+      return null;
+    }
+    final adapter = _repository.remoteProvider.modelDictionary.adapterFor[BrickAnimalModel]!;
+    return jsonEncode(await adapter.toRest(animal, provider: _repository.remoteProvider, repository: _repository));
+  }
+
+  /// Marca un alta recuperada desde un envío protegido por la sesión actual.
+  Future<void> reconcileRecoveredRegistration(
+    BrickAnimalModel animal, {
+    required String? errorCode,
+    required void Function() requireSession,
+  }) async {
+    final latest = await getAnimalById(animal.localId);
+    if (latest == null || latest.syncStatus != BrickAnimalSyncStatus.pending) return;
+    await _repository.runLocalTransaction((transaction) async {
+      requireSession();
+      await transaction.upsert(
+        latest.copyWith(
+          syncStatus: errorCode == null ? BrickAnimalSyncStatus.synchronized : BrickAnimalSyncStatus.rejected,
+          syncErrorCode: errorCode,
+        ),
+      );
+      requireSession();
+    });
   }
 
   BrickAnimalModel _preferredAnimal(

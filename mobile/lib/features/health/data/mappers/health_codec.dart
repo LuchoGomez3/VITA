@@ -110,6 +110,8 @@ abstract final class HealthCodec {
       notes: json['observaciones'] as String?,
       deletedAt: _date(json['deleted_at']),
       syncStatus: remote ? HealthSyncStatus.synchronized : HealthSyncStatus.values.byName(json['local_sync'] as String),
+      syncErrorCode: remote ? null : json['local_sync_error'] as String?,
+      resultErrorCode: remote ? null : json['local_result_error'] as String?,
       resultSyncStatus: remote || json['local_result_sync'] == null
           ? null
           : HealthSyncStatus.values.byName(json['local_result_sync'] as String),
@@ -142,6 +144,8 @@ abstract final class HealthCodec {
       'observaciones': event.notes,
       'deleted_at': event.deletedAt?.toUtc().toIso8601String(),
       'local_sync': event.syncStatus.name,
+      'local_sync_error': event.syncErrorCode,
+      'local_result_error': event.resultErrorCode,
       'local_result_sync': event.resultSyncStatus?.name,
       'resultado': switch (event.result) {
         final value? => {

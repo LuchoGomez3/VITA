@@ -2,17 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
+import 'package:frontend_mayoral/core/rfid/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/hid_rfid_keyboard_listener.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/quick_read/domain/entities/quick_read_item.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/cubit/quick_read_cubit.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/strings/quick_read_strings.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/widgets/quick_read_cards.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/widgets/quick_read_tiles.dart';
-import 'package:frontend_mayoral/core/rfid/hid_rfid_reading_source.dart';
-import 'package:frontend_mayoral/core/widgets/hid_rfid_keyboard_listener.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/widgets/weighing_method_sheet.dart';
 import 'package:go_router/go_router.dart';
 

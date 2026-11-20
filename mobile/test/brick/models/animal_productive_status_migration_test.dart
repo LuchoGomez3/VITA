@@ -3,7 +3,7 @@ import 'package:frontend_mayoral/brick/db/schema.g.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
-  test('productive status migrations are additive and latest is registered', () {
+  test('productive status migrations remain registered and additive', () {
     final migration = migrations.singleWhere(
       (item) => item.version == 20261015043521,
     );
@@ -11,7 +11,7 @@ void main() {
       (item) => item.version == 20261015133521,
     );
 
-    expect(schema.version, 20261015133521);
+    expect(schema.version, greaterThanOrEqualTo(statusDateMigration.version));
     expect(
       migration.upStatement,
       contains(
@@ -28,7 +28,7 @@ void main() {
     expect(statusDateMigration.upStatement, isNot(contains('DROP')));
   });
 
-  test('upgrading a legacy table preserves its existing animals', () async {
+  test('upgrading through the health migration preserves existing animals', () async {
     sqfliteFfiInit();
     final database = await databaseFactoryFfi.openDatabase(
       inMemoryDatabasePath,
@@ -48,14 +48,23 @@ void main() {
     final statusDateMigration = migrations.singleWhere(
       (item) => item.version == 20261015133521,
     );
+    final healthMigration = migrations.singleWhere(
+      (item) => item.version == 20261120223303,
+    );
 
     await database.execute(migration.upStatement);
     await database.execute(statusDateMigration.upStatement);
+    for (final command in healthMigration.up) {
+      if (command.statement case final statement?) await database.execute(statement);
+    }
 
     final rows = await database.query('BrickAnimalModel');
     expect(rows, hasLength(1));
     expect(rows.single['local_id'], 'legacy-animal');
     expect(rows.single['productive_status'], isNull);
     expect(rows.single['productive_status_changed_at'], isNull);
+    expect(rows.single['local_registration_author_id'], isNull);
+    expect(await database.query('BrickHealthEventModel'), isEmpty);
+    expect(await database.query('BrickHealthOperationModel'), isEmpty);
   });
 }

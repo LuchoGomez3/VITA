@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/health_event.model.dart';
@@ -10,10 +12,15 @@ import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart'
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
+import 'package:frontend_mayoral/features/health/data/datasources/health_remote_data_source.dart';
+import 'package:frontend_mayoral/features/health/data/mappers/health_codec.dart';
 import 'package:frontend_mayoral/features/health/data/repositories/health_repository_impl.dart';
+import 'package:frontend_mayoral/features/health/data/services/health_sync_service.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
 import 'package:frontend_mayoral/features/health/domain/use_cases/health_use_cases.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -132,6 +139,82 @@ void main() {
     expect(await restartedStore.operations(other.userId), isEmpty);
     expect(await repository.getRecipients(farm, ['animal-1']), isEmpty);
     current = author;
+
+    final paths = <String>[];
+    final registrationBodies = <String>[];
+    final knownAnimals = <String>{};
+    final resultEvent = updated.copyWith(
+      result: HealthStudyResult(value: 'Aceptado desde otro teléfono', reportedAt: date, reportedById: 'other'),
+    );
+    final initialEvents = [
+      (await repository.watchHistory(farm, 'animal-1').first).single,
+      event,
+    ];
+    final adapter = HealthRemoteDataSource(
+      baseUrl: 'http://localhost',
+      tokens: const _Tokens(),
+      client: MockClient((request) async {
+        paths.add('${request.method} ${request.url.path}');
+        final parts = request.url.pathSegments;
+        if (parts.contains('animales')) {
+          if (request.method == 'GET') {
+            return knownAnimals.contains(parts.last)
+                ? _response({'id': parts.last, 'establecimiento_id': farm})
+                : http.Response('', 404);
+          }
+          final body = HealthCodec.object(request.body);
+          final id = body['id'] as String;
+          expect(body.containsKey('local_registration_author_id'), isFalse);
+          knownAnimals.add(id);
+          return _response({'id': id, 'establecimiento_id': farm});
+        }
+        if (request.method == 'POST') {
+          registrationBodies.add(request.body);
+          if (registrationBodies.length == 1) throw http.ClientException('Interrupted response');
+          return _response(initialEvents.map(_wire).toList());
+        }
+        expect(parts[parts.length - 2], event.id);
+        return http.Response(
+          jsonEncode({
+            'success': false,
+            'errors': [
+              {
+                'code': 'resultado_ya_completado',
+                'details': {'evento': _wire(resultEvent)},
+              },
+            ],
+          }),
+          409,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+    final sync = HealthSyncService(
+      repository: repository,
+      remote: adapter,
+      resolveAnimal: HealthAnimalRegistrationRecovery(BrickAnimalStore.instance, adapter, repository).call,
+    );
+    addTearDown(sync.dispose);
+    await sync.request();
+    expect((await restartedStore.operations(author.userId)).map((row) => row.localId), contains(creation.localId));
+    await sync.request();
+    expect(registrationBodies, hasLength(2));
+    expect(registrationBodies.toSet(), hasLength(1));
+    expect(
+      paths.where((entry) => !entry.startsWith('GET ')),
+      [
+        'POST /api/v1/animales',
+        'POST /api/v1/animales',
+        'POST /api/v1/eventos_sanitarios',
+        'POST /api/v1/eventos_sanitarios',
+        'PUT /api/v1/eventos_sanitarios/${event.id}/resultado',
+      ],
+    );
+    final reconciled = (await repository.watchHistory(farm, 'animal-2').first).single;
+    expect(reconciled.result?.value, resultEvent.result?.value);
+    expect(reconciled.resultSyncStatus, isNull);
+    expect(reconciled.resultErrorCode, 'resultado_ya_completado');
+    expect(await restartedStore.operations(author.userId), isEmpty);
   });
 
   test('rolls back all changes when the session changes inside a transaction', () async {
@@ -150,6 +233,24 @@ void main() {
     );
     expect(await store.events(farm, animalId: 'rollback'), isEmpty);
   });
+}
+
+Map<String, dynamic> _wire(HealthEvent event) => HealthCodec.object(HealthCodec.eventRow(event).payload);
+
+http.Response _response(Object data) => http.Response(
+  jsonEncode({'success': true, 'data': data}),
+  200,
+  headers: {'content-type': 'application/json'},
+);
+
+class _Tokens implements RefreshableBackendAccessTokenProvider {
+  const _Tokens();
+
+  @override
+  Future<String?> getAccessToken() async => 'synthetic';
+
+  @override
+  Future<String?> refreshAccessToken() async => 'synthetic-refresh';
 }
 
 class _Storage implements SecureStorageService {

@@ -39,6 +39,7 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     required PesajeBrickStore weighingStore,
     required AnimalLotMovementBrickStore movementStore,
     required SyncOperatingExpenseData syncOperatingExpenseData,
+    void Function()? onPrepared,
     Object? Function()? sessionIdentity,
     Future<void> Function(Future<void> Function())? persistSessionData,
   }) : _secureStorage = secureStorage,
@@ -49,6 +50,7 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
        _weighingStore = weighingStore,
        _movementStore = movementStore,
        _syncOperatingExpenseData = syncOperatingExpenseData,
+       _onPrepared = onPrepared,
        _sessionIdentity = sessionIdentity,
        _persistSessionData = persistSessionData;
 
@@ -60,6 +62,7 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
   final PesajeBrickStore _weighingStore;
   final AnimalLotMovementBrickStore _movementStore;
   final SyncOperatingExpenseData _syncOperatingExpenseData;
+  final void Function()? _onPrepared;
   final Object? Function()? _sessionIdentity;
   final Future<void> Function(Future<void> Function())? _persistSessionData;
 
@@ -141,6 +144,7 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
       }
 
       requireSession();
+      _onPrepared?.call();
       return Result.success(
         PostAuthenticationSummary(
           establishmentIds: establishments.map((establishment) => establishment.id).toList(growable: false),

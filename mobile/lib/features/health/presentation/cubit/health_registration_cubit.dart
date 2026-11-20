@@ -1,12 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
+import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
 import 'package:frontend_mayoral/features/health/domain/use_cases/health_use_cases.dart';
-import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 
 part 'health_registration_cubit.freezed.dart';
 
@@ -127,7 +127,7 @@ class HealthRegistrationCubit extends Cubit<HealthRegistrationState> {
 
   /// Confirma los animales revisados en un solo guardado.
   Future<void> submit(HealthRegistration registration, {String? replacingOperationId}) async {
-    if (state.submission is Loading<void> || state.pendingReadings != 0) return;
+    if (state.submission is Loading<void> || state.submission is Data<void> || state.pendingReadings != 0) return;
     emit(state.copyWith(submission: const ResultState.loading()));
     try {
       await _register(registration, replacingOperationId: replacingOperationId);
@@ -149,6 +149,7 @@ DomainException healthFormError(Object error) => DomainException(
       HealthProblem.invalidDetails => HealthRegistrationStrings.invalidDetails,
       HealthProblem.invalidSelection => HealthRegistrationStrings.invalidSelection,
       HealthProblem.unavailableAnimal => HealthRegistrationStrings.unavailableAnimal,
+      HealthProblem.invalidTag => HealthRegistrationStrings.invalidTag,
       HealthProblem.ambiguousTag => HealthRegistrationStrings.ambiguousTag,
       HealthProblem.invalidResult => HealthRegistrationStrings.invalidResult,
     },

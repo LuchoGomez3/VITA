@@ -81,6 +81,8 @@ abstract final class SyncStatusStrings {
     SyncOperationKind.lot => 'Lote',
     SyncOperationKind.operatingExpense => 'Egreso operativo',
     SyncOperationKind.operatingExpenseCategory => 'Categoría de egreso',
+    SyncOperationKind.healthEvent => 'Registro sanitario',
+    SyncOperationKind.healthResult => 'Resultado sanitario',
     SyncOperationKind.other => 'Otro registro',
   };
 
