@@ -39,7 +39,10 @@ import 'package:frontend_mayoral/features/field/presentation/pages/field_detail_
 import 'package:frontend_mayoral/features/field/presentation/pages/field_map_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/lot_editor_page.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
-import 'package:frontend_mayoral/features/health/presentation/pages/apply_vaccination_page.dart';
+import 'package:frontend_mayoral/app/composition/health_composition.dart';
+import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
+import 'package:frontend_mayoral/features/health/presentation/pages/health_registration_page.dart';
+import 'package:frontend_mayoral/features/health/presentation/pages/health_result_page.dart';
 import 'package:frontend_mayoral/features/health/presentation/pages/health_page.dart';
 import 'package:frontend_mayoral/features/home/home_composition.dart';
 import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart';
@@ -356,6 +359,7 @@ class AppRouter {
               createCubit: createAnimalDetailCubit,
               createMovementHistoryCubit: createMovementHistoryCubit,
               createGenealogyCubit: createAnimalGenealogyCubit,
+              createHealthReader: createHealthReader,
             );
           },
         ),
@@ -394,7 +398,31 @@ class AppRouter {
         ),
         GoRoute(
           path: AppRoutes.applyVaccination,
-          builder: (context, state) => const ApplyVaccinationPage(),
+          builder: (context, state) {
+            final query = state.uri.queryParameters;
+            final request = state.extra;
+            return HealthRegistrationPage(
+              establishmentId: query['establecimiento'],
+              animalIds: switch ((query['animal'], request)) {
+                (final animal?, _) => [animal],
+                (_, final List<String> animals) => animals,
+                _ => const [],
+              },
+              rejected: request is ({String id, HealthRegistration registration}) ? request : null,
+              createCubit: createHealthRegistrationCubit,
+              refreshCatalog: () async {
+                await createOfflineSyncCoordinator().synchronizeAfterCurrent();
+              },
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.healthResult,
+          redirect: (_, state) => state.extra is HealthEvent ? null : AppRoutes.health,
+          builder: (_, state) => HealthResultPage(
+            event: state.extra! as HealthEvent,
+            createCubit: createHealthResultCubit,
+          ),
         ),
         GoRoute(
           path: AppRoutes.establishmentRegisterEmpty,

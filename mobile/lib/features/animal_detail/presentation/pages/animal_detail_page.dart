@@ -10,12 +10,13 @@ import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/anima
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/movement_history_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_ficha_header.dart';
-import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_ficha_section.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_genealogy_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_general_tab.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_health_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_movements_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_weighings_tab.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
+import 'package:frontend_mayoral/features/health/domain/use_cases/health_use_cases.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/widgets/weighing_method_sheet.dart';
 import 'package:go_router/go_router.dart';
 
@@ -36,6 +37,7 @@ class AnimalDetailPage extends StatelessWidget {
     required this.createCubit,
     required this.createMovementHistoryCubit,
     required this.createGenealogyCubit,
+    this.createHealthReader,
     super.key,
   });
 
@@ -51,6 +53,9 @@ class AnimalDetailPage extends StatelessWidget {
   /// Crea el Cubit que carga padres, abuelos y crías.
   final AnimalGenealogyCubitFactory createGenealogyCubit;
 
+  /// Crea la lectura sanitaria local al abrir la pestaña.
+  final ReadHealthUseCase Function()? createHealthReader;
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -58,7 +63,7 @@ class AnimalDetailPage extends StatelessWidget {
         BlocProvider(create: (_) => createCubit()..loadAnimalData(animalId)),
         BlocProvider(create: (_) => createMovementHistoryCubit()..load(animalId)),
       ],
-      child: _AnimalDetailView(createGenealogyCubit: createGenealogyCubit),
+      child: _AnimalDetailView(createGenealogyCubit: createGenealogyCubit, createHealthReader: createHealthReader),
     );
   }
 }
@@ -87,15 +92,17 @@ enum AnimalFichaTab {
 }
 
 class _AnimalDetailView extends StatefulWidget {
-  const _AnimalDetailView({required this.createGenealogyCubit});
+  const _AnimalDetailView({required this.createGenealogyCubit, this.createHealthReader});
 
   final AnimalGenealogyCubitFactory createGenealogyCubit;
+  final ReadHealthUseCase Function()? createHealthReader;
 
   @override
   State<_AnimalDetailView> createState() => _AnimalDetailViewState();
 }
 
 class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerProviderStateMixin {
+  late final _healthReader = widget.createHealthReader?.call();
   late final TabController _tabs = TabController(length: AnimalFichaTab.values.length, vsync: this)
     ..addListener(() {
       // Solo hace falta redibujar para mostrar u ocultar el botón de Pesajes.
@@ -157,11 +164,10 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
             ),
             AnimalGenealogyTab(animal: data, createCubit: widget.createGenealogyCubit),
             AnimalWeighingsTab(animal: data),
-            const AnimalFichaComingSoon(
-              icon: Icons.vaccines_outlined,
-              title: AnimalDetailStrings.comingSoonTitle,
-              message: AnimalDetailStrings.healthComingSoon,
-            ),
+            if (_healthReader case final reader?)
+              AnimalHealthTab(animal: data, reader: reader)
+            else
+              const SizedBox.shrink(),
             const AnimalMovementsTab(),
           ],
         ),
