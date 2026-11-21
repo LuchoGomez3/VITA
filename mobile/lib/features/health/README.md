@@ -50,6 +50,19 @@ en su sección de rechazados.
 El adaptador sanitario traduce los campos y motivos conocidos para la ficha y
 los formularios. Sync conserva el código original de la operación rechazada.
 
+### Recorrido de los datos
+
+El router pasa los argumentos de ficha, lote o manga. La composición inyecta
+los casos de uso en el formulario. El registro pasa por el cubit y el
+repositorio de Sanidad hasta `HealthBrickStore`, que escribe los eventos y la
+operación pendiente en SQLite. El historial observa las escrituras confirmadas.
+
+Como en los movimientos de lote, el transporte viene de Brick y los registros
+se reconcilian en su almacenamiento local. En Sanidad,
+`HealthSyncService` lee la operación durable, espera el alta de los animales
+y entrega la respuesta canónica al repositorio. Sync consume la actividad
+mediante `HealthSyncActivity`.
+
 Los resultados locales se leen desde la operación de la cuenta que los guardó.
 Dos cuentas habilitadas que comparten un dispositivo pueden guardar sus propios
 borradores para el mismo estudio. El resultado confirmado se comparte entre

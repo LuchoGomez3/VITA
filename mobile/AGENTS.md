@@ -100,12 +100,16 @@ The agreed structure is:
 feature-specific business logic there. Entity-specific sync behavior belongs in
 `stores/`.
 
-Features must not access Brick from `presentation` or `domain`. The expected
-dependency path is:
+Features must not access Brick from `presentation` or `domain`. At runtime, a
+call flows through these layers:
 
 ```txt
 feature/presentation -> feature/domain -> feature/data -> lib/brick
 ```
+
+Domain defines the repository contract. Data imports that contract and
+implements it. Composition injects the implementation and router supplies
+route arguments and public callbacks.
 
 Before implementing a syncable feature, cite an equivalent flow in the repo
 (for example, lot movements for a group write). Trace screen → use case →
