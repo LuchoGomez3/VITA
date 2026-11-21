@@ -41,6 +41,10 @@ void main() {
   late HealthBrickStore store;
   late HealthRepositoryImpl repository;
   late HealthSession current;
+  var nextId = 0xffffffff;
+
+  // UUID con orden inverso al de alta para probar la corrección sin azar.
+  String generateId() => '${(nextId--).toRadixString(16)}-0000-4000-8000-000000000000';
 
   setUpAll(() async {
     sqfliteFfiInit();
@@ -58,23 +62,13 @@ void main() {
     final animals = BrickAnimalStore.instance;
     for (final id in ['animal-1', 'animal-2', 'animal-3', 'animal-4']) {
       await animals.cacheAnimal(
-        BrickAnimalModel(
-          localId: id,
-          rfidTagNumber: id.split('-').last.padLeft(15, '0'),
-          visualTag: id,
-          sex: BrickAnimalSex.female,
-          breed: '',
-          birthDate: date,
-          categoryId: '',
-          lotId: '',
-          establishmentId: farm,
-          initialWeight: 0,
-          weighingMethod: BrickAnimalWeighingMethod.manual,
-          weighingDate: date,
-          createdAt: date,
-          updatedAt: date,
-          productiveStatus: BrickAnimalProductiveStatus.active,
-          localRegistrationAuthorId: author.userId,
+        _animal(
+          id: id,
+          rfid: id.split('-').last.padLeft(15, '0'),
+          visual: id,
+          farm: farm,
+          date: date,
+          owner: author.userId,
         ),
       );
     }
@@ -88,6 +82,7 @@ void main() {
       memberships: catalog,
       session: () => current,
       now: () => date,
+      generateId: generateId,
     );
   });
 
@@ -862,6 +857,90 @@ void main() {
     expect((await repository.localEvent(farm, id))?.result, result);
   });
 
+  for (final deleted in [false, true]) {
+    final change = deleted ? 'tombstone' : 'result';
+    test('preserves a canonical $change received before the lost create response is replayed', () async {
+      final farm = 'replay-$change';
+      final session = (userId: 'author-$change', generation: 1);
+      final animals = BrickAnimalStore.instance;
+      await animals.cacheAnimal(
+        _animal(id: 'animal-$change', rfid: '', visual: '101', farm: farm, date: date, owner: session.userId),
+      );
+      final memberships = EstablishmentCatalog(secureStorage: _Storage());
+      await memberships.upsert(EstablishmentMembership(id: farm, name: 'Campo', role: UserRole.employee));
+      final repository = HealthRepositoryImpl(
+        store: store,
+        animals: animals,
+        memberships: memberships,
+        session: () => session,
+        now: () => date,
+        generateId: generateId,
+      );
+      final catalog = HealthCatalog(establishmentId: farm, practices: [sampling], products: const []);
+      await repository.cacheCatalog(session, catalog);
+      await RegisterHealthEventsUseCase(repository)(
+        HealthRegistration(
+          establishmentId: farm,
+          occurredAt: date,
+          practice: sampling,
+          details: const HealthObservation(description: 'Control', sampleType: 'Sangre'),
+          responsible: 'Operario',
+          recipients: await repository.getRecipients(farm, ['animal-$change']),
+        ),
+      );
+      final operation = (await store.operations(session.userId)).single;
+      final id = HealthRepositoryImpl.registrationEventIds(operation).single;
+      final pending = (await repository.localEvent(farm, id))!;
+      final original = pending.copyWith(syncStatus: HealthSyncStatus.synchronized);
+      final updated = date.add(const Duration(minutes: 10));
+      final canonical = original.copyWith(
+        updatedAt: updated,
+        deletedAt: deleted ? updated : null,
+        result: deleted
+            ? null
+            : HealthStudyResult(value: 'Resultado confirmado', reportedAt: updated, reportedById: other.userId),
+      );
+      await RecordHealthResultUseCase(repository)(pending, 'Resultado local pendiente', date);
+      var replayAvailable = false;
+      var historyReads = 0;
+      final cursor = 'cursor-after-$change';
+      final sync = HealthSyncService(
+        repository: repository,
+        remote: _healthRemote(
+          client: MockClient((request) async {
+            if (request.method == 'POST') {
+              expect(request.body, operation.payload);
+              return replayAvailable ? _response([_wire(original)]) : http.Response('', 503);
+            }
+            expect(request.method, 'GET');
+            if (request.url.path.endsWith('/catalogo')) return _response(HealthCodec.catalogTo(catalog));
+            final firstPage = historyReads++ == 0;
+            if (!firstPage) expect(request.url.queryParameters['cursor'], cursor);
+            return http.Response(
+              jsonEncode({
+                'success': true,
+                'data': [if (firstPage) _wire(canonical)],
+                'meta': {'next_cursor': cursor, 'has_more': false},
+              }),
+              200,
+            );
+          }),
+        ),
+        resolveAnimal: (_, _, _, _) async => AnimalRegistrationAvailability.confirmed,
+      );
+      addTearDown(sync.dispose);
+      expect(await sync.request(refresh: true), isFalse);
+      expect(await repository.cursor(farm), cursor);
+      expect(await repository.localEvent(farm, id), canonical);
+      expect((await store.operations(session.userId)).single.localId, operation.localId);
+
+      replayAvailable = true;
+      expect(await sync.request(refresh: true), isTrue);
+      expect(await store.operations(session.userId), isEmpty);
+      expect(await repository.localEvent(farm, id), canonical);
+    });
+  }
+
   test('rolls back all changes when the session changes inside a transaction', () async {
     var calls = 0;
     await expectLater(
@@ -881,6 +960,32 @@ void main() {
 }
 
 Map<String, dynamic> _wire(HealthEvent event) => HealthCodec.object(HealthCodec.eventRow(event).payload);
+
+BrickAnimalModel _animal({
+  required String id,
+  required String rfid,
+  required String visual,
+  required String farm,
+  required DateTime date,
+  required String owner,
+}) => BrickAnimalModel(
+  localId: id,
+  rfidTagNumber: rfid,
+  visualTag: visual,
+  sex: BrickAnimalSex.female,
+  breed: '',
+  birthDate: date,
+  categoryId: '',
+  lotId: '',
+  establishmentId: farm,
+  initialWeight: 0,
+  weighingMethod: BrickAnimalWeighingMethod.manual,
+  weighingDate: date,
+  createdAt: date,
+  updatedAt: date,
+  productiveStatus: BrickAnimalProductiveStatus.active,
+  localRegistrationAuthorId: owner,
+);
 
 HealthRemoteDataSource _healthRemote({required http.Client client}) => HealthRemoteDataSource(_backend(client: client));
 

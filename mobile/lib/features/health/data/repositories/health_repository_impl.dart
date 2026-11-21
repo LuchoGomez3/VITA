@@ -32,12 +32,14 @@ class HealthRepositoryImpl implements HealthRepository {
     required HealthSession? Function() session,
     void Function()? onPending,
     DateTime Function()? now,
+    String Function()? generateId,
   }) : _store = store,
        _animals = animals,
        _memberships = memberships,
        _session = session,
        _onPending = onPending,
-       _now = now ?? DateTime.now;
+       _now = now ?? DateTime.now,
+       _generateId = generateId ?? generateUuidV4;
 
   final HealthBrickStore _store;
   final AnimalBrickStore _animals;
@@ -45,6 +47,7 @@ class HealthRepositoryImpl implements HealthRepository {
   final HealthSession? Function() _session;
   final void Function()? _onPending;
   final DateTime Function() _now;
+  final String Function() _generateId;
   static const _resultRejectionKey = 'local_result_rejection';
 
   /// Identidad de la sesión abierta, si la hay.
@@ -214,7 +217,7 @@ class HealthRepositoryImpl implements HealthRepository {
       final events = [
         for (final animal in participants)
           HealthEvent(
-            id: previousByAnimal[animal.animalId]?.id ?? generateUuidV4(),
+            id: previousByAnimal[animal.animalId]?.id ?? _generateId(),
             establishmentId: establishmentId,
             occurredAt: registration.occurredAt,
             createdAt: previousByAnimal[animal.animalId]?.createdAt ?? timestamp,
@@ -227,7 +230,7 @@ class HealthRepositoryImpl implements HealthRepository {
             notes: registration.notes,
           ),
       ];
-      final operationId = generateUuidV4();
+      final operationId = _generateId();
       final body = jsonEncode({
         'id': operationId,
         'establecimiento_id': establishmentId,
@@ -326,11 +329,14 @@ class HealthRepositoryImpl implements HealthRepository {
     final establishmentId = operation.establishmentId;
     final ids = registrationEventIds(operation);
     final drafts = await _resultDrafts(current, establishmentId);
-    return (await _store.eventsByIds(establishmentId, ids))
-        .map(_decode)
-        .where((event) => event.syncStatus == HealthSyncStatus.rejected && event.deletedAt == null)
-        .map((event) => _withResultDraft(event, drafts[event.id]))
-        .toList();
+    final rows = {
+      for (final row in await _store.eventsByIds(establishmentId, ids)) row.localId: _decode(row),
+    };
+    return [
+      for (final id in ids)
+        if (rows[id] case final event? when event.syncStatus == HealthSyncStatus.rejected && event.deletedAt == null)
+          _withResultDraft(event, drafts[id]),
+    ];
   }
 
   Future<Map<String, BrickHealthOperationModel>> _resultDrafts(HealthSession current, String establishmentId) async => {
@@ -363,7 +369,7 @@ class HealthRepositoryImpl implements HealthRepository {
       ? event
       : event.copyWith(result: null, resultSyncStatus: null, resultIssue: null, resultRejection: null);
 
-  /// UUID de los eventos afectados por el registro persistido.
+  /// UUID de los eventos afectados, en el orden del registro persistido.
   static Set<String> registrationEventIds(BrickHealthOperationModel operation) =>
       (HealthCodec.object(operation.payload)['animales'] as List)
           .cast<Map<String, dynamic>>()
@@ -386,7 +392,7 @@ class HealthRepositoryImpl implements HealthRepository {
       if (_withoutLegacyResult(latest).result != null || (previous != null && previous.rejection == null)) {
         throw const HealthFailure(HealthProblem.invalidResult);
       }
-      final id = generateUuidV4();
+      final id = _generateId();
       final timestamp = _now().toUtc();
       await _store.save(
         operations: [
@@ -468,17 +474,10 @@ class HealthRepositoryImpl implements HealthRepository {
     for (final remote in incoming) {
       final previous = local[remote.id];
       if (!_shouldApply(remote, previous)) continue;
-      final isFinal = remote.result != null || remote.deletedAt != null;
-      final hasLocalResult = previous?.resultSyncStatus != null;
-      if (isFinal) resolvedResults.add(remote.id);
-      final merged = hasLocalResult && !isFinal
-          ? remote.copyWith(
-              result: previous?.result,
-              resultSyncStatus: previous?.resultSyncStatus,
-              resultIssue: previous?.resultIssue,
-              resultRejection: previous?.resultRejection,
-            )
-          : remote.copyWith(resultIssue: hasLocalResult ? null : previous?.resultIssue);
+      final merged = _applyRemote(remote, previous);
+      if (merged.resultSyncStatus == null && (merged.result != null || merged.deletedAt != null)) {
+        resolvedResults.add(remote.id);
+      }
       local[remote.id] = merged;
       updatedEvents.add(HealthCodec.eventRow(merged));
     }
@@ -492,11 +491,29 @@ class HealthRepositoryImpl implements HealthRepository {
 
   static bool _shouldApply(HealthEvent remote, HealthEvent? local) {
     if (local == null) return true;
-    if (local.syncStatus != HealthSyncStatus.synchronized) return false;
+    if (local.recipient.animalId != remote.recipient.animalId) {
+      throw const FormatException('Health event changed its animal');
+    }
+    // Un evento confirmado en historial puede llegar antes del ACK de su alta.
+    if (local.syncStatus != HealthSyncStatus.synchronized) return true;
+    if (local.deletedAt != null && remote.deletedAt == null && !remote.updatedAt.isAfter(local.updatedAt)) {
+      return false;
+    }
     if (local.resultSyncStatus == null && local.result != null && remote.result == null && remote.deletedAt == null) {
       return false;
     }
     return !remote.updatedAt.isBefore(local.updatedAt);
+  }
+
+  static HealthEvent _applyRemote(HealthEvent remote, HealthEvent? previous) {
+    if (previous?.resultSyncStatus == null) return remote.copyWith(resultIssue: previous?.resultIssue);
+    if (remote.result != null || remote.deletedAt != null) return remote;
+    return remote.copyWith(
+      result: previous?.result,
+      resultSyncStatus: previous?.resultSyncStatus,
+      resultIssue: previous?.resultIssue,
+      resultRejection: previous?.resultRejection,
+    );
   }
 
   /// Reconcilia una aceptación o el resultado que ganó una carrera.
@@ -519,26 +536,22 @@ class HealthRepositoryImpl implements HealthRepository {
     final previous = {
       for (final row in await _store.eventsByIds(operation.establishmentId, expected)) row.localId: _decode(row),
     };
-    final finished = {
-      for (final event in remote)
-        if (event.result != null || event.deletedAt != null) event.id,
-    };
-    final rows = remote.map((accepted) {
-      final previousEvent = previous[accepted.id];
-      if (resultTarget == null && !finished.contains(accepted.id) && previousEvent?.resultSyncStatus != null) {
-        return HealthCodec.eventRow(
-          accepted.copyWith(
-            result: previousEvent?.result,
-            resultSyncStatus: previousEvent?.resultSyncStatus,
-            resultIssue: previousEvent?.resultIssue,
-            resultRejection: previousEvent?.resultRejection,
-          ),
-        );
+    final rows = <BrickHealthEventModel>[];
+    final finished = <String>{};
+    for (final accepted in remote) {
+      final local = previous[accepted.id];
+      final reconciled = _shouldApply(accepted, local) ? _applyRemote(accepted, local) : local!;
+      if (reconciled.resultSyncStatus == null && (reconciled.result != null || reconciled.deletedAt != null)) {
+        finished.add(reconciled.id);
       }
-      return HealthCodec.eventRow(
-        accepted.copyWith(resultIssue: resultConflict ? HealthSyncIssue.resultAlreadyRecorded : null),
+      rows.add(
+        HealthCodec.eventRow(
+          resultConflict && reconciled.deletedAt == null
+              ? reconciled.copyWith(resultIssue: HealthSyncIssue.resultAlreadyRecorded)
+              : reconciled,
+        ),
       );
-    });
+    }
     await _store.save(
       events: rows,
       removing: {
@@ -562,13 +575,14 @@ class HealthRepositoryImpl implements HealthRepository {
     await _store.save(
       events: [
         for (final event in events.map(_decode))
-          HealthCodec.eventRow(
-            event.copyWith(
-              syncStatus: HealthSyncStatus.rejected,
-              syncIssue: HealthCodec.issueFrom(reason),
-              syncRejection: details,
+          if (event.syncStatus != HealthSyncStatus.synchronized)
+            HealthCodec.eventRow(
+              event.copyWith(
+                syncStatus: HealthSyncStatus.rejected,
+                syncIssue: HealthCodec.issueFrom(reason),
+                syncRejection: details,
+              ),
             ),
-          ),
       ],
       operations: [
         BrickHealthOperationModel(
