@@ -51,11 +51,11 @@ void main() {
     final brick = AppBrickRepository.instance;
     BrickAnimalStore.configure(brick);
     final animals = BrickAnimalStore.instance;
-    for (final id in ['animal-1', 'animal-2']) {
+    for (final id in ['animal-1', 'animal-2', 'animal-3', 'animal-4']) {
       await animals.cacheAnimal(
         BrickAnimalModel(
           localId: id,
-          rfidTagNumber: id == 'animal-1' ? '000000000000001' : '000000000000002',
+          rfidTagNumber: id.split('-').last.padLeft(15, '0'),
           visualTag: id,
           sex: BrickAnimalSex.female,
           breed: '',
@@ -275,6 +275,100 @@ void main() {
     );
     expect(await store.operations(author.userId), isEmpty);
     expect(await repository.cursor(farm), '2');
+  });
+
+  test('allows correcting a group after a definitive animal rejection and keeps an excluded study result', () async {
+    await repository.cacheCatalog(
+      author,
+      const HealthCatalog(establishmentId: farm, practices: [sampling], products: []),
+    );
+    final recipients = await repository.getRecipients(farm, ['animal-3', 'animal-4']);
+    final registration = HealthRegistration(
+      establishmentId: farm,
+      occurredAt: date,
+      practice: sampling,
+      details: const HealthObservation(description: 'Control', sampleType: 'Sangre'),
+      responsible: 'Operario',
+      recipients: [
+        recipients.first.copyWith(sampleReference: 'muestra-3'),
+        recipients.last,
+      ],
+    );
+    await RegisterHealthEventsUseCase(repository)(registration);
+    final group = (await store.operations(author.userId)).single;
+    final kept = (await repository.watchHistory(farm, 'animal-3').first).single;
+    final blocked = (await repository.watchHistory(farm, 'animal-4').first).single;
+    await RecordHealthResultUseCase(repository)(blocked, 'Resultado de muestra 4', date);
+
+    var rejectedAnimalAttempts = 0;
+    final groupRequests = <List<String>>[];
+    final adapter = HealthRemoteDataSource(
+      baseUrl: 'http://localhost',
+      tokens: const _Tokens(),
+      client: MockClient((request) async {
+        final resource = request.url.pathSegments.last;
+        if (resource == 'animal-3') return _response({'id': resource, 'establecimiento_id': farm});
+        if (resource == 'animal-4') return http.Response('', 404);
+        if (resource == 'animales') {
+          if (++rejectedAnimalAttempts == 1) return http.Response('', 503);
+          return http.Response(
+            jsonEncode({
+              'success': false,
+              'errors': [
+                {'code': 'caravana_duplicada'},
+              ],
+            }),
+            409,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        final body = HealthCodec.object(request.body);
+        final animals = (body['animales'] as List).cast<Map<String, dynamic>>();
+        groupRequests.add([for (final animal in animals) animal['animal_id'] as String]);
+        expect(body['id'], isNot(group.localId));
+        expect(animals.single['id'], kept.id);
+        expect(animals.single['referencia_muestra'], 'muestra-3');
+        return _response([_wire(kept)]);
+      }),
+    );
+    final sync = HealthSyncService(
+      repository: repository,
+      remote: adapter,
+      resolveAnimal: HealthAnimalRegistrationRecovery(BrickAnimalStore.instance, adapter, repository).call,
+    );
+    addTearDown(sync.dispose);
+
+    await sync.request();
+    expect((await repository.localEvent(farm, kept.id))?.syncStatus, HealthSyncStatus.pending);
+    await sync.request();
+    final rejected = (await repository.localEvent(farm, kept.id))!;
+    expect(rejected.syncStatus, HealthSyncStatus.rejected);
+    expect(rejected.syncErrorCode, 'alta_animal_rechazada');
+    expect(groupRequests, isEmpty);
+
+    final draft = (await repository.getRejectedRegistration(rejected))!;
+    expect(draft.id, group.localId);
+    expect(draft.registration.recipients, hasLength(2));
+    final selectable = await repository.getRecipients(farm, ['animal-3', 'animal-4']);
+    expect(selectable.map((recipient) => recipient.animalId), ['animal-3']);
+    await RegisterHealthEventsUseCase(repository)(
+      draft.registration.copyWith(
+        recipients: [draft.registration.recipients.firstWhere((r) => r.animalId == 'animal-3')],
+      ),
+      replacingOperationId: draft.id,
+    );
+    await sync.request();
+
+    expect(groupRequests, [
+      ['animal-3'],
+    ]);
+    expect((await repository.localEvent(farm, kept.id))?.syncStatus, HealthSyncStatus.synchronized);
+    final remaining = (await repository.localEvent(farm, blocked.id))!;
+    expect(remaining.syncStatus, HealthSyncStatus.rejected);
+    expect(remaining.result?.value, 'Resultado de muestra 4');
+    final pendingCorrection = (await repository.getRejectedRegistration(remaining))!;
+    expect(pendingCorrection.registration.recipients.map((recipient) => recipient.animalId), ['animal-4']);
+    expect(await store.operations(author.userId), hasLength(2));
   });
 
   test('rolls back all changes when the session changes inside a transaction', () async {

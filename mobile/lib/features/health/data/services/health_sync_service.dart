@@ -162,7 +162,7 @@ class HealthSyncService {
           );
           if (availability != HealthAnimalDependency.confirmed) {
             if (availability == HealthAnimalDependency.rejected) {
-              await _repository.reject(session, operation, 'alta_animal_rechazada', waitingForAnimal: true);
+              await _repository.reject(session, operation, 'alta_animal_rechazada');
             }
             return availability == HealthAnimalDependency.rejected;
           }

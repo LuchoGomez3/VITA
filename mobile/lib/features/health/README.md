@@ -16,9 +16,13 @@ del producto aplicado aunque se retire del catálogo.
 La tabla de operaciones de Sanidad en SQLite conserva el cuerpo y el UUID
 original hasta que el backend lo acepte. Un lote usa una sola operación. El
 resultado tiene su propia operación sobre el evento existente. Una dependencia
-de alta animal bloquea el envío hasta que el UUID esté confirmado. Cada
-operación se envía con la cuenta que la guardó. La pantalla de sincronización
-muestra los pendientes y rechazos de esa cuenta.
+de alta animal mantiene el envío pendiente mientras el UUID pueda confirmarse.
+Si el alta es rechazada, el grupo pasa a rechazado y se puede corregir desde
+la ficha de un integrante. La corrección conserva los UUID y los resultados
+de los integrantes retenidos. Si un integrante excluido ya tiene un resultado
+local, conserva su registro rechazado para que se pueda recuperar por separado.
+Cada operación se envía con la cuenta que la guardó. La pantalla de
+sincronización muestra los pendientes y rechazos de esa cuenta.
 
 El historial incremental aplica el evento y el cursor en la misma transacción.
 Una actualización sin resultado conserva cualquier carga local en curso. Un

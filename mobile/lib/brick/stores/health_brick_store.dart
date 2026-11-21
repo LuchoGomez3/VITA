@@ -66,10 +66,10 @@ class HealthBrickStore {
     );
   }
 
-  /// Escribe juntas las filas, la operación y el avance del historial.
+  /// Escribe juntas las filas, las operaciones y el avance del historial.
   Future<void> save({
     Iterable<BrickHealthEventModel> events = const [],
-    BrickHealthOperationModel? operation,
+    Iterable<BrickHealthOperationModel> operations = const [],
     Iterable<BrickHealthOperationModel> removing = const [],
     BrickHealthCatalogModel? catalog,
     void Function()? requireSession,
@@ -78,7 +78,9 @@ class HealthBrickStore {
     for (final event in events) {
       await transaction.upsert(event);
     }
-    if (operation != null) await transaction.upsert(operation);
+    for (final operation in operations) {
+      await transaction.upsert(operation);
+    }
     for (final previous in removing) {
       await transaction.delete(previous);
     }

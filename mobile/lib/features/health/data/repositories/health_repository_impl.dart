@@ -206,8 +206,8 @@ class HealthRepositoryImpl implements HealthRepository {
       if (previousEvents.any(
         (event) =>
             event.result != null &&
-            (registration.practice.kind != HealthPracticeKind.sampling ||
-                !selection.containsKey(event.recipient.animalId)),
+            selection.containsKey(event.recipient.animalId) &&
+            registration.practice.kind != HealthPracticeKind.sampling,
       )) {
         throw const HealthFailure(HealthProblem.invalidResult);
       }
@@ -254,25 +254,50 @@ class HealthRepositoryImpl implements HealthRepository {
             },
         ],
       });
+      final unselected = previousEvents.where((event) => !selection.containsKey(event.recipient.animalId));
+      final retained = previous == null ? null : _retainUnselectedResults(previous, unselected);
       await _store.save(
         events: [
           ...events.map(HealthCodec.eventRow),
-          for (final event in previousEvents)
-            if (!selection.containsKey(event.recipient.animalId))
-              HealthCodec.eventRow(event.copyWith(deletedAt: timestamp, updatedAt: timestamp)),
+          for (final event in unselected)
+            if (event.result == null) HealthCodec.eventRow(event.copyWith(deletedAt: timestamp, updatedAt: timestamp)),
         ],
-        operation: BrickHealthOperationModel(
-          localId: operationId,
-          establishmentId: establishmentId,
-          authorId: current.userId,
-          createdAt: timestamp,
-          payload: body,
-        ),
-        removing: [if (previous != null) previous],
+        operations: [
+          BrickHealthOperationModel(
+            localId: operationId,
+            establishmentId: establishmentId,
+            authorId: current.userId,
+            createdAt: timestamp,
+            payload: body,
+          ),
+          if (retained != null) retained,
+        ],
+        removing: [if (previous != null && retained == null) previous],
         requireSession: () => requireSession(current),
       );
     });
     _onPending?.call();
+  }
+
+  static BrickHealthOperationModel? _retainUnselectedResults(
+    BrickHealthOperationModel previous,
+    Iterable<HealthEvent> unselected,
+  ) {
+    final retained = {
+      for (final event in unselected)
+        if (event.result != null) event.id,
+    };
+    if (retained.isEmpty) return null;
+    final payload = HealthCodec.object(previous.payload);
+    final entries = (payload['animales'] as List).cast<Map<String, dynamic>>();
+    return BrickHealthOperationModel(
+      localId: previous.localId,
+      establishmentId: previous.establishmentId,
+      authorId: previous.authorId,
+      createdAt: previous.createdAt,
+      payload: jsonEncode({...payload, 'animales': entries.where((entry) => retained.contains(entry['id'])).toList()}),
+      rejection: previous.rejection,
+    );
   }
 
   @override
@@ -351,14 +376,16 @@ class HealthRepositoryImpl implements HealthRepository {
             ),
           ),
         ],
-        operation: BrickHealthOperationModel(
-          localId: id,
-          establishmentId: event.establishmentId,
-          authorId: current.userId,
-          createdAt: timestamp,
-          resultEventId: event.id,
-          payload: jsonEncode({'id': id, 'resultado': result, 'fecha': reportedAt.toUtc().toIso8601String()}),
-        ),
+        operations: [
+          BrickHealthOperationModel(
+            localId: id,
+            establishmentId: event.establishmentId,
+            authorId: current.userId,
+            createdAt: timestamp,
+            resultEventId: event.id,
+            payload: jsonEncode({'id': id, 'resultado': result, 'fecha': reportedAt.toUtc().toIso8601String()}),
+          ),
+        ],
         removing: [if (previous != null) previous],
         requireSession: () => requireSession(current),
       );
@@ -478,38 +505,32 @@ class HealthRepositoryImpl implements HealthRepository {
   Future<void> reject(
     HealthSession current,
     BrickHealthOperationModel operation,
-    String reason, {
-    bool waitingForAnimal = false,
-  }) => _store.serialize(() async {
+    String reason,
+  ) => _store.serialize(() async {
     final resultTarget = operation.resultEventId;
     final ids = resultTarget == null ? registrationEventIds(operation) : {resultTarget};
     final events = (await _store.events(
       operation.establishmentId,
     )).where((row) => ids.contains(row.localId)).map(_decode);
     await _store.save(
-      events: events
-          .where((event) => !waitingForAnimal || event.syncErrorCode != reason)
-          .map(
-            (event) => HealthCodec.eventRow(
-              resultTarget != null
-                  ? event.copyWith(resultSyncStatus: HealthSyncStatus.rejected, resultErrorCode: reason)
-                  : event.copyWith(
-                      syncStatus: waitingForAnimal ? HealthSyncStatus.pending : HealthSyncStatus.rejected,
-                      syncErrorCode: reason,
-                    ),
-            ),
-          ),
-      operation: waitingForAnimal
-          ? null
-          : BrickHealthOperationModel(
-              localId: operation.localId,
-              establishmentId: operation.establishmentId,
-              authorId: operation.authorId,
-              createdAt: operation.createdAt,
-              payload: operation.payload,
-              resultEventId: resultTarget,
-              rejection: reason,
-            ),
+      events: events.map(
+        (event) => HealthCodec.eventRow(
+          resultTarget != null
+              ? event.copyWith(resultSyncStatus: HealthSyncStatus.rejected, resultErrorCode: reason)
+              : event.copyWith(syncStatus: HealthSyncStatus.rejected, syncErrorCode: reason),
+        ),
+      ),
+      operations: [
+        BrickHealthOperationModel(
+          localId: operation.localId,
+          establishmentId: operation.establishmentId,
+          authorId: operation.authorId,
+          createdAt: operation.createdAt,
+          payload: operation.payload,
+          resultEventId: resultTarget,
+          rejection: reason,
+        ),
+      ],
       requireSession: () => requireSession(current),
     );
   });
