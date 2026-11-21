@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/health/presentation/mock/health_mock.dart';
@@ -11,12 +12,7 @@ import 'package:frontend_mayoral/features/health/presentation/widgets/scheduled_
 import 'package:frontend_mayoral/features/health/presentation/widgets/treatment_card.dart';
 import 'package:go_router/go_router.dart';
 
-/// Pantalla de Sanidad: bandeja de campañas de vacunación, tratamientos con
-/// período de carencia y alertas, como 3 tabs de una sola página.
-///
-/// Réplica visual estática del diseño `SanidadTabs` (ver
-/// `.claude/specs/sanidad.md`); no hay módulo `eventos_sanitarios` en backend
-/// todavía, ni validación real de carencia.
+/// Acceso al registro sanitario y vista de ejemplo de campañas y alertas.
 class HealthPage extends StatefulWidget {
   /// Crea la pantalla de sanidad.
   const HealthPage({this.syncIndicator, super.key});
@@ -32,26 +28,26 @@ class HealthPage extends StatefulWidget {
 class _HealthPageState extends State<HealthPage> {
   HealthTab _tab = HealthTab.vaccinations;
 
-  void _showOutOfScopeSnackBar() {
+  void _showExampleMessage() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Fuera de alcance de esta iniciativa')),
+      const SnackBar(content: Text(HealthStrings.exampleMessage)),
     );
   }
 
-  void _openApplyVaccination() => context.push(AppRoutes.healthRegistration(capture: true));
+  void _openRegistration() => context.push(AppRoutes.healthRegistration(capture: true));
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppHeader(
         title: HealthStrings.title,
-        headline: HealthStrings.establishmentTitle,
+        headline: HealthStrings.exampleOverview,
         actions: [?widget.syncIndicator],
       ),
       floatingActionButton: _tab == HealthTab.vaccinations
           ? FloatingActionButton.extended(
-              onPressed: _openApplyVaccination,
-              label: const Text(HealthStrings.applyFab),
+              onPressed: _openRegistration,
+              label: const Text(HealthRegistrationStrings.capture),
               icon: const Icon(Icons.add),
             )
           : null,
@@ -64,14 +60,9 @@ class _HealthPageState extends State<HealthPage> {
             ),
             Expanded(
               child: switch (_tab) {
-                HealthTab.vaccinations => _VaccinationsTab(
-                  onApplyCampaign: _openApplyVaccination,
-                ),
+                HealthTab.vaccinations => _VaccinationsTab(onApplyCampaign: _showExampleMessage),
                 HealthTab.treatments => const _TreatmentsTab(),
-                HealthTab.alerts => _AlertsTab(
-                  onApplyAlert: _openApplyVaccination,
-                  onOtherAction: _showOutOfScopeSnackBar,
-                ),
+                HealthTab.alerts => _AlertsTab(onAction: _showExampleMessage),
               },
             ),
           ],
@@ -153,10 +144,9 @@ class _TreatmentsTab extends StatelessWidget {
 }
 
 class _AlertsTab extends StatelessWidget {
-  const _AlertsTab({required this.onApplyAlert, required this.onOtherAction});
+  const _AlertsTab({required this.onAction});
 
-  final VoidCallback onApplyAlert;
-  final VoidCallback onOtherAction;
+  final VoidCallback onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -164,11 +154,7 @@ class _AlertsTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.xl * 2),
       itemCount: healthAlertsMock.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-      itemBuilder: (context, index) {
-        final alert = healthAlertsMock[index];
-        final isApplyAlert = alert.actionLabel == HealthStrings.applyLink;
-        return HealthAlertTile(alert: alert, onAction: isApplyAlert ? onApplyAlert : onOtherAction);
-      },
+      itemBuilder: (context, index) => HealthAlertTile(alert: healthAlertsMock[index], onAction: onAction),
     );
   }
 }
