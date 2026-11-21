@@ -7,6 +7,8 @@ confirmación aplica una práctica a una selección de UUID y guarda un evento p
 animal. El historial lee SQLite por establecimiento y animal. Un estudio se
 registra con resultado pendiente y permite completar el primero desde la ficha.
 La referencia de muestra es opcional y pertenece al animal.
+Brick filtra las lecturas por el establecimiento, la cuenta o los UUID que
+correspondan. Una página remota solo lee los eventos que necesita reconciliar.
 
 El catálogo se guarda por establecimiento. Con el último catálogo descargado
 se puede registrar sin señal. Una instalación nueva necesita descargar el

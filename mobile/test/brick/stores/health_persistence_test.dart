@@ -107,6 +107,37 @@ void main() {
     await expectLater(repository.getCatalog('another-farm'), throwsA(isA<HealthFailure>()));
   });
 
+  test('queries a large set of event IDs within its establishment', () async {
+    final ids = {for (var index = 0; index < 1100; index++) 'query-event-$index'};
+    final first = BrickHealthEventModel(
+      localId: ids.first,
+      establishmentId: 'query-farm',
+      animalId: 'query-animal',
+      payload: '{}',
+    );
+    final last = BrickHealthEventModel(
+      localId: ids.last,
+      establishmentId: 'query-farm',
+      animalId: 'query-animal-2',
+      payload: '{}',
+    );
+    final outside = BrickHealthEventModel(
+      localId: ids.elementAt(1),
+      establishmentId: 'other-query-farm',
+      animalId: first.animalId,
+      payload: '{}',
+    );
+    await store.save(events: [first, last, outside]);
+
+    expect((await store.eventsByIds(first.establishmentId, ids)).map((row) => row.localId), [
+      first.localId,
+      last.localId,
+    ]);
+    expect(await store.event(first.establishmentId, outside.localId), isNull);
+    expect((await store.events(first.establishmentId, animalId: first.animalId)).single.localId, first.localId);
+    expect(await store.eventsByIds(first.establishmentId, {}), isEmpty);
+  });
+
   test('persists one outbox entry for a group and one result on an existing event', () async {
     final recipients = await repository.getRecipients(farm, ['animal-1', 'animal-2']);
     final original = HealthRegistration(

@@ -237,9 +237,10 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   }
 
   /// Lee modelos solo desde SQLite, sin hidratar desde backend.
-  Future<List<TModel>> getLocal<TModel extends OfflineFirstWithRestModel>() {
+  Future<List<TModel>> getLocal<TModel extends OfflineFirstWithRestModel>({Query? query}) {
     return get<TModel>(
       policy: OfflineFirstGetPolicy.localOnly,
+      query: query,
     );
   }
 

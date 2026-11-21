@@ -326,8 +326,7 @@ class HealthRepositoryImpl implements HealthRepository {
     final establishmentId = operation.establishmentId;
     final ids = registrationEventIds(operation);
     final drafts = await _resultDrafts(current, establishmentId);
-    return (await _store.events(establishmentId))
-        .where((row) => ids.contains(row.localId))
+    return (await _store.eventsByIds(establishmentId, ids))
         .map(_decode)
         .where((event) => event.syncStatus == HealthSyncStatus.rejected && event.deletedAt == null)
         .map((event) => _withResultDraft(event, drafts[event.id]))
@@ -375,10 +374,8 @@ class HealthRepositoryImpl implements HealthRepository {
   Future<void> recordResult(HealthEvent event, String result, DateTime reportedAt) async {
     final current = await authorize(event.establishmentId);
     await _store.serialize(() async {
-      final latest = (await _store.events(
-        event.establishmentId,
-        animalId: event.recipient.animalId,
-      )).where((row) => row.localId == event.id).map(_decode).firstOrNull;
+      final row = await _store.event(event.establishmentId, event.id);
+      final latest = row == null || row.animalId != event.recipient.animalId ? null : _decode(row);
       if (latest == null ||
           latest.deletedAt != null ||
           latest.practice.kind != HealthPracticeKind.sampling ||
@@ -448,9 +445,10 @@ class HealthRepositoryImpl implements HealthRepository {
   Stream<void> get changes => _store.changes;
 
   /// Lee el evento local sin proyectar borradores privados para resolver dependencias del envío.
-  Future<HealthEvent?> localEvent(String establishmentId, String eventId) async => (await _store.events(
-    establishmentId,
-  )).where((item) => item.localId == eventId).map(_decode).map(_withoutLegacyResult).firstOrNull;
+  Future<HealthEvent?> localEvent(String establishmentId, String eventId) async {
+    final row = await _store.event(establishmentId, eventId);
+    return row == null ? null : _withoutLegacyResult(_decode(row));
+  }
 
   /// Aplica una página descargada y su cursor en una sola transacción.
   Future<void> reconcilePage(
@@ -459,11 +457,12 @@ class HealthRepositoryImpl implements HealthRepository {
     List<HealthEvent> incoming,
     String cursor,
   ) => _store.serialize(() async {
-    final cache = await _store.catalog(establishmentId);
-    final local = {for (final row in await _store.events(establishmentId)) row.localId: _decode(row)};
     if (incoming.any((event) => event.establishmentId != establishmentId)) {
       throw const FormatException('Health history belongs to a different establishment');
     }
+    final cache = await _store.catalog(establishmentId);
+    final ids = incoming.map((event) => event.id).toSet();
+    final local = {for (final row in await _store.eventsByIds(establishmentId, ids)) row.localId: _decode(row)};
     final updatedEvents = <BrickHealthEventModel>[];
     final resolvedResults = <String>{};
     for (final remote in incoming) {
@@ -518,8 +517,7 @@ class HealthRepositoryImpl implements HealthRepository {
       throw const FormatException('Health response did not acknowledge the requested events');
     }
     final previous = {
-      for (final row in await _store.events(operation.establishmentId))
-        if (expected.contains(row.localId)) row.localId: _decode(row),
+      for (final row in await _store.eventsByIds(operation.establishmentId, expected)) row.localId: _decode(row),
     };
     final finished = {
       for (final event in remote)
@@ -560,10 +558,10 @@ class HealthRepositoryImpl implements HealthRepository {
   }) => _store.serialize(() async {
     final resultTarget = operation.resultEventId;
     final ids = resultTarget == null ? registrationEventIds(operation) : const <String>{};
-    final events = ids.isEmpty ? const <BrickHealthEventModel>[] : await _store.events(operation.establishmentId);
+    final events = await _store.eventsByIds(operation.establishmentId, ids);
     await _store.save(
       events: [
-        for (final event in events.where((row) => ids.contains(row.localId)).map(_decode))
+        for (final event in events.map(_decode))
           HealthCodec.eventRow(
             event.copyWith(
               syncStatus: HealthSyncStatus.rejected,
