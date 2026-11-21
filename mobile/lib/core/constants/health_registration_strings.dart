@@ -117,6 +117,33 @@ abstract final class HealthRegistrationStrings {
   /// La creación del animal debe corregirse antes de enviar el evento.
   static const animalRegistrationRejected = 'Revisá el alta del animal antes de sincronizar este registro.';
 
+  /// Indica qué dato revisar sin mostrar los códigos técnicos de la API.
+  static String? rejectionPrompt({String? animalLabel, String? field}) {
+    final label = switch (field?.split('.').last) {
+      'practica_id' => practice,
+      'producto_id' => product,
+      'dosis' => dose,
+      'unidad' => unit,
+      'via' => route,
+      'serie' => recordedBatch,
+      'vencimiento' => recordedExpiration,
+      'descripcion' => description,
+      'tipo_muestra' => sampleType,
+      'referencia_muestra' => sampleReference,
+      'responsable' => responsible,
+      'fecha_aplicacion' => date,
+      'resultado' => result,
+      'fecha' => resultDate,
+      _ => null,
+    };
+    return switch ((animalLabel, label)) {
+      (final animal?, final name?) => 'Revisá el campo «$name» para la caravana $animal.',
+      (final animal?, null) => 'Revisá la caravana $animal.',
+      (null, final name?) => 'Revisá el campo «$name».',
+      (null, null) => null,
+    };
+  }
+
   /// Entrada de una caravana con bastón.
   static const scanHint = 'Leé con el bastón RFID o ingresá una caravana.';
 

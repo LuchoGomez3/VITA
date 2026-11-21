@@ -22,5 +22,5 @@ abstract interface class HealthRepository {
   Future<void> recordResult(HealthEvent event, String result, DateTime reportedAt);
 
   /// Recupera el formulario de un registro rechazado propio.
-  Future<({String id, HealthRegistration registration})?> getRejectedRegistration(HealthEvent event);
+  Future<HealthCorrection?> getRejectedRegistration(HealthEvent event);
 }

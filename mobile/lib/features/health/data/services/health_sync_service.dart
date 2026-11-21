@@ -154,15 +154,21 @@ class HealthSyncService {
       if (resultId == null) {
         final animals = (HealthCodec.object(operation.payload)['animales'] as List).cast<Map<String, dynamic>>();
         for (final entry in animals) {
+          final animalId = entry['animal_id'] as String;
           final availability = await _resolveAnimal(
-            entry['animal_id'] as String,
+            animalId,
             operation.establishmentId,
             session,
             guard,
           );
           if (availability != HealthAnimalDependency.confirmed) {
             if (availability == HealthAnimalDependency.rejected) {
-              await _repository.reject(session, operation, 'alta_animal_rechazada');
+              await _repository.reject(
+                session,
+                operation,
+                'alta_animal_rechazada',
+                details: (animalId: animalId, field: null),
+              );
             }
             return availability == HealthAnimalDependency.rejected;
           }
@@ -181,7 +187,7 @@ class HealthSyncService {
       if (error.status == 409 && currentEvent != null && operation.resultEventId == currentEvent.id) {
         await _repository.accept(session, operation, [currentEvent], resultConflict: true);
       } else if (error.definitive) {
-        await _repository.reject(session, operation, error.code);
+        await _repository.reject(session, operation, error.code, details: error.rejection);
       }
       return !_transient(error);
     } on Object catch (error) {

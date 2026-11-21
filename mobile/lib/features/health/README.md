@@ -65,8 +65,11 @@ campos del animal en el mismo nivel, `registrado_por_id`, `deleted_at`,
   aceptado, devolver éxito. Si ganó otro envío, devolver HTTP `409` con
   `errors[0].code = resultado_ya_completado` y el evento vigente en
   `errors[0].details.evento`.
-- Para un rechazo funcional devolver un código estable y el animal o campo
-  afectado en `errors[0].details`. Si el evento ya no existe, usar
+- Para un rechazo funcional devolver un código estable. En `errors[0].details`,
+  `animal_id` identifica al animal afectado y `campo` indica el nombre del campo
+  del cuerpo, por ejemplo `datos.dosis` o `referencia_muestra`. Ambos son
+  opcionales. Mobile los guarda en SQLite y muestra la caravana y la etiqueta
+  del campo al corregir el registro. Si el evento ya no existe, usar
   `evento_sanitario_no_encontrado` como código de `404`.
 - Entregar las migraciones, el SQL espejo y las pruebas de aislamiento,
   atomicidad, concurrencia, idempotencia y cursor. Las confirmaciones en la

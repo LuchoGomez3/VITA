@@ -36,6 +36,12 @@ enum HealthSyncStatus {
   rejected,
 }
 
+/// Ubicación del dato que el servidor rechazó.
+typedef HealthRejectionDetails = ({String? animalId, String? field});
+
+/// Registro rechazado y los datos que el operario puede corregir.
+typedef HealthCorrection = ({String id, HealthRegistration registration, HealthRejectionDetails? rejection});
+
 /// Animal seleccionado para recibir una práctica.
 @freezed
 sealed class HealthRecipient with _$HealthRecipient {
@@ -93,6 +99,8 @@ sealed class HealthEvent with _$HealthEvent {
     HealthSyncStatus? resultSyncStatus,
     String? syncErrorCode,
     String? resultErrorCode,
+    HealthRejectionDetails? syncRejection,
+    HealthRejectionDetails? resultRejection,
     HealthStudyResult? result,
     String? notes,
     DateTime? deletedAt,

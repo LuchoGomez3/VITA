@@ -116,7 +116,44 @@ void main() {
     expect(find.text('Ficha'), findsOneWidget);
   });
 
-  testWidgets('saves a result for the same study UUID', (tester) async {
+  testWidgets('a correction identifies the affected animal and field', (tester) async {
+    final repository = _Repository();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HealthRegistrationPage(
+          rejected: (
+            id: 'rejected-group',
+            registration: HealthRegistration(
+              establishmentId: 'farm',
+              occurredAt: DateTime.utc(2026),
+              practice: _study,
+              details: const HealthObservation(description: 'Control', sampleType: 'Sangre'),
+              responsible: 'Operario',
+              recipients: const [
+                _animal,
+                HealthRecipient(animalId: 'second', label: '002'),
+              ],
+            ),
+            rejection: (animalId: 'second', field: 'referencia_muestra'),
+          ),
+          createCubit: () => HealthRegistrationCubit(
+            reader: ReadHealthUseCase(repository),
+            register: RegisterHealthEventsUseCase(repository),
+            establishments: () async => const [
+              EstablishmentMembership(id: 'farm', name: 'Campo', role: UserRole.employee),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Revisá el campo «${HealthRegistrationStrings.sampleReference}» para la caravana 002.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('corrects a rejected result for the same study UUID', (tester) async {
     final repository = _Repository();
     final date = DateTime.utc(2026);
     final event = HealthEvent(
@@ -130,6 +167,9 @@ void main() {
       responsible: 'Operario',
       recordedById: 'user',
       recipient: _animal,
+      resultRejection: (animalId: null, field: 'resultado'),
+      resultSyncStatus: HealthSyncStatus.rejected,
+      result: HealthStudyResult(value: 'Informe previo', reportedAt: date, reportedById: 'user'),
     );
     final router = GoRouter(
       routes: [
@@ -153,6 +193,7 @@ void main() {
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.tap(find.text('Historial'));
     await tester.pumpAndSettle();
+    expect(find.text('Revisá el campo «${HealthRegistrationStrings.result}».'), findsOneWidget);
     await tester.enterText(_entry(HealthRegistrationStrings.result), 'Informe recibido');
     await tester.tap(find.text(HealthRegistrationStrings.saveResult));
     await tester.pumpAndSettle();
@@ -196,7 +237,7 @@ class _Repository implements HealthRepository {
       };
 
   @override
-  Future<({String id, HealthRegistration registration})?> getRejectedRegistration(HealthEvent event) async => null;
+  Future<HealthCorrection?> getRejectedRegistration(HealthEvent event) async => null;
 
   @override
   Stream<List<HealthEvent>> watchHistory(String establishmentId, String animalId) => Stream.value([]);

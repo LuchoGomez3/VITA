@@ -169,7 +169,12 @@ class HealthRepositoryImpl implements HealthRepository {
                 .map((event) {
                   final result = event.result;
                   if (event.resultSyncStatus == null || result?.reportedById == current.userId) return event;
-                  return event.copyWith(result: null, resultSyncStatus: null, resultErrorCode: null);
+                  return event.copyWith(
+                    result: null,
+                    resultSyncStatus: null,
+                    resultErrorCode: null,
+                    resultRejection: null,
+                  );
                 })
                 .toList()
               ..sort((left, right) => right.occurredAt.compareTo(left.occurredAt));
@@ -233,6 +238,7 @@ class HealthRepositoryImpl implements HealthRepository {
             result: previousByAnimal[animal.animalId]?.result,
             resultSyncStatus: previousByAnimal[animal.animalId]?.resultSyncStatus,
             resultErrorCode: previousByAnimal[animal.animalId]?.resultErrorCode,
+            resultRejection: previousByAnimal[animal.animalId]?.resultRejection,
           ),
       ];
       final operationId = generateUuidV4();
@@ -301,7 +307,7 @@ class HealthRepositoryImpl implements HealthRepository {
   }
 
   @override
-  Future<({String id, HealthRegistration registration})?> getRejectedRegistration(HealthEvent event) async {
+  Future<HealthCorrection?> getRejectedRegistration(HealthEvent event) async {
     final current = await authorize(event.establishmentId);
     final operations = await _store.operations(current.userId, establishmentId: event.establishmentId);
     requireSession(current);
@@ -311,15 +317,18 @@ class HealthRepositoryImpl implements HealthRepository {
       if (!ids.contains(event.id)) continue;
       final rows = await _rejectedEvents(event.establishmentId, operation);
       requireSession(current);
+      final rejected = rows.where((item) => item.id == event.id).firstOrNull;
+      if (rejected == null) return null;
       return (
         id: operation.localId,
+        rejection: rejected.syncRejection,
         registration: HealthRegistration(
-          establishmentId: event.establishmentId,
-          occurredAt: event.occurredAt,
-          practice: event.practice,
-          details: event.details,
-          responsible: event.responsible,
-          notes: event.notes,
+          establishmentId: rejected.establishmentId,
+          occurredAt: rejected.occurredAt,
+          practice: rejected.practice,
+          details: rejected.details,
+          responsible: rejected.responsible,
+          notes: rejected.notes,
           recipients: [for (final item in rows) item.recipient],
         ),
       );
@@ -373,6 +382,7 @@ class HealthRepositoryImpl implements HealthRepository {
               result: HealthStudyResult(value: result, reportedAt: reportedAt, reportedById: current.userId),
               resultSyncStatus: HealthSyncStatus.pending,
               resultErrorCode: null,
+              resultRejection: null,
             ),
           ),
         ],
@@ -440,6 +450,7 @@ class HealthRepositoryImpl implements HealthRepository {
               result: previous?.result,
               resultSyncStatus: previous?.resultSyncStatus,
               resultErrorCode: previous?.resultErrorCode,
+              resultRejection: previous?.resultRejection,
             )
           : remote.copyWith(resultErrorCode: hasLocalResult ? null : previous?.resultErrorCode);
       local[remote.id] = merged;
@@ -491,6 +502,7 @@ class HealthRepositoryImpl implements HealthRepository {
             result: previousEvent?.result,
             resultSyncStatus: previousEvent?.resultSyncStatus,
             resultErrorCode: previousEvent?.resultErrorCode,
+            resultRejection: previousEvent?.resultRejection,
           ),
         );
       }
@@ -505,8 +517,9 @@ class HealthRepositoryImpl implements HealthRepository {
   Future<void> reject(
     HealthSession current,
     BrickHealthOperationModel operation,
-    String reason,
-  ) => _store.serialize(() async {
+    String reason, {
+    HealthRejectionDetails? details,
+  }) => _store.serialize(() async {
     final resultTarget = operation.resultEventId;
     final ids = resultTarget == null ? registrationEventIds(operation) : {resultTarget};
     final events = (await _store.events(
@@ -516,8 +529,12 @@ class HealthRepositoryImpl implements HealthRepository {
       events: events.map(
         (event) => HealthCodec.eventRow(
           resultTarget != null
-              ? event.copyWith(resultSyncStatus: HealthSyncStatus.rejected, resultErrorCode: reason)
-              : event.copyWith(syncStatus: HealthSyncStatus.rejected, syncErrorCode: reason),
+              ? event.copyWith(
+                  resultSyncStatus: HealthSyncStatus.rejected,
+                  resultErrorCode: reason,
+                  resultRejection: details,
+                )
+              : event.copyWith(syncStatus: HealthSyncStatus.rejected, syncErrorCode: reason, syncRejection: details),
         ),
       ),
       operations: [

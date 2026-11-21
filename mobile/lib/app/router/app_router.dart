@@ -409,7 +409,7 @@ class AppRouter {
                 (_, final List<String> animals) => animals,
                 _ => const [],
               },
-              rejected: request is ({String id, HealthRegistration registration}) ? request : null,
+              rejected: request is HealthCorrection ? request : null,
               createCubit: createHealthRegistrationCubit,
               refreshCatalog: requestHealthSync,
             );

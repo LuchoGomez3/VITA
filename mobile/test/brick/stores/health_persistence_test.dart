@@ -348,6 +348,7 @@ void main() {
 
     final draft = (await repository.getRejectedRegistration(rejected))!;
     expect(draft.id, group.localId);
+    expect(draft.rejection, (animalId: 'animal-4', field: null));
     expect(draft.registration.recipients, hasLength(2));
     final selectable = await repository.getRecipients(farm, ['animal-3', 'animal-4']);
     expect(selectable.map((recipient) => recipient.animalId), ['animal-3']);
@@ -369,6 +370,62 @@ void main() {
     final pendingCorrection = (await repository.getRejectedRegistration(remaining))!;
     expect(pendingCorrection.registration.recipients.map((recipient) => recipient.animalId), ['animal-4']);
     expect(await store.operations(author.userId), hasLength(2));
+  });
+
+  test('persists the affected animal and field from a rejected group response', () async {
+    await repository.cacheCatalog(
+      author,
+      const HealthCatalog(establishmentId: farm, practices: [sampling], products: []),
+    );
+    final recipients = await repository.getRecipients(farm, ['animal-1', 'animal-2']);
+    final existingIds = (await store.operations(author.userId)).map((item) => item.localId).toSet();
+    await RegisterHealthEventsUseCase(repository)(
+      HealthRegistration(
+        establishmentId: farm,
+        occurredAt: date,
+        practice: sampling,
+        details: const HealthObservation(description: 'Muestreo', sampleType: 'Sangre'),
+        responsible: 'Operario',
+        recipients: recipients,
+      ),
+    );
+    final group = (await store.operations(author.userId)).singleWhere((item) => !existingIds.contains(item.localId));
+    final adapter = HealthRemoteDataSource(
+      baseUrl: 'http://localhost',
+      tokens: const _Tokens(),
+      client: MockClient((request) async {
+        expect(request.method, 'POST');
+        return http.Response(
+          jsonEncode({
+            'success': false,
+            'errors': [
+              {
+                'code': 'referencia_muestra_no_valida',
+                'details': {'animal_id': 'animal-2', 'campo': 'referencia_muestra'},
+              },
+            ],
+          }),
+          422,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+    final sync = HealthSyncService(
+      repository: repository,
+      remote: adapter,
+      resolveAnimal: (_, _, _, _) async => HealthAnimalDependency.confirmed,
+    );
+    addTearDown(sync.dispose);
+    await sync.request();
+
+    final ids = HealthRepositoryImpl.registrationEventIds(group);
+    final reloaded = HealthBrickStore(AppBrickRepository.instance);
+    final row = (await reloaded.events(farm, animalId: 'animal-1')).singleWhere((item) => ids.contains(item.localId));
+    final rejected = HealthCodec.eventFrom(HealthCodec.object(row.payload));
+    final correction = (await repository.getRejectedRegistration(rejected))!;
+    expect(rejected.syncStatus, HealthSyncStatus.rejected);
+    expect(correction.rejection, (animalId: 'animal-2', field: 'referencia_muestra'));
+    expect(correction.registration.recipients.map((recipient) => recipient.animalId), ['animal-1', 'animal-2']);
   });
 
   test('rolls back all changes when the session changes inside a transaction', () async {

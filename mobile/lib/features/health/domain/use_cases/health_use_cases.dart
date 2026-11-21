@@ -124,8 +124,7 @@ class ReadHealthUseCase {
       _repository.watchHistory(establishmentId, animalId);
 
   /// Recupera una carga rechazada para corregirla.
-  Future<({String id, HealthRegistration registration})?> rejectedRegistration(HealthEvent event) =>
-      _repository.getRejectedRegistration(event);
+  Future<HealthCorrection?> rejectedRegistration(HealthEvent event) => _repository.getRejectedRegistration(event);
 }
 
 /// Guarda el primer resultado o corrige su envío rechazado.

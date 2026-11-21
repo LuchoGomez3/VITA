@@ -10,7 +10,7 @@ import 'package:http/http.dart' as http;
 /// Error remoto clasificado sin exponer datos sanitarios en logs.
 class HealthRemoteFailure implements Exception {
   /// Conserva el estado HTTP y el motivo estable que devolvió el servidor.
-  const HealthRemoteFailure(this.status, this.code, {this.currentEvent});
+  const HealthRemoteFailure(this.status, this.code, {this.currentEvent, this.rejection});
 
   /// Estado HTTP.
   final int status;
@@ -20,6 +20,9 @@ class HealthRemoteFailure implements Exception {
 
   /// Resultado autoritativo de otra carga aceptada previamente.
   final HealthEvent? currentEvent;
+
+  /// Animal o campo que permite orientar la corrección del registro.
+  final HealthRejectionDetails? rejection;
 
   /// Se puede procesar como rechazo definitivo.
   bool get definitive =>
@@ -158,6 +161,7 @@ class HealthRemoteDataSource {
     throw HealthRemoteFailure(
       response.statusCode,
       code,
+      rejection: HealthCodec.rejectionFrom(details),
       currentEvent: currentEvent is Map<String, dynamic> && code == 'resultado_ya_completado'
           ? HealthCodec.eventFrom(currentEvent, remote: true)
           : null,

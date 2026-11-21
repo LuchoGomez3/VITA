@@ -92,6 +92,18 @@ abstract final class HealthCodec {
     'referencia_muestra': recipient.sampleReference,
   };
 
+  /// Lee solo los identificadores previstos en el contrato de rechazos.
+  static HealthRejectionDetails? rejectionFrom(Object? json) {
+    if (json is! Map<String, dynamic>) return null;
+    final animalId = json['animal_id'];
+    final field = json['campo'];
+    final details = (animalId: animalId is String ? animalId : null, field: field is String ? field : null);
+    return details.animalId == null && details.field == null ? null : details;
+  }
+
+  static Map<String, String?>? _rejectionTo(HealthRejectionDetails? rejection) =>
+      rejection == null ? null : {'animal_id': rejection.animalId, 'campo': rejection.field};
+
   /// Lee un evento del historial. Las filas remotas tienen estado confirmado.
   static HealthEvent eventFrom(Map<String, dynamic> json, {bool remote = false}) {
     final practice = practiceFrom(json['practica'] as Map<String, dynamic>);
@@ -112,6 +124,8 @@ abstract final class HealthCodec {
       syncStatus: remote ? HealthSyncStatus.synchronized : HealthSyncStatus.values.byName(json['local_sync'] as String),
       syncErrorCode: remote ? null : json['local_sync_error'] as String?,
       resultErrorCode: remote ? null : json['local_result_error'] as String?,
+      syncRejection: remote ? null : rejectionFrom(json['local_sync_rejection']),
+      resultRejection: remote ? null : rejectionFrom(json['local_result_rejection']),
       resultSyncStatus: remote || json['local_result_sync'] == null
           ? null
           : HealthSyncStatus.values.byName(json['local_result_sync'] as String),
@@ -146,6 +160,8 @@ abstract final class HealthCodec {
       'local_sync': event.syncStatus.name,
       'local_sync_error': event.syncErrorCode,
       'local_result_error': event.resultErrorCode,
+      'local_sync_rejection': _rejectionTo(event.syncRejection),
+      'local_result_rejection': _rejectionTo(event.resultRejection),
       'local_result_sync': event.resultSyncStatus?.name,
       'resultado': switch (event.result) {
         final value? => {

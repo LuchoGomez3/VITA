@@ -32,7 +32,7 @@ class HealthRegistrationPage extends StatelessWidget {
   final List<String> animalIds;
 
   /// Carga rechazada del usuario actual.
-  final ({String id, HealthRegistration registration})? rejected;
+  final HealthCorrection? rejected;
 
   /// Solicita una nueva descarga al coordinador de la sesión.
   final Future<void> Function()? refreshCatalog;
@@ -64,7 +64,7 @@ class _RegistrationForm extends StatefulWidget {
   const _RegistrationForm({required this.capture, this.initialEstablishmentId, this.rejected, this.refreshCatalog});
 
   final String? initialEstablishmentId;
-  final ({String id, HealthRegistration registration})? rejected;
+  final HealthCorrection? rejected;
   final Future<void> Function()? refreshCatalog;
   final bool capture;
 
@@ -88,6 +88,16 @@ class _RegistrationFormState extends State<_RegistrationForm> {
   bool _refreshing = false;
 
   bool get _fixedEstablishment => widget.initialEstablishmentId != null || widget.rejected != null;
+
+  String? get _rejectionPrompt {
+    final draft = widget.rejected;
+    final rejection = draft?.rejection;
+    if (draft == null || rejection == null) return null;
+    final recipient = draft.registration.recipients
+        .where((animal) => animal.animalId == rejection.animalId)
+        .firstOrNull;
+    return HealthRegistrationStrings.rejectionPrompt(animalLabel: recipient?.label, field: rejection.field);
+  }
 
   @override
   void initState() {
@@ -139,6 +149,7 @@ class _RegistrationFormState extends State<_RegistrationForm> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  if (_rejectionPrompt case final prompt?) Text(prompt),
                   if (!_fixedEstablishment && state.establishments.length > 1)
                     _select(
                       HealthRegistrationStrings.establishment,

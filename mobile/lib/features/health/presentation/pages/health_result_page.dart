@@ -51,6 +51,9 @@ class _HealthResultPageState extends State<HealthResultPage> {
                 children: [
                   Text(widget.event.practice.name),
                   Text(widget.event.recipient.label),
+                  if (HealthRegistrationStrings.rejectionPrompt(field: widget.event.resultRejection?.field)
+                      case final prompt?)
+                    Text(prompt),
                   TextField(
                     controller: _text,
                     enabled: !saving,
