@@ -101,7 +101,8 @@ abstract final class HealthCodec {
     return details.animalId == null && details.field == null ? null : details;
   }
 
-  static Map<String, String?>? _rejectionTo(HealthRejectionDetails? rejection) =>
+  /// Conserva el detalle de rechazo en SQLite.
+  static Map<String, String?>? rejectionTo(HealthRejectionDetails? rejection) =>
       rejection == null ? null : {'animal_id': rejection.animalId, 'campo': rejection.field};
 
   /// Lee un evento del historial. Las filas remotas tienen estado confirmado.
@@ -160,8 +161,8 @@ abstract final class HealthCodec {
       'local_sync': event.syncStatus.name,
       'local_sync_error': event.syncErrorCode,
       'local_result_error': event.resultErrorCode,
-      'local_sync_rejection': _rejectionTo(event.syncRejection),
-      'local_result_rejection': _rejectionTo(event.resultRejection),
+      'local_sync_rejection': rejectionTo(event.syncRejection),
+      'local_result_rejection': rejectionTo(event.resultRejection),
       'local_result_sync': event.resultSyncStatus?.name,
       'resultado': switch (event.result) {
         final value? => {

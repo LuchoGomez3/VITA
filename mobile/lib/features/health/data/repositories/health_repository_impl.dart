@@ -45,6 +45,7 @@ class HealthRepositoryImpl implements HealthRepository {
   final HealthSession? Function() _session;
   final void Function()? _onPending;
   final DateTime Function() _now;
+  static const _resultRejectionKey = 'local_result_rejection';
 
   /// Identidad de la sesión abierta, si la hay.
   HealthSession? get session => _session();
@@ -156,28 +157,17 @@ class HealthRepositoryImpl implements HealthRepository {
     try {
       await for (final _ in ticks.stream) {
         await authorize(establishmentId);
-        final rows = await _store.events(establishmentId, animalId: animalId);
+        final events = await _store.serialize(() async {
+          final rows = await _store.events(establishmentId, animalId: animalId);
+          final drafts = await _resultDrafts(current, establishmentId);
+          return [
+            for (final event in rows.map(_decode))
+              if (event.deletedAt == null &&
+                  (event.syncStatus == HealthSyncStatus.synchronized || event.recordedById == current.userId))
+                _withResultDraft(event, drafts[event.id]),
+          ]..sort((left, right) => right.occurredAt.compareTo(left.occurredAt));
+        });
         requireSession(current);
-        final events =
-            rows
-                .map(_decode)
-                .where(
-                  (event) =>
-                      event.deletedAt == null &&
-                      (event.syncStatus == HealthSyncStatus.synchronized || event.recordedById == current.userId),
-                )
-                .map((event) {
-                  final result = event.result;
-                  if (event.resultSyncStatus == null || result?.reportedById == current.userId) return event;
-                  return event.copyWith(
-                    result: null,
-                    resultSyncStatus: null,
-                    resultErrorCode: null,
-                    resultRejection: null,
-                  );
-                })
-                .toList()
-              ..sort((left, right) => right.occurredAt.compareTo(left.occurredAt));
         yield events;
       }
     } finally {
@@ -207,7 +197,7 @@ class HealthRepositoryImpl implements HealthRepository {
       if (replacingOperationId != null && previous == null) {
         throw const HealthFailure(HealthProblem.invalidSelection);
       }
-      final previousEvents = previous == null ? <HealthEvent>[] : await _rejectedEvents(establishmentId, previous);
+      final previousEvents = previous == null ? <HealthEvent>[] : await _rejectedEvents(current, previous);
       if (previousEvents.any(
         (event) =>
             event.result != null &&
@@ -235,10 +225,6 @@ class HealthRepositoryImpl implements HealthRepository {
             recordedById: current.userId,
             recipient: animal,
             notes: registration.notes,
-            result: previousByAnimal[animal.animalId]?.result,
-            resultSyncStatus: previousByAnimal[animal.animalId]?.resultSyncStatus,
-            resultErrorCode: previousByAnimal[animal.animalId]?.resultErrorCode,
-            resultRejection: previousByAnimal[animal.animalId]?.resultRejection,
           ),
       ];
       final operationId = generateUuidV4();
@@ -315,7 +301,7 @@ class HealthRepositoryImpl implements HealthRepository {
       if (operation.rejection == null || operation.resultEventId != null) continue;
       final ids = registrationEventIds(operation);
       if (!ids.contains(event.id)) continue;
-      final rows = await _rejectedEvents(event.establishmentId, operation);
+      final rows = await _rejectedEvents(current, operation);
       requireSession(current);
       final rejected = rows.where((item) => item.id == event.id).firstOrNull;
       if (rejected == null) return null;
@@ -336,14 +322,47 @@ class HealthRepositoryImpl implements HealthRepository {
     return null;
   }
 
-  Future<List<HealthEvent>> _rejectedEvents(String establishmentId, BrickHealthOperationModel operation) async {
+  Future<List<HealthEvent>> _rejectedEvents(HealthSession current, BrickHealthOperationModel operation) async {
+    final establishmentId = operation.establishmentId;
     final ids = registrationEventIds(operation);
+    final drafts = await _resultDrafts(current, establishmentId);
     return (await _store.events(establishmentId))
         .where((row) => ids.contains(row.localId))
         .map(_decode)
         .where((event) => event.syncStatus == HealthSyncStatus.rejected && event.deletedAt == null)
+        .map((event) => _withResultDraft(event, drafts[event.id]))
         .toList();
   }
+
+  Future<Map<String, BrickHealthOperationModel>> _resultDrafts(HealthSession current, String establishmentId) async => {
+    for (final operation in await _store.operations(current.userId, establishmentId: establishmentId))
+      if (operation.resultEventId case final id?) id: operation,
+  };
+
+  static HealthEvent _withResultDraft(HealthEvent event, BrickHealthOperationModel? draft) {
+    final canonical = _withoutLegacyResult(event);
+    if (draft == null || canonical.result != null || canonical.deletedAt != null) return canonical;
+    final payload = HealthCodec.object(draft.payload);
+    final legacyDetails = event.result?.reportedById == draft.authorId ? event.resultRejection : null;
+    return canonical.copyWith(
+      result: HealthStudyResult(
+        value: payload['resultado'] as String,
+        reportedAt: DateTime.parse(payload['fecha'] as String),
+        reportedById: draft.authorId,
+      ),
+      resultSyncStatus: draft.rejection == null ? HealthSyncStatus.pending : HealthSyncStatus.rejected,
+      resultErrorCode: draft.rejection,
+      resultRejection: draft.rejection == null
+          ? null
+          : payload.containsKey(_resultRejectionKey)
+          ? HealthCodec.rejectionFrom(payload[_resultRejectionKey])
+          : legacyDetails,
+    );
+  }
+
+  static HealthEvent _withoutLegacyResult(HealthEvent event) => event.resultSyncStatus == null
+      ? event
+      : event.copyWith(result: null, resultSyncStatus: null, resultErrorCode: null, resultRejection: null);
 
   /// UUID de los eventos afectados por el registro persistido.
   static Set<String> registrationEventIds(BrickHealthOperationModel operation) =>
@@ -366,26 +385,13 @@ class HealthRepositoryImpl implements HealthRepository {
           (latest.syncStatus != HealthSyncStatus.synchronized && latest.recordedById != current.userId)) {
         throw const HealthFailure(HealthProblem.invalidResult);
       }
-      final previous = (await _store.operations(
-        current.userId,
-        establishmentId: event.establishmentId,
-      )).where((row) => row.resultEventId == event.id && row.rejection != null).firstOrNull;
-      if (latest.result != null && (latest.resultSyncStatus != HealthSyncStatus.rejected || previous == null)) {
+      final previous = (await _resultDrafts(current, event.establishmentId))[event.id];
+      if (_withoutLegacyResult(latest).result != null || (previous != null && previous.rejection == null)) {
         throw const HealthFailure(HealthProblem.invalidResult);
       }
       final id = generateUuidV4();
       final timestamp = _now().toUtc();
       await _store.save(
-        events: [
-          HealthCodec.eventRow(
-            latest.copyWith(
-              result: HealthStudyResult(value: result, reportedAt: reportedAt, reportedById: current.userId),
-              resultSyncStatus: HealthSyncStatus.pending,
-              resultErrorCode: null,
-              resultRejection: null,
-            ),
-          ),
-        ],
         operations: [
           BrickHealthOperationModel(
             localId: id,
@@ -421,9 +427,10 @@ class HealthRepositoryImpl implements HealthRepository {
   /// Observa transacciones confirmadas de Sanidad.
   Stream<void> get changes => _store.changes;
 
-  /// Lee la proyección local para resolver dependencias del envío.
-  Future<HealthEvent?> localEvent(String establishmentId, String eventId) async =>
-      (await _store.events(establishmentId)).where((item) => item.localId == eventId).map(_decode).firstOrNull;
+  /// Lee el evento local sin proyectar borradores privados para resolver dependencias del envío.
+  Future<HealthEvent?> localEvent(String establishmentId, String eventId) async => (await _store.events(
+    establishmentId,
+  )).where((item) => item.localId == eventId).map(_decode).map(_withoutLegacyResult).firstOrNull;
 
   /// Aplica una página descargada y su cursor en una sola transacción.
   Future<void> reconcilePage(
@@ -444,7 +451,7 @@ class HealthRepositoryImpl implements HealthRepository {
       if (!_shouldApply(remote, previous)) continue;
       final isFinal = remote.result != null || remote.deletedAt != null;
       final hasLocalResult = previous?.resultSyncStatus != null;
-      if (isFinal && hasLocalResult) resolvedResults.add(remote.id);
+      if (isFinal) resolvedResults.add(remote.id);
       final merged = hasLocalResult && !isFinal
           ? remote.copyWith(
               result: previous?.result,
@@ -494,9 +501,13 @@ class HealthRepositoryImpl implements HealthRepository {
       for (final row in await _store.events(operation.establishmentId))
         if (expected.contains(row.localId)) row.localId: _decode(row),
     };
+    final finished = {
+      for (final event in remote)
+        if (event.result != null || event.deletedAt != null) event.id,
+    };
     final rows = remote.map((accepted) {
       final previousEvent = previous[accepted.id];
-      if (resultTarget == null && previousEvent?.resultSyncStatus != null) {
+      if (resultTarget == null && !finished.contains(accepted.id) && previousEvent?.resultSyncStatus != null) {
         return HealthCodec.eventRow(
           accepted.copyWith(
             result: previousEvent?.result,
@@ -510,7 +521,14 @@ class HealthRepositoryImpl implements HealthRepository {
         accepted.copyWith(resultErrorCode: resultConflict ? 'resultado_ya_completado' : null),
       );
     });
-    await _store.save(events: rows, removing: [operation], requireSession: () => requireSession(current));
+    await _store.save(
+      events: rows,
+      removing: {
+        operation.localId: operation,
+        for (final draft in await _store.resultOperations(operation.establishmentId, finished)) draft.localId: draft,
+      }.values,
+      requireSession: () => requireSession(current),
+    );
   });
 
   /// Conserva un rechazo funcional para que su autor pueda corregirlo.
@@ -521,29 +539,27 @@ class HealthRepositoryImpl implements HealthRepository {
     HealthRejectionDetails? details,
   }) => _store.serialize(() async {
     final resultTarget = operation.resultEventId;
-    final ids = resultTarget == null ? registrationEventIds(operation) : {resultTarget};
-    final events = (await _store.events(
-      operation.establishmentId,
-    )).where((row) => ids.contains(row.localId)).map(_decode);
+    final ids = resultTarget == null ? registrationEventIds(operation) : const <String>{};
+    final events = ids.isEmpty ? const <BrickHealthEventModel>[] : await _store.events(operation.establishmentId);
     await _store.save(
-      events: events.map(
-        (event) => HealthCodec.eventRow(
-          resultTarget != null
-              ? event.copyWith(
-                  resultSyncStatus: HealthSyncStatus.rejected,
-                  resultErrorCode: reason,
-                  resultRejection: details,
-                )
-              : event.copyWith(syncStatus: HealthSyncStatus.rejected, syncErrorCode: reason, syncRejection: details),
-        ),
-      ),
+      events: [
+        for (final event in events.where((row) => ids.contains(row.localId)).map(_decode))
+          HealthCodec.eventRow(
+            event.copyWith(syncStatus: HealthSyncStatus.rejected, syncErrorCode: reason, syncRejection: details),
+          ),
+      ],
       operations: [
         BrickHealthOperationModel(
           localId: operation.localId,
           establishmentId: operation.establishmentId,
           authorId: operation.authorId,
           createdAt: operation.createdAt,
-          payload: operation.payload,
+          payload: resultTarget == null
+              ? operation.payload
+              : jsonEncode({
+                  ...HealthCodec.object(operation.payload),
+                  _resultRejectionKey: HealthCodec.rejectionTo(details),
+                }),
           resultEventId: resultTarget,
           rejection: reason,
         ),

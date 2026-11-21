@@ -28,6 +28,11 @@ recuperar por separado.
 Cada operación se envía con la cuenta que la guardó. La pantalla de
 sincronización muestra los pendientes y rechazos de esa cuenta.
 
+Los resultados locales se leen desde la operación de la cuenta que los guardó.
+Dos cuentas habilitadas que comparten un dispositivo pueden guardar sus propios
+borradores para el mismo estudio. El resultado confirmado se comparte entre
+las cuentas autorizadas y cierra los borradores de ese evento.
+
 El historial incremental aplica el evento y el cursor en la misma transacción.
 Una actualización sin resultado conserva cualquier carga local en curso. Un
 resultado confirmado o una baja lógica de la versión vigente cierra las cargas

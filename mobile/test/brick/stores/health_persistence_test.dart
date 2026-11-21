@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/health_event.model.dart';
+import 'package:frontend_mayoral/brick/models/health_operation.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/health_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
@@ -242,21 +243,49 @@ void main() {
     final [first, second] = events;
     await RecordHealthResultUseCase(repository)(first, 'Resultado rechazado', date);
     final rejected = (await store.operations(author.userId)).single;
-    await repository.reject(author, rejected, 'resultado_invalido');
+    const legacyDetails = (animalId: null, field: 'resultado');
+    await store.save(
+      events: [
+        HealthCodec.eventRow(
+          first.copyWith(
+            result: HealthStudyResult(value: 'Resultado rechazado', reportedAt: date, reportedById: author.userId),
+            resultSyncStatus: HealthSyncStatus.rejected,
+            resultErrorCode: 'resultado_invalido',
+            resultRejection: legacyDetails,
+          ),
+        ),
+      ],
+      operations: [
+        BrickHealthOperationModel(
+          localId: rejected.localId,
+          establishmentId: rejected.establishmentId,
+          authorId: rejected.authorId,
+          createdAt: rejected.createdAt,
+          payload: rejected.payload,
+          resultEventId: rejected.resultEventId,
+          rejection: 'resultado_invalido',
+        ),
+      ],
+    );
     await RecordHealthResultUseCase(repository)(second, 'Resultado pendiente', date);
 
     current = other;
     addTearDown(() => current = author);
     final metadataTime = date.add(const Duration(minutes: 1));
     await repository.reconcilePage(other, farm, [first.copyWith(notes: 'Nota vigente', updatedAt: metadataTime)], '1');
-    final retained = (await repository.localEvent(farm, first.id))!;
+    current = author;
+    final retained = (await repository.watchHistory(farm, first.recipient.animalId).first).singleWhere(
+      (event) => event.id == first.id,
+    );
     expect(retained.notes, 'Nota vigente');
     expect(retained.result?.value, 'Resultado rechazado');
     expect(retained.resultSyncStatus, HealthSyncStatus.rejected);
+    expect(retained.resultRejection, legacyDetails);
     expect(await store.operations(author.userId), hasLength(2));
 
     final updated = date.add(const Duration(minutes: 2));
     final canonical = HealthStudyResult(value: 'Resultado vigente', reportedAt: updated, reportedById: other.userId);
+    current = other;
     await repository.reconcilePage(other, farm, [
       first.copyWith(result: canonical, updatedAt: updated),
       second.copyWith(deletedAt: updated, updatedAt: updated),
@@ -275,6 +304,74 @@ void main() {
     );
     expect(await store.operations(author.userId), isEmpty);
     expect(await repository.cursor(farm), '2');
+  });
+
+  test('isolates study drafts between accounts on one device and clears both on acceptance', () async {
+    await repository.cacheCatalog(
+      author,
+      const HealthCatalog(establishmentId: farm, practices: [sampling], products: []),
+    );
+    final recipients = await repository.getRecipients(farm, ['animal-1']);
+    await RegisterHealthEventsUseCase(repository)(
+      HealthRegistration(
+        establishmentId: farm,
+        occurredAt: date,
+        practice: sampling,
+        details: const HealthObservation(description: 'Muestreo compartido', sampleType: 'Sangre'),
+        responsible: 'Operario',
+        recipients: recipients,
+      ),
+    );
+    final creation = (await store.operations(author.userId)).single;
+    final id = HealthRepositoryImpl.registrationEventIds(creation).single;
+    final study = (await repository.localEvent(farm, id))!.copyWith(syncStatus: HealthSyncStatus.synchronized);
+    await repository.accept(author, creation, [study]);
+
+    Future<HealthEvent> visible() async =>
+        (await repository.watchHistory(farm, 'animal-1').first).singleWhere((event) => event.id == id);
+
+    await RecordHealthResultUseCase(repository)(study, 'Resultado privado de A', date);
+    final draftA = (await store.operations(author.userId)).single;
+    const details = (animalId: null, field: 'resultado');
+    await repository.reject(author, draftA, 'resultado_invalido', details: details);
+    expect((await visible()).resultRejection, details);
+
+    current = other;
+    addTearDown(() => current = author);
+    final available = await visible();
+    expect(available.result, isNull);
+    expect(available.resultRejection, isNull);
+    await RecordHealthResultUseCase(repository)(available, 'Resultado privado de B', date);
+    await expectLater(
+      RecordHealthResultUseCase(repository)(available, 'Duplicado de B', date),
+      throwsA(isA<HealthFailure>()),
+    );
+    expect((await visible()).result?.value, 'Resultado privado de B');
+    expect(await repository.localEvent(farm, id), study);
+    final draftB = (await store.operations(other.userId)).single;
+    expect(draftB.localId, isNot(draftA.localId));
+
+    current = author;
+    final retained = await visible();
+    expect(retained.result?.value, 'Resultado privado de A');
+    expect(retained.resultSyncStatus, HealthSyncStatus.rejected);
+    expect(retained.resultRejection, details);
+
+    current = other;
+    final reportedAt = date.add(const Duration(hours: 1));
+    final result = HealthStudyResult(
+      value: 'Resultado privado de B',
+      reportedAt: reportedAt,
+      reportedById: other.userId,
+    );
+    await repository.accept(other, draftB, [study.copyWith(result: result, updatedAt: reportedAt)]);
+    expect(await store.operations(other.userId), isEmpty);
+    expect(await store.operations(author.userId), isEmpty);
+    current = author;
+    final shared = await visible();
+    expect(shared.result, result);
+    expect(shared.resultSyncStatus, isNull);
+    expect(shared.resultRejection, isNull);
   });
 
   test('allows correcting a group after a definitive animal rejection and keeps an excluded study result', () async {
@@ -364,7 +461,9 @@ void main() {
       ['animal-3'],
     ]);
     expect((await repository.localEvent(farm, kept.id))?.syncStatus, HealthSyncStatus.synchronized);
-    final remaining = (await repository.localEvent(farm, blocked.id))!;
+    final remaining = (await repository.watchHistory(farm, 'animal-4').first).singleWhere(
+      (event) => event.id == blocked.id,
+    );
     expect(remaining.syncStatus, HealthSyncStatus.rejected);
     expect(remaining.result?.value, 'Resultado de muestra 4');
     final pendingCorrection = (await repository.getRejectedRegistration(remaining))!;
