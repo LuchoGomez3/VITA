@@ -8,7 +8,7 @@ Un operario registra **una práctica sanitaria sobre uno o varios animales de un
 
 Mobile guarda cada operación y sus eventos en SQLite antes del envío. Reutiliza el transporte autenticado de Brick. Al reconectar conserva el UUID y el cuerpo del envío, concilia la respuesta y descarga cambios del historial por establecimiento. El catálogo descargado queda disponible sin señal.
 
-La agenda sanitaria, las jornadas con varias prácticas, la administración de productos y los recordatorios quedan para otra entrega. Esta integración cubre los datos que ya captura el formulario y el primer resultado. [VITA-20](https://linear.app/utn-frc-proyecto-final/issue/VITA-20/registrar-eventos-sanitarios-por-lote) · [Ficha individual](https://linear.app/utn-frc-proyecto-final/issue/VITA-39/visualizar-detalles-e-historial-del-animal) · [Manga](https://linear.app/utn-frc-proyecto-final/issue/VITA-145/4-feature-registrar-animales-por-practica-mediante-baston-rfid) · [Jornada por establecimiento](https://linear.app/utn-frc-proyecto-final/issue/VITA-144/3-feature-configurar-una-jornada-sanitaria-por-establecimiento)
+La agenda sanitaria, las jornadas con varias prácticas, la administración de productos y los recordatorios quedan para otra entrega. Esta integración cubre los datos que ya captura el formulario y el primer resultado. [VITA-20](https://linear.app/utn-frc-proyecto-final/issue/VITA-20/registrar-eventos-sanitarios-desde-ficha-lote-o-manga) · [Ficha individual](https://linear.app/utn-frc-proyecto-final/issue/VITA-39/visualizar-detalles-e-historial-del-animal) · [Manga](https://linear.app/utn-frc-proyecto-final/issue/VITA-145/mobile-registrar-una-practica-desde-manga-con-rfid-o-caravana-manual) · [Jornada por establecimiento](https://linear.app/utn-frc-proyecto-final/issue/VITA-144/3-feature-configurar-una-jornada-sanitaria-por-establecimiento)
 
 ## Base que ya existe
 
@@ -30,7 +30,7 @@ La agenda sanitaria, las jornadas con varias prácticas, la administración de p
 
 Una práctica del catálogo incluye `id`, `nombre`, `modelo` y `producto_ids`. Un producto incluye `id` y `nombre`. La lista `producto_ids` indica las combinaciones permitidas para `aplicacion`. El identificador de práctica puede ser UUID o un código estable. Los tres valores de `modelo` que interpreta Mobile son `aplicacion`, `muestreo` y `lesion`. El modelo del formulario y el tipo sanitario del catálogo son conceptos separados.
 
-[Esquema y migraciones · VITA-142](https://linear.app/utn-frc-proyecto-final/issue/VITA-142/1-db-crear-estructura-de-datos-para-jornadas-y-eventos-sanitarios) · [Catálogos · VITA-143](https://linear.app/utn-frc-proyecto-final/issue/VITA-143/2-feature-consultar-catalogos-sanitarios-sin-conexion)
+[Esquema y migraciones · VITA-142](https://linear.app/utn-frc-proyecto-final/issue/VITA-142/db-extender-el-esquema-de-eventos-sanitarios-y-el-aislamiento-por) · [Catálogo · VITA-143](https://linear.app/utn-frc-proyecto-final/issue/VITA-143/integracion-consultar-el-catalogo-sanitario-por-establecimiento-sin)
 
 ## Fase 2 · Alta y resultado
 
@@ -89,7 +89,7 @@ Cada elemento de `animales` en el alta lleva `id` del evento, `animal_id`, `cara
 - Para un rechazo que el operario pueda corregir, devolver el envelope de dominio. `errors[0].details.animal_id` y `errors[0].details.campo` son opcionales. Ejemplos de campo `datos.dosis` y `animales.1.referencia_muestra`. Un estudio inexistente se comunica con `404` y código `evento_sanitario_no_encontrado`.
 - Verificar el cuerpo de los `422` del esquema y de las reglas de negocio. El envelope genérico de validación de FastAPI necesita traducción cuando haya que señalar un campo o un animal. Conservar la clasificación de fallas transitorias, por ejemplo `429` y `5xx`, para que Mobile pueda reintentar.
 
-[Confirmación · VITA-146](https://linear.app/utn-frc-proyecto-final/issue/VITA-146/5-feature-revisar-y-confirmar-una-jornada-sanitaria-completa) · [Envelope y errores de dominio](../backend/core/middlewares.py)
+[Alta · VITA-146](https://linear.app/utn-frc-proyecto-final/issue/VITA-146/backend-confirmar-el-registro-de-una-practica-sanitaria-por-grupo) · [Resultado · VITA-207](https://linear.app/utn-frc-proyecto-final/issue/VITA-207/backend-registrar-el-primer-resultado-de-un-estudio-sanitario) · [Envelope y errores de dominio](../backend/core/middlewares.py)
 
 ## Fase 3 · Historial incremental
 
@@ -104,7 +104,7 @@ El cursor debe representar cambios confirmados y visibles en el servidor. La pri
 
 Mobile ya conserva una versión más nueva descargada aunque después reciba una respuesta idempotente anterior. El cursor se guarda junto con la página aplicada y el envío conserva su UUID hasta la confirmación del grupo.
 
-[Historial de ficha · VITA-39](https://linear.app/utn-frc-proyecto-final/issue/VITA-39/visualizar-detalles-e-historial-del-animal) · [Persistencia y sync · VITA-147](https://linear.app/utn-frc-proyecto-final/issue/VITA-147/6-feature-registrar-y-sincronizar-jornadas-sanitarias-sin-conexion) · [Mapper de Mobile](../mobile/lib/features/health/data/mappers/health_codec.dart)
+[Historial incremental · VITA-206](https://linear.app/utn-frc-proyecto-final/issue/VITA-206/backend-servir-el-historial-sanitario-incremental-por-establecimiento) · [Persistencia y sync · VITA-147](https://linear.app/utn-frc-proyecto-final/issue/VITA-147/mobile-guardar-y-sincronizar-eventos-sanitarios-sin-conexion) · [Mapper de Mobile](../mobile/lib/features/health/data/mappers/health_codec.dart)
 
 ## Fase 4 · Criterios de integración
 
@@ -119,4 +119,4 @@ Mobile ya conserva una versión más nueva descargada aunque después reciba una
 
 Backend entrega pruebas de API y persistencia, migración y SQL espejo, y comprobación de RLS en staging. Mobile verifica el mismo payload contra staging, el reinicio offline y la captura física.
 
-Para dejar el seguimiento alineado, actualizar VITA-20, VITA-142, VITA-146 y VITA-147 a **una práctica por confirmación**. Mantener el trabajo de catálogo en VITA-143 y el de captura en VITA-145. El resultado y el historial incremental pueden quedar como subtareas backend con criterios verificables. VITA-144 conserva la configuración de jornadas como trabajo posterior.
+VITA-20 agrupa la entrega de **una práctica por confirmación**. VITA-145 y VITA-147 siguen el trabajo de Mobile en revisión. VITA-143 sigue la integración del catálogo. VITA-142, VITA-146, VITA-206 y VITA-207 siguen el trabajo de Backend. VITA-144 conserva la configuración de jornadas como trabajo posterior relacionado.

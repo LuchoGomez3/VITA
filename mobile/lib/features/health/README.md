@@ -140,10 +140,10 @@ campos del animal en el mismo nivel, `registrado_por_id`, `deleted_at`,
 
 VITA-20 cubre registro desde ficha, lote y manga. VITA-143 corresponde al
 catálogo, VITA-145 a manga y VITA-147 a persistencia y sincronización móvil.
-VITA-39 aporta el historial individual. Para backend, ampliar VITA-142 y
-VITA-146 con el esquema y la operación de registro, y contemplar tareas de
-lectura y carga de resultado. VITA-144 corresponde al futuro flujo de
-jornadas con múltiples prácticas.
+VITA-39 aporta la ficha individual. Backend se sigue en VITA-142 para el
+esquema, VITA-146 para el alta, VITA-206 para el historial incremental y
+VITA-207 para el resultado. VITA-144 queda como trabajo futuro relacionado
+para jornadas con múltiples prácticas.
 
 ## Verificación
 
