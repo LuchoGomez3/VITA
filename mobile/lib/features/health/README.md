@@ -77,8 +77,14 @@ Una actualización sin resultado conserva cualquier carga local en curso. Un
 resultado confirmado o una baja lógica de la versión vigente cierra las cargas
 locales del estudio y retira sus operaciones, aunque fueran de otra cuenta del
 dispositivo.
+Si el historial confirma el mismo UUID antes de que se reciba la respuesta del
+alta, aplica la versión del servidor y conserva el envío del grupo pendiente
+hasta su aceptación. El reenvío puede devolver una versión anterior. La ficha
+mantiene el resultado o la baja ya descargados.
 
 ## Contrato para backend
+
+[Plan de integración para backend](../../../../docs/plan-backend-integracion-sanidad.md).
 
 El repositorio contiene los modelos `EventoSanitario` y `ProductoSanitario`.
 Los endpoints siguientes y el aislamiento en Supabase se deben verificar
@@ -110,7 +116,7 @@ campos del animal en el mismo nivel, `registrado_por_id`, `deleted_at`,
 `{valor, fecha, registrado_por_id}`. Las fechas con hora usan ISO 8601 UTC.
 
 - Registrar el grupo y su clave de idempotencia en una sola transacción. Un
-  reenvío idéntico devuelve los eventos originales. Cada animal recibe a lo
+  reenvío idéntico devuelve los mismos UUID de evento. Cada animal recibe a lo
   sumo un evento de esa operación.
 - Completar únicamente un estudio pendiente. Resolver la concurrencia en
   la misma transacción que registra la operación. Si el mismo envío ya fue
@@ -149,8 +155,8 @@ Desde `mobile`, correr
 | Ficha | Formulario individual, estudio y carga de resultado sobre el UUID existente. |
 | Lote o grupo | Una sola operación en SQLite, reenvío con el mismo cuerpo y reanudación del resultado tras corregir un alta rechazada. |
 | Selección grande | El formulario crea filas a medida que se desplazan y conserva la referencia editada al confirmar 120 animales. |
-| Manga | Lecturas HID simuladas y entrada manual sin repetir un animal. |
-| Historial incremental | Conserva un resultado local ante cambios de metadatos y lo concilia ante un resultado confirmado o una baja lógica. |
+| Manga | Lecturas HID simuladas y entrada manual sin repetir un animal. Las consultas se acotan al establecimiento y al identificador. |
+| Historial incremental | Conserva un resultado local ante cambios de metadatos. Si se pierde la respuesta de un alta, el reenvío conserva el resultado o la baja ya recibidos por historial. |
 | Rechazos | El `422` simulado conserva el animal y el campo en SQLite y la corrección muestra una indicación localizada. |
 | Sesión | Cambio de cuenta durante un pedido, borradores privados en el mismo dispositivo y reversión de una escritura interrumpida. |
 
