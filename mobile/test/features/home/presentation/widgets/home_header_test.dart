@@ -39,13 +39,16 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('${HomeStrings.establishmentPrefix} ${HomeStrings.allEstablishments}'));
+    final defaultSummary = find.text('${HomeStrings.establishmentPrefix} La Sirena');
+    expect(defaultSummary, findsOneWidget);
+
+    await tester.tap(defaultSummary);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('La Sirena'));
+    await tester.tap(find.text('El Ombú'));
     await tester.pumpAndSettle();
 
-    expect(cubit.state.selectedEstablishmentId, 'establishment-1');
-    expect(find.text('${HomeStrings.establishmentPrefix} La Sirena'), findsOneWidget);
+    expect(cubit.state.selectedEstablishmentId, 'establishment-2');
+    expect(find.text('${HomeStrings.establishmentPrefix} El Ombú'), findsOneWidget);
   });
 }
 
@@ -54,6 +57,7 @@ class _FakeHomeDashboardRepository implements HomeDashboardRepository {
   Future<Result<Map<String, EstablishmentMembership>>> getEstablishments() async {
     return const Result.success({
       'establishment-1': EstablishmentMembership(id: 'establishment-1', name: 'La Sirena', role: UserRole.owner),
+      'establishment-2': EstablishmentMembership(id: 'establishment-2', name: 'El Ombú', role: UserRole.owner),
     });
   }
 
