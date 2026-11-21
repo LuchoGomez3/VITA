@@ -47,8 +47,8 @@ class HealthBrickStore {
       _repository.getLocal<BrickHealthEventModel>(
         query: Query(
           where: [
-            Where('establishmentId').isExactly(establishmentId),
-            if (animalId != null) Where('animalId').isExactly(animalId),
+            const Where('establishmentId').isExactly(establishmentId),
+            if (animalId != null) const Where('animalId').isExactly(animalId),
           ],
         ),
       );
@@ -59,8 +59,8 @@ class HealthBrickStore {
         query: Query(
           limit: 1,
           where: [
-            Where('establishmentId').isExactly(establishmentId),
-            Where('localId').isExactly(eventId),
+            const Where('establishmentId').isExactly(establishmentId),
+            const Where('localId').isExactly(eventId),
           ],
         ),
       )).firstOrNull;
@@ -74,8 +74,8 @@ class HealthBrickStore {
     final rows = await _repository.getLocal<BrickHealthOperationModel>(
       query: Query(
         where: [
-          Where('authorId').isExactly(authorId),
-          if (establishmentId != null) Where('establishmentId').isExactly(establishmentId),
+          const Where('authorId').isExactly(authorId),
+          if (establishmentId != null) const Where('establishmentId').isExactly(establishmentId),
         ],
       ),
     );
@@ -104,7 +104,7 @@ class HealthBrickStore {
         await _repository.getLocal<T>(
           query: Query(
             where: [
-              Where('establishmentId').isExactly(establishmentId),
+              const Where('establishmentId').isExactly(establishmentId),
               Where(field).isIn(values.skip(offset).take(batchSize).toList()),
             ],
           ),

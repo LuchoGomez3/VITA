@@ -54,21 +54,23 @@ Future<bool> synchronizeHealthNow() {
 Future<void> refreshHealthCatalog(String establishmentId) async {
   final tokens = SessionBackendAccessTokenProvider.instance;
   if (!_healthSessionActive || HealthBrickStore.instance == null || tokens.userId == null) return;
-  final sync = await _onlineHealthSync(tokens.sessionGeneration);
-  await sync?.refreshCatalog(establishmentId);
+  final generation = tokens.sessionGeneration;
+  final sync = await _onlineHealthSync(generation);
+  if (sync == null || !_isCurrentHealthSession(generation)) return;
+  await sync.refreshCatalog(establishmentId);
 }
 
 Future<bool> _runHealthSync(int generation, {required bool refresh}) async {
   final sync = await _onlineHealthSync(generation);
-  if (sync == null) return false;
+  if (sync == null || !_isCurrentHealthSession(generation)) return false;
   final succeeded = await sync.request(refresh: refresh);
-  return succeeded &&
-      _healthSessionActive &&
-      SessionBackendAccessTokenProvider.instance.sessionGeneration == generation;
+  return succeeded && _isCurrentHealthSession(generation);
 }
 
+bool _isCurrentHealthSession(int generation) =>
+    _healthSessionActive && SessionBackendAccessTokenProvider.instance.sessionGeneration == generation;
+
 Future<HealthSyncService?> _onlineHealthSync(int generation) async {
-  final tokens = SessionBackendAccessTokenProvider.instance;
   List<ConnectivityResult> connectivity;
   try {
     connectivity = await Connectivity().checkConnectivity();
@@ -76,9 +78,7 @@ Future<HealthSyncService?> _onlineHealthSync(int generation) async {
     Logger('HealthSync').warning('Connectivity check failed (${error.code})');
     return null;
   }
-  if (!_healthSessionActive ||
-      tokens.sessionGeneration != generation ||
-      !connectivity.any((value) => value != ConnectivityResult.none)) {
+  if (!_isCurrentHealthSession(generation) || !connectivity.any((value) => value != ConnectivityResult.none)) {
     return null;
   }
   return _syncService ??= _createHealthSync();

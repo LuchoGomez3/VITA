@@ -588,6 +588,33 @@ void main() {
     await repository.cacheCatalog(author, original);
   });
 
+  test('a catalog response received after changing accounts is discarded', () async {
+    final started = Completer<void>();
+    final response = Completer<http.Response>();
+    final original = (await repository.getCatalog(farm))!;
+    final refreshed = original.copyWith(practices: [sampling.copyWith(name: 'Sangrado de la sesión anterior')]);
+    final sync = HealthSyncService(
+      repository: repository,
+      remote: _healthRemote(
+        client: MockClient((_) {
+          started.complete();
+          return response.future;
+        }),
+      ),
+      resolveAnimal: (_, _, _, _) async => fail('Catalog refresh must not resolve an animal'),
+    );
+    addTearDown(sync.dispose);
+    addTearDown(() => current = author);
+
+    final refresh = sync.refreshCatalog(farm);
+    await started.future;
+    current = other;
+    response.complete(_response(HealthCodec.catalogTo(refreshed)));
+    await refresh;
+
+    expect(await repository.getCatalog(farm), original);
+  });
+
   test('refreshes the history and catalog independently during a partial outage', () async {
     final requests = <Uri>[];
     final freshPractice = sampling.copyWith(name: 'Sangrado actualizado');

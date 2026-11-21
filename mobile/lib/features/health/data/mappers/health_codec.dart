@@ -92,7 +92,7 @@ abstract final class HealthCodec {
     'referencia_muestra': recipient.sampleReference,
   };
 
-  static const _rejectionFields = {
+  static const Map<String, HealthRejectionField> _rejectionFields = {
     'practica_id': HealthRejectionField.practice,
     'producto_id': HealthRejectionField.product,
     'dosis': HealthRejectionField.dose,

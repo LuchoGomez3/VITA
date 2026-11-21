@@ -188,7 +188,7 @@ class HealthSyncService {
       await _repository.cacheCatalog(session, catalog);
     }
 
-    // Registra el vuelo antes de que el transporte consulte la sesión.
+    // Registra la descarga antes de que el transporte consulte la sesión.
     download = Future<void>.microtask(fetch).whenComplete(() {
       if (identical(_catalogDownloads[key], download)) _catalogDownloads.remove(key);
     });

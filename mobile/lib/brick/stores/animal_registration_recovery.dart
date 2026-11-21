@@ -21,7 +21,7 @@ class AnimalRegistrationRecovery {
 
   final BrickAnimalStore _animals;
   final GuardedBackendRequest _backend;
-  static const _path = BrickAnimalRequestTransformer.animalsPath;
+  static const String _path = BrickAnimalRequestTransformer.animalsPath;
 
   /// Resuelve la dependencia respetando la sesión que inició la operación.
   Future<AnimalRegistrationAvailability> call({
