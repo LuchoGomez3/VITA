@@ -57,7 +57,7 @@ class HealthSyncService {
   final ResolveHealthAnimal _resolveAnimal;
   static final _logger = Logger('HealthSyncService');
   Future<bool>? _active;
-  Timer? _retry;
+  ({Timer timer, HealthSession session, bool refresh})? _retry;
   bool _requested = false;
   bool _refresh = false;
   bool _closed = false;
@@ -65,11 +65,13 @@ class HealthSyncService {
 
   /// Pide un ciclo y devuelve si la sesión completó sus pedidos sin fallas de sincronización.
   Future<bool> request({bool refresh = false}) {
-    if (_closed || _repository.session == null) return Future.value(false);
+    final session = _repository.session;
+    if (_closed || session == null) return Future.value(false);
     _paused = false;
     _requested = true;
     _refresh = _refresh || refresh;
-    _retry?.cancel();
+    final retry = _retry;
+    if (retry != null && (retry.session != session || refresh || !retry.refresh)) _cancelRetry();
     return _active ??= _run().whenComplete(() => _active = null);
   }
 
@@ -78,7 +80,7 @@ class HealthSyncService {
     _paused = true;
     _requested = false;
     _refresh = false;
-    _retry?.cancel();
+    _cancelRetry();
   }
 
   /// Libera los reintentos al cerrar la app.
@@ -100,13 +102,28 @@ class HealthSyncService {
       processed = current;
       final cycle = await _cycle(current, refresh: refresh);
       succeeded = succeeded && cycle.succeeded;
-      if (cycle.retry && !_requested && !_paused && !_closed && _repository.session == current) {
-        _retry = Timer(const Duration(seconds: 30), () {
-          if (_repository.session == current) unawaited(request(refresh: refresh));
-        });
+      final nextCycleCoversRetry = _requested && (_refresh || !refresh);
+      if (cycle.retry && !nextCycleCoversRetry && !_paused && !_closed && _repository.session == current) {
+        _scheduleRetry(current, refresh: refresh);
       }
     }
     return succeeded && !_closed && !_paused && _repository.session == processed;
+  }
+
+  void _scheduleRetry(HealthSession session, {required bool refresh}) {
+    final scheduled = _retry;
+    if (scheduled != null && scheduled.session == session && (scheduled.refresh || !refresh)) return;
+    _cancelRetry();
+    final timer = Timer(const Duration(seconds: 30), () {
+      _retry = null;
+      if (_repository.session == session) unawaited(request(refresh: refresh));
+    });
+    _retry = (timer: timer, session: session, refresh: refresh);
+  }
+
+  void _cancelRetry() {
+    _retry?.timer.cancel();
+    _retry = null;
   }
 
   Future<({bool succeeded, bool retry})> _cycle(HealthSession session, {required bool refresh}) async {

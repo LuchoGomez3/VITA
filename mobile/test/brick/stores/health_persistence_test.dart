@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -583,6 +584,108 @@ void main() {
     );
   });
 
+  for (final sendDuringDownload in [false, true]) {
+    final timing = sendDuringDownload ? 'during the download' : 'after the retry is scheduled';
+    test('preserves a failed history retry when an upload starts $timing', () async {
+      const catalog = HealthCatalog(establishmentId: farm, practices: [sampling], products: []);
+      await repository.reconcilePage(author, farm, [], 'before-outage');
+      final historyStarted = Completer<void>();
+      final firstHistory = Completer<http.Response>();
+      final retries = <_RetryTimer>[];
+      final requests = <String>[];
+      late HealthEvent submitted;
+      final adapter = HealthRemoteDataSource(
+        baseUrl: 'http://localhost',
+        tokens: const _Tokens(),
+        client: MockClient((request) async {
+          final resource = request.url.pathSegments.last;
+          requests.add('${request.method} $resource');
+          if (request.method == 'POST') return _response([_wire(submitted)]);
+          if (resource == 'catalogo') return _response(HealthCodec.catalogTo(catalog));
+          if (!historyStarted.isCompleted) {
+            historyStarted.complete();
+            return firstHistory.future;
+          }
+          expect(request.url.queryParameters['cursor'], 'before-outage');
+          return http.Response(
+            jsonEncode({
+              'success': true,
+              'data': const <Object?>[],
+              'meta': {'next_cursor': 'history-recovered', 'has_more': false},
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      final sync = HealthSyncService(
+        repository: repository,
+        remote: adapter,
+        resolveAnimal: (_, _, _, _) async => HealthAnimalDependency.confirmed,
+      );
+      addTearDown(sync.dispose);
+
+      await runZoned(
+        () async {
+          final download = sync.request(refresh: true);
+          await historyStarted.future;
+          if (!sendDuringDownload) {
+            firstHistory.complete(http.Response('', 503));
+            expect(await download, isFalse);
+            expect(retries.single.isActive, isTrue);
+          }
+
+          final prior = (await store.operations(author.userId)).map((item) => item.localId).toSet();
+          final recipients = await repository.getRecipients(farm, ['animal-1']);
+          await RegisterHealthEventsUseCase(repository)(
+            HealthRegistration(
+              establishmentId: farm,
+              occurredAt: date,
+              practice: sampling,
+              details: const HealthObservation(description: 'Control', sampleType: 'Sangre'),
+              responsible: 'Operario',
+              recipients: recipients,
+            ),
+          );
+          final operation = (await store.operations(
+            author.userId,
+          )).singleWhere((item) => !prior.contains(item.localId));
+          submitted = (await repository.localEvent(farm, HealthRepositoryImpl.registrationEventIds(operation).single))!;
+          final upload = sync.request();
+          if (sendDuringDownload) firstHistory.complete(http.Response('', 503));
+          expect(await download, isFalse);
+          expect(await upload, !sendDuringDownload);
+          expect(
+            (await store.operations(author.userId)).map((item) => item.localId),
+            isNot(contains(operation.localId)),
+          );
+          expect(requests, ['GET catalogo', 'GET eventos_sanitarios', 'POST eventos_sanitarios']);
+          expect(await repository.cursor(farm), 'before-outage');
+
+          expect(retries.single.isActive, isTrue);
+          retries.single.fire();
+          expect(await sync.request(), isTrue);
+          expect(requests, [
+            'GET catalogo',
+            'GET eventos_sanitarios',
+            'POST eventos_sanitarios',
+            'GET catalogo',
+            'GET eventos_sanitarios',
+          ]);
+          expect(await repository.cursor(farm), 'history-recovered');
+        },
+        zoneSpecification: ZoneSpecification(
+          createTimer: (self, parent, zone, duration, callback) {
+            if (duration != const Duration(seconds: 30)) return parent.createTimer(zone, duration, callback);
+            final timer = _RetryTimer(() => zone.run(callback));
+            retries.add(timer);
+            return timer;
+          },
+        ),
+      );
+    });
+  }
+
   test('an older backend without sanitary routes keeps a refresh compatible', () async {
     final requests = <String>[];
     final adapter = HealthRemoteDataSource(
@@ -699,6 +802,30 @@ void main() {
 }
 
 Map<String, dynamic> _wire(HealthEvent event) => HealthCodec.object(HealthCodec.eventRow(event).payload);
+
+class _RetryTimer implements Timer {
+  _RetryTimer(this.callback);
+
+  final void Function() callback;
+  bool _active = true;
+  int _tick = 0;
+
+  @override
+  bool get isActive => _active;
+
+  @override
+  int get tick => _tick;
+
+  @override
+  void cancel() => _active = false;
+
+  void fire() {
+    if (!_active) return;
+    _active = false;
+    _tick++;
+    callback();
+  }
+}
 
 http.Response _response(Object data) => http.Response(
   jsonEncode({'success': true, 'data': data}),

@@ -15,6 +15,8 @@ del producto aplicado aunque se retire del catálogo.
 La sincronización actualiza catálogo e historial por separado. Una falla
 parcial conserva el último dato local del recurso afectado y permite aplicar
 los cambios del recurso disponible.
+Un envío nuevo conserva el reintento de catálogo e historial, tanto si la
+descarga sigue en curso como si el reintento ya está programado.
 Si el operario cambia de campo mientras se descarga el catálogo, el formulario
 conserva la selección más reciente.
 
