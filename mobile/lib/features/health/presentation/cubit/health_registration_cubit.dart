@@ -42,12 +42,17 @@ class HealthRegistrationCubit extends Cubit<HealthRegistrationState> {
   final RegisterHealthEventsUseCase _register;
   final Future<List<EstablishmentMembership>> Function() _establishments;
   int _preparation = 0;
+  Future<void> _preparing = Future.value();
   Future<void> _readingTail = Future.value();
 
   /// Carga el establecimiento y vuelve a resolver los UUID preseleccionados.
-  Future<void> prepare(String? requestedId, {List<String> animalIds = const [], List<HealthRecipient>? draft}) async {
+  Future<void> prepare(String? requestedId, {List<String> animalIds = const [], List<HealthRecipient>? draft}) =>
+      _preparing = _prepare(requestedId, animalIds, draft);
+
+  Future<void> _prepare(String? requestedId, List<String> animalIds, List<HealthRecipient>? draft) async {
     final attempt = ++_preparation;
-    emit(state.copyWith(preparation: const ResultState.loading()));
+    _readingTail = Future.value();
+    emit(state.copyWith(preparation: const ResultState.loading(), pendingReadings: 0));
     try {
       final choices = await _establishments();
       final id = requestedId ?? (choices.length == 1 ? choices.single.id : null);
@@ -78,6 +83,24 @@ class HealthRegistrationCubit extends Cubit<HealthRegistrationState> {
     }
   }
 
+  /// Relee el catálogo para la selección actual cuando termina una descarga.
+  Future<void> reloadCatalog() async {
+    final attempt = _preparation;
+    await _preparing;
+    if (isClosed || attempt != _preparation || state.preparation is! Data<void>) return;
+    final id = state.establishmentId;
+    if (id == null) return;
+    try {
+      final catalog = await _reader.catalog(id);
+      if (isClosed || attempt != _preparation) return;
+      emit(state.copyWith(catalog: catalog));
+    } on Object catch (error, stackTrace) {
+      if (isClosed || attempt != _preparation) return;
+      addError(error, stackTrace);
+      emit(state.copyWith(preparation: ResultState.error(healthFormError(error))));
+    }
+  }
+
   /// Quita un animal de la confirmación.
   void remove(String id) => emit(
     state.copyWith(
@@ -101,13 +124,14 @@ class HealthRegistrationCubit extends Cubit<HealthRegistrationState> {
   /// Agrega una caravana y procesa las lecturas consecutivas en orden.
   Future<void> addReading(String tag, {required bool electronic}) {
     final id = state.establishmentId;
-    if (id == null || state.submission is Loading<void>) return Future.value();
+    if (id == null || state.preparation is! Data<void> || state.submission is Loading<void>) return Future.value();
+    final attempt = _preparation;
     emit(state.copyWith(pendingReadings: state.pendingReadings + 1));
     return _readingTail = _readingTail.then((_) async {
-      if (isClosed) return;
+      if (isClosed || attempt != _preparation) return;
       try {
         final recipient = await _reader.find(id, tag, electronic: electronic);
-        if (isClosed || state.establishmentId != id) return;
+        if (isClosed || attempt != _preparation) return;
         if (recipient == null) throw const HealthFailure(HealthProblem.unavailableAnimal);
         if (state.recipients.any((item) => item.animalId == recipient.animalId)) {
           emit(state.copyWith(selectionMessage: HealthRegistrationStrings.duplicate));
@@ -115,12 +139,14 @@ class HealthRegistrationCubit extends Cubit<HealthRegistrationState> {
         }
         emit(state.copyWith(recipients: [...state.recipients, recipient], selectionMessage: null));
       } on Object catch (error, stackTrace) {
-        addError(error, stackTrace);
-        if (!isClosed && state.establishmentId == id) {
+        if (!isClosed && attempt == _preparation) {
+          addError(error, stackTrace);
           emit(state.copyWith(selectionMessage: healthFormError(error).message));
         }
       } finally {
-        if (!isClosed) emit(state.copyWith(pendingReadings: state.pendingReadings - 1));
+        if (!isClosed && attempt == _preparation) {
+          emit(state.copyWith(pendingReadings: state.pendingReadings - 1));
+        }
       }
     });
   }

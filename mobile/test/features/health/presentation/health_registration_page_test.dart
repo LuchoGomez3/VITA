@@ -20,49 +20,115 @@ const _study = HealthPractice(id: 'sampling', name: 'Sangrado', kind: HealthPrac
 const _animal = HealthRecipient(animalId: 'animal', label: '001');
 
 void main() {
-  testWidgets('a catalog refresh respects a newer establishment selection in manga', (tester) async {
-    final repository = _SwitchableCatalogRepository();
-    final refresh = Completer<void>();
-    await tester.pumpWidget(
-      MaterialApp(
-        home: HealthRegistrationPage(
-          capture: true,
-          refreshCatalog: () => refresh.future,
-          createCubit: () => HealthRegistrationCubit(
-            reader: ReadHealthUseCase(repository),
-            register: RegisterHealthEventsUseCase(repository),
-            establishments: () async => const [
-              EstablishmentMembership(id: 'farm-a', name: 'Campo A', role: UserRole.employee),
-              EstablishmentMembership(id: 'farm-b', name: 'Campo B', role: UserRole.employee),
-            ],
+  for (final returnToOriginal in [false, true]) {
+    final route = returnToOriginal ? 'A to B to A' : 'A to B';
+    testWidgets('a catalog refresh respects the active manga selection after $route', (tester) async {
+      final repository = _SwitchableCatalogRepository();
+      final refresh = Completer<void>();
+      late HealthRegistrationCubit cubit;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HealthRegistrationPage(
+            capture: true,
+            refreshCatalog: () => refresh.future,
+            createCubit: () => cubit = HealthRegistrationCubit(
+              reader: ReadHealthUseCase(repository),
+              register: RegisterHealthEventsUseCase(repository),
+              establishments: () async => const [
+                EstablishmentMembership(id: 'farm-a', name: 'Campo A', role: UserRole.employee),
+                EstablishmentMembership(id: 'farm-b', name: 'Campo B', role: UserRole.employee),
+              ],
+            ),
           ),
         ),
-      ),
+      );
+      await tester.pumpAndSettle();
+      final dropdown = find.byType(DropdownButton<String>).first;
+
+      Future<void> choose(String name) async {
+        await tester.tap(dropdown);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(name).last);
+        await tester.pumpAndSettle();
+      }
+
+      await choose('Campo A');
+      await tester.tap(find.text(HealthRegistrationStrings.refresh));
+      await tester.pump();
+      await choose('Campo B');
+      expect(tester.widget<DropdownButton<String>>(dropdown).value, 'farm-b');
+      if (returnToOriginal) {
+        await choose('Campo A');
+        expect(find.text(HealthRegistrationStrings.catalogUnavailable), findsOneWidget);
+      } else {
+        await cubit.addReading('000000000000001', electronic: true);
+        expect(cubit.state.recipients, [_animal]);
+      }
+
+      repository.farmAAvailable = true;
+      refresh.complete();
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<DropdownButton<String>>(dropdown).value, returnToOriginal ? 'farm-a' : 'farm-b');
+      expect(find.text(HealthRegistrationStrings.catalogUnavailable), findsNothing);
+      expect(cubit.state.recipients, returnToOriginal ? isEmpty : [_animal]);
+    });
+  }
+
+  test('a catalog reload waits for the current selection and preserves its draft', () async {
+    final repository = _PreparingCatalogRepository();
+    final cubit = HealthRegistrationCubit(
+      reader: ReadHealthUseCase(repository),
+      register: RegisterHealthEventsUseCase(repository),
+      establishments: () async => const [
+        EstablishmentMembership(id: 'farm-a', name: 'Campo A', role: UserRole.employee),
+        EstablishmentMembership(id: 'farm-b', name: 'Campo B', role: UserRole.employee),
+      ],
     );
-    await tester.pumpAndSettle();
-    final dropdown = find.byType(DropdownButton<String>).first;
+    addTearDown(cubit.close);
+    await cubit.prepare('farm-a');
+    final draft = _animal.copyWith(sampleReference: 'Muestra B');
+    final preparing = cubit.prepare('farm-b', animalIds: [_animal.animalId], draft: [draft]);
+    await repository.preparingRecipients.future;
 
-    Future<void> choose(String name) async {
-      await tester.tap(dropdown);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(name).last);
-      await tester.pumpAndSettle();
-    }
+    repository.farmBAvailable = true;
+    final reload = cubit.reloadCatalog();
+    repository.resumePreparation.complete();
+    await preparing;
+    await reload;
 
-    await choose('Campo A');
-    await tester.tap(find.text(HealthRegistrationStrings.refresh));
-    await tester.pump();
-    await choose('Campo B');
-    expect(tester.widget<DropdownButton<String>>(dropdown).value, 'farm-b');
+    expect(cubit.state.establishmentId, 'farm-b');
+    expect(cubit.state.catalog?.establishmentId, 'farm-b');
+    expect(cubit.state.recipients, [draft]);
+  });
 
-    repository.farmAAvailable = true;
-    refresh.complete();
-    await tester.pumpAndSettle();
+  test('a delayed RFID lookup cannot enter a later selection at the same establishment', () async {
+    final repository = _DelayedLookupRepository();
+    final cubit = HealthRegistrationCubit(
+      reader: ReadHealthUseCase(repository),
+      register: RegisterHealthEventsUseCase(repository),
+      establishments: () async => const [
+        EstablishmentMembership(id: 'farm-a', name: 'Campo A', role: UserRole.employee),
+        EstablishmentMembership(id: 'farm-b', name: 'Campo B', role: UserRole.employee),
+      ],
+    );
+    addTearDown(cubit.close);
+    await cubit.prepare('farm-a');
+    final abandoned = cubit.addReading('000000000000001', electronic: true);
+    await repository.started.future;
+    expect(cubit.state.pendingReadings, 1);
 
-    expect(tester.widget<DropdownButton<String>>(dropdown).value, 'farm-b');
-    await choose('Campo A');
-    expect(tester.widget<DropdownButton<String>>(dropdown).value, 'farm-a');
-    expect(find.text(HealthRegistrationStrings.catalogUnavailable), findsNothing);
+    await cubit.prepare('farm-b');
+    await cubit.prepare('farm-a');
+    expect(cubit.state.pendingReadings, 0);
+    await cubit.addReading('000000000000002', electronic: true);
+
+    repository.lookup.complete(_animal);
+    await abandoned;
+
+    expect(cubit.state.recipients, [const HealthRecipient(animalId: 'second', label: '002')]);
+    expect(cubit.state.pendingReadings, 0);
+    expect(cubit.state.selectionMessage, isNull);
   });
 
   testWidgets('manga combines consecutive HID and manual readings without duplicate animals', (tester) async {
@@ -261,6 +327,39 @@ class _SwitchableCatalogRepository extends _Repository {
   Future<HealthCatalog?> getCatalog(String establishmentId) async {
     if (establishmentId == 'farm-a' && !farmAAvailable) return null;
     return super.getCatalog(establishmentId);
+  }
+}
+
+class _PreparingCatalogRepository extends _Repository {
+  final preparingRecipients = Completer<void>();
+  final resumePreparation = Completer<void>();
+  bool farmBAvailable = false;
+
+  @override
+  Future<HealthCatalog?> getCatalog(String establishmentId) async {
+    if (establishmentId == 'farm-b' && !farmBAvailable) return null;
+    return super.getCatalog(establishmentId);
+  }
+
+  @override
+  Future<List<HealthRecipient>> getRecipients(String establishmentId, List<String> animalIds) async {
+    if (establishmentId == 'farm-b') {
+      preparingRecipients.complete();
+      await resumePreparation.future;
+    }
+    return super.getRecipients(establishmentId, animalIds);
+  }
+}
+
+class _DelayedLookupRepository extends _Repository {
+  final started = Completer<void>();
+  final lookup = Completer<HealthRecipient?>();
+
+  @override
+  Future<HealthRecipient?> findRecipient(String establishmentId, String tag, {required bool electronic}) {
+    if (tag != '000000000000001') return super.findRecipient(establishmentId, tag, electronic: electronic);
+    started.complete();
+    return lookup.future;
   }
 }
 

@@ -86,7 +86,6 @@ class _RegistrationFormState extends State<_RegistrationForm> {
   String? _practiceId;
   String? _productId;
   bool _refreshing = false;
-  int _establishmentRevision = 0;
 
   bool get _fixedEstablishment => widget.initialEstablishmentId != null || widget.rejected != null;
 
@@ -168,7 +167,7 @@ class _RegistrationFormState extends State<_RegistrationForm> {
                     const Text(HealthRegistrationStrings.catalogUnavailable),
                     if (widget.refreshCatalog != null)
                       TextButton(
-                        onPressed: _refreshing ? null : () => _refresh(state),
+                        onPressed: _refreshing ? null : _refresh,
                         child: const Text(HealthRegistrationStrings.refresh),
                       ),
                   ] else if (catalog != null) ...[
@@ -327,24 +326,18 @@ class _RegistrationFormState extends State<_RegistrationForm> {
 
   void _changeEstablishment(String? id) {
     setState(() {
-      _establishmentRevision++;
       _practiceId = null;
       _productId = null;
     });
     context.read<HealthRegistrationCubit>().prepare(id);
   }
 
-  Future<void> _refresh(HealthRegistrationState state) async {
-    final revision = _establishmentRevision;
+  Future<void> _refresh() async {
     setState(() => _refreshing = true);
     try {
       await widget.refreshCatalog?.call();
-      if (!mounted || revision != _establishmentRevision) return;
-      await context.read<HealthRegistrationCubit>().prepare(
-        state.establishmentId,
-        animalIds: state.recipients.map((item) => item.animalId).toList(),
-        draft: state.recipients,
-      );
+      if (!mounted) return;
+      await context.read<HealthRegistrationCubit>().reloadCatalog();
     } finally {
       if (mounted) setState(() => _refreshing = false);
     }
