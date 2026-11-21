@@ -120,25 +120,34 @@ class HealthSyncService {
           retry = !completed || retry;
         }
         if (refresh) {
-          try {
-            final catalog = await _remote.catalog(id, guard);
-            await _repository.cacheCatalog(session, catalog);
-            await _pull(session, id, guard);
-          } on HealthRemoteFailure catch (error) {
-            // Un backend previo a Sanidad deja accesible el último caché.
-            retry = _transient(error) || retry;
-            if (error.status != 404) _logger.warning('Health refresh returned HTTP ${error.status}');
-          } on Object catch (error) {
-            if (_repository.session != session) return false;
-            _logger.warning('Health refresh interrupted (${error.runtimeType})');
-            retry = true;
-          }
+          retry =
+              await _refreshResource(session, 'catalog', () async {
+                final catalog = await _remote.catalog(id, guard);
+                await _repository.cacheCatalog(session, catalog);
+              }) ||
+              retry;
+          retry = await _refreshResource(session, 'history', () => _pull(session, id, guard)) || retry;
         }
       }
       return retry;
     } on Object catch (error) {
       if (_repository.session != session) return false;
       _logger.warning('Health synchronization interrupted (${error.runtimeType})');
+      return true;
+    }
+  }
+
+  Future<bool> _refreshResource(HealthSession session, String resource, Future<void> Function() refresh) async {
+    if (_closed || _paused || _repository.session != session) return false;
+    try {
+      await refresh();
+      return false;
+    } on HealthRemoteFailure catch (error) {
+      if (error.status != 404) _logger.warning('Health $resource refresh returned HTTP ${error.status}');
+      return _transient(error);
+    } on Object catch (error) {
+      if (_closed || _paused || _repository.session != session) return false;
+      _logger.warning('Health $resource refresh interrupted (${error.runtimeType})');
       return true;
     }
   }

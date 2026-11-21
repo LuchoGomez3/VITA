@@ -428,6 +428,59 @@ void main() {
     expect(correction.registration.recipients.map((recipient) => recipient.animalId), ['animal-1', 'animal-2']);
   });
 
+  test('refreshes the history and catalog independently during a partial outage', () async {
+    final requests = <Uri>[];
+    final freshPractice = sampling.copyWith(name: 'Sangrado actualizado');
+    var unavailable = 'catalogo';
+    final adapter = HealthRemoteDataSource(
+      baseUrl: 'http://localhost',
+      tokens: const _Tokens(),
+      client: MockClient((request) async {
+        requests.add(request.url);
+        final resource = request.url.pathSegments.last;
+        if (resource == unavailable) return http.Response('', 503);
+        if (resource == 'catalogo') {
+          return _response(
+            HealthCodec.catalogTo(HealthCatalog(establishmentId: farm, practices: [freshPractice], products: [])),
+          );
+        }
+        return http.Response(
+          jsonEncode({
+            'success': true,
+            'data': [],
+            'meta': {'next_cursor': 'available-history', 'has_more': false},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+    final sync = HealthSyncService(
+      repository: repository,
+      remote: adapter,
+      resolveAnimal: (_, _, _, _) async => HealthAnimalDependency.confirmed,
+    );
+    addTearDown(sync.dispose);
+
+    final cached = await repository.getCatalog(farm);
+    await sync.request(refresh: true);
+    expect(requests.map((uri) => uri.pathSegments.last), ['catalogo', 'eventos_sanitarios']);
+    expect(await repository.cursor(farm), 'available-history');
+    expect(await repository.getCatalog(farm), cached);
+
+    unavailable = 'eventos_sanitarios';
+    requests.clear();
+    await sync.request(refresh: true);
+    expect(requests.map((uri) => uri.pathSegments.last), ['catalogo', 'eventos_sanitarios']);
+    expect(requests.last.queryParameters['cursor'], 'available-history');
+    expect(await repository.cursor(farm), 'available-history');
+    expect((await repository.getCatalog(farm))?.practices.single, freshPractice);
+    await repository.cacheCatalog(
+      author,
+      const HealthCatalog(establishmentId: farm, practices: [sampling], products: []),
+    );
+  });
+
   test('rolls back all changes when the session changes inside a transaction', () async {
     var calls = 0;
     await expectLater(

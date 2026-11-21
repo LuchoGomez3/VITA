@@ -12,6 +12,9 @@ El catálogo se guarda por establecimiento. Con el último catálogo descargado
 se puede registrar sin señal. Una instalación nueva necesita descargar el
 catálogo antes de elegir prácticas o productos. Los eventos conservan el nombre
 del producto aplicado aunque se retire del catálogo.
+La sincronización actualiza catálogo e historial por separado. Una falla
+parcial conserva el último dato local del recurso afectado y permite aplicar
+los cambios del recurso disponible.
 
 La tabla de operaciones de Sanidad en SQLite conserva el cuerpo y el UUID
 original durante los reintentos del mismo envío. Un lote usa una sola operación.
