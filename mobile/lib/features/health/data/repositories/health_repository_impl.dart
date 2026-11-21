@@ -268,7 +268,7 @@ class HealthRepositoryImpl implements HealthRepository {
           createdAt: timestamp,
           payload: body,
         ),
-        removing: previous,
+        removing: [if (previous != null) previous],
         requireSession: () => requireSession(current),
       );
     });
@@ -359,7 +359,7 @@ class HealthRepositoryImpl implements HealthRepository {
           resultEventId: event.id,
           payload: jsonEncode({'id': id, 'resultado': result, 'fecha': reportedAt.toUtc().toIso8601String()}),
         ),
-        removing: previous,
+        removing: [if (previous != null) previous],
         requireSession: () => requireSession(current),
       );
     });
@@ -400,12 +400,27 @@ class HealthRepositoryImpl implements HealthRepository {
     if (incoming.any((event) => event.establishmentId != establishmentId)) {
       throw const FormatException('Health history belongs to a different establishment');
     }
+    final updatedEvents = <BrickHealthEventModel>[];
+    final resolvedResults = <String>{};
+    for (final remote in incoming) {
+      final previous = local[remote.id];
+      if (!_shouldApply(remote, previous)) continue;
+      final isFinal = remote.result != null || remote.deletedAt != null;
+      final hasLocalResult = previous?.resultSyncStatus != null;
+      if (isFinal && hasLocalResult) resolvedResults.add(remote.id);
+      final merged = hasLocalResult && !isFinal
+          ? remote.copyWith(
+              result: previous?.result,
+              resultSyncStatus: previous?.resultSyncStatus,
+              resultErrorCode: previous?.resultErrorCode,
+            )
+          : remote.copyWith(resultErrorCode: hasLocalResult ? null : previous?.resultErrorCode);
+      local[remote.id] = merged;
+      updatedEvents.add(HealthCodec.eventRow(merged));
+    }
     await _store.save(
-      events: [
-        for (final remote in incoming)
-          if (_shouldApply(remote, local[remote.id]))
-            HealthCodec.eventRow(remote.copyWith(resultErrorCode: local[remote.id]?.resultErrorCode)),
-      ],
+      events: updatedEvents,
+      removing: await _store.resultOperations(establishmentId, resolvedResults),
       catalog: BrickHealthCatalogModel(establishmentId: establishmentId, payload: cache?.payload, cursor: cursor),
       requireSession: () => requireSession(current),
     );
@@ -413,8 +428,10 @@ class HealthRepositoryImpl implements HealthRepository {
 
   static bool _shouldApply(HealthEvent remote, HealthEvent? local) {
     if (local == null) return true;
-    if (local.syncStatus != HealthSyncStatus.synchronized || local.resultSyncStatus != null) return false;
-    if (local.result != null && remote.result == null && remote.deletedAt == null) return false;
+    if (local.syncStatus != HealthSyncStatus.synchronized) return false;
+    if (local.resultSyncStatus == null && local.result != null && remote.result == null && remote.deletedAt == null) {
+      return false;
+    }
     return !remote.updatedAt.isBefore(local.updatedAt);
   }
 
@@ -454,7 +471,7 @@ class HealthRepositoryImpl implements HealthRepository {
         accepted.copyWith(resultErrorCode: resultConflict ? 'resultado_ya_completado' : null),
       );
     });
-    await _store.save(events: rows, removing: operation, requireSession: () => requireSession(current));
+    await _store.save(events: rows, removing: [operation], requireSession: () => requireSession(current));
   });
 
   /// Conserva un rechazo funcional para que su autor pueda corregirlo.

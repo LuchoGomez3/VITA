@@ -217,6 +217,66 @@ void main() {
     expect(await restartedStore.operations(author.userId), isEmpty);
   });
 
+  test('applies the canonical result and tombstone without consuming drafts on unrelated changes', () async {
+    await repository.cacheCatalog(
+      author,
+      const HealthCatalog(establishmentId: farm, practices: [sampling], products: []),
+    );
+    final recipients = await repository.getRecipients(farm, ['animal-1', 'animal-2']);
+    await RegisterHealthEventsUseCase(repository)(
+      HealthRegistration(
+        establishmentId: farm,
+        occurredAt: date,
+        practice: sampling,
+        details: const HealthObservation(description: 'Control', sampleType: 'Sangre'),
+        responsible: 'Resultados',
+        recipients: recipients,
+      ),
+    );
+    final creation = (await store.operations(author.userId)).single;
+    final events = [
+      for (final id in HealthRepositoryImpl.registrationEventIds(creation))
+        (await repository.localEvent(farm, id))!.copyWith(syncStatus: HealthSyncStatus.synchronized),
+    ];
+    await repository.accept(author, creation, events);
+    final [first, second] = events;
+    await RecordHealthResultUseCase(repository)(first, 'Resultado rechazado', date);
+    final rejected = (await store.operations(author.userId)).single;
+    await repository.reject(author, rejected, 'resultado_invalido');
+    await RecordHealthResultUseCase(repository)(second, 'Resultado pendiente', date);
+
+    current = other;
+    addTearDown(() => current = author);
+    final metadataTime = date.add(const Duration(minutes: 1));
+    await repository.reconcilePage(other, farm, [first.copyWith(notes: 'Nota vigente', updatedAt: metadataTime)], '1');
+    final retained = (await repository.localEvent(farm, first.id))!;
+    expect(retained.notes, 'Nota vigente');
+    expect(retained.result?.value, 'Resultado rechazado');
+    expect(retained.resultSyncStatus, HealthSyncStatus.rejected);
+    expect(await store.operations(author.userId), hasLength(2));
+
+    final updated = date.add(const Duration(minutes: 2));
+    final canonical = HealthStudyResult(value: 'Resultado vigente', reportedAt: updated, reportedById: other.userId);
+    await repository.reconcilePage(other, farm, [
+      first.copyWith(result: canonical, updatedAt: updated),
+      second.copyWith(deletedAt: updated, updatedAt: updated),
+    ], '2');
+
+    final visible = (await repository.watchHistory(farm, first.recipient.animalId).first).singleWhere(
+      (event) => event.id == first.id,
+    );
+    expect(visible.result, canonical);
+    expect(visible.resultSyncStatus, isNull);
+    expect(visible.resultErrorCode, isNull);
+    expect(await repository.localEvent(farm, second.id), isNotNull);
+    expect(
+      (await repository.watchHistory(farm, second.recipient.animalId).first).map((event) => event.id),
+      isNot(contains(second.id)),
+    );
+    expect(await store.operations(author.userId), isEmpty);
+    expect(await repository.cursor(farm), '2');
+  });
+
   test('rolls back all changes when the session changes inside a transaction', () async {
     var calls = 0;
     await expectLater(

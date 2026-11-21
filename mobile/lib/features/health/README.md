@@ -20,6 +20,12 @@ de alta animal bloquea el envío hasta que el UUID esté confirmado. Cada
 operación se envía con la cuenta que la guardó. La pantalla de sincronización
 muestra los pendientes y rechazos de esa cuenta.
 
+El historial incremental aplica el evento y el cursor en la misma transacción.
+Una actualización sin resultado conserva cualquier carga local en curso. Un
+resultado confirmado o una baja lógica de la versión vigente cierra las cargas
+locales del estudio y retira sus operaciones, aunque fueran de otra cuenta del
+dispositivo.
+
 ## Contrato para backend
 
 Todos los endpoints usan `StandardResponse`. Los IDs son UUID, salvo el

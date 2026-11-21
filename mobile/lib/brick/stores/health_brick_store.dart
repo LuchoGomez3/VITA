@@ -58,11 +58,19 @@ class HealthBrickStore {
     return rows;
   }
 
+  /// Encuentra las cargas locales que una actualización canónica deja sin efecto.
+  Future<Iterable<BrickHealthOperationModel>> resultOperations(String establishmentId, Set<String> eventIds) async {
+    if (eventIds.isEmpty) return const [];
+    return (await _repository.getLocal<BrickHealthOperationModel>()).where(
+      (row) => row.establishmentId == establishmentId && eventIds.contains(row.resultEventId),
+    );
+  }
+
   /// Escribe juntas las filas, la operación y el avance del historial.
   Future<void> save({
     Iterable<BrickHealthEventModel> events = const [],
     BrickHealthOperationModel? operation,
-    BrickHealthOperationModel? removing,
+    Iterable<BrickHealthOperationModel> removing = const [],
     BrickHealthCatalogModel? catalog,
     void Function()? requireSession,
   }) => _repository.runLocalTransaction((transaction) async {
@@ -71,7 +79,9 @@ class HealthBrickStore {
       await transaction.upsert(event);
     }
     if (operation != null) await transaction.upsert(operation);
-    if (removing != null) await transaction.delete(removing);
+    for (final previous in removing) {
+      await transaction.delete(previous);
+    }
     if (catalog != null) await transaction.upsert(catalog);
     requireSession?.call();
   });
