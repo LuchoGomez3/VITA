@@ -133,6 +133,73 @@ void main() {
     expect(await store.eventsByIds(first.establishmentId, {}), isEmpty);
   });
 
+  test('resolves RFID, visual tags and preselection only among eligible animals of the chosen farm', () async {
+    const selectionFarm = 'manga-farm';
+    const otherFarm = 'manga-other';
+    const rfid = '911111111111111';
+    const visual = 'Áb_100%';
+    final animals = BrickAnimalStore.instance;
+    final memberships = EstablishmentCatalog(secureStorage: _Storage());
+    for (final id in [selectionFarm, otherFarm]) {
+      await memberships.upsert(EstablishmentMembership(id: id, name: id, role: UserRole.employee));
+    }
+    final reader = HealthRepositoryImpl(
+      store: store,
+      animals: animals,
+      memberships: memberships,
+      session: () => author,
+    );
+    for (final (id, farm, owner, status, deletedAt) in [
+      ('manga-selected', selectionFarm, author.userId, BrickAnimalSyncStatus.pending, null),
+      ('manga-cross-farm', otherFarm, author.userId, BrickAnimalSyncStatus.pending, null),
+      ('manga-private', selectionFarm, other.userId, BrickAnimalSyncStatus.pending, null),
+      ('manga-rejected', selectionFarm, author.userId, BrickAnimalSyncStatus.rejected, null),
+      ('manga-deleted', selectionFarm, author.userId, BrickAnimalSyncStatus.synchronized, date),
+    ]) {
+      await animals.cacheAnimal(
+        _animal(
+          id: id,
+          rfid: rfid,
+          visual: ' $visual ',
+          farm: farm,
+          date: date,
+          owner: owner,
+          status: status,
+          deletedAt: deletedAt,
+        ),
+      );
+    }
+    final byRfid = await reader.findRecipient(selectionFarm, rfid, electronic: true);
+    final byVisual = await reader.findRecipient(selectionFarm, '  áB_100% ', electronic: false);
+    expect(byRfid?.animalId, 'manga-selected');
+    expect(byVisual, byRfid);
+    expect((await reader.findRecipient(otherFarm, rfid, electronic: true))?.animalId, 'manga-cross-farm');
+    expect(await reader.findRecipient(selectionFarm, 'ÁB_', electronic: false), isNull);
+
+    await animals.cacheAnimal(
+      _animal(
+        id: 'manga-ambiguous',
+        rfid: '922222222222222',
+        visual: visual,
+        farm: selectionFarm,
+        date: date,
+        owner: author.userId,
+      ),
+    );
+    expect(
+      (await reader.getRecipients(selectionFarm, [
+        'manga-ambiguous',
+        'manga-cross-farm',
+        'manga-selected',
+      ])).map((animal) => animal.animalId),
+      ['manga-ambiguous', 'manga-selected'],
+    );
+    await expectLater(
+      reader.findRecipient(selectionFarm, visual, electronic: false),
+      throwsA(isA<HealthFailure>().having((error) => error.problem, 'problem', HealthProblem.ambiguousTag)),
+    );
+  });
+
   test('persists one outbox entry for a group and one result on an existing event', () async {
     final recipients = await repository.getRecipients(farm, ['animal-1', 'animal-2']);
     final original = HealthRegistration(
@@ -968,6 +1035,8 @@ BrickAnimalModel _animal({
   required String farm,
   required DateTime date,
   required String owner,
+  DateTime? deletedAt,
+  BrickAnimalSyncStatus status = BrickAnimalSyncStatus.pending,
 }) => BrickAnimalModel(
   localId: id,
   rfidTagNumber: rfid,
@@ -985,6 +1054,8 @@ BrickAnimalModel _animal({
   updatedAt: date,
   productiveStatus: BrickAnimalProductiveStatus.active,
   localRegistrationAuthorId: owner,
+  deletedAt: deletedAt,
+  syncStatus: status,
 );
 
 HealthRemoteDataSource _healthRemote({required http.Client client}) => HealthRemoteDataSource(_backend(client: client));

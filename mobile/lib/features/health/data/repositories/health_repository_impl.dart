@@ -27,7 +27,7 @@ class HealthRepositoryImpl implements HealthRepository {
   /// Inyecta la cuenta y las fuentes locales que necesita Sanidad.
   HealthRepositoryImpl({
     required HealthBrickStore store,
-    required AnimalBrickStore animals,
+    required AnimalSelectionStore animals,
     required EstablishmentCatalog memberships,
     required HealthSession? Function() session,
     void Function()? onPending,
@@ -42,7 +42,7 @@ class HealthRepositoryImpl implements HealthRepository {
        _generateId = generateId ?? generateUuidV4;
 
   final HealthBrickStore _store;
-  final AnimalBrickStore _animals;
+  final AnimalSelectionStore _animals;
   final EstablishmentCatalog _memberships;
   final HealthSession? Function() _session;
   final void Function()? _onPending;
@@ -100,32 +100,28 @@ class HealthRepositoryImpl implements HealthRepository {
     );
   });
 
-  Future<List<BrickAnimalModel>> _eligibleAnimals(String establishmentId, HealthSession current) async {
-    final animals = await _animals.getLocalAnimals();
-    requireSession(current);
-    return animals
-        .where(
-          (animal) =>
-              animal.establishmentId == establishmentId &&
-              animal.deletedAt == null &&
-              (animal.productiveStatus.toDomain().isInProductiveStock ||
-                  (animal.syncStatus == BrickAnimalSyncStatus.pending &&
-                      animal.localRegistrationAuthorId == current.userId &&
-                      animal.productiveStatus == BrickAnimalProductiveStatus.unknown)) &&
-              (animal.syncStatus == BrickAnimalSyncStatus.synchronized ||
-                  animal.localRegistrationAuthorId == null ||
-                  animal.localRegistrationAuthorId == current.userId) &&
-              animal.syncStatus != BrickAnimalSyncStatus.rejected,
-        )
-        .toList();
-  }
+  static bool _isEligibleAnimal(BrickAnimalModel animal, HealthSession current) =>
+      animal.deletedAt == null &&
+      (animal.productiveStatus.toDomain().isInProductiveStock ||
+          (animal.syncStatus == BrickAnimalSyncStatus.pending &&
+              animal.localRegistrationAuthorId == current.userId &&
+              animal.productiveStatus == BrickAnimalProductiveStatus.unknown)) &&
+      (animal.syncStatus == BrickAnimalSyncStatus.synchronized ||
+          animal.localRegistrationAuthorId == null ||
+          animal.localRegistrationAuthorId == current.userId) &&
+      animal.syncStatus != BrickAnimalSyncStatus.rejected;
 
   @override
   Future<List<HealthRecipient>> getRecipients(String establishmentId, List<String> animalIds) async {
     final current = await authorize(establishmentId);
-    final animals = {for (final animal in await _eligibleAnimals(establishmentId, current)) animal.localId: animal};
+    final ids = animalIds.toSet();
+    final rows = await _animals.getLocalAnimalsByIds(establishmentId, ids);
+    requireSession(current);
+    final animals = {
+      for (final animal in rows.where((animal) => _isEligibleAnimal(animal, current))) animal.localId: animal,
+    };
     return [
-      for (final id in animalIds.toSet())
+      for (final id in ids)
         if (animals[id] case final animal?) _recipient(animal),
     ];
   }
@@ -136,12 +132,9 @@ class HealthRepositoryImpl implements HealthRepository {
     final code = tag.trim();
     if (electronic && !RfidValidator.isValid(code)) throw const HealthFailure(HealthProblem.invalidTag);
     if (code.isEmpty) return null;
-    final matches = (await _eligibleAnimals(establishmentId, current))
-        .where(
-          (animal) =>
-              electronic ? animal.rfidTagNumber == code : animal.visualTag.trim().toUpperCase() == code.toUpperCase(),
-        )
-        .toList();
+    final rows = await _animals.findLocalAnimalsByTag(establishmentId, code, electronic: electronic);
+    requireSession(current);
+    final matches = rows.where((animal) => _isEligibleAnimal(animal, current)).toList();
     if (matches.length > 1) throw const HealthFailure(HealthProblem.ambiguousTag);
     return matches.isEmpty ? null : _recipient(matches.single);
   }

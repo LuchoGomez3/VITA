@@ -41,12 +41,21 @@ abstract class AnimalBrickStore {
   Future<void> retryRejectedAnimal(String animalId);
 }
 
+/// Consultas locales de selección dentro de un establecimiento.
+abstract interface class AnimalSelectionStore {
+  /// Lee las versiones vigentes de los UUID solicitados, incluidas las bajas.
+  Future<List<BrickAnimalModel>> getLocalAnimalsByIds(String establishmentId, Set<String> ids);
+
+  /// Devuelve los candidatos por RFID o caravana visual para validar la selección.
+  Future<List<BrickAnimalModel>> findLocalAnimalsByTag(String establishmentId, String tag, {required bool electronic});
+}
+
 /// Store Brick especifico para operaciones de animales.
 ///
 /// Este store contiene logica propia de `BrickAnimalModel`: guardar primero en
 /// SQLite, encolar el upsert remoto y aplicar los resultados de sync que llegan
 /// desde el cliente HTTP autenticado.
-class BrickAnimalStore implements AnimalBrickStore {
+class BrickAnimalStore implements AnimalBrickStore, AnimalSelectionStore {
   BrickAnimalStore._(this._repository) {
     _syncSubscription = _repository.syncResults.listen(
       applyAnimalSyncResult,
@@ -97,15 +106,8 @@ class BrickAnimalStore implements AnimalBrickStore {
 
   @override
   Future<BrickAnimalModel?> getAnimalById(String animalId) async {
-    final storedAnimals = await getLocalAnimals();
-
-    for (final animal in storedAnimals) {
-      if (animal.localId == animalId && animal.deletedAt == null) {
-        return animal;
-      }
-    }
-
-    return null;
+    final rows = await _repository.getLocal<BrickAnimalModel>(query: Query.where('localId', animalId));
+    return _preferredAnimals(rows).where((animal) => animal.deletedAt == null).firstOrNull;
   }
 
   @override
@@ -149,8 +151,60 @@ class BrickAnimalStore implements AnimalBrickStore {
   }
 
   @override
-  Future<List<BrickAnimalModel>> getLocalAnimals() async {
-    final storedAnimals = await _repository.getLocal<BrickAnimalModel>();
+  Future<List<BrickAnimalModel>> getLocalAnimals() async =>
+      _preferredAnimals(await _repository.getLocal<BrickAnimalModel>());
+
+  @override
+  Future<List<BrickAnimalModel>> getLocalAnimalsByIds(String establishmentId, Set<String> ids) async {
+    const batchSize = 500;
+    final values = ids.toList();
+    final rows = <BrickAnimalModel>[];
+    for (var offset = 0; offset < values.length; offset += batchSize) {
+      rows.addAll(
+        await _repository.getLocal<BrickAnimalModel>(
+          query: Query(
+            where: [
+              const Where('establishmentId').isExactly(establishmentId),
+              const Where('localId').isIn(values.skip(offset).take(batchSize).toList()),
+            ],
+          ),
+        ),
+      );
+    }
+    return _preferredAnimals(rows);
+  }
+
+  @override
+  Future<List<BrickAnimalModel>> findLocalAnimalsByTag(
+    String establishmentId,
+    String tag, {
+    required bool electronic,
+  }) async {
+    final value = tag.trim();
+    if (value.isEmpty) return const [];
+    final normalized = electronic ? value : value.toUpperCase();
+    // SQLite UPPER solo convierte ASCII. Las caravanas legacy con Unicode
+    // se comparan con la misma normalización Dart que el resto.
+    final condition = electronic
+        ? 'rfid_tag_number = ?'
+        : "(UPPER(TRIM(visual_tag)) = ? OR visual_tag GLOB '*[^ -~]*')";
+    final candidates = await _repository.sqliteProvider.rawQuery(
+      'SELECT DISTINCT local_id FROM BrickAnimalModel WHERE establishment_id = ? AND $condition',
+      [establishmentId, normalized],
+    );
+    // La versión preferida puede tener otra caravana. Elegirla antes de
+    // comparar evita que una fila legacy coincidente oculte el estado vigente.
+    final rows = await getLocalAnimalsByIds(establishmentId, {
+      for (final row in candidates) row['local_id']! as String,
+    });
+    return rows
+        .where(
+          (animal) => electronic ? animal.rfidTagNumber == value : animal.visualTag.trim().toUpperCase() == normalized,
+        )
+        .toList();
+  }
+
+  List<BrickAnimalModel> _preferredAnimals(Iterable<BrickAnimalModel> storedAnimals) {
     final animalsById = <String, BrickAnimalModel>{};
 
     // Las versiones antiguas del pull podian insertar varias filas con el mismo
