@@ -7,6 +7,8 @@ import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
 import 'package:http/http.dart' as http;
 
+const _invalidResponseCode = 'respuesta_sanitaria_invalida';
+
 /// Error remoto clasificado sin exponer datos sanitarios en logs.
 class HealthRemoteFailure implements Exception {
   /// Conserva el estado HTTP y el motivo estable que devolvió el servidor.
@@ -23,6 +25,9 @@ class HealthRemoteFailure implements Exception {
 
   /// Animal o campo que permite orientar la corrección del registro.
   final HealthRejectionDetails? rejection;
+
+  /// Un FastAPI anterior a Sanidad responde 404 sin código de dominio.
+  bool get routeUnavailable => status == 404 && code == _invalidResponseCode;
 
   /// Se puede procesar como rechazo definitivo.
   bool get definitive =>
@@ -155,7 +160,7 @@ class HealthRemoteDataSource {
     }
     final errors = envelope?['errors'];
     final error = errors is List ? errors.whereType<Map<String, dynamic>>().firstOrNull : null;
-    final code = error?['code'] as String? ?? 'respuesta_sanitaria_invalida';
+    final code = error?['code'] as String? ?? _invalidResponseCode;
     final details = error?['details'];
     final currentEvent = details is Map<String, dynamic> ? details['evento'] : null;
     throw HealthRemoteFailure(

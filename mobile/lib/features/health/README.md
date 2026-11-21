@@ -29,6 +29,10 @@ ya tiene un resultado local, conserva su registro rechazado para que se pueda
 recuperar por separado.
 Cada operación se envía con la cuenta que la guardó. La pantalla de
 sincronización muestra los pendientes y rechazos de esa cuenta.
+Al pedir sincronización manual, el indicador espera tanto la preparación de
+datos como el ciclo sanitario. Una falla de transporte se informa en Sync y
+conserva los registros en el dispositivo. Los rechazos funcionales se muestran
+en su sección de rechazados.
 
 Los resultados locales se leen desde la operación de la cuenta que los guardó.
 Dos cuentas habilitadas que comparten un dispositivo pueden guardar sus propios

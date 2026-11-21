@@ -24,26 +24,50 @@ import 'package:logging/logging.dart';
 HealthSyncService? _syncService;
 http.Client? _syncClient;
 bool _healthSessionActive = false;
+({int generation, Future<bool> result})? _healthRefresh;
 
 /// Activa el envío sanitario cuando hay sesión e interfaz de red.
-Future<void> requestHealthSync({bool refresh = true}) async {
+Future<bool> requestHealthSync({bool refresh = true}) {
   final tokens = SessionBackendAccessTokenProvider.instance;
+  if (!_healthSessionActive || HealthBrickStore.instance == null || tokens.userId == null) return Future.value(false);
   final generation = tokens.sessionGeneration;
-  if (!_healthSessionActive || HealthBrickStore.instance == null || tokens.userId == null) return;
+  if (!refresh) return _runHealthSync(generation, refresh: false);
+
+  late final Future<bool> result;
+  result = _runHealthSync(generation, refresh: true).whenComplete(() {
+    if (identical(_healthRefresh?.result, result)) _healthRefresh = null;
+  });
+  _healthRefresh = (generation: generation, result: result);
+  return result;
+}
+
+/// El botón de Sync espera la descarga iniciada por la preparación de datos.
+Future<bool> synchronizeHealthNow() {
+  if (HealthBrickStore.instance == null) return Future.value(true);
+  final active = _healthRefresh;
+  if (active != null && active.generation == SessionBackendAccessTokenProvider.instance.sessionGeneration) {
+    return active.result;
+  }
+  return requestHealthSync();
+}
+
+Future<bool> _runHealthSync(int generation, {required bool refresh}) async {
+  final tokens = SessionBackendAccessTokenProvider.instance;
   List<ConnectivityResult> connectivity;
   try {
     connectivity = await Connectivity().checkConnectivity();
   } on PlatformException catch (error) {
     Logger('HealthSync').warning('Connectivity check failed (${error.code})');
-    return;
+    return false;
   }
   if (!_healthSessionActive ||
       tokens.sessionGeneration != generation ||
       !connectivity.any((value) => value != ConnectivityResult.none)) {
-    return;
+    return false;
   }
   final sync = _syncService ??= _createHealthSync();
-  await sync.request(refresh: refresh);
+  final succeeded = await sync.request(refresh: refresh);
+  return succeeded && _healthSessionActive && tokens.sessionGeneration == generation;
 }
 
 HealthSyncService _createHealthSync() {
@@ -69,7 +93,10 @@ StreamSubscription<Type>? watchHealthAnimalDependencies() {
 }
 
 /// Cancela los reintentos asociados a la sesión que se cerró.
-void pauseHealthSync() => _syncService?.pause();
+void pauseHealthSync() {
+  _healthRefresh = null;
+  _syncService?.pause();
+}
 
 /// Habilita la sincronización solamente mientras la app tiene una cuenta activa.
 void setHealthSessionActive({required bool active}) {
@@ -80,6 +107,7 @@ void setHealthSessionActive({required bool active}) {
 /// Libera el cliente al cerrar la aplicación.
 void disposeHealthSync() {
   _healthSessionActive = false;
+  _healthRefresh = null;
   _syncService?.dispose();
   _syncClient?.close();
   _syncService = null;

@@ -69,7 +69,7 @@ abstract final class SyncStatusStrings {
   static const readError = 'No pudimos leer la cola. Tus registros siguen guardados en el teléfono.';
 
   /// Mensaje cuando la sincronización manual falló.
-  static const manualSyncFailed = 'No se pudo sincronizar ahora. Los registros siguen guardados y se reintentan solos.';
+  static const manualSyncFailed = 'No se pudo completar la sincronización. Los registros pendientes siguen guardados.';
 
   /// Nombre de cada tipo de operación.
   static String operationKind(SyncOperationKind kind) => switch (kind) {

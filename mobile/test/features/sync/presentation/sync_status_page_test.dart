@@ -115,17 +115,25 @@ void main() {
     expect(find.text('Pesaje'), findsOneWidget);
   });
 
-  testWidgets('avisa si la sincronización manual falla', (tester) async {
-    synchronizeNow = () async => false;
+  testWidgets('espera la sincronización manual y conserva los pendientes si falla', (tester) async {
+    final pending = Completer<bool>();
+    synchronizeNow = () => pending.future;
     await pumpPage(tester);
-    queue.add(_snapshot([]));
+    queue.add(_snapshot([_operation(1, SyncOperationKind.healthEvent, SyncOperationState.waiting)]));
+    connectivity.add(true);
     await tester.pump();
 
     await tester.tap(find.byTooltip(SyncStatusStrings.refreshTooltip));
     await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text(SyncStatusStrings.manualSyncFailed), findsNothing);
+
+    pending.complete(false);
     await tester.pump();
 
+    expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text(SyncStatusStrings.manualSyncFailed), findsOneWidget);
+    expect(find.text(SyncStatusStrings.pendingSubtitle(1)), findsOneWidget);
   });
 }
 

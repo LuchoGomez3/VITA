@@ -562,22 +562,46 @@ void main() {
     addTearDown(sync.dispose);
 
     final cached = await repository.getCatalog(farm);
-    await sync.request(refresh: true);
+    expect(await sync.request(refresh: true), isFalse);
     expect(requests.map((uri) => uri.pathSegments.last), ['catalogo', 'eventos_sanitarios']);
     expect(await repository.cursor(farm), 'available-history');
     expect(await repository.getCatalog(farm), cached);
 
     unavailable = 'eventos_sanitarios';
     requests.clear();
-    await sync.request(refresh: true);
+    expect(await sync.request(refresh: true), isFalse);
     expect(requests.map((uri) => uri.pathSegments.last), ['catalogo', 'eventos_sanitarios']);
     expect(requests.last.queryParameters['cursor'], 'available-history');
     expect(await repository.cursor(farm), 'available-history');
     expect((await repository.getCatalog(farm))?.practices.single, freshPractice);
+
+    unavailable = '';
+    expect(await sync.request(refresh: true), isTrue);
     await repository.cacheCatalog(
       author,
       const HealthCatalog(establishmentId: farm, practices: [sampling], products: []),
     );
+  });
+
+  test('an older backend without sanitary routes keeps a refresh compatible', () async {
+    final requests = <String>[];
+    final adapter = HealthRemoteDataSource(
+      baseUrl: 'http://localhost',
+      tokens: const _Tokens(),
+      client: MockClient((request) async {
+        requests.add(request.url.pathSegments.last);
+        return http.Response('{"detail":"Not Found"}', 404);
+      }),
+    );
+    final sync = HealthSyncService(
+      repository: repository,
+      remote: adapter,
+      resolveAnimal: (_, _, _, _) async => HealthAnimalDependency.confirmed,
+    );
+    addTearDown(sync.dispose);
+
+    expect(await sync.request(refresh: true), isTrue);
+    expect(requests, ['catalogo', 'eventos_sanitarios']);
   });
 
   test('resumes a blocked result only after its rejected study is corrected', () async {

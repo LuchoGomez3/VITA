@@ -31,6 +31,16 @@ typedef ResolveHealthAnimal =
       Future<void> Function() guard,
     );
 
+enum _SyncStep {
+  completed,
+  waiting,
+  failed,
+  retryableFailure;
+
+  bool get succeeded => this == completed || this == waiting;
+  bool get shouldRetry => this == waiting || this == retryableFailure;
+}
+
 /// Drena pendientes durables y descarga cambios por establecimiento.
 class HealthSyncService {
   /// Crea el coordinador de Sanidad bajo la sesión compartida.
@@ -46,16 +56,16 @@ class HealthSyncService {
   final HealthRemoteDataSource _remote;
   final ResolveHealthAnimal _resolveAnimal;
   static final _logger = Logger('HealthSyncService');
-  Future<void>? _active;
+  Future<bool>? _active;
   Timer? _retry;
   bool _requested = false;
   bool _refresh = false;
   bool _closed = false;
   bool _paused = false;
 
-  /// Pide un ciclo posterior si hay otro procesando una instantánea previa.
-  Future<void> request({bool refresh = false}) {
-    if (_closed || _repository.session == null) return Future.value();
+  /// Pide un ciclo y devuelve si la sesión completó sus pedidos sin fallas de sincronización.
+  Future<bool> request({bool refresh = false}) {
+    if (_closed || _repository.session == null) return Future.value(false);
     _paused = false;
     _requested = true;
     _refresh = _refresh || refresh;
@@ -77,27 +87,39 @@ class HealthSyncService {
     pause();
   }
 
-  Future<void> _run() async {
+  Future<bool> _run() async {
+    HealthSession? processed;
+    var succeeded = true;
     while (_requested) {
       final refresh = _refresh;
       _requested = false;
       _refresh = false;
       final current = _repository.session;
-      if (current == null || _closed) return;
-      final shouldRetry = await _cycle(current, refresh: refresh);
-      if (shouldRetry && !_requested && !_paused && !_closed && _repository.session == current) {
+      if (current == null || _closed) return false;
+      if (processed != current) succeeded = true;
+      processed = current;
+      final cycle = await _cycle(current, refresh: refresh);
+      succeeded = succeeded && cycle.succeeded;
+      if (cycle.retry && !_requested && !_paused && !_closed && _repository.session == current) {
         _retry = Timer(const Duration(seconds: 30), () {
           if (_repository.session == current) unawaited(request(refresh: refresh));
         });
       }
     }
+    return succeeded && !_closed && !_paused && _repository.session == processed;
   }
 
-  Future<bool> _cycle(HealthSession session, {required bool refresh}) async {
+  Future<({bool succeeded, bool retry})> _cycle(HealthSession session, {required bool refresh}) async {
     try {
       final establishments = await _repository.establishments();
       final operations = await _repository.pendingOperations();
+      var succeeded = true;
       var retry = false;
+      void track(_SyncStep step) {
+        succeeded = succeeded && step.succeeded;
+        retry = retry || step.shouldRetry;
+      }
+
       for (final establishment in establishments) {
         final id = establishment.id;
         final pending = operations.where((operation) => operation.establishmentId == id).toList();
@@ -114,43 +136,43 @@ class HealthSyncService {
           ...pending.where((item) => item.resultEventId == null),
           ...pending.where((item) => item.resultEventId != null),
         ]) {
-          final completed = await _attempt(session, operation, guard);
-          retry = !completed || retry;
+          track(await _attempt(session, operation, guard));
         }
         if (refresh) {
-          retry =
-              await _refreshResource(session, 'catalog', () async {
-                final catalog = await _remote.catalog(id, guard);
-                await _repository.cacheCatalog(session, catalog);
-              }) ||
-              retry;
-          retry = await _refreshResource(session, 'history', () => _pull(session, id, guard)) || retry;
+          track(
+            await _refreshResource(session, 'catalog', () async {
+              final catalog = await _remote.catalog(id, guard);
+              await _repository.cacheCatalog(session, catalog);
+            }),
+          );
+          track(await _refreshResource(session, 'history', () => _pull(session, id, guard)));
         }
       }
-      return retry;
+      return (succeeded: succeeded, retry: retry);
     } on Object catch (error) {
-      if (_repository.session != session) return false;
+      if (_repository.session != session || _paused || _closed) return (succeeded: false, retry: false);
       _logger.warning('Health synchronization interrupted (${error.runtimeType})');
-      return true;
+      return (succeeded: false, retry: true);
     }
   }
 
-  Future<bool> _refreshResource(HealthSession session, String resource, Future<void> Function() refresh) async {
-    if (_closed || _paused || _repository.session != session) return false;
+  Future<_SyncStep> _refreshResource(HealthSession session, String resource, Future<void> Function() refresh) async {
+    if (_closed || _paused || _repository.session != session) return _SyncStep.failed;
     try {
       await refresh();
-      return false;
+      return _SyncStep.completed;
     } on HealthRemoteFailure catch (error) {
-      if (error.status != 404) _logger.warning('Health $resource refresh returned HTTP ${error.status}');
-      return _transient(error);
+      if (error.routeUnavailable) return _SyncStep.completed;
+      _logger.warning('Health $resource refresh returned HTTP ${error.status}');
+      return _transient(error) ? _SyncStep.retryableFailure : _SyncStep.failed;
     } on Object catch (error) {
-      if (_closed || _paused || _repository.session != session) return false;
+      if (_closed || _paused || _repository.session != session) return _SyncStep.failed;
       _logger.warning('Health $resource refresh interrupted (${error.runtimeType})');
-      return true;
+      return _SyncStep.retryableFailure;
     }
   }
 
-  Future<bool> _attempt(
+  Future<_SyncStep> _attempt(
     HealthSession session,
     BrickHealthOperationModel operation,
     Future<void> Function() guard,
@@ -177,7 +199,7 @@ class HealthSyncService {
                 details: (animalId: animalId, field: null),
               );
             }
-            return availability == HealthAnimalDependency.rejected;
+            return availability == HealthAnimalDependency.rejected ? _SyncStep.completed : _SyncStep.waiting;
           }
         }
       } else {
@@ -186,26 +208,28 @@ class HealthSyncService {
             event.syncStatus != HealthSyncStatus.synchronized ||
             event.deletedAt != null ||
             event.result != null) {
-          return true;
+          return _SyncStep.completed;
         }
       }
       final response = await _remote.submit(operation, guard);
       await guard();
       await _repository.accept(session, operation, response);
-      return true;
+      return _SyncStep.completed;
     } on HealthRemoteFailure catch (error) {
-      if (_paused || _repository.session != session) return true;
+      if (_closed || _paused || _repository.session != session) return _SyncStep.failed;
       final currentEvent = error.currentEvent;
       if (error.status == 409 && currentEvent != null && operation.resultEventId == currentEvent.id) {
         await _repository.accept(session, operation, [currentEvent], resultConflict: true);
+        return _SyncStep.completed;
       } else if (error.definitive) {
         await _repository.reject(session, operation, error.code, details: error.rejection);
+        return _SyncStep.completed;
       }
-      return !_transient(error);
+      return _transient(error) ? _SyncStep.retryableFailure : _SyncStep.failed;
     } on Object catch (error) {
-      if (_repository.session != session) return true;
+      if (_closed || _paused || _repository.session != session) return _SyncStep.failed;
       _logger.warning('Health submission interrupted (${error.runtimeType})');
-      return false;
+      return _SyncStep.retryableFailure;
     }
   }
 

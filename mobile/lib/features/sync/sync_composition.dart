@@ -10,7 +10,6 @@ import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.da
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
-import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
 import 'package:frontend_mayoral/features/sync/data/datasources/brick_rejected_records_reader.dart';
@@ -115,7 +114,7 @@ SyncQueueCubit _createCubit({required bool includeActivity}) {
       check: Connectivity().checkConnectivity,
       changes: Connectivity().onConnectivityChanged,
     ),
-    synchronizeNow: () async => await createOfflineSyncCoordinator().synchronize() is Success,
+    synchronizeNow: () => createOfflineSyncCoordinator().synchronizeManually(synchronizeHealthNow),
     rejections: includeActivity
         ? SyncRejectionsRepositoryImpl(readRejected: () => _readRejectedWithHealth(brick), changes: changes())
         : null,
