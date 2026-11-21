@@ -158,7 +158,7 @@ class _HealthEventCard extends StatelessWidget {
             if (event.recipient.sampleReference case final reference?) Text(reference),
             if (event.notes case final notes?) Text(notes),
             if (syncStatus != null) Text(syncStatus),
-            if (event.syncErrorCode == 'alta_animal_rechazada')
+            if (event.syncIssue == HealthSyncIssue.animalRegistrationRejected)
               const Text(HealthRegistrationStrings.animalRegistrationRejected),
             if (event.syncStatus == HealthSyncStatus.rejected)
               TextButton(onPressed: () => onCorrect(event), child: const Text(HealthRegistrationStrings.correct)),
@@ -166,7 +166,7 @@ class _HealthEventCard extends StatelessWidget {
               Text(result?.value ?? HealthRegistrationStrings.pendingResult),
               if (result != null) Text(localizations.formatCompactDate(result.reportedAt.toLocal())),
               if (resultStatus != null) Text(resultStatus),
-              if (event.resultErrorCode == 'resultado_ya_completado')
+              if (event.resultIssue == HealthSyncIssue.resultAlreadyRecorded)
                 const Text(HealthRegistrationStrings.resultConflict),
               if ((result == null || event.resultSyncStatus == HealthSyncStatus.rejected) &&
                   event.syncStatus != HealthSyncStatus.rejected)

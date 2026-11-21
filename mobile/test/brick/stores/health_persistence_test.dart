@@ -4,8 +4,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/authenticated_backend_client.dart';
-import 'package:frontend_mayoral/brick/auth/guarded_backend_request.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
+import 'package:frontend_mayoral/brick/auth/guarded_backend_request.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/health_event.model.dart';
@@ -216,7 +216,7 @@ void main() {
     final reconciled = (await repository.watchHistory(farm, 'animal-2').first).single;
     expect(reconciled.result?.value, resultEvent.result?.value);
     expect(reconciled.resultSyncStatus, isNull);
-    expect(reconciled.resultErrorCode, 'resultado_ya_completado');
+    expect(reconciled.resultIssue, HealthSyncIssue.resultAlreadyRecorded);
     expect(await restartedStore.operations(author.userId), isEmpty);
   });
 
@@ -245,14 +245,13 @@ void main() {
     final [first, second] = events;
     await RecordHealthResultUseCase(repository)(first, 'Resultado rechazado', date);
     final rejected = (await store.operations(author.userId)).single;
-    const legacyDetails = (animalId: null, field: 'resultado');
+    const legacyDetails = (animalId: null, field: HealthRejectionField.result);
     await store.save(
       events: [
         HealthCodec.eventRow(
           first.copyWith(
             result: HealthStudyResult(value: 'Resultado rechazado', reportedAt: date, reportedById: author.userId),
             resultSyncStatus: HealthSyncStatus.rejected,
-            resultErrorCode: 'resultado_invalido',
             resultRejection: legacyDetails,
           ),
         ),
@@ -298,7 +297,7 @@ void main() {
     );
     expect(visible.result, canonical);
     expect(visible.resultSyncStatus, isNull);
-    expect(visible.resultErrorCode, isNull);
+    expect(visible.resultIssue, isNull);
     expect(await repository.localEvent(farm, second.id), isNotNull);
     expect(
       (await repository.watchHistory(farm, second.recipient.animalId).first).map((event) => event.id),
@@ -334,7 +333,7 @@ void main() {
 
     await RecordHealthResultUseCase(repository)(study, 'Resultado privado de A', date);
     final draftA = (await store.operations(author.userId)).single;
-    const details = (animalId: null, field: 'resultado');
+    const details = (animalId: null, field: HealthRejectionField.result);
     await repository.reject(author, draftA, 'resultado_invalido', details: details);
     expect((await visible()).resultRejection, details);
 
@@ -440,7 +439,7 @@ void main() {
     await sync.request();
     final rejected = (await repository.localEvent(farm, kept.id))!;
     expect(rejected.syncStatus, HealthSyncStatus.rejected);
-    expect(rejected.syncErrorCode, 'alta_animal_rechazada');
+    expect(rejected.syncIssue, HealthSyncIssue.animalRegistrationRejected);
     expect(groupRequests, isEmpty);
 
     final draft = (await repository.getRejectedRegistration(rejected))!;
@@ -498,7 +497,7 @@ void main() {
             'errors': [
               {
                 'code': 'referencia_muestra_no_valida',
-                'details': {'animal_id': 'animal-2', 'campo': 'referencia_muestra'},
+                'details': {'animal_id': 'animal-2', 'campo': 'animales.1.referencia_muestra'},
               },
             ],
           }),
@@ -521,7 +520,7 @@ void main() {
     final rejected = HealthCodec.eventFrom(HealthCodec.object(row.payload));
     final correction = (await repository.getRejectedRegistration(rejected))!;
     expect(rejected.syncStatus, HealthSyncStatus.rejected);
-    expect(correction.rejection, (animalId: 'animal-2', field: 'referencia_muestra'));
+    expect(correction.rejection, (animalId: 'animal-2', field: HealthRejectionField.sampleReference));
     expect(correction.registration.recipients.map((recipient) => recipient.animalId), ['animal-1', 'animal-2']);
   });
 

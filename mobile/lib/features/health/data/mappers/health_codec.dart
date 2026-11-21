@@ -92,18 +92,62 @@ abstract final class HealthCodec {
     'referencia_muestra': recipient.sampleReference,
   };
 
-  /// Lee solo los identificadores previstos en el contrato de rechazos.
+  static const _rejectionFields = {
+    'practica_id': HealthRejectionField.practice,
+    'producto_id': HealthRejectionField.product,
+    'dosis': HealthRejectionField.dose,
+    'unidad': HealthRejectionField.unit,
+    'via': HealthRejectionField.route,
+    'serie': HealthRejectionField.batch,
+    'vencimiento': HealthRejectionField.expiration,
+    'descripcion': HealthRejectionField.description,
+    'tipo_muestra': HealthRejectionField.sampleType,
+    'referencia_muestra': HealthRejectionField.sampleReference,
+    'responsable': HealthRejectionField.responsible,
+    'fecha_aplicacion': HealthRejectionField.date,
+    'resultado': HealthRejectionField.result,
+    'fecha': HealthRejectionField.resultDate,
+  };
+
+  /// Código del rechazo local por una dependencia de alta animal.
+  static const animalRegistrationRejectedCode = 'alta_animal_rechazada';
+
+  /// Código que acompaña al resultado confirmado por otra carga.
+  static const resultAlreadyRecordedCode = 'resultado_ya_completado';
+
+  /// Traduce los códigos de SQLite y del backend a los motivos de la ficha.
+  static HealthSyncIssue? issueFrom(String? code) => switch (code) {
+    animalRegistrationRejectedCode => HealthSyncIssue.animalRegistrationRejected,
+    resultAlreadyRecordedCode => HealthSyncIssue.resultAlreadyRecorded,
+    _ => null,
+  };
+
+  static String? _issueCode(HealthSyncIssue? issue) => switch (issue) {
+    HealthSyncIssue.animalRegistrationRejected => animalRegistrationRejectedCode,
+    HealthSyncIssue.resultAlreadyRecorded => resultAlreadyRecordedCode,
+    null => null,
+  };
+
+  /// Traduce los datos de un rechazo remoto o guardado en SQLite.
   static HealthRejectionDetails? rejectionFrom(Object? json) {
     if (json is! Map<String, dynamic>) return null;
     final animalId = json['animal_id'];
-    final field = json['campo'];
-    final details = (animalId: animalId is String ? animalId : null, field: field is String ? field : null);
+    final rawField = json['campo'];
+    final details = (
+      animalId: animalId is String ? animalId : null,
+      field: rawField is String ? _rejectionFields[rawField.split('.').last] : null,
+    );
     return details.animalId == null && details.field == null ? null : details;
   }
 
   /// Conserva el detalle de rechazo en SQLite.
-  static Map<String, String?>? rejectionTo(HealthRejectionDetails? rejection) =>
-      rejection == null ? null : {'animal_id': rejection.animalId, 'campo': rejection.field};
+  static Map<String, String?>? rejectionTo(HealthRejectionDetails? rejection) {
+    if (rejection == null) return null;
+    return {
+      'animal_id': rejection.animalId,
+      'campo': _rejectionFields.entries.where((entry) => entry.value == rejection.field).firstOrNull?.key,
+    };
+  }
 
   /// Lee un evento del historial. Las filas remotas tienen estado confirmado.
   static HealthEvent eventFrom(Map<String, dynamic> json, {bool remote = false}) {
@@ -123,8 +167,8 @@ abstract final class HealthCodec {
       notes: json['observaciones'] as String?,
       deletedAt: _date(json['deleted_at']),
       syncStatus: remote ? HealthSyncStatus.synchronized : HealthSyncStatus.values.byName(json['local_sync'] as String),
-      syncErrorCode: remote ? null : json['local_sync_error'] as String?,
-      resultErrorCode: remote ? null : json['local_result_error'] as String?,
+      syncIssue: remote ? null : issueFrom(json['local_sync_error'] as String?),
+      resultIssue: remote ? null : issueFrom(json['local_result_error'] as String?),
       syncRejection: remote ? null : rejectionFrom(json['local_sync_rejection']),
       resultRejection: remote ? null : rejectionFrom(json['local_result_rejection']),
       resultSyncStatus: remote || json['local_result_sync'] == null
@@ -159,8 +203,8 @@ abstract final class HealthCodec {
       'observaciones': event.notes,
       'deleted_at': event.deletedAt?.toUtc().toIso8601String(),
       'local_sync': event.syncStatus.name,
-      'local_sync_error': event.syncErrorCode,
-      'local_result_error': event.resultErrorCode,
+      'local_sync_error': _issueCode(event.syncIssue),
+      'local_result_error': _issueCode(event.resultIssue),
       'local_sync_rejection': rejectionTo(event.syncRejection),
       'local_result_rejection': rejectionTo(event.resultRejection),
       'local_result_sync': event.resultSyncStatus?.name,

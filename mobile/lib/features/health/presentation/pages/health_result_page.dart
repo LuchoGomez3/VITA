@@ -5,6 +5,7 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
 import 'package:frontend_mayoral/features/health/presentation/cubit/health_result_cubit.dart';
+import 'package:frontend_mayoral/features/health/presentation/health_rejection_prompt.dart';
 import 'package:go_router/go_router.dart';
 
 /// Permite informar el resultado pendiente de un estudio existente.
@@ -51,8 +52,7 @@ class _HealthResultPageState extends State<HealthResultPage> {
                 children: [
                   Text(widget.event.practice.name),
                   Text(widget.event.recipient.label),
-                  if (HealthRegistrationStrings.rejectionPrompt(field: widget.event.resultRejection?.field)
-                      case final prompt?)
+                  if (healthRejectionPrompt(field: widget.event.resultRejection?.field) case final prompt?)
                     Text(prompt),
                   TextField(
                     controller: _text,

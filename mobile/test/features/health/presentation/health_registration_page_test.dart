@@ -250,7 +250,7 @@ void main() {
                 HealthRecipient(animalId: 'second', label: '002'),
               ],
             ),
-            rejection: (animalId: 'second', field: 'referencia_muestra'),
+            rejection: (animalId: 'second', field: HealthRejectionField.sampleReference),
           ),
           createCubit: () => HealthRegistrationCubit(
             reader: ReadHealthUseCase(repository),
@@ -283,7 +283,7 @@ void main() {
       responsible: 'Operario',
       recordedById: 'user',
       recipient: _animal,
-      resultRejection: (animalId: null, field: 'resultado'),
+      resultRejection: (animalId: null, field: HealthRejectionField.result),
       resultSyncStatus: HealthSyncStatus.rejected,
       result: HealthStudyResult(value: 'Informe previo', reportedAt: date, reportedById: 'user'),
     );

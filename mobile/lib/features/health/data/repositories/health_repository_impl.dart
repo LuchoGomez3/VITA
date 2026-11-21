@@ -351,7 +351,7 @@ class HealthRepositoryImpl implements HealthRepository {
         reportedById: draft.authorId,
       ),
       resultSyncStatus: draft.rejection == null ? HealthSyncStatus.pending : HealthSyncStatus.rejected,
-      resultErrorCode: draft.rejection,
+      resultIssue: HealthCodec.issueFrom(draft.rejection),
       resultRejection: draft.rejection == null
           ? null
           : payload.containsKey(_resultRejectionKey)
@@ -362,7 +362,7 @@ class HealthRepositoryImpl implements HealthRepository {
 
   static HealthEvent _withoutLegacyResult(HealthEvent event) => event.resultSyncStatus == null
       ? event
-      : event.copyWith(result: null, resultSyncStatus: null, resultErrorCode: null, resultRejection: null);
+      : event.copyWith(result: null, resultSyncStatus: null, resultIssue: null, resultRejection: null);
 
   /// UUID de los eventos afectados por el registro persistido.
   static Set<String> registrationEventIds(BrickHealthOperationModel operation) =>
@@ -476,10 +476,10 @@ class HealthRepositoryImpl implements HealthRepository {
           ? remote.copyWith(
               result: previous?.result,
               resultSyncStatus: previous?.resultSyncStatus,
-              resultErrorCode: previous?.resultErrorCode,
+              resultIssue: previous?.resultIssue,
               resultRejection: previous?.resultRejection,
             )
-          : remote.copyWith(resultErrorCode: hasLocalResult ? null : previous?.resultErrorCode);
+          : remote.copyWith(resultIssue: hasLocalResult ? null : previous?.resultIssue);
       local[remote.id] = merged;
       updatedEvents.add(HealthCodec.eventRow(merged));
     }
@@ -532,13 +532,13 @@ class HealthRepositoryImpl implements HealthRepository {
           accepted.copyWith(
             result: previousEvent?.result,
             resultSyncStatus: previousEvent?.resultSyncStatus,
-            resultErrorCode: previousEvent?.resultErrorCode,
+            resultIssue: previousEvent?.resultIssue,
             resultRejection: previousEvent?.resultRejection,
           ),
         );
       }
       return HealthCodec.eventRow(
-        accepted.copyWith(resultErrorCode: resultConflict ? 'resultado_ya_completado' : null),
+        accepted.copyWith(resultIssue: resultConflict ? HealthSyncIssue.resultAlreadyRecorded : null),
       );
     });
     await _store.save(
@@ -565,7 +565,11 @@ class HealthRepositoryImpl implements HealthRepository {
       events: [
         for (final event in events.where((row) => ids.contains(row.localId)).map(_decode))
           HealthCodec.eventRow(
-            event.copyWith(syncStatus: HealthSyncStatus.rejected, syncErrorCode: reason, syncRejection: details),
+            event.copyWith(
+              syncStatus: HealthSyncStatus.rejected,
+              syncIssue: HealthCodec.issueFrom(reason),
+              syncRejection: details,
+            ),
           ),
       ],
       operations: [

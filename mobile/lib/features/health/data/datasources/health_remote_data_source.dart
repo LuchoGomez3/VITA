@@ -29,7 +29,7 @@ class HealthRemoteFailure extends BackendRequestFailure {
   static HealthEvent? _conflictEvent(BackendRequestFailure failure) {
     final details = failure.details;
     final event = details is Map<String, dynamic> ? details['evento'] : null;
-    return event is Map<String, dynamic> && failure.code == 'resultado_ya_completado'
+    return event is Map<String, dynamic> && failure.code == HealthCodec.resultAlreadyRecordedCode
         ? HealthCodec.eventFrom(event, remote: true)
         : null;
   }

@@ -234,7 +234,7 @@ class HealthSyncService {
               await _repository.reject(
                 session,
                 operation,
-                'alta_animal_rechazada',
+                HealthCodec.animalRegistrationRejectedCode,
                 details: (animalId: animalId, field: null),
               );
             }

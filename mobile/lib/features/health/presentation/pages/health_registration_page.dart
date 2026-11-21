@@ -7,6 +7,7 @@ import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
 import 'package:frontend_mayoral/features/health/presentation/cubit/health_registration_cubit.dart';
 import 'package:frontend_mayoral/features/health/presentation/widgets/health_manga_capture.dart';
+import 'package:frontend_mayoral/features/health/presentation/health_rejection_prompt.dart';
 import 'package:go_router/go_router.dart';
 
 /// Formulario compartido de registro sanitario.
@@ -96,7 +97,7 @@ class _RegistrationFormState extends State<_RegistrationForm> {
     final recipient = draft.registration.recipients
         .where((animal) => animal.animalId == rejection.animalId)
         .firstOrNull;
-    return HealthRegistrationStrings.rejectionPrompt(animalLabel: recipient?.label, field: rejection.field);
+    return healthRejectionPrompt(animalLabel: recipient?.label, field: rejection.field);
   }
 
   @override

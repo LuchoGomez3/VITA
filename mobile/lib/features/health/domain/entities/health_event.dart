@@ -36,8 +36,62 @@ enum HealthSyncStatus {
   rejected,
 }
 
-/// Ubicación del dato que el servidor rechazó.
-typedef HealthRejectionDetails = ({String? animalId, String? field});
+/// Motivo de sincronización que la ficha puede explicar al operario.
+enum HealthSyncIssue {
+  /// El alta del animal necesita una corrección.
+  animalRegistrationRejected,
+
+  /// Otro dispositivo ya guardó el resultado definitivo.
+  resultAlreadyRecorded,
+}
+
+/// Dato del formulario que el operario puede revisar.
+enum HealthRejectionField {
+  /// Práctica seleccionada.
+  practice,
+
+  /// Producto aplicado.
+  product,
+
+  /// Dosis del producto.
+  dose,
+
+  /// Unidad de la dosis.
+  unit,
+
+  /// Vía de administración.
+  route,
+
+  /// Serie del producto.
+  batch,
+
+  /// Vencimiento del producto.
+  expiration,
+
+  /// Descripción de la práctica.
+  description,
+
+  /// Tipo de muestra.
+  sampleType,
+
+  /// Identificador de la muestra.
+  sampleReference,
+
+  /// Responsable de la práctica.
+  responsible,
+
+  /// Fecha de aplicación.
+  date,
+
+  /// Valor del resultado.
+  result,
+
+  /// Fecha del resultado.
+  resultDate,
+}
+
+/// Ubicación del dato que necesita una corrección.
+typedef HealthRejectionDetails = ({String? animalId, HealthRejectionField? field});
 
 /// Registro rechazado y los datos que el operario puede corregir.
 typedef HealthCorrection = ({String id, HealthRegistration registration, HealthRejectionDetails? rejection});
@@ -97,8 +151,8 @@ sealed class HealthEvent with _$HealthEvent {
     required HealthRecipient recipient,
     @Default(HealthSyncStatus.pending) HealthSyncStatus syncStatus,
     HealthSyncStatus? resultSyncStatus,
-    String? syncErrorCode,
-    String? resultErrorCode,
+    HealthSyncIssue? syncIssue,
+    HealthSyncIssue? resultIssue,
     HealthRejectionDetails? syncRejection,
     HealthRejectionDetails? resultRejection,
     HealthStudyResult? result,

@@ -45,6 +45,8 @@ Al pedir sincronización manual, el indicador espera tanto la preparación de
 datos como el ciclo sanitario. Una falla de transporte se informa en Sync y
 conserva los registros en el dispositivo. Los rechazos funcionales se muestran
 en su sección de rechazados.
+El adaptador sanitario traduce los campos y motivos conocidos para la ficha y
+los formularios. Sync conserva el código original de la operación rechazada.
 
 Los resultados locales se leen desde la operación de la cuenta que los guardó.
 Dos cuentas habilitadas que comparten un dispositivo pueden guardar sus propios
