@@ -96,13 +96,11 @@ class HealthSyncService {
   Future<bool> _cycle(HealthSession session, {required bool refresh}) async {
     try {
       final establishments = await _repository.establishments();
-      final operations = await _repository.visibleOperations();
+      final operations = await _repository.pendingOperations();
       var retry = false;
       for (final establishment in establishments) {
         final id = establishment.id;
-        final pending = operations
-            .where((operation) => operation.establishmentId == id && operation.rejection == null)
-            .toList();
+        final pending = operations.where((operation) => operation.establishmentId == id).toList();
         if (!refresh && pending.isEmpty) continue;
         Future<void> guard() async {
           _repository.requireSession(session);
@@ -184,7 +182,12 @@ class HealthSyncService {
         }
       } else {
         final event = await _repository.localEvent(operation.establishmentId, resultId);
-        if (event?.syncStatus != HealthSyncStatus.synchronized) return true;
+        if (event == null ||
+            event.syncStatus != HealthSyncStatus.synchronized ||
+            event.deletedAt != null ||
+            event.result != null) {
+          return true;
+        }
       }
       final response = await _remote.submit(operation, guard);
       await guard();

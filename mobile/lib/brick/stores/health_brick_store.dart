@@ -66,6 +66,14 @@ class HealthBrickStore {
     );
   }
 
+  /// Lee los eventos de los que dependen los resultados pendientes.
+  Future<Iterable<BrickHealthEventModel>> resultParents(Map<String, Set<String>> idsByEstablishment) async {
+    if (idsByEstablishment.isEmpty) return const [];
+    return (await _repository.getLocal<BrickHealthEventModel>()).where(
+      (row) => idsByEstablishment[row.establishmentId]?.contains(row.localId) ?? false,
+    );
+  }
+
   /// Escribe juntas las filas, las operaciones y el avance del historial.
   Future<void> save({
     Iterable<BrickHealthEventModel> events = const [],

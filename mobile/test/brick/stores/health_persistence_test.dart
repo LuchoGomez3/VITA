@@ -546,7 +546,7 @@ void main() {
         return http.Response(
           jsonEncode({
             'success': true,
-            'data': [],
+            'data': const <Object?>[],
             'meta': {'next_cursor': 'available-history', 'has_more': false},
           }),
           200,
@@ -578,6 +578,82 @@ void main() {
       author,
       const HealthCatalog(establishmentId: farm, practices: [sampling], products: []),
     );
+  });
+
+  test('resumes a blocked result only after its rejected study is corrected', () async {
+    await repository.cacheCatalog(
+      author,
+      const HealthCatalog(establishmentId: farm, practices: [sampling], products: []),
+    );
+    final before = (await store.operations(author.userId)).map((item) => item.localId).toSet();
+    final recipients = await repository.getRecipients(farm, ['animal-1']);
+    await RegisterHealthEventsUseCase(repository)(
+      HealthRegistration(
+        establishmentId: farm,
+        occurredAt: date,
+        practice: sampling,
+        details: const HealthObservation(description: 'Control', sampleType: 'Sangre'),
+        responsible: 'Operario',
+        recipients: recipients,
+      ),
+    );
+    final group = (await store.operations(author.userId)).singleWhere((item) => !before.contains(item.localId));
+    final id = HealthRepositoryImpl.registrationEventIds(group).single;
+    final study = (await repository.localEvent(farm, id))!;
+    await RecordHealthResultUseCase(repository)(study, 'Resultado conservado', date);
+
+    final methods = <String>[];
+    var valid = false;
+    final confirmed = study.copyWith(syncStatus: HealthSyncStatus.synchronized);
+    final result = HealthStudyResult(value: 'Resultado conservado', reportedAt: date, reportedById: author.userId);
+    final adapter = HealthRemoteDataSource(
+      baseUrl: 'http://localhost',
+      tokens: const _Tokens(),
+      client: MockClient((request) async {
+        methods.add(request.method);
+        if (!valid) {
+          return http.Response(
+            jsonEncode({
+              'success': false,
+              'errors': [
+                {'code': 'registro_invalido'},
+              ],
+            }),
+            422,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        if (request.method == 'POST') return _response([_wire(confirmed)]);
+        expect(request.url.pathSegments, contains(id));
+        expect(HealthCodec.object(request.body)['resultado'], 'Resultado conservado');
+        return _response(_wire(confirmed.copyWith(result: result)));
+      }),
+    );
+    final sync = HealthSyncService(
+      repository: repository,
+      remote: adapter,
+      resolveAnimal: (_, _, _, _) async => HealthAnimalDependency.confirmed,
+    );
+    addTearDown(sync.dispose);
+
+    await sync.request();
+    await sync.request();
+    expect(methods, ['POST']);
+    expect((await repository.pendingOperations()).where((item) => item.resultEventId == id), isEmpty);
+    expect((await repository.visibleOperations()).where((item) => item.resultEventId == id), hasLength(1));
+    final rejected = (await repository.watchHistory(farm, 'animal-1').first).singleWhere((event) => event.id == id);
+    expect(rejected.result, result);
+    expect(rejected.syncStatus, HealthSyncStatus.rejected);
+
+    final draft = (await repository.getRejectedRegistration(rejected))!;
+    valid = true;
+    await RegisterHealthEventsUseCase(repository)(draft.registration, replacingOperationId: draft.id);
+    expect((await repository.pendingOperations()).where((item) => item.resultEventId == id), hasLength(1));
+    await sync.request();
+
+    expect(methods, ['POST', 'POST', 'PUT']);
+    expect((await repository.visibleOperations()).where((item) => item.resultEventId == id), isEmpty);
+    expect((await repository.localEvent(farm, id))?.result, result);
   });
 
   test('rolls back all changes when the session changes inside a transaction', () async {

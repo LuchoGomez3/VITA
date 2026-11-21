@@ -32,6 +32,10 @@ Los resultados locales se leen desde la operación de la cuenta que los guardó.
 Dos cuentas habilitadas que comparten un dispositivo pueden guardar sus propios
 borradores para el mismo estudio. El resultado confirmado se comparte entre
 las cuentas autorizadas y cierra los borradores de ese evento.
+Si el alta del estudio requiere una corrección manual, su resultado queda
+guardado y se muestra desde el registro rechazado. La cola cuenta ese resultado
+como pendiente cuando se guarda la corrección del alta y lo envía después de
+que el servidor confirme el estudio.
 
 El historial incremental aplica el evento y el cursor en la misma transacción.
 Una actualización sin resultado conserva cualquier carga local en curso. Un
@@ -108,11 +112,11 @@ Desde `mobile`, correr
 | Recorrido | Verificación automatizada mobile |
 | --- | --- |
 | Ficha | Formulario individual, estudio y carga de resultado sobre el UUID existente. |
-| Lote o grupo | Una sola operación en SQLite, reenvío con el mismo cuerpo y corrección tras el rechazo de un alta. |
+| Lote o grupo | Una sola operación en SQLite, reenvío con el mismo cuerpo y reanudación del resultado tras corregir un alta rechazada. |
 | Manga | Lecturas HID simuladas y entrada manual sin repetir un animal. |
 | Historial incremental | Conserva un resultado local ante cambios de metadatos y lo concilia ante un resultado confirmado o una baja lógica. |
 | Rechazos | El `422` simulado conserva el animal y el campo en SQLite y la corrección muestra una indicación localizada. |
-| Sesión | Cambio de cuenta durante un pedido y reversión de una escritura interrumpida. |
+| Sesión | Cambio de cuenta durante un pedido, borradores privados en el mismo dispositivo y reversión de una escritura interrumpida. |
 
 En staging, usar dos cuentas de un establecimiento y una cuenta sin acceso
 a ese establecimiento. Registrar por ficha, lote y manga en modo avión y

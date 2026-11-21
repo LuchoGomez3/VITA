@@ -124,12 +124,12 @@ HealthResultCubit createHealthResultCubit() => HealthResultCubit(
 /// Proyecta las operaciones pendientes de Sanidad al contrato de Sync.
 Future<List<SyncQueueOperation>> readHealthSyncQueue() async {
   if (HealthBrickStore.instance == null) return const [];
-  final operations = await createHealthRepository().visibleOperations();
+  final operations = await createHealthRepository().pendingOperations();
   return [
     for (final operation in operations)
-      if (operation.rejection == null && operation.primaryKey != null)
+      if (operation.primaryKey case final primaryKey?)
         SyncQueueOperation(
-          queueId: -operation.primaryKey!,
+          queueId: -primaryKey,
           kind: operation.resultEventId == null ? SyncOperationKind.healthEvent : SyncOperationKind.healthResult,
           state: SyncOperationState.waiting,
           attempts: 0,

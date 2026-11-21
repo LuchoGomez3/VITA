@@ -424,6 +424,26 @@ class HealthRepositoryImpl implements HealthRepository {
     return operations.where((item) => allowed.contains(item.establishmentId)).toList();
   }
 
+  /// Operaciones reintentables. Un resultado con alta rechazada espera la corrección del alta.
+  Future<List<BrickHealthOperationModel>> pendingOperations() => _store.serialize(() async {
+    final current = session;
+    final pending = (await visibleOperations()).where((item) => item.rejection == null).toList();
+    final resultIds = <String, Set<String>>{};
+    for (final item in pending) {
+      if (item.resultEventId case final id?) (resultIds[item.establishmentId] ??= {}).add(id);
+    }
+    final available = {
+      for (final parent in (await _store.resultParents(resultIds)).map(_decode).map(_withoutLegacyResult))
+        if (parent.deletedAt == null && parent.syncStatus != HealthSyncStatus.rejected && parent.result == null)
+          (parent.establishmentId, parent.id),
+    };
+    if (session != current) return const [];
+    return [
+      for (final item in pending)
+        if (item.resultEventId == null || available.contains((item.establishmentId, item.resultEventId))) item,
+    ];
+  });
+
   /// Observa transacciones confirmadas de Sanidad.
   Stream<void> get changes => _store.changes;
 
