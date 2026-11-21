@@ -411,7 +411,7 @@ class AppRouter {
               },
               rejected: request is HealthCorrection ? request : null,
               createCubit: createHealthRegistrationCubit,
-              refreshCatalog: requestHealthSync,
+              refreshCatalog: refreshHealthCatalog,
             );
           },
         ),

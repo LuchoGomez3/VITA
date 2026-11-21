@@ -30,7 +30,10 @@ void main() {
         MaterialApp(
           home: HealthRegistrationPage(
             capture: true,
-            refreshCatalog: () => refresh.future,
+            refreshCatalog: (establishmentId) {
+              expect(establishmentId, 'farm-a');
+              return refresh.future;
+            },
             createCubit: () => cubit = HealthRegistrationCubit(
               reader: ReadHealthUseCase(repository),
               register: RegisterHealthEventsUseCase(repository),

@@ -19,7 +19,6 @@ import 'package:frontend_mayoral/features/sync/data/repositories/initial_data_sy
 import 'package:frontend_mayoral/features/sync/data/repositories/sync_history_recorder.dart';
 import 'package:frontend_mayoral/features/sync/data/repositories/sync_queue_repository_impl.dart';
 import 'package:frontend_mayoral/features/sync/data/repositories/sync_rejections_repository_impl.dart';
-import 'package:frontend_mayoral/features/sync/domain/entities/sync_activity.dart';
 import 'package:frontend_mayoral/features/sync/domain/services/offline_sync_coordinator.dart';
 import 'package:frontend_mayoral/features/sync/domain/use_cases/prepare_initial_data_sync_use_case.dart';
 import 'package:frontend_mayoral/features/sync/presentation/cubit/sync_queue_cubit.dart';
@@ -103,12 +102,13 @@ SyncQueueCubit createSyncStatusCubit() => _createCubit(includeActivity: true);
 
 SyncQueueCubit _createCubit({required bool includeActivity}) {
   final brick = AppBrickRepository.instance;
+  final healthActivity = createHealthSyncActivity();
   Stream<void> changes() => _mergeVoid([brick.localChanges, brick.syncResults]);
   return SyncQueueCubit(
     repository: SyncQueueRepositoryImpl(
       readQueue: brick.queuedRequests,
       changes: changes(),
-      readAdditionalOperations: readHealthSyncQueue,
+      readAdditionalOperations: healthActivity.readPending,
     ),
     connectivityChanges: connectivityStatus(
       check: Connectivity().checkConnectivity,
@@ -116,16 +116,15 @@ SyncQueueCubit _createCubit({required bool includeActivity}) {
     ),
     synchronizeNow: () => createOfflineSyncCoordinator().synchronizeManually(synchronizeHealthNow),
     rejections: includeActivity
-        ? SyncRejectionsRepositoryImpl(readRejected: () => _readRejectedWithHealth(brick), changes: changes())
+        ? SyncRejectionsRepositoryImpl(
+            readRejected: BrickRejectedRecordsReader(brick).read,
+            readAdditional: healthActivity.readRejected,
+            changes: changes(),
+          )
         : null,
     history: includeActivity ? _historyRecorder : null,
   );
 }
-
-Future<List<SyncRejectedRecord>> _readRejectedWithHealth(AppBrickRepository brick) async => [
-  ...await BrickRejectedRecordsReader(brick).read(),
-  ...await readHealthSyncRejections(),
-]..sort((left, right) => right.recordedAt.compareTo(left.recordedAt));
 
 /// Une varios streams en avisos sin payload; se cancela al cancelar el último.
 Stream<void> _mergeVoid(List<Stream<Object?>> sources) {

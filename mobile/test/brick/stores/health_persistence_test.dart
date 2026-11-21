@@ -525,6 +525,39 @@ void main() {
     expect(correction.registration.recipients.map((recipient) => recipient.animalId), ['animal-1', 'animal-2']);
   });
 
+  test('a form refresh shares the catalog download without submitting operations or pulling history', () async {
+    final requests = <http.Request>[];
+    final started = Completer<void>();
+    final response = Completer<http.Response>();
+    final original = (await repository.getCatalog(farm))!;
+    final refreshed = original.copyWith(practices: [sampling.copyWith(name: 'Sangrado habilitado')]);
+    final sync = HealthSyncService(
+      repository: repository,
+      remote: _healthRemote(
+        client: MockClient((request) {
+          requests.add(request);
+          if (!started.isCompleted) started.complete();
+          return response.future;
+        }),
+      ),
+      resolveAnimal: (_, _, _, _) async => fail('Catalog refresh must not resolve an animal'),
+    );
+    addTearDown(sync.dispose);
+
+    final first = sync.refreshCatalog(farm);
+    await started.future;
+    final second = sync.refreshCatalog(farm);
+    response.complete(_response(HealthCodec.catalogTo(refreshed)));
+    await Future.wait([first, second]);
+
+    final request = requests.single;
+    expect(request.method, 'GET');
+    expect(request.url.path, '/api/v1/eventos_sanitarios/catalogo');
+    expect(request.url.queryParameters, {'establecimiento_id': farm});
+    expect(await repository.getCatalog(farm), refreshed);
+    await repository.cacheCatalog(author, original);
+  });
+
   test('refreshes the history and catalog independently during a partial outage', () async {
     final requests = <Uri>[];
     final freshPractice = sampling.copyWith(name: 'Sangrado actualizado');

@@ -35,7 +35,7 @@ class HealthRegistrationPage extends StatelessWidget {
   final HealthCorrection? rejected;
 
   /// Solicita una nueva descarga al coordinador de la sesión.
-  final Future<void> Function()? refreshCatalog;
+  final Future<void> Function(String establishmentId)? refreshCatalog;
 
   /// Inicia y mantiene una sesión de lectura sucesiva.
   final bool capture;
@@ -65,7 +65,7 @@ class _RegistrationForm extends StatefulWidget {
 
   final String? initialEstablishmentId;
   final HealthCorrection? rejected;
-  final Future<void> Function()? refreshCatalog;
+  final Future<void> Function(String establishmentId)? refreshCatalog;
   final bool capture;
 
   @override
@@ -139,6 +139,7 @@ class _RegistrationFormState extends State<_RegistrationForm> {
       },
       builder: (context, state) {
         final catalog = state.catalog;
+        final establishmentId = state.establishmentId;
         final practice = catalog?.practices.where((item) => item.id == _practiceId).firstOrNull;
         final saving = state.submission is Loading<void>;
         return PopScope(
@@ -161,13 +162,13 @@ class _RegistrationFormState extends State<_RegistrationForm> {
                     const Center(child: CircularProgressIndicator())
                   else if (state.preparation case ResultError<void>(:final error))
                     Text(error.message)
-                  else if (state.establishmentId == null && state.establishments.isEmpty)
+                  else if (establishmentId == null && state.establishments.isEmpty)
                     const Text(HealthRegistrationStrings.unauthorized)
-                  else if (state.establishmentId != null && catalog == null) ...[
+                  else if (establishmentId != null && catalog == null) ...[
                     const Text(HealthRegistrationStrings.catalogUnavailable),
                     if (widget.refreshCatalog != null)
                       TextButton(
-                        onPressed: _refreshing ? null : _refresh,
+                        onPressed: _refreshing ? null : () => _refresh(establishmentId),
                         child: const Text(HealthRegistrationStrings.refresh),
                       ),
                   ] else if (catalog != null) ...[
@@ -332,10 +333,10 @@ class _RegistrationFormState extends State<_RegistrationForm> {
     context.read<HealthRegistrationCubit>().prepare(id);
   }
 
-  Future<void> _refresh() async {
+  Future<void> _refresh(String establishmentId) async {
     setState(() => _refreshing = true);
     try {
-      await widget.refreshCatalog?.call();
+      await widget.refreshCatalog?.call(establishmentId);
       if (!mounted) return;
       await context.read<HealthRegistrationCubit>().reloadCatalog();
     } finally {

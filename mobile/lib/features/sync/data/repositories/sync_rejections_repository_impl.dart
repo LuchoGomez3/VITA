@@ -16,11 +16,21 @@ class SyncRejectionsRepositoryImpl implements SyncRejectionsRepository {
   SyncRejectionsRepositoryImpl({
     required Future<List<SyncRejectedRecord>> Function() readRejected,
     required Stream<void> changes,
+    Future<List<SyncRejectedRecord>> Function()? readAdditional,
   }) : _readRejected = readRejected,
-       _changes = changes;
+       _changes = changes,
+       _readAdditional = readAdditional;
 
   final Future<List<SyncRejectedRecord>> Function() _readRejected;
   final Stream<void> _changes;
+  final Future<List<SyncRejectedRecord>> Function()? _readAdditional;
+
+  Future<List<SyncRejectedRecord>> _readAll() async {
+    final records = await _readRejected();
+    final readAdditional = _readAdditional;
+    if (readAdditional == null) return records;
+    return [...records, ...await readAdditional()]..sort((left, right) => right.recordedAt.compareTo(left.recordedAt));
+  }
 
   @override
   Stream<List<SyncRejectedRecord>> watch() {
@@ -39,7 +49,7 @@ class SyncRejectionsRepositoryImpl implements SyncRejectionsRepository {
       try {
         do {
           readAgain = false;
-          final records = await _readRejected();
+          final records = await _readAll();
           if (controller.isClosed) return;
           if (lastRecords == null || !listEquals(records, lastRecords)) {
             lastRecords = records;

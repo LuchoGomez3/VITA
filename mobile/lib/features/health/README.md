@@ -21,6 +21,8 @@ Si el operario cambia de campo mientras se descarga el catálogo, el formulario
 relee el catálogo del campo activo al terminar y conserva los animales de esa
 selección. Una lectura RFID pendiente pertenece a la selección que la inició y
 se descarta si el operario cambia de campo, incluso si después regresa al mismo.
+El botón del formulario pide el catálogo del campo seleccionado. Si Sync ya
+está descargando ese catálogo para la misma sesión, ambos usan la misma descarga.
 
 La tabla de operaciones de Sanidad en SQLite conserva el cuerpo y el UUID
 original durante los reintentos del mismo envío. Un lote usa una sola operación.

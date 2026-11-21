@@ -44,6 +44,7 @@ class HealthSyncService {
   final HealthRemoteDataSource _remote;
   final ResolveHealthAnimal _resolveAnimal;
   static final _logger = Logger('HealthSyncService');
+  final _catalogDownloads = <(HealthSession, String), Future<void>>{};
   Future<bool>? _active;
   ({Timer timer, HealthSession session, bool refresh})? _retry;
   bool _requested = false;
@@ -63,11 +64,20 @@ class HealthSyncService {
     return _active ??= _run().whenComplete(() => _active = null);
   }
 
+  /// Descarga únicamente el catálogo solicitado por el formulario.
+  Future<void> refreshCatalog(String establishmentId) async {
+    final session = _repository.session;
+    if (_closed || session == null) return;
+    _paused = false;
+    await _refreshResource(session, 'catalog', () => _downloadCatalog(session, establishmentId));
+  }
+
   /// Cancela solicitudes programadas que pertenecían a la sesión anterior.
   void pause() {
     _paused = true;
     _requested = false;
     _refresh = false;
+    _catalogDownloads.clear();
     _cancelRetry();
   }
 
@@ -129,13 +139,7 @@ class HealthSyncService {
         final id = establishment.id;
         final pending = operations.where((operation) => operation.establishmentId == id).toList();
         if (!refresh && pending.isEmpty) continue;
-        Future<void> guard() async {
-          _repository.requireSession(session);
-          final authorized = await _repository.authorize(id);
-          if (_closed || _paused || authorized != session) {
-            throw const HealthFailure(HealthProblem.unauthorized);
-          }
-        }
+        Future<void> guard() => _authorize(session, id);
 
         for (final operation in [
           ...pending.where((item) => item.resultEventId == null),
@@ -145,10 +149,7 @@ class HealthSyncService {
         }
         if (refresh) {
           track(
-            await _refreshResource(session, 'catalog', () async {
-              final catalog = await _remote.catalog(id, guard);
-              await _repository.cacheCatalog(session, catalog);
-            }),
+            await _refreshResource(session, 'catalog', () => _downloadCatalog(session, id)),
           );
           track(await _refreshResource(session, 'history', () => _pull(session, id, guard)));
         }
@@ -159,6 +160,39 @@ class HealthSyncService {
       _logger.warning('Health synchronization interrupted (${error.runtimeType})');
       return (succeeded: false, retry: true);
     }
+  }
+
+  Future<void> _authorize(HealthSession session, String establishmentId) async {
+    _repository.requireSession(session);
+    final authorized = await _repository.authorize(establishmentId);
+    if (_closed || _paused || authorized != session) {
+      throw const HealthFailure(HealthProblem.unauthorized);
+    }
+  }
+
+  Future<void> _downloadCatalog(HealthSession session, String establishmentId) {
+    final key = (session, establishmentId);
+    final active = _catalogDownloads[key];
+    if (active != null) return active;
+    late final Future<void> download;
+    Future<void> guard() async {
+      await _authorize(session, establishmentId);
+      if (!identical(_catalogDownloads[key], download)) {
+        throw const HealthFailure(HealthProblem.unauthorized);
+      }
+    }
+
+    Future<void> fetch() async {
+      final catalog = await _remote.catalog(establishmentId, guard);
+      await guard();
+      await _repository.cacheCatalog(session, catalog);
+    }
+
+    // Registra el vuelo antes de que el transporte consulte la sesión.
+    download = Future<void>.microtask(fetch).whenComplete(() {
+      if (identical(_catalogDownloads[key], download)) _catalogDownloads.remove(key);
+    });
+    return _catalogDownloads[key] = download;
   }
 
   Future<_SyncStep> _refreshResource(HealthSession session, String resource, Future<void> Function() refresh) async {

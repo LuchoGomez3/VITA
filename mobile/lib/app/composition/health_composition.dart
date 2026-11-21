@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:frontend_mayoral/app/adapters/health_sync_activity.dart';
 import 'package:frontend_mayoral/app/config/app_config.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/auth/guarded_backend_request.dart';
@@ -18,8 +19,6 @@ import 'package:frontend_mayoral/features/health/data/services/health_sync_servi
 import 'package:frontend_mayoral/features/health/domain/use_cases/health_use_cases.dart';
 import 'package:frontend_mayoral/features/health/presentation/cubit/health_registration_cubit.dart';
 import 'package:frontend_mayoral/features/health/presentation/cubit/health_result_cubit.dart';
-import 'package:frontend_mayoral/features/sync/domain/entities/sync_activity.dart';
-import 'package:frontend_mayoral/features/sync/domain/entities/sync_queue.dart';
 import 'package:logging/logging.dart';
 
 HealthSyncService? _syncService;
@@ -51,23 +50,38 @@ Future<bool> synchronizeHealthNow() {
   return requestHealthSync();
 }
 
+/// Actualiza el catálogo del establecimiento que abrió el formulario.
+Future<void> refreshHealthCatalog(String establishmentId) async {
+  final tokens = SessionBackendAccessTokenProvider.instance;
+  if (!_healthSessionActive || HealthBrickStore.instance == null || tokens.userId == null) return;
+  final sync = await _onlineHealthSync(tokens.sessionGeneration);
+  await sync?.refreshCatalog(establishmentId);
+}
+
 Future<bool> _runHealthSync(int generation, {required bool refresh}) async {
+  final sync = await _onlineHealthSync(generation);
+  if (sync == null) return false;
+  final succeeded = await sync.request(refresh: refresh);
+  return succeeded &&
+      _healthSessionActive &&
+      SessionBackendAccessTokenProvider.instance.sessionGeneration == generation;
+}
+
+Future<HealthSyncService?> _onlineHealthSync(int generation) async {
   final tokens = SessionBackendAccessTokenProvider.instance;
   List<ConnectivityResult> connectivity;
   try {
     connectivity = await Connectivity().checkConnectivity();
   } on PlatformException catch (error) {
     Logger('HealthSync').warning('Connectivity check failed (${error.code})');
-    return false;
+    return null;
   }
   if (!_healthSessionActive ||
       tokens.sessionGeneration != generation ||
       !connectivity.any((value) => value != ConnectivityResult.none)) {
-    return false;
+    return null;
   }
-  final sync = _syncService ??= _createHealthSync();
-  final succeeded = await sync.request(refresh: refresh);
-  return succeeded && _healthSessionActive && tokens.sessionGeneration == generation;
+  return _syncService ??= _createHealthSync();
 }
 
 HealthSyncService _createHealthSync() {
@@ -153,36 +167,6 @@ HealthResultCubit createHealthResultCubit() => HealthResultCubit(
   RecordHealthResultUseCase(createHealthRepository(onPending: _requestPending)),
 );
 
-/// Proyecta las operaciones pendientes de Sanidad al contrato de Sync.
-Future<List<SyncQueueOperation>> readHealthSyncQueue() async {
-  if (HealthBrickStore.instance == null) return const [];
-  final operations = await createHealthRepository().pendingOperations();
-  return [
-    for (final operation in operations)
-      if (operation.primaryKey case final primaryKey?)
-        SyncQueueOperation(
-          queueId: -primaryKey,
-          kind: operation.resultEventId == null ? SyncOperationKind.healthEvent : SyncOperationKind.healthResult,
-          state: SyncOperationState.waiting,
-          attempts: 0,
-          queuedAt: operation.createdAt,
-          lastAttemptAt: operation.createdAt,
-        ),
-  ];
-}
-
-/// Proyecta los rechazos de Sanidad visibles para la sesión de Sync.
-Future<List<SyncRejectedRecord>> readHealthSyncRejections() async {
-  if (HealthBrickStore.instance == null) return const [];
-  final operations = await createHealthRepository().visibleOperations();
-  return [
-    for (final operation in operations)
-      if (operation.rejection case final code?)
-        SyncRejectedRecord(
-          localId: operation.localId,
-          kind: operation.resultEventId == null ? SyncOperationKind.healthEvent : SyncOperationKind.healthResult,
-          recordedAt: operation.createdAt,
-          errorCode: code,
-        ),
-  ];
-}
+/// Conecta Sync con la actividad local de Sanidad.
+HealthSyncActivity createHealthSyncActivity() =>
+    HealthSyncActivity(() => HealthBrickStore.instance == null ? null : createHealthRepository());
