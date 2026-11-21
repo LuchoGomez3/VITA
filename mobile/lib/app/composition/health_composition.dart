@@ -4,9 +4,11 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:frontend_mayoral/app/config/app_config.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
+import 'package:frontend_mayoral/brick/auth/guarded_backend_request.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/animal_registration_recovery.dart';
 import 'package:frontend_mayoral/brick/stores/health_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -70,14 +72,21 @@ Future<bool> _runHealthSync(int generation, {required bool refresh}) async {
 
 HealthSyncService _createHealthSync() {
   final repository = createHealthRepository();
-  final remote = HealthRemoteDataSource(
+  final backend = GuardedBackendRequest(
     baseUrl: AppConfig.current.backendBaseUrl,
     send: AppBrickRepository.instance.sendGuardedBackendRequest,
   );
+  final animalRegistration = AnimalRegistrationRecovery(BrickAnimalStore.instance, backend);
   return HealthSyncService(
     repository: repository,
-    remote: remote,
-    resolveAnimal: HealthAnimalRegistrationRecovery(BrickAnimalStore.instance, remote, repository).call,
+    remote: HealthRemoteDataSource(backend),
+    resolveAnimal: (id, establishmentId, session, guard) => animalRegistration(
+      id: id,
+      establishmentId: establishmentId,
+      authorId: session.userId,
+      guard: guard,
+      requireSession: () => repository.requireSession(session),
+    ),
   );
 }
 

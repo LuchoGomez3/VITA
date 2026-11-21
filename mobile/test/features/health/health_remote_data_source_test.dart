@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/authenticated_backend_client.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
+import 'package:frontend_mayoral/brick/auth/guarded_backend_request.dart';
 import 'package:frontend_mayoral/features/health/data/datasources/health_remote_data_source.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -57,12 +58,14 @@ void main() {
 }
 
 HealthRemoteDataSource _remote({required _Tokens tokens, required http.Client client}) => HealthRemoteDataSource(
-  baseUrl: 'http://localhost:8000',
-  send: AuthenticatedBackendClient(
-    tokenProvider: tokens,
-    inner: client,
-    onSyncResult: (_) async => fail('Guarded requests are reconciled by their own store'),
-  ).sendGuarded,
+  GuardedBackendRequest(
+    baseUrl: 'http://localhost:8000',
+    send: AuthenticatedBackendClient(
+      tokenProvider: tokens,
+      inner: client,
+      onSyncResult: (_) async => fail('Guarded requests are reconciled by their own store'),
+    ).sendGuarded,
+  ),
 );
 
 class _Tokens implements RefreshableBackendAccessTokenProvider {

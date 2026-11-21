@@ -4,12 +4,14 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/authenticated_backend_client.dart';
+import 'package:frontend_mayoral/brick/auth/guarded_backend_request.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/health_event.model.dart';
 import 'package:frontend_mayoral/brick/models/health_operation.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/animal_registration_recovery.dart';
 import 'package:frontend_mayoral/brick/stores/health_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
@@ -153,7 +155,7 @@ void main() {
       (await repository.watchHistory(farm, 'animal-1').first).single,
       event,
     ];
-    final adapter = _healthRemote(
+    final backend = _backend(
       client: MockClient((request) async {
         paths.add('${request.method} ${request.url.path}');
         final parts = request.url.pathSegments;
@@ -192,8 +194,8 @@ void main() {
     );
     final sync = HealthSyncService(
       repository: repository,
-      remote: adapter,
-      resolveAnimal: HealthAnimalRegistrationRecovery(BrickAnimalStore.instance, adapter, repository).call,
+      remote: HealthRemoteDataSource(backend),
+      resolveAnimal: _resolveAnimal(backend, repository),
     );
     addTearDown(sync.dispose);
     await sync.request();
@@ -399,7 +401,7 @@ void main() {
 
     var rejectedAnimalAttempts = 0;
     final groupRequests = <List<String>>[];
-    final adapter = _healthRemote(
+    final backend = _backend(
       client: MockClient((request) async {
         final resource = request.url.pathSegments.last;
         if (resource == 'animal-3') return _response({'id': resource, 'establecimiento_id': farm});
@@ -428,8 +430,8 @@ void main() {
     );
     final sync = HealthSyncService(
       repository: repository,
-      remote: adapter,
-      resolveAnimal: HealthAnimalRegistrationRecovery(BrickAnimalStore.instance, adapter, repository).call,
+      remote: HealthRemoteDataSource(backend),
+      resolveAnimal: _resolveAnimal(backend, repository),
     );
     addTearDown(sync.dispose);
 
@@ -508,7 +510,7 @@ void main() {
     final sync = HealthSyncService(
       repository: repository,
       remote: adapter,
-      resolveAnimal: (_, _, _, _) async => HealthAnimalDependency.confirmed,
+      resolveAnimal: (_, _, _, _) async => AnimalRegistrationAvailability.confirmed,
     );
     addTearDown(sync.dispose);
     await sync.request();
@@ -551,7 +553,7 @@ void main() {
     final sync = HealthSyncService(
       repository: repository,
       remote: adapter,
-      resolveAnimal: (_, _, _, _) async => HealthAnimalDependency.confirmed,
+      resolveAnimal: (_, _, _, _) async => AnimalRegistrationAvailability.confirmed,
     );
     addTearDown(sync.dispose);
 
@@ -612,7 +614,7 @@ void main() {
       final sync = HealthSyncService(
         repository: repository,
         remote: adapter,
-        resolveAnimal: (_, _, _, _) async => HealthAnimalDependency.confirmed,
+        resolveAnimal: (_, _, _, _) async => AnimalRegistrationAvailability.confirmed,
       );
       addTearDown(sync.dispose);
 
@@ -688,7 +690,7 @@ void main() {
     final sync = HealthSyncService(
       repository: repository,
       remote: adapter,
-      resolveAnimal: (_, _, _, _) async => HealthAnimalDependency.confirmed,
+      resolveAnimal: (_, _, _, _) async => AnimalRegistrationAvailability.confirmed,
     );
     addTearDown(sync.dispose);
 
@@ -746,7 +748,7 @@ void main() {
     final sync = HealthSyncService(
       repository: repository,
       remote: adapter,
-      resolveAnimal: (_, _, _, _) async => HealthAnimalDependency.confirmed,
+      resolveAnimal: (_, _, _, _) async => AnimalRegistrationAvailability.confirmed,
     );
     addTearDown(sync.dispose);
 
@@ -790,7 +792,20 @@ void main() {
 
 Map<String, dynamic> _wire(HealthEvent event) => HealthCodec.object(HealthCodec.eventRow(event).payload);
 
-HealthRemoteDataSource _healthRemote({required http.Client client}) => HealthRemoteDataSource(
+HealthRemoteDataSource _healthRemote({required http.Client client}) => HealthRemoteDataSource(_backend(client: client));
+
+ResolveHealthAnimal _resolveAnimal(GuardedBackendRequest backend, HealthRepositoryImpl repository) {
+  final recovery = AnimalRegistrationRecovery(BrickAnimalStore.instance, backend);
+  return (id, establishmentId, session, guard) => recovery(
+    id: id,
+    establishmentId: establishmentId,
+    authorId: session.userId,
+    guard: guard,
+    requireSession: () => repository.requireSession(session),
+  );
+}
+
+GuardedBackendRequest _backend({required http.Client client}) => GuardedBackendRequest(
   baseUrl: 'http://localhost',
   send: AuthenticatedBackendClient(
     tokenProvider: const _Tokens(),

@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/auth/guarded_backend_request.dart';
 import 'package:frontend_mayoral/brick/models/health_operation.model.dart';
-import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/animal_registration_recovery.dart';
 import 'package:frontend_mayoral/features/health/data/datasources/health_remote_data_source.dart';
 import 'package:frontend_mayoral/features/health/data/mappers/health_codec.dart';
 import 'package:frontend_mayoral/features/health/data/repositories/health_repository_impl.dart';
@@ -10,21 +10,9 @@ import 'package:frontend_mayoral/features/health/domain/entities/health_event.da
 import 'package:frontend_mayoral/features/health/domain/use_cases/health_use_cases.dart';
 import 'package:logging/logging.dart';
 
-/// Disponibilidad del animal que debe existir antes del evento sanitario.
-enum HealthAnimalDependency {
-  /// El servidor ya conoce al animal.
-  confirmed,
-
-  /// El alta todavía puede llegar al servidor.
-  waiting,
-
-  /// El alta requiere que el usuario la revise.
-  rejected,
-}
-
 /// Resuelve una dependencia de Sanidad bajo la sesión del envío.
 typedef ResolveHealthAnimal =
-    Future<HealthAnimalDependency> Function(
+    Future<AnimalRegistrationAvailability> Function(
       String animalId,
       String establishmentId,
       HealthSession session,
@@ -207,8 +195,8 @@ class HealthSyncService {
             session,
             guard,
           );
-          if (availability != HealthAnimalDependency.confirmed) {
-            if (availability == HealthAnimalDependency.rejected) {
+          if (availability != AnimalRegistrationAvailability.confirmed) {
+            if (availability == AnimalRegistrationAvailability.rejected) {
               await _repository.reject(
                 session,
                 operation,
@@ -216,7 +204,7 @@ class HealthSyncService {
                 details: (animalId: animalId, field: null),
               );
             }
-            return availability == HealthAnimalDependency.rejected ? _SyncStep.completed : _SyncStep.waiting;
+            return availability == AnimalRegistrationAvailability.rejected ? _SyncStep.completed : _SyncStep.waiting;
           }
         }
       } else {
@@ -232,14 +220,20 @@ class HealthSyncService {
       await guard();
       await _repository.accept(session, operation, response);
       return _SyncStep.completed;
-    } on HealthRemoteFailure catch (error) {
+    } on BackendRequestFailure catch (error) {
       if (_closed || _paused || _repository.session != session) return _SyncStep.failed;
-      final currentEvent = error.currentEvent;
+      final healthFailure = error is HealthRemoteFailure ? error : null;
+      final currentEvent = healthFailure?.currentEvent;
       if (error.status == 409 && currentEvent != null && operation.resultEventId == currentEvent.id) {
         await _repository.accept(session, operation, [currentEvent], resultConflict: true);
         return _SyncStep.completed;
       } else if (error.definitive) {
-        await _repository.reject(session, operation, error.code, details: error.rejection);
+        await _repository.reject(
+          session,
+          operation,
+          error.code ?? 'respuesta_animal_invalida',
+          details: healthFailure?.rejection,
+        );
         return _SyncStep.completed;
       }
       return _transient(error) ? _SyncStep.retryableFailure : _SyncStep.failed;
@@ -262,51 +256,6 @@ class HealthSyncService {
     }
   }
 
-  static bool _transient(HealthRemoteFailure error) =>
+  static bool _transient(BackendRequestFailure error) =>
       error.status == 408 || error.status == 425 || error.status == 429 || error.status >= 500;
-}
-
-/// Reutiliza el flujo de alta de animales para dependencias offline.
-class HealthAnimalRegistrationRecovery {
-  /// Inyecta el store de animales y el transporte sanitario protegido.
-  const HealthAnimalRegistrationRecovery(this._animals, this._remote, this._repository);
-
-  final BrickAnimalStore _animals;
-  final HealthRemoteDataSource _remote;
-  final HealthRepositoryImpl _repository;
-
-  /// Confirma que el servidor conoce al animal o recupera su alta local.
-  Future<HealthAnimalDependency> call(
-    String id,
-    String establishmentId,
-    HealthSession session,
-    Future<void> Function() guard,
-  ) async {
-    final animal = await _animals.getAnimalById(id);
-    if (animal != null && animal.establishmentId != establishmentId) return HealthAnimalDependency.rejected;
-    if (animal?.syncStatus == BrickAnimalSyncStatus.synchronized) return HealthAnimalDependency.confirmed;
-    if (await _remote.hasAnimal(id, establishmentId, guard)) return HealthAnimalDependency.confirmed;
-    if (animal == null || animal.syncStatus == BrickAnimalSyncStatus.rejected) {
-      return HealthAnimalDependency.rejected;
-    }
-    final body = await _animals.recoverableRegistrationBody(animal, session.userId);
-    if (body == null) return HealthAnimalDependency.waiting;
-    String? errorCode;
-    try {
-      final data = await _remote.recoverAnimal(body, guard);
-      if (data['id'] != id || data['establecimiento_id'] != establishmentId) {
-        throw const FormatException('Animal response did not match health dependency');
-      }
-    } on HealthRemoteFailure catch (error) {
-      if (!error.definitive) rethrow;
-      if (!await _remote.hasAnimal(id, establishmentId, guard)) errorCode = error.code;
-    }
-    await guard();
-    await _animals.reconcileRecoveredRegistration(
-      animal,
-      errorCode: errorCode,
-      requireSession: () => _repository.requireSession(session),
-    );
-    return errorCode == null ? HealthAnimalDependency.confirmed : HealthAnimalDependency.rejected;
-  }
 }

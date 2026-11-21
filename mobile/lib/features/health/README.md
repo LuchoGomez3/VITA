@@ -30,6 +30,8 @@ reconciliar listas y cursores. El coordinador sanitario administra los
 reintentos de esa operación, ya que la cola REST general usa otra base SQLite.
 El resultado tiene su propia operación sobre el evento existente. Una dependencia
 de alta animal mantiene el envío pendiente mientras el UUID pueda confirmarse.
+La integración de altas de Brick comprueba ese UUID y recupera el respaldo de
+animales cuando corresponde. El adaptador sanitario solo llama a sus endpoints.
 Si el alta es rechazada, el grupo pasa a rechazado y se puede corregir desde
 la ficha de un integrante. La corrección crea una operación nueva y conserva
 los UUID y los resultados de los integrantes retenidos. Si un integrante excluido
