@@ -1,7 +1,6 @@
 import 'dart:convert';
 
-import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
-import 'package:frontend_mayoral/brick/models/health_operation.model.dart';
+import 'package:frontend_mayoral/brick/auth/authenticated_backend_client.dart';
 import 'package:frontend_mayoral/features/health/data/mappers/health_codec.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
@@ -44,20 +43,17 @@ typedef HealthHistoryPage = ({List<HealthEvent> events, String cursor, bool hasM
 
 /// Implementa el contrato de Sanidad con respuesta directa de cada mutación.
 class HealthRemoteDataSource {
-  /// Usa el proveedor compartido de credenciales y un transporte inyectable.
+  /// Usa el transporte autenticado de Brick y conserva el envelope sanitario.
   const HealthRemoteDataSource({
     required String baseUrl,
-    required http.Client client,
-    required RefreshableBackendAccessTokenProvider tokens,
+    required GuardedBackendSender send,
   }) : _baseUrl = baseUrl,
-       _client = client,
-       _tokens = tokens;
+       _send = send;
 
   static const _events = '/api/v1/eventos_sanitarios';
   static const _animals = '/api/v1/animales';
   final String _baseUrl;
-  final http.Client _client;
-  final RefreshableBackendAccessTokenProvider _tokens;
+  final GuardedBackendSender _send;
 
   /// Actualiza las prácticas y productos que el establecimiento tiene habilitados.
   Future<HealthCatalog> catalog(String establishmentId, Future<void> Function() guard) async {
@@ -87,13 +83,12 @@ class HealthRemoteDataSource {
   }
 
   /// Registra el grupo o completa el resultado del evento objetivo.
-  Future<List<HealthEvent>> submit(BrickHealthOperationModel operation, Future<void> Function() guard) async {
-    final eventId = operation.resultEventId;
-    if (eventId == null) {
-      final response = await _request('POST', _events, guard, body: operation.payload);
+  Future<List<HealthEvent>> submit(String body, Future<void> Function() guard, {String? resultEventId}) async {
+    if (resultEventId == null) {
+      final response = await _request('POST', _events, guard, body: body);
       return _eventsFrom(response['data']);
     }
-    final response = await _request('PUT', '$_events/$eventId/resultado', guard, body: operation.payload);
+    final response = await _request('PUT', '$_events/$resultEventId/resultado', guard, body: body);
     return [HealthCodec.eventFrom(response['data'] as Map<String, dynamic>, remote: true)];
   }
 
@@ -124,27 +119,12 @@ class HealthRemoteDataSource {
     Map<String, String>? query,
     String? body,
   }) async {
-    final uri = Uri.parse('$_baseUrl$path').replace(queryParameters: query);
-    Future<http.Response> send(String? token) async {
-      await guard();
-      if (token == null) throw const HealthRemoteFailure(401, 'auth_error');
-      final request = http.Request(method, uri)..headers['Authorization'] = 'Bearer $token';
-      if (body != null) {
-        request.headers['Content-Type'] = 'application/json';
-        request.body = body;
-      }
-      return _client.send(request).then(http.Response.fromStream).timeout(const Duration(seconds: 20));
+    final request = http.Request(method, Uri.parse('$_baseUrl$path').replace(queryParameters: query));
+    if (body != null) {
+      request.headers['Content-Type'] = 'application/json';
+      request.body = body;
     }
-
-    await guard();
-    var response = await send(await _tokens.getAccessToken());
-    await guard();
-    if (response.statusCode == 401) {
-      final refreshed = await _tokens.refreshAccessToken();
-      response = await send(refreshed);
-      await guard();
-    }
-    return _decode(response);
+    return _decode(await _send(request, guard: guard));
   }
 
   static Map<String, dynamic> _decode(http.Response response) {

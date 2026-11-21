@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/brick/auth/authenticated_backend_client.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
@@ -152,9 +153,7 @@ void main() {
       (await repository.watchHistory(farm, 'animal-1').first).single,
       event,
     ];
-    final adapter = HealthRemoteDataSource(
-      baseUrl: 'http://localhost',
-      tokens: const _Tokens(),
+    final adapter = _healthRemote(
       client: MockClient((request) async {
         paths.add('${request.method} ${request.url.path}');
         final parts = request.url.pathSegments;
@@ -400,9 +399,7 @@ void main() {
 
     var rejectedAnimalAttempts = 0;
     final groupRequests = <List<String>>[];
-    final adapter = HealthRemoteDataSource(
-      baseUrl: 'http://localhost',
-      tokens: const _Tokens(),
+    final adapter = _healthRemote(
       client: MockClient((request) async {
         final resource = request.url.pathSegments.last;
         if (resource == 'animal-3') return _response({'id': resource, 'establecimiento_id': farm});
@@ -490,9 +487,7 @@ void main() {
       ),
     );
     final group = (await store.operations(author.userId)).singleWhere((item) => !existingIds.contains(item.localId));
-    final adapter = HealthRemoteDataSource(
-      baseUrl: 'http://localhost',
-      tokens: const _Tokens(),
+    final adapter = _healthRemote(
       client: MockClient((request) async {
         expect(request.method, 'POST');
         return http.Response(
@@ -532,9 +527,7 @@ void main() {
     final requests = <Uri>[];
     final freshPractice = sampling.copyWith(name: 'Sangrado actualizado');
     var unavailable = 'catalogo';
-    final adapter = HealthRemoteDataSource(
-      baseUrl: 'http://localhost',
-      tokens: const _Tokens(),
+    final adapter = _healthRemote(
       client: MockClient((request) async {
         requests.add(request.url);
         final resource = request.url.pathSegments.last;
@@ -594,9 +587,7 @@ void main() {
       final retries = <_RetryTimer>[];
       final requests = <String>[];
       late HealthEvent submitted;
-      final adapter = HealthRemoteDataSource(
-        baseUrl: 'http://localhost',
-        tokens: const _Tokens(),
+      final adapter = _healthRemote(
         client: MockClient((request) async {
           final resource = request.url.pathSegments.last;
           requests.add('${request.method} $resource');
@@ -688,9 +679,7 @@ void main() {
 
   test('an older backend without sanitary routes keeps a refresh compatible', () async {
     final requests = <String>[];
-    final adapter = HealthRemoteDataSource(
-      baseUrl: 'http://localhost',
-      tokens: const _Tokens(),
+    final adapter = _healthRemote(
       client: MockClient((request) async {
         requests.add(request.url.pathSegments.last);
         return http.Response('{"detail":"Not Found"}', 404);
@@ -733,9 +722,7 @@ void main() {
     var valid = false;
     final confirmed = study.copyWith(syncStatus: HealthSyncStatus.synchronized);
     final result = HealthStudyResult(value: 'Resultado conservado', reportedAt: date, reportedById: author.userId);
-    final adapter = HealthRemoteDataSource(
-      baseUrl: 'http://localhost',
-      tokens: const _Tokens(),
+    final adapter = _healthRemote(
       client: MockClient((request) async {
         methods.add(request.method);
         if (!valid) {
@@ -802,6 +789,15 @@ void main() {
 }
 
 Map<String, dynamic> _wire(HealthEvent event) => HealthCodec.object(HealthCodec.eventRow(event).payload);
+
+HealthRemoteDataSource _healthRemote({required http.Client client}) => HealthRemoteDataSource(
+  baseUrl: 'http://localhost',
+  send: AuthenticatedBackendClient(
+    tokenProvider: const _Tokens(),
+    inner: client,
+    onSyncResult: (_) async => fail('The guarded transport must not publish a second sync result'),
+  ).sendGuarded,
+);
 
 class _RetryTimer implements Timer {
   _RetryTimer(this.callback);

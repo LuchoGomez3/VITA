@@ -32,12 +32,18 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     required super.migrations,
     required super.offlineQueueManager,
     required super.reattemptForStatusCodes,
+    required AuthenticatedBackendClient backendClient,
     required StreamController<BackendSyncResult> syncResults,
     required StreamController<void> authRejections,
-  }) : _syncResults = syncResults,
+  }) : _backendClient = backendClient,
+       _syncResults = syncResults,
        _authRejections = authRejections;
 
   static AppBrickRepository? _instance;
+  final AuthenticatedBackendClient _backendClient;
+
+  /// Transporte compartido para stores que reconcilian el envelope completo.
+  GuardedBackendSender get sendGuardedBackendRequest => _backendClient.sendGuarded;
 
   /// Canal interno donde el HTTP client publica resultados de sync del backend.
   ///
@@ -130,6 +136,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     final repository = AppBrickRepository._(
       sqliteProvider: sqliteProvider,
       restProvider: restProvider,
+      backendClient: restClient,
       migrations: migrations.toSet(),
       syncResults: syncResults,
       authRejections: authRejections,

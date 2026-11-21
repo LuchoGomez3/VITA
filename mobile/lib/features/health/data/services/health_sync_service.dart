@@ -228,7 +228,7 @@ class HealthSyncService {
           return _SyncStep.completed;
         }
       }
-      final response = await _remote.submit(operation, guard);
+      final response = await _remote.submit(operation.payload, guard, resultEventId: resultId);
       await guard();
       await _repository.accept(session, operation, response);
       return _SyncStep.completed;

@@ -7,6 +7,13 @@ import 'package:frontend_mayoral/brick/sync/backend_sync_result.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:http/http.dart' as http;
 
+/// Envía una solicitud vinculada a una sesión y devuelve el envelope completo.
+typedef GuardedBackendSender =
+    Future<http.Response> Function(
+      http.Request request, {
+      required Future<void> Function() guard,
+    });
+
 /// Cliente HTTP usado por Brick para hablar con el backend autenticado.
 ///
 /// Responsabilidades:
@@ -38,8 +45,16 @@ class AuthenticatedBackendClient extends http.BaseClient {
   final http.Client _inner;
 
   @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final syncRequest = _syncRequestFrom(request);
+  Future<http.StreamedResponse> send(http.BaseRequest request) => _send(request);
+
+  /// Usa la autenticación compartida para una operación reconciliada por su store.
+  /// El store conserva el cuerpo, la cola y la respuesta completa de la operación.
+  Future<http.Response> sendGuarded(http.Request request, {required Future<void> Function() guard}) async =>
+      http.Response.fromStream(await _send(request, guard: guard));
+
+  Future<http.StreamedResponse> _send(http.BaseRequest request, {Future<void> Function()? guard}) async {
+    final syncRequest = guard == null ? _syncRequestFrom(request) : null;
+    if (guard != null) await guard();
 
     // Brick no sabe de sesiones. Antes de enviar al backend, este wrapper pide
     // el token vigente y lo agrega como Bearer.
@@ -50,10 +65,12 @@ class AuthenticatedBackendClient extends http.BaseClient {
         syncRequest: syncRequest,
       );
     } on _TransientBackendAuthException catch (error) {
+      if (guard != null) await guard();
       return error.response;
     }
+    if (guard != null) await guard();
     if (token == null) {
-      await _onUnauthorized?.call();
+      if (guard == null) await _onUnauthorized?.call();
       return _syntheticResponse(
         request: request,
         syncRequest: syncRequest,
@@ -64,17 +81,13 @@ class AuthenticatedBackendClient extends http.BaseClient {
 
     final retryRequest = _copyRequest(request);
     request.headers['Authorization'] = 'Bearer $token';
-    _logRequest(request);
+    if (guard == null) _logRequest(request);
 
     // Si la request contiene un `id` cliente, la tratamos como sync-able. El
     // resultado se publica despues de recibir la response del backend.
-    final response = await _inner.send(request);
-
-    // Convertimos a Response para poder leer el body una vez, loguearlo y
-    // parsear errores. Luego reconstruimos StreamedResponse porque BaseClient
-    // debe devolver ese tipo.
-    var bufferedResponse = await http.Response.fromStream(response);
-    _logResponse(bufferedResponse);
+    var bufferedResponse = await _readResponse(request, guarded: guard != null);
+    if (guard != null) await guard();
+    if (guard == null) _logResponse(bufferedResponse);
 
     if (bufferedResponse.statusCode == 401 && retryRequest != null) {
       String? refreshedToken;
@@ -82,6 +95,7 @@ class AuthenticatedBackendClient extends http.BaseClient {
         refreshedToken = await _refreshAfterUnauthorized();
       } on DomainException catch (error) {
         if (error.code != DomainErrorCode.unauthorized) {
+          if (guard != null) await guard();
           return _syntheticResponse(
             request: request,
             syncRequest: syncRequest,
@@ -90,15 +104,17 @@ class AuthenticatedBackendClient extends http.BaseClient {
           );
         }
       }
+      if (guard != null) await guard();
       if (refreshedToken != null) {
         retryRequest.headers['Authorization'] = 'Bearer $refreshedToken';
-        _logRequest(retryRequest);
-        bufferedResponse = await http.Response.fromStream(await _inner.send(retryRequest));
-        _logResponse(bufferedResponse);
+        if (guard == null) _logRequest(retryRequest);
+        bufferedResponse = await _readResponse(retryRequest, guarded: guard != null);
+        if (guard != null) await guard();
+        if (guard == null) _logResponse(bufferedResponse);
       }
     }
 
-    if (bufferedResponse.statusCode == 401) {
+    if (guard == null && bufferedResponse.statusCode == 401) {
       await _onUnauthorized?.call();
     }
 
@@ -127,6 +143,11 @@ class AuthenticatedBackendClient extends http.BaseClient {
       persistentConnection: bufferedResponse.persistentConnection,
       reasonPhrase: bufferedResponse.reasonPhrase,
     );
+  }
+
+  Future<http.Response> _readResponse(http.BaseRequest request, {required bool guarded}) {
+    final response = _inner.send(request).then(http.Response.fromStream);
+    return guarded ? response.timeout(const Duration(seconds: 20)) : response;
   }
 
   Future<String?> _refreshAfterUnauthorized() async {

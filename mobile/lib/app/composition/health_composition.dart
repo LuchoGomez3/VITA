@@ -18,11 +18,9 @@ import 'package:frontend_mayoral/features/health/presentation/cubit/health_regis
 import 'package:frontend_mayoral/features/health/presentation/cubit/health_result_cubit.dart';
 import 'package:frontend_mayoral/features/sync/domain/entities/sync_activity.dart';
 import 'package:frontend_mayoral/features/sync/domain/entities/sync_queue.dart';
-import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 
 HealthSyncService? _syncService;
-http.Client? _syncClient;
 bool _healthSessionActive = false;
 ({int generation, Future<bool> result})? _healthRefresh;
 
@@ -74,8 +72,7 @@ HealthSyncService _createHealthSync() {
   final repository = createHealthRepository();
   final remote = HealthRemoteDataSource(
     baseUrl: AppConfig.current.backendBaseUrl,
-    client: _syncClient ??= http.Client(),
-    tokens: SessionBackendAccessTokenProvider.instance,
+    send: AppBrickRepository.instance.sendGuardedBackendRequest,
   );
   return HealthSyncService(
     repository: repository,
@@ -104,14 +101,12 @@ void setHealthSessionActive({required bool active}) {
   if (!active) pauseHealthSync();
 }
 
-/// Libera el cliente al cerrar la aplicación.
+/// Libera el coordinador al cerrar la aplicación.
 void disposeHealthSync() {
   _healthSessionActive = false;
   _healthRefresh = null;
   _syncService?.dispose();
-  _syncClient?.close();
   _syncService = null;
-  _syncClient = null;
 }
 
 void _requestPending() => unawaited(requestHealthSync(refresh: false));

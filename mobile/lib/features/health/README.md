@@ -24,6 +24,10 @@ se descarta si el operario cambia de campo, incluso si después regresa al mismo
 
 La tabla de operaciones de Sanidad en SQLite conserva el cuerpo y el UUID
 original durante los reintentos del mismo envío. Un lote usa una sola operación.
+La operación se guarda en la transacción de los eventos en la base principal.
+El transporte autenticado es el de Brick y entrega el envelope completo para
+reconciliar listas y cursores. El coordinador sanitario administra los
+reintentos de esa operación, ya que la cola REST general usa otra base SQLite.
 El resultado tiene su propia operación sobre el evento existente. Una dependencia
 de alta animal mantiene el envío pendiente mientras el UUID pueda confirmarse.
 Si el alta es rechazada, el grupo pasa a rechazado y se puede corregir desde

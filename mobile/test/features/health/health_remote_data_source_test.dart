@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/brick/auth/authenticated_backend_client.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
-import 'package:frontend_mayoral/brick/models/health_operation.model.dart';
 import 'package:frontend_mayoral/features/health/data/datasources/health_remote_data_source.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -14,8 +14,7 @@ void main() {
     final started = Completer<void>();
     var requests = 0;
     var account = 'author';
-    final service = HealthRemoteDataSource(
-      baseUrl: 'http://localhost:8000',
+    final service = _remote(
       tokens: tokens,
       client: MockClient((request) {
         requests++;
@@ -26,17 +25,11 @@ void main() {
       }),
     );
     final operation = service.submit(
-      BrickHealthOperationModel(
-        localId: 'operation',
-        establishmentId: 'same-farm',
-        authorId: 'author',
-        createdAt: DateTime.utc(2026),
-        payload: '{"id":"operation","resultado":"Sintético"}',
-        resultEventId: 'event',
-      ),
+      '{"id":"operation","resultado":"Sintético"}',
       () async {
         if (account != 'author') throw StateError('Session changed');
       },
+      resultEventId: 'event',
     );
     final assertion = expectLater(operation, throwsStateError);
     await started.future;
@@ -48,8 +41,7 @@ void main() {
   });
 
   test('an incremental page decodes its cursor and scopes the establishment', () async {
-    final service = HealthRemoteDataSource(
-      baseUrl: 'http://localhost:8000',
+    final service = _remote(
       tokens: _Tokens(),
       client: MockClient((request) async {
         expect(request.url.path, '/api/v1/eventos_sanitarios');
@@ -63,6 +55,15 @@ void main() {
     expect(page.hasMore, isFalse);
   });
 }
+
+HealthRemoteDataSource _remote({required _Tokens tokens, required http.Client client}) => HealthRemoteDataSource(
+  baseUrl: 'http://localhost:8000',
+  send: AuthenticatedBackendClient(
+    tokenProvider: tokens,
+    inner: client,
+    onSyncResult: (_) async => fail('Guarded requests are reconciled by their own store'),
+  ).sendGuarded,
+);
 
 class _Tokens implements RefreshableBackendAccessTokenProvider {
   int refreshes = 0;
