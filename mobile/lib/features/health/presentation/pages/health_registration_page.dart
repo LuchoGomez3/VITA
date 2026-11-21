@@ -86,6 +86,7 @@ class _RegistrationFormState extends State<_RegistrationForm> {
   String? _practiceId;
   String? _productId;
   bool _refreshing = false;
+  int _establishmentRevision = 0;
 
   bool get _fixedEstablishment => widget.initialEstablishmentId != null || widget.rejected != null;
 
@@ -326,6 +327,7 @@ class _RegistrationFormState extends State<_RegistrationForm> {
 
   void _changeEstablishment(String? id) {
     setState(() {
+      _establishmentRevision++;
       _practiceId = null;
       _productId = null;
     });
@@ -333,10 +335,11 @@ class _RegistrationFormState extends State<_RegistrationForm> {
   }
 
   Future<void> _refresh(HealthRegistrationState state) async {
+    final revision = _establishmentRevision;
     setState(() => _refreshing = true);
     try {
       await widget.refreshCatalog?.call();
-      if (!mounted) return;
+      if (!mounted || revision != _establishmentRevision) return;
       await context.read<HealthRegistrationCubit>().prepare(
         state.establishmentId,
         animalIds: state.recipients.map((item) => item.animalId).toList(),

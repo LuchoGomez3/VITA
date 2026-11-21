@@ -15,6 +15,8 @@ del producto aplicado aunque se retire del catálogo.
 La sincronización actualiza catálogo e historial por separado. Una falla
 parcial conserva el último dato local del recurso afectado y permite aplicar
 los cambios del recurso disponible.
+Si el operario cambia de campo mientras se descarga el catálogo, el formulario
+conserva la selección más reciente.
 
 La tabla de operaciones de Sanidad en SQLite conserva el cuerpo y el UUID
 original durante los reintentos del mismo envío. Un lote usa una sola operación.

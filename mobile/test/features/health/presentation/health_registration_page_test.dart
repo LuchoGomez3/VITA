@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +20,51 @@ const _study = HealthPractice(id: 'sampling', name: 'Sangrado', kind: HealthPrac
 const _animal = HealthRecipient(animalId: 'animal', label: '001');
 
 void main() {
+  testWidgets('a catalog refresh respects a newer establishment selection in manga', (tester) async {
+    final repository = _SwitchableCatalogRepository();
+    final refresh = Completer<void>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HealthRegistrationPage(
+          capture: true,
+          refreshCatalog: () => refresh.future,
+          createCubit: () => HealthRegistrationCubit(
+            reader: ReadHealthUseCase(repository),
+            register: RegisterHealthEventsUseCase(repository),
+            establishments: () async => const [
+              EstablishmentMembership(id: 'farm-a', name: 'Campo A', role: UserRole.employee),
+              EstablishmentMembership(id: 'farm-b', name: 'Campo B', role: UserRole.employee),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final dropdown = find.byType(DropdownButton<String>).first;
+
+    Future<void> choose(String name) async {
+      await tester.tap(dropdown);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(name).last);
+      await tester.pumpAndSettle();
+    }
+
+    await choose('Campo A');
+    await tester.tap(find.text(HealthRegistrationStrings.refresh));
+    await tester.pump();
+    await choose('Campo B');
+    expect(tester.widget<DropdownButton<String>>(dropdown).value, 'farm-b');
+
+    repository.farmAAvailable = true;
+    refresh.complete();
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<DropdownButton<String>>(dropdown).value, 'farm-b');
+    await choose('Campo A');
+    expect(tester.widget<DropdownButton<String>>(dropdown).value, 'farm-a');
+    expect(find.text(HealthRegistrationStrings.catalogUnavailable), findsNothing);
+  });
+
   testWidgets('manga combines consecutive HID and manual readings without duplicate animals', (tester) async {
     await tester.binding.setSurfaceSize(const Size(800, 1300));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -206,6 +253,16 @@ void main() {
 Finder _entry(String label) => find.byWidgetPredicate(
   (widget) => widget is TextField && widget.decoration?.labelText == label,
 );
+
+class _SwitchableCatalogRepository extends _Repository {
+  bool farmAAvailable = false;
+
+  @override
+  Future<HealthCatalog?> getCatalog(String establishmentId) async {
+    if (establishmentId == 'farm-a' && !farmAAvailable) return null;
+    return super.getCatalog(establishmentId);
+  }
+}
 
 class _Repository implements HealthRepository {
   HealthRegistration? registration;
