@@ -107,6 +107,15 @@ dependency path is:
 feature/presentation -> feature/domain -> feature/data -> lib/brick
 ```
 
+Before implementing a syncable feature, cite an equivalent flow in the repo
+(for example, lot movements for a group write). Trace screen → use case →
+repository → store → SQLite and FastAPI response → reconciliation → screen.
+Identify who saves, queues, retries, and reconciles. Use the shared Brick
+transport and queue by default. If the contract needs an exception, show the
+concrete limitation of the shared path, document the guarantees to preserve,
+and agree on the exception before implementing it. Review the first complete
+flow before reusing it across screens.
+
 Generated Brick files (`*.g.dart`, generated schema, generated migrations) must
 not be edited by hand. Regenerate them with build runner when Brick models
 change.
@@ -133,7 +142,7 @@ Each package must strictly follow a 3-layer architecture: **Presentation, Domain
     * **Repository Implementations:** Concrete classes that implement the Domain layer's interfaces.
     * **Mappers:** Classes responsible for translating between domain entities and infrastructure models when needed.
     * **Infrastructure Models:** Technical models used by the persistence or synchronization layer, such as Brick models.
-    * **Services or Technical Integrations:** Optional technical clients or adapters used when a feature must communicate with external systems, device capabilities, or specific endpoints outside the main Brick flow.
+    * **Services or Technical Integrations:** Adapters for device capabilities and external systems. Exceptions to the shared Brick sync path follow section 2.1.1.
     * **Brick Integration:** When a feature uses Brick as its offline-first infrastructure, the data layer connects domain contracts with the shared Brick repository and persistence flow.
   * **Rule:** This layer depends on the Domain layer (to implement its interfaces), but the Domain knows nothing about the Data layer.
 
