@@ -6,8 +6,8 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
 import 'package:frontend_mayoral/features/health/presentation/cubit/health_registration_cubit.dart';
-import 'package:frontend_mayoral/features/health/presentation/widgets/health_manga_capture.dart';
 import 'package:frontend_mayoral/features/health/presentation/health_rejection_prompt.dart';
+import 'package:frontend_mayoral/features/health/presentation/widgets/health_manga_capture.dart';
 import 'package:go_router/go_router.dart';
 
 /// Formulario compartido de registro sanitario.
@@ -141,89 +141,106 @@ class _RegistrationFormState extends State<_RegistrationForm> {
       builder: (context, state) {
         final catalog = state.catalog;
         final establishmentId = state.establishmentId;
-        final practice = catalog?.practices.where((item) => item.id == _practiceId).firstOrNull;
+        final preparing = state.preparation is Loading<void>;
+        final practice = preparing || state.preparation is ResultError<void>
+            ? null
+            : catalog?.practices.where((item) => item.id == _practiceId).firstOrNull;
         final saving = state.submission is Loading<void>;
+        final header = <Widget>[
+          if (_rejectionPrompt case final prompt?) Text(prompt),
+          if (!_fixedEstablishment && state.establishments.length > 1)
+            _select(
+              HealthRegistrationStrings.establishment,
+              state.establishments.map((item) => (item.id, item.name)),
+              state.establishmentId,
+              saving ? null : _changeEstablishment,
+            ),
+          if (preparing)
+            const Center(child: CircularProgressIndicator())
+          else if (state.preparation case ResultError<void>(:final error))
+            Text(error.message)
+          else if (establishmentId == null && state.establishments.isEmpty)
+            const Text(HealthRegistrationStrings.unauthorized)
+          else if (establishmentId != null && catalog == null) ...[
+            const Text(HealthRegistrationStrings.catalogUnavailable),
+            if (widget.refreshCatalog != null)
+              TextButton(
+                onPressed: _refreshing ? null : () => _refresh(establishmentId),
+                child: const Text(HealthRegistrationStrings.refresh),
+              ),
+          ] else if (catalog != null) ...[
+            _select(
+              HealthRegistrationStrings.practice,
+              catalog.practices.map((item) => (item.id, item.name)),
+              practice?.id,
+              saving
+                  ? null
+                  : (value) => setState(() {
+                      _practiceId = value;
+                      _productId = null;
+                    }),
+            ),
+            if (practice != null) ...[
+              _entry(HealthRegistrationStrings.responsible, _responsible, enabled: !saving),
+              _dateButton(HealthRegistrationStrings.date, _date, saving ? null : _pickDate),
+              if (practice.kind == HealthPracticeKind.application)
+                ..._application(catalog, practice, enabled: !saving)
+              else ...[
+                _entry(
+                  practice.kind == HealthPracticeKind.sampling
+                      ? HealthRegistrationStrings.reason
+                      : HealthRegistrationStrings.description,
+                  _description,
+                  enabled: !saving,
+                ),
+                if (practice.kind == HealthPracticeKind.sampling)
+                  _entry(HealthRegistrationStrings.sampleType, _sampleType, enabled: !saving),
+              ],
+              _entry(HealthRegistrationStrings.notes, _notes, enabled: !saving),
+              const SizedBox(height: 16),
+              if (widget.capture)
+                HealthMangaCapture(
+                  key: ValueKey((state.establishmentId, practice.id)),
+                  enabled: !saving,
+                  onTag: context.read<HealthRegistrationCubit>().addReading,
+                ),
+              Text(HealthRegistrationStrings.selected(state.recipients.length)),
+              if (state.selectionMessage case final message?) Text(message),
+              if (state.recipients.isEmpty) const Text(HealthRegistrationStrings.noAnimals),
+            ],
+          ],
+        ];
+        final recipients = practice == null ? const <HealthRecipient>[] : state.recipients;
+        final recipientIndices = {
+          for (final (index, recipient) in recipients.indexed) recipient.animalId: header.length + index,
+        };
+        final footer = <Widget>[
+          if (catalog != null && practice != null) ...[
+            if (state.submission case ResultError<void>(:final error)) Text(error.message),
+            const SizedBox(height: 16),
+            AppFilledButton(
+              label: HealthRegistrationStrings.confirm,
+              onPressed: saving || state.recipients.isEmpty || state.pendingReadings > 0
+                  ? null
+                  : () => _submit(state, catalog, practice),
+            ),
+          ],
+        ];
+        final recipientEnd = header.length + recipients.length;
         return PopScope(
           canPop: !saving,
           child: Scaffold(
             appBar: AppBar(title: const Text(HealthRegistrationStrings.register)),
             body: SafeArea(
-              child: ListView(
+              child: ListView.builder(
                 padding: const EdgeInsets.all(16),
-                children: [
-                  if (_rejectionPrompt case final prompt?) Text(prompt),
-                  if (!_fixedEstablishment && state.establishments.length > 1)
-                    _select(
-                      HealthRegistrationStrings.establishment,
-                      state.establishments.map((item) => (item.id, item.name)),
-                      state.establishmentId,
-                      saving ? null : _changeEstablishment,
-                    ),
-                  if (state.preparation is Loading<void>)
-                    const Center(child: CircularProgressIndicator())
-                  else if (state.preparation case ResultError<void>(:final error))
-                    Text(error.message)
-                  else if (establishmentId == null && state.establishments.isEmpty)
-                    const Text(HealthRegistrationStrings.unauthorized)
-                  else if (establishmentId != null && catalog == null) ...[
-                    const Text(HealthRegistrationStrings.catalogUnavailable),
-                    if (widget.refreshCatalog != null)
-                      TextButton(
-                        onPressed: _refreshing ? null : () => _refresh(establishmentId),
-                        child: const Text(HealthRegistrationStrings.refresh),
-                      ),
-                  ] else if (catalog != null) ...[
-                    _select(
-                      HealthRegistrationStrings.practice,
-                      catalog.practices.map((item) => (item.id, item.name)),
-                      practice?.id,
-                      saving
-                          ? null
-                          : (value) => setState(() {
-                              _practiceId = value;
-                              _productId = null;
-                            }),
-                    ),
-                    if (practice != null) ...[
-                      _entry(HealthRegistrationStrings.responsible, _responsible, enabled: !saving),
-                      _dateButton(HealthRegistrationStrings.date, _date, saving ? null : _pickDate),
-                      if (practice.kind == HealthPracticeKind.application)
-                        ..._application(catalog, practice, enabled: !saving)
-                      else ...[
-                        _entry(
-                          practice.kind == HealthPracticeKind.sampling
-                              ? HealthRegistrationStrings.reason
-                              : HealthRegistrationStrings.description,
-                          _description,
-                          enabled: !saving,
-                        ),
-                        if (practice.kind == HealthPracticeKind.sampling)
-                          _entry(HealthRegistrationStrings.sampleType, _sampleType, enabled: !saving),
-                      ],
-                      _entry(HealthRegistrationStrings.notes, _notes, enabled: !saving),
-                      const SizedBox(height: 16),
-                      if (widget.capture)
-                        HealthMangaCapture(
-                          key: ValueKey((state.establishmentId, practice.id)),
-                          enabled: !saving,
-                          onTag: context.read<HealthRegistrationCubit>().addReading,
-                        ),
-                      Text(HealthRegistrationStrings.selected(state.recipients.length)),
-                      if (state.selectionMessage case final message?) Text(message),
-                      if (state.recipients.isEmpty) const Text(HealthRegistrationStrings.noAnimals),
-                      for (final recipient in state.recipients)
-                        _recipient(context, recipient, practice.kind, enabled: !saving),
-                      if (state.submission case ResultError<void>(:final error)) Text(error.message),
-                      const SizedBox(height: 16),
-                      AppFilledButton(
-                        label: HealthRegistrationStrings.confirm,
-                        onPressed: saving || state.recipients.isEmpty || state.pendingReadings > 0
-                            ? null
-                            : () => _submit(state, catalog, practice),
-                      ),
-                    ],
-                  ],
-                ],
+                itemCount: recipientEnd + footer.length,
+                findChildIndexCallback: (key) => key is ValueKey<String> ? recipientIndices[key.value] : null,
+                itemBuilder: (context, index) {
+                  if (index < header.length) return header[index];
+                  if (index >= recipientEnd) return footer[index - recipientEnd];
+                  return _recipient(context, recipients[index - header.length], practice!.kind, enabled: !saving);
+                },
               ),
             ),
           ),

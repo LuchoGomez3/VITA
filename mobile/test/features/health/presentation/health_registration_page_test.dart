@@ -232,6 +232,68 @@ void main() {
     expect(find.text('Ficha'), findsOneWidget);
   });
 
+  testWidgets('a large selection keeps an edited sample after scrolling and confirms every animal', (tester) async {
+    final animals = List.generate(120, (index) => HealthRecipient(animalId: 'lot-$index', label: 'Caravana $index'));
+    final repository = _Repository(animals: animals);
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, _) => TextButton(onPressed: () => context.push('/record'), child: const Text('Lote')),
+        ),
+        GoRoute(
+          path: '/record',
+          builder: (_, _) => HealthRegistrationPage(
+            establishmentId: 'farm',
+            animalIds: animals.map((animal) => animal.animalId).toList(),
+            createCubit: () => HealthRegistrationCubit(
+              reader: ReadHealthUseCase(repository),
+              register: RegisterHealthEventsUseCase(repository),
+              establishments: () async => const [
+                EstablishmentMembership(id: 'farm', name: 'Campo', role: UserRole.employee),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.tap(find.text('Lote'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sangrado').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(_entry(HealthRegistrationStrings.responsible), 'Operario');
+    await tester.enterText(_entry(HealthRegistrationStrings.reason), 'Control');
+    await tester.enterText(_entry(HealthRegistrationStrings.sampleType), 'Sangre');
+
+    final list = find.byType(ListView);
+    final scrollable = find.byType(Scrollable).first;
+    final firstRow = find.byKey(const ValueKey('lot-0'));
+    final lastRow = find.byKey(const ValueKey('lot-119'));
+    expect(tester.widget<ListView>(list).childrenDelegate, isA<SliverChildBuilderDelegate>());
+    await tester.scrollUntilVisible(firstRow, 250, scrollable: scrollable);
+    final firstSample = find.descendant(of: firstRow, matching: _entry(HealthRegistrationStrings.sampleReference));
+    await tester.enterText(firstSample, 'Muestra 42');
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(lastRow, 450, scrollable: scrollable, maxScrolls: 70);
+    expect(firstRow, findsNothing);
+    final confirm = find.text(HealthRegistrationStrings.confirm);
+    await tester.scrollUntilVisible(confirm, 250, scrollable: scrollable);
+    await tester.tap(confirm);
+    await tester.pumpAndSettle();
+
+    expect(repository.registration?.recipients, [
+      animals.first.copyWith(sampleReference: 'Muestra 42'),
+      ...animals.skip(1),
+    ]);
+    expect(find.text('Lote'), findsOneWidget);
+  });
+
   testWidgets('a correction identifies the affected animal and field', (tester) async {
     final repository = _Repository();
     await tester.pumpWidget(
@@ -367,6 +429,9 @@ class _DelayedLookupRepository extends _Repository {
 }
 
 class _Repository implements HealthRepository {
+  _Repository({this.animals = const [_animal]});
+
+  final List<HealthRecipient> animals;
   HealthRegistration? registration;
   (String, String)? result;
 
@@ -376,7 +441,8 @@ class _Repository implements HealthRepository {
 
   @override
   Future<List<HealthRecipient>> getRecipients(String establishmentId, List<String> animalIds) async => [
-    if (animalIds.contains(_animal.animalId)) _animal,
+    for (final animal in animals)
+      if (animalIds.contains(animal.animalId)) animal,
   ];
 
   @override

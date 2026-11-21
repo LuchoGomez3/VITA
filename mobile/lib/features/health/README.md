@@ -135,6 +135,7 @@ Desde `mobile`, correr
 | --- | --- |
 | Ficha | Formulario individual, estudio y carga de resultado sobre el UUID existente. |
 | Lote o grupo | Una sola operación en SQLite, reenvío con el mismo cuerpo y reanudación del resultado tras corregir un alta rechazada. |
+| Selección grande | El formulario crea filas a medida que se desplazan y conserva la referencia editada al confirmar 120 animales. |
 | Manga | Lecturas HID simuladas y entrada manual sin repetir un animal. |
 | Historial incremental | Conserva un resultado local ante cambios de metadatos y lo concilia ante un resultado confirmado o una baja lógica. |
 | Rechazos | El `422` simulado conserva el animal y el campo en SQLite y la corrección muestra una indicación localizada. |
