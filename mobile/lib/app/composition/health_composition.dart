@@ -16,6 +16,8 @@ import 'package:frontend_mayoral/features/health/data/services/health_sync_servi
 import 'package:frontend_mayoral/features/health/domain/use_cases/health_use_cases.dart';
 import 'package:frontend_mayoral/features/health/presentation/cubit/health_registration_cubit.dart';
 import 'package:frontend_mayoral/features/health/presentation/cubit/health_result_cubit.dart';
+import 'package:frontend_mayoral/features/sync/domain/entities/sync_activity.dart';
+import 'package:frontend_mayoral/features/sync/domain/entities/sync_queue.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 
@@ -118,3 +120,37 @@ HealthRegistrationCubit createHealthRegistrationCubit() {
 HealthResultCubit createHealthResultCubit() => HealthResultCubit(
   RecordHealthResultUseCase(createHealthRepository(onPending: _requestPending)),
 );
+
+/// Proyecta las operaciones pendientes de Sanidad al contrato de Sync.
+Future<List<SyncQueueOperation>> readHealthSyncQueue() async {
+  if (HealthBrickStore.instance == null) return const [];
+  final operations = await createHealthRepository().visibleOperations();
+  return [
+    for (final operation in operations)
+      if (operation.rejection == null && operation.primaryKey != null)
+        SyncQueueOperation(
+          queueId: -operation.primaryKey!,
+          kind: operation.resultEventId == null ? SyncOperationKind.healthEvent : SyncOperationKind.healthResult,
+          state: SyncOperationState.waiting,
+          attempts: 0,
+          queuedAt: operation.createdAt,
+          lastAttemptAt: operation.createdAt,
+        ),
+  ];
+}
+
+/// Proyecta los rechazos de Sanidad visibles para la sesión de Sync.
+Future<List<SyncRejectedRecord>> readHealthSyncRejections() async {
+  if (HealthBrickStore.instance == null) return const [];
+  final operations = await createHealthRepository().visibleOperations();
+  return [
+    for (final operation in operations)
+      if (operation.rejection case final code?)
+        SyncRejectedRecord(
+          localId: operation.localId,
+          kind: operation.resultEventId == null ? SyncOperationKind.healthEvent : SyncOperationKind.healthResult,
+          recordedAt: operation.createdAt,
+          errorCode: code,
+        ),
+  ];
+}

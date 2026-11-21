@@ -8,7 +8,6 @@ import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
-import 'package:frontend_mayoral/brick/stores/health_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -22,7 +21,6 @@ import 'package:frontend_mayoral/features/sync/data/repositories/sync_history_re
 import 'package:frontend_mayoral/features/sync/data/repositories/sync_queue_repository_impl.dart';
 import 'package:frontend_mayoral/features/sync/data/repositories/sync_rejections_repository_impl.dart';
 import 'package:frontend_mayoral/features/sync/domain/entities/sync_activity.dart';
-import 'package:frontend_mayoral/features/sync/domain/entities/sync_queue.dart';
 import 'package:frontend_mayoral/features/sync/domain/services/offline_sync_coordinator.dart';
 import 'package:frontend_mayoral/features/sync/domain/use_cases/prepare_initial_data_sync_use_case.dart';
 import 'package:frontend_mayoral/features/sync/presentation/cubit/sync_queue_cubit.dart';
@@ -111,7 +109,7 @@ SyncQueueCubit _createCubit({required bool includeActivity}) {
     repository: SyncQueueRepositoryImpl(
       readQueue: brick.queuedRequests,
       changes: changes(),
-      readAdditionalOperations: _readHealthOperations,
+      readAdditionalOperations: readHealthSyncQueue,
     ),
     connectivityChanges: connectivityStatus(
       check: Connectivity().checkConnectivity,
@@ -125,39 +123,10 @@ SyncQueueCubit _createCubit({required bool includeActivity}) {
   );
 }
 
-Future<List<SyncQueueOperation>> _readHealthOperations() async {
-  if (HealthBrickStore.instance == null) return const [];
-  final operations = await createHealthRepository().visibleOperations();
-  return [
-    for (final operation in operations)
-      if (operation.rejection == null && operation.primaryKey != null)
-        SyncQueueOperation(
-          queueId: -operation.primaryKey!,
-          kind: operation.resultEventId == null ? SyncOperationKind.healthEvent : SyncOperationKind.healthResult,
-          state: SyncOperationState.waiting,
-          attempts: 0,
-          queuedAt: operation.createdAt,
-          lastAttemptAt: operation.createdAt,
-        ),
-  ];
-}
-
-Future<List<SyncRejectedRecord>> _readRejectedWithHealth(AppBrickRepository brick) async {
-  final rejected = await BrickRejectedRecordsReader(brick).read();
-  if (HealthBrickStore.instance == null) return rejected;
-  final operations = await createHealthRepository().visibleOperations();
-  return [
-    ...rejected,
-    for (final operation in operations)
-      if (operation.rejection case final code?)
-        SyncRejectedRecord(
-          localId: operation.localId,
-          kind: operation.resultEventId == null ? SyncOperationKind.healthEvent : SyncOperationKind.healthResult,
-          recordedAt: operation.createdAt,
-          errorCode: code,
-        ),
-  ]..sort((left, right) => right.recordedAt.compareTo(left.recordedAt));
-}
+Future<List<SyncRejectedRecord>> _readRejectedWithHealth(AppBrickRepository brick) async => [
+  ...await BrickRejectedRecordsReader(brick).read(),
+  ...await readHealthSyncRejections(),
+]..sort((left, right) => right.recordedAt.compareTo(left.recordedAt));
 
 /// Une varios streams en avisos sin payload; se cancela al cancelar el último.
 Stream<void> _mergeVoid(List<Stream<Object?>> sources) {

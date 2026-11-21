@@ -14,13 +14,14 @@ catálogo antes de elegir prácticas o productos. Los eventos conservan el nombr
 del producto aplicado aunque se retire del catálogo.
 
 La tabla de operaciones de Sanidad en SQLite conserva el cuerpo y el UUID
-original hasta que el backend lo acepte. Un lote usa una sola operación. El
-resultado tiene su propia operación sobre el evento existente. Una dependencia
+original durante los reintentos del mismo envío. Un lote usa una sola operación.
+El resultado tiene su propia operación sobre el evento existente. Una dependencia
 de alta animal mantiene el envío pendiente mientras el UUID pueda confirmarse.
 Si el alta es rechazada, el grupo pasa a rechazado y se puede corregir desde
-la ficha de un integrante. La corrección conserva los UUID y los resultados
-de los integrantes retenidos. Si un integrante excluido ya tiene un resultado
-local, conserva su registro rechazado para que se pueda recuperar por separado.
+la ficha de un integrante. La corrección crea una operación nueva y conserva
+los UUID y los resultados de los integrantes retenidos. Si un integrante excluido
+ya tiene un resultado local, conserva su registro rechazado para que se pueda
+recuperar por separado.
 Cada operación se envía con la cuenta que la guardó. La pantalla de
 sincronización muestra los pendientes y rechazos de esa cuenta.
 
@@ -31,6 +32,10 @@ locales del estudio y retira sus operaciones, aunque fueran de otra cuenta del
 dispositivo.
 
 ## Contrato para backend
+
+El repositorio contiene los modelos `EventoSanitario` y `ProductoSanitario`.
+Los endpoints siguientes y el aislamiento en Supabase se deben verificar
+cuando esté disponible la implementación de FastAPI en staging.
 
 Todos los endpoints usan `StandardResponse`. Los IDs son UUID, salvo el
 identificador estable de práctica, que también puede ser un código. Aplicar
@@ -65,6 +70,9 @@ campos del animal en el mismo nivel, `registrado_por_id`, `deleted_at`,
   aceptado, devolver éxito. Si ganó otro envío, devolver HTTP `409` con
   `errors[0].code = resultado_ya_completado` y el evento vigente en
   `errors[0].details.evento`.
+- Al completar un resultado o dar de baja un evento, actualizar su
+  `updated_at` en backend e incluir la versión canónica en el historial
+  incremental.
 - Para un rechazo funcional devolver un código estable. En `errors[0].details`,
   `animal_id` identifica al animal afectado y `campo` indica el nombre del campo
   del cuerpo, por ejemplo `datos.dosis` o `referencia_muestra`. Ambos son
@@ -86,8 +94,24 @@ jornadas con múltiples prácticas.
 
 ## Verificación
 
-Desde `mobile`, correr `fvm flutter test test/features/health test/brick/stores/health_persistence_test.dart`.
-Para la integración manual, confirmar una práctica en modo avión, cerrar y
-reabrir la app, recuperar la conexión y confirmar el historial desde otro
-dispositivo. Probar la captura con un bastón físico y repetir con un alta de
-animal creada sin conexión.
+Desde `mobile`, correr
+`fvm flutter test --no-pub test/features/health test/brick/stores/health_persistence_test.dart`.
+
+| Recorrido | Verificación automatizada mobile |
+| --- | --- |
+| Ficha | Formulario individual, estudio y carga de resultado sobre el UUID existente. |
+| Lote o grupo | Una sola operación en SQLite, reenvío con el mismo cuerpo y corrección tras el rechazo de un alta. |
+| Manga | Lecturas HID simuladas y entrada manual sin repetir un animal. |
+| Historial incremental | Conserva un resultado local ante cambios de metadatos y lo concilia ante un resultado confirmado o una baja lógica. |
+| Rechazos | El `422` simulado conserva el animal y el campo en SQLite y la corrección muestra una indicación localizada. |
+| Sesión | Cambio de cuenta durante un pedido y reversión de una escritura interrumpida. |
+
+En staging, usar dos cuentas de un establecimiento y una cuenta sin acceso
+a ese establecimiento. Registrar por ficha, lote y manga en modo avión y
+reiniciar la app para verificar la persistencia. Probar el bastón físico y
+repetir con un animal dado de alta sin señal. Al recuperar la conexión,
+comprobar los UUID en ambos dispositivos, el reenvío sin duplicados y la
+sincronización al volver desde segundo plano. Completar el resultado desde
+dos dispositivos y verificar el mismo historial en ambos. Con la cuenta sin
+membresía, comprobar que el catálogo, el historial y las mutaciones queden
+restringidos. Validar un rechazo real con el animal o campo afectado.
