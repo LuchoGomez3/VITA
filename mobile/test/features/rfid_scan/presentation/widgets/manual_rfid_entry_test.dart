@@ -8,7 +8,14 @@ void main() {
     String? submitted;
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(body: ManualRfidEntry(onSubmitted: (value) => submitted = value)),
+        home: Scaffold(
+          body: ManualRfidEntry(
+            onSubmitted: (value) => submitted = value,
+            onChanged: (_) {},
+            onSuggestionSelected: (_) {},
+            suggestions: const [],
+          ),
+        ),
       ),
     );
     final field = find.byType(TextFormField);

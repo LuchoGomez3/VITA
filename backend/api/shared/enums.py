@@ -89,6 +89,22 @@ class TipoComprador(str, Enum):
     particular = "particular"
 
 
+class CondicionCobro(str, Enum):
+    """Forma en que comienza el cobro de una venta al confirmarla."""
+
+    total = "total"
+    parcial = "parcial"
+    pendiente = "pendiente"
+
+
+class EstadoCobro(str, Enum):
+    """Estado derivado de comparar los cobros efectivos con el total vendido."""
+
+    pendiente = "pendiente"
+    parcial = "parcial"
+    cobrada = "cobrada"
+
+
 class MedioCobro(str, Enum):
     """Instrumento con el que se recibió un cobro de venta."""
 
@@ -134,7 +150,8 @@ class RecursoForrajero(str, Enum):
     """Recurso forrajero predominante del lote.
 
     Es un catálogo de códigos estables, no una etiqueta visible: la traducción a
-    texto para el usuario la resuelve el cliente.
+    texto para el usuario la resuelve el cliente. Los seis primeros son los
+    originales; el resto cubre pasturas, verdeos y rastrojos de la zona.
     """
 
     pasto_natural = "pasto_natural"
@@ -142,6 +159,66 @@ class RecursoForrajero(str, Enum):
     sorgo = "sorgo"
     maiz = "maiz"
     avena = "avena"
+    otro = "otro"
+    pastura_consociada = "pastura_consociada"
+    festuca = "festuca"
+    agropiro = "agropiro"
+    raigras = "raigras"
+    cebada = "cebada"
+    centeno = "centeno"
+    triticale = "triticale"
+    moha = "moha"
+    gatton_panic = "gatton_panic"
+    grama_rhodes = "grama_rhodes"
+    rastrojo_maiz = "rastrojo_maiz"
+    rastrojo_sorgo = "rastrojo_sorgo"
+    rastrojo_soja = "rastrojo_soja"
+    verdeo_verano = "verdeo_verano"
+
+
+class TipoRegistroAlimentacion(str, Enum):
+    """Qué se le dio al animal además del pastoreo del potrero.
+
+    ``suplemento`` es un agregado puntual o temporal (grano en sequía, sales);
+    ``dieta`` es un régimen que reemplaza o define su alimentación (engorde,
+    recría a corral).
+    """
+
+    suplemento = "suplemento"
+    dieta = "dieta"
+
+
+class UnidadAlimento(str, Enum):
+    """Unidad en la que se mide una cantidad de alimento."""
+
+    kg = "kg"
+    g = "g"
+    l = "l"  # noqa: E741 - litros; el código es estable y lo comparte el cliente.
+    fardo = "fardo"
+    rollo = "rollo"
+    bolsa = "bolsa"
+
+
+class BaseCantidadAlimento(str, Enum):
+    """A qué se refiere la cantidad de un registro de alimentación.
+
+    ``por_animal_dia``: cada animal recibe esa cantidad por día.
+    ``grupo_dia``: es lo que recibe todo el grupo por día.
+    """
+
+    por_animal_dia = "por_animal_dia"
+    grupo_dia = "grupo_dia"
+
+
+class CategoriaAlimento(str, Enum):
+    """Categoría de un alimento del catálogo del establecimiento."""
+
+    grano = "grano"
+    concentrado = "concentrado"
+    heno = "heno"
+    silaje = "silaje"
+    subproducto = "subproducto"
+    mineral = "mineral"
     otro = "otro"
 
 

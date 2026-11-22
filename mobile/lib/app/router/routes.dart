@@ -86,6 +86,9 @@ class AppRoutes {
   /// "Mover animales" arrancando con el animal de la ficha.
   static const animalGroupMovement = '/animals/:animalId/mover';
 
+  /// Registrar un suplemento o dieta arrancando por un animal.
+  static const animalFeeding = '/animals/:animalId/alimentacion';
+
   /// Cámara lateral y revisión de capturas para pesaje por visión.
   static const visionWeighing = '/pesar-por-vision';
 
@@ -94,6 +97,9 @@ class AppRoutes {
 
   /// Captura RFID para completar un formulario existente.
   static const rfidCapture = '/capturar-rfid';
+
+  /// Valor de ruta que solicita devolver el RFID a una venta en curso.
+  static const rfidSaleSelectionMode = 'seleccion_venta';
 
   /// Ruta de la seccion de registros de gastos.
   static const expenseRecords = '/registros-de-gastos';
@@ -104,6 +110,9 @@ class AppRoutes {
   /// Ruta temporal para registrar un ingreso operativo.
   static const incomeRegister = '/registros-de-gastos/registrar-ingreso';
 
+  /// Ruta raiz del registro de una venta de hacienda.
+  static const livestockSaleRegister = '/registrar-venta';
+
   /// Construye la ruta de egresos con el establecimiento activo explicito.
   static String expensesForEstablishment({
     required String path,
@@ -112,6 +121,12 @@ class AppRoutes {
   }) =>
       '$path?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}'
       '&establecimientoNombre=${Uri.encodeQueryComponent(establishmentName)}';
+
+  /// Construye la ruta de venta con el establecimiento activo explicito.
+  static String livestockSaleForEstablishment(String establishmentId) {
+    return '$livestockSaleRegister?establecimientoId='
+        '${Uri.encodeQueryComponent(establishmentId)}';
+  }
 
   /// Ruta del menu principal de reportes SENASA.
   static const String senasaMenu = procedures;
@@ -176,6 +191,9 @@ class AppRoutes {
   /// "Mover animales" con [animalId] ya en la lista.
   static String animalGroupMovementById(String animalId) => '/animals/$animalId/mover';
 
+  /// Ruta de "Registrar alimentación" para [animalId].
+  static String animalFeedingById(String animalId) => '/animals/$animalId/alimentacion';
+
   /// Ruta de la pantalla de estado vacio de establecimiento.
   static const establishmentRegisterEmpty = '/registrar-establecimiento';
 
@@ -205,6 +223,12 @@ class AppRoutes {
   /// Identifica un animal dentro del establecimiento indicado.
   static String rfidScanForEstablishment(String establishmentId) {
     return '$rfidScan?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}';
+  }
+
+  /// Abre el lector RFID para seleccionar un animal de una venta en curso.
+  static String rfidScanForLivestockSale(String establishmentId) {
+    return '${rfidScanForEstablishment(establishmentId)}'
+        '&modo=$rfidSaleSelectionMode';
   }
 
   /// Construye la ruta de alta con una caravana RFID ya leida.

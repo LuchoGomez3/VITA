@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/rfid/rfid_reading_source.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/entities/identified_animal.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/repositories/rfid_animal_lookup_repository.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/use_cases/find_animal_by_rfid_use_case.dart';
+import 'package:frontend_mayoral/features/rfid_scan/domain/use_cases/search_animals_by_rfid_prefix_use_case.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/use_cases/validate_rfid_reading_use_case.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/bloc/rfid_scan_bloc.dart';
 
@@ -20,11 +22,31 @@ void main() {
       lookupRepository = _FakeRfidAnimalLookupRepository();
       bloc = RfidScanBloc(
         readingSource: readingSource,
-        validateRfidReadingUseCase: ValidateRfidReadingUseCase(),
+        validateRfidReadingUseCase: const ValidateRfidReadingUseCase(),
         findAnimalByRfidUseCase: FindAnimalByRfidUseCase(lookupRepository),
+        searchAnimalsByRfidPrefixUseCase: SearchAnimalsByRfidPrefixUseCase(lookupRepository),
         establishmentId: 'establishment-id',
       );
       addTearDown(bloc.close);
+    });
+
+    test('distingue una falla de sugerencias de una lista vacia y conserva el prefijo', () async {
+      lookupRepository.prefixResult = const Result.failure(DomainException(message: 'local_read_failed'));
+      final failed = expectLater(
+        bloc.stream,
+        emitsInOrder([
+          const RfidScanState.inactive(rfidPrefix: '982'),
+          const RfidScanState.inactive(rfidPrefix: '982', suggestionsFailed: true),
+        ]),
+      );
+      bloc.add(const RfidScanEvent.rfidPrefixChanged(prefix: '982'));
+      await failed;
+
+      lookupRepository.prefixResult = const Result.success(<IdentifiedAnimal>[]);
+      final recovered = expectLater(bloc.stream, emits(const RfidScanState.inactive(rfidPrefix: '982')));
+      bloc.add(const RfidScanEvent.rfidPrefixChanged(prefix: '982'));
+      await recovered;
+      expect(bloc.state, const RfidScanState.inactive(rfidPrefix: '982'));
     });
 
     test('starts the source and emits listening', () async {
@@ -94,7 +116,7 @@ void main() {
     test('capture mode returns a valid RFID without an animal lookup', () async {
       final captureBloc = RfidScanBloc(
         readingSource: readingSource,
-        validateRfidReadingUseCase: ValidateRfidReadingUseCase(),
+        validateRfidReadingUseCase: const ValidateRfidReadingUseCase(),
         mode: RfidScanMode.capture,
       );
       addTearDown(captureBloc.close);
@@ -173,12 +195,19 @@ final _identifiedAnimal = IdentifiedAnimal(
 
 class _FakeRfidAnimalLookupRepository implements RfidAnimalLookupRepository {
   IdentifiedAnimal? animal;
+  Result<List<IdentifiedAnimal>> prefixResult = const Result.success(<IdentifiedAnimal>[]);
 
   @override
   Future<Result<IdentifiedAnimal?>> findByRfidTagNumber({
     required String rfidTagNumber,
     required String establishmentId,
   }) async => Result.success(animal);
+
+  @override
+  Future<Result<List<IdentifiedAnimal>>> findByRfidPrefix({
+    required String rfidPrefix,
+    required String establishmentId,
+  }) async => prefixResult;
 }
 
 class _FakeRfidReadingSource implements RfidReadingSource {

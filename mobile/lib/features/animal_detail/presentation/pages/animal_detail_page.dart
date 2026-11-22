@@ -7,9 +7,11 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_photo.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_feeding_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/movement_history_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_ficha_header.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_feeding_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_genealogy_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_general_tab.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_health_tab.dart';
@@ -26,10 +28,13 @@ typedef AnimalDetailCubitFactory = AnimalDetailCubit Function();
 /// Factory del cubit del historial de potreros (pestaña Movim.).
 typedef MovementHistoryCubitFactory = MovementHistoryCubit Function();
 
+/// Factory del cubit de la pestaña Alimentación.
+typedef AnimalFeedingCubitFactory = AnimalFeedingCubit Function();
+
 /// Ficha del animal (diseño "Ficha · General" y sus pestañas).
 ///
 /// Cabecera con la caravana, la raza y "categoría · edad", y debajo el menú
-/// General · Genealogía · Pesajes · Sanidad · Movimientos.
+/// General · Genealogía · Pesajes · Sanidad · Movimientos · Alimentación.
 class AnimalDetailPage extends StatelessWidget {
   /// Crea la ficha para [animalId].
   const AnimalDetailPage({
@@ -37,6 +42,7 @@ class AnimalDetailPage extends StatelessWidget {
     required this.createCubit,
     required this.createMovementHistoryCubit,
     required this.createGenealogyCubit,
+    required this.createFeedingCubit,
     this.createHealthReader,
     super.key,
   });
@@ -50,6 +56,9 @@ class AnimalDetailPage extends StatelessWidget {
   /// Crea el cubit del historial de potreros.
   final MovementHistoryCubitFactory createMovementHistoryCubit;
 
+  /// Crea el cubit de la pestaña Alimentación.
+  final AnimalFeedingCubitFactory createFeedingCubit;
+
   /// Crea el Cubit que carga padres, abuelos y crías.
   final AnimalGenealogyCubitFactory createGenealogyCubit;
 
@@ -62,6 +71,7 @@ class AnimalDetailPage extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => createCubit()..loadAnimalData(animalId)),
         BlocProvider(create: (_) => createMovementHistoryCubit()..load(animalId)),
+        BlocProvider(create: (_) => createFeedingCubit()..load(animalId)),
       ],
       child: _AnimalDetailView(createGenealogyCubit: createGenealogyCubit, createHealthReader: createHealthReader),
     );
@@ -83,7 +93,10 @@ enum AnimalFichaTab {
   health(AnimalDetailStrings.healthTab),
 
   /// Movimientos entre potreros.
-  movements(AnimalDetailStrings.movementsTab);
+  movements(AnimalDetailStrings.movementsTab),
+
+  /// Pastoreo derivado y suplementos o dietas.
+  feeding(AnimalDetailStrings.feedingTab);
 
   const AnimalFichaTab(this.label);
 
@@ -145,7 +158,10 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
           indicatorColor: AppColors.primary,
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: AppColors.border,
-          labelPadding: EdgeInsets.zero,
+          // Seis pestañas no entran fijas a 360dp: se desplazan.
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          labelPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           labelStyle: AppTypography.smallEmphasis.copyWith(fontSize: 12, fontWeight: FontWeight.w700),
           tabs: [for (final tab in AnimalFichaTab.values) Tab(text: tab.label)],
         ),
@@ -169,6 +185,7 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
             else
               const SizedBox.shrink(),
             const AnimalMovementsTab(),
+            const AnimalFeedingTab(),
           ],
         ),
         ResultError<AnimalDetail>(:final error) => Center(child: Text(error.message)),
@@ -191,6 +208,15 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
           onPressed: () => _moveAnimals(context, animal),
+          child: const Icon(Icons.add),
+        ),
+        (final animal?, AnimalFichaTab.feeding) => FloatingActionButton(
+          heroTag: 'animal-ficha-feed',
+          tooltip: AnimalDetailStrings.newFeedingTooltip,
+          shape: const CircleBorder(),
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.onPrimary,
+          onPressed: () => _registerFeeding(context, animal),
           child: const Icon(Icons.add),
         ),
         _ => null,
@@ -218,6 +244,19 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
           ),
         ),
       );
+  }
+
+  /// Abre "Registrar alimentación" con este animal y, al volver, recarga el
+  /// historial y avisa que quedó guardado en el celular.
+  Future<void> _registerFeeding(BuildContext context, AnimalDetail animal) async {
+    final feedingCubit = context.read<AnimalFeedingCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final count = await context.push<int>(AppRoutes.animalFeedingById(animal.id));
+    if (count == null) return;
+    await feedingCubit.load(animal.id);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text(AnimalDetailStrings.feedingSaved)));
   }
 
   void _close(BuildContext context) {

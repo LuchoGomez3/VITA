@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
+import 'package:frontend_mayoral/brick/models/food.model.dart';
+import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/features/sync/data/datasources/brick_rejected_records_reader.dart';
@@ -61,6 +63,58 @@ void main() {
     expect(rejected.last.kind, SyncOperationKind.lot);
     expect(rejected.last.errorCode, 'LOTE_SUPERPUESTO');
     expect(rejected.last.recordedAt, DateTime.utc(2026, 11, 3, 9));
+  });
+
+  test('un alimento rechazado aparece con su tipo', () async {
+    final at = DateTime.utc(2026, 11, 4, 8);
+    await repository.upsertLocal(
+      BrickFoodModel(
+        localId: 'food-rejected',
+        establishmentId: 'establishment-id',
+        name: 'Maíz partido',
+        category: 'grano',
+        unit: 'kg',
+        createdAt: at,
+        updatedAt: at,
+        syncStatus: BrickFoodSyncStatus.rejected,
+        syncErrorCode: 'ALIMENTO_INVALIDO',
+      ),
+    );
+
+    final rejected = await BrickRejectedRecordsReader(repository).read();
+
+    final food = rejected.firstWhere((record) => record.localId == 'food-rejected');
+    expect(food.kind, SyncOperationKind.food);
+    expect(food.errorCode, 'ALIMENTO_INVALIDO');
+  });
+
+  test('una venta rechazada aparece con su tipo', () async {
+    final at = DateTime.utc(2026, 11, 5, 8);
+    await repository.upsertLocal(
+      BrickLivestockSaleModel(
+        localId: 'sale-rejected',
+        establishmentId: 'establishment-id',
+        operationDate: at,
+        buyerType: 'particular',
+        buyerName: 'Comprador',
+        isCompany: false,
+        dteNumber: '001234567-9',
+        saleType: 'al_bulto',
+        totalAmount: '10000.00',
+        animalIdsJson: '[]',
+        paymentCondition: 'pendiente',
+        createdAt: at,
+        updatedAt: at,
+        syncStatus: BrickLivestockSaleSyncStatus.rejected,
+        syncErrorCode: 'VENTA_INVALIDA',
+      ),
+    );
+
+    final rejected = await BrickRejectedRecordsReader(repository).read();
+
+    final sale = rejected.firstWhere((record) => record.localId == 'sale-rejected');
+    expect(sale.kind, SyncOperationKind.livestockSale);
+    expect(sale.errorCode, 'VENTA_INVALIDA');
   });
 }
 

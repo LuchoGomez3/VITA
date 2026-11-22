@@ -6,7 +6,10 @@ import 'package:flutter/foundation.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/feeding_record_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/food_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_forage_period_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
@@ -19,6 +22,9 @@ import 'package:http/http.dart' as http;
 
 /// Sincroniza los datos financieros de un establecimiento habilitado.
 typedef SyncOperatingExpenseData = Future<void> Function(String establishmentId);
+
+/// Reanuda comandos comerciales persistidos despues de preparar el inventario.
+typedef SyncLivestockSaleData = Future<void> Function(String establishmentId);
 
 /// Implementacion que descarga datos iniciales a SQLite para uso offline.
 ///
@@ -36,9 +42,13 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
     required AnimalBrickStore animalStore,
     required CategoriaBrickStore categoryStore,
     required LotBrickStore lotStore,
+    required LotForagePeriodBrickStore foragePeriodStore,
+    required FoodBrickStore foodStore,
+    required FeedingRecordBrickStore feedingRecordStore,
     required PesajeBrickStore weighingStore,
     required AnimalLotMovementBrickStore movementStore,
     required SyncOperatingExpenseData syncOperatingExpenseData,
+    required SyncLivestockSaleData syncLivestockSaleData,
     void Function()? onPrepared,
     Object? Function()? sessionIdentity,
     Future<void> Function(Future<void> Function())? persistSessionData,
@@ -47,9 +57,13 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
        _animalStore = animalStore,
        _categoryStore = categoryStore,
        _lotStore = lotStore,
+       _foragePeriodStore = foragePeriodStore,
+       _foodStore = foodStore,
+       _feedingRecordStore = feedingRecordStore,
        _weighingStore = weighingStore,
        _movementStore = movementStore,
        _syncOperatingExpenseData = syncOperatingExpenseData,
+       _syncLivestockSaleData = syncLivestockSaleData,
        _onPrepared = onPrepared,
        _sessionIdentity = sessionIdentity,
        _persistSessionData = persistSessionData;
@@ -59,9 +73,13 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
   final AnimalBrickStore _animalStore;
   final CategoriaBrickStore _categoryStore;
   final LotBrickStore _lotStore;
+  final LotForagePeriodBrickStore _foragePeriodStore;
+  final FoodBrickStore _foodStore;
+  final FeedingRecordBrickStore _feedingRecordStore;
   final PesajeBrickStore _weighingStore;
   final AnimalLotMovementBrickStore _movementStore;
   final SyncOperatingExpenseData _syncOperatingExpenseData;
+  final SyncLivestockSaleData _syncLivestockSaleData;
   final void Function()? _onPrepared;
   final Object? Function()? _sessionIdentity;
   final Future<void> Function(Future<void> Function())? _persistSessionData;
@@ -109,6 +127,15 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
         _logInitialSyncStep('pulling lots for establishment=$establishmentId');
         await _lotStore.pullRemoteLots(establishmentId);
         requireSession();
+        // Después de los lotes: un período nuevo apunta a un lote que tiene
+        // que haber llegado antes al servidor.
+        _logInitialSyncStep(
+          'syncing forage periods for establishment=$establishmentId',
+        );
+        await _foragePeriodStore.pushPendingPeriods(establishmentId);
+        requireSession();
+        await _foragePeriodStore.pullRemotePeriods(establishmentId);
+        requireSession();
         _logInitialSyncStep(
           'pulling animals for establishment=$establishmentId',
         );
@@ -134,7 +161,22 @@ class InitialDataSyncRepositoryImpl implements InitialDataSyncRepository {
         );
         await _weighingStore.pullRemotePesajes(establishmentId);
         requireSession();
+        // Alimentos antes que registros: un registro puede apuntar a un
+        // alimento dado de alta sin señal en el mismo formulario.
+        _logInitialSyncStep(
+          'syncing feeding data for establishment=$establishmentId',
+        );
+        await _foodStore.pushPendingFoods(establishmentId);
+        requireSession();
+        await _foodStore.pullRemoteFoods(establishmentId);
+        requireSession();
+        await _feedingRecordStore.pushPendingRecords(establishmentId);
+        requireSession();
+        await _feedingRecordStore.pullRemoteRecords(establishmentId);
+        requireSession();
         if (establishment.role.canViewFinancialInformation) {
+          await _syncLivestockSaleData(establishmentId);
+          requireSession();
           _logInitialSyncStep(
             'pulling operating expense data for establishment=$establishmentId',
           );

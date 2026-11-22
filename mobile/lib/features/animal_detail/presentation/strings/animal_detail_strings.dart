@@ -114,10 +114,10 @@ class AnimalDetailStrings {
   static const rejectedSyncStatus = 'Rechazado por backend';
 
   /// Titulo visible cuando backend rechazo la sincronizacion.
-  static const rejectedSyncTitle = 'No se pudo sincronizar el animal';
+  static const rejectedSyncTitle = 'No se pudo sincronizar la operación';
 
   /// Mensaje generico para cualquier rechazo funcional del backend.
-  static const rejectedSyncMessage = 'El alta fue rechazada por el servidor. Intentá sincronizarla nuevamente.';
+  static const rejectedSyncMessage = 'La operación fue rechazada por el servidor. Intentá sincronizarla nuevamente.';
 
   /// Accion para volver a encolar el alta rechazada.
   static const retrySync = 'Reintentar';
@@ -241,11 +241,6 @@ class AnimalDetailStrings {
   /// Botón flotante para registrar un pesaje del animal.
   static const newWeighingTooltip = 'Registrar pesaje';
 
-
-
-
-
-
   /// Título del historial en la ficha.
   static String historyTitle(int count) =>
       count == 1 ? 'Historial de potreros · 1 movim.' : 'Historial de potreros · $count movim.';
@@ -285,4 +280,88 @@ class AnimalDetailStrings {
 
   /// Aclaración offline de la confirmación.
   static const savedOffline = 'Queda guardado en el celular y se sincroniza con señal.';
+
+  /// Pestaña de alimentación.
+  static const feedingTab = 'Alimentación';
+
+  /// Confirmación al volver del registro.
+  static const feedingSaved = 'Alimentación guardada en el celular. Se sincroniza con señal.';
+
+  /// Botón para registrar alimentación.
+  static const newFeedingTooltip = 'Registrar alimentación';
+
+  /// Encabezado del resumen.
+  static const feedingNow = 'Ahora';
+
+  /// Encabezado del historial.
+  static const feedingHistoryTitle = 'Historial';
+
+  /// Sección de suplementos vigentes.
+  static const ongoingSupplementsTitle = 'Suplementación en curso';
+
+  /// Sin potrero actual.
+  static const noCurrentGrazing = 'Sin potrero asignado';
+
+  /// Chip del pastoreo.
+  static const grazingChip = 'Pastoreo';
+
+  /// Chip del suplemento.
+  static const supplementChip = 'Suplemento';
+
+  /// Chip de la dieta.
+  static const dietChip = 'Dieta';
+
+  /// Chip de tramo inferido.
+  static const estimatedChip = 'Estimado';
+
+  /// Tramo sin recurso cargado.
+  static const noForageRecorded = 'Recurso sin registrar';
+
+  /// Chip de rechazo.
+  static const rejectedChip = 'Rechazado';
+
+  /// Explica el chip "Estimado" cuando el animal no tiene movimientos.
+  static const estimatedNoMovements =
+      'Estimado: no hay movimientos de este animal. Se asume que está en su potrero actual desde que se cargó en la app.';
+
+  /// Explica el chip "Estimado" antes del primer movimiento.
+  static const estimatedBeforeFirstMovement =
+      'Estimado: antes de su primer movimiento se asume el potrero de origen desde que se cargó en la app.';
+
+  /// Explica el chip "Estimado" cuando dos movimientos no encadenan.
+  static const estimatedBrokenChain =
+      'Estimado: falta un movimiento entre dos registrados (salió de un potrero distinto al que había llegado).';
+
+  /// Explica el chip "Estimado" cuando el potrero se editó desde la ficha.
+  static const estimatedLotEdited =
+      'Estimado: el potrero se cambió desde la ficha, sin registrar un movimiento. El corte se toma de esa edición.';
+
+  /// Título del estado vacío.
+  static const feedingEmptyTitle = 'Todavía no hay alimentación registrada';
+
+  /// Mensaje del estado vacío.
+  static const feedingEmptyMessage =
+      'El pastoreo se arma solo con los movimientos del animal y el recurso de cada potrero. '
+      'Los suplementos y dietas se cargan con el botón +.';
+
+  /// Atajo para cargar el recurso del potrero actual.
+  static const loadLotForageCta = 'Cargar recurso del potrero';
+
+  /// Error de lectura.
+  static const feedingError = 'No se pudo leer la alimentación guardada.';
+
+  /// Recurso y potrero de un tramo.
+  static String grazingTitle(String resource, String lotName) => lotName.isEmpty ? resource : '$resource · $lotName';
+
+  /// Rango de fechas.
+  static String feedingRange(String from, String? to) => '$from → ${to ?? 'hoy'}';
+
+  /// Duración en días.
+  static String feedingDays(int days) => days == 1 ? '1 día' : '$days días';
+
+  /// "desde dd/mm/aaaa".
+  static String since(String date) => 'desde $date';
+
+  /// Lugar de un suplemento.
+  static String feedingPlace(String? lotName) => lotName ?? 'Corral o manga';
 }

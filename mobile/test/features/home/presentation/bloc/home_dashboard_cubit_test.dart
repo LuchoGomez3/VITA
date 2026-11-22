@@ -16,6 +16,80 @@ import 'package:frontend_mayoral/features/home/domain/use_cases/get_home_establi
 import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_cubit.dart';
 
 void main() {
+  test('loads only the first cached establishment on startup', () async {
+    final repository = _HomeRepository();
+    final cubit = _cubit(repository);
+    addTearDown(cubit.close);
+
+    await cubit.initialize();
+
+    expect(cubit.state.selectedEstablishmentId, 'farm-id');
+    expect(repository.dashboardScopes, [
+      {'farm-id'},
+    ]);
+  });
+
+  test('preserves a manual selection on reload while it remains available', () async {
+    final repository = _HomeRepository();
+    final cubit = _cubit(repository);
+    addTearDown(cubit.close);
+    await cubit.load();
+
+    await cubit.selectEstablishment('south-farm-id');
+    await cubit.load();
+    expect(cubit.state.selectedEstablishmentId, 'south-farm-id');
+    expect(repository.dashboardScopes.last, {'south-farm-id'});
+
+    await cubit.selectEstablishment(null);
+    await cubit.load();
+    expect(cubit.state.selectedEstablishmentId, isNull);
+    expect(repository.dashboardScopes.last, isNull);
+  });
+
+  test('selects the first available establishment when the catalog changes', () async {
+    final repository = _HomeRepository();
+    final memberships = Map.of(repository.establishments);
+    repository.establishments.clear();
+    final cubit = _cubit(
+      repository,
+      refreshOfflineData: () async => Result.success(
+        PostAuthenticationSummary(establishmentIds: repository.establishments.keys.toList()),
+      ),
+    );
+    addTearDown(cubit.close);
+    await cubit.load();
+    expect(cubit.state.selectedEstablishmentId, isNull);
+
+    repository.establishments.addAll(memberships);
+    await cubit.refresh();
+    expect(cubit.state.selectedEstablishmentId, 'farm-id');
+    expect(repository.dashboardScopes.last, {'farm-id'});
+
+    repository.establishments.remove('farm-id');
+    await cubit.refresh();
+    expect(cubit.state.selectedEstablishmentId, 'south-farm-id');
+    expect(repository.dashboardScopes.last, {'south-farm-id'});
+  });
+
+  test('ignores initial indicators that arrive after a manual selection', () async {
+    final repository = _HomeRepository();
+    final initialDashboard = Completer<Result<HomeDashboardSource>>();
+    repository.pendingDashboard = initialDashboard.future;
+    final cubit = _cubit(repository);
+    addTearDown(cubit.close);
+
+    final initialLoad = cubit.initialize();
+    await cubit.stream.firstWhere((state) => state.selectedEstablishmentId == 'farm-id');
+    repository.pendingDashboard = null;
+    await cubit.selectEstablishment('south-farm-id');
+    initialDashboard.complete(Result.success(_source(AnimalProductiveStatus.sold)));
+    await initialLoad;
+
+    final dashboard = (cubit.state.dashboardState as Data<HomeDashboard>).data;
+    expect(cubit.state.selectedEstablishmentId, 'south-farm-id');
+    expect(dashboard.activeAnimals, 1);
+  });
+
   test('keeps cached dashboard visible while refresh is in progress', () async {
     final repository = _HomeRepository();
     final syncCompleter = Completer<Result<PostAuthenticationSummary>>();
@@ -77,7 +151,7 @@ void main() {
 
 HomeDashboardCubit _cubit(
   _HomeRepository repository, {
-  required Future<Result<PostAuthenticationSummary>> Function() refreshOfflineData,
+  PreparePostAuthentication? refreshOfflineData,
   Stream<bool>? connectivityChanges,
 }) {
   return HomeDashboardCubit(
@@ -115,18 +189,32 @@ HomeDashboardSource _source(AnimalProductiveStatus status) {
 
 class _HomeRepository implements HomeDashboardRepository {
   HomeDashboardSource source = _source(AnimalProductiveStatus.active);
-
-  @override
-  Future<Result<HomeDashboardSource>> getDashboardSource({
-    Set<String>? establishmentIds,
-  }) async => Result.success(source);
-
-  @override
-  Future<Result<Map<String, EstablishmentMembership>>> getEstablishments() async => const Result.success({
-    'farm-id': EstablishmentMembership(
+  Future<Result<HomeDashboardSource>>? pendingDashboard;
+  final dashboardScopes = <Set<String>?>[];
+  final establishments = {
+    'farm-id': const EstablishmentMembership(
       id: 'farm-id',
       name: 'Campo Norte',
       role: UserRole.owner,
     ),
-  });
+    'south-farm-id': const EstablishmentMembership(
+      id: 'south-farm-id',
+      name: 'Campo Sur',
+      role: UserRole.owner,
+    ),
+  };
+
+  @override
+  Future<Result<HomeDashboardSource>> getDashboardSource({
+    Set<String>? establishmentIds,
+  }) async {
+    dashboardScopes.add(establishmentIds);
+    final pending = pendingDashboard;
+    return pending != null ? await pending : Result.success(source);
+  }
+
+  @override
+  Future<Result<Map<String, EstablishmentMembership>>> getEstablishments() async => Result.success(
+    Map.of(establishments),
+  );
 }

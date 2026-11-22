@@ -23,6 +23,7 @@ import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_ani
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/retry_animal_sync_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/watch_animal_location_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_feeding_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_genealogy_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/movement_history_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/pages/animal_detail_page.dart';
@@ -31,6 +32,9 @@ import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tab
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/repositories/animal_movement_repository.dart';
+import 'package:frontend_mayoral/features/feeding/domain/entities/feeding_entities.dart';
+import 'package:frontend_mayoral/features/feeding/domain/repositories/feeding_repositories.dart';
+import 'package:frontend_mayoral/features/feeding/domain/use_cases/feeding_use_cases.dart';
 import 'package:go_router/go_router.dart';
 
 void main() {
@@ -57,6 +61,7 @@ void main() {
               createCubit: _createCubit,
               createGenealogyCubit: _createGenealogyCubit,
               createMovementHistoryCubit: _createMovementHistoryCubit,
+              createFeedingCubit: _createFeedingCubit,
             ),
           ),
         );
@@ -79,6 +84,7 @@ void main() {
           createCubit: () => _createCubit(photoResult: photoResult.future),
           createGenealogyCubit: _createGenealogyCubit,
           createMovementHistoryCubit: _createMovementHistoryCubit,
+          createFeedingCubit: _createFeedingCubit,
         ),
       ),
     );
@@ -115,6 +121,7 @@ void main() {
             createCubit: () => _createCubit(photoResult: Future.value(result)),
             createGenealogyCubit: _createGenealogyCubit,
             createMovementHistoryCubit: _createMovementHistoryCubit,
+            createFeedingCubit: _createFeedingCubit,
           ),
         ),
       );
@@ -147,6 +154,7 @@ void main() {
               createMovementHistoryCubit: () => MovementHistoryCubit(
                 GetAnimalMovementHistoryUseCase(movementRepository),
               ),
+              createFeedingCubit: _createFeedingCubit,
             ),
           ),
           GoRoute(
@@ -256,6 +264,17 @@ class _EmptyFamilyRepository implements AnimalGenealogyRepository {
 MovementHistoryCubit _createMovementHistoryCubit() => MovementHistoryCubit(
   GetAnimalMovementHistoryUseCase(_MovementRepository()),
 );
+
+AnimalFeedingCubit _createFeedingCubit() => AnimalFeedingCubit(GetAnimalFeedingHistoryUseCase(_FeedingRepository()));
+
+class _FeedingRepository implements FeedingHistoryRepository {
+  @override
+  Stream<void> get changes => const Stream.empty();
+
+  @override
+  Future<Result<AnimalFeedingHistory>> getAnimalHistory(String animalId) async =>
+      const Result.success(AnimalFeedingHistory(entries: []));
+}
 
 AnimalDetailCubit _createCubit({
   Future<Result<AnimalPhoto?>>? photoResult,

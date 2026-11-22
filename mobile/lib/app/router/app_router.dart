@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/composition/animal_movement_composition.dart';
+import 'package:frontend_mayoral/app/composition/feeding_composition.dart';
 import 'package:frontend_mayoral/app/composition/health_composition.dart';
 import 'package:frontend_mayoral/app/composition/team_session_composition.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
@@ -35,6 +36,7 @@ import 'package:frontend_mayoral/features/establishment_register/presentation/bl
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_empty_state_page.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_page.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/pages/establishment_register_success_page.dart';
+import 'package:frontend_mayoral/features/feeding/presentation/pages/register_feeding_page.dart';
 import 'package:frontend_mayoral/features/field/field_composition.dart';
 import 'package:frontend_mayoral/features/field/presentation/navigation/lot_editor_route_data.dart';
 import 'package:frontend_mayoral/features/field/presentation/pages/field_detail_page.dart';
@@ -50,6 +52,9 @@ import 'package:frontend_mayoral/features/home/presentation/pages/home_page.dart
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/livestock/livestock_composition.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
+import 'package:frontend_mayoral/features/livestock_sales/livestock_sales_composition.dart';
+import 'package:frontend_mayoral/features/livestock_sales/presentation/pages/livestock_sale_flow_page.dart';
+import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/financial_access_denied_page.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/operating_expense_history_page.dart';
@@ -182,9 +187,17 @@ class AppRouter {
                   builder: (context, state) => LivestockPage(
                     createCubit: createAnimalListCubit,
                     createReaderCubit: createLivestockReaderCubit,
+                    createAccessCubit: createLivestockAccessCubit,
                     onIdentifyAnimal: (establishmentId) async {
                       await context.push<void>(
                         AppRoutes.rfidScanForEstablishment(establishmentId),
+                      );
+                    },
+                    onRegisterSale: (establishmentId) async {
+                      await context.push<void>(
+                        AppRoutes.livestockSaleForEstablishment(
+                          establishmentId,
+                        ),
                       );
                     },
                   ),
@@ -359,6 +372,7 @@ class AppRouter {
               createCubit: createAnimalDetailCubit,
               createMovementHistoryCubit: createMovementHistoryCubit,
               createGenealogyCubit: createAnimalGenealogyCubit,
+              createFeedingCubit: createAnimalFeedingCubit,
               createHealthReader: createHealthReader,
             );
           },
@@ -368,6 +382,13 @@ class AppRouter {
           builder: (context, state) => GroupMovementPage(
             animalIds: [state.pathParameters['animalId']!],
             createCubit: createGroupMovementCubit,
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.animalFeeding,
+          builder: (context, state) => RegisterFeedingPage(
+            animalIds: [state.pathParameters['animalId']!],
+            createCubit: createRegisterFeedingCubit,
           ),
         ),
         GoRoute(
@@ -499,9 +520,9 @@ class AppRouter {
             }
 
             final readingSource = HidRfidReadingSource();
+            final selectsForSale = state.uri.queryParameters['modo'] == AppRoutes.rfidSaleSelectionMode;
             final selectingForVision = state.uri.queryParameters['seleccionarParaPesajeIA'] == 'true';
             return RfidScanPage(
-              onAnimalSelected: selectingForVision ? (animalId) => context.pop(animalId) : null,
               establishmentId: establishmentId,
               createBloc: ({required establishmentId}) => createRfidScanBloc(
                 readingSource: readingSource,
@@ -515,6 +536,10 @@ class AppRouter {
                   establishmentId: establishmentId,
                 ),
               ),
+              onAnimalSelected: selectsForSale || selectingForVision
+                  ? (animalIdentifier) => context.pop(animalIdentifier)
+                  : null,
+              returnRfidOnSelection: selectsForSale,
             );
           },
         ),
@@ -590,6 +615,29 @@ class AppRouter {
           builder: (context, state) => const ShellPlaceholderPage(
             title: HomeStrings.registerIncome,
           ),
+        ),
+        GoRoute(
+          path: AppRoutes.livestockSaleRegister,
+          builder: (context, state) {
+            final establishmentId = state.uri.queryParameters['establecimientoId'];
+            final sessionState = context.read<AuthSessionCubit>().state;
+            if (establishmentId == null ||
+                establishmentId.trim().isEmpty ||
+                sessionState is! AuthSessionAuthenticated) {
+              return const ShellPlaceholderPage(
+                title: LivestockSaleStrings.requiredEstablishment,
+              );
+            }
+            return FinancialRouteGuard(
+              establishmentId: establishmentId,
+              getEstablishmentRole: getEstablishmentRole,
+              child: LivestockSaleFlowPage(
+                userId: sessionState.session.user.id,
+                establishmentId: establishmentId,
+                createBloc: createLivestockSaleBloc,
+              ),
+            );
+          },
         ),
         GoRoute(
           path: AppRoutes.senasaReport,
@@ -733,7 +781,7 @@ class AppRouter {
 }
 
 /// Protege las rutas financieras con la membresia offline del establecimiento.
-class FinancialRouteGuard extends StatelessWidget {
+class FinancialRouteGuard extends StatefulWidget {
   /// Crea el guard que falla cerrado ante permisos ausentes o invalidos.
   const FinancialRouteGuard({
     required this.establishmentId,
@@ -752,19 +800,47 @@ class FinancialRouteGuard extends StatelessWidget {
   final Widget child;
 
   @override
+  State<FinancialRouteGuard> createState() => _FinancialRouteGuardState();
+}
+
+class _FinancialRouteGuardState extends State<FinancialRouteGuard> {
+  late Future<bool> _accessCheck;
+
+  @override
+  void initState() {
+    super.initState();
+    _accessCheck = _checkAccess();
+  }
+
+  @override
+  void didUpdateWidget(covariant FinancialRouteGuard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.establishmentId != widget.establishmentId ||
+        oldWidget.getEstablishmentRole != widget.getEstablishmentRole) {
+      _accessCheck = _checkAccess();
+    }
+  }
+
+  Future<bool> _checkAccess() {
+    return AppRouter.canAccessFinancialRoute(
+      establishmentId: widget.establishmentId,
+      getRole: widget.getEstablishmentRole.call,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<bool>(
-      future: AppRouter.canAccessFinancialRoute(
-        establishmentId: establishmentId,
-        getRole: getEstablishmentRole.call,
-      ),
+      // Reutilizar el Future evita desmontar el formulario cuando GoRouter
+      // reconstruye la ruta al volver del lector RFID u otra subpantalla.
+      future: _accessCheck,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        return (snapshot.data ?? false) ? child : const FinancialAccessDeniedPage();
+        return (snapshot.data ?? false) ? widget.child : const FinancialAccessDeniedPage();
       },
     );
   }

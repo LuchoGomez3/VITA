@@ -96,7 +96,9 @@ class Venta(Base, SoftDeleteMixin, table=True):
     nro_dte: str = Field(nullable=False)
     tipo_venta: TipoVenta = Field(sa_type=String, nullable=False)
     peso_total_kg: Decimal | None = Field(default=None, sa_type=Numeric(10, 3))
-    precio_por_kg: Decimal | None = Field(default=None, sa_type=Numeric(14, 2))
+    # Seis decimales conservan el precio unitario pactado; solo el total final
+    # se expresa en centavos.
+    precio_por_kg: Decimal | None = Field(default=None, sa_type=Numeric(18, 6))
     monto_total: Decimal = Field(sa_type=Numeric(14, 2), nullable=False)
     observaciones: str | None = None
     # La identidad siempre proviene del JWT; el cliente nunca puede elegirla.

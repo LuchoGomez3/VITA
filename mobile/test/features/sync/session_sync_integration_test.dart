@@ -6,10 +6,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
+import 'package:frontend_mayoral/brick/models/feeding_record.model.dart';
+import 'package:frontend_mayoral/brick/models/food.model.dart';
+import 'package:frontend_mayoral/brick/models/lot_forage_period.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/feeding_record_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/food_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_forage_period_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/post_authentication_summary.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -91,9 +97,14 @@ void main() {
         animalStore: BrickAnimalStore.instance,
         categoryStore: BrickCategoriaStore.instance,
         lotStore: BrickLotStore.instance,
+        // Alimentación no participa del ciclo de sesión que se prueba acá.
+        foragePeriodStore: _NoopForagePeriodStore(),
+        foodStore: _NoopFoodStore(),
+        feedingRecordStore: _NoopFeedingRecordStore(),
         weighingStore: BrickPesajeStore.instance,
         movementStore: BrickAnimalLotMovementStore.instance,
         syncOperatingExpenseData: (_) async => fail('Employee cannot sync finances'),
+        syncLivestockSaleData: (_) async => fail('Employee cannot sync sales'),
         sessionIdentity: () => provider.sessionGeneration,
         persistSessionData: provider.persistSessionData,
       ),
@@ -167,3 +178,42 @@ http.Response _ok(Object data) => http.Response(
   200,
   headers: {'content-type': 'application/json; charset=utf-8'},
 );
+
+class _NoopForagePeriodStore implements LotForagePeriodBrickStore {
+  @override
+  Future<List<BrickLotForagePeriodModel>> getLocalPeriods(String establishmentId, {String? lotId}) async => const [];
+
+  @override
+  Future<void> pullRemotePeriods(String establishmentId) async {}
+
+  @override
+  Future<void> pushPendingPeriods(String establishmentId) async {}
+
+  @override
+  Future<BrickLotForagePeriodModel> save(BrickLotForagePeriodModel period) async => period;
+}
+
+class _NoopFoodStore implements FoodBrickStore {
+  @override
+  Future<List<BrickFoodModel>> getLocalFoods(String establishmentId) async => const [];
+
+  @override
+  Future<void> pullRemoteFoods(String establishmentId) async {}
+
+  @override
+  Future<void> pushPendingFoods(String establishmentId) async {}
+}
+
+class _NoopFeedingRecordStore implements FeedingRecordBrickStore {
+  @override
+  Future<List<BrickFeedingRecordModel>> getLocalRecords(String establishmentId) async => const [];
+
+  @override
+  Future<void> pullRemoteRecords(String establishmentId) async {}
+
+  @override
+  Future<void> pushPendingRecords(String establishmentId) async {}
+
+  @override
+  Future<BrickFeedingRecordModel> save(BrickFeedingRecordModel record, {BrickFoodModel? newFood}) async => record;
+}

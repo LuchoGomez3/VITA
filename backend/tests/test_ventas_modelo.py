@@ -165,12 +165,13 @@ async def test_venta_por_kilo_exige_peso_y_precio(session, campo_id, usuario_id)
         usuario_id,
         tipo_venta=TipoVenta.por_kilo,
         peso_total_kg=Decimal("12500.500"),
-        precio_por_kg=Decimal("2400.00"),
-        monto_total=Decimal("30001200.00"),
+        precio_por_kg=Decimal("2400.123456"),
+        monto_total=Decimal("30002743.26"),
     )
     session.add(completa)
     await session.commit()
     assert completa.peso_total_kg == Decimal("12500.500")
+    assert completa.precio_por_kg == Decimal("2400.123456")
 
 
 @pytest.mark.anyio

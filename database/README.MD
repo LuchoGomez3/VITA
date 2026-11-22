@@ -222,7 +222,7 @@ del animal (muerte, baja, traslado externo). Ver `docs/adr/adr-0001-ventas-separ
 | `nro_dte` | `varchar` NOT NULL | se conserva como texto; no vacío |
 | `tipo_venta` | `varchar` NOT NULL | `por_kilo` \| `al_bulto` |
 | `peso_total_kg` | `numeric(10,3)` | obligatorio si `por_kilo` |
-| `precio_por_kg` | `numeric(14,2)` | obligatorio si `por_kilo` |
+| `precio_por_kg` | `numeric(18,6)` | obligatorio si `por_kilo`; conserva el precio pactado sin redondearlo |
 | `monto_total` | `numeric(14,2)` NOT NULL | `> 0` |
 | `observaciones` | `varchar` | |
 | `registrada_por_id` | `uuid` NOT NULL | FK `usuarios`; sale del JWT |
@@ -302,7 +302,7 @@ fondo en `docs/adr/adr-0002-geometria-y-movimientos-de-lotes.md`; contrato con m
 | `geometria_local` | `jsonb` NOT NULL | polígono esquemático, **no** geografía (ver abajo) |
 | `modo_geometria` | `varchar` NOT NULL | hoy solo `local_schematic` |
 | `superficie_ha` | `numeric(12,2)` NOT NULL | `> 0`, autoritativa a **un decimal** |
-| `recurso_forrajero_codigo` | `varchar` | `pasto_natural` \| `alfalfa` \| `sorgo` \| `maiz` \| `avena` \| `otro` |
+| `recurso_forrajero_codigo` | `varchar` | recurso vigente, derivado de `lotes_recursos_forrajeros` (ver abajo); catálogo en `RecursoForrajero` |
 | `tiene_agua` | `boolean` NOT NULL | |
 | `estado` | `varchar` NOT NULL | `activo` \| `descanso` \| `mantenimiento` \| `inactivo` |
 | `plan_alimenticio_id` | `uuid` | FK `planes_alimenticios`; concepto distinto del forraje |
@@ -339,3 +339,34 @@ migración `20260905_03` (estaba vacía).
 La cabecera lleva `lote_origen_id` (nullable en la base, obligatorio en la API V1),
 `lote_destino_id`, `fecha_movimiento`, `motivo` y `responsable_id`, que **siempre** sale
 del JWT.
+
+## Alimentación
+
+Decisiones de fondo en `docs/adr/adr-0015-alimentacion-pastoreo-derivado-y-registros.md`.
+Migraciones `20261114_01` y `20261114_02`; espejos
+`backend/scripts/crear_recursos_forrajeros_por_periodo.sql` y
+`backend/scripts/crear_alimentacion.sql`.
+
+`lotes_recursos_forrajeros` — sincronizable. Qué recurso tuvo cada lote desde qué fecha:
+
+| Columna | Tipo | Notas |
+| --- | --- | --- |
+| `establecimiento_id` / `lote_id` | `uuid` NOT NULL | FK; el trigger exige que el lote sea del establecimiento |
+| `recurso_forrajero_codigo` | `varchar` NOT NULL | mismo catálogo que `lotes` |
+| `descripcion` | `varchar` | obligatoria cuando el código es `otro` (la exige el backend) |
+| `fecha_desde` / `fecha_hasta` | `date` | `fecha_hasta` solo para un corte; si es null, el período termina el día antes del siguiente |
+| `registrado_por_id` | `uuid` | sale del JWT; null en los períodos migrados |
+
+Único parcial `(lote_id, fecha_desde) where deleted_at is null`. El backend recalcula
+`lotes.recurso_forrajero_codigo` con cada cambio del historial: es el recurso del período
+más reciente, o null si ese período está cerrado.
+
+`alimentos` — sincronizable desde la adopción. Catálogo por establecimiento; las filas
+con `establecimiento_id` null son globales y de solo lectura para los clientes. Suma
+`categoria` y `creado_por_id`. Los nombres repetidos se toleran a propósito.
+
+`registros_alimentacion` (cabecera, sincronizable) + `registros_alimentacion_animales`
+(detalle inmutable, `UNIQUE (registro_alimentacion_id, animal_id)`). Mismo agregado que
+los movimientos: qué alimento (`tipo` suplemento o dieta), dónde (`lote_id`, null = corral
+o manga), cuándo (`fecha_desde`, `fecha_hasta` null = en curso), cuánto (`cantidad`,
+`unidad`, `base_cantidad`) y a qué animales. El pastoreo no se guarda: lo deriva mobile.
