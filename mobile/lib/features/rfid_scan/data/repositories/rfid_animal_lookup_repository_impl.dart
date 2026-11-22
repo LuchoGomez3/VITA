@@ -4,6 +4,7 @@ import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/features/rfid_scan/data/mappers/identified_animal_mapper.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/entities/identified_animal.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/repositories/rfid_animal_lookup_repository.dart';
+import 'package:logging/logging.dart';
 
 /// Implementa la busqueda RFID usando exclusivamente Brick/SQLite local.
 class RfidAnimalLookupRepositoryImpl implements RfidAnimalLookupRepository {
@@ -13,6 +14,7 @@ class RfidAnimalLookupRepositoryImpl implements RfidAnimalLookupRepository {
   }) : _animalBrickStore = animalBrickStore;
 
   final AnimalBrickStore _animalBrickStore;
+  static final Logger _logger = Logger('RfidAnimalLookupRepositoryImpl');
 
   @override
   Future<Result<IdentifiedAnimal?>> findByRfidTagNumber({
@@ -32,6 +34,45 @@ class RfidAnimalLookupRepositoryImpl implements RfidAnimalLookupRepository {
       return const Result.failure(
         DomainException(
           message: 'No se pudo buscar la caravana en el dispositivo.',
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<List<IdentifiedAnimal>>> findByRfidPrefix({
+    required String rfidPrefix,
+    required String establishmentId,
+  }) async {
+    try {
+      final normalizedPrefix = rfidPrefix.trim();
+      if (normalizedPrefix.isEmpty) {
+        return const Result.success(<IdentifiedAnimal>[]);
+      }
+
+      final animals = await _animalBrickStore.getLocalAnimals();
+      final matches =
+          animals
+              .where(
+                (animal) =>
+                    animal.establishmentId == establishmentId &&
+                    animal.deletedAt == null &&
+                    animal.rfidTagNumber.startsWith(normalizedPrefix),
+              )
+              .map(IdentifiedAnimalMapper.fromBrick)
+              .toList()
+            ..sort((left, right) => left.rfidTagNumber.compareTo(right.rfidTagNumber));
+
+      return Result.success(matches.take(10).toList(growable: false));
+    } on Object catch (error, stackTrace) {
+      _logger.warning(
+        'No se pudieron leer coincidencias RFID locales (${error.runtimeType}).',
+        null,
+        stackTrace,
+      );
+      return const Result.failure(
+        DomainException(
+          message: 'No se pudieron buscar coincidencias en el dispositivo.',
         ),
       );
     }

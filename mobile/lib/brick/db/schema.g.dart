@@ -12,10 +12,12 @@ part '20260830204306.migration.dart';
 part '20260910133325.migration.dart';
 part '20260917120957.migration.dart';
 part '20261002183516.migration.dart';
-part '20261015043521.migration.dart';
+part '20261014141500.migration.dart';
 part '20261015133521.migration.dart';
 part '20261117190838.migration.dart';
 part '20261117194823.migration.dart';
+part '20261122000100.migration.dart';
+part '20261122000200.migration.dart';
 
 /// All intelligently-generated migrations from all `@Migratable` classes on disk
 final migrations = <Migration>{
@@ -30,15 +32,17 @@ final migrations = <Migration>{
   const Migration20260910133325(),
   const Migration20260917120957(),
   const Migration20261002183516(),
-  const Migration20261015043521(),
+  const Migration20261014141500(),
   const Migration20261015133521(),
   const Migration20261117190838(),
   const Migration20261117194823(),
+  const Migration20261122000100(),
+  const Migration20261122000200(),
 };
 
 /// A consumable database structure including the latest generated migration.
 final schema = Schema(
-  20261117194823,
+  20261122000200,
   generatorVersion: 1,
   tables: <SchemaTable>{
     SchemaTable(
@@ -176,6 +180,41 @@ final schema = Schema(
         SchemaColumn('deleted_at', Column.datetime),
         SchemaColumn('sync_status', Column.integer),
         SchemaColumn('sync_error_code', Column.varchar),
+      },
+      indices: <SchemaIndex>{},
+    ),
+    SchemaTable(
+      'BrickLivestockSaleModel',
+      columns: <SchemaColumn>{
+        SchemaColumn(
+          '_brick_id',
+          Column.integer,
+          autoincrement: true,
+          nullable: false,
+          isPrimaryKey: true,
+        ),
+        SchemaColumn('local_id', Column.varchar),
+        SchemaColumn('establishment_id', Column.varchar),
+        SchemaColumn('operation_date', Column.datetime),
+        SchemaColumn('buyer_type', Column.varchar),
+        SchemaColumn('buyer_name', Column.varchar),
+        SchemaColumn('is_company', Column.boolean),
+        SchemaColumn('buyer_last_name', Column.varchar),
+        SchemaColumn('dte_number', Column.varchar),
+        SchemaColumn('sale_type', Column.varchar),
+        SchemaColumn('total_weight_kg', Column.varchar),
+        SchemaColumn('price_per_kg', Column.varchar),
+        SchemaColumn('total_amount', Column.varchar),
+        SchemaColumn('observations', Column.varchar),
+        SchemaColumn('animal_ids_json', Column.varchar),
+        SchemaColumn('payment_condition', Column.varchar),
+        SchemaColumn('initial_payment_json', Column.varchar),
+        SchemaColumn('created_at', Column.datetime),
+        SchemaColumn('updated_at', Column.datetime),
+        SchemaColumn('deleted_at', Column.datetime),
+        SchemaColumn('sync_status', Column.integer),
+        SchemaColumn('sync_error_code', Column.varchar),
+        SchemaColumn('pending_animal_ids_json', Column.varchar),
       },
       indices: <SchemaIndex>{},
     ),

@@ -2,6 +2,10 @@
 class RfidScanStrings {
   const RfidScanStrings._();
 
+  /// Error recuperable de la ayuda de autocompletado local.
+  static const suggestionsError =
+      'No se pudieron cargar las sugerencias. Volvé a escribir para reintentar o ingresá la caravana completa.';
+
   static const pageTitle = 'Identificar animal';
 
   /// Título de la captura que devuelve una lectura a otro formulario.
@@ -15,6 +19,9 @@ class RfidScanStrings {
   static const manualEntryTitle = 'O ingresá la caravana manualmente';
   static const manualEntryHint = '15 dígitos RFID';
   static const searchManualRfid = 'Buscar caravana';
+
+  /// Encabezado de las coincidencias encontradas por prefijo RFID.
+  static const manualSuggestionsTitle = 'Coincidencias';
   static const cancelReading = 'Cancelar lectura';
   static const listeningTitle = 'Esperando lectura';
   static const listeningDescription = 'Acercá el bastón a la caravana del animal.';
@@ -24,6 +31,9 @@ class RfidScanStrings {
   static const notFoundDescription = 'Esta caravana no está disponible en los datos locales del dispositivo.';
   static const registerAnimal = 'Registrar nuevo animal';
   static const foundTitle = 'Animal identificado';
+
+  /// Accion para devolver el animal a una venta en curso.
+  static const selectForSale = 'Agregar a la venta';
   static const viewDetail = 'Ver ficha completa';
 
   /// Acción para devolver el animal a la pantalla que abrió el lector.

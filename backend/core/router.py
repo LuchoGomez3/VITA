@@ -22,6 +22,7 @@ from api.modules.recursos_forrajeros.router import (
     router as recursos_forrajeros_router,
 )
 from api.modules.usuarios.router import router as usuarios_router
+from api.modules.ventas.router import router as ventas_router
 from api.reportes.router import router as reportes_router
 
 logger = logging.getLogger(__name__)
@@ -45,5 +46,6 @@ def get_global_router() -> APIRouter:
     router.include_router(pesajes_router)
     router.include_router(observaciones_animales_router)
     router.include_router(eventos_sanitarios_router)
+    router.include_router(ventas_router)
     router.include_router(reportes_router)
     return router

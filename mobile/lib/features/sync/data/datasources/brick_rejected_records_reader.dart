@@ -2,7 +2,10 @@ import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
+import 'package:frontend_mayoral/brick/models/feeding_record.model.dart';
+import 'package:frontend_mayoral/brick/models/food.model.dart';
 import 'package:frontend_mayoral/brick/models/lot.model.dart';
+import 'package:frontend_mayoral/brick/models/lot_forage_period.model.dart';
 import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
 import 'package:frontend_mayoral/brick/models/operating_expense_category.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
@@ -50,6 +53,20 @@ class BrickRejectedRecordsReader {
         isRejected: (model) => model.syncStatus == BrickOperatingExpenseCategorySyncStatus.rejected,
         toRecord: (model) =>
             _record(model.localId, SyncOperationKind.operatingExpenseCategory, model.updatedAt, model.syncErrorCode),
+      ),
+      _rejected<BrickFoodModel>(
+        isRejected: (model) => model.syncStatus == BrickFoodSyncStatus.rejected,
+        toRecord: (model) => _record(model.localId, SyncOperationKind.food, model.updatedAt, model.syncErrorCode),
+      ),
+      _rejected<BrickFeedingRecordModel>(
+        isRejected: (model) => model.syncStatus == BrickFeedingRecordSyncStatus.rejected,
+        toRecord: (model) =>
+            _record(model.localId, SyncOperationKind.feedingRecord, model.updatedAt, model.syncErrorCode),
+      ),
+      _rejected<BrickLotForagePeriodModel>(
+        isRejected: (model) => model.syncStatus == BrickLotForagePeriodSyncStatus.rejected,
+        toRecord: (model) =>
+            _record(model.localId, SyncOperationKind.foragePeriod, model.updatedAt, model.syncErrorCode),
       ),
     ]);
     return results.expand((records) => records).toList()..sort((a, b) => b.recordedAt.compareTo(a.recordedAt));

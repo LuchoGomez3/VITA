@@ -12,6 +12,13 @@ void main() {
     expect(syncOperationKindFor('/api/v1/ventas'), SyncOperationKind.other);
   });
 
+  test('los registros de alimentación tienen su propio tipo', () {
+    expect(syncOperationKindFor('/api/v1/alimentos'), SyncOperationKind.food);
+    expect(syncOperationKindFor('/api/v1/registros_alimentacion/abc'), SyncOperationKind.feedingRecord);
+    // No se confunde con los lotes aunque el path empiece igual.
+    expect(syncOperationKindFor('/api/v1/lotes_recursos_forrajeros'), SyncOperationKind.foragePeriod);
+  });
+
   test('un animal se distingue por método solo cuando se conoce', () {
     expect(syncOperationKindFor('/api/v1/animales', method: 'POST'), SyncOperationKind.animalRegistration);
     expect(syncOperationKindFor('/api/v1/animales/abc', method: 'PUT'), SyncOperationKind.animalUpdate);

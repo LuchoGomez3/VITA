@@ -114,10 +114,10 @@ class AnimalDetailStrings {
   static const rejectedSyncStatus = 'Rechazado por backend';
 
   /// Titulo visible cuando backend rechazo la sincronizacion.
-  static const rejectedSyncTitle = 'No se pudo sincronizar el animal';
+  static const rejectedSyncTitle = 'No se pudo sincronizar la operación';
 
   /// Mensaje generico para cualquier rechazo funcional del backend.
-  static const rejectedSyncMessage = 'El alta fue rechazada por el servidor. Intentá sincronizarla nuevamente.';
+  static const rejectedSyncMessage = 'La operación fue rechazada por el servidor. Intentá sincronizarla nuevamente.';
 
   /// Accion para volver a encolar el alta rechazada.
   static const retrySync = 'Reintentar';
