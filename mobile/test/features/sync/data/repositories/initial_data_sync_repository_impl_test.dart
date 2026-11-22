@@ -37,6 +37,7 @@ void main() {
     final weighingStore = _FakeWeighingStore();
     final movementStore = _FakeMovementStore();
     final financialSync = _FakeOperatingExpenseSync();
+    final saleSync = _FakeOperatingExpenseSync();
     final repository = InitialDataSyncRepositoryImpl(
       secureStorage: _MemoryStorage(),
       establishmentRemoteDataSource: _FakeEstablishmentRemoteDataSource(),
@@ -49,6 +50,7 @@ void main() {
       weighingStore: weighingStore,
       movementStore: movementStore,
       syncOperatingExpenseData: financialSync.call,
+      syncLivestockSaleData: saleSync.call,
     );
 
     await repository.sync();
@@ -81,6 +83,7 @@ void main() {
     expect(movementStore.pulls, ['establishment-1', 'establishment-1']);
     expect(movementStore.pushes, ['establishment-1', 'establishment-1']);
     expect(financialSync.pulls, ['establishment-1', 'establishment-1']);
+    expect(saleSync.pulls, ['establishment-1', 'establishment-1']);
   });
 
   test('persists the establishment role in the offline catalog', () async {
@@ -97,6 +100,7 @@ void main() {
       weighingStore: _FakeWeighingStore(),
       movementStore: _FakeMovementStore(),
       syncOperatingExpenseData: _FakeOperatingExpenseSync().call,
+      syncLivestockSaleData: _FakeOperatingExpenseSync().call,
     );
 
     await repository.sync();
@@ -108,6 +112,7 @@ void main() {
 
   test('does not hydrate finances for a role without access', () async {
     final financialSync = _FakeOperatingExpenseSync();
+    final saleSync = _FakeOperatingExpenseSync();
     final repository = InitialDataSyncRepositoryImpl(
       secureStorage: _MemoryStorage(),
       establishmentRemoteDataSource: _FakeEstablishmentRemoteDataSource(
@@ -122,11 +127,13 @@ void main() {
       weighingStore: _FakeWeighingStore(),
       movementStore: _FakeMovementStore(),
       syncOperatingExpenseData: financialSync.call,
+      syncLivestockSaleData: saleSync.call,
     );
 
     await repository.sync();
 
     expect(financialSync.pulls, isEmpty);
+    expect(saleSync.pulls, isEmpty);
   });
   test('una consulta de catálogo de otra sesión no persiste ni inicia descargas', () async {
     final pending = Completer<List<EstablishmentRemoteSummary>>();
@@ -146,6 +153,7 @@ void main() {
       weighingStore: _FakeWeighingStore(),
       movementStore: _FakeMovementStore(),
       syncOperatingExpenseData: _FakeOperatingExpenseSync().call,
+      syncLivestockSaleData: (_) async {},
       sessionIdentity: () => identity,
     );
     final syncing = repository.sync();

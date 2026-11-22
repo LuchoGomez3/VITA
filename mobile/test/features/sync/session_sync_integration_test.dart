@@ -104,6 +104,7 @@ void main() {
         weighingStore: BrickPesajeStore.instance,
         movementStore: BrickAnimalLotMovementStore.instance,
         syncOperatingExpenseData: (_) async => fail('Employee cannot sync finances'),
+        syncLivestockSaleData: (_) async => fail('Employee cannot sync sales'),
         sessionIdentity: () => provider.sessionGeneration,
         persistSessionData: provider.persistSessionData,
       ),

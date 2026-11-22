@@ -19,4 +19,8 @@ class SecureStorageKeys {
   /// Último equipo traído del servidor, por establecimiento, para verlo sin
   /// conexión. Trae emails de otras personas: se borra al cerrar sesión.
   static const teamSnapshot = 'team_snapshot_v1';
+
+  /// Borrador cifrado y aislado para una venta, usuario y establecimiento.
+  static String livestockSaleDraft(String userId, String establishmentId) =>
+      'livestock_sale_draft_v1_${userId}_$establishmentId';
 }
