@@ -27,6 +27,15 @@ enum SyncOperationKind {
   /// Categoría de egreso operativo.
   operatingExpenseCategory,
 
+  /// Alimento del catálogo, dado de alta desde el registro de alimentación.
+  food,
+
+  /// Registro de suplementación o dieta.
+  feedingRecord,
+
+  /// Recurso forrajero de un potrero en un período.
+  foragePeriod,
+
   /// Recurso sin traducción conocida; se muestra igual para no ocultar nada.
   other,
 }
