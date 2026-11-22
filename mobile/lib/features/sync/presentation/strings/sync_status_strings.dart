@@ -81,6 +81,9 @@ abstract final class SyncStatusStrings {
     SyncOperationKind.lot => 'Lote',
     SyncOperationKind.operatingExpense => 'Egreso operativo',
     SyncOperationKind.operatingExpenseCategory => 'Categoría de egreso',
+    SyncOperationKind.food => 'Alimento',
+    SyncOperationKind.feedingRecord => 'Registro de alimentación',
+    SyncOperationKind.foragePeriod => 'Recurso del potrero',
     SyncOperationKind.other => 'Otro registro',
   };
 

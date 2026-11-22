@@ -1,6 +1,9 @@
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
+import 'package:frontend_mayoral/brick/models/feeding_record.model.dart';
+import 'package:frontend_mayoral/brick/models/food.model.dart';
 import 'package:frontend_mayoral/brick/models/lot.model.dart';
+import 'package:frontend_mayoral/brick/models/lot_forage_period.model.dart';
 import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
 import 'package:frontend_mayoral/brick/models/operating_expense_category.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
@@ -24,6 +27,9 @@ SyncOperationKind syncOperationKindFor(String path, {String? method}) {
   if (under(BrickAnimalLotMovementRequestTransformer.movementsPath)) return SyncOperationKind.lotMovement;
   if (under(BrickLotRequestTransformer.lotsPath)) return SyncOperationKind.lot;
   if (under(BrickPesajeRequestTransformer.weighingsPath)) return SyncOperationKind.weighing;
+  if (under(BrickFoodRequestTransformer.foodsPath)) return SyncOperationKind.food;
+  if (under(BrickFeedingRecordRequestTransformer.recordsPath)) return SyncOperationKind.feedingRecord;
+  if (under(BrickLotForagePeriodRequestTransformer.periodsPath)) return SyncOperationKind.foragePeriod;
   if (under(BrickAnimalRequestTransformer.animalsPath)) {
     return switch (method) {
       'POST' => SyncOperationKind.animalRegistration,
