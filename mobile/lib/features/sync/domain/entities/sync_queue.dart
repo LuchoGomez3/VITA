@@ -36,6 +36,9 @@ enum SyncOperationKind {
   /// Recurso forrajero de un potrero en un período.
   foragePeriod,
 
+  /// Venta de hacienda, con sus cobros.
+  livestockSale,
+
   /// Recurso sin traducción conocida; se muestra igual para no ocultar nada.
   other,
 }

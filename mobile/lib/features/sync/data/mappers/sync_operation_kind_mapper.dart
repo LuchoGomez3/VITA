@@ -2,6 +2,7 @@ import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
 import 'package:frontend_mayoral/brick/models/feeding_record.model.dart';
 import 'package:frontend_mayoral/brick/models/food.model.dart';
+import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/brick/models/lot_forage_period.model.dart';
 import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
@@ -30,6 +31,7 @@ SyncOperationKind syncOperationKindFor(String path, {String? method}) {
   if (under(BrickFoodRequestTransformer.foodsPath)) return SyncOperationKind.food;
   if (under(BrickFeedingRecordRequestTransformer.recordsPath)) return SyncOperationKind.feedingRecord;
   if (under(BrickLotForagePeriodRequestTransformer.periodsPath)) return SyncOperationKind.foragePeriod;
+  if (under(BrickLivestockSaleRequestTransformer.salesPath)) return SyncOperationKind.livestockSale;
   if (under(BrickAnimalRequestTransformer.animalsPath)) {
     return switch (method) {
       'POST' => SyncOperationKind.animalRegistration,

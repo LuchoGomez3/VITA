@@ -9,7 +9,9 @@ void main() {
     expect(syncOperationKindFor('/api/v1/lotes/abc'), SyncOperationKind.lot);
     expect(syncOperationKindFor('/api/v1/egresos_operativos'), SyncOperationKind.operatingExpense);
     expect(syncOperationKindFor('/api/v1/egresos_operativos/categorias'), SyncOperationKind.operatingExpenseCategory);
-    expect(syncOperationKindFor('/api/v1/ventas'), SyncOperationKind.other);
+    expect(syncOperationKindFor('/api/v1/ventas'), SyncOperationKind.livestockSale);
+    expect(syncOperationKindFor('/api/v1/ventas/abc/cobros'), SyncOperationKind.livestockSale);
+    expect(syncOperationKindFor('/api/v1/compras'), SyncOperationKind.other);
   });
 
   test('los registros de alimentación tienen su propio tipo', () {
