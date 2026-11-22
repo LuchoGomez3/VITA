@@ -11,11 +11,10 @@ import 'package:brick_sqlite/brick_sqlite.dart' show Column, Sqlite;
 // ignore: unused_import, unused_shown_name, unnecessary_import
 import 'package:brick_sqlite/brick_sqlite.dart';
 // ignore: unused_import, unused_shown_name, unnecessary_import
-import 'package:brick_sqlite/brick_sqlite.dart' show Sqlite; // GENERATED CODE DO NOT EDIT
+import 'package:brick_sqlite/brick_sqlite.dart' show Sqlite;// GENERATED CODE DO NOT EDIT
 // ignore: unused_import
 import 'dart:convert';
-import 'package:brick_sqlite/brick_sqlite.dart'
-    show SqliteModel, SqliteAdapter, SqliteModelDictionary, RuntimeSqliteColumnDefinition, SqliteProvider;
+import 'package:brick_sqlite/brick_sqlite.dart' show SqliteModel, SqliteAdapter, SqliteModelDictionary, RuntimeSqliteColumnDefinition, SqliteProvider;
 import 'package:brick_rest/brick_rest.dart' show RestProvider, RestModel, RestAdapter, RestModelDictionary;
 // ignore: unused_import, unused_shown_name
 import 'package:brick_offline_first/brick_offline_first.dart' show RuntimeOfflineFirstDefinition;
@@ -25,8 +24,11 @@ import 'package:sqflite_common/sqlite_api.dart' show DatabaseExecutor;
 import '../brick/models/animal.model.dart';
 import '../brick/models/animal_lot_movement.model.dart';
 import '../brick/models/categoria.model.dart';
+import '../brick/models/feeding_record.model.dart';
+import '../brick/models/food.model.dart';
 import '../brick/models/livestock_sale.model.dart';
 import '../brick/models/lot.model.dart';
+import '../brick/models/lot_forage_period.model.dart';
 import '../brick/models/operating_expense.model.dart';
 import '../brick/models/operating_expense_category.model.dart';
 import '../brick/models/pesaje.model.dart';
@@ -34,8 +36,11 @@ import '../brick/models/pesaje.model.dart';
 part 'adapters/brick_animal_model_adapter.g.dart';
 part 'adapters/brick_animal_lot_movement_model_adapter.g.dart';
 part 'adapters/brick_categoria_model_adapter.g.dart';
+part 'adapters/brick_feeding_record_model_adapter.g.dart';
+part 'adapters/brick_food_model_adapter.g.dart';
 part 'adapters/brick_livestock_sale_model_adapter.g.dart';
 part 'adapters/brick_lot_model_adapter.g.dart';
+part 'adapters/brick_lot_forage_period_model_adapter.g.dart';
 part 'adapters/brick_operating_expense_model_adapter.g.dart';
 part 'adapters/brick_operating_expense_category_model_adapter.g.dart';
 part 'adapters/brick_pesaje_model_adapter.g.dart';
@@ -45,11 +50,14 @@ final Map<Type, RestAdapter<RestModel>> restMappings = {
   BrickAnimalModel: BrickAnimalModelAdapter(),
   BrickAnimalLotMovementModel: BrickAnimalLotMovementModelAdapter(),
   BrickCategoriaModel: BrickCategoriaModelAdapter(),
+  BrickFeedingRecordModel: BrickFeedingRecordModelAdapter(),
+  BrickFoodModel: BrickFoodModelAdapter(),
   BrickLivestockSaleModel: BrickLivestockSaleModelAdapter(),
   BrickLotModel: BrickLotModelAdapter(),
+  BrickLotForagePeriodModel: BrickLotForagePeriodModelAdapter(),
   BrickOperatingExpenseModel: BrickOperatingExpenseModelAdapter(),
   BrickOperatingExpenseCategoryModel: BrickOperatingExpenseCategoryModelAdapter(),
-  BrickPesajeModel: BrickPesajeModelAdapter(),
+  BrickPesajeModel: BrickPesajeModelAdapter()
 };
 final restModelDictionary = RestModelDictionary(restMappings);
 
@@ -58,10 +66,13 @@ final Map<Type, SqliteAdapter<SqliteModel>> sqliteMappings = {
   BrickAnimalModel: BrickAnimalModelAdapter(),
   BrickAnimalLotMovementModel: BrickAnimalLotMovementModelAdapter(),
   BrickCategoriaModel: BrickCategoriaModelAdapter(),
+  BrickFeedingRecordModel: BrickFeedingRecordModelAdapter(),
+  BrickFoodModel: BrickFoodModelAdapter(),
   BrickLivestockSaleModel: BrickLivestockSaleModelAdapter(),
   BrickLotModel: BrickLotModelAdapter(),
+  BrickLotForagePeriodModel: BrickLotForagePeriodModelAdapter(),
   BrickOperatingExpenseModel: BrickOperatingExpenseModelAdapter(),
   BrickOperatingExpenseCategoryModel: BrickOperatingExpenseCategoryModelAdapter(),
-  BrickPesajeModel: BrickPesajeModelAdapter(),
+  BrickPesajeModel: BrickPesajeModelAdapter()
 };
 final sqliteModelDictionary = SqliteModelDictionary(sqliteMappings);

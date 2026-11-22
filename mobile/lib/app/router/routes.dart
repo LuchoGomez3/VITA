@@ -44,6 +44,12 @@ class AppRoutes {
   /// Sumarse a un establecimiento con el código de una invitación.
   static const joinEstablishment = '/perfil/sumarme';
 
+  /// Índice del manual de usuario.
+  static const userManual = '/perfil/manual';
+
+  /// Detalle de una sección del manual (recibe `ManualSection` en `extra`).
+  static const userManualSection = '/perfil/manual/seccion';
+
   /// Equipo de [establishmentId].
   static String teamFor(String establishmentId) => '/perfil/establecimiento/$establishmentId/equipo';
 
@@ -79,6 +85,9 @@ class AppRoutes {
 
   /// "Mover animales" arrancando con el animal de la ficha.
   static const animalGroupMovement = '/animals/:animalId/mover';
+
+  /// Registrar un suplemento o dieta arrancando por un animal.
+  static const animalFeeding = '/animals/:animalId/alimentacion';
 
   /// Cámara lateral y revisión de capturas para pesaje por visión.
   static const visionWeighing = '/pesar-por-vision';
@@ -155,6 +164,9 @@ class AppRoutes {
   /// Ruta del detalle de un lote.
   static const fieldDetail = '/campo/:loteId';
 
+  /// Ruta de la pantalla de estado de sincronización.
+  static const syncStatus = '/sincronizacion';
+
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {
     return '/animals/$animalId';
@@ -165,6 +177,9 @@ class AppRoutes {
 
   /// "Mover animales" con [animalId] ya en la lista.
   static String animalGroupMovementById(String animalId) => '/animals/$animalId/mover';
+
+  /// Ruta de "Registrar alimentación" para [animalId].
+  static String animalFeedingById(String animalId) => '/animals/$animalId/alimentacion';
 
   /// Ruta de la pantalla de estado vacio de establecimiento.
   static const establishmentRegisterEmpty = '/registrar-establecimiento';

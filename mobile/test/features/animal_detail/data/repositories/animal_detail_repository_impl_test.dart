@@ -377,6 +377,9 @@ class _FakeLotBrickStore implements LotBrickStore {
   final Map<String, String> lots;
 
   @override
+  Future<void> setLocalForageResource(String lotId, String? forageResourceCode) async {}
+
+  @override
   Future<List<BrickLotModel>> getLocalLots(String establishmentId, {bool includeDeleted = false}) async => [
     for (final MapEntry(key: id, value: name) in lots.entries)
       BrickLotModel(

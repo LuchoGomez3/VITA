@@ -335,4 +335,7 @@ class _FakeLotBrickStore implements LotBrickStore {
 
   @override
   Future<void> pushPendingLots(String establishmentId) async {}
+
+  @override
+  Future<void> setLocalForageResource(String lotId, String? forageResourceCode) async {}
 }

@@ -3,7 +3,7 @@
 // This file should be version controlled and can be manually edited.
 part of 'schema.g.dart';
 
-const List<MigrationCommand> _migration_20261028002455_up = [
+const List<MigrationCommand> _migration_20261122000100_up = [
   InsertTable('BrickLivestockSaleModel'),
   InsertColumn('local_id', Column.varchar, onTable: 'BrickLivestockSaleModel'),
   InsertColumn('establishment_id', Column.varchar, onTable: 'BrickLivestockSaleModel'),
@@ -28,7 +28,7 @@ const List<MigrationCommand> _migration_20261028002455_up = [
   InsertColumn('sync_error_code', Column.varchar, onTable: 'BrickLivestockSaleModel'),
 ];
 
-const List<MigrationCommand> _migration_20261028002455_down = [
+const List<MigrationCommand> _migration_20261122000100_down = [
   DropTable('BrickLivestockSaleModel'),
   DropColumn('local_id', onTable: 'BrickLivestockSaleModel'),
   DropColumn('establishment_id', onTable: 'BrickLivestockSaleModel'),
@@ -54,15 +54,15 @@ const List<MigrationCommand> _migration_20261028002455_down = [
 ];
 
 @Migratable(
-  version: '20261028002455',
-  up: _migration_20261028002455_up,
-  down: _migration_20261028002455_down,
+  version: '20261122000100',
+  up: _migration_20261122000100_up,
+  down: _migration_20261122000100_down,
 )
-class Migration20261028002455 extends Migration {
-  const Migration20261028002455()
+class Migration20261122000100 extends Migration {
+  const Migration20261122000100()
     : super(
-        version: 20261028002455,
-        up: _migration_20261028002455_up,
-        down: _migration_20261028002455_down,
+        version: 20261122000100,
+        up: _migration_20261122000100_up,
+        down: _migration_20261122000100_down,
       );
 }

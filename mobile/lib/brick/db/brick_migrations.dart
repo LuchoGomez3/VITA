@@ -1,7 +1,7 @@
 import 'package:brick_sqlite/db.dart';
 import 'package:frontend_mayoral/brick/db/schema.g.dart' as generated;
 
-const _livestockSaleMigrationVersion = 20261028002455;
+const _livestockSaleMigrationVersion = 20261122000100;
 
 /// Migraciones ejecutadas por la aplicacion, con compatibilidad entre ramas.
 ///

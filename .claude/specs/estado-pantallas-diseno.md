@@ -107,7 +107,7 @@ contraria. Ninguno queda en 🎨.
 | Pesaje en manga (Bluetooth/Manual/Foto) 🧱 (rama `feature/pantalla-pesaje`, PR #38 abierto) | [`pesaje-en-manga.md`](./pesaje-en-manga.md) | `screens-pesaje.jsx` | 3 (una sola página con tabs) | Offline-first (captura en el campo, sin conectividad) |
 | Sanidad (vacunaciones/tratamientos/alertas/aplicar) 🧱 maquetada dentro del PR #40 (`feature/pantalla-sanidad`), que además trae la lista de animales y la ficha con pestañas | [`sanidad.md`](./sanidad.md) | `screens-sanidad.jsx` | 4 | Offline-first |
 | Gestión de equipo ✅ (rama `feature/equipo-establecimiento`, reemplaza a PR #42; se entra desde la ficha del establecimiento en Perfil) | [`gestion-de-equipo.md`](./gestion-de-equipo.md) | `screens-other.jsx` | 2 + Sumarme con código | Online-only con la lista cacheada (adr-0012); roles owner/admin/employee/veterinarian |
-| Sincronización 🧱 (rama `feature/pantalla-sync`, PR #41 abierto) | [`sincronizacion.md`](./sincronizacion.md) | `screens-other.jsx` | 1 | Offline-first (es la vista de estado del motor de sync); ojo — `lib/features/sync/` sólo tiene hoy la sincronización inicial post-login, no una cola de operaciones real |
+| Sincronización (rama `feature/pantalla-sync`, PR #41) | [`sincronizacion.md`](./sincronizacion.md) | `screens-other.jsx` | 1 | Offline-first: lee en vivo la cola SQLite de Brick, sin red. Ya no es mock; la resolución de conflictos quedó afuera (el backend aplica last-write-wins) |
 | Ajustes (secciones nuevas sobre `ProfilePage`) 🧱 (rama `feature/pantalla-ajustes`) | [`ajustes.md`](./ajustes.md) | `screens-other.jsx` | Extiende 1 pantalla existente | No aplica (son datos de preferencias/dispositivos, sin sync) |
 
 ## Pendientes sin spec todavía

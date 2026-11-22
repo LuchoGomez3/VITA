@@ -160,6 +160,9 @@ class _FakeCategoryStore implements CategoriaBrickStore {
 
 class _FakeLotStore implements LotBrickStore {
   @override
+  Future<void> setLocalForageResource(String lotId, String? forageResourceCode) async {}
+
+  @override
   Future<List<BrickLotModel>> getLocalLots(String establishmentId, {bool includeDeleted = false}) async => [
     BrickLotModel(
       localId: 'lote-bajo',

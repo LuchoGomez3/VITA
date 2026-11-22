@@ -40,7 +40,6 @@ Future<Map<String, dynamic>> _$BrickLotModelToRest(
     'geometria_local': brickLotGeometryToBackend(instance.boundaryJson),
     'modo_geometria': instance.geometryMode,
     'superficie_ha': brickLotSurfaceToBackend(instance.surfaceTenths),
-    'recurso_forrajero_codigo': instance.forageResourceCode,
     'tiene_agua': instance.hasWater,
     'estado': instance.statusCode,
     'created_at': instance.createdAt.toIso8601String(),

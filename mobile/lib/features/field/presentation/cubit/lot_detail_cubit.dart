@@ -1,15 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_animal_summary.dart';
+import 'package:frontend_mayoral/features/field/domain/entities/lot_forage_period.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_status.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/delete_lot_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/get_available_destination_lots_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/get_lot_animals_use_case.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/get_lot_forage_periods_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/get_lot_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/move_lot_animals_use_case.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/save_lot_forage_period_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/update_lot_details_use_case.dart';
 
 part 'lot_detail_cubit.freezed.dart';
@@ -26,14 +31,24 @@ class LotDetailCubit extends Cubit<LotDetailState> {
     required MoveLotAnimalsUseCase moveAnimals,
     required UpdateLotDetailsUseCase updateLot,
     required DeleteLotUseCase deleteLot,
+    required GetLotForagePeriodsUseCase getForagePeriods,
+    required SaveLotForagePeriodUseCase saveForagePeriod,
   }) : _lotId = lotId,
+       _getForagePeriods = getForagePeriods,
+       _saveForagePeriod = saveForagePeriod,
        _getLot = getLot,
        _getAvailableDestinations = getAvailableDestinations,
        _getAnimals = getAnimals,
        _moveAnimals = moveAnimals,
        _updateLot = updateLot,
        _deleteLot = deleteLot,
-       super(const LotDetailState());
+       super(const LotDetailState()) {
+    // La confirmación del servidor llega después de guardar: se relee solo el
+    // historial para que el chip "Pendiente" se actualice sin recargar todo.
+    _periodChanges = _getForagePeriods.changes.listen((_) => unawaited(_reloadForagePeriods()));
+  }
+
+  late final StreamSubscription<void> _periodChanges;
 
   final String _lotId;
   final GetLotUseCase _getLot;
@@ -42,6 +57,8 @@ class LotDetailCubit extends Cubit<LotDetailState> {
   final MoveLotAnimalsUseCase _moveAnimals;
   final UpdateLotDetailsUseCase _updateLot;
   final DeleteLotUseCase _deleteLot;
+  final GetLotForagePeriodsUseCase _getForagePeriods;
+  final SaveLotForagePeriodUseCase _saveForagePeriod;
 
   /// Carga lote y animales desde SQLite.
   Future<void> load() async {
@@ -59,6 +76,10 @@ class LotDetailCubit extends Cubit<LotDetailState> {
           establishmentId: data.establishmentId,
           lotId: data.id,
         );
+        final periodsResult = await _getForagePeriods(
+          establishmentId: data.establishmentId,
+          lotId: data.id,
+        );
         switch (animalsResult) {
           case Success<List<LotAnimalSummary>>(data: final animals):
             final destinationsState = destinationsResult is Success<List<Lot>>
@@ -73,6 +94,11 @@ class LotDetailCubit extends Cubit<LotDetailState> {
                 lot: data,
                 animals: animals,
                 destinationsState: destinationsState,
+                foragePeriodsState: periodsResult is Success<List<LotForagePeriod>>
+                    ? ResultState<List<LotForagePeriod>>.data(periodsResult.data)
+                    : ResultState<List<LotForagePeriod>>.error(
+                        (periodsResult as Failure<List<LotForagePeriod>>).error,
+                      ),
               ),
             );
           case Failure<List<LotAnimalSummary>>(:final error):
@@ -87,14 +113,12 @@ class LotDetailCubit extends Cubit<LotDetailState> {
     required int surfaceTenths,
     required bool hasWater,
     required LotStatus status,
-    String? forageResourceCode,
   }) async {
     emit(state.copyWith(mutationState: const ResultState.loading()));
     final result = await _updateLot(
       lotId: _lotId,
       name: name,
       surfaceTenths: surfaceTenths,
-      forageResourceCode: forageResourceCode,
       hasWater: hasWater,
       status: status,
     );
@@ -147,5 +171,61 @@ class LotDetailCubit extends Cubit<LotDetailState> {
       case Failure(:final error):
         emit(state.copyWith(mutationState: ResultState.error(error)));
     }
+  }
+
+  /// Registra un recurso nuevo del potrero o corrige [existing], y recarga.
+  Future<void> saveForagePeriod({
+    required String resourceCode,
+    required DateTime startDate,
+    DateTime? endDate,
+    String? description,
+    LotForagePeriod? existing,
+  }) async {
+    final lot = state.lot;
+    if (lot == null) return;
+    emit(state.copyWith(mutationState: const ResultState.loading()));
+    final result = await _saveForagePeriod(
+      establishmentId: lot.establishmentId,
+      lotId: lot.id,
+      resourceCode: resourceCode,
+      startDate: startDate,
+      endDate: endDate,
+      description: description,
+      existing: existing,
+    );
+    switch (result) {
+      case Success():
+        await load();
+      case Failure(:final error):
+        emit(state.copyWith(mutationState: ResultState.error(error)));
+    }
+  }
+
+  /// Borra lógicamente un período del historial y recarga.
+  Future<void> deleteForagePeriod(LotForagePeriod period) async {
+    emit(state.copyWith(mutationState: const ResultState.loading()));
+    final result = await _saveForagePeriod.delete(period);
+    switch (result) {
+      case Success():
+        await load();
+      case Failure(:final error):
+        emit(state.copyWith(mutationState: ResultState.error(error)));
+    }
+  }
+
+  Future<void> _reloadForagePeriods() async {
+    final lot = state.lot;
+    if (lot == null || isClosed) return;
+    final result = await _getForagePeriods(establishmentId: lot.establishmentId, lotId: lot.id);
+    if (isClosed) return;
+    if (result case Success<List<LotForagePeriod>>(:final data)) {
+      emit(state.copyWith(foragePeriodsState: ResultState.data(data)));
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    await _periodChanges.cancel();
+    return super.close();
   }
 }

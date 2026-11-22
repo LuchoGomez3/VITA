@@ -5,7 +5,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 void main() {
   test('la migracion de ventas permanece registrada en el esquema', () {
     final migration = appBrickMigrations.singleWhere(
-      (item) => item.version == 20261028002455,
+      (item) => item.version == 20261122000100,
     );
 
     expect(
@@ -25,7 +25,7 @@ void main() {
     );
     addTearDown(database.close);
     final migration = appBrickMigrations.singleWhere(
-      (item) => item.version == 20261028002455,
+      (item) => item.version == 20261122000100,
     );
 
     for (final statement in migration.upStatement.split(';')) {

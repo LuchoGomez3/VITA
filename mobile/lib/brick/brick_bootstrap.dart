@@ -2,8 +2,11 @@ import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/feeding_record_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/food_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_forage_period_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/operating_expense_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/operating_expense_category_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
@@ -46,6 +49,12 @@ class BrickBootstrap {
     BrickCategoriaStore.configure(AppBrickRepository.instance);
     BrickPesajeStore.configure(AppBrickRepository.instance);
     BrickLotStore.configure(AppBrickRepository.instance);
+    BrickLotForagePeriodStore.configure(
+      AppBrickRepository.instance,
+      lotStore: BrickLotStore.instance,
+    );
+    BrickFoodStore.configure(AppBrickRepository.instance);
+    BrickFeedingRecordStore.configure(AppBrickRepository.instance);
     BrickOperatingExpenseCategoryStore.configure(AppBrickRepository.instance);
     BrickOperatingExpenseStore.configure(
       AppBrickRepository.instance,

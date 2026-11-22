@@ -23,6 +23,12 @@ abstract class LotBrickStore {
 
   /// Envía las operaciones locales pendientes del establecimiento.
   Future<void> pushPendingLots(String establishmentId);
+
+  /// Refleja en SQLite el recurso vigente derivado del historial de períodos.
+  ///
+  /// No encola nada: backend recalcula el mismo valor al recibir el período, y
+  /// el lote baja actualizado en el próximo pull.
+  Future<void> setLocalForageResource(String lotId, String? forageResourceCode);
 }
 
 /// Implementación Brick de persistencia durable local.
@@ -99,16 +105,28 @@ class BrickLotStore implements LotBrickStore {
     );
     final localLots = await _repository.getLocal<BrickLotModel>();
     final localById = {for (final lot in localLots) lot.localId: lot};
-    for (final remote in remoteLots) {
-      final local = localById[remote.localId];
-      if (local != null && local.syncStatus != BrickLotSyncStatus.synchronized) {
-        continue;
+    await _repository.runLocalTransaction((transaction) async {
+      for (final remote in remoteLots) {
+        final local = localById[remote.localId];
+        if (local != null && local.syncStatus != BrickLotSyncStatus.synchronized) {
+          continue;
+        }
+        final synchronized = remote.copyWith(
+          syncStatus: BrickLotSyncStatus.synchronized,
+        )..primaryKey = local?.primaryKey;
+        await transaction.upsert<BrickLotModel>(synchronized);
       }
-      final synchronized = remote.copyWith(
-        syncStatus: BrickLotSyncStatus.synchronized,
-      )..primaryKey = local?.primaryKey;
-      await _repository.upsertLocal<BrickLotModel>(synchronized);
-    }
+    });
+  }
+
+  @override
+  Future<void> setLocalForageResource(String lotId, String? forageResourceCode) async {
+    final stored = await _repository.getLocal<BrickLotModel>();
+    final current = _latestVersionWithId(stored, lotId);
+    if (current == null || current.forageResourceCode == forageResourceCode) return;
+    await _repository.upsertLocal<BrickLotModel>(
+      current.copyWith(forageResourceCode: forageResourceCode),
+    );
   }
 
   @override

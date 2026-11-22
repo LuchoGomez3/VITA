@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/formatters/rfid_input_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/entities/identified_animal.dart';
 import 'package:frontend_mayoral/features/rfid_scan/presentation/strings/rfid_scan_strings.dart';
@@ -61,9 +62,11 @@ class _ManualRfidEntryState extends State<ManualRfidEntry> {
             controller: _controller,
             hintText: RfidScanStrings.manualEntryHint,
             keyboardType: TextInputType.number,
-            maxCharacters: 15,
+            maxCharacters: RfidValidator.length,
             inputFormatters: [RfidInputFormatter()],
             onChanged: widget.onChanged,
+            autocorrect: false,
+            enableSuggestions: false,
           ),
           if (widget.suggestions.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
@@ -78,10 +81,13 @@ class _ManualRfidEntryState extends State<ManualRfidEntry> {
             ),
           ],
           const SizedBox(height: AppSpacing.xs),
-          AppOutlinedButton(
-            label: RfidScanStrings.searchManualRfid,
-            icon: const Icon(Icons.search),
-            onPressed: () => widget.onSubmitted(_controller.text),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _controller,
+            builder: (context, value, _) => AppOutlinedButton(
+              label: RfidScanStrings.searchManualRfid,
+              icon: const Icon(Icons.search),
+              onPressed: RfidValidator.isValid(value.text) ? () => widget.onSubmitted(value.text) : null,
+            ),
           ),
         ],
       ),

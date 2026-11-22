@@ -201,7 +201,9 @@ class BrickAnimalStore implements AnimalBrickStore {
         final remaining = dependencies.where((id) => !knownRemoteIds.contains(id)).toList();
         final updated = remaining.length == dependencies.length
             ? sale
-            : await transaction.upsert(sale.copyWith(pendingAnimalIdsJson: jsonEncode(remaining)));
+            : await transaction.upsert<BrickLivestockSaleModel>(
+                sale.copyWith(pendingAnimalIdsJson: jsonEncode(remaining)),
+              );
         reconciledSales.add(updated);
       }
       final salesByAnimal = _salesByAnimal(reconciledSales);
@@ -213,7 +215,7 @@ class BrickAnimalStore implements AnimalBrickStore {
           sale: salesByAnimal[animal.localId],
           saleWasSynchronizedBeforePull: synchronizedSaleIds.contains(salesByAnimal[animal.localId]?.localId),
         )..primaryKey = local?.primaryKey;
-        await transaction.upsert(synchronizedAnimal);
+        await transaction.upsert<BrickAnimalModel>(synchronizedAnimal);
       }
     });
   }

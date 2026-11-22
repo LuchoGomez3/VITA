@@ -27,6 +27,9 @@ sealed class MovementFailure with _$MovementFailure {
   /// No se recibió una identificación.
   const factory MovementFailure.tagRequired() = MovementTagRequired;
 
+  /// El ingreso RFID no contiene exactamente quince números.
+  const factory MovementFailure.invalidRfid() = MovementInvalidRfid;
+
   /// No existe una coincidencia local para la identificación.
   const factory MovementFailure.tagNotFound(String tag) = MovementTagNotFound;
 

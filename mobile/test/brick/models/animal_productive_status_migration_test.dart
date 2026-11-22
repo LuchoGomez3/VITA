@@ -11,7 +11,11 @@ void main() {
       (item) => item.version == 20261015133521,
     );
 
-    expect(schema.version, 20261028002455);
+    // El esquema registra la migración más nueva, sea cual sea: fijar un número
+    // rompía el test con cada migración posterior.
+    final latest = migrations.map((item) => item.version).reduce((a, b) => a > b ? a : b);
+    expect(schema.version, latest);
+    expect(schema.version, greaterThanOrEqualTo(20261015133521));
     expect(
       migrations.where((item) => item.version == 20261015043521),
       isEmpty,
