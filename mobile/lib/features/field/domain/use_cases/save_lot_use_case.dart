@@ -5,6 +5,7 @@ import 'package:frontend_mayoral/features/field/domain/entities/lot_draft.dart';
 import 'package:frontend_mayoral/features/field/domain/repositories/lot_repository.dart';
 import 'package:frontend_mayoral/features/field/domain/services/lot_boundary_validator.dart';
 import 'package:frontend_mayoral/features/field/domain/services/lot_overlap_validator.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/save_lot_forage_period_use_case.dart';
 
 /// Convierte un borrador válido en un lote durable generado por el cliente.
 class SaveLotUseCase {
@@ -14,8 +15,10 @@ class SaveLotUseCase {
     required LotBoundaryValidator validator,
     required LotOverlapValidator overlapValidator,
     required String Function() createId,
+    SaveLotForagePeriodUseCase? saveForagePeriod,
     DateTime Function()? now,
   }) : _repository = repository,
+       _saveForagePeriod = saveForagePeriod,
        _validator = validator,
        _overlapValidator = overlapValidator,
        _createId = createId,
@@ -25,6 +28,7 @@ class SaveLotUseCase {
   final LotBoundaryValidator _validator;
   final LotOverlapValidator _overlapValidator;
   final String Function() _createId;
+  final SaveLotForagePeriodUseCase? _saveForagePeriod;
   final DateTime Function() _now;
 
   /// Valida nombre, geometría y unicidad local antes de escribir.
@@ -72,7 +76,7 @@ class SaveLotUseCase {
       return Result.failure(error);
     }
     final timestamp = _now().toUtc();
-    return _repository.saveLot(
+    final lotResult = await _repository.saveLot(
       Lot(
         id: _createId(),
         establishmentId: establishmentId,
@@ -86,5 +90,21 @@ class SaveLotUseCase {
         updatedAt: timestamp,
       ),
     );
+    // El recurso elegido en el alta abre el historial del potrero (adr-0015):
+    // el lote ya no lo envía, lo deriva backend de los períodos.
+    final resourceCode = draft.forageResourceCode;
+    final saveForagePeriod = _saveForagePeriod;
+    if (lotResult case Success<Lot>(data: final lot) when resourceCode != null && saveForagePeriod != null) {
+      final periodResult = await saveForagePeriod(
+        establishmentId: lot.establishmentId,
+        lotId: lot.id,
+        resourceCode: resourceCode,
+        startDate: _now(),
+      );
+      if (periodResult case Failure(:final error)) {
+        return Result.failure(error);
+      }
+    }
+    return lotResult;
   }
 }

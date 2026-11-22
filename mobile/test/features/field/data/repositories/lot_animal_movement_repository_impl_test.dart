@@ -197,6 +197,9 @@ class _FakeLotStore implements LotBrickStore {
   const _FakeLotStore();
 
   @override
+  Future<void> setLocalForageResource(String lotId, String? forageResourceCode) async {}
+
+  @override
   Future<BrickLotModel?> getLocalLot(String lotId) async {
     final timestamp = DateTime.utc(2026, 9, 29);
     return BrickLotModel(

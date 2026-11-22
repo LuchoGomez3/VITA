@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
-import 'package:frontend_mayoral/features/field/domain/entities/forage_resource.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_status.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_surface.dart';
@@ -15,7 +14,6 @@ class LotEditInput {
     required this.surfaceTenths,
     required this.hasWater,
     required this.status,
-    this.forageResourceCode,
   });
 
   /// Nombre normalizado del lote.
@@ -23,9 +21,6 @@ class LotEditInput {
 
   /// Superficie expresada en decimas de hectarea.
   final int surfaceTenths;
-
-  /// Codigo del recurso forrajero seleccionado.
-  final String? forageResourceCode;
 
   /// Disponibilidad actual de agua.
   final bool hasWater;
@@ -49,7 +44,6 @@ class LotEditDialog extends StatefulWidget {
 class _LotEditDialogState extends State<LotEditDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _surfaceController;
-  late String? _forageResourceCode;
   late bool _hasWater;
   late LotStatus _status;
   String? _validationMessage;
@@ -61,7 +55,6 @@ class _LotEditDialogState extends State<LotEditDialog> {
     _surfaceController = TextEditingController(
       text: widget.lot.surfaceHectares.toStringAsFixed(1),
     );
-    _forageResourceCode = widget.lot.forageResourceCode;
     _hasWater = widget.lot.hasWater;
     _status = widget.lot.status;
   }
@@ -92,20 +85,6 @@ class _LotEditDialogState extends State<LotEditDialog> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppDropdownFormField<String>(
-              title: FieldStrings.forageResourceFieldLabel,
-              hintText: FieldStrings.forageResourceHint,
-              initialValue: _forageResourceCode,
-              options: [
-                for (final resource in InitialForageResources.values)
-                  AppDropdownOption(
-                    value: resource.code,
-                    label: resource.displayName,
-                  ),
-              ],
-              onChanged: (value) => _forageResourceCode = value,
             ),
             const SizedBox(height: AppSpacing.md),
             AppChoiceSelector<bool>(
@@ -173,7 +152,6 @@ class _LotEditDialogState extends State<LotEditDialog> {
       LotEditInput(
         name: _nameController.text.trim(),
         surfaceTenths: surface.tenths,
-        forageResourceCode: _forageResourceCode,
         hasWater: _hasWater,
         status: _status,
       ),
