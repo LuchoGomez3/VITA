@@ -692,3 +692,101 @@ async def test_cursor_invalido(auth_client, campo):
 
     assert resp.status_code == 422
     assert _error(resp)["details"]["campo"] == "cursor"
+
+
+# ------------------------------------------- correcciones de la revisión de #88
+
+
+async def test_resultado_del_mismo_dia_local_aunque_en_utc_sea_otro(auth_client, campo):
+    # Toma del lunes 16/11 a las 22 en Córdoba: en UTC ya es martes 17 a la 1.
+    toma = _alta(
+        campo,
+        "sangrado",
+        animales=[_integrante(campo["animales"][0])],
+        fecha_aplicacion="2026-11-17T01:00:00Z",
+    )
+    evento = (await auth_client.post(URL, json=toma)).json()["data"][0]
+
+    # El formulario manda el lunes a medianoche local (03:00 UTC).
+    mismo_dia = await auth_client.put(
+        f"{URL}/{evento['id']}/resultado",
+        json=_resultado(fecha="2026-11-16T03:00:00Z"),
+    )
+    assert mismo_dia.status_code == 200, mismo_dia.text
+
+
+async def test_resultado_del_dia_local_anterior_se_rechaza(auth_client, campo):
+    toma = _alta(
+        campo,
+        "sangrado",
+        animales=[_integrante(campo["animales"][0])],
+        fecha_aplicacion="2026-11-17T01:00:00Z",
+    )
+    evento = (await auth_client.post(URL, json=toma)).json()["data"][0]
+
+    resp = await auth_client.put(
+        f"{URL}/{evento['id']}/resultado",
+        json=_resultado(fecha="2026-11-15T03:00:00Z"),
+    )
+
+    assert resp.status_code == 422
+    assert _error(resp)["details"]["campo"] == "fecha"
+
+
+@pytest.mark.parametrize(
+    "dosis", ["1e999999999", "9" * 30, "0.00001", "20000", "", " "]
+)
+async def test_dosis_fuera_de_rango_es_rechazo_corregible(
+    auth_client, campo, session, dosis
+):
+    cuerpo = _alta(campo)
+    cuerpo["datos"]["dosis"] = dosis
+
+    resp = await auth_client.post(URL, json=cuerpo)
+
+    assert resp.status_code == 422, resp.text
+    assert _error(resp)["details"]["campo"] == "datos.dosis"
+    assert await _cantidad_eventos(session) == 0
+
+
+@pytest.mark.parametrize("cursor", ["²", "-1", "1.5", "9" * 25])
+async def test_cursor_mal_formado_es_422_y_no_500(auth_client, campo, cursor):
+    resp = await auth_client.get(
+        URL, params={"establecimiento_id": str(campo["est"].id), "cursor": cursor}
+    )
+
+    assert resp.status_code == 422
+    assert _error(resp)["details"]["campo"] == "cursor"
+
+
+async def test_error_de_tipo_indica_campo_y_animal(auth_client, campo, session):
+    animales = [
+        _integrante(campo["animales"][0]),
+        _integrante(campo["animales"][1], referencia_muestra=123),
+    ]
+
+    resp = await auth_client.post(URL, json=_alta(campo, "sangrado", animales=animales))
+
+    assert resp.status_code == 422
+    error = _error(resp)
+    assert error["code"] == "evento_sanitario_invalido"
+    assert error["details"] == {
+        "campo": "animales.1.referencia_muestra",
+        "animal_id": str(campo["animales"][1].id),
+    }
+    assert await _cantidad_eventos(session) == 0
+
+
+async def test_error_de_tipo_fuera_de_animales_indica_el_campo(auth_client, campo):
+    cuerpo = _alta(campo)
+    del cuerpo["practica_id"]
+
+    alta = await auth_client.post(URL, json=cuerpo)
+    catalogo = await auth_client.get(
+        f"{URL}/catalogo", params={"establecimiento_id": "no-es-un-uuid"}
+    )
+
+    assert alta.status_code == 422
+    assert _error(alta)["details"] == {"campo": "practica_id"}
+    assert catalogo.status_code == 422
+    assert _error(catalogo)["details"] == {"campo": "establecimiento_id"}

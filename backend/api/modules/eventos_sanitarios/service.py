@@ -4,10 +4,11 @@ Contrato acordado con Mobile en ``docs/plan-backend-integracion-sanidad.md`` y
 decisiones en ``docs/adr/adr-0017-eventos-sanitarios-por-operacion.md``.
 """
 
-from datetime import UTC, date, datetime, timedelta
-from decimal import Decimal, InvalidOperation
+from datetime import UTC, date, datetime, timedelta, timezone
+from decimal import Decimal, DecimalException
 import hashlib
 import json
+import re
 from typing import Any
 from uuid import UUID
 
@@ -42,6 +43,13 @@ MAX_ANIMALES_POR_OPERACION = 500
 TAMANIO_PAGINA_HISTORIAL = 200
 # Margen para relojes de celulares levemente adelantados.
 _TOLERANCIA_FUTURO = timedelta(minutes=10)
+# Día calendario que ve el productor. Argentina no tiene horario de verano
+# desde 2009, así que un desfasaje fijo alcanza y no depende de tzdata.
+ZONA_HORARIA_CAMPO = timezone(timedelta(hours=-3), "ART")
+DOSIS_MAXIMA = Decimal(10000)
+DECIMALES_DOSIS = 4
+# Cabe en un bigint de Postgres: un cursor más largo no es uno que emitimos.
+_CURSOR_VALIDO = re.compile(r"[0-9]{1,18}")
 _TIPO_ALTA = "alta"
 _TIPO_RESULTADO = "resultado"
 
@@ -103,6 +111,10 @@ def _no_futura(valor: datetime, campo: str) -> datetime:
     if valor > datetime.now(UTC) + _TOLERANCIA_FUTURO:
         raise EventoSanitarioInvalidoError("La fecha no puede ser futura", campo=campo)
     return valor
+
+
+def _dia_del_campo(valor: datetime) -> date:
+    return as_utc(valor).astimezone(ZONA_HORARIA_CAMPO).date()
 
 
 def representar(evento: EventoSanitario) -> dict[str, Any]:
@@ -357,13 +369,24 @@ class EventoSanitarioService:
 
     @staticmethod
     def _dosis(valor: Any) -> str:
+        texto = str(valor).replace(",", ".").strip() if valor is not None else ""
         try:
-            dosis = Decimal(str(valor).replace(",", ".")) if valor is not None else None
-        except InvalidOperation:
+            # El largo acota el costo de parsear; Overflow o Underflow no son
+            # InvalidOperation, por eso se atrapa la base de los errores decimales.
+            dosis = Decimal(texto) if 0 < len(texto) <= 20 else None
+        except DecimalException:
             dosis = None
         if dosis is None or not dosis.is_finite() or dosis <= 0:
             raise EventoSanitarioInvalidoError(
                 "La dosis tiene que ser un número mayor a cero", campo="datos.dosis"
+            )
+        if (
+            dosis > DOSIS_MAXIMA
+            or -dosis.normalize().as_tuple().exponent > DECIMALES_DOSIS
+        ):
+            raise EventoSanitarioInvalidoError(
+                f"La dosis admite hasta {DOSIS_MAXIMA} con {DECIMALES_DOSIS} decimales",
+                campo="datos.dosis",
             )
         return format(dosis.normalize(), "f")
 
@@ -470,7 +493,9 @@ class EventoSanitarioService:
 
         valor = _texto_obligatorio(data.resultado, "resultado")
         fecha = _no_futura(data.fecha, "fecha")
-        if fecha.date() < as_utc(evento.fecha_aplicacion).date():
+        # Se compara el día que ve el usuario, no el día en UTC: una toma del
+        # lunes a las 22 en Córdoba ya es martes en UTC.
+        if _dia_del_campo(fecha) < _dia_del_campo(evento.fecha_aplicacion):
             raise EventoSanitarioInvalidoError(
                 "El resultado no puede ser anterior a la toma de la muestra",
                 campo="fecha",
@@ -513,7 +538,7 @@ class EventoSanitarioService:
         await self._exigir_acceso(usuario, establecimiento_id)
         desde = 0
         if cursor is not None:
-            if not cursor.isdigit():
+            if not _CURSOR_VALIDO.fullmatch(cursor):
                 raise EventoSanitarioInvalidoError(
                     "El cursor no es válido", campo="cursor"
                 )
