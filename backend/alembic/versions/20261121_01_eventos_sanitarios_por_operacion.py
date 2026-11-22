@@ -17,7 +17,7 @@ fuera del historial (en Supabase la tabla estaba vacía al migrar). Ver
 ``docs/adr/adr-0017-eventos-sanitarios-por-operacion.md``.
 
 Revision ID: 20261121_01
-Revises: 20261017_02
+Revises: 20261114_02
 Create Date: 2026-11-21
 """
 
@@ -29,7 +29,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import Connection
 
 revision: str = "20261121_01"
-down_revision: str | None = "20261017_02"
+down_revision: str | None = "20261114_02"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

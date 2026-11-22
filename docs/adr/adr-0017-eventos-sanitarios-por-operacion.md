@@ -40,5 +40,5 @@ Un operario registra una práctica sanitaria sobre uno o varios animales desde l
 - **Toda escritura sanitaria tiene que pasar por el servicio,** incluidas las futuras bajas lógicas. Un `UPDATE` directo en SQL no avanzaría la `version` y el celular no se enteraría.
 - **La carencia (`periodo_carencia_dias` y `fecha_fin_carencia`)** se calcula al aplicar, a partir del producto vigente.
 - **Una operación admite hasta 500 animales.**
-- **La migración `20261121_01` encadena sobre `20261017_02`.** Si Alimentación (`20261114_*`) entra antes a `develop`, hay que reencadenarla.
+- **La migración `20261121_01` encadena sobre `20261114_02` (Alimentación).**
 - **Queda para otra entrega:** la agenda sanitaria, las jornadas con varias prácticas, la administración de productos y los recordatorios.

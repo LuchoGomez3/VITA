@@ -44,7 +44,7 @@ _MIGRACION = (
 )
 _SCRIPT_SQL = _BACKEND / "scripts/eventos_sanitarios_por_operacion.sql"
 _REVISION = "20261121_01"
-_REVISION_PREVIA = "20261017_02"
+_REVISION_PREVIA = "20261114_02"
 URL = "/api/v1/eventos_sanitarios"
 
 
