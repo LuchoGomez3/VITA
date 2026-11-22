@@ -1,4 +1,6 @@
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/repositories/animal_registration_repository.dart';
 
@@ -22,6 +24,17 @@ class RegisterAnimalUseCase {
   /// con backend en manos del repositorio/Brick. Por eso el resultado devuelve
   /// el animal registrado junto con su estado de sincronizacion local.
   Future<Result<RegisteredAnimal>> call(AnimalRegistration registration) {
+    if (!RfidValidator.isValid(registration.rfidTagNumber)) {
+      return Future.value(
+        const Result.failure(
+          DomainException(
+            message: 'invalid_rfid',
+            code: DomainErrorCode.validation,
+            reason: RfidValidationFailure.invalidFormat,
+          ),
+        ),
+      );
+    }
     return _repository.register(registration);
   }
 }

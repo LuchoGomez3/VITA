@@ -278,13 +278,21 @@ class EquipoService:
                 invitacion.invitado_por_id, establecimiento.id
             )
         }
+        role = RolUsuario(invitacion.rol)
+        if invitacion.estado == EstadoInvitacion.aceptada:
+            memberships = await self.membresias.get_memberships(
+                current_user.id, establecimiento.id
+            )
+            if not memberships:
+                raise CodigoUsadoError()
+            role = _rol_principal({RolUsuario(m.rol) for m in memberships})
         return InvitacionPrevia(
             establecimiento_id=establecimiento.id,
             establecimiento_nombre=establecimiento.nombre,
             establecimiento_renspa=establecimiento.nro_renspa,
             establecimiento_localidad=establecimiento.localidad,
             establecimiento_provincia=establecimiento.provincia,
-            rol=RolUsuario(invitacion.rol),
+            rol=role,
             email=invitacion.email,
             invitado_por=(
                 f"{invitado_por.nombre} {invitado_por.apellido}"
@@ -305,6 +313,19 @@ class EquipoService:
             current_user, codigo
         )
         rol = RolUsuario(invitacion.rol)
+
+        if invitacion.estado == EstadoInvitacion.aceptada:
+            # Recuperar una respuesta perdida solo consulta el acceso vigente.
+            # No reactiva filas, no restaura el rol invitado ni repite el aviso.
+            roles = await self.membresias.get_memberships(
+                current_user.id, establecimiento.id
+            )
+            if not roles:
+                raise CodigoUsadoError()
+            datos = EstablecimientoRead.model_validate(establecimiento).model_dump()
+            return EstablecimientoConRolRead(
+                **datos, rol=_rol_principal({RolUsuario(m.rol) for m in roles})
+            )
 
         if not await self.invitaciones.marcar_aceptada(
             invitacion.id, usuario_id=current_user.id, ahora=self.reloj()
@@ -394,7 +415,19 @@ class EquipoService:
         if invitacion is None:
             raise CodigoInvalidoError()
         if invitacion.estado == EstadoInvitacion.aceptada:
-            raise CodigoUsadoError()
+            if (
+                invitacion.aceptada_por_id != current_user.id
+                or current_user.email.strip().lower() != invitacion.email
+            ):
+                raise CodigoUsadoError()
+            establecimiento = await self.establecimientos.get_by_id(
+                invitacion.establecimiento_id
+            )
+            if establecimiento is None or not await self.membresias.get_memberships(
+                current_user.id, invitacion.establecimiento_id
+            ):
+                raise CodigoUsadoError()
+            return invitacion, establecimiento
         if invitacion.estado == EstadoInvitacion.cancelada:
             raise CodigoRevocadoError()
         if self._vencida(invitacion):

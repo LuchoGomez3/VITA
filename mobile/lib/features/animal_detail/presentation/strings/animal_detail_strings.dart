@@ -2,6 +2,9 @@
 class AnimalDetailStrings {
   const AnimalDetailStrings._();
 
+  /// El animal deja de estar disponible localmente para la ficha abierta.
+  static const animalUnavailable = 'Este animal ya no está disponible en el establecimiento.';
+
   /// Titulo del app bar.
   static const pageTitle = 'Detalle de animal';
 

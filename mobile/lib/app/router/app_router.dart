@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/composition/animal_movement_composition.dart';
 import 'package:frontend_mayoral/app/composition/feeding_composition.dart';
+import 'package:frontend_mayoral/app/composition/team_session_composition.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -69,12 +70,21 @@ import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senas
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/pages/senasa_report_success_page.dart';
 import 'package:frontend_mayoral/features/senasa_report/senasa_report_composition.dart';
+import 'package:frontend_mayoral/features/sync/presentation/cubit/sync_queue_cubit.dart';
+import 'package:frontend_mayoral/features/sync/presentation/pages/sync_status_page.dart';
+import 'package:frontend_mayoral/features/sync/presentation/widgets/sync_queue_indicator.dart';
+import 'package:frontend_mayoral/features/sync/sync_composition.dart';
 import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
+import 'package:frontend_mayoral/features/team/presentation/cubit/join_establishment_cubit.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/invitation_created_page.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/invite_team_member_page.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/join_establishment_page.dart';
 import 'package:frontend_mayoral/features/team/presentation/pages/team_page.dart';
 import 'package:frontend_mayoral/features/team/team_composition.dart';
+import 'package:frontend_mayoral/features/user_manual/domain/entities/manual_section.dart';
+import 'package:frontend_mayoral/features/user_manual/presentation/pages/user_manual_page.dart';
+import 'package:frontend_mayoral/features/user_manual/presentation/pages/user_manual_section_page.dart';
+import 'package:frontend_mayoral/features/user_manual/user_manual_composition.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/camera_reveal_page.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/vision_weighing_page.dart';
 import 'package:frontend_mayoral/features/vision_weighing/vision_weighing_composition.dart';
@@ -91,7 +101,13 @@ class AppRouter {
     required AuthSessionCubit authSessionCubit,
     required Listenable refreshListenable,
     required GetEstablishmentRoleUseCase getEstablishmentRole,
+    HomeDashboardCubitFactory createHomeCubit = createHomeDashboardCubit,
+    SyncQueueCubit Function() createSyncCubit = createSyncQueueCubit,
+    LoginBlocFactory loginBlocFactory = createLoginBloc,
+    JoinEstablishmentCubit Function()? joinCubitFactory,
   }) {
+    final repositoryForSession = createSessionTeamRepositoryFactory();
+
     return GoRouter(
       initialLocation: AppRoutes.authCheck,
       refreshListenable: refreshListenable,
@@ -109,7 +125,7 @@ class AppRouter {
           path: AppRoutes.login,
           pageBuilder: (context, state) => BackwardPage(
             state: state,
-            child: const LoginPage(createBloc: createLoginBloc),
+            child: LoginPage(createBloc: loginBlocFactory),
           ),
         ),
         GoRoute(
@@ -146,8 +162,12 @@ class AppRouter {
                     return FadePage(
                       state: state,
                       child: HomePage(
-                        createCubit: createHomeDashboardCubit,
+                        createCubit: createHomeCubit,
                         userName: userName,
+                        syncIndicator: SyncQueueIndicator(
+                          createCubit: createSyncCubit,
+                          onPressed: () => context.push(AppRoutes.syncStatus),
+                        ),
                       ),
                     );
                   },
@@ -229,14 +249,14 @@ class AppRouter {
           path: AppRoutes.team,
           builder: (context, state) => TeamPage(
             establishmentId: state.pathParameters['establishmentId']!,
-            createCubit: createTeamCubit,
+            createCubit: (id) => createTeamCubit(id, repository: repositoryForSession()),
           ),
         ),
         GoRoute(
           path: AppRoutes.teamInvite,
           builder: (context, state) => InviteTeamMemberPage(
             establishmentId: state.pathParameters['establishmentId']!,
-            createCubit: createInviteTeamMemberCubit,
+            createCubit: (id) => createInviteTeamMemberCubit(id, repository: repositoryForSession()),
           ),
         ),
         GoRoute(
@@ -252,13 +272,38 @@ class AppRouter {
             return InvitationCreatedPage(
               created: extra.created,
               establishmentName: extra.establishmentName,
-              cancelInvitation: () => cancelTeamInvitation(establishmentId, extra.created.invitation.id),
+              createCubit: () => createInvitationCreatedCubit(
+                establishmentId,
+                extra.created.invitation,
+                repository: repositoryForSession(),
+              ),
             );
           },
         ),
         GoRoute(
           path: AppRoutes.joinEstablishment,
-          builder: (context, state) => const JoinEstablishmentPage(createCubit: createJoinEstablishmentCubit),
+          builder: (context, state) => JoinEstablishmentPage(
+            createCubit:
+                joinCubitFactory ??
+                () {
+                  final coordinator = createOfflineSyncCoordinator();
+                  return createJoinEstablishmentCubit(
+                    prepareData: coordinator.synchronize,
+                    repository: repositoryForSession(),
+                  );
+                },
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.userManual,
+          builder: (context, state) => const UserManualPage(createCubit: createUserManualCubit),
+        ),
+        GoRoute(
+          path: AppRoutes.userManualSection,
+          // Sin la sección (por ejemplo, al restaurar la app) se vuelve al
+          // índice, que la vuelve a leer de los assets.
+          redirect: (context, state) => state.extra is ManualSection ? null : AppRoutes.userManual,
+          builder: (context, state) => UserManualSectionPage(section: state.extra! as ManualSection),
         ),
         GoRoute(
           path: AppRoutes.animalRegisterStep1,
@@ -350,7 +395,12 @@ class AppRouter {
         ),
         GoRoute(
           path: AppRoutes.health,
-          builder: (context, state) => const HealthPage(),
+          builder: (context, state) => HealthPage(
+            syncIndicator: SyncQueueIndicator(
+              createCubit: createSyncCubit,
+              onPressed: () => context.push(AppRoutes.syncStatus),
+            ),
+          ),
         ),
         GoRoute(
           path: AppRoutes.applyVaccination,
@@ -471,6 +521,10 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.fieldList,
           redirect: (context, state) => AppRoutes.field,
+        ),
+        GoRoute(
+          path: AppRoutes.syncStatus,
+          builder: (context, state) => const SyncStatusPage(createCubit: createSyncStatusCubit),
         ),
         GoRoute(
           path: AppRoutes.lotRegister,
@@ -630,7 +684,7 @@ class AppRouter {
     required String location,
     bool hasSignUpSuccessData = false,
   }) {
-    if (authState is AuthSessionChecking) {
+    if (authState is AuthSessionChecking || authState is AuthSessionCleanupFailed) {
       return location == AppRoutes.authCheck ? null : AppRoutes.authCheck;
     }
 

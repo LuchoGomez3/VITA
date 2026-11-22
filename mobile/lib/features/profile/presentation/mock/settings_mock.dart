@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/app/router/routes.dart';
 
 /// Un dispositivo Bluetooth emparejado mock.
 class PairedDeviceMock {
@@ -46,6 +47,7 @@ class SettingsInfoMock {
     required this.label,
     required this.icon,
     this.value,
+    this.route,
   });
 
   /// Etiqueta de la fila.
@@ -56,6 +58,9 @@ class SettingsInfoMock {
 
   /// Valor mock mostrado como subtítulo, si corresponde.
   final String? value;
+
+  /// Ruta que abre la fila; sin ruta, la fila avisa que llega pronto.
+  final String? route;
 }
 
 /// Sección "Preferencias": todas navegables, sin funcionalidad real todavía.
@@ -79,7 +84,7 @@ const preferencesMock = [
 
 /// Sección "Sobre la app", sin la versión: esa se lee del paquete instalado.
 const aboutAppMock = [
-  SettingsInfoMock(label: 'Manual de usuario', icon: Icons.menu_book_outlined),
+  SettingsInfoMock(label: 'Manual de usuario', icon: Icons.menu_book_outlined, route: AppRoutes.userManual),
   SettingsInfoMock(
     label: 'Soporte',
     icon: Icons.support_agent,

@@ -33,7 +33,7 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
       if (isConnected) unawaited(refresh());
     });
     _syncResultSubscription = syncResults?.listen((result) {
-      if (!_refreshInProgress) unawaited(_applyExternalSyncResult(result));
+      unawaited(_applyExternalSyncResult(result));
     });
   }
 
@@ -44,6 +44,7 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
   StreamSubscription<bool>? _connectivitySubscription;
   StreamSubscription<Result<PostAuthenticationSummary>>? _syncResultSubscription;
   bool _refreshInProgress = false;
+  int _dashboardRequestId = 0;
 
   /// Muestra primero la cache y luego intenta actualizarla sin bloquear la UI.
   Future<void> initialize() async {
@@ -55,6 +56,7 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
   /// Calcula nuevamente los KPIs usando la informacion offline actual.
   Future<void> load() async {
     if (isClosed) return;
+    _dashboardRequestId++;
     emit(
       state.copyWith(
         dashboardState: const ResultState<HomeDashboard>.loading(),
@@ -64,7 +66,7 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
     if (isClosed) return;
     switch (establishmentsResult) {
       case Success<Map<String, EstablishmentMembership>>(:final data):
-        emit(state.copyWith(establishments: data));
+        _updateEstablishments(data);
       case Failure<Map<String, EstablishmentMembership>>(:final error):
         emit(
           state.copyWith(
@@ -104,7 +106,7 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
       if (isClosed) return;
       switch (establishmentsResult) {
         case Success<Map<String, EstablishmentMembership>>(:final data):
-          emit(state.copyWith(establishments: data));
+          _updateEstablishments(data);
         case Failure<Map<String, EstablishmentMembership>>(:final error):
           refreshError ??= error;
       }
@@ -138,10 +140,24 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
     final establishmentsResult = await _getHomeEstablishmentsUseCase();
     if (isClosed) return;
     if (establishmentsResult case Success<Map<String, EstablishmentMembership>>(:final data)) {
-      emit(state.copyWith(establishments: data));
+      _updateEstablishments(data);
     }
     await _loadDashboard();
     if (!isClosed) emit(state.copyWith(refreshError: refreshError));
+  }
+
+  void _updateEstablishments(Map<String, EstablishmentMembership> establishments) {
+    final selectedId = state.selectedEstablishmentId;
+    // Con un catálogo previo, null representa una selección manual de «Todos».
+    final keepSelection = selectedId == null ? state.establishments.isNotEmpty : establishments.containsKey(selectedId);
+    final nextId = keepSelection ? selectedId : establishments.keys.firstOrNull;
+    emit(
+      state.copyWith(
+        establishments: establishments,
+        selectedEstablishmentId: nextId,
+        dashboardState: nextId == selectedId ? state.dashboardState : const ResultState<HomeDashboard>.loading(),
+      ),
+    );
   }
 
   /// Cambia el establecimiento activo y vuelve a calcular los indicadores.
@@ -164,11 +180,12 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
 
   Future<void> _loadDashboard() async {
     if (isClosed) return;
+    final requestId = ++_dashboardRequestId;
     final selectedId = state.selectedEstablishmentId;
     final result = await _getHomeDashboardUseCase(
       establishmentIds: selectedId == null ? null : {selectedId},
     );
-    if (isClosed) return;
+    if (isClosed || requestId != _dashboardRequestId) return;
     switch (result) {
       case Success<HomeDashboard>(:final data):
         emit(

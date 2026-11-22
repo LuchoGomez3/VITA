@@ -204,8 +204,18 @@ void _showComingSoon(BuildContext context) {
     ..showSnackBar(const SnackBar(content: Text(ProfileStrings.comingSoonMessage)));
 }
 
+/// Abre la ruta de [item] o, si todavía no tiene, avisa que llega pronto.
+void _openInfoRow(BuildContext context, SettingsInfoMock item) {
+  final route = item.route;
+  if (route == null) {
+    _showComingSoon(context);
+    return;
+  }
+  context.push<void>(route);
+}
+
 /// Secciones de `AjustesScreen`: dispositivos, preferencias y "sobre la app".
-/// Salvo la versión, todavía son datos de ejemplo (ver
+/// Salvo la versión y el manual, todavía son datos de ejemplo (ver
 /// `.claude/specs/ajustes.md`) y sus filas solo avisan que llegan pronto.
 class _SettingsSections extends StatelessWidget {
   const _SettingsSections({required this.readAppVersion});
@@ -259,7 +269,7 @@ class _SettingsSections extends StatelessWidget {
                 label: item.label,
                 subtitle: item.value,
                 isNavigable: true,
-                onTap: () => _showComingSoon(context),
+                onTap: () => _openInfoRow(context, item),
               ),
             _VersionRow(readAppVersion: readAppVersion),
           ],
