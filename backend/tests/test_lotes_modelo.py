@@ -18,15 +18,21 @@ from api.shared.enums import EstadoLote, RecursoForrajero
 _BACKEND = Path(__file__).resolve().parents[1]
 _MIGRACION = _BACKEND / "alembic/versions/20260905_03_lotes_y_movimientos_batch.py"
 _SCRIPT_SQL = _BACKEND / "scripts/crear_lotes_y_movimientos.sql"
+# El catálogo de recursos se amplió después: la definición vigente del CHECK
+# vive en la migración de recursos por período y en su script espejo.
+_MIGRACION_RECURSOS = (
+    _BACKEND / "alembic/versions/20261114_01_recursos_forrajeros_por_periodo.py"
+)
+_SCRIPT_SQL_RECURSOS = _BACKEND / "scripts/crear_recursos_forrajeros_por_periodo.sql"
 
 
-def _cargar_migracion():
+def _cargar_migracion(ruta: Path = _MIGRACION):
     """Importa el módulo de la revisión para leer sus constantes.
 
     Las revisiones de Alembic no son un paquete importable, así que se cargan por
     ruta. Leer las constantes es más robusto que hacer regex sobre el archivo.
     """
-    spec = importlib.util.spec_from_file_location("_migracion_lotes", _MIGRACION)
+    spec = importlib.util.spec_from_file_location(f"_migracion_{ruta.stem}", ruta)
     modulo = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(modulo)
     return modulo
@@ -46,22 +52,30 @@ def _valores_de_check_sql(contenido: str, restriccion: str) -> set[str]:
 
 
 @pytest.mark.parametrize(
-    ("restriccion", "constante", "enum"),
+    ("restriccion", "constante", "enum", "migracion", "script"),
     [
-        ("ck_lotes_estado_valido", "_ESTADOS", EstadoLote),
-        ("ck_lotes_recurso_forrajero_valido", "_RECURSOS_FORRAJEROS", RecursoForrajero),
+        ("ck_lotes_estado_valido", "_ESTADOS", EstadoLote, _MIGRACION, _SCRIPT_SQL),
+        (
+            "ck_lotes_recurso_forrajero_valido",
+            "_RECURSOS_FORRAJEROS",
+            RecursoForrajero,
+            _MIGRACION_RECURSOS,
+            _SCRIPT_SQL_RECURSOS,
+        ),
     ],
 )
-def test_enums_coinciden_entre_modelo_migracion_y_script(restriccion, constante, enum):
+def test_enums_coinciden_entre_modelo_migracion_y_script(
+    restriccion, constante, enum, migracion, script
+):
     """Los tres artefactos que describen el esquema no pueden divergir.
 
     El modelo deriva los literales del enum; la migración y el script los
     escriben a mano, así que este test es el que evita que se desalineen.
     """
     esperados = {miembro.value for miembro in enum}
-    assert set(getattr(_cargar_migracion(), constante)) == esperados
+    assert set(getattr(_cargar_migracion(migracion), constante)) == esperados
     assert (
-        _valores_de_check_sql(_SCRIPT_SQL.read_text(encoding="utf-8"), restriccion)
+        _valores_de_check_sql(script.read_text(encoding="utf-8"), restriccion)
         == esperados
     )
 
