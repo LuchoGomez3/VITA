@@ -8,11 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.auth.dependencies import get_current_user
 from api.modules.eventos_sanitarios.schemas import AltaSanitaria, ResultadoSanitario
 from api.modules.eventos_sanitarios.service import EventoSanitarioService
+from api.modules.eventos_sanitarios.validacion import RutaSanitaria
 from api.modules.usuarios.models import Usuario
 from api.shared.schemas import StandardResponse
 from database.database import get_session
 
-router = APIRouter(prefix="/v1/eventos_sanitarios", tags=["eventos_sanitarios"])
+router = APIRouter(
+    prefix="/v1/eventos_sanitarios",
+    tags=["eventos_sanitarios"],
+    route_class=RutaSanitaria,
+)
 
 
 @router.get("/catalogo", response_model=StandardResponse)
