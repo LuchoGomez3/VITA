@@ -84,6 +84,7 @@ abstract final class SyncStatusStrings {
     SyncOperationKind.food => 'Alimento',
     SyncOperationKind.feedingRecord => 'Registro de alimentación',
     SyncOperationKind.foragePeriod => 'Recurso del potrero',
+    SyncOperationKind.livestockSale => 'Venta',
     SyncOperationKind.other => 'Otro registro',
   };
 

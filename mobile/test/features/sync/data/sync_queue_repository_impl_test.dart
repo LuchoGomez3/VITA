@@ -24,7 +24,8 @@ void main() {
         map('POST', '/api/v1/egresos_operativos/categorias').kind,
         SyncOperationKind.operatingExpenseCategory,
       );
-      expect(map('POST', '/api/v1/ventas').kind, SyncOperationKind.other);
+      expect(map('POST', '/api/v1/ventas').kind, SyncOperationKind.livestockSale);
+      expect(map('POST', '/api/v1/compras').kind, SyncOperationKind.other);
     });
 
     test('no confunde recursos que comparten prefijo', () {

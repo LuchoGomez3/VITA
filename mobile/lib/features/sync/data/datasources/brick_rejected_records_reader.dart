@@ -4,6 +4,7 @@ import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/animal_lot_movement.model.dart';
 import 'package:frontend_mayoral/brick/models/feeding_record.model.dart';
 import 'package:frontend_mayoral/brick/models/food.model.dart';
+import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/brick/models/lot_forage_period.model.dart';
 import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
@@ -67,6 +68,11 @@ class BrickRejectedRecordsReader {
         isRejected: (model) => model.syncStatus == BrickLotForagePeriodSyncStatus.rejected,
         toRecord: (model) =>
             _record(model.localId, SyncOperationKind.foragePeriod, model.updatedAt, model.syncErrorCode),
+      ),
+      _rejected<BrickLivestockSaleModel>(
+        isRejected: (model) => model.syncStatus == BrickLivestockSaleSyncStatus.rejected,
+        toRecord: (model) =>
+            _record(model.localId, SyncOperationKind.livestockSale, model.updatedAt, model.syncErrorCode),
       ),
     ]);
     return results.expand((records) => records).toList()..sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
