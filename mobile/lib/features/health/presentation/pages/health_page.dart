@@ -19,7 +19,11 @@ import 'package:go_router/go_router.dart';
 /// todavía, ni validación real de carencia.
 class HealthPage extends StatefulWidget {
   /// Crea la pantalla de sanidad.
-  const HealthPage({super.key});
+  const HealthPage({this.syncIndicator, super.key});
+
+  /// Indicador en vivo de registros pendientes de sincronizar. Lo arma el
+  /// router, así Sanidad no depende de la feature de sincronización.
+  final Widget? syncIndicator;
 
   @override
   State<HealthPage> createState() => _HealthPageState();
@@ -39,10 +43,10 @@ class _HealthPageState extends State<HealthPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppHeader(
+      appBar: AppHeader(
         title: HealthStrings.title,
         headline: HealthStrings.establishmentTitle,
-        actions: [AppSyncBadge(pendingCount: healthPendingSyncCount)],
+        actions: [?widget.syncIndicator],
       ),
       floatingActionButton: _tab == HealthTab.vaccinations
           ? FloatingActionButton.extended(

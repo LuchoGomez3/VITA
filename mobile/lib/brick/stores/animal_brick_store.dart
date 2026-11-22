@@ -179,14 +179,16 @@ class BrickAnimalStore implements AnimalBrickStore {
     final localAnimalsById = {
       for (final animal in localAnimals) animal.localId: animal,
     };
-    for (final animal in remoteAnimals) {
-      final local = localAnimalsById[animal.localId];
-      final synchronizedAnimal = reconcileRemoteAnimal(
-        local: local,
-        remote: animal,
-      )..primaryKey = local?.primaryKey;
-      await _repository.upsertLocal<BrickAnimalModel>(synchronizedAnimal);
-    }
+    await _repository.runLocalTransaction((transaction) async {
+      for (final animal in remoteAnimals) {
+        final local = localAnimalsById[animal.localId];
+        final synchronizedAnimal = reconcileRemoteAnimal(
+          local: local,
+          remote: animal,
+        )..primaryKey = local?.primaryKey;
+        await transaction.upsert<BrickAnimalModel>(synchronizedAnimal);
+      }
+    });
   }
 
   /// Fusiona el estado autoritativo sin pisar un alta local pendiente.

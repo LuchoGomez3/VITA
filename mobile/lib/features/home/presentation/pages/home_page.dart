@@ -22,6 +22,7 @@ class HomePage extends StatelessWidget {
   const HomePage({
     required this.createCubit,
     required this.userName,
+    this.syncIndicator,
     super.key,
   });
 
@@ -31,33 +32,34 @@ class HomePage extends StatelessWidget {
   /// Nombre visible de la persona autenticada.
   final String userName;
 
+  /// Indicador de la cola de sincronización mostrado en el encabezado.
+  final Widget? syncIndicator;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<HomeDashboardCubit>(
       create: (_) => createCubit()..initialize(),
-      child: _HomeDashboardView(userName: _displayUserName),
+      child: _HomeDashboardView(userName: _displayUserName, syncIndicator: syncIndicator),
     );
   }
 
   String get _displayUserName {
     final trimmedUserName = userName.trim();
-    return trimmedUserName.isEmpty
-        ? HomeStrings.defaultUserName
-        : trimmedUserName;
+    return trimmedUserName.isEmpty ? HomeStrings.defaultUserName : trimmedUserName;
   }
 }
 
 class _HomeDashboardView extends StatefulWidget {
-  const _HomeDashboardView({required this.userName});
+  const _HomeDashboardView({required this.userName, this.syncIndicator});
 
   final String userName;
+  final Widget? syncIndicator;
 
   @override
   State<_HomeDashboardView> createState() => _HomeDashboardViewState();
 }
 
-class _HomeDashboardViewState extends State<_HomeDashboardView>
-    with WidgetsBindingObserver {
+class _HomeDashboardViewState extends State<_HomeDashboardView> with WidgetsBindingObserver {
   final _establishmentMenu = MenuController();
 
   @override
@@ -82,9 +84,7 @@ class _HomeDashboardViewState extends State<_HomeDashboardView>
   @override
   Widget build(BuildContext context) {
     return BlocListener<HomeDashboardCubit, HomeDashboardState>(
-      listenWhen: (previous, current) =>
-          previous.refreshError != current.refreshError &&
-          current.refreshError != null,
+      listenWhen: (previous, current) => previous.refreshError != current.refreshError && current.refreshError != null,
       listener: (context, state) {
         ScaffoldMessenger.of(
           context,
@@ -99,6 +99,7 @@ class _HomeDashboardViewState extends State<_HomeDashboardView>
               onSelected: _selectEstablishment,
               onCreateEstablishment: _createEstablishment,
               onIdentifyAnimal: _identifyAnimal,
+              syncIndicator: widget.syncIndicator,
             ),
             Expanded(
               child: _HomeDashboardBody(
@@ -112,10 +113,7 @@ class _HomeDashboardViewState extends State<_HomeDashboardView>
   }
 
   void _identifyAnimal() {
-    final establishmentId = context
-        .read<HomeDashboardCubit>()
-        .state
-        .selectedEstablishmentId;
+    final establishmentId = context.read<HomeDashboardCubit>().state.selectedEstablishmentId;
     if (establishmentId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -171,15 +169,12 @@ class _HomeDashboardBody extends StatelessWidget {
       child: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
         builder: (context, state) {
           final dashboardState = state.dashboardState;
-          final membership =
-              state.establishments[state.selectedEstablishmentId];
+          final membership = state.establishments[state.selectedEstablishmentId];
           return switch (dashboardState) {
             Data<HomeDashboard>(:final data) => HomeDashboardContent(
               dashboard: data,
-              onEstablishmentSelectionRequested:
-                  onEstablishmentSelectionRequested,
-              canViewFinancialInformation:
-                  membership?.role.canViewFinancialInformation ?? false,
+              onEstablishmentSelectionRequested: onEstablishmentSelectionRequested,
+              canViewFinancialInformation: membership?.role.canViewFinancialInformation ?? false,
             ),
             ResultError<HomeDashboard>(:final error) => HomeDashboardError(
               message: error.message,

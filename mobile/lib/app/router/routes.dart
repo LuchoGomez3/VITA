@@ -44,6 +44,12 @@ class AppRoutes {
   /// Sumarse a un establecimiento con el código de una invitación.
   static const joinEstablishment = '/perfil/sumarme';
 
+  /// Índice del manual de usuario.
+  static const userManual = '/perfil/manual';
+
+  /// Detalle de una sección del manual (recibe `ManualSection` en `extra`).
+  static const userManualSection = '/perfil/manual/seccion';
+
   /// Equipo de [establishmentId].
   static String teamFor(String establishmentId) => '/perfil/establecimiento/$establishmentId/equipo';
 
@@ -142,6 +148,9 @@ class AppRoutes {
 
   /// Ruta del detalle de un lote.
   static const fieldDetail = '/campo/:loteId';
+
+  /// Ruta de la pantalla de estado de sincronización.
+  static const syncStatus = '/sincronizacion';
 
   /// Obtiene la ruta de detalle de animal por su id.
   static String animalDetailById(String animalId) {
