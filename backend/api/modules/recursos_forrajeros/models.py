@@ -5,7 +5,7 @@ necesita cerrarse a mano: termina el día anterior al siguiente período del mis
 lote (``fecha_hasta`` explícita solo hace falta para un corte, por ejemplo un
 verdeo que se terminó y dejó el potrero sin recurso). Así un cambio de recurso es
 una sola fila y dos dispositivos offline solo chocan si cargan el mismo lote con
-la misma fecha. Ver ``docs/adr/adr-0015-alimentacion-pastoreo-derivado-y-registros.md``.
+la misma fecha. Ver ``docs/adr/adr-0016-alimentacion-pastoreo-derivado-y-registros.md``.
 """
 
 from datetime import date

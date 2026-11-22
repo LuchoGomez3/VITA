@@ -1,4 +1,4 @@
--- Catálogo de alimentos y registros de alimentación (adr-0015).
+-- Catálogo de alimentos y registros de alimentación (adr-0016).
 -- Espejo manual de la migración Alembic 20261114_02. Es idempotente: se puede
 -- reejecutar sin duplicar nada. Correr después de
 -- crear_recursos_forrajeros_por_periodo.sql y de crear_observaciones_animales.sql

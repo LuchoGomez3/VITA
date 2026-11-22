@@ -1,4 +1,4 @@
-"""Catálogo de alimentos y registros de alimentación (adr-0015).
+"""Catálogo de alimentos y registros de alimentación (adr-0016).
 
 1. Adopta ``alimentos``, que existía en Supabase desde el esquema base sin API,
    sin migración y con RLS activo sin políticas:

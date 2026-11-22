@@ -1,4 +1,4 @@
-"""Garantías de la alimentación que solo Postgres puede probar (adr-0015).
+"""Garantías de la alimentación que solo Postgres puede probar (adr-0016).
 
 El backfill de recursos, los triggers de pertenencia y el RLS sobre
 ``auth.uid()`` no existen en SQLite. La migración y el script espejo se aplican

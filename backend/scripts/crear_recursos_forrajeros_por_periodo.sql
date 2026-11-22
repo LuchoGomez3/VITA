@@ -1,4 +1,4 @@
--- Recurso forrajero del potrero con historial por período (adr-0015).
+-- Recurso forrajero del potrero con historial por período (adr-0016).
 -- Espejo manual de la migración Alembic 20261114_01. Es idempotente: se puede
 -- reejecutar sin duplicar los períodos migrados.
 begin;

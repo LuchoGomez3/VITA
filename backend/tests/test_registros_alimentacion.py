@@ -1,4 +1,4 @@
-"""Tests del catálogo de alimentos y de los registros de alimentación (adr-0015)."""
+"""Tests del catálogo de alimentos y de los registros de alimentación (adr-0016)."""
 
 from datetime import UTC, date, datetime, timedelta
 from uuid import uuid4

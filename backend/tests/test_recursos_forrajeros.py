@@ -1,4 +1,4 @@
-"""Tests del historial de recursos forrajeros de los lotes (adr-0015).
+"""Tests del historial de recursos forrajeros de los lotes (adr-0016).
 
 Cubren el contrato de sync del período (alta idempotente, LWW, 409), el
 aislamiento entre establecimientos y cómo se mantiene

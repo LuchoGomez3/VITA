@@ -1,4 +1,4 @@
-"""Contrato de las migraciones de alimentación (adr-0015).
+"""Contrato de las migraciones de alimentación (adr-0016).
 
 Corre sin Postgres, así que el CI lo ejecuta siempre: verifica que modelo,
 migración y script espejo describan el mismo esquema. El comportamiento real

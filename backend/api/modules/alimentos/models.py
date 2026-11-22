@@ -3,7 +3,7 @@
 La tabla existía en Supabase desde el esquema base, sin API ni políticas. La
 migración ``20261115_02`` la adopta: le suma los campos de sincronización, la
 categoría y el autor, y le pone RLS (ver
-``docs/adr/adr-0015-alimentacion-pastoreo-derivado-y-registros.md``).
+``docs/adr/adr-0016-alimentacion-pastoreo-derivado-y-registros.md``).
 """
 
 from decimal import Decimal

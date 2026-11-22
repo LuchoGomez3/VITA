@@ -3,7 +3,7 @@
 Los nombres repetidos se toleran a propósito: dos dispositivos sin señal pueden
 dar de alta "Maíz partido" a la vez, y rechazar uno con un 409 dejaría rechazados
 también todos los registros de alimentación que lo usan. El cliente evita el
-duplicado mostrando coincidencias mientras se escribe (ver adr-0015).
+duplicado mostrando coincidencias mientras se escribe (ver adr-0016).
 """
 
 from datetime import UTC, datetime

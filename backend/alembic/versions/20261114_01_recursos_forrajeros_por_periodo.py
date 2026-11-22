@@ -1,4 +1,4 @@
-"""Recurso forrajero del potrero con historial por período (adr-0015).
+"""Recurso forrajero del potrero con historial por período (adr-0016).
 
 1. Amplía el catálogo de ``lotes.recurso_forrajero_codigo`` (pasturas, verdeos y
    rastrojos de la zona).
