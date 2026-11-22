@@ -88,8 +88,9 @@ class BrickLotModel extends OfflineFirstWithRestModel {
   )
   final int surfaceTenths;
 
-  /// Código estable del catálogo de recurso forrajero.
-  @Rest(name: 'recurso_forrajero_codigo')
+  /// Recurso forrajero vigente. Lo deriva backend del historial de períodos
+  /// (adr-0015), así que se lee pero no se envía.
+  @Rest(name: 'recurso_forrajero_codigo', ignoreTo: true)
   final String? forageResourceCode;
 
   /// Disponibilidad actual de agua.
@@ -124,6 +125,7 @@ class BrickLotModel extends OfflineFirstWithRestModel {
   BrickLotModel copyWith({
     BrickLotSyncStatus? syncStatus,
     Object? syncErrorCode = _unchangedLotSyncErrorCode,
+    Object? forageResourceCode = _unchangedLotSyncErrorCode,
   }) {
     final nextSyncErrorCode =
         identical(
@@ -139,7 +141,9 @@ class BrickLotModel extends OfflineFirstWithRestModel {
       boundaryJson: boundaryJson,
       geometryMode: geometryMode,
       surfaceTenths: surfaceTenths,
-      forageResourceCode: forageResourceCode,
+      forageResourceCode: identical(forageResourceCode, _unchangedLotSyncErrorCode)
+          ? this.forageResourceCode
+          : forageResourceCode as String?,
       hasWater: hasWater,
       statusCode: statusCode,
       createdAt: createdAt,

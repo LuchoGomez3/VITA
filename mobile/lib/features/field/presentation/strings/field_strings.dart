@@ -82,6 +82,82 @@ abstract final class FieldStrings {
   /// Fila de recurso forrajero.
   static const forageResourceLabel = 'Recurso forrajero';
 
+  /// Etiqueta del recurso vigente en el detalle.
+  static const currentForageLabel = 'Recurso vigente';
+
+  /// Recurso vigente cuando el historial está vacío o cortado.
+  static const noCurrentForage = 'Sin recurso cargado';
+
+  /// Fecha de inicio del recurso vigente.
+  static String forageSince(String date) => 'desde $date';
+
+  /// Acción para cargar un recurso nuevo.
+  static const changeForageCta = 'Cambiar recurso';
+
+  /// Acción cuando todavía no hay ningún recurso.
+  static const addForageCta = 'Cargar recurso';
+
+  /// Título del historial de recursos.
+  static const forageHistoryTitle = 'Historial de recursos';
+
+  /// Historial vacío.
+  static const forageHistoryEmpty =
+      'Todavía no hay recursos cargados. Cargá el primero para saber qué comen los animales en este potrero.';
+
+  /// Error al leer el historial.
+  static const forageHistoryError = 'No se pudo leer el historial de recursos.';
+
+  /// Rango de un período del historial.
+  static String forageRange(String from, String? to) => '$from → ${to ?? 'hoy'}';
+
+  /// Título de la hoja para cargar un recurso.
+  static const newForageTitle = 'Cambiar recurso del potrero';
+
+  /// Título de la hoja para corregir un período.
+  static const editForageTitle = 'Corregir recurso';
+
+  /// Explica cómo se cierra el período anterior.
+  static const newForageHelper = 'El recurso anterior termina el día antes de esta fecha.';
+
+  /// Campo de descripción del recurso.
+  static const forageDescriptionLabel = 'Detalle (opcional)';
+
+  /// Ejemplo de descripción.
+  static const forageDescriptionHint = 'Ej. Alfalfa + festuca';
+
+  /// Campo de fecha de inicio.
+  static const forageStartLabel = 'Desde';
+
+  /// Campo de fecha de corte.
+  static const forageEndLabel = 'Hasta';
+
+  /// Opción para cortar el período sin cargar otro recurso.
+  static const forageHasEndLabel = 'El potrero quedó sin este recurso';
+
+  /// Ejemplo de fecha.
+  static const forageDateHint = 'dd/mm/aaaa';
+
+  /// Ejemplo del selector de recurso en la hoja (ahí es obligatorio).
+  static const forageResourceRequiredHint = 'Seleccioná un recurso';
+
+  /// Recurso obligatorio.
+  static const forageRequiredError = 'Elegí un recurso.';
+
+  /// Confirmación del formulario.
+  static const saveForageCta = 'Guardar recurso';
+
+  /// Borrado de un período.
+  static const deleteForageCta = 'Borrar del historial';
+
+  /// Chip del período vigente.
+  static const currentForageChip = 'Vigente';
+
+  /// Chip de sincronización pendiente.
+  static const pendingSyncChip = 'Pendiente de sincronizar';
+
+  /// Chip de rechazo del servidor.
+  static const rejectedSyncChip = 'Rechazado';
+
   /// Fila de aguada.
   static const waterSourceLabel = 'Aguada';
 

@@ -7,6 +7,9 @@ import 'package:frontend_mayoral/features/field/domain/repositories/lot_animal_r
 import 'package:frontend_mayoral/features/field/domain/repositories/lot_repository.dart';
 
 /// Edita únicamente datos alfanuméricos y conserva la geometría creada.
+///
+/// El recurso forrajero no se edita acá: tiene su propio historial por
+/// períodos (ver `SaveLotForagePeriodUseCase`).
 class UpdateLotDetailsUseCase {
   /// Crea el caso de uso con las fuentes locales necesarias.
   UpdateLotDetailsUseCase({
@@ -28,7 +31,6 @@ class UpdateLotDetailsUseCase {
     required int surfaceTenths,
     required bool hasWater,
     required LotStatus status,
-    String? forageResourceCode,
   }) async {
     final normalizedName = name.trim();
     if (normalizedName.isEmpty || surfaceTenths <= 0 || status == LotStatus.unknown) {
@@ -85,7 +87,6 @@ class UpdateLotDetailsUseCase {
       current.copyWith(
         name: normalizedName,
         surfaceTenths: surfaceTenths,
-        forageResourceCode: forageResourceCode,
         hasWater: hasWater,
         status: status,
         updatedAt: _now().toUtc(),

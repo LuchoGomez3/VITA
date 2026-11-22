@@ -7,7 +7,10 @@ import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/feeding_record_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/food_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_forage_period_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
@@ -69,6 +72,9 @@ PrepareInitialDataSyncUseCase createPrepareInitialDataSyncUseCase({
       animalStore: BrickAnimalStore.instance,
       categoryStore: BrickCategoriaStore.instance,
       lotStore: BrickLotStore.instance,
+      foragePeriodStore: BrickLotForagePeriodStore.instance,
+      foodStore: BrickFoodStore.instance,
+      feedingRecordStore: BrickFeedingRecordStore.instance,
       weighingStore: BrickPesajeStore.instance,
       movementStore: BrickAnimalLotMovementStore.instance,
       syncOperatingExpenseData: operatingExpenseSync.call,
