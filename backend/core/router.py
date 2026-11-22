@@ -11,6 +11,7 @@ from api.modules.categorias.router import router as categorias_router
 from api.modules.equipo.router import router as equipo_router
 from api.modules.establecimientos.router import router as establecimientos_router
 from api.modules.egresos_operativos.router import router as egresos_operativos_router
+from api.modules.eventos_sanitarios.router import router as eventos_sanitarios_router
 from api.modules.lotes.router import router as lotes_router
 from api.modules.movimientos.router import router as movimientos_lotes_router
 from api.modules.observaciones_animales.router import (
@@ -44,6 +45,7 @@ def get_global_router() -> APIRouter:
     router.include_router(categorias_router)
     router.include_router(pesajes_router)
     router.include_router(observaciones_animales_router)
+    router.include_router(eventos_sanitarios_router)
     router.include_router(ventas_router)
     router.include_router(reportes_router)
     return router
