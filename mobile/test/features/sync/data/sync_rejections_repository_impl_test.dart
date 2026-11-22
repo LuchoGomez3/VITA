@@ -62,6 +62,23 @@ void main() {
     await subscription.cancel();
   });
 
+  test('ordena los rechazos de las dos fuentes por fecha', () async {
+    final health = SyncRejectedRecord(
+      localId: 'estudio-1',
+      kind: SyncOperationKind.healthResult,
+      recordedAt: DateTime(2026, 11, 4),
+      errorCode: 'resultado_invalido',
+    );
+    final weighing = _record('pesaje-1');
+    final records = await SyncRejectionsRepositoryImpl(
+      readRejected: () async => [weighing],
+      readAdditional: () async => [health],
+      changes: changes.stream,
+    ).watch().first;
+
+    expect(records, [health, weighing]);
+  });
+
   test('un error de lectura se informa y la próxima lectura se recupera', () async {
     failWith = StateError('sqlite cerrado');
     final emissions = <List<SyncRejectedRecord>>[];

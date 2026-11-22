@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:brick_offline_first/brick_offline_first.dart';
 import 'package:brick_offline_first_with_rest/brick_offline_first_with_rest.dart';
@@ -31,12 +32,18 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     required super.migrations,
     required super.offlineQueueManager,
     required super.reattemptForStatusCodes,
+    required AuthenticatedBackendClient backendClient,
     required StreamController<BackendSyncResult> syncResults,
     required StreamController<void> authRejections,
-  }) : _syncResults = syncResults,
+  }) : _backendClient = backendClient,
+       _syncResults = syncResults,
        _authRejections = authRejections;
 
   static AppBrickRepository? _instance;
+  final AuthenticatedBackendClient _backendClient;
+
+  /// Transporte compartido para stores que reconcilian el envelope completo.
+  GuardedBackendSender get sendGuardedBackendRequest => _backendClient.sendGuarded;
 
   /// Canal interno donde el HTTP client publica resultados de sync del backend.
   ///
@@ -129,6 +136,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     final repository = AppBrickRepository._(
       sqliteProvider: sqliteProvider,
       restProvider: restProvider,
+      backendClient: restClient,
       migrations: appBrickMigrations,
       syncResults: syncResults,
       authRejections: authRejections,
@@ -141,6 +149,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
       reattemptForStatusCodes: const [500, 501, 502, 503, 504],
     );
 
+    await upgradePreMergeHealthDatabase(sqliteProvider);
     // initialize() aplica migraciones de la DB principal y de la cola offline.
     await repository.initialize();
     _instance = repository;
@@ -229,9 +238,10 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   }
 
   /// Lee modelos solo desde SQLite, sin hidratar desde backend.
-  Future<List<TModel>> getLocal<TModel extends OfflineFirstWithRestModel>() {
+  Future<List<TModel>> getLocal<TModel extends OfflineFirstWithRestModel>({Query? query}) {
     return get<TModel>(
       policy: OfflineFirstGetPolicy.localOnly,
+      query: query,
     );
   }
 
@@ -243,6 +253,24 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
   Future<List<BrickQueuedRequest>> queuedRequests() async {
     final rows = await offlineRequestQueue.client.requestManager.unprocessedRequests();
     return rows.map(BrickQueuedRequest.fromQueueRow).toList(growable: false);
+  }
+
+  /// Indica si la cola ya tiene un alta con este UUID, sin exponer su cuerpo.
+  Future<bool> hasQueuedCreate(String resource, String id) async {
+    final rows = await offlineRequestQueue.client.requestManager.unprocessedRequests();
+    for (final row in rows) {
+      final request = BrickQueuedRequest.fromQueueRow(row);
+      final body = row[HTTP_JOBS_BODY_COLUMN];
+      if (request.method != 'POST' || request.path != resource || body is! String) continue;
+      try {
+        final decoded = jsonDecode(body);
+        if (decoded is Map<String, dynamic> && decoded['id'] == id) return true;
+      } on FormatException {
+        // Una solicitud legacy sin JSON identificable no corresponde a este ID.
+        continue;
+      }
+    }
+    return false;
   }
 }
 
@@ -332,5 +360,15 @@ class AppBrickTransaction {
     });
     _notifications[TModel] = _repository._notifyLocalSubscribers<TModel>;
     return model;
+  }
+
+  /// Elimina una fila local y notifica el cambio después del commit.
+  Future<void> delete<TModel extends OfflineFirstWithRestModel>(TModel model) async {
+    final adapter = _repository.sqliteProvider.modelDictionary.adapterFor[TModel]!;
+    await _transaction.delete(adapter.tableName, where: '_brick_id = ?', whereArgs: [model.primaryKey]);
+    _afterCommit.add(() {
+      _repository.memoryCacheProvider.delete<TModel>(model);
+    });
+    _notifications[TModel] = _repository._notifyLocalSubscribers<TModel>;
   }
 }

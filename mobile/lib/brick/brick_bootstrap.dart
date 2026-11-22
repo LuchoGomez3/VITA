@@ -4,6 +4,7 @@ import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.da
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/feeding_record_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/food_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/health_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_forage_period_brick_store.dart';
@@ -47,6 +48,7 @@ class BrickBootstrap {
       animalStore: BrickAnimalStore.instance,
     );
     BrickCategoriaStore.configure(AppBrickRepository.instance);
+    HealthBrickStore.instance = HealthBrickStore(AppBrickRepository.instance);
     BrickPesajeStore.configure(AppBrickRepository.instance);
     BrickLotStore.configure(AppBrickRepository.instance);
     BrickLotForagePeriodStore.configure(

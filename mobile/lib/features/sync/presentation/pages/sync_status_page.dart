@@ -33,10 +33,9 @@ class _SyncStatusView extends StatelessWidget {
   const _SyncStatusView();
 
   Future<void> _synchronizeNow(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
     final synchronized = await context.read<SyncQueueCubit>().synchronizeNow();
-    if (!synchronized) {
-      messenger.showSnackBar(const SnackBar(content: Text(SyncStatusStrings.manualSyncFailed)));
+    if (context.mounted && !synchronized) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(SyncStatusStrings.manualSyncFailed)));
     }
   }
 

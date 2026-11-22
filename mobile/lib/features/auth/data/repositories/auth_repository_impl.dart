@@ -301,7 +301,7 @@ class AuthRepositoryImpl implements AuthRepository {
       accessTokenExpiresAt: session.accessTokenExpiresAt,
     );
     if (newSession) {
-      _tokenProvider.startSession(value);
+      _tokenProvider.startSession(value, userId: session.user.id);
     } else {
       _tokenProvider.session = value;
     }

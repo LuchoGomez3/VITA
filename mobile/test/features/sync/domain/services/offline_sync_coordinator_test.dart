@@ -9,6 +9,55 @@ import 'package:frontend_mayoral/features/sync/domain/services/offline_sync_coor
 import 'package:frontend_mayoral/features/sync/domain/use_cases/prepare_initial_data_sync_use_case.dart';
 
 void main() {
+  test('a manual sync waits for its additional result and reports a failure', () async {
+    final repository = _DeferredSyncRepository();
+    final coordinator = OfflineSyncCoordinator(
+      prepareInitialDataSyncUseCase: PrepareInitialDataSyncUseCase(repository),
+    );
+    addTearDown(coordinator.dispose);
+    final additional = Completer<bool>();
+    var started = false;
+    var finished = false;
+    final manual = coordinator
+        .synchronizeManually(() {
+          started = true;
+          return additional.future;
+        })
+        .then((value) {
+          finished = true;
+          return value;
+        });
+
+    expect(started, isFalse);
+    repository.completer.complete(Result.success(PostAuthenticationSummary(establishmentIds: [])));
+    await Future<void>.delayed(Duration.zero);
+    expect(started, isTrue);
+    expect(finished, isFalse);
+    additional.complete(false);
+    expect(await manual, isFalse);
+    expect(await coordinator.synchronizeManually(() async => true), isTrue);
+  });
+
+  test('a manual sync from a replaced session does not start additional sync', () async {
+    final repository = _DeferredSyncRepository();
+    var identity = 1;
+    final coordinator = OfflineSyncCoordinator(
+      prepareInitialDataSyncUseCase: PrepareInitialDataSyncUseCase(repository),
+      sessionIdentity: () => identity,
+    );
+    addTearDown(coordinator.dispose);
+    var started = false;
+    final manual = coordinator.synchronizeManually(() async {
+      started = true;
+      return true;
+    });
+
+    identity++;
+    repository.completer.complete(Result.success(PostAuthenticationSummary(establishmentIds: [])));
+    expect(await manual, isFalse);
+    expect(started, isFalse);
+  });
+
   test('shares a concurrent sync and publishes its result once', () async {
     final repository = _DeferredSyncRepository();
     final coordinator = OfflineSyncCoordinator(

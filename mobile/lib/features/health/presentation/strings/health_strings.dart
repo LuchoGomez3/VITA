@@ -1,7 +1,10 @@
 /// Textos centralizados del flujo de sanidad.
 abstract final class HealthStrings {
-  /// Título del establecimiento mostrado en el header.
-  static const establishmentTitle = 'La Sirena';
+  /// Identifica el tablero con datos de demostración.
+  static const exampleOverview = 'Vista de ejemplo';
+
+  /// Mensaje de una acción sobre una tarjeta de ejemplo.
+  static const exampleMessage = 'Esta tarjeta muestra datos de ejemplo.';
 
   /// Título de la pantalla.
   static const title = 'Sanidad';
@@ -29,9 +32,6 @@ abstract final class HealthStrings {
 
   /// Sufijo de cantidad de animales.
   static const animalCountSuffix = 'animales';
-
-  /// Botón flotante para aplicar una vacunación.
-  static const applyFab = '+ Aplicar';
 
   /// Título de la sección de tratamientos en curso.
   static String treatmentsInProgressTitle(int count) => 'Tratamientos en curso · $count';

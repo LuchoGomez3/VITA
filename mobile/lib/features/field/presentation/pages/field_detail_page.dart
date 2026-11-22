@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
@@ -186,6 +188,12 @@ class _LotDetailBody extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         if (state.animals.isNotEmpty)
+          OutlinedButton.icon(
+            onPressed: state.isSaving ? null : () => _registerHealth(context, lot.establishmentId),
+            label: const Text(HealthRegistrationStrings.register),
+            icon: const Icon(Icons.vaccines_outlined),
+          ),
+        if (state.animals.isNotEmpty)
           switch (state.destinationsState) {
             ResultError<List<Lot>>(:final error) => Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -260,6 +268,16 @@ class _LotDetailBody extends StatelessWidget {
         await cubit.deleteForagePeriod(existing);
       case _:
         return;
+    }
+  }
+
+  Future<void> _registerHealth(BuildContext context, String establishmentId) async {
+    final saved = await context.push<bool>(
+      AppRoutes.healthRegistration(establishmentId: establishmentId),
+      extra: [for (final animal in state.animals) animal.id],
+    );
+    if (context.mounted && (saved ?? false)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(HealthRegistrationStrings.saved)));
     }
   }
 

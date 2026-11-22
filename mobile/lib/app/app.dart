@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:frontend_mayoral/app/composition/health_composition.dart';
 import 'package:frontend_mayoral/app/config/config.dart';
 import 'package:frontend_mayoral/app/router/app_router.dart';
 import 'package:frontend_mayoral/app/theme/app_theme.dart';
@@ -34,6 +36,9 @@ class _FrontendMayoralAppState extends State<FrontendMayoralApp> {
   late final AuthSessionCubit _authSessionCubit;
   late final AuthRouterRefreshNotifier _routerRefreshNotifier;
   late final GoRouter _router;
+  StreamSubscription<AuthSessionState>? _healthSession;
+  StreamSubscription<List<ConnectivityResult>>? _healthConnection;
+  StreamSubscription<Type>? _healthAnimals;
 
   @override
   void initState() {
@@ -50,11 +55,36 @@ class _FrontendMayoralAppState extends State<FrontendMayoralApp> {
         ),
       ),
     );
+    if (widget._createAuthSessionCubit == null) {
+      _healthSession = _authSessionCubit.stream.listen(_onHealthSession);
+      _healthAnimals = watchHealthAnimalDependencies();
+    }
     unawaited(_authSessionCubit.restoreSession());
+  }
+
+  void _onHealthSession(AuthSessionState state) {
+    setHealthSessionActive(active: state is AuthSessionAuthenticated);
+    if (state is! AuthSessionAuthenticated) {
+      unawaited(_healthConnection?.cancel());
+      _healthConnection = null;
+      return;
+    }
+    _healthConnection ??= Connectivity().onConnectivityChanged.listen((results) {
+      if (results.any((value) => value != ConnectivityResult.none)) {
+        unawaited(requestHealthSync());
+      } else {
+        pauseHealthSync();
+      }
+    });
+    unawaited(requestHealthSync());
   }
 
   @override
   void dispose() {
+    unawaited(_healthSession?.cancel());
+    unawaited(_healthConnection?.cancel());
+    unawaited(_healthAnimals?.cancel());
+    disposeHealthSync();
     _router.dispose();
     _routerRefreshNotifier.dispose();
     unawaited(_authSessionCubit.close());

@@ -39,6 +39,12 @@ enum SyncOperationKind {
   /// Venta de hacienda, con sus cobros.
   livestockSale,
 
+  /// Registro sanitario para uno o varios animales.
+  healthEvent,
+
+  /// Primer resultado informado de un estudio sanitario.
+  healthResult,
+
   /// Recurso sin traducción conocida; se muestra igual para no ocultar nada.
   other,
 }

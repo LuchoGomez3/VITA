@@ -33,6 +33,16 @@ class OfflineSyncCoordinator {
   /// Resultados de cada ciclo terminado, exitoso o fallido.
   Stream<Result<PostAuthenticationSummary>> get results => _results.stream;
 
+  /// Espera la preparación general y la sincronización adicional del botón manual.
+  Future<bool> synchronizeManually(Future<bool> Function() synchronizeAdditional) async {
+    if (_isDisposed) return false;
+    final session = _sessionIdentity();
+    final prepared = await synchronize();
+    if (_isDisposed || _sessionIdentity() != session) return false;
+    final additional = await synchronizeAdditional();
+    return !_isDisposed && _sessionIdentity() == session && prepared is Success && additional;
+  }
+
   /// Ejecuta o reutiliza el ciclo de sincronizacion que ya esta en curso.
   Future<Result<PostAuthenticationSummary>> synchronize() {
     if (_isDisposed) {

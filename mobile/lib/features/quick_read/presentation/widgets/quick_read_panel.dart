@@ -3,15 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
+import 'package:frontend_mayoral/core/rfid/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/hid_rfid_keyboard_listener.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/quick_read/domain/entities/quick_read_item.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/cubit/quick_read_cubit.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/strings/quick_read_strings.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/widgets/quick_read_cards.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/widgets/quick_read_tiles.dart';
-import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
-import 'package:frontend_mayoral/features/rfid_scan/presentation/widgets/hid_rfid_keyboard_listener.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/widgets/weighing_method_sheet.dart';
 import 'package:go_router/go_router.dart';
 
@@ -56,6 +57,7 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
 
   /// Cambia al volver de otra pantalla para que el bastón recupere el foco.
   int _listenerGeneration = 0;
+  bool _openingHealth = false;
 
   QuickReadCubit get _cubit => context.read<QuickReadCubit>();
 
@@ -106,7 +108,7 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
                   child: BlocBuilder<QuickReadCubit, QuickReadState>(
                     builder: (context, state) => HidRfidKeyboardListener(
                       key: ValueKey(_listenerGeneration),
-                      isListening: !state.isManualEntry,
+                      isListening: !state.isManualEntry && !_openingHealth,
                       onKeyEvent: _readingSource.handleKeyEvent,
                       child: _content(state),
                     ),
@@ -154,6 +156,12 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
                 const SizedBox(height: AppSpacing.sm),
                 body,
                 const SizedBox(height: AppSpacing.sm),
+                if (items.isEmpty)
+                  OutlinedButton.icon(
+                    onPressed: _openingHealth ? null : () => _health(const [], capture: true),
+                    icon: const Icon(Icons.vaccines_outlined),
+                    label: const Text(HealthRegistrationStrings.capture),
+                  ),
                 _manualEntry(state),
               ],
             ),
@@ -233,10 +241,11 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
                   : QuickReadStrings.lastWeight(formatQuickReadWeight(weight)),
               onTap: () => _weigh(animal),
             ),
-            const QuickActionTile(
+            QuickActionTile(
               icon: Icons.vaccines_outlined,
-              label: QuickReadStrings.registerTreatment,
-              subtitle: QuickReadStrings.comingSoon,
+              label: HealthRegistrationStrings.register,
+              subtitle: HealthRegistrationStrings.selected(1),
+              onTap: () => _health([animal.animal.id]),
             ),
             QuickActionTile(
               icon: Icons.swap_horiz,
@@ -361,10 +370,11 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
           const SizedBox(height: AppSpacing.xs),
           QuickActionGrid(
             children: [
-              const QuickActionTile(
+              QuickActionTile(
                 icon: Icons.vaccines_outlined,
-                label: QuickReadStrings.registerTreatment,
-                subtitle: QuickReadStrings.comingSoon,
+                label: HealthRegistrationStrings.register,
+                subtitle: HealthRegistrationStrings.selected(registered.length),
+                onTap: () => _health([for (final item in registered) item.animal.animal.id]),
               ),
               QuickActionTile(
                 icon: Icons.swap_horiz,
@@ -442,6 +452,30 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
       currentWeightKg: animal.lastWeightKg?.round() ?? 0,
     ));
     await _afterAction();
+  }
+
+  Future<void> _health(List<String> animalIds, {bool capture = false}) async {
+    if (_openingHealth) return;
+    setState(() => _openingHealth = true);
+    try {
+      await _readingSource.stopReading();
+      if (!mounted) return;
+      final saved = await context.push<bool>(
+        AppRoutes.healthRegistration(establishmentId: _cubit.state.establishmentId, capture: capture),
+        extra: animalIds,
+      );
+      if (mounted && (saved ?? false)) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(HealthRegistrationStrings.saved)));
+      }
+    } finally {
+      if (mounted) {
+        unawaited(_readingSource.startReading());
+        setState(() {
+          _openingHealth = false;
+          _listenerGeneration++;
+        });
+      }
+    }
   }
 
   Future<void> _move(List<String> animalIds) async {

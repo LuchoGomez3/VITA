@@ -18,6 +18,7 @@ part '20261117190838.migration.dart';
 part '20261117194823.migration.dart';
 part '20261122000100.migration.dart';
 part '20261122000200.migration.dart';
+part '20261122234613.migration.dart';
 
 /// All intelligently-generated migrations from all `@Migratable` classes on disk
 final migrations = <Migration>{
@@ -38,11 +39,12 @@ final migrations = <Migration>{
   const Migration20261117194823(),
   const Migration20261122000100(),
   const Migration20261122000200(),
+  const Migration20261122234613(),
 };
 
 /// A consumable database structure including the latest generated migration.
 final schema = Schema(
-  20261122000200,
+  20261122234613,
   generatorVersion: 1,
   tables: <SchemaTable>{
     SchemaTable(
@@ -77,6 +79,7 @@ final schema = Schema(
         SchemaColumn('productive_status_changed_at', Column.datetime),
         SchemaColumn('sync_status', Column.integer),
         SchemaColumn('sync_error_code', Column.varchar),
+        SchemaColumn('local_registration_author_id', Column.varchar),
         SchemaColumn('created_at', Column.datetime),
         SchemaColumn('updated_at', Column.datetime),
         SchemaColumn('deleted_at', Column.datetime),
@@ -180,6 +183,59 @@ final schema = Schema(
         SchemaColumn('deleted_at', Column.datetime),
         SchemaColumn('sync_status', Column.integer),
         SchemaColumn('sync_error_code', Column.varchar),
+      },
+      indices: <SchemaIndex>{},
+    ),
+    SchemaTable(
+      'BrickHealthCatalogModel',
+      columns: <SchemaColumn>{
+        SchemaColumn(
+          '_brick_id',
+          Column.integer,
+          autoincrement: true,
+          nullable: false,
+          isPrimaryKey: true,
+        ),
+        SchemaColumn('establishment_id', Column.varchar, unique: true),
+        SchemaColumn('payload', Column.varchar),
+        SchemaColumn('cursor', Column.varchar),
+      },
+      indices: <SchemaIndex>{},
+    ),
+    SchemaTable(
+      'BrickHealthEventModel',
+      columns: <SchemaColumn>{
+        SchemaColumn(
+          '_brick_id',
+          Column.integer,
+          autoincrement: true,
+          nullable: false,
+          isPrimaryKey: true,
+        ),
+        SchemaColumn('local_id', Column.varchar, unique: true),
+        SchemaColumn('establishment_id', Column.varchar),
+        SchemaColumn('animal_id', Column.varchar),
+        SchemaColumn('payload', Column.varchar),
+      },
+      indices: <SchemaIndex>{},
+    ),
+    SchemaTable(
+      'BrickHealthOperationModel',
+      columns: <SchemaColumn>{
+        SchemaColumn(
+          '_brick_id',
+          Column.integer,
+          autoincrement: true,
+          nullable: false,
+          isPrimaryKey: true,
+        ),
+        SchemaColumn('local_id', Column.varchar, unique: true),
+        SchemaColumn('establishment_id', Column.varchar),
+        SchemaColumn('author_id', Column.varchar),
+        SchemaColumn('created_at', Column.datetime),
+        SchemaColumn('payload', Column.varchar),
+        SchemaColumn('result_event_id', Column.varchar),
+        SchemaColumn('rejection', Column.varchar),
       },
       indices: <SchemaIndex>{},
     ),

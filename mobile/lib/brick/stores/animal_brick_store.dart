@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:brick_offline_first/brick_offline_first.dart';
 import 'package:brick_rest/brick_rest.dart';
+import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/mappers/livestock_sale_productive_status_mapper.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
@@ -43,12 +44,21 @@ abstract class AnimalBrickStore {
   Future<void> retryRejectedAnimal(String animalId);
 }
 
+/// Consultas locales de selección dentro de un establecimiento.
+abstract interface class AnimalSelectionStore {
+  /// Lee las versiones vigentes de los UUID solicitados, incluidas las bajas.
+  Future<List<BrickAnimalModel>> getLocalAnimalsByIds(String establishmentId, Set<String> ids);
+
+  /// Devuelve los candidatos por RFID o caravana visual para validar la selección.
+  Future<List<BrickAnimalModel>> findLocalAnimalsByTag(String establishmentId, String tag, {required bool electronic});
+}
+
 /// Store Brick especifico para operaciones de animales.
 ///
 /// Este store contiene logica propia de `BrickAnimalModel`: guardar primero en
 /// SQLite, encolar el upsert remoto y aplicar los resultados de sync que llegan
 /// desde el cliente HTTP autenticado.
-class BrickAnimalStore implements AnimalBrickStore {
+class BrickAnimalStore implements AnimalBrickStore, AnimalSelectionStore {
   BrickAnimalStore._(this._repository) {
     _syncSubscription = _repository.syncResults.listen(
       applyAnimalSyncResult,
@@ -58,6 +68,7 @@ class BrickAnimalStore implements AnimalBrickStore {
   static BrickAnimalStore? _instance;
 
   final AppBrickRepository _repository;
+  final _registrationsEnqueuing = <String>{};
   late final StreamSubscription<BackendSyncResult> _syncSubscription;
 
   /// Instancia compartida configurada durante el bootstrap de Brick.
@@ -80,11 +91,13 @@ class BrickAnimalStore implements AnimalBrickStore {
 
   @override
   Future<BrickAnimalModel> upsertAnimal(BrickAnimalModel animal) async {
-    final savedAnimal = await _repository.upsertLocal<BrickAnimalModel>(animal);
+    final savedAnimal = await _repository.upsertLocal<BrickAnimalModel>(
+      animal.copyWith(localRegistrationAuthorId: SessionBackendAccessTokenProvider.instance.userId),
+    );
 
     // El alta ya quedo guardada localmente. El request remoto corre en segundo
     // plano para que la UX siga siendo offline-first y no espere al backend.
-    unawaited(_repository.enqueueRemoteUpsert<BrickAnimalModel>(savedAnimal));
+    unawaited(_enqueueRegistration(savedAnimal));
 
     return savedAnimal;
   }
@@ -96,15 +109,8 @@ class BrickAnimalStore implements AnimalBrickStore {
 
   @override
   Future<BrickAnimalModel?> getAnimalById(String animalId) async {
-    final storedAnimals = await getLocalAnimals();
-
-    for (final animal in storedAnimals) {
-      if (animal.localId == animalId && animal.deletedAt == null) {
-        return animal;
-      }
-    }
-
-    return null;
+    final rows = await _repository.getLocal<BrickAnimalModel>(query: Query.where('localId', animalId));
+    return _preferredAnimals(rows).where((animal) => animal.deletedAt == null).firstOrNull;
   }
 
   @override
@@ -148,8 +154,60 @@ class BrickAnimalStore implements AnimalBrickStore {
   }
 
   @override
-  Future<List<BrickAnimalModel>> getLocalAnimals() async {
-    final storedAnimals = await _repository.getLocal<BrickAnimalModel>();
+  Future<List<BrickAnimalModel>> getLocalAnimals() async =>
+      _preferredAnimals(await _repository.getLocal<BrickAnimalModel>());
+
+  @override
+  Future<List<BrickAnimalModel>> getLocalAnimalsByIds(String establishmentId, Set<String> ids) async {
+    const batchSize = 500;
+    final values = ids.toList();
+    final rows = <BrickAnimalModel>[];
+    for (var offset = 0; offset < values.length; offset += batchSize) {
+      rows.addAll(
+        await _repository.getLocal<BrickAnimalModel>(
+          query: Query(
+            where: [
+              const Where('establishmentId').isExactly(establishmentId),
+              const Where('localId').isIn(values.skip(offset).take(batchSize).toList()),
+            ],
+          ),
+        ),
+      );
+    }
+    return _preferredAnimals(rows);
+  }
+
+  @override
+  Future<List<BrickAnimalModel>> findLocalAnimalsByTag(
+    String establishmentId,
+    String tag, {
+    required bool electronic,
+  }) async {
+    final value = tag.trim();
+    if (value.isEmpty) return const [];
+    final normalized = electronic ? value : value.toUpperCase();
+    // SQLite UPPER solo convierte ASCII. Las caravanas legacy con Unicode
+    // se comparan con la misma normalización Dart que el resto.
+    final condition = electronic
+        ? 'rfid_tag_number = ?'
+        : "(UPPER(TRIM(visual_tag)) = ? OR visual_tag GLOB '*[^ -~]*')";
+    final candidates = await _repository.sqliteProvider.rawQuery(
+      'SELECT DISTINCT local_id FROM BrickAnimalModel WHERE establishment_id = ? AND $condition',
+      [establishmentId, normalized],
+    );
+    // La versión preferida puede tener otra caravana. Elegirla antes de
+    // comparar evita que una fila legacy coincidente oculte el estado vigente.
+    final rows = await getLocalAnimalsByIds(establishmentId, {
+      for (final row in candidates) row['local_id']! as String,
+    });
+    return rows
+        .where(
+          (animal) => electronic ? animal.rfidTagNumber == value : animal.visualTag.trim().toUpperCase() == normalized,
+        )
+        .toList();
+  }
+
+  List<BrickAnimalModel> _preferredAnimals(Iterable<BrickAnimalModel> storedAnimals) {
     final animalsById = <String, BrickAnimalModel>{};
 
     // Las versiones antiguas del pull podian insertar varias filas con el mismo
@@ -286,7 +344,48 @@ class BrickAnimalStore implements AnimalBrickStore {
       syncErrorCode: null,
     );
     final savedAnimal = await _repository.upsertLocal<BrickAnimalModel>(pendingAnimal);
-    await _repository.enqueueRemoteUpsert<BrickAnimalModel>(savedAnimal);
+    await _enqueueRegistration(savedAnimal);
+  }
+
+  Future<void> _enqueueRegistration(BrickAnimalModel animal) async {
+    if (!_registrationsEnqueuing.add(animal.localId)) return;
+    try {
+      await _repository.enqueueRemoteUpsert(animal);
+    } finally {
+      _registrationsEnqueuing.remove(animal.localId);
+    }
+  }
+
+  /// Prepara un alta interrumpida que todavía no tiene otro envío pendiente.
+  Future<String?> recoverableRegistrationBody(BrickAnimalModel animal, String authorId) async {
+    if (animal.localRegistrationAuthorId != authorId ||
+        animal.syncStatus != BrickAnimalSyncStatus.pending ||
+        _registrationsEnqueuing.contains(animal.localId) ||
+        await _repository.hasQueuedCreate(BrickAnimalRequestTransformer.animalsPath, animal.localId)) {
+      return null;
+    }
+    final adapter = _repository.remoteProvider.modelDictionary.adapterFor[BrickAnimalModel]!;
+    return jsonEncode(await adapter.toRest(animal, provider: _repository.remoteProvider, repository: _repository));
+  }
+
+  /// Marca un alta recuperada desde un envío protegido por la sesión actual.
+  Future<void> reconcileRecoveredRegistration(
+    BrickAnimalModel animal, {
+    required String? errorCode,
+    required void Function() requireSession,
+  }) async {
+    final latest = await getAnimalById(animal.localId);
+    if (latest == null || latest.syncStatus != BrickAnimalSyncStatus.pending) return;
+    await _repository.runLocalTransaction((transaction) async {
+      requireSession();
+      await transaction.upsert(
+        latest.copyWith(
+          syncStatus: errorCode == null ? BrickAnimalSyncStatus.synchronized : BrickAnimalSyncStatus.rejected,
+          syncErrorCode: errorCode,
+        ),
+      );
+      requireSession();
+    });
   }
 
   BrickAnimalModel _preferredAnimal(

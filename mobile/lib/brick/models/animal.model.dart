@@ -171,6 +171,7 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
     this.productiveStatusChangedAt,
     this.syncStatus = BrickAnimalSyncStatus.pending,
     this.syncErrorCode,
+    this.localRegistrationAuthorId,
   });
 
   /// UUID generado por mobile. Viaja al backend como `id`.
@@ -324,6 +325,10 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
   @Rest(ignore: true)
   final String? syncErrorCode;
 
+  /// Cuenta propietaria del alta local, usada para recuperar envíos pendientes.
+  @Rest(ignore: true)
+  final String? localRegistrationAuthorId;
+
   /// Timestamp de creacion generado por mobile para offline-first.
   final DateTime createdAt;
 
@@ -346,6 +351,7 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
     String? lotName,
     BrickAnimalProductiveStatus? productiveStatus,
     Object? productiveStatusChangedAt = _unchangedProductiveStatusChangedAt,
+    String? localRegistrationAuthorId,
   }) {
     final nextSyncErrorCode =
         identical(
@@ -388,6 +394,7 @@ class BrickAnimalModel extends OfflineFirstWithRestModel {
       productiveStatus: productiveStatus ?? this.productiveStatus,
       productiveStatusChangedAt: nextProductiveStatusChangedAt,
       syncErrorCode: nextSyncErrorCode,
+      localRegistrationAuthorId: localRegistrationAuthorId ?? this.localRegistrationAuthorId,
     )..primaryKey = primaryKey;
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
+import 'package:frontend_mayoral/core/rfid/hid_rfid_reading_source.dart';
 
 void main() {
   group('HidRfidReadingSource', () {

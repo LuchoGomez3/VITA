@@ -152,6 +152,19 @@ class AppRoutes {
   /// Ruta de la pantalla de aplicar vacunación.
   static const applyVaccination = '/sanidad/aplicar-vacunacion';
 
+  /// Ruta de carga del primer resultado de un estudio.
+  static const healthResult = '/sanidad/resultado';
+
+  /// Abre el formulario común con el contexto que conoce el acceso.
+  static String healthRegistration({String? establishmentId, String? animalId, bool capture = false}) => Uri(
+    path: applyVaccination,
+    queryParameters: {
+      'establecimiento': ?establishmentId,
+      'animal': ?animalId,
+      if (capture) 'manga': '1',
+    },
+  ).toString();
+
   /// Ruta del mapa de potreros.
   static const field = '/campo';
 

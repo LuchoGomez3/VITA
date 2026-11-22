@@ -61,6 +61,7 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
   DateTime? _accessTokenExpiresAt;
   Future<BackendTokenSession?>? _refreshInFlight;
   int _sessionGeneration = 0;
+  String? _userId;
   final Set<Future<void>> _pendingWrites = {};
   final _authRejections = StreamController<void>.broadcast(sync: true);
 
@@ -86,9 +87,13 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
   /// Cambia al cerrar o iniciar sesión, pero permanece al renovar el JWT.
   int get sessionGeneration => _sessionGeneration;
 
+  /// Identidad propietaria de la sesión actual en este dispositivo.
+  String? get userId => _userId;
+
   /// Inicia una identidad nueva aunque hubiera otra sesión en memoria.
-  void startSession(BackendTokenSession value) {
+  void startSession(BackendTokenSession value, {String? userId}) {
     if (_accessToken != null) _sessionGeneration++;
+    _userId = userId;
     session = value;
   }
 
@@ -134,6 +139,7 @@ class SessionBackendAccessTokenProvider implements RefreshableBackendAccessToken
   /// Elimina el token de la sesion local.
   void clearAccessToken() {
     _sessionGeneration++;
+    _userId = null;
     _accessToken = null;
     _refreshToken = null;
     _accessTokenExpiresAt = null;

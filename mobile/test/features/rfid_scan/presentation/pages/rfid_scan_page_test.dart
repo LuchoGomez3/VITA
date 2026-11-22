@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
-import 'package:frontend_mayoral/features/rfid_scan/data/datasources/hid_rfid_reading_source.dart';
+import 'package:frontend_mayoral/core/rfid/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/entities/identified_animal.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/repositories/rfid_animal_lookup_repository.dart';
 import 'package:frontend_mayoral/features/rfid_scan/domain/use_cases/find_animal_by_rfid_use_case.dart';

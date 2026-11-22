@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:frontend_mayoral/app/composition/health_composition.dart';
 import 'package:frontend_mayoral/app/config/config.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
@@ -13,7 +14,6 @@ import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_forage_period_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
-import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
 import 'package:frontend_mayoral/features/sync/data/datasources/brick_rejected_records_reader.dart';
@@ -80,6 +80,7 @@ PrepareInitialDataSyncUseCase createPrepareInitialDataSyncUseCase({
       movementStore: BrickAnimalLotMovementStore.instance,
       syncOperatingExpenseData: operatingExpenseSync.call,
       syncLivestockSaleData: BrickLivestockSaleStore.instance.pushPendingSales,
+      onPrepared: () => unawaited(requestHealthSync()),
       sessionIdentity: () => SessionBackendAccessTokenProvider.instance.sessionGeneration,
       persistSessionData: SessionBackendAccessTokenProvider.instance.persistSessionData,
     ),
@@ -109,16 +110,25 @@ SyncQueueCubit createSyncStatusCubit() => _createCubit(includeActivity: true);
 
 SyncQueueCubit _createCubit({required bool includeActivity}) {
   final brick = AppBrickRepository.instance;
+  final healthActivity = createHealthSyncActivity();
   Stream<void> changes() => _mergeVoid([brick.localChanges, brick.syncResults]);
   return SyncQueueCubit(
-    repository: SyncQueueRepositoryImpl(readQueue: brick.queuedRequests, changes: changes()),
+    repository: SyncQueueRepositoryImpl(
+      readQueue: brick.queuedRequests,
+      changes: changes(),
+      readAdditionalOperations: healthActivity.readPending,
+    ),
     connectivityChanges: connectivityStatus(
       check: Connectivity().checkConnectivity,
       changes: Connectivity().onConnectivityChanged,
     ),
-    synchronizeNow: () async => await createOfflineSyncCoordinator().synchronize() is Success,
+    synchronizeNow: () => createOfflineSyncCoordinator().synchronizeManually(synchronizeHealthNow),
     rejections: includeActivity
-        ? SyncRejectionsRepositoryImpl(readRejected: BrickRejectedRecordsReader(brick).read, changes: changes())
+        ? SyncRejectionsRepositoryImpl(
+            readRejected: BrickRejectedRecordsReader(brick).read,
+            readAdditional: healthActivity.readRejected,
+            changes: changes(),
+          )
         : null,
     history: includeActivity ? _historyRecorder : null,
   );

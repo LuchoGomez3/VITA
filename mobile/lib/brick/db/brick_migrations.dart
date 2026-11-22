@@ -1,7 +1,11 @@
+import 'package:brick_sqlite/brick_sqlite.dart';
 import 'package:brick_sqlite/db.dart';
 import 'package:frontend_mayoral/brick/db/schema.g.dart' as generated;
 
 const _livestockSaleMigrationVersion = 20261122000100;
+const _preMergeHealthVersion = 20261120223303;
+const _lastSharedVersion = 20261015133521;
+const _healthMigrationVersion = 20261122234613;
 
 /// Migraciones ejecutadas por la aplicacion, con compatibilidad entre ramas.
 ///
@@ -16,6 +20,25 @@ Set<Migration> get appBrickMigrations => generated.migrations
           : migration,
     )
     .toSet();
+
+/// Integra las migraciones omitidas por una instalación anterior de Sanidad.
+Future<void> upgradePreMergeHealthDatabase(SqliteProvider sqliteProvider) async {
+  if (await sqliteProvider.lastMigrationVersion() != _preMergeHealthVersion) return;
+
+  final migrations = MigrationManager(appBrickMigrations).migrationsSince(_lastSharedVersion);
+  await sqliteProvider.transaction((transaction) async {
+    for (final migration in migrations.takeWhile((migration) => migration.version <= _healthMigrationVersion)) {
+      if (migration.version != _healthMigrationVersion) {
+        for (final command in migration.up) {
+          if (command.statement case final statement?) await transaction.execute(statement);
+        }
+      }
+      // Brick registra estas versiones en esta tabla. Sanidad ya existe y se
+      // conserva. SQLite confirma el esquema y las versiones juntos.
+      await transaction.insert('MigrationVersions', {'version': migration.version});
+    }
+  });
+}
 
 class _LivestockSaleCompatibilityMigration extends Migration {
   const _LivestockSaleCompatibilityMigration()
