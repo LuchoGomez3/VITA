@@ -15,6 +15,12 @@ abstract final class HealthRegistrationStrings {
   /// Selector de producto.
   static const product = 'Producto';
 
+  /// Estado inicial de un selector del formulario.
+  static const selectOption = 'Seleccioná una opción';
+
+  /// Agrupa los datos del producto y su aplicación.
+  static const applicationDetails = 'Datos de aplicación';
+
   /// Dato de administración.
   static const dose = 'Dosis';
 
@@ -48,6 +54,9 @@ abstract final class HealthRegistrationStrings {
   /// Identificador por animal.
   static const sampleReference = 'Referencia de muestra (opcional)';
 
+  /// Referencia de muestra que ya se registró.
+  static const recordedSampleReference = 'Referencia de muestra';
+
   /// Persona responsable de la práctica.
   static const responsible = 'Responsable';
 
@@ -56,6 +65,9 @@ abstract final class HealthRegistrationStrings {
 
   /// Notas adicionales.
   static const notes = 'Observaciones (opcional)';
+
+  /// Observaciones guardadas en el historial.
+  static const recordedNotes = 'Observaciones';
 
   /// Confirmación de la selección.
   static const confirm = 'Confirmar registro';

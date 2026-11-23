@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
+import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
+import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
@@ -53,7 +55,7 @@ class _AnimalHealthTabState extends State<AnimalHealthTab> {
         final events = snapshot.data;
         if (events == null) return const Center(child: CircularProgressIndicator());
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           itemCount: events.length + (events.isEmpty ? 2 : 1),
           itemBuilder: (context, index) {
             if (index == 0) {
@@ -65,7 +67,7 @@ class _AnimalHealthTabState extends State<AnimalHealthTab> {
             }
             if (events.isEmpty) {
               return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
                 child: Text(HealthRegistrationStrings.emptyHistory),
               );
             }
@@ -127,45 +129,55 @@ class _HealthEventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = MaterialLocalizations.of(context);
-    final date = localizations.formatCompactDate(event.occurredAt.toLocal());
+    final date = DateDisplayFormatter.shortDate(event.occurredAt.toLocal());
     final isStudy = event.practice.kind == HealthPracticeKind.sampling;
-    final resultStatus = _status(event.resultSyncStatus);
-    final syncStatus = _status(event.syncStatus);
     final result = event.result;
     return Card(
-      margin: const EdgeInsets.only(top: 12),
+      margin: const EdgeInsets.only(top: AppSpacing.sm),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(event.practice.name, style: Theme.of(context).textTheme.titleMedium),
-            Text('$date · ${event.responsible}'),
-            switch (event.details) {
-              final HealthApplication details => Text(
-                '${details.productName} · ${details.dose} ${details.unit} · ${details.route}',
-              ),
-              final HealthObservation details => Text(details.description),
-            },
-            if (event.details case HealthApplication(:final batch?))
-              Text('${HealthRegistrationStrings.recordedBatch} · $batch'),
-            if (event.details case HealthApplication(:final expirationDate?))
-              Text(
-                '${HealthRegistrationStrings.recordedExpiration} · ${localizations.formatCompactDate(expirationDate)}',
-              ),
-            if (event.details case HealthObservation(:final sampleType?)) Text(sampleType),
-            if (event.recipient.sampleReference case final reference?) Text(reference),
-            if (event.notes case final notes?) Text(notes),
-            if (syncStatus != null) Text(syncStatus),
+            Text(event.practice.name, style: AppTypography.pageBodyTitle),
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xxs),
+              child: Text('$date · ${event.responsible}', style: AppTypography.formFieldHelper),
+            ),
+            const Divider(height: AppSpacing.lg),
+            if (event.details case final HealthApplication details) ...[
+              Text(details.productName, style: AppTypography.mediumEmphasis),
+              _HealthDetail(HealthRegistrationStrings.dose, '${details.dose} ${details.unit}'),
+              _HealthDetail(HealthRegistrationStrings.route, details.route),
+              if (details.batch case final batch?) _HealthDetail(HealthRegistrationStrings.recordedBatch, batch),
+              if (details.expirationDate case final expiration?)
+                _HealthDetail(HealthRegistrationStrings.recordedExpiration, DateDisplayFormatter.shortDate(expiration)),
+            ],
+            if (event.details case final HealthObservation details) ...[
+              Text(details.description, style: AppTypography.pageBodyTitle),
+              if (details.sampleType case final sampleType?)
+                _HealthDetail(HealthRegistrationStrings.sampleType, sampleType),
+            ],
+            if (event.recipient.sampleReference case final reference?)
+              _HealthDetail(HealthRegistrationStrings.recordedSampleReference, reference),
+            if (event.notes case final notes?) _HealthDetail(HealthRegistrationStrings.recordedNotes, notes),
+            _HealthSyncStatus(event.syncStatus),
             if (event.syncIssue == HealthSyncIssue.animalRegistrationRejected)
               const Text(HealthRegistrationStrings.animalRegistrationRejected),
             if (event.syncStatus == HealthSyncStatus.rejected)
               TextButton(onPressed: () => onCorrect(event), child: const Text(HealthRegistrationStrings.correct)),
             if (isStudy) ...[
-              Text(result?.value ?? HealthRegistrationStrings.pendingResult),
-              if (result != null) Text(localizations.formatCompactDate(result.reportedAt.toLocal())),
-              if (resultStatus != null) Text(resultStatus),
+              const Divider(height: AppSpacing.lg),
+              if (result == null)
+                const Text(HealthRegistrationStrings.pendingResult, style: AppTypography.mediumEmphasis)
+              else ...[
+                _HealthDetail(HealthRegistrationStrings.result, result.value),
+                _HealthDetail(
+                  HealthRegistrationStrings.resultDate,
+                  DateDisplayFormatter.shortDate(result.reportedAt.toLocal()),
+                ),
+              ],
+              if (event.resultSyncStatus case final status?) _HealthSyncStatus(status),
               if (event.resultIssue == HealthSyncIssue.resultAlreadyRecorded)
                 const Text(HealthRegistrationStrings.resultConflict),
               if ((result == null || event.resultSyncStatus == HealthSyncStatus.rejected) &&
@@ -177,11 +189,70 @@ class _HealthEventCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  static String? _status(HealthSyncStatus? status) => switch (status) {
-    HealthSyncStatus.pending => HealthRegistrationStrings.pending,
-    HealthSyncStatus.rejected => HealthRegistrationStrings.rejected,
-    HealthSyncStatus.synchronized => HealthRegistrationStrings.synchronized,
-    null => null,
-  };
+class _HealthDetail extends StatelessWidget {
+  const _HealthDetail(this.label, this.value);
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: AppSpacing.xxs),
+    child: Text.rich(
+      TextSpan(
+        style: AppTypography.formFieldValue,
+        children: [
+          TextSpan(text: '$label · ', style: AppTypography.secondaryEmphasis),
+          TextSpan(text: value),
+        ],
+      ),
+    ),
+  );
+}
+
+class _HealthSyncStatus extends StatelessWidget {
+  const _HealthSyncStatus(this.status);
+
+  final HealthSyncStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, icon, color, background) = switch (status) {
+      HealthSyncStatus.pending => (
+        HealthRegistrationStrings.pending,
+        Icons.schedule,
+        AppColors.syncPending,
+        AppColors.syncPendingContainer,
+      ),
+      HealthSyncStatus.rejected => (
+        HealthRegistrationStrings.rejected,
+        Icons.error_outline,
+        AppColors.error,
+        AppColors.errorContainer,
+      ),
+      HealthSyncStatus.synchronized => (
+        HealthRegistrationStrings.synchronized,
+        Icons.check_circle_outline,
+        AppColors.primaryDark,
+        AppColors.backgroundSecondaryLight,
+      ),
+    };
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
+      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(AppRadius.sm)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: AppSpacing.xxs),
+          Flexible(
+            child: Text(label, style: AppTypography.smallEmphasis.copyWith(color: color)),
+          ),
+        ],
+      ),
+    );
+  }
 }
