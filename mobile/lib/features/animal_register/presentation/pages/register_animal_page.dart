@@ -28,6 +28,7 @@ class RegisterAnimalPage extends StatelessWidget {
   /// Creates the animal registration flow.
   const RegisterAnimalPage({
     required this.createBloc,
+    required this.captureInitialWeight,
     this.initialStep = RegisterAnimalStep.identification,
     this.initialRfid = '',
     this.initialEstablishmentId,
@@ -37,6 +38,9 @@ class RegisterAnimalPage extends StatelessWidget {
 
   /// Crea el BLoC con dependencias ya resueltas fuera de presentation.
   final RegisterAnimalBlocFactory createBloc;
+
+  /// Abre la captura de peso desde Datos básicos.
+  final CaptureInitialWeight captureInitialWeight;
 
   /// Step displayed when the flow is opened.
   final RegisterAnimalStep initialStep;
@@ -59,15 +63,16 @@ class RegisterAnimalPage extends StatelessWidget {
         initialRfid: initialRfid,
         initialEstablishmentId: initialEstablishmentId,
       ),
-      child: _RegisterAnimalView(returnToCaller: returnToCaller),
+      child: _RegisterAnimalView(returnToCaller: returnToCaller, captureInitialWeight: captureInitialWeight),
     );
   }
 }
 
 class _RegisterAnimalView extends StatelessWidget {
-  const _RegisterAnimalView({required this.returnToCaller});
+  const _RegisterAnimalView({required this.returnToCaller, required this.captureInitialWeight});
 
   final bool returnToCaller;
+  final CaptureInitialWeight captureInitialWeight;
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +124,7 @@ class _RegisterAnimalView extends StatelessWidget {
                       RegisterAnimalIdentificationStep(
                         onBluetoothRequested: () => _requestBluetoothReading(context),
                       ),
-                      const RegisterAnimalBasicDataStep(),
+                      RegisterAnimalBasicDataStep(captureInitialWeight: captureInitialWeight),
                       const RegisterAnimalGenealogyStep(),
                       const RegisterAnimalReviewStep(),
                     ],

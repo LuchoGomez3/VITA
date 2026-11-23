@@ -24,9 +24,17 @@ const _savedToastDuration = Duration(seconds: 2);
 class WeighingPage extends StatefulWidget {
   /// Crea la pantalla de pesaje.
   ///
-  /// Desde la ficha de un animal llega [animal] (se pesa ese animal, no la
-  /// cola ficticia) y la pestaña elegida en [initialTab].
-  const WeighingPage({super.key, this.request, this.recordWeighing});
+  /// Desde la ficha, [request] identifica el animal y la pestaña inicial.
+  const WeighingPage({super.key, this.request, this.recordWeighing}) : captureTab = null;
+
+  /// Captura kilos para un formulario y devuelve el valor al confirmar.
+  const WeighingPage.capture({required WeighingCaptureTab initialTab, super.key})
+    : captureTab = initialTab,
+      request = null,
+      recordWeighing = null;
+
+  /// Pestaña inicial cuando el peso se devuelve al formulario.
+  final WeighingCaptureTab? captureTab;
 
   /// Animal a pesar y pestaña inicial, o `null` para la cola ficticia.
   final WeighingRequest? request;
@@ -40,7 +48,7 @@ class WeighingPage extends StatefulWidget {
 }
 
 class _WeighingPageState extends State<WeighingPage> {
-  late WeighingCaptureTab _tab = widget.request?.initialTab ?? WeighingCaptureTab.bluetooth;
+  late WeighingCaptureTab _tab = widget.captureTab ?? widget.request?.initialTab ?? WeighingCaptureTab.bluetooth;
   bool _isSaving = false;
   int _batchIndex = 0;
   int _batchPosition = weighingBatchStart;
@@ -61,7 +69,10 @@ class _WeighingPageState extends State<WeighingPage> {
         }
         return;
       }
-      if (key == WeighingStrings.numpadDecimalSeparator && _manualInput.contains(key)) {
+      final separator = _manualInput.indexOf(WeighingStrings.numpadDecimalSeparator);
+      if (separator >= 0 &&
+          (key == WeighingStrings.numpadDecimalSeparator ||
+              (widget.captureTab != null && _manualInput.length - separator > 2))) {
         return;
       }
       _manualInput += key;
@@ -92,7 +103,7 @@ class _WeighingPageState extends State<WeighingPage> {
       _showMessage(WeighingStrings.noScaleConnected);
       return;
     }
-    final weightKg = double.tryParse(_manualInput.replaceAll(WeighingStrings.numpadDecimalSeparator, '.'));
+    final weightKg = _manualWeightKg;
     if (weightKg == null) {
       _showMessage(WeighingStrings.enterWeight);
       return;
@@ -124,6 +135,17 @@ class _WeighingPageState extends State<WeighingPage> {
     }
   }
 
+  double? get _manualWeightKg => double.tryParse(_manualInput.replaceAll(WeighingStrings.numpadDecimalSeparator, '.'));
+
+  void _confirmCapturedWeight() {
+    final weight = _manualWeightKg;
+    if (weight == null || !weight.isFinite || weight <= 0) {
+      _showMessage(WeighingStrings.invalidCapturedWeight);
+      return;
+    }
+    if (ModalRoute.of(context)?.isCurrent ?? false) Navigator.of(context).pop(weight);
+  }
+
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -132,6 +154,8 @@ class _WeighingPageState extends State<WeighingPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.captureTab != null) return _buildWeightCapture();
+
     return Scaffold(
       body: SafeArea(
         child: Stack(
@@ -177,6 +201,40 @@ class _WeighingPageState extends State<WeighingPage> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeightCapture() {
+    final isManual = _tab == WeighingCaptureTab.manual;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(isManual ? WeighingStrings.methodManual : WeighingStrings.methodBluetooth),
+        leading: const CloseButton(),
+      ),
+      body: SafeArea(
+        child: isManual
+            ? SingleChildScrollView(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: _ManualTabContent(input: _manualInput, onKeyPressed: _handleNumpadKey),
+                  ),
+                ),
+              )
+            : const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.lg),
+                  child: Text(WeighingStrings.noScaleConnected, textAlign: TextAlign.center),
+                ),
+              ),
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.all(AppSpacing.md),
+        child: AppFilledButton(
+          label: isManual ? WeighingStrings.useWeight : WeighingStrings.methodManual,
+          onPressed: isManual ? _confirmCapturedWeight : () => setState(() => _tab = WeighingCaptureTab.manual),
         ),
       ),
     );

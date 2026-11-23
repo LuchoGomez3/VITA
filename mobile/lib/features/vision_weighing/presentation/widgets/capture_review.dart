@@ -23,6 +23,7 @@ class CaptureReview extends StatefulWidget {
     required this.review,
     required this.getAnimalOptions,
     required this.calibration,
+    this.onWeightConfirmed,
     super.key,
   });
 
@@ -34,6 +35,9 @@ class CaptureReview extends StatefulWidget {
 
   /// Solicita kilos de balanza si se activó la calibración antes de capturar.
   final bool calibration;
+
+  /// Devuelve el peso estimado al formulario tras confirmar la revisión.
+  final ValueChanged<double>? onWeightConfirmed;
 
   @override
   State<CaptureReview> createState() => _CaptureReviewState();
@@ -65,6 +69,12 @@ class _CaptureReviewState extends State<CaptureReview> {
 
   void _saveWeight() {
     if (widget.review.saving) return;
+    final onWeightConfirmed = widget.onWeightConfirmed;
+    if (onWeightConfirmed != null) {
+      final weight = widget.review.reviewedCapture?.capture.estimatedWeightKg;
+      if (weight != null) onWeightConfirmed(weight);
+      return;
+    }
     final selectedAnimal = _selectedAnimal;
     if (selectedAnimal == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -141,7 +151,7 @@ class _CaptureReviewState extends State<CaptureReview> {
                   },
                 ),
               )
-            else if (capture.estimatedWeightKg != null)
+            else if (capture.estimatedWeightKg != null && widget.onWeightConfirmed == null)
               AbsorbPointer(
                 absorbing: widget.review.saving || widget.review.saved,
                 child: VisionAnimalSelector(
@@ -168,7 +178,11 @@ class _CaptureReviewState extends State<CaptureReview> {
                     : confirmed
                     ? _saveWeight
                     : _confirmCapture,
-                label: confirmed ? VisionWeighingStrings.saveEstimate : VisionWeighingStrings.confirm,
+                label: !confirmed
+                    ? VisionWeighingStrings.confirm
+                    : widget.onWeightConfirmed == null
+                    ? VisionWeighingStrings.saveEstimate
+                    : VisionWeighingStrings.useEstimate,
               ),
             const SizedBox(height: AppSpacing.xs),
             AppOutlinedButton(

@@ -31,6 +31,7 @@ class VisionWeighingContent extends StatelessWidget {
     required this.onDeviceOrientationChanged,
     required this.onCalibrationChanged,
     required this.cameraDependencies,
+    this.onWeightConfirmed,
     super.key,
   });
 
@@ -76,9 +77,14 @@ class VisionWeighingContent extends StatelessWidget {
   /// Integra cámara y sensor mediante casos de uso inyectados.
   final VisionCameraDependencies cameraDependencies;
 
+  /// Entrega la estimación al formulario que abrió la cámara.
+  final ValueChanged<double>? onWeightConfirmed;
+
   @override
   Widget build(BuildContext context) {
-    if (state is Loading<VisionCaptureViewData>) return const _VisionProcessingContent();
+    if (state is Loading<VisionCaptureViewData>) {
+      return _VisionProcessingContent(showBackButton: onWeightConfirmed != null);
+    }
     if (state case Data<VisionCaptureViewData>(:final data)) {
       return Scaffold(
         appBar: AppBar(title: const Text(VisionWeighingStrings.review)),
@@ -87,6 +93,7 @@ class VisionWeighingContent extends StatelessWidget {
             review: data,
             getAnimalOptions: getAnimalOptions,
             calibration: calibration,
+            onWeightConfirmed: onWeightConfirmed,
           ),
         ),
       );
@@ -105,17 +112,21 @@ class VisionWeighingContent extends StatelessWidget {
       onDeviceOrientationChanged: onDeviceOrientationChanged,
       onCalibrationChanged: onCalibrationChanged,
       cameraDependencies: cameraDependencies,
+      showBackWhileOpening: onWeightConfirmed != null,
     );
   }
 }
 
 class _VisionProcessingContent extends StatelessWidget {
-  const _VisionProcessingContent();
+  const _VisionProcessingContent({required this.showBackButton});
+
+  final bool showBackButton;
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
+  Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.background,
-    body: Center(
+    appBar: showBackButton ? AppBar() : null,
+    body: const Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -143,6 +154,7 @@ class _CameraCaptureContent extends StatelessWidget {
     required this.onDeviceOrientationChanged,
     required this.onCalibrationChanged,
     required this.cameraDependencies,
+    required this.showBackWhileOpening,
   });
 
   final ResultState<VisionCaptureViewData> state;
@@ -158,6 +170,7 @@ class _CameraCaptureContent extends StatelessWidget {
   final ValueChanged<VisionDeviceOrientation> onDeviceOrientationChanged;
   final ValueChanged<bool> onCalibrationChanged;
   final VisionCameraDependencies cameraDependencies;
+  final bool showBackWhileOpening;
 
   @override
   Widget build(BuildContext context) {
@@ -187,6 +200,11 @@ class _CameraCaptureContent extends StatelessWidget {
               busy: selectingPhoto,
               onAttachPhoto: onAttachPhoto,
               onCalibrationChanged: onCalibrationChanged,
+            ),
+          if (showBackWhileOpening && !cameraControlsVisible)
+            const Align(
+              alignment: Alignment.topLeft,
+              child: SafeArea(child: BackButton(color: Colors.white)),
             ),
           if (cameraControlsVisible && horizontal) LandscapeFramingReminder(orientation: phoneOrientation),
         ],

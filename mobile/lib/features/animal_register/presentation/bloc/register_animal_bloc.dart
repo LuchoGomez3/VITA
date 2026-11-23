@@ -492,6 +492,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
           categoryId: categoryId,
           categoryName: categoryName,
           initialWeight: parsedWeight,
+          weighingMethod: draft.weighingMethod,
           motherId: draft.mother?.id,
           fatherId: draft.father?.id,
           weighingDate: DateTime.now().toUtc(),

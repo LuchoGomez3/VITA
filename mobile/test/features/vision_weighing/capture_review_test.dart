@@ -8,23 +8,35 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_animal.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_camera_info.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_capture.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_device_orientation.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_weight_estimate.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/errors/vision_weighing_exception.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/repositories/vision_animal_repository.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/repositories/vision_camera_repository.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/repositories/vision_capture_repository.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/repositories/vision_photo_picker_repository.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/repositories/vision_weight_estimator_repository.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/repositories/vision_weight_repository.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/capture_vision_photo.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/confirm_vision_capture.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/dispose_vision_camera.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/estimate_vision_weight.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/get_vision_animal_options.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/initialize_vision_camera.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/pick_vision_photo.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/prepare_vision_capture.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/process_vision_capture.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/save_vision_weight.dart';
+import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/watch_vision_camera_orientation.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/bloc/vision_capture_cubit.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/bloc/vision_capture_view_data.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/models/vision_camera_dependencies.dart';
+import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/vision_weighing_page.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/strings/vision_weighing_strings.dart';
 import 'package:frontend_mayoral/features/vision_weighing/presentation/widgets/capture_review.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image/image.dart' as img;
 
 class _Repository implements VisionCaptureRepository {
@@ -80,6 +92,77 @@ class _AnimalRepository implements VisionAnimalRepository {
 }
 
 void main() {
+  testWidgets('la ruta de captura devuelve la estimación confirmada y sale sin valor al volver', (tester) async {
+    final photo = Uint8List.fromList(img.encodeJpg(img.Image(width: 640, height: 360)));
+    final repository = _WeightRepository();
+    final camera = _CameraRepository();
+    final results = <double?>[];
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => Scaffold(
+            body: TextButton(
+              onPressed: () async => results.add(await context.push<double>('/capture')),
+              child: const Text('Capturar peso'),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/capture',
+          builder: (context, state) => VisionWeighingPage(
+            returnWeight: true,
+            createCubit: () => _createCubit(repository),
+            getAnimalOptions: GetVisionAnimalOptions(_AnimalRepository()),
+            pickPhoto: PickVisionPhoto(_PhotoPicker(photo)),
+            cameraDependencies: VisionCameraDependencies(
+              initialize: InitializeVisionCamera(camera),
+              capture: CaptureVisionPhoto(camera),
+              watchOrientation: WatchVisionCameraOrientation(camera),
+              dispose: DisposeVisionCamera(camera),
+              previewBuilder: (_) => const ColoredBox(color: Colors.black),
+            ),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+
+    Future<void> openReview() async {
+      await tester.tap(find.text('Capturar peso'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip(VisionWeighingStrings.settings));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(VisionWeighingStrings.attachPhoto));
+      await tester.pumpAndSettle();
+      expect(find.text(VisionWeighingStrings.review), findsOneWidget);
+    }
+
+    await openReview();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(results, [null]);
+
+    await openReview();
+    for (final checkbox in find.byType(CheckboxListTile).evaluate().toList()) {
+      final control = find.byWidget(checkbox.widget);
+      await tester.ensureVisible(control);
+      await tester.tap(control);
+    }
+    await tester.ensureVisible(find.text(VisionWeighingStrings.confirm));
+    await tester.tap(find.text(VisionWeighingStrings.confirm));
+    await tester.pumpAndSettle();
+    expect(find.text(VisionWeighingStrings.animalSectionTitle), findsNothing);
+    await tester.ensureVisible(find.text(VisionWeighingStrings.useEstimate));
+    await tester.tap(find.text(VisionWeighingStrings.useEstimate));
+    await tester.pumpAndSettle();
+    expect(results, [null, 390.0]);
+    expect(repository.savedAnimalId, isNull);
+    expect(camera.disposals, 2);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('renderiza progreso, error y reintento desde el estado sin perder la selección', (tester) async {
     final photo = Uint8List.fromList(img.encodeJpg(img.Image(width: 640, height: 360)));
     final repository = _WeightRepository()
@@ -332,4 +415,29 @@ void main() {
     expect(find.text(VisionWeighingStrings.animalSectionTitle), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+}
+
+class _CameraRepository implements VisionCameraRepository {
+  int disposals = 0;
+
+  @override
+  Stream<VisionDeviceOrientation> get orientationChanges => const Stream.empty();
+
+  @override
+  Future<Uint8List> capturePhoto({required VisionDeviceOrientation orientation}) async => Uint8List(0);
+
+  @override
+  Future<void> dispose() async => disposals++;
+
+  @override
+  Future<VisionCameraInfo> initialize() async => const VisionCameraInfo(aspectRatio: 1);
+}
+
+class _PhotoPicker implements VisionPhotoPickerRepository {
+  _PhotoPicker(this.photo);
+
+  final Uint8List photo;
+
+  @override
+  Future<Uint8List> pickPhoto() async => photo;
 }

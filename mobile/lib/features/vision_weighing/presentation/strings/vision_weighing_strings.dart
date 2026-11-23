@@ -53,6 +53,9 @@ abstract final class VisionWeighingStrings {
   /// Acción que registra el peso con el animal elegido.
   static const saveEstimate = 'Guardar pesaje IA';
 
+  /// Confirma la estimación para completar el peso inicial.
+  static const useEstimate = 'Usar peso estimado';
+
   /// Rótulo del resultado calculado mediante visión.
   static const estimatedWeight = 'Peso estimado';
 

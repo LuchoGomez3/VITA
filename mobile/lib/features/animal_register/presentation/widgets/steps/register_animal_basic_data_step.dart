@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
+import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/animal_identification_summary.dart';
@@ -15,10 +16,19 @@ enum _BirthDatePreset {
   oneYearAgo,
 }
 
+/// Peso confirmado por alguno de los métodos ofrecidos durante el alta.
+typedef CapturedInitialWeight = ({double weightKg, AnimalWeighingMethod method});
+
+/// Pide un peso y devuelve `null` si el usuario sale sin confirmar.
+typedef CaptureInitialWeight = Future<CapturedInitialWeight?> Function(BuildContext context);
+
 /// Basic animal data form shown in the second registration step.
 class RegisterAnimalBasicDataStep extends StatefulWidget {
   /// Creates the basic animal data step.
-  const RegisterAnimalBasicDataStep({super.key});
+  const RegisterAnimalBasicDataStep({required this.captureInitialWeight, super.key});
+
+  /// Abre el selector de métodos y recibe el peso confirmado.
+  final CaptureInitialWeight captureInitialWeight;
 
   @override
   State<RegisterAnimalBasicDataStep> createState() => _RegisterAnimalBasicDataStepState();
@@ -28,6 +38,7 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
   final _birthWeightController = TextEditingController();
 
   _BirthDatePreset? _selectedDatePreset;
+  bool _capturingWeight = false;
 
   @override
   void initState() {
@@ -210,8 +221,13 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                 const SizedBox(height: AppSpacing.md),
                 AppTextFormField(
                   controller: _birthWeightController,
-                  title: AnimalRegisterStrings.stepTwoBirthWeightTitle,
+                  title: AnimalRegisterStrings.weightLabel,
                   hintText: AnimalRegisterStrings.stepTwoBirthWeightHint,
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.add, color: AppColors.primary),
+                    tooltip: AnimalRegisterStrings.captureWeightTooltip,
+                    onPressed: _captureWeight,
+                  ),
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
@@ -227,7 +243,7 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                       ? AnimalRegisterStrings.invalidBirthWeight
                       : null,
                   onChanged: (value) {
-                    _updateDraft(draft.copyWith(birthWeight: value));
+                    _updateDraft(draft.copyWith(birthWeight: value, weighingMethod: AnimalWeighingMethod.manual));
                   },
                 ),
               ],
@@ -236,6 +252,25 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
         ),
       ],
     );
+  }
+
+  Future<void> _captureWeight() async {
+    if (_capturingWeight) return;
+    _capturingWeight = true;
+    FocusScope.of(context).unfocus();
+    try {
+      final captured = await widget.captureInitialWeight(context);
+      if (!mounted || captured == null) return;
+      final draft = context.read<RegisterAnimalBloc>().state.draft;
+      final weight = captured.weightKg.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '').replaceAll('.', ',');
+      _birthWeightController.value = TextEditingValue(
+        text: weight,
+        selection: TextSelection.collapsed(offset: weight.length),
+      );
+      _updateDraft(draft.copyWith(birthWeight: weight, weighingMethod: captured.method));
+    } finally {
+      _capturingWeight = false;
+    }
   }
 
   void _applyBirthDatePreset(_BirthDatePreset preset) {

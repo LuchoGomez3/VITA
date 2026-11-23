@@ -8,6 +8,7 @@ import 'package:frontend_mayoral/app/composition/health_composition.dart';
 import 'package:frontend_mayoral/app/composition/team_session_composition.dart';
 import 'package:frontend_mayoral/app/layout/main_layout_page.dart';
 import 'package:frontend_mayoral/app/layout/shell_placeholder_page.dart';
+import 'package:frontend_mayoral/app/router/registration_weight_capture.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_case.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
@@ -95,6 +96,7 @@ import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/cam
 import 'package:frontend_mayoral/features/vision_weighing/presentation/pages/vision_weighing_page.dart';
 import 'package:frontend_mayoral/features/vision_weighing/vision_weighing_composition.dart';
 import 'package:frontend_mayoral/features/weighing/presentation/pages/weighing_page.dart';
+import 'package:frontend_mayoral/features/weighing/presentation/widgets/weighing_tab_selector.dart';
 import 'package:frontend_mayoral/features/weighing/weighing_composition.dart';
 import 'package:go_router/go_router.dart';
 
@@ -323,6 +325,7 @@ class AppRouter {
           path: AppRoutes.animalRegisterStep1,
           builder: (context, state) => RegisterAnimalPage(
             createBloc: createRegisterAnimalBloc,
+            captureInitialWeight: captureRegistrationWeight,
             initialRfid: state.uri.queryParameters['rfid'] ?? '',
             initialEstablishmentId: state.uri.queryParameters['establecimientoId'],
             returnToCaller: state.uri.queryParameters['origen'] == 'lector',
@@ -332,6 +335,7 @@ class AppRouter {
           path: AppRoutes.animalRegisterStep2,
           builder: (context, state) => const RegisterAnimalPage(
             createBloc: createRegisterAnimalBloc,
+            captureInitialWeight: captureRegistrationWeight,
             initialStep: RegisterAnimalStep.basicData,
           ),
         ),
@@ -339,6 +343,7 @@ class AppRouter {
           path: AppRoutes.animalRegisterStep3,
           builder: (context, state) => const RegisterAnimalPage(
             createBloc: createRegisterAnimalBloc,
+            captureInitialWeight: captureRegistrationWeight,
             initialStep: RegisterAnimalStep.genealogy,
           ),
         ),
@@ -346,6 +351,7 @@ class AppRouter {
           path: AppRoutes.animalRegisterStep4,
           builder: (context, state) => const RegisterAnimalPage(
             createBloc: createRegisterAnimalBloc,
+            captureInitialWeight: captureRegistrationWeight,
             initialStep: RegisterAnimalStep.review,
           ),
         ),
@@ -402,10 +408,14 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.weighing,
           builder: (context, state) {
-            final request = state.extra;
-            return request is WeighingRequest
-                ? WeighingPage(request: request, recordWeighing: createRecordAnimalWeighingUseCase())
-                : const WeighingPage();
+            return switch (state.extra) {
+              final WeighingRequest request => WeighingPage(
+                request: request,
+                recordWeighing: createRecordAnimalWeighingUseCase(),
+              ),
+              final WeighingCaptureTab tab => WeighingPage.capture(initialTab: tab),
+              _ => const WeighingPage(),
+            };
           },
         ),
         GoRoute(
@@ -501,13 +511,12 @@ class AppRouter {
           path: AppRoutes.visionWeighing,
           pageBuilder: (context, state) => CameraRevealPage(
             state: state,
-            child: VisionWeighingPage(
-              createCubit: createVisionCaptureCubit,
-              getAnimalOptions: createVisionAnimalOptionsUseCase(),
-              pickPhoto: createPickVisionPhotoUseCase(),
-              cameraDependencies: createVisionCameraDependencies(),
-            ),
+            child: _visionWeighingPage(),
           ),
+        ),
+        GoRoute(
+          path: AppRoutes.visionWeightCapture,
+          builder: (context, state) => _visionWeighingPage(returnWeight: true),
         ),
         GoRoute(
           path: AppRoutes.rfidScan,
@@ -672,6 +681,14 @@ class AppRouter {
       ],
     );
   }
+
+  static VisionWeighingPage _visionWeighingPage({bool returnWeight = false}) => VisionWeighingPage(
+    createCubit: createVisionCaptureCubit,
+    getAnimalOptions: createVisionAnimalOptionsUseCase(),
+    pickPhoto: createPickVisionPhotoUseCase(),
+    cameraDependencies: createVisionCameraDependencies(),
+    returnWeight: returnWeight,
+  );
 
   static Widget _operatingExpensesPage(
     BuildContext context,

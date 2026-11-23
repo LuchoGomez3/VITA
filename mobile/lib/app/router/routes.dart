@@ -92,6 +92,9 @@ class AppRoutes {
   /// Cámara lateral y revisión de capturas para pesaje por visión.
   static const visionWeighing = '/pesar-por-vision';
 
+  /// Pesaje por visión que devuelve una estimación al alta en curso.
+  static const visionWeightCapture = '/registrar-animal/capturar-peso-por-vision';
+
   /// Ruta de identificacion de animales mediante caravana RFID.
   static const rfidScan = '/identificar-animal';
 

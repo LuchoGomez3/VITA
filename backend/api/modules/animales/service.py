@@ -25,7 +25,7 @@ from api.modules.observaciones_animales.service import ObservacionAnimalService
 from api.modules.pesajes.models import Pesaje
 from api.modules.pesajes.repository import PesajeRepository
 from api.modules.usuarios.models import Usuario
-from api.shared.enums import EstadoAnimal, SexoAnimal
+from api.shared.enums import EstadoAnimal, MetodoPesaje, SexoAnimal
 from api.shared.sync import as_utc
 
 
@@ -177,6 +177,7 @@ class AnimalService:
                     fecha=data.fecha_pesaje or datetime.now(UTC),
                     peso_kg=data.peso_inicial,
                     metodo=data.metodo_pesaje,
+                    es_estimado=data.metodo_pesaje == MetodoPesaje.estimacion_ia,
                     responsable_id=current_user.id,
                 )
             )
