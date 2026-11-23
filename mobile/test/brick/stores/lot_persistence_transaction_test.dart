@@ -78,6 +78,50 @@ void main() {
     }
   });
 
+  test('repara lotes anteriores sin perder geometría ni enviar una superficie desconocida', () async {
+    final database = await databaseFactoryFfi.openDatabase(sqlitePath);
+    const boundary = '{"type":"LocalPolygon"}';
+    const timestamp = '2026-08-28T16:30:00.000Z';
+    final oldRow = {
+      'local_id': 'legacy-lot',
+      'establishment_id': 'legacy-establishment',
+      'name': 'Potrero anterior',
+      'boundary_json': boundary,
+      'created_at': timestamp,
+      'updated_at': timestamp,
+    };
+    await database.insert('BrickLotModel', oldRow);
+    await database.insert('BrickLotModel', {
+      ...oldRow,
+      'local_id': 'existing-lot',
+      'surface_tenths': 457,
+      'status_code': 'descanso',
+      'has_water': 1,
+      'sync_status': BrickLotSyncStatus.synchronized.index,
+    });
+
+    await repository.migrate();
+    await repository.migrate();
+    await lotStore.pushPendingLots('legacy-establishment');
+    final lots = await lotStore.getLocalLots('legacy-establishment');
+    final oldLot = lots.singleWhere((lot) => lot.localId == 'legacy-lot');
+    expect(oldLot.name, 'Potrero anterior');
+    expect(oldLot.boundaryJson, boundary);
+    expect(oldLot.updatedAt, DateTime.parse(timestamp));
+    expect(oldLot.geometryMode, 'local_schematic');
+    expect(oldLot.surfaceTenths, 0);
+    expect(oldLot.syncStatus, BrickLotSyncStatus.rejected);
+    expect(oldLot.syncErrorCode, 'superficie_lote_faltante');
+
+    final existing = lots.singleWhere((lot) => lot.localId == 'existing-lot');
+    expect(existing.geometryMode, 'local_schematic');
+    expect(existing.surfaceTenths, 457);
+    expect(existing.statusCode, 'descanso');
+    expect(existing.hasWater, isTrue);
+    expect(existing.syncStatus, BrickLotSyncStatus.synchronized);
+    expect(await repository.hasQueuedCreate('/api/v1/lotes', oldLot.localId), isFalse);
+  });
+
   test('editar el mismo UUID conserva una sola fila SQLite', () async {
     await lotStore.upsertLocalLot(_lot(id: 'lot-upsert', name: 'Original'));
 

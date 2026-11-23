@@ -1,6 +1,7 @@
 import 'package:brick_sqlite/brick_sqlite.dart';
 import 'package:brick_sqlite/db.dart';
 import 'package:frontend_mayoral/brick/db/schema.g.dart' as generated;
+import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:sqflite/sqflite.dart';
 
 const _livestockSaleMigrationVersion = 20261122000100;
@@ -40,6 +41,37 @@ Future<Set<Migration>> prepareAppBrickMigrations(SqliteProvider sqliteProvider) 
       await _upgradePreMergeHealthDatabase(transaction, migrations);
     }
     return migrations;
+  });
+}
+
+/// Completa los campos agregados después de los primeros lotes offline.
+Future<void> repairLegacyBrickData(SqliteProvider sqliteProvider) async {
+  await sqliteProvider.transaction((transaction) async {
+    final pending = BrickLotSyncStatus.pending.index;
+    final rejected = BrickLotSyncStatus.rejected.index;
+    // La superficie real no se puede deducir del dibujo. Se conserva el lote,
+    // marcado para corregirlo antes de que la cola lo envíe al backend.
+    await transaction.rawUpdate(
+      '''
+UPDATE BrickLotModel
+SET geometry_mode = COALESCE(geometry_mode, 'local_schematic'),
+    surface_tenths = COALESCE(surface_tenths, 0),
+    has_water = COALESCE(has_water, 0),
+    status_code = COALESCE(status_code, 'activo'),
+    sync_status = CASE
+      WHEN surface_tenths IS NULL AND COALESCE(sync_status, ?) = ? THEN ?
+      ELSE COALESCE(sync_status, ?)
+    END,
+    sync_error_code = CASE
+      WHEN surface_tenths IS NULL AND COALESCE(sync_status, ?) = ?
+      THEN COALESCE(sync_error_code, 'superficie_lote_faltante')
+      ELSE sync_error_code
+    END
+WHERE geometry_mode IS NULL OR surface_tenths IS NULL OR has_water IS NULL
+   OR status_code IS NULL OR sync_status IS NULL
+''',
+      [pending, pending, rejected, pending, pending, pending],
+    );
   });
 }
 

@@ -269,6 +269,11 @@ nombres de potreros anteriores. La deduplicación y el filtro de establecimiento
 se aplican también en esa lectura; los destinos de nuevos traslados siguen
 usando únicamente lotes vigentes y activos.
 
+Al abrir la base, los lotes anteriores a la sincronización recuperan los valores
+faltantes de esquema local y estado operativo. Si falta la superficie, el lote
+queda disponible en el dispositivo y requiere que se cargue su superficie real
+para enviarlo al backend.
+
 ## Codigo generado
 
 Si cambia un modelo Brick, se debe regenerar:

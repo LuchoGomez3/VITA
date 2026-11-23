@@ -154,6 +154,12 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
     _instance = repository;
   }
 
+  @override
+  Future<void> migrate() async {
+    await super.migrate();
+    await repairLegacyBrickData(sqliteProvider);
+  }
+
   /// Guarda un modelo solo en SQLite y notifica subscribers locales.
   ///
   /// Los stores usan este helper cuando quieren persistir cambios locales sin

@@ -9,6 +9,7 @@ abstract final class FieldStrings {
   static String syncErrorMessage(String? code) => switch (code) {
     'nombre_lote_duplicado' => 'Ya existe un lote con ese nombre.',
     'geometria_lote_invalida' => 'La delimitación del lote no es válida.',
+    'superficie_lote_faltante' => 'Cargá la superficie real del lote para sincronizarlo.',
     'lotes_superpuestos' => 'La delimitación se superpone con otro lote.',
     'lote_con_animales' => 'Mové los animales antes de inactivar o eliminar el lote.',
     'lote_destino_no_disponible' => 'El lote de destino ya no está disponible.',
