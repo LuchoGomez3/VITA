@@ -47,6 +47,7 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
     final state = context.watch<RegisterAnimalBloc>().state;
     final draft = state.draft;
     final showErrors = state.showStepValidationErrors;
+    final selectableCategories = state.selectableCategories;
 
     return Column(
       children: [
@@ -162,21 +163,29 @@ class _RegisterAnimalBasicDataStepState extends State<RegisterAnimalBasicDataSte
                     AnimalRegisterStrings.noCategoriesMessage,
                     style: AppTypography.pageBodyTitle,
                   ),
-                  Data(:final data) => Column(
+                  Data() when draft.selectedSex == null => const Text(
+                    AnimalRegisterStrings.categorySelectSexHint,
+                    style: AppTypography.pageBodyTitle,
+                  ),
+                  Data() when selectableCategories.isEmpty => const Text(
+                    AnimalRegisterStrings.noCategoriesForSexMessage,
+                    style: AppTypography.pageBodyTitle,
+                  ),
+                  Data() => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       AppChoiceSelector<String>(
                         title: AnimalRegisterStrings.stepTwoCategoryTitle,
                         value: draft.categoryId,
                         options: [
-                          for (final category in data)
+                          for (final category in selectableCategories)
                             AppChoiceOption(
                               value: category.id,
                               label: category.name,
                             ),
                         ],
                         onChanged: (categoryId) {
-                          final category = data.firstWhere(
+                          final category = selectableCategories.firstWhere(
                             (item) => item.id == categoryId,
                           );
                           _updateDraft(

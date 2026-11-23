@@ -98,9 +98,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     switch (result) {
       case Success<List<AnimalCategory>>(:final data):
         emit(
-          state.copyWith(
-            categoriesState: ResultState.data(data),
-          ),
+          _clearIncompatibleCategory(state.copyWith(categoriesState: ResultState.data(data))),
         );
       case Failure<List<AnimalCategory>>(:final error):
         emit(state.copyWith(categoriesState: ResultState.error(error)));
@@ -205,11 +203,22 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     Emitter<RegisterAnimalState> emit,
   ) {
     emit(
-      state.copyWith(
-        draft: event.draft,
-        rfidCheckState: event.draft.rfid == state.draft.rfid ? state.rfidCheckState : const ResultState.initial(),
+      _clearIncompatibleCategory(
+        state.copyWith(
+          draft: event.draft,
+          rfidCheckState: event.draft.rfid == state.draft.rfid ? state.rfidCheckState : const ResultState.initial(),
+        ),
       ),
     );
+  }
+
+  /// Al cambiar el sexo o recargar el catálogo, limpia ambos campos de una
+  /// categoría incompatible para que tampoco llegue al resumen ni al alta.
+  RegisterAnimalState _clearIncompatibleCategory(RegisterAnimalState next) {
+    final draft = next.draft;
+    if (draft.categoryId == null || next.categoriesState is! Data<List<AnimalCategory>>) return next;
+    if (next.selectableCategories.any((category) => category.id == draft.categoryId)) return next;
+    return next.copyWith(draft: draft.copyWith(categoryId: null, categoryName: null));
   }
 
   Future<void> _onRfidCaptured(
@@ -421,7 +430,8 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
       );
     }
 
-    if (draft.sex.isEmpty) {
+    final sex = draft.selectedSex;
+    if (sex == null) {
       return const Result.failure(
         DomainException(
           message: AnimalRegisterStrings.sexRequired,
@@ -473,7 +483,7 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
         AnimalRegistration(
           rfidTagNumber: rfid,
           visualTag: visualTag,
-          sex: _mapSex(draft.sex),
+          sex: sex,
           breed: breed,
           birthDate: birthDate,
           lotId: _registrationContext.resolveLotId(destinationId),
@@ -505,10 +515,5 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
     }
 
     return double.tryParse(normalized);
-  }
-
-  /// Mapea la opcion localizada de UI al enum de dominio.
-  AnimalSex _mapSex(String value) {
-    return value == AnimalRegisterStrings.stepTwoMale ? AnimalSex.male : AnimalSex.female;
   }
 }

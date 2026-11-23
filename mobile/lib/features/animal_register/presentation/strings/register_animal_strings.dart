@@ -93,12 +93,41 @@ class AnimalRegisterStrings {
   /// Hint visible cuando no hay una raza seleccionada.
   static const stepTwoBreedHint = 'Seleccioná una raza';
 
-  /// Razas disponibles para seleccionar en el alta.
+  /// Razas del catálogo que usa el backend para los reportes SENASA.
+  /// Aberdeen Angus también cubre el alias Angus del exportador.
   static const stepTwoBreedOptions = [
     'Aberdeen Angus',
-    'Hereford',
+    'Bosmara',
     'Braford',
+    'Brahman',
     'Brangus',
+    'Charolais',
+    'Criolla',
+    'Galloway',
+    'Ganado Cruza',
+    'Hereford',
+    'Holando Argentino',
+    'Jafarabadi',
+    'Jersey',
+    'Kiwi',
+    'Limangus',
+    'Limousine',
+    'Mediterránea',
+    'Murrah',
+    'Murray Grey',
+    'Polled Hereford',
+    'San Ignacio',
+    'Santa Gertrudis',
+    'Senangus',
+    'Seneford',
+    'Senepol',
+    'Shorthorn',
+    'Simmental',
+    'Sueca Roja y Blanca',
+    'Tuli',
+    'Wagyu',
+    'Otra raza',
+    'Sin especificar',
   ];
 
   /// Validacion cuando no se selecciono una raza.
@@ -139,6 +168,12 @@ class AnimalRegisterStrings {
 
   /// Titulo del selector de categoria.
   static const stepTwoCategoryTitle = 'Categoría';
+
+  /// Indicación para habilitar las opciones de categoría.
+  static const categorySelectSexHint = 'Seleccioná el sexo para ver las categorías.';
+
+  /// Mensaje cuando el catálogo local no contiene categorías para ese sexo.
+  static const noCategoriesForSexMessage = 'No hay categorías disponibles para el sexo seleccionado.';
 
   /// Estado vacio cuando la sincronizacion no dejo categorias disponibles.
   static const noCategoriesMessage = 'No hay categorías disponibles. Sincronizá los datos e intentá nuevamente.';

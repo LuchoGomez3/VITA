@@ -88,15 +88,33 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
     Data<List<AnimalCategory>>(:final data) => data,
     _ => const [],
   };
+
+  /// Opciones válidas para el sexo elegido en el borrador actual.
+  List<AnimalCategory> get selectableCategories {
+    final sex = draft.selectedSex;
+    if (sex == null) return const [];
+    return categories.where((category) => category.allowedSex.allows(sex)).toList(growable: false);
+  }
 }
 
 /// Validaciones sincrónicas necesarias para avanzar en el alta.
 extension RegisterAnimalDraftValidation on RegisterAnimalDraft {
+  /// Traduce la opción de pantalla al valor de dominio.
+  AnimalSex? get selectedSex => switch (sex) {
+    AnimalRegisterStrings.stepTwoFemale => AnimalSex.female,
+    AnimalRegisterStrings.stepTwoMale => AnimalSex.male,
+    _ => null,
+  };
+
   /// Indica si el borrador contiene los datos obligatorios del [step].
   bool isValidForStep(RegisterAnimalStep step) => switch (step) {
     RegisterAnimalStep.identification => RfidValidator.isValid(rfid.trim()),
     RegisterAnimalStep.basicData =>
-      breed.trim().isNotEmpty && sex.isNotEmpty && birthDate != null && categoryId != null && _hasValidInitialWeight,
+      breed.trim().isNotEmpty &&
+          selectedSex != null &&
+          birthDate != null &&
+          categoryId != null &&
+          _hasValidInitialWeight,
     RegisterAnimalStep.genealogy => establishmentId != null && destinationId != null,
     RegisterAnimalStep.review => true,
   };

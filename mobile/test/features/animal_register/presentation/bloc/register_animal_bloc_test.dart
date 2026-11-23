@@ -18,6 +18,7 @@ import 'package:frontend_mayoral/features/animal_register/domain/use_cases/get_a
 import 'package:frontend_mayoral/features/animal_register/domain/use_cases/register_animal_use_case.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/bloc/register_animal_bloc.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
+import 'package:frontend_mayoral/features/animal_register/presentation/widgets/steps/register_animal_basic_data_step.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/steps/register_animal_identification_step.dart';
 
 void main() {
@@ -121,8 +122,62 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(bloc.state.categories, _FakeAnimalCategoryRepository.categories);
+      expect(bloc.state.selectableCategories, isEmpty);
       expect(bloc.state.draft.categoryId, isNull);
       expect(bloc.state.draft.categoryName, isNull);
+    });
+
+    testWidgets('filtra al tocar el sexo y conserva solo las selecciones compatibles', (tester) async {
+      final [female, male, shared] = _FakeAnimalCategoryRepository.categories;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlocProvider(
+              create: (_) => RegisterAnimalBloc(
+                registerAnimalUseCase: RegisterAnimalUseCase(repository),
+                checkAnimalRfidUseCase: CheckAnimalRfidUseCase(rfidRepository),
+                getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
+                getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(categoryRepository),
+                registrationContext: const _TestAnimalRegistrationContext(),
+              )..add(const RegisterAnimalEvent.categoriesRequested()),
+              child: const RegisterAnimalBasicDataStep(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final widgetBloc = tester.element(find.byType(RegisterAnimalBasicDataStep)).read<RegisterAnimalBloc>();
+      expect(find.text(AnimalRegisterStrings.categorySelectSexHint), findsOneWidget);
+      expect(find.text(female.name), findsNothing);
+      expect(find.text(male.name), findsNothing);
+
+      await tester.tap(find.text(AnimalRegisterStrings.stepTwoFemale));
+      await tester.pumpAndSettle();
+      expect(find.text(female.name), findsOneWidget);
+      expect(find.text(male.name), findsNothing);
+      expect(find.text(shared.name), findsOneWidget);
+      await tester.ensureVisible(find.text(female.name));
+      await tester.tap(find.text(female.name));
+      await tester.pumpAndSettle();
+      expect(widgetBloc.state.draft.categoryId, female.id);
+
+      await tester.ensureVisible(find.text(AnimalRegisterStrings.stepTwoMale));
+      await tester.tap(find.text(AnimalRegisterStrings.stepTwoMale));
+      await tester.pumpAndSettle();
+      expect(find.text(male.name), findsOneWidget);
+      expect(find.text(female.name), findsNothing);
+      expect(find.text(shared.name), findsOneWidget);
+      expect(widgetBloc.state.draft.categoryId, isNull);
+      expect(widgetBloc.state.draft.categoryName, isNull);
+
+      await tester.ensureVisible(find.text(shared.name));
+      await tester.tap(find.text(shared.name));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text(AnimalRegisterStrings.stepTwoFemale));
+      await tester.tap(find.text(AnimalRegisterStrings.stepTwoFemale));
+      await tester.pumpAndSettle();
+      expect(widgetBloc.state.draft.categoryId, shared.id);
+      expect(widgetBloc.state.draft.categoryName, shared.name);
     });
 
     test('represents category loading failures with ResultState', () async {
@@ -210,6 +265,7 @@ void main() {
 
     test('keeps the selected global category when establishment changes', () async {
       final context = _MultipleEstablishmentsContext();
+      final category = _FakeAnimalCategoryRepository.categories.first;
       final selectionBloc = RegisterAnimalBloc(
         registerAnimalUseCase: RegisterAnimalUseCase(repository),
         checkAnimalRfidUseCase: CheckAnimalRfidUseCase(_FakeAnimalRfidRepository()),
@@ -220,13 +276,16 @@ void main() {
         registrationContext: context,
       );
       addTearDown(selectionBloc.close);
-      selectionBloc.add(const RegisterAnimalEvent.establishmentsRequested());
+      selectionBloc
+        ..add(const RegisterAnimalEvent.establishmentsRequested())
+        ..add(const RegisterAnimalEvent.categoriesRequested());
       await Future<void>.delayed(Duration.zero);
       selectionBloc.add(
         RegisterAnimalEvent.draftChanged(
           selectionBloc.state.draft.copyWith(
-            categoryId: _FakeAnimalCategoryRepository.categories.single.id,
-            categoryName: _FakeAnimalCategoryRepository.categories.single.name,
+            sex: AnimalRegisterStrings.stepTwoFemale,
+            categoryId: category.id,
+            categoryName: category.name,
           ),
         ),
       );
@@ -237,14 +296,8 @@ void main() {
       );
       await Future<void>.delayed(Duration.zero);
 
-      expect(
-        selectionBloc.state.draft.categoryId,
-        _FakeAnimalCategoryRepository.categories.single.id,
-      );
-      expect(
-        selectionBloc.state.draft.categoryName,
-        _FakeAnimalCategoryRepository.categories.single.name,
-      );
+      expect(selectionBloc.state.draft.categoryId, category.id);
+      expect(selectionBloc.state.draft.categoryName, category.name);
     });
 
     test('loads local parents and clears selections when establishment changes', () async {
@@ -660,7 +713,10 @@ class _FakeAnimalCategoryRepository implements AnimalCategoryRepository {
     AnimalCategory(
       id: 'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8',
       name: 'Ternera',
+      allowedSex: AnimalCategorySex.female,
     ),
+    AnimalCategory(id: 'toro', name: 'Toro', allowedSex: AnimalCategorySex.male),
+    AnimalCategory(id: 'shared', name: 'Categoría compartida', allowedSex: AnimalCategorySex.both),
   ];
 
   Result<List<AnimalCategory>> result = const Result.success(categories);

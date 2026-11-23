@@ -16,7 +16,8 @@ mixin _$AnimalCategory {
 
 /// UUID administrado por backend y referenciado por el animal.
  String get id;/// Nombre presentado al productor.
- String get name;
+ String get name;/// Regla que limita su selección según el sexo del animal.
+ AnimalCategorySex get allowedSex;
 /// Create a copy of AnimalCategory
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,16 +28,16 @@ $AnimalCategoryCopyWith<AnimalCategory> get copyWith => _$AnimalCategoryCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AnimalCategory&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AnimalCategory&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.allowedSex, allowedSex) || other.allowedSex == allowedSex));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name);
+int get hashCode => Object.hash(runtimeType,id,name,allowedSex);
 
 @override
 String toString() {
-  return 'AnimalCategory(id: $id, name: $name)';
+  return 'AnimalCategory(id: $id, name: $name, allowedSex: $allowedSex)';
 }
 
 
@@ -47,7 +48,7 @@ abstract mixin class $AnimalCategoryCopyWith<$Res>  {
   factory $AnimalCategoryCopyWith(AnimalCategory value, $Res Function(AnimalCategory) _then) = _$AnimalCategoryCopyWithImpl;
 @useResult
 $Res call({
- String id, String name
+ String id, String name, AnimalCategorySex allowedSex
 });
 
 
@@ -64,11 +65,12 @@ class _$AnimalCategoryCopyWithImpl<$Res>
 
 /// Create a copy of AnimalCategory
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? allowedSex = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,
+as String,allowedSex: null == allowedSex ? _self.allowedSex : allowedSex // ignore: cast_nullable_to_non_nullable
+as AnimalCategorySex,
   ));
 }
 
@@ -150,10 +152,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  AnimalCategorySex allowedSex)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AnimalCategory() when $default != null:
-return $default(_that.id,_that.name);case _:
+return $default(_that.id,_that.name,_that.allowedSex);case _:
   return orElse();
 
 }
@@ -171,10 +173,10 @@ return $default(_that.id,_that.name);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  AnimalCategorySex allowedSex)  $default,) {final _that = this;
 switch (_that) {
 case _AnimalCategory():
-return $default(_that.id,_that.name);}
+return $default(_that.id,_that.name,_that.allowedSex);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -188,10 +190,10 @@ return $default(_that.id,_that.name);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  AnimalCategorySex allowedSex)?  $default,) {final _that = this;
 switch (_that) {
 case _AnimalCategory() when $default != null:
-return $default(_that.id,_that.name);case _:
+return $default(_that.id,_that.name,_that.allowedSex);case _:
   return null;
 
 }
@@ -203,13 +205,15 @@ return $default(_that.id,_that.name);case _:
 
 
 class _AnimalCategory implements AnimalCategory {
-  const _AnimalCategory({required this.id, required this.name});
+  const _AnimalCategory({required this.id, required this.name, required this.allowedSex});
   
 
 /// UUID administrado por backend y referenciado por el animal.
 @override final  String id;
 /// Nombre presentado al productor.
 @override final  String name;
+/// Regla que limita su selección según el sexo del animal.
+@override final  AnimalCategorySex allowedSex;
 
 /// Create a copy of AnimalCategory
 /// with the given fields replaced by the non-null parameter values.
@@ -221,16 +225,16 @@ _$AnimalCategoryCopyWith<_AnimalCategory> get copyWith => __$AnimalCategoryCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AnimalCategory&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AnimalCategory&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.allowedSex, allowedSex) || other.allowedSex == allowedSex));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name);
+int get hashCode => Object.hash(runtimeType,id,name,allowedSex);
 
 @override
 String toString() {
-  return 'AnimalCategory(id: $id, name: $name)';
+  return 'AnimalCategory(id: $id, name: $name, allowedSex: $allowedSex)';
 }
 
 
@@ -241,7 +245,7 @@ abstract mixin class _$AnimalCategoryCopyWith<$Res> implements $AnimalCategoryCo
   factory _$AnimalCategoryCopyWith(_AnimalCategory value, $Res Function(_AnimalCategory) _then) = __$AnimalCategoryCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name
+ String id, String name, AnimalCategorySex allowedSex
 });
 
 
@@ -258,11 +262,12 @@ class __$AnimalCategoryCopyWithImpl<$Res>
 
 /// Create a copy of AnimalCategory
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? allowedSex = null,}) {
   return _then(_AnimalCategory(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,
+as String,allowedSex: null == allowedSex ? _self.allowedSex : allowedSex // ignore: cast_nullable_to_non_nullable
+as AnimalCategorySex,
   ));
 }
 
