@@ -39,7 +39,7 @@ void main() {
         fromLotName: null,
         toLotName: 'El Bajo',
         occurredAt: DateTime(2026, 3),
-        reason: 'Alta',
+        reason: '',
         syncStatus: MovementSyncStatus.synchronized,
       ),
     ]);
@@ -47,6 +47,7 @@ void main() {
     expect(find.text(AnimalDetailStrings.historyTitle(2).toUpperCase()), findsOneWidget);
     expect(find.text('El Bajo → La Cumbre ${AnimalDetailStrings.currentLot}'), findsOneWidget);
     expect(find.text('${AnimalDetailStrings.noOrigin} → El Bajo'), findsOneWidget);
+    expect(find.text(AnimalDetailStrings.initialLotAssignment), findsOneWidget);
     expect(find.text(AnimalDetailStrings.pendingSync), findsOneWidget);
     expect(find.text('Rotación pastoreo'), findsOneWidget);
   });

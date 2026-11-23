@@ -135,6 +135,10 @@ animal; las filas siguen ordenadas por fecha efectiva aunque un movimiento
 retroactivo aparezca después. Los nombres se resuelven incluyendo lotes con
 tombstone, que permanecen excluidos de las opciones de destino.
 
+La ficha muestra la asignación inicial con la fecha de alta. Si hubo traslados,
+usa el origen del primero registrado para recuperar el lote inicial. Si ese
+primer movimiento ya figura sin origen, se muestra una sola vez.
+
 Al volver del traslado, incluso tras guardar solo algunos orígenes, se recargan
 la ficha y el historial. La confirmación utiliza los destinos del resumen
 guardado; el animal inicial puede haber sido quitado de la selección.

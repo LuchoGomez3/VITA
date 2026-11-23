@@ -257,6 +257,12 @@ class AnimalDetailStrings {
   /// Origen de la primera asignación.
   static const noOrigin = '—';
 
+  /// Primer lote asignado al registrar el animal.
+  static const initialLotAssignment = 'Asignación inicial';
+
+  /// Lote del historial cuyo nombre todavía no está disponible localmente.
+  static const unknownMovementLot = 'Potrero sin nombre';
+
   /// Movimiento que todavía no llegó al servidor.
   static const pendingSync = 'Pendiente de sincronizar';
 

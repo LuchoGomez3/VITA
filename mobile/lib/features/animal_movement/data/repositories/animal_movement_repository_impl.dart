@@ -143,6 +143,29 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
           );
         }
         entries.sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
+
+        // El alta guarda su lote en el animal. Tras el primer traslado, el
+        // origen de ese traslado conserva la ubicación anterior al cambio.
+        final firstMovement = movements.lastOrNull;
+        final initialLotId = firstMovement == null ? animal.lotId : firstMovement.sourceLotId;
+        if (initialLotId != null && initialLotId.isNotEmpty) {
+          final isStillInInitialLot = initialLotId == animal.lotId;
+          entries.add(
+            MovementHistoryEntry(
+              movementId: 'registration:${animal.localId}',
+              fromLotName: null,
+              toLotName: lotNames[initialLotId] ?? (isStillInInitialLot ? animal.lotName : ''),
+              occurredAt: animal.createdAt,
+              reason: '',
+              syncStatus: switch (animal.syncStatus) {
+                BrickAnimalSyncStatus.pending => MovementSyncStatus.pending,
+                BrickAnimalSyncStatus.synchronized => MovementSyncStatus.synchronized,
+                BrickAnimalSyncStatus.rejected => MovementSyncStatus.rejected,
+              },
+              isCurrent: current == null && isStillInInitialLot && animal.syncStatus != BrickAnimalSyncStatus.rejected,
+            ),
+          );
+        }
         return entries;
       });
 
