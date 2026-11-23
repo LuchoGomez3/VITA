@@ -48,6 +48,7 @@ class BrickCategoriaModel extends OfflineFirstWithRestModel {
     required this.updatedAt,
     this.description,
     this.deletedAt,
+    this.allowedSex,
   });
 
   /// UUID estable administrado por backend.
@@ -57,6 +58,11 @@ class BrickCategoriaModel extends OfflineFirstWithRestModel {
   /// Nombre visible de la categoria (Ternero, Vaquillona, Novillo, ...).
   @Rest(name: 'nombre')
   final String name;
+
+  /// Sexo admitido por el backend. Las filas cacheadas antes de este campo
+  /// conservan un valor nulo hasta el próximo pull del catálogo.
+  @Rest(name: 'sexo_permitido')
+  final String? allowedSex;
 
   /// Descripcion opcional de la categoria.
   @Rest(name: 'descripcion')

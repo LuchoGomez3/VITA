@@ -1,11 +1,14 @@
 import 'package:brick_sqlite/brick_sqlite.dart';
 import 'package:brick_sqlite/db.dart';
 import 'package:frontend_mayoral/brick/db/schema.g.dart' as generated;
+import 'package:sqflite/sqflite.dart';
 
 const _livestockSaleMigrationVersion = 20261122000100;
+const _livestockSaleDependenciesVersion = 20261122000200;
 const _preMergeHealthVersion = 20261120223303;
 const _lastSharedVersion = 20261015133521;
 const _healthMigrationVersion = 20261122234613;
+const _categoryAllowedSexVersion = 20261123003833;
 
 /// Migraciones ejecutadas por la aplicacion, con compatibilidad entre ramas.
 ///
@@ -21,23 +24,57 @@ Set<Migration> get appBrickMigrations => generated.migrations
     )
     .toSet();
 
-/// Integra las migraciones omitidas por una instalación anterior de Sanidad.
-Future<void> upgradePreMergeHealthDatabase(SqliteProvider sqliteProvider) async {
-  if (await sqliteProvider.lastMigrationVersion() != _preMergeHealthVersion) return;
-
-  final migrations = MigrationManager(appBrickMigrations).migrationsSince(_lastSharedVersion);
-  await sqliteProvider.transaction((transaction) async {
-    for (final migration in migrations.takeWhile((migration) => migration.version <= _healthMigrationVersion)) {
-      if (migration.version != _healthMigrationVersion) {
-        for (final command in migration.up) {
-          if (command.statement case final statement?) await transaction.execute(statement);
-        }
-      }
-      // Brick registra estas versiones en esta tabla. Sanidad ya existe y se
-      // conserva. SQLite confirma el esquema y las versiones juntos.
-      await transaction.insert('MigrationVersions', {'version': migration.version});
+/// Ajusta las migraciones pendientes al esquema físico antes de abrir Brick.
+///
+/// SQLite puede tener una columna agregada desde otra rama o haber guardado el
+/// cambio antes de que Brick registre la versión. Se omite el `ALTER TABLE`
+/// correspondiente y Brick registra su versión en el orden habitual.
+Future<Set<Migration>> prepareAppBrickMigrations(SqliteProvider sqliteProvider) async {
+  final lastVersion = await sqliteProvider.lastMigrationVersion();
+  return sqliteProvider.transaction((transaction) async {
+    final migrations = <Migration>{
+      for (final migration in appBrickMigrations)
+        if (migration.version > lastVersion) await _skipExistingColumn(transaction, migration) else migration,
+    };
+    if (lastVersion == _preMergeHealthVersion) {
+      await _upgradePreMergeHealthDatabase(transaction, migrations);
     }
+    return migrations;
   });
+}
+
+/// Omite solo los cambios aditivos conocidos que ya están en la base.
+Future<Migration> _skipExistingColumn(Transaction transaction, Migration migration) async {
+  if (migration.version != _livestockSaleDependenciesVersion && migration.version != _categoryAllowedSexVersion) {
+    return migration;
+  }
+  if (migration.up case [final InsertColumn column]) {
+    final existingColumns = await transaction.rawQuery('PRAGMA table_info("${column.onTable}")');
+    if (existingColumns.any((existing) => existing['name'] == column.name)) {
+      return _AlreadyAppliedMigration(migration);
+    }
+  }
+  return migration;
+}
+
+/// Integra las migraciones omitidas por una instalación anterior de Sanidad.
+Future<void> _upgradePreMergeHealthDatabase(Transaction transaction, Set<Migration> preparedMigrations) async {
+  final migrations = MigrationManager(preparedMigrations).migrationsSince(_lastSharedVersion);
+  for (final migration in migrations.takeWhile((migration) => migration.version <= _healthMigrationVersion)) {
+    if (migration.version != _healthMigrationVersion) {
+      for (final command in migration.up) {
+        if (command.statement case final statement?) await transaction.execute(statement);
+      }
+    }
+    // Sanidad ya existe. SQLite confirma los cambios faltantes y sus versiones
+    // en la misma transacción para poder reintentar el arranque.
+    await transaction.insert('MigrationVersions', {'version': migration.version});
+  }
+}
+
+/// Conserva la versión y su reversión cuando la columna ya fue agregada.
+class _AlreadyAppliedMigration extends Migration {
+  _AlreadyAppliedMigration(Migration migration) : super(version: migration.version, up: const [], down: migration.down);
 }
 
 class _LivestockSaleCompatibilityMigration extends Migration {
