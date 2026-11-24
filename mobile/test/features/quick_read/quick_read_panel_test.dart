@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/quick_read/domain/use_cases/quick_read_use_cases.dart';
 import 'package:frontend_mayoral/features/quick_read/presentation/cubit/quick_read_cubit.dart';
@@ -85,7 +86,12 @@ void main() {
       ],
     );
     addTearDown(router.dispose);
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        routerConfig: router,
+        builder: (_, child) => AppToastHost(child: child!),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -152,7 +158,7 @@ void main() {
 
     await tester.tap(find.text('confirmar movimiento'));
     await tester.pumpAndSettle();
-    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.text('${QuickReadStrings.moved(2, const {})} ${QuickReadStrings.savedOffline}'), findsOneWidget);
     expect(find.text(QuickReadStrings.registered(2)), findsOneWidget);
   });
 

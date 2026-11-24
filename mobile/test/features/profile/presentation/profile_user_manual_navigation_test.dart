@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/profile/domain/entities/establishment_details.dart';
 import 'package:frontend_mayoral/features/profile/domain/repositories/profile_repository.dart';
 import 'package:frontend_mayoral/features/profile/domain/use_cases/get_profile_establishments_use_case.dart';
@@ -50,7 +52,12 @@ Future<void> _pumpProfile(WidgetTester tester) async {
     ],
   );
   addTearDown(router.dispose);
-  await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+  await tester.pumpWidget(
+    MaterialApp.router(
+      routerConfig: router,
+      builder: (_, child) => AppToastHost(child: child!),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -79,7 +86,12 @@ void main() {
     await tester.tap(_row('Soporte'));
     await tester.pump();
 
-    expect(find.text(ProfileStrings.comingSoonMessage), findsOneWidget);
+    final message = find.text(ProfileStrings.comingSoonMessage);
+    final toastSurface = find.ancestor(
+      of: message,
+      matching: find.byWidgetPredicate((widget) => widget is Material && widget.color == AppColors.earTagBlue),
+    );
+    expect(toastSurface, findsOneWidget);
     expect(find.byType(UserManualPage), findsNothing);
   });
 }

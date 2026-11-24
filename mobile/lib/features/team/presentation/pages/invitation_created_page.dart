@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/authentication/user_role_strings.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
 import 'package:frontend_mayoral/features/team/presentation/cubit/invitation_created_cubit.dart';
@@ -55,7 +56,7 @@ class _InvitationCreatedPageState extends State<_InvitationCreatedView> {
   Future<void> _copy() async {
     await Clipboard.setData(ClipboardData(text: widget.created.code));
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(TeamStrings.codeCopied)));
+      AppToastHost.show(context, TeamStrings.codeCopied, tone: AppToastTone.success);
     }
   }
 
@@ -92,16 +93,14 @@ class _InvitationCreatedPageState extends State<_InvitationCreatedView> {
       listener: (context, state) {
         switch (state) {
           case Data<TeamMutation<void>>(:final data):
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  data.persistenceError == null ? TeamStrings.cancelledNotice : TeamStrings.mutationStorageWarning,
-                ),
-              ),
+            AppToastHost.show(
+              context,
+              data.persistenceError == null ? TeamStrings.cancelledNotice : TeamStrings.mutationStorageWarning,
+              tone: data.persistenceError == null ? AppToastTone.success : AppToastTone.error,
             );
             context.pop(data);
           case ResultError<TeamMutation<void>>(:final error):
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(TeamStrings.error(error))));
+            AppToastHost.show(context, TeamStrings.error(error));
           default:
             break;
         }

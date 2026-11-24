@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/field_map_photo_actions.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
@@ -59,7 +60,7 @@ class _FieldMapWithPhotoState extends State<FieldMapWithPhoto> {
     } on Exception catch (error, stackTrace) {
       Logger('FieldMapPhoto').warning('No se pudo guardar el fondo local.', error, stackTrace);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(FieldStrings.mapPhotoError)));
+        AppToastHost.show(context, FieldStrings.mapPhotoError);
       }
     } finally {
       if (mounted) setState(() => _selecting = false);

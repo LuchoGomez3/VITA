@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/auth/domain/repositories/auth_repository.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/restore_session_use_case.dart';
 import 'package:frontend_mayoral/features/auth/domain/use_cases/sign_out_use_case.dart';
@@ -33,6 +34,7 @@ void main() {
       BlocProvider.value(
         value: authSessionCubit,
         child: MaterialApp(
+          builder: (_, child) => AppToastHost(child: child!),
           home: EstablishmentRegisterPage(
             initialStep: RegisterEstablishmentStep.review,
             showSatelliteImagery: false,

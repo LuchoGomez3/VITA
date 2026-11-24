@@ -5,6 +5,7 @@ import 'package:frontend_mayoral/core/constants/health_registration_strings.dart
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_forage_period.dart';
@@ -291,7 +292,7 @@ class _LotDetailBody extends StatelessWidget {
       extra: [for (final animal in state.animals) animal.id],
     );
     if (context.mounted && (saved ?? false)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(HealthRegistrationStrings.saved)));
+      AppToastHost.show(context, HealthRegistrationStrings.saved, tone: AppToastTone.success);
     }
   }
 

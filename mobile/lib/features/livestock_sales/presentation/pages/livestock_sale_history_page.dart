@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/export_livestock_sales_csv_use_case.dart';
@@ -114,9 +115,7 @@ class _LivestockSaleHistoryViewState extends State<_LivestockSaleHistoryView> {
     } on Exception catch (error, stackTrace) {
       _logger.warning('No se pudo compartir el CSV de ventas.', error.runtimeType, stackTrace);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(LivestockSaleHistoryStrings.exportError)),
-        );
+        AppToastHost.show(context, LivestockSaleHistoryStrings.exportError);
       }
     } finally {
       if (mounted) setState(() => _exporting = false);

@@ -7,6 +7,7 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_genealogy.dart';
@@ -191,7 +192,12 @@ void main() {
         ],
       );
       addTearDown(router.dispose);
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpWidget(
+        MaterialApp.router(
+          routerConfig: router,
+          builder: (_, child) => AppToastHost(child: child!),
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text(AnimalDetailStrings.genealogyTab));
@@ -209,10 +215,10 @@ void main() {
       expect(movementRepository.loadedAnimalIds, [_animal.id, _animal.id]);
       expect(find.text('Rotación de pastoreo'), movedInitial ? findsOneWidget : findsNothing);
       expect(find.text(AnimalDetailStrings.pendingSync), movedInitial ? findsOneWidget : findsNothing);
-      expect(
-        find.text('${AnimalDetailStrings.moved(1, 'Potrero destino')} ${AnimalDetailStrings.savedOffline}'),
-        findsOneWidget,
-      );
+      final toast = find.text('${AnimalDetailStrings.moved(1, 'Potrero destino')} ${AnimalDetailStrings.savedOffline}');
+      expect(toast, findsOneWidget);
+      await tester.tap(toast);
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text(AnimalDetailStrings.generalTab));
       await tester.pumpAndSettle();

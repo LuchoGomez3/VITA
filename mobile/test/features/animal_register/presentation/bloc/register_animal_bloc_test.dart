@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_category.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_parent.dart';
 import 'package:frontend_mayoral/features/animal_register/domain/entities/animal_registration.dart';
@@ -217,6 +218,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp.router(
           routerConfig: router,
+          builder: (_, child) => AppToastHost(child: child!),
           theme: ThemeData(platform: platform),
         ),
       );

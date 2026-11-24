@@ -9,6 +9,7 @@ import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
 import 'package:frontend_mayoral/features/team/domain/errors/team_error.dart';
@@ -51,7 +52,12 @@ Future<List<Object?>> _pump(WidgetTester tester, Widget page) async {
       GoRoute(path: '/perfil/establecimiento/:id/equipo/invitar', builder: (context, state) => const Scaffold()),
     ],
   );
-  await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+  await tester.pumpWidget(
+    MaterialApp.router(
+      routerConfig: router,
+      builder: (_, child) => AppToastHost(child: child!),
+    ),
+  );
   await tester.tap(find.text('abrir'));
   await tester.pumpAndSettle();
   return popped;

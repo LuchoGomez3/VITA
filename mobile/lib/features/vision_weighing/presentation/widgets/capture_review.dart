@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_animal.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_capture.dart';
@@ -77,9 +78,7 @@ class _CaptureReviewState extends State<CaptureReview> {
     }
     final selectedAnimal = _selectedAnimal;
     if (selectedAnimal == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(VisionWeighingStrings.selectAnimalBeforeSave)),
-      );
+      AppToastHost.show(context, VisionWeighingStrings.selectAnimalBeforeSave);
       return;
     }
     unawaited(context.read<VisionCaptureCubit>().save(selectedAnimal.id));

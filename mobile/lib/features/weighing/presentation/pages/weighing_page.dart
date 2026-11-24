@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/weighing/domain/entities/animal_weighing.dart';
 import 'package:frontend_mayoral/features/weighing/domain/use_cases/record_animal_weighing_use_case.dart';
@@ -147,9 +148,7 @@ class _WeighingPageState extends State<WeighingPage> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    AppToastHost.show(context, message);
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:frontend_mayoral/core/widgets/app_sync_badge.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/health/presentation/pages/health_page.dart';
 import 'package:frontend_mayoral/features/health/presentation/strings/health_strings.dart';
 import 'package:go_router/go_router.dart';
@@ -30,7 +31,12 @@ void main() {
       ],
     );
     addTearDown(router.dispose);
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        routerConfig: router,
+        builder: (_, child) => AppToastHost(child: child!),
+      ),
+    );
 
     for (final tab in [HealthStrings.vaccinationsTab, HealthStrings.alertsTab]) {
       await tester.tap(find.text(tab));
@@ -39,7 +45,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(HealthStrings.exampleMessage), findsOneWidget);
       expect(find.text('manga=1'), findsNothing);
-      ScaffoldMessenger.of(tester.element(find.byType(HealthPage))).removeCurrentSnackBar();
+      await tester.tap(find.text(HealthStrings.exampleMessage));
       await tester.pumpAndSettle();
     }
 

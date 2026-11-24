@@ -4,6 +4,7 @@ import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/authentication/user_role_strings.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/team/presentation/cubit/invite_team_member_cubit.dart';
 import 'package:frontend_mayoral/features/team/presentation/strings/team_strings.dart';
@@ -65,7 +66,6 @@ class _InviteViewState extends State<_InviteView> {
           return;
         }
         final sent = state.sent;
-        final messenger = ScaffoldMessenger.of(context);
         if (sent != null) {
           // Equipo abre "Invitación creada" con el código para compartir.
           context.pop(sent);
@@ -73,9 +73,7 @@ class _InviteViewState extends State<_InviteView> {
         }
         final error = state.error;
         if (error != null && state.emailError == null) {
-          messenger
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(TeamStrings.error(error))));
+          AppToastHost.show(context, TeamStrings.error(error));
         }
       },
       builder: (context, state) {

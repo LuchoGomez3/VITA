@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/field_map_photo_actions.dart';
@@ -190,9 +191,7 @@ class _FieldMapViewState extends State<_FieldMapView> {
     if (saved == null || !context.mounted) return;
     await context.read<LotOverviewCubit>().refresh();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(FieldStrings.lotSavedMessage(saved.name))),
-    );
+    AppToastHost.show(context, FieldStrings.lotSavedMessage(saved.name), tone: AppToastTone.success);
   }
 
   Future<void> _openLotDetail(BuildContext context, String lotId) async {

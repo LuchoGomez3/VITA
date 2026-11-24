@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/widgets/app_header.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/cubit/operating_expense_cubit.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/strings/operating_expense_strings.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/widgets/operating_expense_form.dart';
@@ -50,9 +51,7 @@ class _OperatingExpensesView extends StatelessWidget {
         if (message == null) {
           return;
         }
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(message)));
+        AppToastHost.show(context, message);
       },
       builder: (context, state) {
         final savedExpense = state.savedExpense;

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/sync/domain/entities/sync_activity.dart';
 import 'package:frontend_mayoral/features/sync/domain/entities/sync_queue.dart';
 import 'package:frontend_mayoral/features/sync/domain/repositories/sync_activity_repository.dart';
@@ -34,6 +35,7 @@ void main() {
 
   Future<void> pumpPage(WidgetTester tester) => tester.pumpWidget(
     MaterialApp(
+      builder: (_, child) => AppToastHost(child: child!),
       home: SyncStatusPage(
         createCubit: () => SyncQueueCubit(
           repository: _FakeRepository(queue.stream),

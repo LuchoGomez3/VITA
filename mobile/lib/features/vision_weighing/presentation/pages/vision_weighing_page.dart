@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_device_orientation.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/get_vision_animal_options.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/use_cases/pick_vision_photo.dart';
@@ -163,9 +164,7 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
     } on Exception catch (error, stack) {
       developer.log('No se pudo adjuntar la foto', name: 'vision_weighing', error: error, stackTrace: stack);
       if (mounted && !_closing) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(VisionWeighingStrings.attachPhotoError)),
-        );
+        AppToastHost.show(context, VisionWeighingStrings.attachPhotoError);
       }
     } finally {
       if (mounted) setState(() => _selectingPhoto = false);

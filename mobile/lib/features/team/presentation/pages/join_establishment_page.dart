@@ -8,6 +8,7 @@ import 'package:frontend_mayoral/core/authentication/user_role_strings.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/team/domain/errors/team_error.dart';
 import 'package:frontend_mayoral/features/team/presentation/cubit/join_establishment_cubit.dart';
@@ -40,9 +41,7 @@ class _JoinView extends StatelessWidget {
       // El error de un código se ve en la pantalla; el del canje (ya confirmado)
       // va en un aviso porque la confirmación queda arriba para reintentar.
       listenWhen: (previous, current) => current.step == JoinStep.confirm && current.error != null,
-      listener: (context, state) => ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(TeamStrings.error(state.error!)))),
+      listener: (context, state) => AppToastHost.show(context, TeamStrings.error(state.error!)),
       builder: (context, state) {
         if (state.step == JoinStep.recovery) return _Recovery(state: state);
         if (state.step == JoinStep.joined) {

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/satellite_imagery.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/local_point.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
@@ -273,11 +274,7 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
   }
 
   void _showBlockedPlacementMessage() {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(content: Text(FieldStrings.vertexInsideLotError)),
-      );
+    AppToastHost.show(context, FieldStrings.vertexInsideLotError);
   }
 }
 
