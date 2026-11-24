@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/senasa_report/domain/entities/senasa_report_models.dart';
 import 'package:frontend_mayoral/features/senasa_report/presentation/bloc/senasa_menu_cubit.dart';
@@ -98,9 +99,7 @@ class _SenasaMenuView extends StatelessWidget {
         );
       case ResultError<GeneratedSenasaReport>(:final error):
         if (context.mounted) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(error.message)));
+          AppToastHost.show(context, error.message);
         }
       default:
         break;

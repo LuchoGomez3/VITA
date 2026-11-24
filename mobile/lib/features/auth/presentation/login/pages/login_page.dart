@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/presentation/login/bloc/login_bloc.dart';
@@ -66,19 +67,11 @@ class _LoginViewState extends State<_LoginView> {
             context.read<AuthSessionCubit>().setAuthenticated(data);
             final initialDataSyncError = state.initialDataSyncError;
             if (initialDataSyncError != null) {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(content: Text(initialDataSyncError.message)),
-                );
+              AppToastHost.show(context, initialDataSyncError.message);
             }
             context.go(state.destinationAfterSignIn);
           case ResultError<AuthSession>(:final error):
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(content: Text(error.message)),
-              );
+            AppToastHost.show(context, error.message);
           default:
             break;
         }

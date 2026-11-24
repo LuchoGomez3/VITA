@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_animal.dart';
 import 'package:frontend_mayoral/features/vision_weighing/domain/entities/vision_camera_info.dart';
@@ -269,6 +270,7 @@ void main() {
     await cubit.process(photo);
     await tester.pumpWidget(
       MaterialApp(
+        builder: (_, child) => AppToastHost(child: child!),
         home: BlocProvider.value(
           value: cubit,
           child: Scaffold(

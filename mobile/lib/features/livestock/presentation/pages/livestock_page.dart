@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/livestock/domain/entities/animal_list_entry.dart';
 import 'package:frontend_mayoral/features/livestock/domain/entities/livestock_establishment.dart';
@@ -128,20 +129,14 @@ class _LivestockViewState extends State<_LivestockView> {
         BlocListener<LivestockReaderCubit, ResultState<List<LivestockEstablishment>>>(
           listener: (context, state) {
             if (state is ResultError<List<LivestockEstablishment>>) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(LivestockStrings.establishmentsError),
-                ),
-              );
+              AppToastHost.show(context, LivestockStrings.establishmentsError);
             }
           },
         ),
         BlocListener<LivestockAccessCubit, ResultState<List<LivestockEstablishment>>>(
           listener: (context, state) {
             if (state is ResultError<List<LivestockEstablishment>>) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text(LivestockStrings.saleAccessError)),
-              );
+              AppToastHost.show(context, LivestockStrings.saleAccessError);
             }
           },
         ),
@@ -626,9 +621,7 @@ class _HeaderActionsState extends State<_HeaderActions> {
 
   Future<void> _handleEstablishments(List<LivestockEstablishment> establishments) async {
     if (establishments.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(LivestockStrings.noEstablishments)),
-      );
+      AppToastHost.show(context, LivestockStrings.noEstablishments);
       return;
     }
 

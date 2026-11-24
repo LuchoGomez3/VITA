@@ -8,13 +8,14 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_forage_period.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/field_map_photo_actions.dart';
 import 'package:frontend_mayoral/features/field/presentation/cubit/lot_detail_cubit.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/field_map_with_photo.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_edit_dialog.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_forage_period_sheet.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_forage_section.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_movement_dialog.dart';
-import 'package:frontend_mayoral/features/field/presentation/widgets/lot_overview_canvas.dart';
 import 'package:go_router/go_router.dart';
 
 /// Fábrica inyectable del estado de detalle.
@@ -23,10 +24,13 @@ typedef LotDetailCubitFactory = LotDetailCubit Function();
 /// Ficha offline de un lote y sus animales actuales.
 class FieldDetailPage extends StatelessWidget {
   /// Crea la pantalla con sus dependencias resueltas en composición.
-  const FieldDetailPage({required this.createCubit, super.key});
+  const FieldDetailPage({required this.createCubit, this.photoActions, super.key});
 
   /// Construye el Cubit propietario de la ficha.
   final LotDetailCubitFactory createCubit;
+
+  /// Lee el fondo del establecimiento para el mapa de la ficha.
+  final FieldMapPhotoActions? photoActions;
 
   @override
   Widget build(BuildContext context) {
@@ -35,14 +39,16 @@ class FieldDetailPage extends StatelessWidget {
       child: BlocListener<LotDetailCubit, LotDetailState>(
         listenWhen: (previous, current) => previous.isDeleted != current.isDeleted && current.isDeleted,
         listener: (context, _) => context.pop(true),
-        child: const _FieldDetailView(),
+        child: _FieldDetailView(photoActions: photoActions),
       ),
     );
   }
 }
 
 class _FieldDetailView extends StatelessWidget {
-  const _FieldDetailView();
+  const _FieldDetailView({required this.photoActions});
+
+  final FieldMapPhotoActions? photoActions;
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +77,8 @@ class _FieldDetailView extends StatelessWidget {
             child: switch (state.loadState) {
               Initial<void>() || Loading<void>() => const Center(child: CircularProgressIndicator()),
               ResultError<void>(:final error) => _ErrorBody(message: error.message),
-              Data<void>() => state.isDeleted ? const SizedBox.shrink() : _LotDetailBody(state: state),
+              Data<void>() =>
+                state.isDeleted ? const SizedBox.shrink() : _LotDetailBody(state: state, photoActions: photoActions),
               _ => const SizedBox.shrink(),
             },
           ),
@@ -119,9 +126,10 @@ class _FieldDetailView extends StatelessWidget {
 }
 
 class _LotDetailBody extends StatelessWidget {
-  const _LotDetailBody({required this.state});
+  const _LotDetailBody({required this.state, required this.photoActions});
 
   final LotDetailState state;
+  final FieldMapPhotoActions? photoActions;
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +139,13 @@ class _LotDetailBody extends StatelessWidget {
       children: [
         SizedBox(
           height: 260,
-          child: LotOverviewCanvas(lots: [lot], onLotSelected: (_) {}),
+          child: FieldMapWithPhoto(
+            key: ValueKey(lot.establishmentId),
+            establishmentId: lot.establishmentId,
+            actions: photoActions,
+            lots: [lot],
+            onLotSelected: (_) {},
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         Row(
@@ -272,13 +286,10 @@ class _LotDetailBody extends StatelessWidget {
   }
 
   Future<void> _registerHealth(BuildContext context, String establishmentId) async {
-    final saved = await context.push<bool>(
+    await context.push<bool>(
       AppRoutes.healthRegistration(establishmentId: establishmentId),
       extra: [for (final animal in state.animals) animal.id],
     );
-    if (context.mounted && (saved ?? false)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(HealthRegistrationStrings.saved)));
-    }
   }
 
   Future<void> _moveAnimals(BuildContext context) async {
@@ -287,6 +298,7 @@ class _LotDetailBody extends StatelessWidget {
       builder: (_) => LotMovementDialog(
         animals: state.animals,
         destinations: state.availableDestinations,
+        originResourceCode: state.lot?.forageResourceCode,
       ),
     );
     if (input == null || !context.mounted) return;

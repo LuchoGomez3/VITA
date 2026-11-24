@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/satellite_imagery.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/boundary_point.dart';
@@ -53,9 +54,11 @@ class EstablishmentRegisterSurfaceStep extends StatelessWidget {
           _ => null,
         };
         if (message != null) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(message)));
+          AppToastHost.show(
+            context,
+            message,
+            tone: state.boundaryGpsResult is Data<CurrentLocation> ? AppToastTone.success : AppToastTone.error,
+          );
         }
       },
       child: Column(

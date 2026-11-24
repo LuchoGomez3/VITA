@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/sync/presentation/cubit/sync_queue_cubit.dart';
 import 'package:frontend_mayoral/features/sync/presentation/strings/sync_status_strings.dart';
 import 'package:frontend_mayoral/features/sync/presentation/widgets/sync_progress_banner.dart';
@@ -35,7 +36,7 @@ class _SyncStatusView extends StatelessWidget {
   Future<void> _synchronizeNow(BuildContext context) async {
     final synchronized = await context.read<SyncQueueCubit>().synchronizeNow();
     if (context.mounted && !synchronized) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(SyncStatusStrings.manualSyncFailed)));
+      AppToastHost.show(context, SyncStatusStrings.manualSyncFailed);
     }
   }
 

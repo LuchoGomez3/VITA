@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.dart';
 import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_cubit.dart';
 import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
@@ -86,9 +87,7 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> with WidgetsBind
     return BlocListener<HomeDashboardCubit, HomeDashboardState>(
       listenWhen: (previous, current) => previous.refreshError != current.refreshError && current.refreshError != null,
       listener: (context, state) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(state.refreshError!.message)));
+        AppToastHost.show(context, state.refreshError!.message);
       },
       child: Scaffold(
         body: Column(
@@ -98,7 +97,6 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> with WidgetsBind
               establishmentMenuController: _establishmentMenu,
               onSelected: _selectEstablishment,
               onCreateEstablishment: _createEstablishment,
-              onIdentifyAnimal: _identifyAnimal,
               syncIndicator: widget.syncIndicator,
             ),
             Expanded(
@@ -110,20 +108,6 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> with WidgetsBind
         ),
       ),
     );
-  }
-
-  void _identifyAnimal() {
-    final establishmentId = context.read<HomeDashboardCubit>().state.selectedEstablishmentId;
-    if (establishmentId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(HomeStrings.selectEstablishmentBeforeIdentification),
-        ),
-      );
-      return;
-    }
-
-    context.push(AppRoutes.rfidScanForEstablishment(establishmentId));
   }
 
   void _openSelector() => _establishmentMenu.open();

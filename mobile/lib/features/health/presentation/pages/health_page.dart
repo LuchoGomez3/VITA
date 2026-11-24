@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/health/presentation/mock/health_mock.dart';
 import 'package:frontend_mayoral/features/health/presentation/strings/health_strings.dart';
@@ -29,9 +30,7 @@ class _HealthPageState extends State<HealthPage> {
   HealthTab _tab = HealthTab.vaccinations;
 
   void _showExampleMessage() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text(HealthStrings.exampleMessage)),
-    );
+    AppToastHost.show(context, HealthStrings.exampleMessage, tone: AppToastTone.info);
   }
 
   void _openRegistration() => context.push(AppRoutes.healthRegistration(capture: true));

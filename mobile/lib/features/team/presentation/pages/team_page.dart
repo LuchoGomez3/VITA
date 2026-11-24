@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/team/domain/entities/team.dart';
 import 'package:frontend_mayoral/features/team/presentation/cubit/team_cubit.dart';
@@ -60,9 +61,7 @@ class _TeamView extends StatelessWidget {
               null => null,
             };
       if (message != null) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(message)));
+        AppToastHost.show(context, message, tone: state.error == null ? AppToastTone.success : AppToastTone.error);
       }
     },
     builder: (context, state) {
@@ -117,7 +116,7 @@ class _TeamView extends StatelessWidget {
     if (mutation == null || !context.mounted) return;
     cubit.invitationCreated(mutation);
     if (mutation.persistenceError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(TeamStrings.mutationStorageWarning)));
+      AppToastHost.show(context, TeamStrings.mutationStorageWarning);
     }
     await _openCreated(context, cubit, mutation.value);
   }

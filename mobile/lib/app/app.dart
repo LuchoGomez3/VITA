@@ -10,6 +10,7 @@ import 'package:frontend_mayoral/app/theme/app_theme.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
 import 'package:frontend_mayoral/core/authentication/get_establishment_role_use_case.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/auth/auth_composition.dart' as auth_composition;
 import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
 import 'package:frontend_mayoral/features/sync/sync_composition.dart';
@@ -101,6 +102,7 @@ class _FrontendMayoralAppState extends State<FrontendMayoralApp> {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
         routerConfig: _router,
+        builder: (context, child) => AppToastHost(child: child ?? const SizedBox.shrink()),
       ),
     );
   }

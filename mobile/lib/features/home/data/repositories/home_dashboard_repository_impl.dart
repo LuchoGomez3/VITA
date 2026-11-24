@@ -4,6 +4,7 @@ import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/operating_expense_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
@@ -25,6 +26,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     required SecureStorageService secureStorage,
     required OperatingExpenseBrickStore operatingExpenseStore,
     required LivestockSaleBrickStore livestockSaleStore,
+    required LotBrickStore lotStore,
   }) : _animalStore = animalStore,
        _categoryStore = categoryStore,
        _pesajeStore = pesajeStore,
@@ -32,7 +34,8 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
          secureStorage: secureStorage,
        ),
        _operatingExpenseStore = operatingExpenseStore,
-       _livestockSaleStore = livestockSaleStore;
+       _livestockSaleStore = livestockSaleStore,
+       _lotStore = lotStore;
 
   final AnimalBrickStore _animalStore;
   final CategoriaBrickStore _categoryStore;
@@ -40,6 +43,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
   final EstablishmentCatalog _establishmentCatalog;
   final OperatingExpenseBrickStore _operatingExpenseStore;
   final LivestockSaleBrickStore _livestockSaleStore;
+  final LotBrickStore _lotStore;
 
   @override
   Future<Result<HomeDashboardSource>> getDashboardSource({
@@ -56,6 +60,14 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
                 .toList();
       final weighings = await _pesajeStore.getLocalPesajes();
       final categories = await _categoryStore.getLocalCategorias();
+      final establishmentsWithLots = {
+        for (final animal in animals)
+          if (animal.lotId.isNotEmpty) animal.establishmentId,
+      };
+      final lotNames = {
+        for (final establishmentId in establishmentsWithLots)
+          for (final lot in await _lotStore.getLocalLots(establishmentId)) (establishmentId, lot.localId): lot.name,
+      };
 
       return Result.success(
         HomeDashboardSource(
@@ -69,7 +81,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
                 productiveStatusChangedAt: animal.productiveStatusChangedAt,
                 categoryId: animal.categoryId,
                 categoryName: animal.categoryName,
-                lotName: animal.lotName,
+                lotName: lotNames[(animal.establishmentId, animal.lotId)] ?? animal.lotName,
                 initialWeightKg: animal.initialWeight,
                 initialWeighingDate: animal.weighingDate,
               ),

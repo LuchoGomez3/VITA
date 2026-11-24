@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail_enums.dart';
@@ -44,9 +45,7 @@ class _AnimalObservationsSectionState extends State<AnimalObservationsSection> {
       await widget.actions.add(widget.animal.establishmentId, widget.animal.id, note);
     } on Exception {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AnimalDetailStrings.observationSaveError)),
-        );
+        AppToastHost.show(context, AnimalDetailStrings.observationSaveError);
       }
     } finally {
       if (mounted) setState(() => _saving = false);

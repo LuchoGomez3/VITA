@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/fields/app_dropdown_form_field.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
@@ -166,6 +167,12 @@ void main() {
     await tester.tap(find.text('Sangrado').last);
     await tester.pumpAndSettle();
 
+    await tester.tap(find.text(HealthRegistrationStrings.useManual));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(HealthRegistrationStrings.useReader));
+    await tester.pumpAndSettle();
+    expect(find.text(HealthRegistrationStrings.readerReady), findsOneWidget);
+
     for (final rfid in ['000000000000001', '000000000000002']) {
       for (final digit in rfid.split('')) {
         final key = LogicalKeyboardKey(LogicalKeyboardKey.digit0.keyId + int.parse(digit));
@@ -219,7 +226,12 @@ void main() {
       ],
     );
     addTearDown(router.dispose);
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        routerConfig: router,
+        builder: (_, child) => AppToastHost(child: child!),
+      ),
+    );
     await tester.tap(find.text('Ficha'));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(MenuAnchor));
@@ -237,6 +249,7 @@ void main() {
     expect(repository.registration?.recipients, [_animal]);
     expect(repository.registration?.details, const HealthObservation(description: 'Control', sampleType: 'Sangre'));
     expect(find.text('Ficha'), findsOneWidget);
+    expect(find.text(HealthRegistrationStrings.registrationSaved), findsOneWidget);
   });
 
   testWidgets('a large selection keeps an edited sample after scrolling and confirms every animal', (tester) async {

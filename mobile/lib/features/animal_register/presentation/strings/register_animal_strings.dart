@@ -46,8 +46,7 @@ class AnimalRegisterStrings {
   static const manualEntryTitle = 'INGRESO MANUAL';
 
   /// Descripcion del formulario de ingreso manual.
-  static const manualEntryDescription =
-      'Si no tenés el bastón a mano, ingresá los 15 dígitos de la caravana RFID y el número visual .';
+  static const manualEntryDescription = 'Ingresá el RFID de 15 dígitos, la serie y el número de caravana visual.';
 
   /// Titulo del campo de RFID.
   static const rfidFieldTitle = 'RFID • 15 dígitos';
@@ -67,11 +66,17 @@ class AnimalRegisterStrings {
   /// Hint del campo de serie.
   static const seriesFieldHint = 'Ej. 2024';
 
+  /// Error de formato o ausencia de serie.
+  static const seriesInvalid = 'Ingresá de 1 a 4 dígitos.';
+
   /// Titulo del campo de número de caravana visual.
   static const visualNumberFieldTitle = 'N° caravana visual';
 
   /// Hint del campo de número de caravana visual.
   static const visualNumberFieldHint = 'Ej. 1048';
+
+  /// Error de formato o ausencia de número visual.
+  static const visualNumberInvalid = 'Ingresá de 1 a 8 dígitos.';
 
   /// Titulo del boton de prueba con bastón Bluetooth.
   static const bluetoothButtonLabel = 'Probar con bastón Bluetooth';

@@ -100,6 +100,22 @@ sealed class RegisterAnimalState with _$RegisterAnimalState {
 
 /// Validaciones sincrónicas necesarias para avanzar en el alta.
 extension RegisterAnimalDraftValidation on RegisterAnimalDraft {
+  /// Límite del campo de serie en el formulario.
+  static const maxSeriesLength = 4;
+
+  /// Límite del campo de número visual en el formulario.
+  static const maxVisualNumberLength = 8;
+
+  static final _digitsOnly = RegExp(r'^[0-9]+$');
+
+  /// La serie tiene entre uno y cuatro dígitos.
+  bool get hasValidVisualTagSeries =>
+      visualTagSeries.length <= maxSeriesLength && _digitsOnly.hasMatch(visualTagSeries);
+
+  /// El número visual tiene entre uno y ocho dígitos.
+  bool get hasValidVisualTagNumber =>
+      visualTagNumber.length <= maxVisualNumberLength && _digitsOnly.hasMatch(visualTagNumber);
+
   /// Traduce la opción de pantalla al valor de dominio.
   AnimalSex? get selectedSex => switch (sex) {
     AnimalRegisterStrings.stepTwoFemale => AnimalSex.female,
@@ -109,7 +125,8 @@ extension RegisterAnimalDraftValidation on RegisterAnimalDraft {
 
   /// Indica si el borrador contiene los datos obligatorios del [step].
   bool isValidForStep(RegisterAnimalStep step) => switch (step) {
-    RegisterAnimalStep.identification => RfidValidator.isValid(rfid.trim()),
+    RegisterAnimalStep.identification =>
+      RfidValidator.isValid(rfid.trim()) && hasValidVisualTagSeries && hasValidVisualTagNumber,
     RegisterAnimalStep.basicData =>
       breed.trim().isNotEmpty &&
           selectedSex != null &&

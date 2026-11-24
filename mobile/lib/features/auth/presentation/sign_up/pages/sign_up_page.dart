@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/auth_session.dart';
 import 'package:frontend_mayoral/features/auth/domain/entities/registration_request.dart';
 import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
@@ -189,11 +190,7 @@ class _SignUpViewState extends State<_SignUpView> {
           unawaited(_showOfflineModal());
           return;
         }
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(content: Text(error.message)),
-          );
+        AppToastHost.show(context, error.message);
       case SignUpStage.idle || SignUpStage.registering:
         break;
     }

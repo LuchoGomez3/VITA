@@ -75,6 +75,9 @@ abstract final class HealthRegistrationStrings {
   /// Confirmación durable en SQLite.
   static const saved = 'Guardado en el dispositivo';
 
+  /// Confirma el guardado local del evento, incluso sin conexión.
+  static const registrationSaved = 'Registro sanitario guardado en el dispositivo.';
+
   /// Consulta sin registros previos.
   static const emptyHistory = 'Este animal todavía no tiene eventos sanitarios.';
 
@@ -134,6 +137,9 @@ abstract final class HealthRegistrationStrings {
 
   /// Activa el bastón en la sesión de manga.
   static const useReader = 'Leer con bastón';
+
+  /// Indica que la app está escuchando las teclas del lector externo.
+  static const readerReady = 'Esperando lectura. Acercá el bastón Bluetooth conectado a la caravana.';
 
   /// Abre el ingreso con teclado.
   static const useManual = 'Ingresar caravana manual';

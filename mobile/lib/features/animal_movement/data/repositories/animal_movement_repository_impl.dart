@@ -95,7 +95,12 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
             ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       return [
         for (final lot in lots)
-          MovementDestination(id: lot.localId, name: lot.name, animalCount: counts[lot.localId] ?? 0),
+          MovementDestination(
+            id: lot.localId,
+            name: lot.name,
+            animalCount: counts[lot.localId] ?? 0,
+            forageResourceCode: lot.forageResourceCode,
+          ),
       ];
     },
   );
@@ -186,9 +191,9 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
         }
       }
     }
-    final lotName = animal.lotName.isNotEmpty
-        ? animal.lotName
-        : (await _lotStore.getLocalLot(animal.lotId))?.name ?? '';
+    final lot = await _lotStore.getLocalLot(animal.lotId);
+    final currentLot = lot?.establishmentId == animal.establishmentId ? lot : null;
+    final lotName = animal.lotName.isNotEmpty ? animal.lotName : currentLot?.name ?? '';
     return MovementAnimal(
       id: animal.localId,
       establishmentId: animal.establishmentId,
@@ -198,6 +203,7 @@ class AnimalMovementRepositoryImpl implements AnimalMovementRepository {
       categoryName: categoryName,
       lotId: animal.lotId,
       lotName: lotName,
+      forageResourceCode: currentLot?.forageResourceCode,
     );
   }
 

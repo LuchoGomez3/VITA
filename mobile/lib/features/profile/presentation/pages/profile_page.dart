@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/profile/domain/entities/establishment_details.dart';
 import 'package:frontend_mayoral/features/profile/presentation/cubit/profile_appearance_cubit.dart';
@@ -199,9 +200,7 @@ class _EstablishmentsContent extends StatelessWidget {
 }
 
 void _showComingSoon(BuildContext context) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(const SnackBar(content: Text(ProfileStrings.comingSoonMessage)));
+  AppToastHost.show(context, ProfileStrings.comingSoonMessage, tone: AppToastTone.info);
 }
 
 /// Abre la ruta de [item] o, si todavía no tiene, avisa que llega pronto.
@@ -347,9 +346,11 @@ class _AppearanceHeader extends StatelessWidget {
         if (message == null) {
           return;
         }
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(message)));
+        AppToastHost.show(
+          context,
+          message,
+          tone: state.errorMessage == null ? AppToastTone.success : AppToastTone.error,
+        );
         context.read<ProfileAppearanceCubit>().clearMessages();
       },
       builder: (context, state) {
@@ -369,8 +370,8 @@ class _AppearanceHeader extends StatelessWidget {
 
   Future<void> _edit(BuildContext context, int? currentColor, bool hasPhoto) async {
     final cubit = context.read<ProfileAppearanceCubit>();
-    final messenger = ScaffoldMessenger.of(context);
     final choice = await showProfileAppearanceSheet(context, currentColor: currentColor, hasPhoto: hasPhoto);
+    if (!context.mounted) return;
     switch (choice) {
       case null:
         return;
@@ -379,13 +380,10 @@ class _AppearanceHeader extends StatelessWidget {
       case RemovePhotoChoice():
         await cubit.removeAvatar();
       case TakePhotoChoice():
-        await _pick(cubit, messenger, ImageSource.camera);
+        await _pick(context, cubit, ImageSource.camera);
       case PickPhotoChoice():
-        await _pick(cubit, messenger, ImageSource.gallery);
+        await _pick(context, cubit, ImageSource.gallery);
       case ChooseAvatarChoice():
-        if (!context.mounted) {
-          return;
-        }
         final seed = await showToonHeadAvatarPicker(context);
         if (seed != null) {
           await cubit.changeAvatar(await ToonHeadAvatars.toPng(ToonHeadAvatars.svg(seed)));
@@ -393,7 +391,7 @@ class _AppearanceHeader extends StatelessWidget {
     }
   }
 
-  Future<void> _pick(ProfileAppearanceCubit cubit, ScaffoldMessengerState messenger, ImageSource source) async {
+  Future<void> _pick(BuildContext context, ProfileAppearanceCubit cubit, ImageSource source) async {
     try {
       // Achicada en el celular para que suba rápido con poca señal; el
       // backend la deja en 512 px igual.
@@ -410,9 +408,7 @@ class _AppearanceHeader extends StatelessWidget {
       }
     } on PlatformException catch (error, stackTrace) {
       _logger.warning('No se pudo abrir la cámara o la galería', error, stackTrace);
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text(ProfileStrings.photoPickerError)));
+      if (context.mounted) AppToastHost.show(context, ProfileStrings.photoPickerError);
     }
   }
 }

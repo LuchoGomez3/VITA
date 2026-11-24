@@ -8,6 +8,7 @@ import 'package:frontend_mayoral/core/constants/health_registration_strings.dart
 import 'package:frontend_mayoral/core/rfid/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/hid_rfid_keyboard_listener.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/quick_read/domain/entities/quick_read_item.dart';
@@ -312,7 +313,6 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
             QuickActionTile(
               icon: Icons.vaccines_outlined,
               label: QuickReadStrings.registerTreatment,
-              subtitle: QuickReadStrings.comingSoon,
             ),
           ],
         ),
@@ -484,13 +484,10 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
     try {
       await _readingSource.stopReading();
       if (!mounted) return;
-      final saved = await context.push<bool>(
+      await context.push<bool>(
         AppRoutes.healthRegistration(establishmentId: _cubit.state.establishmentId, capture: capture),
         extra: animalIds,
       );
-      if (mounted && (saved ?? false)) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(HealthRegistrationStrings.saved)));
-      }
     } finally {
       if (mounted) {
         unawaited(_readingSource.startReading());
@@ -503,21 +500,16 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
   }
 
   Future<void> _move(List<String> animalIds) async {
-    final messenger = ScaffoldMessenger.of(context);
     final summary = await context.push<GroupMovementSummary>(AppRoutes.groupMovement, extra: animalIds);
     await _afterAction();
     if (summary == null || !mounted) {
       return;
     }
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            '${QuickReadStrings.moved(summary.movedCount, summary.destinations)} ${QuickReadStrings.savedOffline}',
-          ),
-        ),
-      );
+    AppToastHost.show(
+      context,
+      '${QuickReadStrings.moved(summary.movedCount, summary.destinations)} ${QuickReadStrings.savedOffline}',
+      tone: AppToastTone.success,
+    );
   }
 
   /// Da de alta [rfids] de a uno; cortar un alta corta la serie.

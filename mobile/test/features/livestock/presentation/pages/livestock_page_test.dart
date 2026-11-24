@@ -7,6 +7,7 @@ import 'package:frontend_mayoral/core/authentication/establishment_membership.da
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/livestock/domain/entities/animal_list_entry.dart';
 import 'package:frontend_mayoral/features/livestock/domain/entities/livestock_establishment.dart';
 import 'package:frontend_mayoral/features/livestock/domain/repositories/animal_list_repository.dart';
@@ -367,6 +368,7 @@ Widget _testAppWithRepository({
     saleAccessResult,
   );
   return MaterialApp(
+    builder: (_, child) => AppToastHost(child: child!),
     home: LivestockPage(
       createCubit: () => AnimalListCubit(
         getAnimalListUseCase: GetAnimalListUseCase(listRepository),

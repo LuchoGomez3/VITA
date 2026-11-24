@@ -32,7 +32,7 @@ void main() {
               establishmentMenuController: MenuController(),
               onSelected: cubit.selectEstablishment,
               onCreateEstablishment: () {},
-              onIdentifyAnimal: () {},
+              syncIndicator: const Icon(Icons.cloud_done_outlined),
             ),
           ),
         ),
@@ -41,6 +41,8 @@ void main() {
 
     final defaultSummary = find.text('${HomeStrings.establishmentPrefix} La Sirena');
     expect(defaultSummary, findsOneWidget);
+    expect(find.byIcon(Icons.bluetooth), findsNothing);
+    expect(find.byIcon(Icons.cloud_done_outlined), findsOneWidget);
 
     await tester.tap(defaultSummary);
     await tester.pumpAndSettle();

@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/auth/presentation/session/cubit/auth_session_cubit.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/establishment_registration.dart';
@@ -211,21 +212,13 @@ class _EstablishmentRegisterView extends StatelessWidget {
         // La sesión venció y no se pudo renovar: se cierra como en el resto
         // de la app (AuthSessionCubit) y el router lleva a iniciar sesión.
         // El alta es online-only, así que no queda nada pendiente de guardar.
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            const SnackBar(content: Text(EstablishmentRegisterStrings.sessionExpiredMessage)),
-          );
+        AppToastHost.show(context, EstablishmentRegisterStrings.sessionExpiredMessage);
         unawaited(context.read<AuthSessionCubit>().signOut());
       case DomainErrorCode.unknown ||
           DomainErrorCode.validation ||
           DomainErrorCode.notFound ||
           DomainErrorCode.syncFailed:
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(content: Text(error.message)),
-          );
+        AppToastHost.show(context, error.message);
     }
   }
 }

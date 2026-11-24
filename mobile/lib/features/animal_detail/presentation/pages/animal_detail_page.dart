@@ -4,6 +4,7 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/constants/feature_strings.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_photo.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/animal_observations.dart';
@@ -240,7 +241,7 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
   Future<void> _capturePhoto(BuildContext context) async {
     final captured = await context.read<AnimalDetailCubit>().capturePhoto();
     if (!captured && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(AnimalDetailStrings.takePhotoError)));
+      AppToastHost.show(context, AnimalDetailStrings.takePhotoError);
     }
   }
 
@@ -249,34 +250,28 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
   Future<void> _moveAnimals(BuildContext context, AnimalDetail animal) async {
     final detailCubit = context.read<AnimalDetailCubit>();
     final historyCubit = context.read<MovementHistoryCubit>();
-    final messenger = ScaffoldMessenger.of(context);
     final summary = await context.push<GroupMovementSummary>(AppRoutes.animalGroupMovementById(animal.id));
     if (summary == null) {
       return;
     }
     await Future.wait([detailCubit.loadAnimalData(animal.id), historyCubit.load(animal.id)]);
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            '${AnimalDetailStrings.movementConfirmation(summary.movedCount, summary.destinations)} ${AnimalDetailStrings.savedOffline}',
-          ),
-        ),
-      );
+    if (!context.mounted) return;
+    AppToastHost.show(
+      context,
+      '${AnimalDetailStrings.movementConfirmation(summary.movedCount, summary.destinations)} ${AnimalDetailStrings.savedOffline}',
+      tone: AppToastTone.success,
+    );
   }
 
   /// Abre "Registrar alimentación" con este animal y, al volver, recarga el
   /// historial y avisa que quedó guardado en el celular.
   Future<void> _registerFeeding(BuildContext context, AnimalDetail animal) async {
     final feedingCubit = context.read<AnimalFeedingCubit>();
-    final messenger = ScaffoldMessenger.of(context);
     final count = await context.push<int>(AppRoutes.animalFeedingById(animal.id));
     if (count == null) return;
     await feedingCubit.load(animal.id);
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text(AnimalDetailStrings.feedingSaved)));
+    if (!context.mounted) return;
+    AppToastHost.show(context, AnimalDetailStrings.feedingSaved, tone: AppToastTone.success);
   }
 
   void _close(BuildContext context) {

@@ -611,6 +611,7 @@ class AppRouter {
             final lotId = state.pathParameters['loteId']!;
             return FieldDetailPage(
               createCubit: () => createLotDetailCubit(lotId),
+              photoActions: createFieldMapPhotoActions(),
             );
           },
         ),

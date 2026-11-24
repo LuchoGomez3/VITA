@@ -3,6 +3,7 @@ import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
@@ -83,39 +84,33 @@ class _AnimalHealthTabState extends State<AnimalHealthTab> {
   }
 
   Future<void> _register() async {
-    final saved = await context.push<bool>(
+    await context.push<bool>(
       AppRoutes.healthRegistration(
         establishmentId: widget.animal.establishmentId,
         animalId: widget.animal.id,
       ),
     );
-    _showSaved(saved);
   }
 
   Future<void> _recordResult(HealthEvent event) async {
     final saved = await context.push<bool>(AppRoutes.healthResult, extra: event);
-    _showSaved(saved);
+    if (mounted && (saved ?? false)) {
+      AppToastHost.show(context, HealthRegistrationStrings.saved, tone: AppToastTone.success);
+    }
   }
 
   Future<void> _correct(HealthEvent event) async {
     try {
       final rejected = await widget.reader.rejectedRegistration(event);
       if (!mounted || rejected == null) return;
-      final saved = await context.push<bool>(
+      await context.push<bool>(
         AppRoutes.healthRegistration(establishmentId: event.establishmentId),
         extra: rejected,
       );
-      _showSaved(saved);
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(HealthRegistrationStrings.failed)));
+        AppToastHost.show(context, HealthRegistrationStrings.failed);
       }
-    }
-  }
-
-  void _showSaved(bool? saved) {
-    if (mounted && (saved ?? false)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(HealthRegistrationStrings.saved)));
     }
   }
 }

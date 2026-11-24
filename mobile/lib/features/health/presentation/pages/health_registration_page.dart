@@ -4,6 +4,7 @@ import 'package:frontend_mayoral/core/constants/health_registration_strings.dart
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
@@ -138,7 +139,10 @@ class _RegistrationFormState extends State<_RegistrationForm> {
     return BlocConsumer<HealthRegistrationCubit, HealthRegistrationState>(
       listenWhen: (previous, current) => previous.submission != current.submission,
       listener: (context, state) {
-        if (state.submission is Data<void>) context.pop(true);
+        if (state.submission is Data<void>) {
+          AppToastHost.show(context, HealthRegistrationStrings.registrationSaved, tone: AppToastTone.success);
+          context.pop(true);
+        }
       },
       builder: (context, state) {
         final catalog = state.catalog;
@@ -382,9 +386,7 @@ class _RegistrationFormState extends State<_RegistrationForm> {
     final productId = _productId;
     final product = catalog.products.where((item) => item.id == productId).firstOrNull;
     if (practice.kind == HealthPracticeKind.application && product == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(HealthRegistrationStrings.unavailablePractice)),
-      );
+      AppToastHost.show(context, HealthRegistrationStrings.unavailablePractice);
       return;
     }
     final details = practice.kind == HealthPracticeKind.application
