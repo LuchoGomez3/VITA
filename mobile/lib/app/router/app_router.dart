@@ -634,6 +634,7 @@ class AppRouter {
               child: LivestockSaleFlowPage(
                 userId: sessionState.session.user.id,
                 establishmentId: establishmentId,
+                returnToPreviousOnSuccess: state.uri.queryParameters['origen'] == AppRoutes.livestockSaleHomeOrigin,
                 createBloc: createLivestockSaleBloc,
               ),
             );

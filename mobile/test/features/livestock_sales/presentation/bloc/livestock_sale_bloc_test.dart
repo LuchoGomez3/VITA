@@ -410,6 +410,10 @@ void main() {
       );
 
       expect(draftBloc.state.form.buyerName, 'Juan');
+      expect(
+        draftBloc.state.form.observations,
+        savedDraft.observations,
+      );
       expect(draftBloc.state.currentStep, LivestockSaleStep.operation);
       expect(draftBloc.state.selection.animals.single.rfidTagNumber, _rfid);
     });
@@ -520,6 +524,7 @@ void main() {
         totalWeight: '10.125',
         pricePerKg: '1000.123456',
         paymentCondition: LivestockSalePaymentCondition.pending,
+        observations: 'Retiro coordinado para el viernes.',
       );
       bloc.add(LivestockSaleEvent.formChanged(form));
       await _waitUntil(bloc, (state) => state.form == form);
@@ -531,6 +536,10 @@ void main() {
 
       expect(saleRepository.created?.pricePerKgMicros, 1000123456);
       expect(saleRepository.created?.totalAmountCents, 1012624);
+      expect(
+        saleRepository.created?.observations,
+        'Retiro coordinado para el viernes.',
+      );
       expect(saleRepository.created?.initialPayment, isNull);
     });
 
@@ -890,7 +899,7 @@ LivestockSaleSavedDraft _savedDraft() {
     paymentMethod: LivestockSalePaymentMethod.cash,
     amountToCollect: '',
     paymentDate: _today,
-    observations: '',
+    observations: 'Entrega acordada en el establecimiento.',
     paymentObservations: '',
     selectedRfidTagNumbers: const [_rfid],
     currentStep: LivestockSaleDraftStep.operation,

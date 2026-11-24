@@ -86,6 +86,11 @@ class _Store implements LivestockSaleBrickStore {
   BrickLivestockSaleModel? saved;
 
   @override
+  Future<List<BrickLivestockSaleModel>> getLocalSales(
+    String? establishmentId,
+  ) => throw StateError('Unexpected getLocalSales call');
+
+  @override
   Future<BrickLivestockSaleModel> saveSale(BrickLivestockSaleModel sale) async {
     final error = this.error;
     if (error != null) throw error;

@@ -12,6 +12,7 @@ sealed class HomeDashboardSource with _$HomeDashboardSource {
     required List<HomeDashboardWeighing> weighings,
     required Map<String, String> categoryNamesById,
     required int operatingExpensesCents,
+    @Default(0) int salesIncomeCents,
   }) = _HomeDashboardSource;
 }
 

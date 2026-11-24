@@ -16,8 +16,14 @@ sealed class HomeDashboard with _$HomeDashboard {
     required List<CategoryInventoryMetric> categories,
     required List<LotWeightMetric> lots,
     @Default(0) int operatingExpensesCents,
+    @Default(0) int salesIncomeCents,
     double? averageDailyGainKg,
   }) = _HomeDashboard;
+
+  const HomeDashboard._();
+
+  /// Resultado operativo entre ventas registradas y egresos locales.
+  int get operatingBalanceCents => salesIncomeCents - operatingExpensesCents;
 }
 
 /// Distribucion del inventario activo para una categoria productiva.

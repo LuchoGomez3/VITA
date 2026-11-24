@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$HomeDashboardSource {
 
- List<HomeDashboardAnimal> get animals; List<HomeDashboardWeighing> get weighings; Map<String, String> get categoryNamesById; int get operatingExpensesCents;
+ List<HomeDashboardAnimal> get animals; List<HomeDashboardWeighing> get weighings; Map<String, String> get categoryNamesById; int get operatingExpensesCents; int get salesIncomeCents;
 /// Create a copy of HomeDashboardSource
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $HomeDashboardSourceCopyWith<HomeDashboardSource> get copyWith => _$HomeDashboar
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is HomeDashboardSource&&const DeepCollectionEquality().equals(other.animals, animals)&&const DeepCollectionEquality().equals(other.weighings, weighings)&&const DeepCollectionEquality().equals(other.categoryNamesById, categoryNamesById)&&(identical(other.operatingExpensesCents, operatingExpensesCents) || other.operatingExpensesCents == operatingExpensesCents));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is HomeDashboardSource&&const DeepCollectionEquality().equals(other.animals, animals)&&const DeepCollectionEquality().equals(other.weighings, weighings)&&const DeepCollectionEquality().equals(other.categoryNamesById, categoryNamesById)&&(identical(other.operatingExpensesCents, operatingExpensesCents) || other.operatingExpensesCents == operatingExpensesCents)&&(identical(other.salesIncomeCents, salesIncomeCents) || other.salesIncomeCents == salesIncomeCents));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(animals),const DeepCollectionEquality().hash(weighings),const DeepCollectionEquality().hash(categoryNamesById),operatingExpensesCents);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(animals),const DeepCollectionEquality().hash(weighings),const DeepCollectionEquality().hash(categoryNamesById),operatingExpensesCents,salesIncomeCents);
 
 @override
 String toString() {
-  return 'HomeDashboardSource(animals: $animals, weighings: $weighings, categoryNamesById: $categoryNamesById, operatingExpensesCents: $operatingExpensesCents)';
+  return 'HomeDashboardSource(animals: $animals, weighings: $weighings, categoryNamesById: $categoryNamesById, operatingExpensesCents: $operatingExpensesCents, salesIncomeCents: $salesIncomeCents)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $HomeDashboardSourceCopyWith<$Res>  {
   factory $HomeDashboardSourceCopyWith(HomeDashboardSource value, $Res Function(HomeDashboardSource) _then) = _$HomeDashboardSourceCopyWithImpl;
 @useResult
 $Res call({
- List<HomeDashboardAnimal> animals, List<HomeDashboardWeighing> weighings, Map<String, String> categoryNamesById, int operatingExpensesCents
+ List<HomeDashboardAnimal> animals, List<HomeDashboardWeighing> weighings, Map<String, String> categoryNamesById, int operatingExpensesCents, int salesIncomeCents
 });
 
 
@@ -62,12 +62,13 @@ class _$HomeDashboardSourceCopyWithImpl<$Res>
 
 /// Create a copy of HomeDashboardSource
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? animals = null,Object? weighings = null,Object? categoryNamesById = null,Object? operatingExpensesCents = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? animals = null,Object? weighings = null,Object? categoryNamesById = null,Object? operatingExpensesCents = null,Object? salesIncomeCents = null,}) {
   return _then(_self.copyWith(
 animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
 as List<HomeDashboardAnimal>,weighings: null == weighings ? _self.weighings : weighings // ignore: cast_nullable_to_non_nullable
 as List<HomeDashboardWeighing>,categoryNamesById: null == categoryNamesById ? _self.categoryNamesById : categoryNamesById // ignore: cast_nullable_to_non_nullable
 as Map<String, String>,operatingExpensesCents: null == operatingExpensesCents ? _self.operatingExpensesCents : operatingExpensesCents // ignore: cast_nullable_to_non_nullable
+as int,salesIncomeCents: null == salesIncomeCents ? _self.salesIncomeCents : salesIncomeCents // ignore: cast_nullable_to_non_nullable
 as int,
   ));
 }
@@ -150,10 +151,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<HomeDashboardAnimal> animals,  List<HomeDashboardWeighing> weighings,  Map<String, String> categoryNamesById,  int operatingExpensesCents)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<HomeDashboardAnimal> animals,  List<HomeDashboardWeighing> weighings,  Map<String, String> categoryNamesById,  int operatingExpensesCents,  int salesIncomeCents)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _HomeDashboardSource() when $default != null:
-return $default(_that.animals,_that.weighings,_that.categoryNamesById,_that.operatingExpensesCents);case _:
+return $default(_that.animals,_that.weighings,_that.categoryNamesById,_that.operatingExpensesCents,_that.salesIncomeCents);case _:
   return orElse();
 
 }
@@ -171,10 +172,10 @@ return $default(_that.animals,_that.weighings,_that.categoryNamesById,_that.oper
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<HomeDashboardAnimal> animals,  List<HomeDashboardWeighing> weighings,  Map<String, String> categoryNamesById,  int operatingExpensesCents)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<HomeDashboardAnimal> animals,  List<HomeDashboardWeighing> weighings,  Map<String, String> categoryNamesById,  int operatingExpensesCents,  int salesIncomeCents)  $default,) {final _that = this;
 switch (_that) {
 case _HomeDashboardSource():
-return $default(_that.animals,_that.weighings,_that.categoryNamesById,_that.operatingExpensesCents);}
+return $default(_that.animals,_that.weighings,_that.categoryNamesById,_that.operatingExpensesCents,_that.salesIncomeCents);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -188,10 +189,10 @@ return $default(_that.animals,_that.weighings,_that.categoryNamesById,_that.oper
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<HomeDashboardAnimal> animals,  List<HomeDashboardWeighing> weighings,  Map<String, String> categoryNamesById,  int operatingExpensesCents)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<HomeDashboardAnimal> animals,  List<HomeDashboardWeighing> weighings,  Map<String, String> categoryNamesById,  int operatingExpensesCents,  int salesIncomeCents)?  $default,) {final _that = this;
 switch (_that) {
 case _HomeDashboardSource() when $default != null:
-return $default(_that.animals,_that.weighings,_that.categoryNamesById,_that.operatingExpensesCents);case _:
+return $default(_that.animals,_that.weighings,_that.categoryNamesById,_that.operatingExpensesCents,_that.salesIncomeCents);case _:
   return null;
 
 }
@@ -203,7 +204,7 @@ return $default(_that.animals,_that.weighings,_that.categoryNamesById,_that.oper
 
 
 class _HomeDashboardSource implements HomeDashboardSource {
-  const _HomeDashboardSource({required final  List<HomeDashboardAnimal> animals, required final  List<HomeDashboardWeighing> weighings, required final  Map<String, String> categoryNamesById, required this.operatingExpensesCents}): _animals = animals,_weighings = weighings,_categoryNamesById = categoryNamesById;
+  const _HomeDashboardSource({required final  List<HomeDashboardAnimal> animals, required final  List<HomeDashboardWeighing> weighings, required final  Map<String, String> categoryNamesById, required this.operatingExpensesCents, this.salesIncomeCents = 0}): _animals = animals,_weighings = weighings,_categoryNamesById = categoryNamesById;
   
 
  final  List<HomeDashboardAnimal> _animals;
@@ -228,6 +229,7 @@ class _HomeDashboardSource implements HomeDashboardSource {
 }
 
 @override final  int operatingExpensesCents;
+@override@JsonKey() final  int salesIncomeCents;
 
 /// Create a copy of HomeDashboardSource
 /// with the given fields replaced by the non-null parameter values.
@@ -239,16 +241,16 @@ _$HomeDashboardSourceCopyWith<_HomeDashboardSource> get copyWith => __$HomeDashb
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _HomeDashboardSource&&const DeepCollectionEquality().equals(other._animals, _animals)&&const DeepCollectionEquality().equals(other._weighings, _weighings)&&const DeepCollectionEquality().equals(other._categoryNamesById, _categoryNamesById)&&(identical(other.operatingExpensesCents, operatingExpensesCents) || other.operatingExpensesCents == operatingExpensesCents));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _HomeDashboardSource&&const DeepCollectionEquality().equals(other._animals, _animals)&&const DeepCollectionEquality().equals(other._weighings, _weighings)&&const DeepCollectionEquality().equals(other._categoryNamesById, _categoryNamesById)&&(identical(other.operatingExpensesCents, operatingExpensesCents) || other.operatingExpensesCents == operatingExpensesCents)&&(identical(other.salesIncomeCents, salesIncomeCents) || other.salesIncomeCents == salesIncomeCents));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_animals),const DeepCollectionEquality().hash(_weighings),const DeepCollectionEquality().hash(_categoryNamesById),operatingExpensesCents);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_animals),const DeepCollectionEquality().hash(_weighings),const DeepCollectionEquality().hash(_categoryNamesById),operatingExpensesCents,salesIncomeCents);
 
 @override
 String toString() {
-  return 'HomeDashboardSource(animals: $animals, weighings: $weighings, categoryNamesById: $categoryNamesById, operatingExpensesCents: $operatingExpensesCents)';
+  return 'HomeDashboardSource(animals: $animals, weighings: $weighings, categoryNamesById: $categoryNamesById, operatingExpensesCents: $operatingExpensesCents, salesIncomeCents: $salesIncomeCents)';
 }
 
 
@@ -259,7 +261,7 @@ abstract mixin class _$HomeDashboardSourceCopyWith<$Res> implements $HomeDashboa
   factory _$HomeDashboardSourceCopyWith(_HomeDashboardSource value, $Res Function(_HomeDashboardSource) _then) = __$HomeDashboardSourceCopyWithImpl;
 @override @useResult
 $Res call({
- List<HomeDashboardAnimal> animals, List<HomeDashboardWeighing> weighings, Map<String, String> categoryNamesById, int operatingExpensesCents
+ List<HomeDashboardAnimal> animals, List<HomeDashboardWeighing> weighings, Map<String, String> categoryNamesById, int operatingExpensesCents, int salesIncomeCents
 });
 
 
@@ -276,12 +278,13 @@ class __$HomeDashboardSourceCopyWithImpl<$Res>
 
 /// Create a copy of HomeDashboardSource
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? animals = null,Object? weighings = null,Object? categoryNamesById = null,Object? operatingExpensesCents = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? animals = null,Object? weighings = null,Object? categoryNamesById = null,Object? operatingExpensesCents = null,Object? salesIncomeCents = null,}) {
   return _then(_HomeDashboardSource(
 animals: null == animals ? _self._animals : animals // ignore: cast_nullable_to_non_nullable
 as List<HomeDashboardAnimal>,weighings: null == weighings ? _self._weighings : weighings // ignore: cast_nullable_to_non_nullable
 as List<HomeDashboardWeighing>,categoryNamesById: null == categoryNamesById ? _self._categoryNamesById : categoryNamesById // ignore: cast_nullable_to_non_nullable
 as Map<String, String>,operatingExpensesCents: null == operatingExpensesCents ? _self.operatingExpensesCents : operatingExpensesCents // ignore: cast_nullable_to_non_nullable
+as int,salesIncomeCents: null == salesIncomeCents ? _self.salesIncomeCents : salesIncomeCents // ignore: cast_nullable_to_non_nullable
 as int,
   ));
 }

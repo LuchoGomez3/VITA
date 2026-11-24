@@ -343,6 +343,40 @@ void main() {
     expect(animal.syncStatus, BrickAnimalSyncStatus.rejected);
     expect(animal.syncErrorCode, 'animal_already_sold');
   });
+
+  test('selecciona ventas vigentes por establecimiento sin duplicar revisiones', () {
+    final older = _sale('sale-local', const ['animal-a']);
+    final newer = _sale(
+      'sale-local',
+      const ['animal-a'],
+      updatedAt: older.updatedAt.add(const Duration(minutes: 1)),
+      syncStatus: BrickLivestockSaleSyncStatus.synchronized,
+    );
+    final pending = _sale('sale-pending', const ['animal-b']);
+    final deleted = _sale(
+      'sale-deleted',
+      const ['animal-c'],
+      deletedAt: DateTime.utc(2026, 10, 4),
+    );
+    final otherEstablishment = _sale(
+      'sale-other',
+      const ['animal-d'],
+      establishmentId: 'other-establishment',
+    );
+
+    final selected = BrickLivestockSaleStore.selectLocalSales(
+      [older, newer, pending, deleted, otherEstablishment],
+      establishmentId: 'establishment-id',
+    );
+
+    expect(
+      selected.map((sale) => sale.localId),
+      containsAll(['sale-local', 'sale-pending']),
+    );
+    expect(selected.where((sale) => sale.localId == 'sale-local'), hasLength(1));
+    expect(selected.map((sale) => sale.localId), isNot(contains('sale-deleted')));
+    expect(selected.map((sale) => sale.localId), isNot(contains('sale-other')));
+  });
 }
 
 BrickAnimalModel _animal(
@@ -370,11 +404,19 @@ BrickAnimalModel _animal(
   );
 }
 
-BrickLivestockSaleModel _sale(String id, List<String> animalIds, {DateTime? operationDate}) {
+BrickLivestockSaleModel _sale(
+  String id,
+  List<String> animalIds, {
+  DateTime? operationDate,
+  DateTime? updatedAt,
+  DateTime? deletedAt,
+  String establishmentId = 'establishment-id',
+  BrickLivestockSaleSyncStatus syncStatus = BrickLivestockSaleSyncStatus.pending,
+}) {
   final timestamp = DateTime.utc(2026, 10, 3, 18, 30);
   return BrickLivestockSaleModel(
     localId: id,
-    establishmentId: 'establishment-id',
+    establishmentId: establishmentId,
     operationDate: operationDate ?? DateTime(2026, 10, 3),
     buyerType: 'particular',
     buyerName: 'Juan',
@@ -386,7 +428,9 @@ BrickLivestockSaleModel _sale(String id, List<String> animalIds, {DateTime? oper
     animalIdsJson: jsonEncode(animalIds),
     paymentCondition: 'pendiente',
     createdAt: timestamp,
-    updatedAt: timestamp,
+    updatedAt: updatedAt ?? timestamp,
+    deletedAt: deletedAt,
+    syncStatus: syncStatus,
   );
 }
 

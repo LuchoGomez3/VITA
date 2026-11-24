@@ -172,6 +172,11 @@ class AppTextFormField extends StatelessWidget {
           readOnly: readOnly,
           onChanged: onChanged,
           onTap: onTap,
+          onTapOutside: (_) {
+            // En mobile Flutter conserva el foco ante algunos toques externos.
+            // Retirarlo tambien cierra el cursor, la lupa y el menu de seleccion.
+            FocusManager.instance.primaryFocus?.unfocus();
+          },
           style: style ?? AppTypography.formFieldValue,
           decoration: InputDecoration(
             hintText: hintText,
