@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/formatters/rfid_input_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
@@ -49,6 +50,8 @@ class _RegisterAnimalIdentificationStepState extends State<RegisterAnimalIdentif
   Widget build(BuildContext context) {
     final state = context.watch<RegisterAnimalBloc>().state;
     final draft = state.draft;
+    final seriesInvalid = state.showStepValidationErrors && !draft.hasValidVisualTagSeries;
+    final visualNumberInvalid = state.showStepValidationErrors && !draft.hasValidVisualTagNumber;
     if (_rfidController.text != draft.rfid) {
       _rfidController.value = TextEditingValue(
         text: draft.rfid,
@@ -107,6 +110,11 @@ class _RegisterAnimalIdentificationStepState extends State<RegisterAnimalIdentif
                     controller: _seriesController,
                     title: AnimalRegisterStrings.seriesFieldTitle,
                     hintText: AnimalRegisterStrings.seriesFieldHint,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    maxCharacters: RegisterAnimalDraftValidation.maxSeriesLength,
+                    validation: seriesInvalid ? AppFieldValidation.invalid : AppFieldValidation.neutral,
+                    validationMessage: seriesInvalid ? AnimalRegisterStrings.seriesInvalid : null,
                     onChanged: (value) {
                       _updateDraft(draft.copyWith(visualTagSeries: value));
                     },
@@ -119,6 +127,10 @@ class _RegisterAnimalIdentificationStepState extends State<RegisterAnimalIdentif
                     title: AnimalRegisterStrings.visualNumberFieldTitle,
                     hintText: AnimalRegisterStrings.visualNumberFieldHint,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    maxCharacters: RegisterAnimalDraftValidation.maxVisualNumberLength,
+                    validation: visualNumberInvalid ? AppFieldValidation.invalid : AppFieldValidation.neutral,
+                    validationMessage: visualNumberInvalid ? AnimalRegisterStrings.visualNumberInvalid : null,
                     onChanged: (value) {
                       _updateDraft(draft.copyWith(visualTagNumber: value));
                     },

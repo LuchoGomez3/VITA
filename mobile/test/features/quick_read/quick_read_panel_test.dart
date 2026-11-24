@@ -168,6 +168,7 @@ void main() {
 
     expect(find.text(QuickReadStrings.unregisteredTitle), findsOneWidget);
     expect(find.text(QuickReadStrings.notInEstablishment('La Sirena')), findsOneWidget);
+    expect(tile(tester, QuickReadStrings.registerTreatment).subtitle, isNull);
     expect(tile(tester, QuickReadStrings.registerWeight).onTap, isNull);
 
     await tester.tap(find.text(QuickReadStrings.registerAnimal));

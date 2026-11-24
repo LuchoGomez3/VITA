@@ -275,13 +275,14 @@ class RegisterAnimalBloc extends Bloc<RegisterAnimalEvent, RegisterAnimalState> 
 
     if (!state.draft.isValidForStep(currentStep)) {
       emit(state.copyWith(showStepValidationErrors: true));
-      if (currentStep == RegisterAnimalStep.identification) {
+      if (currentStep == RegisterAnimalStep.identification && !_isValidRfid(state.draft.rfid.trim())) {
         await _checkRfid(state.draft.rfid.trim(), emit);
       }
       return;
     }
 
-    if (currentStep == RegisterAnimalStep.identification && !await _checkRfid(state.draft.rfid.trim(), emit)) {
+    if (currentStep == RegisterAnimalStep.identification &&
+        (!await _checkRfid(state.draft.rfid.trim(), emit) || !state.draft.isValidForStep(currentStep))) {
       emit(state.copyWith(showStepValidationErrors: true));
       return;
     }

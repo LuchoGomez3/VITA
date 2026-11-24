@@ -97,7 +97,6 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> with WidgetsBind
               establishmentMenuController: _establishmentMenu,
               onSelected: _selectEstablishment,
               onCreateEstablishment: _createEstablishment,
-              onIdentifyAnimal: _identifyAnimal,
               syncIndicator: widget.syncIndicator,
             ),
             Expanded(
@@ -109,16 +108,6 @@ class _HomeDashboardViewState extends State<_HomeDashboardView> with WidgetsBind
         ),
       ),
     );
-  }
-
-  void _identifyAnimal() {
-    final establishmentId = context.read<HomeDashboardCubit>().state.selectedEstablishmentId;
-    if (establishmentId == null) {
-      AppToastHost.show(context, HomeStrings.selectEstablishmentBeforeIdentification);
-      return;
-    }
-
-    context.push(AppRoutes.rfidScanForEstablishment(establishmentId));
   }
 
   void _openSelector() => _establishmentMenu.open();

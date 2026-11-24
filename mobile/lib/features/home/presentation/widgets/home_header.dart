@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/home/presentation/bloc/home_dashboard_cubit.dart';
-import 'package:frontend_mayoral/features/home/presentation/strings/home_strings.dart';
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_establishment_select.dart';
 
 /// Encabezado de Inicio con el saludo y el selector de establecimiento.
@@ -13,7 +12,6 @@ class HomeHeader extends StatelessWidget {
     required this.establishmentMenuController,
     required this.onSelected,
     required this.onCreateEstablishment,
-    required this.onIdentifyAnimal,
     this.syncIndicator,
     super.key,
   });
@@ -32,9 +30,6 @@ class HomeHeader extends StatelessWidget {
   /// Es la única entrada al wizard después del registro de la cuenta: sin ella,
   /// quien sale del alta antes de terminar queda sin forma de crear uno.
   final VoidCallback onCreateEstablishment;
-
-  /// Abre el flujo de identificacion RFID para el establecimiento activo.
-  final VoidCallback onIdentifyAnimal;
 
   /// Indicador de la cola de sincronización, inyectado por el router para que
   /// Inicio no dependa del feature `sync`.
@@ -82,11 +77,6 @@ class HomeHeader extends StatelessWidget {
                 ),
               ),
               ?syncIndicator,
-              IconButton(
-                tooltip: HomeStrings.identifyAnimalTooltip,
-                onPressed: onIdentifyAnimal,
-                icon: const Icon(Icons.bluetooth),
-              ),
             ],
           ),
         ),

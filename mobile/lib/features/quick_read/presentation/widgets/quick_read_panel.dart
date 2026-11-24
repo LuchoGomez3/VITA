@@ -313,7 +313,6 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
             QuickActionTile(
               icon: Icons.vaccines_outlined,
               label: QuickReadStrings.registerTreatment,
-              subtitle: QuickReadStrings.comingSoon,
             ),
           ],
         ),

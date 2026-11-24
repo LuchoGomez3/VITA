@@ -88,6 +88,44 @@ void main() {
       expect(bloc.state.draft.rfid, '982000412991416');
     });
 
+    testWidgets('el alta exige serie y número visual, con un máximo de 4 y 8 dígitos', (tester) async {
+      final formBloc = createBloc();
+      addTearDown(formBloc.close);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BlocProvider.value(
+              value: formBloc,
+              child: RegisterAnimalIdentificationStep(onBluetoothRequested: () {}),
+            ),
+          ),
+        ),
+      );
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.at(0), '982000412991416');
+      await tester.pumpAndSettle();
+      formBloc.add(const RegisterAnimalEvent.nextStepRequested());
+      await tester.pumpAndSettle();
+      expect(formBloc.state.currentStep, RegisterAnimalStep.identification);
+      expect(find.text(AnimalRegisterStrings.seriesInvalid), findsOneWidget);
+      expect(find.text(AnimalRegisterStrings.visualNumberInvalid), findsOneWidget);
+      expect(rfidRepository.checked, isEmpty);
+
+      await tester.enterText(fields.at(1), 'A00234');
+      await tester.pumpAndSettle();
+      expect(formBloc.state.draft.visualTagSeries, '0023');
+      formBloc.add(const RegisterAnimalEvent.nextStepRequested());
+      await tester.pumpAndSettle();
+      expect(formBloc.state.currentStep, RegisterAnimalStep.identification);
+
+      await tester.enterText(fields.at(2), 'B012345678');
+      await tester.pumpAndSettle();
+      expect(formBloc.state.draft.visualTagNumber, '01234567');
+      formBloc.add(const RegisterAnimalEvent.nextStepRequested());
+      await tester.pumpAndSettle();
+      expect(formBloc.state.currentStep, RegisterAnimalStep.basicData);
+    });
+
     for (final invalid in ['98200041299141', '9820004129914160', 'A982000412991416']) {
       test('una captura RFID inválida no se copia al formulario: $invalid', () async {
         bloc.add(RegisterAnimalEvent.rfidCaptured(invalid));
@@ -476,7 +514,11 @@ void main() {
     });
 
     test('moves forward and backward through the flow', () async {
-      bloc.add(RegisterAnimalEvent.draftChanged(bloc.state.draft.copyWith(rfid: '982000412991416')));
+      bloc.add(
+        RegisterAnimalEvent.draftChanged(
+          bloc.state.draft.copyWith(rfid: '982000412991416', visualTagSeries: '003', visualTagNumber: '1295'),
+        ),
+      );
       await Future<void>.delayed(Duration.zero);
       bloc.add(const RegisterAnimalEvent.nextStepRequested());
       await Future<void>.delayed(Duration.zero);
@@ -531,7 +573,11 @@ void main() {
 
     test('rejects a duplicate RFID when leaving manual identification', () async {
       rfidRepository.registered = true;
-      bloc.add(RegisterAnimalEvent.draftChanged(bloc.state.draft.copyWith(rfid: '982000412991416')));
+      bloc.add(
+        RegisterAnimalEvent.draftChanged(
+          bloc.state.draft.copyWith(rfid: '982000412991416', visualTagSeries: '003', visualTagNumber: '1295'),
+        ),
+      );
       await Future<void>.delayed(Duration.zero);
 
       bloc.add(const RegisterAnimalEvent.nextStepRequested());

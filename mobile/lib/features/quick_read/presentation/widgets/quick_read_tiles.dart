@@ -7,7 +7,7 @@ class QuickActionTile extends StatelessWidget {
   const QuickActionTile({
     required this.icon,
     required this.label,
-    required this.subtitle,
+    this.subtitle,
     super.key,
     this.onTap,
     this.isWide = false,
@@ -19,8 +19,8 @@ class QuickActionTile extends StatelessWidget {
   /// Nombre de la acción.
   final String label;
 
-  /// Detalle (último peso, potrero, "Próximamente").
-  final String subtitle;
+  /// Detalle opcional (último peso o potrero).
+  final String? subtitle;
 
   /// Acción; `null` la deshabilita.
   final VoidCallback? onTap;
@@ -80,16 +80,17 @@ class QuickActionTile extends StatelessWidget {
                           label,
                           style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: foreground),
                         ),
-                        Text(
-                          subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: filled ? AppColors.onPrimary.withValues(alpha: 0.85) : AppColors.textHint,
+                        if (subtitle case final detail?)
+                          Text(
+                            detail,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: filled ? AppColors.onPrimary.withValues(alpha: 0.85) : AppColors.textHint,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),

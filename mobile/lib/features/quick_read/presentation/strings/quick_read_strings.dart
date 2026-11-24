@@ -52,9 +52,6 @@ abstract final class QuickReadStrings {
   /// Acción tratamiento.
   static const registerTreatment = 'Registrar tratamiento';
 
-  /// Tratamiento todavía no disponible.
-  static const comingSoon = 'Próximamente';
-
   /// Acción mover.
   static const moveLot = 'Mover de lote';
 
