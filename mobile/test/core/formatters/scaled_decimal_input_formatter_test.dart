@@ -33,6 +33,35 @@ void main() {
     );
   });
 
+  test('interpreta importes pegados con puntos como miles', () {
+    final pricePerKilogram = ScaledDecimalInputFormatter(
+      scale: 6,
+      groupThousands: true,
+    );
+    final totalAmount = ScaledDecimalInputFormatter(
+      scale: 2,
+      groupThousands: true,
+    );
+
+    expect(_format(pricePerKilogram, '', '1.000').text, '1.000');
+    expect(_format(totalAmount, '', '1.000').text, '1.000');
+    expect(
+      ScaledDecimalInputFormatter.normalizeGrouped(
+        _format(pricePerKilogram, '', '1.000').text,
+      ),
+      '1000',
+    );
+  });
+
+  test('conserva el punto decimal cuando el texto no agrupa miles', () {
+    final formatter = ScaledDecimalInputFormatter(
+      scale: 2,
+      groupThousands: true,
+    );
+
+    expect(_format(formatter, '', '1000.25').text, '1.000,25');
+  });
+
   test('formatea valores canonicos recuperados de un borrador', () {
     expect(
       ScaledDecimalInputFormatter.formatGroupedCanonical(
@@ -40,6 +69,13 @@ void main() {
         scale: 6,
       ),
       '1.000,123456',
+    );
+    expect(
+      ScaledDecimalInputFormatter.formatGroupedCanonical(
+        '1.000',
+        scale: 6,
+      ),
+      '1,000',
     );
   });
 }

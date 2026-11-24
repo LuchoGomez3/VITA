@@ -42,19 +42,18 @@ class ScaledDecimalInputFormatter extends TextInputFormatter {
     required int scale,
   }) {
     if (value.isEmpty) return value;
-    final formatter = ScaledDecimalInputFormatter(
-      scale: scale,
-      groupThousands: true,
+    final pattern = RegExp(
+      scale == 0 ? r'^\d+$' : '^\\d+(?:\\.\\d{0,$scale})?\$',
     );
-    return formatter
-        .formatEditUpdate(
-          TextEditingValue.empty,
-          TextEditingValue(
-            text: value,
-            selection: TextSelection.collapsed(offset: value.length),
-          ),
-        )
-        .text;
+    if (!pattern.hasMatch(value)) return value;
+
+    final separatorIndex = value.indexOf('.');
+    final whole = separatorIndex < 0 ? value : value.substring(0, separatorIndex);
+    final fraction = separatorIndex < 0 ? null : value.substring(separatorIndex + 1);
+    final groupedWhole = _groupThousands(
+      whole.replaceFirst(RegExp(r'^0+(?=\d)'), ''),
+    );
+    return fraction == null ? groupedWhole : '$groupedWhole,$fraction';
   }
 
   TextEditingValue _formatGrouped(
@@ -68,7 +67,17 @@ class ScaledDecimalInputFormatter extends TextInputFormatter {
     }
 
     final commaIndex = input.lastIndexOf(',');
-    final addedDecimalPoint = commaIndex < 0 && '.'.allMatches(input).length > '.'.allMatches(oldValue.text).length;
+    // Un texto pegado como `1.000` ya representa miles en la visualizacion
+    // argentina. Solo se interpreta el punto como decimal cuando el contenido
+    // no tiene un agrupamiento de miles completo.
+    final hasGroupedThousands = RegExp(
+      r'^\d{1,3}(?:\.\d{3})+(?:,\d*)?$',
+    ).hasMatch(input);
+    final addedDecimalPoint =
+        !hasGroupedThousands &&
+        commaIndex < 0 &&
+        '.'.allMatches(input).length >
+            '.'.allMatches(oldValue.text).length;
     final decimalIndex = commaIndex >= 0
         ? commaIndex
         : addedDecimalPoint
