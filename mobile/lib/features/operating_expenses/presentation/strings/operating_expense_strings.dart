@@ -49,7 +49,6 @@ class OperatingExpenseStrings {
   static const totalExpenses = 'Total';
   static const records = 'registros encontrados';
   static const oneRecord = 'registro encontrado';
-  static const exportCsv = 'Exportar CSV';
   static const exportSuccess = 'Archivo listo para guardar o compartir.';
   static const exportError = 'No se pudo exportar el archivo. Reintentá cuando tengas conexión.';
   static const exportPendingWarning =

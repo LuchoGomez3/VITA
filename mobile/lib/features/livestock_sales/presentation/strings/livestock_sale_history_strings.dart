@@ -11,6 +11,9 @@ abstract final class LivestockSaleHistoryStrings {
   /// Mensaje ante una falla al leer SQLite.
   static const loadError = 'No se pudieron cargar las ventas guardadas.';
 
+  /// Mensaje ante una falla al generar o compartir el archivo.
+  static const exportError = 'No se pudo compartir el CSV de ventas. Volvé a intentar.';
+
   /// Accion para volver a leer el historial.
   static const retry = 'Reintentar';
 

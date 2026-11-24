@@ -1,13 +1,20 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/livestock_sales/domain/entities/livestock_sale.dart';
+import 'package:frontend_mayoral/features/livestock_sales/domain/use_cases/export_livestock_sales_csv_use_case.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/cubit/livestock_sale_history_cubit.dart';
+import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_history_strings.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/history/livestock_sale_history_filters.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/history/livestock_sale_history_header.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/history/livestock_sale_history_result.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/widgets/history/livestock_sale_history_summary.dart';
+import 'package:logging/logging.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Factory del estado del historial de ventas.
 typedef LivestockSaleHistoryCubitFactory = LivestockSaleHistoryCubit Function();
@@ -67,8 +74,10 @@ class _LivestockSaleHistoryView extends StatefulWidget {
 }
 
 class _LivestockSaleHistoryViewState extends State<_LivestockSaleHistoryView> {
+  static final _logger = Logger('LivestockSaleHistoryView');
   final _scrollController = ScrollController();
   bool _compactHeader = false;
+  bool _exporting = false;
 
   @override
   void initState() {
@@ -87,6 +96,31 @@ class _LivestockSaleHistoryViewState extends State<_LivestockSaleHistoryView> {
   void _updateHeaderMode() {
     final compact = _scrollController.offset >= _compactHeaderScrollThreshold;
     if (compact != _compactHeader) setState(() => _compactHeader = compact);
+  }
+
+  Future<void> _export(List<LivestockSale> sales) async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    try {
+      const filename = 'ventas_hacienda.csv';
+      final csv = const ExportLivestockSalesCsvUseCase()(sales);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile.fromData(utf8.encode('\uFEFF$csv'), mimeType: 'text/csv', name: filename)],
+          fileNameOverrides: const [filename],
+          sharePositionOrigin: Offset.zero & MediaQuery.sizeOf(context),
+        ),
+      );
+    } on Exception catch (error, stackTrace) {
+      _logger.warning('No se pudo compartir el CSV de ventas.', error.runtimeType, stackTrace);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(LivestockSaleHistoryStrings.exportError)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
   }
 
   @override
@@ -114,6 +148,8 @@ class _LivestockSaleHistoryViewState extends State<_LivestockSaleHistoryView> {
             totalCents: totalCents,
             recordCount: sales.length,
             pendingCount: pendingCount,
+            exporting: _exporting,
+            onExport: sales.isEmpty ? null : () => unawaited(_export(sales)),
           ),
           body: Stack(
             children: [

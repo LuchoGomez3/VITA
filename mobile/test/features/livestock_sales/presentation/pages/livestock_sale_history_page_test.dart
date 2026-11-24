@@ -64,6 +64,9 @@ void main() {
     await tester.pumpWidget(_TestApp(onExpensesSelected: () {}));
     await tester.pumpAndSettle();
 
+    final exportButton = find.widgetWithIcon(IconButton, Icons.file_download_outlined);
+    expect(tester.widget<IconButton>(exportButton).onPressed, isNotNull);
+
     await tester.tap(find.text(LivestockSaleHistoryStrings.filters));
     await tester.pumpAndSettle();
     await tester.enterText(
@@ -85,6 +88,7 @@ void main() {
       find.text(LivestockSaleHistoryStrings.filteredEmpty),
       findsOneWidget,
     );
+    expect(tester.widget<IconButton>(exportButton).onPressed, isNull);
 
     await tester.ensureVisible(
       find.text(LivestockSaleHistoryStrings.clearFilters),
@@ -94,6 +98,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Juan Perez'), findsOneWidget);
+    expect(tester.widget<IconButton>(exportButton).onPressed, isNotNull);
   });
 
   testWidgets('compacta el encabezado al desplazar el historial', (

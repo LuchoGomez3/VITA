@@ -8,4 +8,7 @@ abstract final class FinancialMovementStrings {
 
   /// Seccion de ventas de hacienda.
   static const sales = 'Ventas';
+
+  /// Accion para guardar o compartir los movimientos en un CSV.
+  static const exportCsv = 'Exportar CSV';
 }

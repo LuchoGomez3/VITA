@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:frontend_mayoral/features/operating_expenses/presentation/strings/operating_expense_strings.dart';
+import 'package:frontend_mayoral/core/constants/financial_movement_strings.dart';
 
 /// Acción del encabezado que refleja el progreso de la exportación CSV.
-class OperatingExpenseExportButton extends StatelessWidget {
+class FinancialCsvExportButton extends StatelessWidget {
   /// Crea el botón de exportación.
-  const OperatingExpenseExportButton({
+  const FinancialCsvExportButton({
     required this.loading,
     required this.onPressed,
     super.key,
@@ -14,12 +14,12 @@ class OperatingExpenseExportButton extends StatelessWidget {
   final bool loading;
 
   /// Inicia la exportación cuando el botón está disponible.
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      tooltip: OperatingExpenseStrings.exportCsv,
+      tooltip: FinancialMovementStrings.exportCsv,
       onPressed: loading ? null : onPressed,
       icon: loading
           ? const SizedBox.square(

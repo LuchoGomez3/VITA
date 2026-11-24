@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/formatters/argentine_currency_input_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/financial_csv_export_button.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_history_strings.dart';
 
@@ -13,6 +14,8 @@ class LivestockSaleHistoryHeader extends StatelessWidget implements PreferredSiz
     required this.totalCents,
     required this.recordCount,
     required this.pendingCount,
+    required this.exporting,
+    required this.onExport,
     super.key,
   });
 
@@ -30,6 +33,12 @@ class LivestockSaleHistoryHeader extends StatelessWidget implements PreferredSiz
 
   /// Cantidad de ventas que todavia no tienen confirmacion remota.
   final int pendingCount;
+
+  /// Indica si el archivo se esta preparando o compartiendo.
+  final bool exporting;
+
+  /// Exporta las ventas visibles cuando existen resultados.
+  final VoidCallback? onExport;
 
   @override
   Size get preferredSize => const Size.fromHeight(70);
@@ -72,6 +81,7 @@ class LivestockSaleHistoryHeader extends StatelessWidget implements PreferredSiz
       ),
       actions: [
         if (pendingCount > 0) AppSyncBadge(pendingCount: pendingCount),
+        FinancialCsvExportButton(loading: exporting, onPressed: onExport),
       ],
     );
   }
