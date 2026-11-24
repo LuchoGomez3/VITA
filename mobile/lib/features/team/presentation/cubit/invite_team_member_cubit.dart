@@ -99,8 +99,16 @@ class InviteTeamMemberCubit extends Cubit<InviteTeamMemberState> {
     if (!_canPresent) return;
     switch (result) {
       case Success<EstablishmentMembership?>(:final data):
-        final roles = data?.role.assignableRoles ?? const <UserRole>[];
-        emit(state.copyWith(initialization: ResultState.data(List.unmodifiable(roles))));
+        // El formulario ofrece Dueño y Empleado según los permisos de la membresía.
+        final roles = (data?.role.assignableRoles ?? const <UserRole>[]).where(
+          (role) => role == UserRole.owner || role == UserRole.employee,
+        );
+        emit(
+          state.copyWith(
+            role: roles.contains(state.role) ? state.role : UserRole.employee,
+            initialization: ResultState.data(List.unmodifiable(roles)),
+          ),
+        );
       case Failure<EstablishmentMembership?>(:final error):
         emit(state.copyWith(initialization: ResultState.error(error)));
     }

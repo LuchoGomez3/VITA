@@ -157,11 +157,11 @@ void main() {
       ),
     );
 
-    testWidgets('un admin no ve la opción de invitar dueños', (tester) async {
+    testWidgets('un administrador solo puede elegir Empleado', (tester) async {
       await _pump(tester, invitePage(FakeTeamRepository(), UserRole.admin));
 
-      expect(find.text('Administrador'), findsOneWidget);
-      expect(find.text('Veterinario'), findsOneWidget);
+      expect(find.text('Empleado'), findsOneWidget);
+      expect(find.byType(AppSelectableCard<UserRole>), findsOneWidget);
       expect(find.text('Dueño'), findsNothing);
     });
 
@@ -169,17 +169,20 @@ void main() {
       final repository = FakeTeamRepository();
       final popped = await _pump(tester, invitePage(repository, UserRole.owner));
 
+      expect(find.text('Dueño'), findsOneWidget);
+      expect(find.text('Empleado'), findsOneWidget);
+      expect(find.byType(AppSelectableCard<UserRole>), findsNWidgets(2));
+
       await tester.tap(find.text(TeamStrings.sendCta));
       await tester.pumpAndSettle();
       expect(find.text(TeamStrings.emailRequired), findsOneWidget);
 
-      await tester.enterText(find.byType(TextFormField), 'vet@example.com');
-      await tester.scrollUntilVisible(find.text('Veterinario'), 100, scrollable: find.byType(Scrollable).first);
-      await tester.tap(find.text('Veterinario'));
+      await tester.enterText(find.byType(TextFormField), 'socio@example.com');
+      await tester.tap(find.text('Dueño'));
       await tester.tap(find.text(TeamStrings.sendCta));
       await tester.pumpAndSettle();
 
-      expect(repository.calls, ['invite:vet@example.com:veterinarian']);
+      expect(repository.calls, ['invite:socio@example.com:owner']);
       expect((popped.single! as TeamMutation<CreatedInvitation>).value.code, '7K4-P2M');
     });
 
