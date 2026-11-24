@@ -1,7 +1,9 @@
 import 'package:frontend_mayoral/brick/mappers/animal_productive_status_mapper.dart';
+import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/operating_expense_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_catalog.dart';
@@ -22,19 +24,22 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
     required PesajeBrickStore pesajeStore,
     required SecureStorageService secureStorage,
     required OperatingExpenseBrickStore operatingExpenseStore,
+    required LivestockSaleBrickStore livestockSaleStore,
   }) : _animalStore = animalStore,
        _categoryStore = categoryStore,
        _pesajeStore = pesajeStore,
        _establishmentCatalog = EstablishmentCatalog(
          secureStorage: secureStorage,
        ),
-       _operatingExpenseStore = operatingExpenseStore;
+       _operatingExpenseStore = operatingExpenseStore,
+       _livestockSaleStore = livestockSaleStore;
 
   final AnimalBrickStore _animalStore;
   final CategoriaBrickStore _categoryStore;
   final PesajeBrickStore _pesajeStore;
   final EstablishmentCatalog _establishmentCatalog;
   final OperatingExpenseBrickStore _operatingExpenseStore;
+  final LivestockSaleBrickStore _livestockSaleStore;
 
   @override
   Future<Result<HomeDashboardSource>> getDashboardSource({
@@ -81,6 +86,7 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
             for (final category in categories) category.localId: category.name,
           },
           operatingExpensesCents: await _expensesFor(establishmentIds),
+          salesIncomeCents: await _salesIncomeFor(establishmentIds),
         ),
       );
     } on Object {
@@ -124,5 +130,21 @@ class HomeDashboardRepositoryImpl implements HomeDashboardRepository {
   int _sumExpenses(Iterable<BrickOperatingExpenseModel> expenses) => expenses.fold(
     0,
     (total, expense) => total + DecimalAmountFormatter.decimalToCents(expense.amount),
+  );
+
+  Future<int> _salesIncomeFor(Set<String>? establishmentIds) async {
+    if (establishmentIds == null) {
+      return _sumSales(await _livestockSaleStore.getLocalSales(null));
+    }
+    var total = 0;
+    for (final id in establishmentIds) {
+      total += _sumSales(await _livestockSaleStore.getLocalSales(id));
+    }
+    return total;
+  }
+
+  int _sumSales(Iterable<BrickLivestockSaleModel> sales) => sales.fold(
+    0,
+    (total, sale) => total + DecimalAmountFormatter.decimalToCents(sale.totalAmount),
   );
 }

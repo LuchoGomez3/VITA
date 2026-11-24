@@ -42,6 +42,13 @@ class LivestockSaleLocalException implements Exception {
 abstract class LivestockSaleBrickStore {
   /// Guarda la venta y da de baja sus animales en una sola transaccion local.
   Future<BrickLivestockSaleModel> saveSale(BrickLivestockSaleModel sale);
+
+  /// Lista ventas locales vigentes, deduplicadas por UUID.
+  ///
+  /// Un [establishmentId] nulo incluye todos los establecimientos disponibles.
+  Future<List<BrickLivestockSaleModel>> getLocalSales(
+    String? establishmentId,
+  );
 }
 
 /// Recuperacion de una venta propietaria sin reenviar el alta de su animal.
@@ -172,6 +179,48 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore, LivestockSaleS
     // el resultado local sin esperar conectividad ni respuesta del backend.
     unawaited(_resumePendingSales());
     return saved;
+  }
+
+  @override
+  Future<List<BrickLivestockSaleModel>> getLocalSales(
+    String? establishmentId,
+  ) async {
+    final stored = await _repository.getLocal<BrickLivestockSaleModel>();
+    return selectLocalSales(stored, establishmentId: establishmentId);
+  }
+
+  /// Selecciona la ultima version no eliminada de cada venta local.
+  static List<BrickLivestockSaleModel> selectLocalSales(
+    Iterable<BrickLivestockSaleModel> stored, {
+    required String? establishmentId,
+  }) {
+    final scoped = establishmentId == null
+        ? stored
+        : stored.where(
+            (sale) => sale.establishmentId == establishmentId,
+          );
+    final byId = <String, BrickLivestockSaleModel>{};
+    for (final sale in scoped) {
+      final current = byId[sale.localId];
+      // Brick puede conservar revisiones de un mismo UUID. Primero se elige la
+      // mas reciente y recien despues se filtran tombstones, para no revivir
+      // una venta eliminada por encontrar una revision anterior vigente.
+      if (current == null || _preferSale(sale, current)) {
+        byId[sale.localId] = sale;
+      }
+    }
+    return byId.values.where((sale) => sale.deletedAt == null).toList()
+      ..sort((a, b) => b.operationDate.compareTo(a.operationDate));
+  }
+
+  static bool _preferSale(
+    BrickLivestockSaleModel candidate,
+    BrickLivestockSaleModel current,
+  ) {
+    final updatedComparison = candidate.updatedAt.compareTo(current.updatedAt);
+    if (updatedComparison != 0) return updatedComparison > 0;
+    return candidate.syncStatus != BrickLivestockSaleSyncStatus.synchronized &&
+        current.syncStatus == BrickLivestockSaleSyncStatus.synchronized;
   }
 
   /// Reanuda pendientes persistidos despues de restaurar la sesion y el tenant.

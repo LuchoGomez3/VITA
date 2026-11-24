@@ -79,6 +79,12 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
     await _loadDashboard();
   }
 
+  /// Recalcula el establecimiento seleccionado usando solamente la cache.
+  ///
+  /// Se utiliza al volver de operaciones locales ya confirmadas para no
+  /// releer membresias ni esperar una sincronizacion con backend.
+  Future<void> reloadFromCache() => _loadDashboard();
+
   /// Sincroniza con backend y vuelve a calcular desde SQLite.
   ///
   /// La cache ya visible nunca se reemplaza por un loading ni se descarta ante

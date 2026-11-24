@@ -53,6 +53,7 @@ class HomeDashboardCalculator {
       ),
       lots: _lotMetrics(activeAnimals, currentWeights),
       operatingExpensesCents: source.operatingExpensesCents,
+      salesIncomeCents: source.salesIncomeCents,
     );
   }
 

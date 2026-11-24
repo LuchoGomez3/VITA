@@ -1,10 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
+import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
 import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/operating_expense_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -27,6 +29,7 @@ void main() {
       pesajeStore: const _FakeWeighingStore(),
       secureStorage: _FakeSecureStorage(),
       operatingExpenseStore: const _FakeExpenseStore(),
+      livestockSaleStore: const _FakeSaleStore(),
     );
     final useCase = GetHomeDashboardUseCase(
       repository,
@@ -43,6 +46,32 @@ void main() {
     expect(dashboard.categories.single.animals, 1);
     expect(dashboard.lots.single.animals, 1);
     expect(dashboard.monthlyRemovals, 3);
+  });
+
+  test('calcula ingresos por ventas y balance desde los datos locales', () async {
+    final repository = HomeDashboardRepositoryImpl(
+      animalStore: const _FakeAnimalStore([]),
+      categoryStore: const _FakeCategoryStore(),
+      pesajeStore: const _FakeWeighingStore(),
+      secureStorage: _FakeSecureStorage(),
+      operatingExpenseStore: _FakeExpenseStore([
+        _expense('250.50'),
+      ]),
+      livestockSaleStore: _FakeSaleStore([
+        _sale('1000.25'),
+        _sale('500.75'),
+      ]),
+    );
+
+    final result = await GetHomeDashboardUseCase(
+      repository,
+      now: () => DateTime.utc(2026, 9, 29),
+    )(establishmentIds: {'establishment-id'});
+
+    final dashboard = (result as Success<HomeDashboard>).data;
+    expect(dashboard.salesIncomeCents, 150100);
+    expect(dashboard.operatingExpensesCents, 25050);
+    expect(dashboard.operatingBalanceCents, 125050);
   });
 }
 
@@ -143,12 +172,14 @@ class _FakeWeighingStore implements PesajeBrickStore {
 }
 
 class _FakeExpenseStore implements OperatingExpenseBrickStore {
-  const _FakeExpenseStore();
+  const _FakeExpenseStore([this.expenses = const []]);
+
+  final List<BrickOperatingExpenseModel> expenses;
 
   @override
   Future<List<BrickOperatingExpenseModel>> getLocalExpenses(
     String? establishmentId,
-  ) async => const [];
+  ) async => expenses;
 
   @override
   Future<void> pullRemoteExpenses(String establishmentId) => throw StateError('Unexpected pullRemoteExpenses call');
@@ -162,6 +193,57 @@ class _FakeExpenseStore implements OperatingExpenseBrickStore {
   Future<BrickOperatingExpenseModel> upsertExpense(
     BrickOperatingExpenseModel expense,
   ) => throw StateError('Unexpected upsertExpense call');
+}
+
+class _FakeSaleStore implements LivestockSaleBrickStore {
+  const _FakeSaleStore([this.sales = const []]);
+
+  final List<BrickLivestockSaleModel> sales;
+
+  @override
+  Future<List<BrickLivestockSaleModel>> getLocalSales(
+    String? establishmentId,
+  ) async => sales;
+
+  @override
+  Future<BrickLivestockSaleModel> saveSale(
+    BrickLivestockSaleModel sale,
+  ) => throw StateError('Unexpected saveSale call');
+}
+
+BrickOperatingExpenseModel _expense(String amount) {
+  final timestamp = DateTime.utc(2026, 9, 20);
+  return BrickOperatingExpenseModel(
+    localId: 'expense-$amount',
+    establishmentId: 'establishment-id',
+    date: timestamp,
+    amount: amount,
+    type: 'insumos',
+    category: 'alimentacion',
+    supply: 'balanceado',
+    description: 'Egreso de prueba',
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  );
+}
+
+BrickLivestockSaleModel _sale(String amount) {
+  final timestamp = DateTime.utc(2026, 9, 20);
+  return BrickLivestockSaleModel(
+    localId: 'sale-$amount',
+    establishmentId: 'establishment-id',
+    operationDate: timestamp,
+    buyerType: 'particular',
+    buyerName: 'Comprador',
+    isCompany: true,
+    dteNumber: '001234567-9',
+    saleType: 'al_bulto',
+    totalAmount: amount,
+    animalIdsJson: '["animal-id"]',
+    paymentCondition: 'pendiente',
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  );
 }
 
 class _FakeSecureStorage implements SecureStorageService {

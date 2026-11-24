@@ -90,6 +90,10 @@ void main() {
 
     expect(bloc.state.form.totalWeight, '10');
     expect(bloc.state.form.pricePerKg, '1000.123456');
+    final priceInput = tester.widget<EditableText>(
+      find.descendant(of: price, matching: find.byType(EditableText)),
+    );
+    expect(priceInput.controller.text, '1.000,123456');
     expect(find.text(r'$ 10.001,23'), findsOneWidget);
     expect(
       find.text(
@@ -280,6 +284,31 @@ void main() {
     expect(
       bloc.state.form.paymentMethod,
       LivestockSalePaymentMethod.card,
+    );
+  });
+
+  testWidgets('guarda las observaciones opcionales en el borrador', (
+    tester,
+  ) async {
+    final bloc = _createBloc();
+    addTearDown(bloc.close);
+    await tester.pumpWidget(_TestApp(bloc: bloc));
+
+    final observations = find.byKey(const Key('livestockSaleObservations'));
+    await tester.scrollUntilVisible(
+      observations,
+      400,
+      scrollable: _operationScrollable,
+    );
+    await tester.enterText(
+      observations,
+      'Entrega acordada en el establecimiento.',
+    );
+    await tester.pump();
+
+    expect(
+      bloc.state.form.observations,
+      'Entrega acordada en el establecimiento.',
     );
   });
 }
