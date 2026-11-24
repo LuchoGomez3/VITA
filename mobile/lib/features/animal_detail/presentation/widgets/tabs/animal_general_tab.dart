@@ -104,21 +104,22 @@ class AnimalGeneralTab extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.lg),
-        const AnimalFichaSectionTitle(AnimalDetailStrings.observationsLabel),
-        const SizedBox(height: AppSpacing.xs),
         if (observationActions case final actions?)
           AnimalObservationsSection(
             key: ValueKey((animal.establishmentId, animal.id)),
             animal: animal,
             actions: actions,
           )
-        else
+        else ...[
+          const AnimalFichaSectionTitle(AnimalDetailStrings.observationsLabel),
+          const SizedBox(height: AppSpacing.xs),
           AppSurfaceCard(
             child: Text(
               (observations == null || observations.isEmpty) ? AnimalDetailStrings.noDataValue : observations,
               style: AppTypography.mediumEmphasis,
             ),
           ),
+        ],
         const SizedBox(height: AppSpacing.md),
         AnimalDetailSyncFooter(animalDetail: animal, onRetry: onRetrySync),
       ],

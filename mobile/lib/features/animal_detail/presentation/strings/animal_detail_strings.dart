@@ -74,11 +74,20 @@ class AnimalDetailStrings {
   /// Abre el formulario para agregar una nota.
   static const addObservation = 'Agregar observación';
 
+  /// Acción corta en la sección de la ficha.
+  static const addObservationAction = 'Agregar';
+
   /// Texto del formulario de observaciones.
   static const observationHint = 'Escribí una observación';
 
   /// Confirma una nota nueva.
-  static const saveObservation = 'Guardar observación';
+  static const saveObservation = 'Guardar';
+
+  /// Cierra la edición sin guardar el borrador.
+  static const cancelObservation = 'Cancelar';
+
+  /// Mensaje de la tarjeta cuando todavía no hay notas.
+  static const noObservations = 'Todavía no hay observaciones.';
 
   /// Error de almacenamiento de una nota.
   static const observationSaveError = 'No se pudo guardar la observación.';
