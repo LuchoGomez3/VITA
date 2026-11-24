@@ -23,7 +23,7 @@ import 'package:http/http.dart' as http;
 /// Sincroniza los datos financieros de un establecimiento habilitado.
 typedef SyncOperatingExpenseData = Future<void> Function(String establishmentId);
 
-/// Reanuda comandos comerciales persistidos despues de preparar el inventario.
+/// Reanuda comandos comerciales y descarga el historial de ventas autorizado.
 typedef SyncLivestockSaleData = Future<void> Function(String establishmentId);
 
 /// Implementacion que descarga datos iniciales a SQLite para uso offline.

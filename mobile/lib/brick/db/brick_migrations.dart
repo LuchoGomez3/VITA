@@ -41,6 +41,9 @@ Future<Set<Migration>> prepareAppBrickMigrations(SqliteProvider sqliteProvider) 
     if (lastVersion == _preMergeHealthVersion) {
       await _upgradePreMergeHealthDatabase(transaction, migrations);
     }
+    if (lastVersion > _animalObservationVersion) {
+      await _restoreSkippedAnimalObservationMigration(transaction, migrations);
+    }
     return migrations;
   });
 }
@@ -112,6 +115,27 @@ Future<void> _upgradePreMergeHealthDatabase(Transaction transaction, Set<Migrati
     // en la misma transacción para poder reintentar el arranque.
     await transaction.insert('MigrationVersions', {'version': migration.version});
   }
+}
+
+/// Recupera observaciones si el dispositivo ya migró con la rama de ventas.
+Future<void> _restoreSkippedAnimalObservationMigration(
+  Transaction transaction,
+  Set<Migration> migrations,
+) async {
+  final applied = await transaction.query(
+    'MigrationVersions',
+    where: 'version = ?',
+    whereArgs: [_animalObservationVersion],
+    limit: 1,
+  );
+  if (applied.isNotEmpty) return;
+
+  final migration = migrations.singleWhere((migration) => migration.version == _animalObservationVersion);
+  final prepared = await _skipExistingColumn(transaction, migration);
+  for (final command in prepared.up) {
+    if (command.statement case final statement?) await transaction.execute(statement);
+  }
+  await transaction.insert('MigrationVersions', {'version': migration.version});
 }
 
 /// Conserva la versión y su reversión cuando la columna ya fue agregada.

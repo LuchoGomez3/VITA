@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/core/widgets/financial_movement_selector.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/cubit/operating_expense_history_cubit.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/strings/operating_expense_strings.dart';
@@ -12,7 +13,6 @@ import 'package:frontend_mayoral/features/operating_expenses/presentation/widget
 import 'package:frontend_mayoral/features/operating_expenses/presentation/widgets/operating_expense_history_header.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/widgets/operating_expense_history_result.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/widgets/operating_expense_history_summary.dart';
-import 'package:frontend_mayoral/features/operating_expenses/presentation/widgets/operating_expense_movement_selector.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -28,6 +28,7 @@ class OperatingExpenseHistoryPage extends StatelessWidget {
   const OperatingExpenseHistoryPage({
     required this.establishmentName,
     required this.createCubit,
+    required this.onSalesSelected,
     super.key,
   });
 
@@ -37,19 +38,29 @@ class OperatingExpenseHistoryPage extends StatelessWidget {
   /// Construye el cubit con dependencias de composition.
   final OperatingExpenseHistoryCubitFactory createCubit;
 
+  /// Abre la seccion de ventas del mismo establecimiento.
+  final VoidCallback onSalesSelected;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => createCubit()..load(),
-      child: _OperatingExpenseHistoryView(establishmentName: establishmentName),
+      child: _OperatingExpenseHistoryView(
+        establishmentName: establishmentName,
+        onSalesSelected: onSalesSelected,
+      ),
     );
   }
 }
 
 class _OperatingExpenseHistoryView extends StatefulWidget {
-  const _OperatingExpenseHistoryView({required this.establishmentName});
+  const _OperatingExpenseHistoryView({
+    required this.establishmentName,
+    required this.onSalesSelected,
+  });
 
   final String establishmentName;
+  final VoidCallback onSalesSelected;
 
   @override
   State<_OperatingExpenseHistoryView> createState() => _OperatingExpenseHistoryViewState();
@@ -131,11 +142,11 @@ class _OperatingExpenseHistoryViewState extends State<_OperatingExpenseHistoryVi
                   child: AnimatedOpacity(
                     opacity: _compactHeader ? 0 : 1,
                     duration: const Duration(milliseconds: 180),
-                    child: OperatingExpenseMovementSelector(
-                      onIncomeSelected: () => _showMessage(
-                        context,
-                        OperatingExpenseStrings.incomeComingSoon,
-                      ),
+                    child: FinancialMovementSelector(
+                      salesSelected: false,
+                      onSelectionChanged: (salesSelected) {
+                        if (salesSelected) widget.onSalesSelected();
+                      },
                     ),
                   ),
                 ),

@@ -101,6 +101,32 @@ class VentaCobroInicialCreate(SyncFields):
         return self
 
 
+class VentaCobroInicialRead(BaseModel):
+    """Cobro inicial reconstruido para la copia offline de una venta."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    fecha_cobro: date
+    monto: Decimal
+    medio_cobro: MedioCobro
+    observaciones: str | None
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: datetime | None
+
+
+class UsuarioVentaRead(BaseModel):
+    """Identidad visible de quien registro la operacion comercial."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    nombre: str
+    apellido: str
+    email: str
+
+
 class VentaCreate(SyncFields):
     """Alta idempotente de una venta creada en mobile o desde un cliente online."""
 
@@ -305,10 +331,13 @@ class VentaRead(BaseModel):
     monto_total: Decimal
     observaciones: str | None
     registrada_por_id: UUID
+    registrada_por: UsuarioVentaRead | None
     animal_ids: list[UUID]
     monto_cobrado: Decimal
     saldo_pendiente: Decimal
     estado_cobro: EstadoCobro
+    condicion_cobro: CondicionCobro
+    cobro_inicial: VentaCobroInicialRead | None
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None

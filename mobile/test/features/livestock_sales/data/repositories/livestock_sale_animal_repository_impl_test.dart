@@ -26,6 +26,7 @@ void main() {
     lotStore = _FakeLotBrickStore();
     repository = LivestockSaleAnimalRepositoryImpl(
       animalBrickStore: store,
+      animalSelectionStore: store,
       categoryBrickStore: categoryStore,
       lotBrickStore: lotStore,
       establishmentId: 'establishment-id',
@@ -82,6 +83,21 @@ void main() {
     expect(matches.map((animal) => animal.id), ['first', 'second']);
   });
 
+  test('returns every local match so presentation can fill its suggestion limit', () async {
+    store.animals = List.generate(
+      11,
+      (index) => _animal(
+        id: 'animal-$index',
+        rfid: '9820004${index.toString().padLeft(8, '0')}',
+      ),
+    );
+
+    final result = await repository.findLocalByRfidPrefix('9820004');
+
+    final matches = (result as Success<List<LivestockSaleAnimal>>).data;
+    expect(matches, hasLength(11));
+  });
+
   test('maps a rejected local animal as unavailable for sale', () async {
     store.animals = [
       _animal(
@@ -127,6 +143,22 @@ void main() {
     final animal = (result as Success<LivestockSaleAnimal?>).data;
     expect(animal?.categoryName, 'Novillo');
     expect(animal?.lotName, 'Lote Norte');
+  });
+
+  test('loads sale animals by id in their original order', () async {
+    store.animals = [
+      _animal(id: 'second', rfid: '982000412991417'),
+      _animal(id: 'first'),
+    ];
+    categoryStore.categories = [_category(name: 'Novillo')];
+    lotStore.lots = [_lot(name: 'Lote Norte')];
+
+    final result = await repository.findLocalByIds(['first', 'second']);
+
+    final animals = (result as Success<List<LivestockSaleAnimal>>).data;
+    expect(animals.map((animal) => animal.id), ['first', 'second']);
+    expect(animals.first.categoryName, 'Novillo');
+    expect(animals.first.lotName, 'Lote Norte');
   });
 
   test('returns the first local match without waiting for remote refresh', () async {
@@ -262,7 +294,7 @@ BrickLotModel _lot({required String name}) {
   );
 }
 
-class _FakeAnimalBrickStore implements AnimalBrickStore {
+class _FakeAnimalBrickStore implements AnimalBrickStore, AnimalSelectionStore {
   List<BrickAnimalModel> animals = [];
   List<BrickAnimalModel>? remoteAnimals;
   Completer<void>? remotePullCompleter;
@@ -275,6 +307,26 @@ class _FakeAnimalBrickStore implements AnimalBrickStore {
     if (throwOnRead) throw Exception('SQLite unavailable');
     return animals;
   }
+
+  @override
+  Future<List<BrickAnimalModel>> getLocalAnimalsByIds(
+    String establishmentId,
+    Set<String> ids,
+  ) async {
+    if (throwOnRead) throw Exception('SQLite unavailable');
+    return animals
+        .where(
+          (animal) => animal.establishmentId == establishmentId && ids.contains(animal.localId),
+        )
+        .toList();
+  }
+
+  @override
+  Future<List<BrickAnimalModel>> findLocalAnimalsByTag(
+    String establishmentId,
+    String tag, {
+    required bool electronic,
+  }) async => const [];
 
   @override
   Future<BrickAnimalModel> cacheAnimal(BrickAnimalModel animal) async => animal;

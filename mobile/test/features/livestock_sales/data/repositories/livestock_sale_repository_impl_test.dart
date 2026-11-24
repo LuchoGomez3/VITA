@@ -86,9 +86,18 @@ class _Store implements LivestockSaleBrickStore {
   BrickLivestockSaleModel? saved;
 
   @override
+  Stream<void> get changes => const Stream.empty();
+
+  @override
   Future<List<BrickLivestockSaleModel>> getLocalSales(
     String? establishmentId,
   ) => throw StateError('Unexpected getLocalSales call');
+
+  @override
+  Future<void> pullRemoteSales(String establishmentId) async {}
+
+  @override
+  Future<void> synchronizeSales(String establishmentId) async {}
 
   @override
   Future<BrickLivestockSaleModel> saveSale(BrickLivestockSaleModel sale) async {

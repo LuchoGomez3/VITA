@@ -14,6 +14,8 @@ void main() {
     final ids = ['sale-id', 'payment-id'].iterator;
     useCase = ConfirmLivestockSaleUseCase(
       repository: repository,
+      registeredById: 'user-id',
+      registeredByName: 'Franco Productor',
       now: () => DateTime(2026, 10, 3, 15, 30),
       createId: () {
         ids.moveNext();
@@ -34,6 +36,8 @@ void main() {
     expect(sale.pricePerKgMicros, 1000123456);
     expect(sale.totalAmountCents, 1012624);
     expect(sale.syncStatus, LivestockSaleSyncStatus.pending);
+    expect(sale.registeredById, 'user-id');
+    expect(sale.registeredByName, 'Franco Productor');
     expect(repository.created, same(sale));
   });
 

@@ -28,6 +28,18 @@ abstract final class LivestockSaleBrickMapper {
       animalIdsJson: jsonEncode(sale.animalIds),
       paymentCondition: sale.paymentCondition.value,
       initialPaymentJson: _paymentToJson(sale.initialPayment),
+      collectedAmount: sale.collectedAmountCents == null
+          ? null
+          : DecimalAmountFormatter.centsToDecimal(
+              sale.collectedAmountCents!,
+            ),
+      pendingAmount: sale.pendingAmountCents == null
+          ? null
+          : DecimalAmountFormatter.centsToDecimal(
+              sale.pendingAmountCents!,
+            ),
+      registeredById: sale.registeredById,
+      registeredByName: sale.registeredByName,
       createdAt: sale.createdAt,
       updatedAt: sale.updatedAt,
       syncStatus: _syncStatusToBrick(sale.syncStatus),
@@ -64,6 +76,14 @@ abstract final class LivestockSaleBrickMapper {
         (value) => value.value,
       ),
       initialPayment: _paymentFromJson(model.initialPaymentJson),
+      collectedAmountCents: model.collectedAmount == null
+          ? null
+          : DecimalAmountFormatter.decimalToCents(model.collectedAmount!),
+      pendingAmountCents: model.pendingAmount == null
+          ? null
+          : DecimalAmountFormatter.decimalToCents(model.pendingAmount!),
+      registeredById: model.registeredById,
+      registeredByName: model.registeredByName,
       createdAt: model.createdAt,
       updatedAt: model.updatedAt,
       syncStatus: _syncStatusFromBrick(model.syncStatus),

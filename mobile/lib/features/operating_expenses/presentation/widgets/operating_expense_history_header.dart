@@ -3,10 +3,10 @@ import 'package:frontend_mayoral/core/formatters/argentine_currency_input_format
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/app_header.dart';
+import 'package:frontend_mayoral/core/widgets/financial_csv_export_button.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/cubit/operating_expense_history_cubit.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/strings/operating_expense_strings.dart';
-import 'package:frontend_mayoral/features/operating_expenses/presentation/widgets/operating_expense_export_button.dart';
 
 /// Encabezado del historial que presenta un resumen compacto al desplazarse.
 class OperatingExpenseHistoryHeader extends StatelessWidget implements PreferredSizeWidget {
@@ -58,7 +58,7 @@ class OperatingExpenseHistoryHeader extends StatelessWidget implements Preferred
                   key: ValueKey('hidden-expense-type'),
                 ),
         ),
-        OperatingExpenseExportButton(
+        FinancialCsvExportButton(
           loading: state.export is Loading<OperatingExpenseExport>,
           onPressed: onExport,
         ),

@@ -29,6 +29,29 @@ void main() {
     );
   });
 
+  test('builds the sale history route for the active establishment', () {
+    expect(
+      AppRoutes.saleHistoryForEstablishment(
+        establishmentId: 'field/id',
+        establishmentName: 'Campo Sur',
+      ),
+      '${AppRoutes.expenseRecords}?establecimientoId=field%2Fid'
+      '&establecimientoNombre=Campo+Sur&seccion=ventas',
+    );
+  });
+
+  test('builds the livestock sale detail route', () {
+    expect(
+      AppRoutes.saleDetailForEstablishment(
+        saleId: 'sale/id',
+        establishmentId: 'field/id',
+        establishmentName: 'Campo Sur',
+      ),
+      '${AppRoutes.expenseRecords}/ventas/sale%2Fid'
+      '?establecimientoId=field%2Fid&establecimientoNombre=Campo+Sur',
+    );
+  });
+
   group('AppRouter.redirectFor', () {
     test('keeps checking state on the technical startup route', () {
       expect(

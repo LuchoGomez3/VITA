@@ -29,8 +29,12 @@ void main() {
         createdAt: timestamp,
         updatedAt: timestamp,
       ),
+      collectedAmountCents: 500010,
+      pendingAmountCents: 512614,
       createdAt: timestamp,
       updatedAt: timestamp,
+      registeredById: 'user-id',
+      registeredByName: 'Franco Productor',
       syncStatus: LivestockSaleSyncStatus.pending,
     );
 
@@ -38,6 +42,10 @@ void main() {
     expect(brick.totalWeightKg, '10.125');
     expect(brick.pricePerKg, '1000.123456');
     expect(brick.totalAmount, '10126.24');
+    expect(brick.registeredById, 'user-id');
+    expect(brick.registeredByName, 'Franco Productor');
+    expect(brick.collectedAmount, '5000.10');
+    expect(brick.pendingAmount, '5126.14');
     final payment = jsonDecode(brick.initialPaymentJson!) as Map<String, dynamic>;
     expect(payment['monto'], '5000.10');
     expect(payment['medio_cobro'], 'tarjeta');

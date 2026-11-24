@@ -119,6 +119,12 @@ class AppRoutes {
   /// Query que identifica una venta abierta desde Inicio.
   static const livestockSaleHomeOrigin = 'inicio';
 
+  /// Query que abre ventas dentro del historial financiero.
+  static const livestockSaleHistorySection = 'ventas';
+
+  /// Ruta del detalle local de una venta seleccionada.
+  static const livestockSaleDetail = '/registros-de-gastos/ventas/:saleId';
+
   /// Construye la ruta de egresos con el establecimiento activo explicito.
   static String expensesForEstablishment({
     required String path,
@@ -127,6 +133,29 @@ class AppRoutes {
   }) =>
       '$path?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}'
       '&establecimientoNombre=${Uri.encodeQueryComponent(establishmentName)}';
+
+  /// Construye la seccion de ventas dentro de los movimientos financieros.
+  static String saleHistoryForEstablishment({
+    required String establishmentId,
+    required String establishmentName,
+  }) {
+    return '${expensesForEstablishment(
+      path: expenseRecords,
+      establishmentId: establishmentId,
+      establishmentName: establishmentName,
+    )}&seccion=$livestockSaleHistorySection';
+  }
+
+  /// Construye el detalle restaurable de una venta del establecimiento.
+  static String saleDetailForEstablishment({
+    required String saleId,
+    required String establishmentId,
+    required String establishmentName,
+  }) {
+    return '/registros-de-gastos/ventas/${Uri.encodeComponent(saleId)}'
+        '?establecimientoId=${Uri.encodeQueryComponent(establishmentId)}'
+        '&establecimientoNombre=${Uri.encodeQueryComponent(establishmentName)}';
+  }
 
   /// Construye la ruta de venta con el establecimiento activo explicito.
   static String livestockSaleForEstablishment(String establishmentId) {

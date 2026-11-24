@@ -19,3 +19,4 @@ export 'app_sync_badge.dart';
 export 'app_timeline.dart';
 export 'buttons/buttons.dart';
 export 'fields/fields.dart';
+export 'financial_movement_selector.dart';
