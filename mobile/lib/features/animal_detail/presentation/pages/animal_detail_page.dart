@@ -177,6 +177,7 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
                 _ => null,
               },
               onRetrySync: () => context.read<AnimalDetailCubit>().retrySync(data.id),
+              onTakePhoto: state.photo is Loading<AnimalPhoto?> ? null : () => _capturePhoto(context),
             ),
             AnimalGenealogyTab(animal: data, createCubit: widget.createGenealogyCubit),
             AnimalWeighingsTab(animal: data),
@@ -222,6 +223,13 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
         _ => null,
       },
     );
+  }
+
+  Future<void> _capturePhoto(BuildContext context) async {
+    final captured = await context.read<AnimalDetailCubit>().capturePhoto();
+    if (!captured && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(AnimalDetailStrings.takePhotoError)));
+    }
   }
 
   /// Abre "Mover animales" con este animal y, al volver, recarga la ficha (el

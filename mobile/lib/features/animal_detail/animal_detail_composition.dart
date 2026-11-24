@@ -47,6 +47,7 @@ AnimalDetailCubit createAnimalDetailCubit() {
     ),
     getAnimalDetailUseCase: GetAnimalDetailUseCase(detailRepository),
     getAnimalPhotoUseCase: const GetAnimalPhotoUseCase(photoRepository),
+    takePhoto: photoRepository.takePhoto,
     retryAnimalSyncUseCase: RetryAnimalSyncUseCase(detailRepository),
   );
 }

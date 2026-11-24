@@ -14,13 +14,22 @@ import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tab
 /// observaciones, más el estado de sincronización del animal.
 class AnimalGeneralTab extends StatelessWidget {
   /// Crea la pestaña para [animal].
-  const AnimalGeneralTab({required this.animal, required this.onRetrySync, this.photo, super.key});
+  const AnimalGeneralTab({
+    required this.animal,
+    required this.onRetrySync,
+    this.photo,
+    this.onTakePhoto,
+    super.key,
+  });
 
   /// Animal de la ficha.
   final AnimalDetail animal;
 
   /// Foto local resuelta independientemente de los datos del animal.
   final AnimalPhoto? photo;
+
+  /// Solicita una captura si todavía no hay foto.
+  final VoidCallback? onTakePhoto;
 
   /// Reintenta sincronizar un alta rechazada.
   final VoidCallback onRetrySync;
@@ -36,7 +45,7 @@ class AnimalGeneralTab extends StatelessWidget {
         AnimalDetailPhoto(
           photo: photo,
           contentBuilder: (image) => image == null
-              ? const _PhotoPlaceholder()
+              ? _PhotoPlaceholder(onTap: onTakePhoto)
               : ClipRRect(
                   borderRadius: BorderRadius.circular(AppRadius.md),
                   child: image,
@@ -106,24 +115,40 @@ class AnimalGeneralTab extends StatelessWidget {
 
 /// Lugar de la foto del animal (diseño: "[ foto del animal ]").
 class _PhotoPlaceholder extends StatelessWidget {
-  const _PhotoPlaceholder();
+  const _PhotoPlaceholder({this.onTap});
+
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 130,
+      constraints: const BoxConstraints(minHeight: 130),
       decoration: BoxDecoration(
         color: AppColors.backgroundTertiary,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColors.border),
       ),
-      child: const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.photo_camera_outlined, color: AppColors.textHint),
-          SizedBox(height: AppSpacing.xxs),
-          Text(AnimalDetailStrings.photoPlaceholder, style: AppTypography.formFieldHelper),
-        ],
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        onTap: onTap,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
+                const SizedBox(height: AppSpacing.xxs),
+                const Text(
+                  AnimalDetailStrings.photoPlaceholder,
+                  style: AppTypography.formFieldHelper,
+                  textAlign: TextAlign.center,
+                ),
+                if (onTap != null) const Text(AnimalDetailStrings.takePhoto, style: AppTypography.mediumEmphasis),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

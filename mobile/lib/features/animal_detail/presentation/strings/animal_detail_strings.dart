@@ -174,6 +174,12 @@ class AnimalDetailStrings {
   /// Placeholder de la foto del animal.
   static const photoPlaceholder = 'Sin foto del animal';
 
+  /// Acceso a la cámara desde el espacio vacío de la foto.
+  static const takePhoto = 'Sacar foto';
+
+  /// Error recuperable al abrir la cámara o guardar la captura.
+  static const takePhotoError = 'No se pudo sacar o guardar la foto. Revisá el permiso de cámara y volvé a intentar.';
+
   /// Pestaña que todavía no está desarrollada.
   static const comingSoonTitle = 'Próximamente';
 

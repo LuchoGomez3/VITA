@@ -19,6 +19,32 @@ import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/watch_a
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
 
 void main() {
+  test('la foto cancelada conserva el espacio y la confirmada se lee del almacenamiento', () async {
+    final detailRepository = _FakeAnimalDetailRepository();
+    final photoRepository = _FakeAnimalPhotoRepository(const Result.success(null));
+    final photo = AnimalPhoto.fromBytes([1, 2, 3]);
+    var confirmed = false;
+    final cubit = AnimalDetailCubit(
+      watchAnimalLocationUseCase: const WatchAnimalLocationUseCase(_LocationRepository()),
+      getAnimalDetailUseCase: GetAnimalDetailUseCase(detailRepository),
+      getAnimalPhotoUseCase: GetAnimalPhotoUseCase(photoRepository),
+      retryAnimalSyncUseCase: RetryAnimalSyncUseCase(detailRepository),
+      takePhoto: ({required establishmentId, required animalId}) async {
+        expect(establishmentId, _animal.establishmentId);
+        expect(animalId, _animal.id);
+        if (confirmed) photoRepository.result = Result.success(photo);
+        return confirmed;
+      },
+    );
+    addTearDown(cubit.close);
+    await cubit.loadAnimalData(_animal.id);
+    expect(await cubit.capturePhoto(), isTrue);
+    expect(photoRepository.calls, 1);
+    confirmed = true;
+    expect(await cubit.capturePhoto(), isTrue);
+    expect(cubit.state.photo, ResultState<AnimalPhoto?>.data(photo));
+  });
+
   test('keeps the animal detail when the optional photo fails', () async {
     final detailRepository = _FakeAnimalDetailRepository();
     final photoRepository = _FakeAnimalPhotoRepository(
@@ -203,7 +229,7 @@ class _SwitchingPhotoRepository implements AnimalPhotoRepository {
 class _FakeAnimalPhotoRepository implements AnimalPhotoRepository {
   _FakeAnimalPhotoRepository(this.result);
 
-  final Result<AnimalPhoto?> result;
+  Result<AnimalPhoto?> result;
   String? establishmentId;
   String? animalId;
   int calls = 0;
