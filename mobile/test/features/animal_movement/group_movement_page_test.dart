@@ -128,6 +128,9 @@ void main() {
       await tester.scrollUntilVisible(find.text('La Cumbre'), 200, scrollable: _list);
       await tester.tap(find.text('La Cumbre'));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Alfalfa'), 150, scrollable: _list);
+      expect(find.text(keepInitial ? 'Pasto natural, Festuca' : 'Festuca'), findsOneWidget);
+      expect(find.text('Alfalfa'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.widgetWithText(TextFormField, AnimalMovementStrings.reasonHint),
         200,
@@ -319,6 +322,7 @@ MovementAnimal _animal(String id, String visualTag, String lotId) => MovementAni
   categoryName: 'Novillo',
   lotId: lotId,
   lotName: lotId,
+  forageResourceCode: lotId == 'bajo' ? 'pasto_natural' : 'festuca',
 );
 
 class _FakeRepository implements AnimalMovementRepository {
@@ -328,7 +332,7 @@ class _FakeRepository implements AnimalMovementRepository {
   @override
   Future<Result<List<MovementDestination>>> getDestinations(String establishmentId) async => const Result.success([
     MovementDestination(id: 'bajo', name: 'El Bajo', animalCount: 2),
-    MovementDestination(id: 'cumbre', name: 'La Cumbre', animalCount: 3),
+    MovementDestination(id: 'cumbre', name: 'La Cumbre', animalCount: 3, forageResourceCode: 'alfalfa'),
   ]);
 
   @override

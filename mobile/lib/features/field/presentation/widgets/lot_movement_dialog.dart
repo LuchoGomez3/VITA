@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/forage_movement_preview.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_animal_summary.dart';
@@ -35,6 +36,7 @@ class LotMovementDialog extends StatefulWidget {
   const LotMovementDialog({
     required this.animals,
     required this.destinations,
+    this.originResourceCode,
     super.key,
   });
 
@@ -43,6 +45,9 @@ class LotMovementDialog extends StatefulWidget {
 
   /// Lotes activos habilitados como destino.
   final List<Lot> destinations;
+
+  /// Recurso vigente del lote que se está consultando.
+  final String? originResourceCode;
 
   @override
   State<LotMovementDialog> createState() => _LotMovementDialogState();
@@ -63,6 +68,7 @@ class _LotMovementDialogState extends State<LotMovementDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final destination = widget.destinations.where((lot) => lot.id == _destinationLotId).firstOrNull;
     return AlertDialog(
       title: const Text(FieldStrings.moveAnimalsTitle),
       content: SingleChildScrollView(
@@ -77,8 +83,15 @@ class _LotMovementDialogState extends State<LotMovementDialog> {
               options: [
                 for (final lot in widget.destinations) AppDropdownOption(value: lot.id, label: lot.name),
               ],
-              onChanged: (value) => _destinationLotId = value,
+              onChanged: (value) => setState(() => _destinationLotId = value),
             ),
+            if (destination != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              ForageMovementPreview(
+                currentResourceCodes: [widget.originResourceCode],
+                destinationResourceCode: destination.forageResourceCode,
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             Text(FieldStrings.animalsSectionTitle(widget.animals.length)),
             for (final animal in widget.animals)

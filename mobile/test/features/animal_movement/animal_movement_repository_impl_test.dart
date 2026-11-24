@@ -252,11 +252,15 @@ void main() {
   });
 
   test('los destinos son los potreros activos con su cantidad de animales', () async {
-    final destinations = data(await repository().getDestinations('campo-1'));
+    final subject = repository();
+    final destinations = data(await subject.getDestinations('campo-1'));
 
     expect(destinations.map((lot) => lot.name), ['El Bajo', 'La Cumbre']);
     expect(destinations.first.animalCount, 2);
     expect(destinations.last.animalCount, 0);
+    expect(destinations.first.forageResourceCode, 'pasto_natural');
+    expect(destinations.last.forageResourceCode, 'alfalfa');
+    expect(data(await subject.getAnimal('a1'))?.forageResourceCode, 'pasto_natural');
   });
 
   test('el historial trae solo los movimientos del animal, del más nuevo al más viejo', () async {
@@ -468,25 +472,31 @@ class _FakeLotStore implements LotBrickStore {
     : _lots =
           lots ??
           [
-            _lot('lote-cumbre', 'La Cumbre'),
-            _lot('lote-bajo', 'El Bajo'),
+            _lot('lote-cumbre', 'La Cumbre', forageResourceCode: 'alfalfa'),
+            _lot('lote-bajo', 'El Bajo', forageResourceCode: 'pasto_natural'),
             _lot('lote-cerrado', 'Clausurado', statusCode: 'inactivo'),
           ];
   final List<BrickLotModel> _lots;
 
-  static BrickLotModel _lot(String id, String name, {String statusCode = 'activo', DateTime? deletedAt}) =>
-      BrickLotModel(
-        localId: id,
-        establishmentId: 'campo-1',
-        name: name,
-        boundaryJson: '{}',
-        surfaceTenths: 950,
-        hasWater: false,
-        statusCode: statusCode,
-        createdAt: DateTime.utc(2026),
-        updatedAt: DateTime.utc(2026),
-        deletedAt: deletedAt,
-      );
+  static BrickLotModel _lot(
+    String id,
+    String name, {
+    String statusCode = 'activo',
+    DateTime? deletedAt,
+    String? forageResourceCode,
+  }) => BrickLotModel(
+    localId: id,
+    establishmentId: 'campo-1',
+    name: name,
+    boundaryJson: '{}',
+    surfaceTenths: 950,
+    hasWater: false,
+    statusCode: statusCode,
+    createdAt: DateTime.utc(2026),
+    updatedAt: DateTime.utc(2026),
+    deletedAt: deletedAt,
+    forageResourceCode: forageResourceCode,
+  );
 
   @override
   Future<void> setLocalForageResource(String lotId, String? forageResourceCode) async {}

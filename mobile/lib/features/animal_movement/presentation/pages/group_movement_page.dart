@@ -5,6 +5,7 @@ import 'package:frontend_mayoral/core/formatters/rfid_input_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
+import 'package:frontend_mayoral/core/widgets/forage_movement_preview.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_tag_kind.dart';
@@ -217,6 +218,10 @@ class _GroupMovementForm extends StatelessWidget {
     final cubit = context.read<GroupMovementCubit>();
     final occurredAt = state.occurredAt ?? DateTime.now();
     final isRfid = state.tagKind == MovementTagKind.rfid;
+    final originResourceCodes = [
+      for (final animal in state.animals)
+        if (animal.lotId != state.destinationId) animal.forageResourceCode,
+    ];
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -287,7 +292,7 @@ class _GroupMovementForm extends StatelessWidget {
         if (state.destinations.isEmpty)
           const Text(AnimalMovementStrings.noDestinations, style: AppTypography.formFieldHelper)
         else
-          for (final destination in state.destinations)
+          for (final destination in state.destinations) ...[
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.xs),
               child: AppSelectableCard<String>(
@@ -299,6 +304,15 @@ class _GroupMovementForm extends StatelessWidget {
                 onChanged: cubit.selectDestination,
               ),
             ),
+            if (destination.id == state.destinationId && originResourceCodes.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                child: ForageMovementPreview(
+                  currentResourceCodes: originResourceCodes,
+                  destinationResourceCode: destination.forageResourceCode,
+                ),
+              ),
+          ],
         const SizedBox(height: AppSpacing.md),
         AppTextFormField(
           controller: reasonController,

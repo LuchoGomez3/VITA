@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MovementAnimal {
 
- String get id; String get establishmentId; String get visualTag; String get rfidTagNumber; String get breed; String get categoryName; String get lotId; String get lotName;
+ String get id; String get establishmentId; String get visualTag; String get rfidTagNumber; String get breed; String get categoryName; String get lotId; String get lotName; String? get forageResourceCode;
 /// Create a copy of MovementAnimal
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $MovementAnimalCopyWith<MovementAnimal> get copyWith => _$MovementAnimalCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MovementAnimal&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.lotName, lotName) || other.lotName == lotName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MovementAnimal&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.lotName, lotName) || other.lotName == lotName)&&(identical(other.forageResourceCode, forageResourceCode) || other.forageResourceCode == forageResourceCode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,establishmentId,visualTag,rfidTagNumber,breed,categoryName,lotId,lotName);
+int get hashCode => Object.hash(runtimeType,id,establishmentId,visualTag,rfidTagNumber,breed,categoryName,lotId,lotName,forageResourceCode);
 
 @override
 String toString() {
-  return 'MovementAnimal(id: $id, establishmentId: $establishmentId, visualTag: $visualTag, rfidTagNumber: $rfidTagNumber, breed: $breed, categoryName: $categoryName, lotId: $lotId, lotName: $lotName)';
+  return 'MovementAnimal(id: $id, establishmentId: $establishmentId, visualTag: $visualTag, rfidTagNumber: $rfidTagNumber, breed: $breed, categoryName: $categoryName, lotId: $lotId, lotName: $lotName, forageResourceCode: $forageResourceCode)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $MovementAnimalCopyWith<$Res>  {
   factory $MovementAnimalCopyWith(MovementAnimal value, $Res Function(MovementAnimal) _then) = _$MovementAnimalCopyWithImpl;
 @useResult
 $Res call({
- String id, String establishmentId, String visualTag, String rfidTagNumber, String breed, String categoryName, String lotId, String lotName
+ String id, String establishmentId, String visualTag, String rfidTagNumber, String breed, String categoryName, String lotId, String lotName, String? forageResourceCode
 });
 
 
@@ -62,7 +62,7 @@ class _$MovementAnimalCopyWithImpl<$Res>
 
 /// Create a copy of MovementAnimal
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? establishmentId = null,Object? visualTag = null,Object? rfidTagNumber = null,Object? breed = null,Object? categoryName = null,Object? lotId = null,Object? lotName = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? establishmentId = null,Object? visualTag = null,Object? rfidTagNumber = null,Object? breed = null,Object? categoryName = null,Object? lotId = null,Object? lotName = null,Object? forageResourceCode = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
@@ -72,7 +72,8 @@ as String,breed: null == breed ? _self.breed : breed // ignore: cast_nullable_to
 as String,categoryName: null == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
 as String,lotId: null == lotId ? _self.lotId : lotId // ignore: cast_nullable_to_non_nullable
 as String,lotName: null == lotName ? _self.lotName : lotName // ignore: cast_nullable_to_non_nullable
-as String,
+as String,forageResourceCode: freezed == forageResourceCode ? _self.forageResourceCode : forageResourceCode // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -154,10 +155,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String visualTag,  String rfidTagNumber,  String breed,  String categoryName,  String lotId,  String lotName)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String visualTag,  String rfidTagNumber,  String breed,  String categoryName,  String lotId,  String lotName,  String? forageResourceCode)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MovementAnimal() when $default != null:
-return $default(_that.id,_that.establishmentId,_that.visualTag,_that.rfidTagNumber,_that.breed,_that.categoryName,_that.lotId,_that.lotName);case _:
+return $default(_that.id,_that.establishmentId,_that.visualTag,_that.rfidTagNumber,_that.breed,_that.categoryName,_that.lotId,_that.lotName,_that.forageResourceCode);case _:
   return orElse();
 
 }
@@ -175,10 +176,10 @@ return $default(_that.id,_that.establishmentId,_that.visualTag,_that.rfidTagNumb
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String visualTag,  String rfidTagNumber,  String breed,  String categoryName,  String lotId,  String lotName)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String establishmentId,  String visualTag,  String rfidTagNumber,  String breed,  String categoryName,  String lotId,  String lotName,  String? forageResourceCode)  $default,) {final _that = this;
 switch (_that) {
 case _MovementAnimal():
-return $default(_that.id,_that.establishmentId,_that.visualTag,_that.rfidTagNumber,_that.breed,_that.categoryName,_that.lotId,_that.lotName);}
+return $default(_that.id,_that.establishmentId,_that.visualTag,_that.rfidTagNumber,_that.breed,_that.categoryName,_that.lotId,_that.lotName,_that.forageResourceCode);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -192,10 +193,10 @@ return $default(_that.id,_that.establishmentId,_that.visualTag,_that.rfidTagNumb
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String establishmentId,  String visualTag,  String rfidTagNumber,  String breed,  String categoryName,  String lotId,  String lotName)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String establishmentId,  String visualTag,  String rfidTagNumber,  String breed,  String categoryName,  String lotId,  String lotName,  String? forageResourceCode)?  $default,) {final _that = this;
 switch (_that) {
 case _MovementAnimal() when $default != null:
-return $default(_that.id,_that.establishmentId,_that.visualTag,_that.rfidTagNumber,_that.breed,_that.categoryName,_that.lotId,_that.lotName);case _:
+return $default(_that.id,_that.establishmentId,_that.visualTag,_that.rfidTagNumber,_that.breed,_that.categoryName,_that.lotId,_that.lotName,_that.forageResourceCode);case _:
   return null;
 
 }
@@ -207,7 +208,7 @@ return $default(_that.id,_that.establishmentId,_that.visualTag,_that.rfidTagNumb
 
 
 class _MovementAnimal implements MovementAnimal {
-  const _MovementAnimal({required this.id, required this.establishmentId, required this.visualTag, required this.rfidTagNumber, required this.breed, required this.categoryName, required this.lotId, required this.lotName});
+  const _MovementAnimal({required this.id, required this.establishmentId, required this.visualTag, required this.rfidTagNumber, required this.breed, required this.categoryName, required this.lotId, required this.lotName, this.forageResourceCode});
   
 
 @override final  String id;
@@ -218,6 +219,7 @@ class _MovementAnimal implements MovementAnimal {
 @override final  String categoryName;
 @override final  String lotId;
 @override final  String lotName;
+@override final  String? forageResourceCode;
 
 /// Create a copy of MovementAnimal
 /// with the given fields replaced by the non-null parameter values.
@@ -229,16 +231,16 @@ _$MovementAnimalCopyWith<_MovementAnimal> get copyWith => __$MovementAnimalCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MovementAnimal&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.lotName, lotName) || other.lotName == lotName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MovementAnimal&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.visualTag, visualTag) || other.visualTag == visualTag)&&(identical(other.rfidTagNumber, rfidTagNumber) || other.rfidTagNumber == rfidTagNumber)&&(identical(other.breed, breed) || other.breed == breed)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&(identical(other.lotName, lotName) || other.lotName == lotName)&&(identical(other.forageResourceCode, forageResourceCode) || other.forageResourceCode == forageResourceCode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,establishmentId,visualTag,rfidTagNumber,breed,categoryName,lotId,lotName);
+int get hashCode => Object.hash(runtimeType,id,establishmentId,visualTag,rfidTagNumber,breed,categoryName,lotId,lotName,forageResourceCode);
 
 @override
 String toString() {
-  return 'MovementAnimal(id: $id, establishmentId: $establishmentId, visualTag: $visualTag, rfidTagNumber: $rfidTagNumber, breed: $breed, categoryName: $categoryName, lotId: $lotId, lotName: $lotName)';
+  return 'MovementAnimal(id: $id, establishmentId: $establishmentId, visualTag: $visualTag, rfidTagNumber: $rfidTagNumber, breed: $breed, categoryName: $categoryName, lotId: $lotId, lotName: $lotName, forageResourceCode: $forageResourceCode)';
 }
 
 
@@ -249,7 +251,7 @@ abstract mixin class _$MovementAnimalCopyWith<$Res> implements $MovementAnimalCo
   factory _$MovementAnimalCopyWith(_MovementAnimal value, $Res Function(_MovementAnimal) _then) = __$MovementAnimalCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String establishmentId, String visualTag, String rfidTagNumber, String breed, String categoryName, String lotId, String lotName
+ String id, String establishmentId, String visualTag, String rfidTagNumber, String breed, String categoryName, String lotId, String lotName, String? forageResourceCode
 });
 
 
@@ -266,7 +268,7 @@ class __$MovementAnimalCopyWithImpl<$Res>
 
 /// Create a copy of MovementAnimal
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? establishmentId = null,Object? visualTag = null,Object? rfidTagNumber = null,Object? breed = null,Object? categoryName = null,Object? lotId = null,Object? lotName = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? establishmentId = null,Object? visualTag = null,Object? rfidTagNumber = null,Object? breed = null,Object? categoryName = null,Object? lotId = null,Object? lotName = null,Object? forageResourceCode = freezed,}) {
   return _then(_MovementAnimal(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
@@ -276,7 +278,8 @@ as String,breed: null == breed ? _self.breed : breed // ignore: cast_nullable_to
 as String,categoryName: null == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
 as String,lotId: null == lotId ? _self.lotId : lotId // ignore: cast_nullable_to_non_nullable
 as String,lotName: null == lotName ? _self.lotName : lotName // ignore: cast_nullable_to_non_nullable
-as String,
+as String,forageResourceCode: freezed == forageResourceCode ? _self.forageResourceCode : forageResourceCode // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -286,7 +289,7 @@ as String,
 /// @nodoc
 mixin _$MovementDestination {
 
- String get id; String get name; int get animalCount;
+ String get id; String get name; int get animalCount; String? get forageResourceCode;
 /// Create a copy of MovementDestination
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -297,16 +300,16 @@ $MovementDestinationCopyWith<MovementDestination> get copyWith => _$MovementDest
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MovementDestination&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.animalCount, animalCount) || other.animalCount == animalCount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MovementDestination&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.animalCount, animalCount) || other.animalCount == animalCount)&&(identical(other.forageResourceCode, forageResourceCode) || other.forageResourceCode == forageResourceCode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,animalCount);
+int get hashCode => Object.hash(runtimeType,id,name,animalCount,forageResourceCode);
 
 @override
 String toString() {
-  return 'MovementDestination(id: $id, name: $name, animalCount: $animalCount)';
+  return 'MovementDestination(id: $id, name: $name, animalCount: $animalCount, forageResourceCode: $forageResourceCode)';
 }
 
 
@@ -317,7 +320,7 @@ abstract mixin class $MovementDestinationCopyWith<$Res>  {
   factory $MovementDestinationCopyWith(MovementDestination value, $Res Function(MovementDestination) _then) = _$MovementDestinationCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, int animalCount
+ String id, String name, int animalCount, String? forageResourceCode
 });
 
 
@@ -334,12 +337,13 @@ class _$MovementDestinationCopyWithImpl<$Res>
 
 /// Create a copy of MovementDestination
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? animalCount = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? animalCount = null,Object? forageResourceCode = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,animalCount: null == animalCount ? _self.animalCount : animalCount // ignore: cast_nullable_to_non_nullable
-as int,
+as int,forageResourceCode: freezed == forageResourceCode ? _self.forageResourceCode : forageResourceCode // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -421,10 +425,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  int animalCount)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  int animalCount,  String? forageResourceCode)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MovementDestination() when $default != null:
-return $default(_that.id,_that.name,_that.animalCount);case _:
+return $default(_that.id,_that.name,_that.animalCount,_that.forageResourceCode);case _:
   return orElse();
 
 }
@@ -442,10 +446,10 @@ return $default(_that.id,_that.name,_that.animalCount);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  int animalCount)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  int animalCount,  String? forageResourceCode)  $default,) {final _that = this;
 switch (_that) {
 case _MovementDestination():
-return $default(_that.id,_that.name,_that.animalCount);}
+return $default(_that.id,_that.name,_that.animalCount,_that.forageResourceCode);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -459,10 +463,10 @@ return $default(_that.id,_that.name,_that.animalCount);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  int animalCount)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  int animalCount,  String? forageResourceCode)?  $default,) {final _that = this;
 switch (_that) {
 case _MovementDestination() when $default != null:
-return $default(_that.id,_that.name,_that.animalCount);case _:
+return $default(_that.id,_that.name,_that.animalCount,_that.forageResourceCode);case _:
   return null;
 
 }
@@ -474,12 +478,13 @@ return $default(_that.id,_that.name,_that.animalCount);case _:
 
 
 class _MovementDestination implements MovementDestination {
-  const _MovementDestination({required this.id, required this.name, required this.animalCount});
+  const _MovementDestination({required this.id, required this.name, required this.animalCount, this.forageResourceCode});
   
 
 @override final  String id;
 @override final  String name;
 @override final  int animalCount;
+@override final  String? forageResourceCode;
 
 /// Create a copy of MovementDestination
 /// with the given fields replaced by the non-null parameter values.
@@ -491,16 +496,16 @@ _$MovementDestinationCopyWith<_MovementDestination> get copyWith => __$MovementD
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MovementDestination&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.animalCount, animalCount) || other.animalCount == animalCount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MovementDestination&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.animalCount, animalCount) || other.animalCount == animalCount)&&(identical(other.forageResourceCode, forageResourceCode) || other.forageResourceCode == forageResourceCode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,animalCount);
+int get hashCode => Object.hash(runtimeType,id,name,animalCount,forageResourceCode);
 
 @override
 String toString() {
-  return 'MovementDestination(id: $id, name: $name, animalCount: $animalCount)';
+  return 'MovementDestination(id: $id, name: $name, animalCount: $animalCount, forageResourceCode: $forageResourceCode)';
 }
 
 
@@ -511,7 +516,7 @@ abstract mixin class _$MovementDestinationCopyWith<$Res> implements $MovementDes
   factory _$MovementDestinationCopyWith(_MovementDestination value, $Res Function(_MovementDestination) _then) = __$MovementDestinationCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, int animalCount
+ String id, String name, int animalCount, String? forageResourceCode
 });
 
 
@@ -528,12 +533,13 @@ class __$MovementDestinationCopyWithImpl<$Res>
 
 /// Create a copy of MovementDestination
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? animalCount = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? animalCount = null,Object? forageResourceCode = freezed,}) {
   return _then(_MovementDestination(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,animalCount: null == animalCount ? _self.animalCount : animalCount // ignore: cast_nullable_to_non_nullable
-as int,
+as int,forageResourceCode: freezed == forageResourceCode ? _self.forageResourceCode : forageResourceCode // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

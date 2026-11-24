@@ -15,6 +15,7 @@ sealed class MovementAnimal with _$MovementAnimal {
     required String categoryName,
     required String lotId,
     required String lotName,
+    String? forageResourceCode,
   }) = _MovementAnimal;
 }
 
@@ -26,6 +27,7 @@ sealed class MovementDestination with _$MovementDestination {
     required String id,
     required String name,
     required int animalCount,
+    String? forageResourceCode,
   }) = _MovementDestination;
 }
 

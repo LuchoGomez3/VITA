@@ -301,6 +301,7 @@ class _LotDetailBody extends StatelessWidget {
       builder: (_) => LotMovementDialog(
         animals: state.animals,
         destinations: state.availableDestinations,
+        originResourceCode: state.lot?.forageResourceCode,
       ),
     );
     if (input == null || !context.mounted) return;
