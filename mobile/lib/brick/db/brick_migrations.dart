@@ -10,6 +10,7 @@ const _preMergeHealthVersion = 20261120223303;
 const _lastSharedVersion = 20261015133521;
 const _healthMigrationVersion = 20261122234613;
 const _categoryAllowedSexVersion = 20261123003833;
+const _animalObservationVersion = 20261123235738;
 
 /// Migraciones ejecutadas por la aplicacion, con compatibilidad entre ramas.
 ///
@@ -77,13 +78,22 @@ WHERE geometry_mode IS NULL OR surface_tenths IS NULL OR has_water IS NULL
 
 /// Omite solo los cambios aditivos conocidos que ya están en la base.
 Future<Migration> _skipExistingColumn(Transaction transaction, Migration migration) async {
+  if (migration.version == _animalObservationVersion) {
+    final columns = await transaction.rawQuery('PRAGMA table_info("BrickAnimalObservationModel")');
+    if (columns.isEmpty) return migration;
+    final names = columns.map((column) => column['name']).toSet();
+    return _PreparedMigration(migration, [
+      for (final column in migration.up.whereType<InsertColumn>())
+        if (!names.contains(column.name)) column,
+    ]);
+  }
   if (migration.version != _livestockSaleDependenciesVersion && migration.version != _categoryAllowedSexVersion) {
     return migration;
   }
   if (migration.up case [final InsertColumn column]) {
     final existingColumns = await transaction.rawQuery('PRAGMA table_info("${column.onTable}")');
     if (existingColumns.any((existing) => existing['name'] == column.name)) {
-      return _AlreadyAppliedMigration(migration);
+      return _PreparedMigration(migration, const []);
     }
   }
   return migration;
@@ -105,8 +115,9 @@ Future<void> _upgradePreMergeHealthDatabase(Transaction transaction, Set<Migrati
 }
 
 /// Conserva la versión y su reversión cuando la columna ya fue agregada.
-class _AlreadyAppliedMigration extends Migration {
-  _AlreadyAppliedMigration(Migration migration) : super(version: migration.version, up: const [], down: migration.down);
+class _PreparedMigration extends Migration {
+  _PreparedMigration(Migration migration, List<MigrationCommand> up)
+    : super(version: migration.version, up: up, down: migration.down);
 }
 
 class _LivestockSaleCompatibilityMigration extends Migration {

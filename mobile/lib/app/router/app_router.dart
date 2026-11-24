@@ -380,6 +380,7 @@ class AppRouter {
               createGenealogyCubit: createAnimalGenealogyCubit,
               createFeedingCubit: createAnimalFeedingCubit,
               createHealthReader: createHealthReader,
+              createObservations: createAnimalObservations,
             );
           },
         ),

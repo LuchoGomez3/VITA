@@ -4,10 +4,12 @@ import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_photo.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/animal_observations.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_formatters.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_photo.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_detail_sync_footer.dart';
+import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/animal_observations_section.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/widgets/tabs/animal_ficha_section.dart';
 
 /// Pestaña General (diseño "Ficha · General"): foto, identificación y
@@ -19,6 +21,7 @@ class AnimalGeneralTab extends StatelessWidget {
     required this.onRetrySync,
     this.photo,
     this.onTakePhoto,
+    this.observationActions,
     super.key,
   });
 
@@ -30,6 +33,9 @@ class AnimalGeneralTab extends StatelessWidget {
 
   /// Solicita una captura si todavía no hay foto.
   final VoidCallback? onTakePhoto;
+
+  /// Notas independientes asociadas al animal.
+  final AnimalObservations? observationActions;
 
   /// Reintenta sincronizar un alta rechazada.
   final VoidCallback onRetrySync;
@@ -100,12 +106,19 @@ class AnimalGeneralTab extends StatelessWidget {
         const SizedBox(height: AppSpacing.lg),
         const AnimalFichaSectionTitle(AnimalDetailStrings.observationsLabel),
         const SizedBox(height: AppSpacing.xs),
-        AppSurfaceCard(
-          child: Text(
-            (observations == null || observations.isEmpty) ? AnimalDetailStrings.noDataValue : observations,
-            style: AppTypography.mediumEmphasis,
+        if (observationActions case final actions?)
+          AnimalObservationsSection(
+            key: ValueKey((animal.establishmentId, animal.id)),
+            animal: animal,
+            actions: actions,
+          )
+        else
+          AppSurfaceCard(
+            child: Text(
+              (observations == null || observations.isEmpty) ? AnimalDetailStrings.noDataValue : observations,
+              style: AppTypography.mediumEmphasis,
+            ),
           ),
-        ),
         const SizedBox(height: AppSpacing.md),
         AnimalDetailSyncFooter(animalDetail: animal, onRetry: onRetrySync),
       ],

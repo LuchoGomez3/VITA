@@ -20,6 +20,7 @@ part '20261122000100.migration.dart';
 part '20261122000200.migration.dart';
 part '20261122234613.migration.dart';
 part '20261123003833.migration.dart';
+part '20261123235738.migration.dart';
 
 /// All intelligently-generated migrations from all `@Migratable` classes on disk
 final migrations = <Migration>{
@@ -42,11 +43,12 @@ final migrations = <Migration>{
   const Migration20261122000200(),
   const Migration20261122234613(),
   const Migration20261123003833(),
+  const Migration20261123235738(),
 };
 
 /// A consumable database structure including the latest generated migration.
 final schema = Schema(
-  20261123003833,
+  20261123235738,
   generatorVersion: 1,
   tables: <SchemaTable>{
     SchemaTable(
@@ -111,6 +113,30 @@ final schema = Schema(
         SchemaColumn('deleted_at', Column.datetime),
         SchemaColumn('sync_status', Column.integer),
         SchemaColumn('sync_error_code', Column.varchar),
+      },
+      indices: <SchemaIndex>{},
+    ),
+    SchemaTable(
+      'BrickAnimalObservationModel',
+      columns: <SchemaColumn>{
+        SchemaColumn(
+          '_brick_id',
+          Column.integer,
+          autoincrement: true,
+          nullable: false,
+          isPrimaryKey: true,
+        ),
+        SchemaColumn('local_id', Column.varchar),
+        SchemaColumn('establishment_id', Column.varchar),
+        SchemaColumn('animal_id', Column.varchar),
+        SchemaColumn('text', Column.varchar),
+        SchemaColumn('date', Column.datetime),
+        SchemaColumn('author_id', Column.varchar),
+        SchemaColumn('sync_status', Column.integer),
+        SchemaColumn('sync_error_code', Column.varchar),
+        SchemaColumn('created_at', Column.datetime),
+        SchemaColumn('updated_at', Column.datetime),
+        SchemaColumn('deleted_at', Column.datetime),
       },
       indices: <SchemaIndex>{},
     ),

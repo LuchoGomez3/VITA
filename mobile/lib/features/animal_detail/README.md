@@ -1,5 +1,12 @@
 # Detalle animal
 
+## Observaciones
+
+Desde **General** se pueden agregar notas independientes del texto histórico.
+Brick las guarda primero en SQLite y encola el envío a
+`/api/v1/observaciones_animales`. El historial se limita al animal y su
+establecimiento y conserva las notas pendientes al recibir datos remotos.
+
 ## Foto local del animal
 
 La foto es un dato privado de la instalación mobile. Se guarda en el directorio

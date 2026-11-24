@@ -1,6 +1,7 @@
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/animal_observation_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/feeding_record_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/food_brick_store.dart';
@@ -43,6 +44,7 @@ class BrickBootstrap {
     // Stores por entidad. A medida que sumemos modelos Brick, aca se registran
     // stores como BrickMovimientoStore, BrickEventoSanitarioStore, etc.
     BrickAnimalStore.configure(AppBrickRepository.instance);
+    BrickAnimalObservationStore.configure(AppBrickRepository.instance);
     BrickAnimalLotMovementStore.configure(
       AppBrickRepository.instance,
       animalStore: BrickAnimalStore.instance,

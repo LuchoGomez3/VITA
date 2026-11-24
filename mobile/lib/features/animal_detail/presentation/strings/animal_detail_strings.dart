@@ -71,6 +71,21 @@ class AnimalDetailStrings {
   /// Etiqueta de observaciones.
   static const observationsLabel = 'Observaciones';
 
+  /// Abre el formulario para agregar una nota.
+  static const addObservation = 'Agregar observación';
+
+  /// Texto del formulario de observaciones.
+  static const observationHint = 'Escribí una observación';
+
+  /// Confirma una nota nueva.
+  static const saveObservation = 'Guardar observación';
+
+  /// Error de almacenamiento de una nota.
+  static const observationSaveError = 'No se pudo guardar la observación.';
+
+  /// Error de lectura del historial de notas.
+  static const observationReadError = 'No se pudieron leer las observaciones.';
+
   /// Metodo de pesaje manual.
   static const manualWeighingMethod = 'Manual';
 
