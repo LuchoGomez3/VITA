@@ -92,6 +92,15 @@ class LoginForm extends StatelessWidget {
             label: LoginStrings.submitButton,
             loadingLabel: loadingLabel,
             isLoading: isSubmitting,
+            loadingIndicator: const SizedBox.square(
+              dimension: 18,
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+                backgroundColor: AppColors.backgroundSecondary,
+                strokeWidth: 2.5,
+                strokeCap: StrokeCap.round,
+              ),
+            ),
             icon: const Icon(Icons.login),
             onPressed: onSubmit,
           ),

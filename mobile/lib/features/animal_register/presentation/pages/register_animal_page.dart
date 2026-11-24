@@ -100,8 +100,7 @@ class _RegisterAnimalView extends StatelessWidget {
           return Scaffold(
             appBar: AppBar(
               centerTitle: true,
-              leading: IconButton(
-                icon: const Icon(Icons.close),
+              leading: BackButton(
                 onPressed: () => _close(context),
               ),
               actions: const [SizedBox(width: 48)],

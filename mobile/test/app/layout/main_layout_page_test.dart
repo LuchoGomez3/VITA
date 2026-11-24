@@ -53,7 +53,11 @@ void main() {
     expect(find.byType(QuickReadPanel), findsNothing);
 
     await tester.tap(find.byType(FloatingActionButton));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 90));
+    final openingHeight = tester.getTopLeft(find.byType(BottomSheet)).dy;
     await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.byType(BottomSheet)).dy, lessThan(openingHeight));
     expect(find.byType(QuickReadPanel), findsOneWidget);
     expect(find.text(QuickReadStrings.waitingTitle), findsOneWidget);
     expect(find.text(QuickReadStrings.close), findsOneWidget);
@@ -91,16 +95,20 @@ void main() {
     await tester.tap(find.text(QuickReadStrings.manualEntry));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), _rfid);
+    await tester.pump();
     await tester.tap(find.text(QuickReadStrings.add));
     await tester.pumpAndSettle();
     expect(find.text('004 0028'), findsOneWidget);
 
-    // Un toque sin querer fuera de la hoja no la cierra.
     await tester.tapAt(const Offset(20, 20));
     await tester.pumpAndSettle();
-    expect(find.byType(QuickReadPanel), findsOneWidget);
+    expect(find.byType(QuickReadPanel), findsNothing);
 
-    await tester.tap(find.text(MainLayoutStrings.livestock));
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    expect(find.text('004 0028'), findsOneWidget);
+    final sheet = tester.getRect(find.byType(BottomSheet));
+    await tester.dragFrom(sheet.topCenter + const Offset(0, 18), Offset(0, sheet.height * 0.7));
     await tester.pumpAndSettle();
     expect(find.byType(QuickReadPanel), findsNothing);
     // El botón muestra cuántas hay leídas.

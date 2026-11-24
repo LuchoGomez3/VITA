@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
 import 'package:frontend_mayoral/core/rfid/hid_rfid_reading_source.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/validators/rfid_validator.dart';
 import 'package:frontend_mayoral/core/widgets/hid_rfid_keyboard_listener.dart';
 import 'package:frontend_mayoral/features/animal_movement/domain/entities/movement_entities.dart';
 import 'package:frontend_mayoral/features/quick_read/domain/entities/quick_read_item.dart';
@@ -24,27 +26,31 @@ import 'package:go_router/go_router.dart';
 /// pierde las caravanas leídas, solo "Descartar" las borra.
 class QuickReadPanel extends StatelessWidget {
   /// Crea el panel sobre la sesión [cubit].
-  const QuickReadPanel({required this.cubit, required this.onClose, super.key});
+  const QuickReadPanel({required this.cubit, required this.onClose, this.animationController, super.key});
 
   /// Sesión de lectura, compartida entre aperturas del panel.
   final QuickReadCubit cubit;
 
-  /// Cierra el panel (botón "Cerrar", atrás o tocar el fondo sin lecturas).
+  /// Cierra el panel desde la barra, el fondo o el arrastre.
   final VoidCallback onClose;
+
+  /// Animación compartida con la barra que abre y cierra el panel.
+  final AnimationController? animationController;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: cubit,
-      child: _QuickReadPanelView(onClose: onClose),
+      child: _QuickReadPanelView(onClose: onClose, animationController: animationController),
     );
   }
 }
 
 class _QuickReadPanelView extends StatefulWidget {
-  const _QuickReadPanelView({required this.onClose});
+  const _QuickReadPanelView({required this.onClose, required this.animationController});
 
   final VoidCallback onClose;
+  final AnimationController? animationController;
 
   @override
   State<_QuickReadPanelView> createState() => _QuickReadPanelViewState();
@@ -79,17 +85,17 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final controller = widget.animationController;
+    final animation = controller ?? kAlwaysCompleteAnimation;
 
     return Stack(
       children: [
         Positioned.fill(
-          // Con caravanas leídas, un toque sin querer en la manga no cierra
-          // el panel (el bastón dejaría de escuchar): se cierra con "Cerrar".
-          child: BlocSelector<QuickReadCubit, QuickReadState, bool>(
-            selector: (state) => state.items.isEmpty,
-            builder: (context, isEmpty) => GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: isEmpty ? widget.onClose : null,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onClose,
+            child: FadeTransition(
+              opacity: animation,
               child: const ColoredBox(color: Color(0x7319140A)),
             ),
           ),
@@ -101,16 +107,25 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
             child: LayoutBuilder(
               builder: (context, constraints) => ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: constraints.maxHeight * 0.94),
-                child: Material(
-                  color: AppColors.background,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
-                  clipBehavior: Clip.antiAlias,
-                  child: BlocBuilder<QuickReadCubit, QuickReadState>(
-                    builder: (context, state) => HidRfidKeyboardListener(
-                      key: ValueKey(_listenerGeneration),
-                      isListening: !state.isManualEntry && !_openingHealth,
-                      onKeyEvent: _readingSource.handleKeyEvent,
-                      child: _content(state),
+                child: SlideTransition(
+                  position: Tween(begin: const Offset(0, 1), end: Offset.zero).animate(animation),
+                  child: BottomSheet(
+                    animationController: controller,
+                    onClosing: widget.onClose,
+                    enableDrag: controller != null,
+                    showDragHandle: controller != null,
+                    backgroundColor: AppColors.background,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    builder: (_) => BlocBuilder<QuickReadCubit, QuickReadState>(
+                      builder: (context, state) => HidRfidKeyboardListener(
+                        key: ValueKey(_listenerGeneration),
+                        isListening: !state.isManualEntry && !_openingHealth,
+                        onKeyEvent: _readingSource.handleKeyEvent,
+                        child: _content(state),
+                      ),
                     ),
                   ),
                 ),
@@ -135,12 +150,6 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const SizedBox(height: AppSpacing.xs),
-        Container(
-          width: 40,
-          height: 4,
-          decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
-        ),
         Flexible(
           child: SingleChildScrollView(
             // El botón central sobresale de la barra: deja aire debajo.
@@ -206,13 +215,27 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
           child: TextField(
             controller: _manualController,
             autofocus: true,
+            keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(
+                RfidValidator.length,
+                maxLengthEnforcement: MaxLengthEnforcement.enforced,
+              ),
+            ],
             decoration: const InputDecoration(hintText: QuickReadStrings.manualHint, isDense: true),
             onSubmitted: (_) => _addManual(),
           ),
         ),
         const SizedBox(width: AppSpacing.xs),
-        FilledButton(onPressed: _addManual, child: const Text(QuickReadStrings.add)),
+        ValueListenableBuilder(
+          valueListenable: _manualController,
+          builder: (_, value, _) => FilledButton(
+            onPressed: RfidValidator.isValid(value.text) ? _addManual : null,
+            child: const Text(QuickReadStrings.add),
+          ),
+        ),
         IconButton(
           tooltip: QuickReadStrings.cancel,
           onPressed: _cubit.toggleManualEntry,
@@ -401,9 +424,10 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
 
   void _addManual() {
     final text = _manualController.text;
+    if (!RfidValidator.isValid(text)) return;
     unawaited(
       _cubit.addTag(text).then((added) {
-        if (added) {
+        if (mounted && added) {
           _manualController.clear();
         }
       }),

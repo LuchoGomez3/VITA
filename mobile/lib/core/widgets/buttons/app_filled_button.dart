@@ -18,6 +18,7 @@ class AppFilledButton extends StatelessWidget {
     this.icon,
     this.isLoading = false,
     this.loadingLabel = 'Guardando...',
+    this.loadingIndicator,
     this.textStyle,
     this.backgroundColor,
     this.foregroundColor,
@@ -38,6 +39,9 @@ class AppFilledButton extends StatelessWidget {
   /// Texto mostrado cuando el boton esta en estado de carga.
   final String loadingLabel;
 
+  /// Indicador opcional que acompaña el texto durante la carga.
+  final Widget? loadingIndicator;
+
   /// El estilo del texto del boton.
   final TextStyle? textStyle;
 
@@ -55,24 +59,21 @@ class AppFilledButton extends StatelessWidget {
 
     // El contenido soporta tres estados simples:
     // loading, solo texto, o icono + texto.
-    final child = isLoading
+    final currentLabel = isLoading ? loadingLabel : label;
+    final leading = isLoading ? loadingIndicator : icon;
+    final child = leading == null
         ? Text(
-            loadingLabel,
-            style: buttonTextStyle,
-          )
-        : icon == null
-        ? Text(
-            label,
+            currentLabel,
             style: buttonTextStyle,
           )
         : Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              icon!,
+              leading,
               const SizedBox(width: AppSpacing.sm),
               Flexible(
                 child: Text(
-                  label,
+                  currentLabel,
                   style: buttonTextStyle,
                   textAlign: TextAlign.center,
                 ),
