@@ -134,12 +134,12 @@ void main() {
   });
 
   group('InviteTeamMemberCubit', () {
-    Future<InviteTeamMemberCubit> inviteCubit(FakeTeamRepository repository, List<UserRole> roles) async {
+    Future<InviteTeamMemberCubit> inviteCubit(FakeTeamRepository repository, UserRole inviter) async {
       repository.membershipResult = Result.success(
         EstablishmentMembership(
           id: 'campo-1',
           name: 'La Sirena',
-          role: roles.contains(UserRole.owner) ? UserRole.owner : UserRole.admin,
+          role: inviter,
         ),
       );
       final cubit = InviteTeamMemberCubit(
@@ -153,7 +153,7 @@ void main() {
 
     test('empieza en Empleado y valida el email antes de mandarlo', () async {
       final repository = FakeTeamRepository();
-      final cubit = await inviteCubit(repository, UserRole.admin.assignableRoles);
+      final cubit = await inviteCubit(repository, UserRole.admin);
 
       expect(cubit.state.role, UserRole.employee);
       await cubit.submit('   ');
@@ -164,21 +164,22 @@ void main() {
     });
 
     test('no deja elegir un rol que no se puede asignar', () async {
-      final cubit = await inviteCubit(FakeTeamRepository(), UserRole.admin.assignableRoles);
-      cubit.selectRole(UserRole.owner);
+      final cubit = await inviteCubit(FakeTeamRepository(), UserRole.admin);
 
-      expect(cubit.state.role, UserRole.employee);
-      cubit.selectRole(UserRole.veterinarian);
-      expect(cubit.state.role, UserRole.veterinarian);
+      expect(cubit.assignableRoles, [UserRole.employee]);
+      for (final role in [UserRole.owner, UserRole.admin, UserRole.veterinarian]) {
+        cubit.selectRole(role);
+        expect(cubit.state.role, UserRole.employee);
+      }
     });
 
     test('envía la invitación y expone el resultado o el error', () async {
       final repository = FakeTeamRepository();
-      final cubit = await inviteCubit(repository, UserRole.owner.assignableRoles);
-      cubit.selectRole(UserRole.admin);
+      final cubit = await inviteCubit(repository, UserRole.owner);
+      cubit.selectRole(UserRole.owner);
 
       await cubit.submit(' socio@example.com ');
-      expect(repository.calls, ['invite:socio@example.com:admin']);
+      expect(repository.calls, ['invite:socio@example.com:owner']);
       expect(cubit.state.sent!.value.code, '7K4-P2M');
 
       repository.inviteResult = const Result.failure(offlineError);
