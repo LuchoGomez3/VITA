@@ -29,7 +29,7 @@ abstract final class QuickReadStrings {
   static const manualEntry = 'Ingresar caravana a mano';
 
   /// Placeholder del campo manual.
-  static const manualHint = 'Caravana visual o RFID';
+  static const manualHint = 'RFID de 15 dígitos';
 
   /// Agregar la caravana escrita.
   static const add = 'Agregar';

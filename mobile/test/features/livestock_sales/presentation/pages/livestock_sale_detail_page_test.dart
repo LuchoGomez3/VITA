@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/app/theme/app_theme.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -14,6 +15,8 @@ import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/l
 
 void main() {
   testWidgets('muestra una venta por kilo en modo solo lectura', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     var backRequests = 0;
     await tester.pumpWidget(
       MaterialApp(
@@ -35,9 +38,13 @@ void main() {
 
     expect(find.text(LivestockSaleDetailStrings.title), findsOneWidget);
     expect(find.text('Frigorífico Norte'), findsOneWidget);
-    expect(find.text('1.610 kg'), findsOneWidget);
+    expect(find.text('4.000 kg'), findsOneWidget);
     expect(find.text(r'$ 1.000/kg'), findsOneWidget);
-    expect(find.text(r'$ 1.610.000,00'), findsOneWidget);
+    final total = find.text(r'$ 4.000.000,00');
+    expect(total, findsOneWidget);
+    final paragraph = tester.renderObject<RenderParagraph>(total);
+    expect(paragraph.maxLines, 1);
+    expect(paragraph.didExceedMaxLines, isFalse);
     expect(find.text(LivestockSaleDetailStrings.registeredAt), findsOneWidget);
     expect(find.text('Franco Productor'), findsOneWidget);
     expect(
@@ -79,6 +86,9 @@ class _AnimalRepository implements LivestockSaleDetailAnimalRepository {
 
 class _Repository implements LivestockSaleHistoryRepository {
   @override
+  Stream<void> get changes => const Stream<void>.empty();
+
+  @override
   Future<Result<LivestockSale>> getSale({
     required String establishmentId,
     required String saleId,
@@ -99,8 +109,8 @@ final _sale = LivestockSale(
   isCompany: true,
   dteNumber: '001234567-9',
   saleType: LivestockSaleType.perKilogram,
-  totalAmountCents: 161000000,
-  totalWeightGrams: 1610000,
+  totalAmountCents: 400000000,
+  totalWeightGrams: 4000000,
   pricePerKgMicros: 1000000000,
   animalIds: const ['animal-id'],
   paymentCondition: LivestockSalePaymentCondition.partial,

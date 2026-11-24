@@ -25,6 +25,9 @@ AnimalListCubit createAnimalListCubit() {
   return AnimalListCubit(
     getAnimalListUseCase: GetAnimalListUseCase(repository),
     getEstablishmentsUseCase: GetAnimalListEstablishmentsUseCase(repository),
+    getLotOptions: (establishmentId) async => {
+      for (final lot in await BrickLotStore.instance.getLocalLots(establishmentId)) lot.localId: lot.name,
+    },
   );
 }
 

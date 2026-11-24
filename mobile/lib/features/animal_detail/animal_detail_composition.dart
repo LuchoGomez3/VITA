@@ -1,6 +1,7 @@
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/animal_observation_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
@@ -10,7 +11,9 @@ import 'package:frontend_mayoral/features/animal_detail/data/datasources/animal_
 import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_detail_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_genealogy_repository_impl.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_location_repository_impl.dart';
+import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_observations_repository.dart';
 import 'package:frontend_mayoral/features/animal_detail/data/repositories/animal_photo_repository_impl.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/animal_observations.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_detail_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_genealogy_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/get_animal_photo_use_case.dart';
@@ -47,6 +50,7 @@ AnimalDetailCubit createAnimalDetailCubit() {
     ),
     getAnimalDetailUseCase: GetAnimalDetailUseCase(detailRepository),
     getAnimalPhotoUseCase: const GetAnimalPhotoUseCase(photoRepository),
+    takePhoto: photoRepository.takePhoto,
     retryAnimalSyncUseCase: RetryAnimalSyncUseCase(detailRepository),
   );
 }
@@ -59,3 +63,8 @@ AnimalGenealogyCubit createAnimalGenealogyCubit() {
   );
   return AnimalGenealogyCubit(GetAnimalGenealogyUseCase(repository));
 }
+
+/// Conecta las notas de la ficha con el store compartido de observaciones.
+AnimalObservations createAnimalObservations() => AnimalObservations(
+  AnimalObservationsRepository(BrickAnimalObservationStore.instance, AppBrickRepository.instance.localChanges),
+);

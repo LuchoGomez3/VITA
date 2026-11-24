@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 
 part 'animal_list_entry.freezed.dart';
 
@@ -30,6 +31,12 @@ sealed class AnimalListEntry with _$AnimalListEntry {
 
     /// Nombre del potrero actual, o vacío si no tiene.
     required String lotName,
+
+    /// Identificador del potrero, independiente de su nombre.
+    @Default('') String lotId,
+
+    /// Estado productivo informado por el inventario local.
+    @Default(AnimalProductiveStatus.active) AnimalProductiveStatus productiveStatus,
 
     /// Último peso conocido en kg, si hay alguno.
     double? lastWeightKg,

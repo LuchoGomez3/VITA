@@ -173,6 +173,9 @@ class _TestApp extends StatelessWidget {
 
 class _Repository implements LivestockSaleHistoryRepository {
   @override
+  Stream<void> get changes => const Stream<void>.empty();
+
+  @override
   Future<Result<List<LivestockSale>>> getSales(
     String establishmentId,
   ) async {

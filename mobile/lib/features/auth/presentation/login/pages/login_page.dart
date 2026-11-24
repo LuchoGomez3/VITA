@@ -84,7 +84,9 @@ class _LoginViewState extends State<_LoginView> {
         }
       },
       child: BlocBuilder<LoginBloc, LoginState>(
-        buildWhen: (previous, current) => previous.signInResult != current.signInResult,
+        buildWhen: (previous, current) =>
+            previous.signInResult != current.signInResult ||
+            previous.isPreparingOfflineData != current.isPreparingOfflineData,
         builder: (context, state) {
           final isSubmitting = state.signInResult is Loading<AuthSession>;
           final loadingLabel = state.isPreparingOfflineData

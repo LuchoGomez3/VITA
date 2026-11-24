@@ -62,6 +62,12 @@ abstract final class WeighingStrings {
   /// Guardar sin haber ingresado un peso.
   static const enterWeight = 'Ingresá el peso con el teclado.';
 
+  /// Validación antes de devolver el peso a un formulario.
+  static const invalidCapturedWeight = 'Ingresá un peso válido mayor a 0 kg.';
+
+  /// Confirma el peso y vuelve al formulario.
+  static const useWeight = 'Usar peso';
+
   /// Título de la hoja para elegir cómo pesar.
   static const methodSheetTitle = '¿Cómo querés pesarlo?';
 

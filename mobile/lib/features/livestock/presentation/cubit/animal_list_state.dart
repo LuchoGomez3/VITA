@@ -13,6 +13,15 @@ sealed class AnimalListState with _$AnimalListState {
     /// Categoría elegida en los chips, o `null` para "Todos".
     String? category,
 
+    /// Estado productivo elegido. Nulo incluye todos los estados.
+    @Default(AnimalProductiveStatus.active) AnimalProductiveStatus? productiveStatus,
+
+    /// Identificador del potrero elegido.
+    String? lotId,
+
+    /// Potreros guardados de cada establecimiento, incluso los vacíos.
+    @Default(<String, Map<String, String>>{}) Map<String, Map<String, String>> lotsByEstablishment,
+
     /// Establecimientos del usuario, para el selector de la cabecera.
     @Default(<EstablishmentMembership>[]) List<EstablishmentMembership> establishments,
 
@@ -58,11 +67,31 @@ sealed class AnimalListState with _$AnimalListState {
     return names;
   }
 
+  /// Lotes disponibles en el alcance de la lista.
+  Map<String, String> get lotOptions {
+    final options = {
+      for (final animal in allAnimals)
+        if (animal.lotId.isNotEmpty && animal.lotName.isNotEmpty) animal.lotId: animal.lotName,
+      for (final entry in lotsByEstablishment.entries)
+        if (establishmentId == null || entry.key == establishmentId) ...entry.value,
+    };
+    final sorted = options.entries.toList()..sort((a, b) => a.value.compareTo(b.value));
+    return Map.fromEntries(sorted);
+  }
+
+  /// Base de los filtros rápidos. Conserva el estado y el lote seleccionados.
+  List<AnimalListEntry> get statusAndLotAnimals => [
+    for (final animal in allAnimals)
+      if ((productiveStatus == null || animal.productiveStatus == productiveStatus) &&
+          (lotId == null || animal.lotId == lotId))
+        animal,
+  ];
+
   /// Animales que cumplen la búsqueda y la categoría elegida.
   List<AnimalListEntry> get visibleAnimals {
     final normalizedQuery = query.trim().toLowerCase().replaceAll(' ', '');
     return [
-      for (final animal in allAnimals)
+      for (final animal in statusAndLotAnimals)
         if ((category == null || animal.categoryName == category) && _matches(animal, normalizedQuery)) animal,
     ];
   }

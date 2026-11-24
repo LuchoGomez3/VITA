@@ -17,24 +17,26 @@ typedef WeighingSubject = ({
   int currentWeightKg,
 });
 
-enum _WeighingMethod {
+/// Opciones ofrecidas al iniciar un pesaje.
+enum WeighingMethod {
+  /// Captura por balanza.
   bluetooth(WeighingStrings.methodBluetooth, Icons.bluetooth),
+
+  /// Ingreso de kilos por teclado.
   manual(WeighingStrings.methodManual, Icons.dialpad),
+
+  /// Estimación a partir de una foto.
   photo(WeighingStrings.methodPhoto, Icons.photo_camera_outlined);
 
-  const _WeighingMethod(this.label, this.icon);
+  const WeighingMethod(this._label, this._icon);
 
-  final String label;
-  final IconData icon;
+  final String _label;
+  final IconData _icon;
 }
 
-/// Pregunta cómo pesar a [subject] (balanza, manual o foto) y abre el pesaje.
-///
-/// La usan la ficha del animal y el lector de caravanas. Devuelve `true` si
-/// pudo haberse guardado un pesaje, para que quien la abrió recargue el último
-/// peso.
-Future<bool> startWeighing(BuildContext context, WeighingSubject subject) async {
-  final method = await showModalBottomSheet<_WeighingMethod>(
+/// Muestra los métodos de pesaje y devuelve la opción elegida.
+Future<WeighingMethod?> chooseWeighingMethod(BuildContext context) {
+  return showModalBottomSheet<WeighingMethod>(
     context: context,
     useRootNavigator: true,
     showDragHandle: true,
@@ -47,22 +49,27 @@ Future<bool> startWeighing(BuildContext context, WeighingSubject subject) async 
             padding: EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.xs),
             child: Text(WeighingStrings.methodSheetTitle, style: AppTypography.pageTitle),
           ),
-          for (final method in _WeighingMethod.values)
+          for (final method in WeighingMethod.values)
             ListTile(
-              leading: Icon(method.icon, color: AppColors.primary),
-              title: Text(method.label, style: AppTypography.mediumEmphasis),
+              leading: Icon(method._icon, color: AppColors.primary),
+              title: Text(method._label, style: AppTypography.mediumEmphasis),
               onTap: () => Navigator.of(sheetContext).pop(method),
             ),
         ],
       ),
     ),
   );
+}
+
+/// Abre el pesaje de un animal registrado y avisa si hay que recargar su peso.
+Future<bool> startWeighing(BuildContext context, WeighingSubject subject) async {
+  final method = await chooseWeighingMethod(context);
   if (method == null || !context.mounted) {
     return false;
   }
 
   switch (method) {
-    case _WeighingMethod.bluetooth || _WeighingMethod.manual:
+    case WeighingMethod.bluetooth || WeighingMethod.manual:
       final saved = await context.push<bool>(
         AppRoutes.weighing,
         extra: WeighingRequest(
@@ -74,11 +81,11 @@ Future<bool> startWeighing(BuildContext context, WeighingSubject subject) async 
             breedAndCategory: subject.breedAndCategory,
             weightKg: subject.currentWeightKg,
           ),
-          initialTab: method == _WeighingMethod.bluetooth ? WeighingCaptureTab.bluetooth : WeighingCaptureTab.manual,
+          initialTab: method == WeighingMethod.bluetooth ? WeighingCaptureTab.bluetooth : WeighingCaptureTab.manual,
         ),
       );
       return saved ?? false;
-    case _WeighingMethod.photo:
+    case WeighingMethod.photo:
       // Pesaje IA (modelo de visión on-device). La pantalla elige el animal por
       // su cuenta y no informa si guardó: se recarga igual al volver.
       await context.push<void>(AppRoutes.visionWeighing);

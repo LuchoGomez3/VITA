@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/brick/mappers/animal_productive_status_mapper.dart';
 import 'package:frontend_mayoral/brick/mappers/latest_weight.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
@@ -98,6 +99,8 @@ class AnimalListRepositoryImpl implements AnimalListRepository {
       breed: animal.breed,
       categoryName: animal.categoryName.isNotEmpty ? animal.categoryName : categoryNames[animal.categoryId] ?? '',
       lotName: animal.lotName.isNotEmpty ? animal.lotName : lotNames[animal.lotId] ?? '',
+      lotId: animal.lotId,
+      productiveStatus: animal.productiveStatus.toDomain(),
       lastWeightKg: latest.weightKg,
       lastWeighingDate: latest.date,
     );

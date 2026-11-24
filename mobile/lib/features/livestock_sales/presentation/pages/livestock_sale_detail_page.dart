@@ -282,11 +282,22 @@ class _DetailRow extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.md),
           Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: emphasize ? AppTypography.successTitle : AppTypography.mediumEmphasis,
-            ),
+            child: emphasize
+                ? FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      value,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: AppTypography.formFieldValueEmphasis,
+                    ),
+                  )
+                : Text(
+                    value,
+                    textAlign: TextAlign.right,
+                    style: AppTypography.mediumEmphasis,
+                  ),
           ),
         ],
       ),

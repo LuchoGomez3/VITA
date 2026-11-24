@@ -1,6 +1,7 @@
 import 'package:brick_sqlite/brick_sqlite.dart';
 import 'package:brick_sqlite/db.dart';
 import 'package:frontend_mayoral/brick/db/schema.g.dart' as generated;
+import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:sqflite/sqflite.dart';
 
 const _livestockSaleMigrationVersion = 20261122000100;
@@ -9,6 +10,7 @@ const _preMergeHealthVersion = 20261120223303;
 const _lastSharedVersion = 20261015133521;
 const _healthMigrationVersion = 20261122234613;
 const _categoryAllowedSexVersion = 20261123003833;
+const _animalObservationVersion = 20261123235738;
 
 /// Migraciones ejecutadas por la aplicacion, con compatibilidad entre ramas.
 ///
@@ -39,19 +41,62 @@ Future<Set<Migration>> prepareAppBrickMigrations(SqliteProvider sqliteProvider) 
     if (lastVersion == _preMergeHealthVersion) {
       await _upgradePreMergeHealthDatabase(transaction, migrations);
     }
+    if (lastVersion > _animalObservationVersion) {
+      await _restoreSkippedAnimalObservationMigration(transaction, migrations);
+    }
     return migrations;
+  });
+}
+
+/// Completa los campos agregados después de los primeros lotes offline.
+Future<void> repairLegacyBrickData(SqliteProvider sqliteProvider) async {
+  await sqliteProvider.transaction((transaction) async {
+    final pending = BrickLotSyncStatus.pending.index;
+    final rejected = BrickLotSyncStatus.rejected.index;
+    // La superficie real no se puede deducir del dibujo. Se conserva el lote,
+    // marcado para corregirlo antes de que la cola lo envíe al backend.
+    await transaction.rawUpdate(
+      '''
+UPDATE BrickLotModel
+SET geometry_mode = COALESCE(geometry_mode, 'local_schematic'),
+    surface_tenths = COALESCE(surface_tenths, 0),
+    has_water = COALESCE(has_water, 0),
+    status_code = COALESCE(status_code, 'activo'),
+    sync_status = CASE
+      WHEN surface_tenths IS NULL AND COALESCE(sync_status, ?) = ? THEN ?
+      ELSE COALESCE(sync_status, ?)
+    END,
+    sync_error_code = CASE
+      WHEN surface_tenths IS NULL AND COALESCE(sync_status, ?) = ?
+      THEN COALESCE(sync_error_code, 'superficie_lote_faltante')
+      ELSE sync_error_code
+    END
+WHERE geometry_mode IS NULL OR surface_tenths IS NULL OR has_water IS NULL
+   OR status_code IS NULL OR sync_status IS NULL
+''',
+      [pending, pending, rejected, pending, pending, pending],
+    );
   });
 }
 
 /// Omite solo los cambios aditivos conocidos que ya están en la base.
 Future<Migration> _skipExistingColumn(Transaction transaction, Migration migration) async {
+  if (migration.version == _animalObservationVersion) {
+    final columns = await transaction.rawQuery('PRAGMA table_info("BrickAnimalObservationModel")');
+    if (columns.isEmpty) return migration;
+    final names = columns.map((column) => column['name']).toSet();
+    return _PreparedMigration(migration, [
+      for (final column in migration.up.whereType<InsertColumn>())
+        if (!names.contains(column.name)) column,
+    ]);
+  }
   if (migration.version != _livestockSaleDependenciesVersion && migration.version != _categoryAllowedSexVersion) {
     return migration;
   }
   if (migration.up case [final InsertColumn column]) {
     final existingColumns = await transaction.rawQuery('PRAGMA table_info("${column.onTable}")');
     if (existingColumns.any((existing) => existing['name'] == column.name)) {
-      return _AlreadyAppliedMigration(migration);
+      return _PreparedMigration(migration, const []);
     }
   }
   return migration;
@@ -72,9 +117,31 @@ Future<void> _upgradePreMergeHealthDatabase(Transaction transaction, Set<Migrati
   }
 }
 
+/// Recupera observaciones si el dispositivo ya migró con la rama de ventas.
+Future<void> _restoreSkippedAnimalObservationMigration(
+  Transaction transaction,
+  Set<Migration> migrations,
+) async {
+  final applied = await transaction.query(
+    'MigrationVersions',
+    where: 'version = ?',
+    whereArgs: [_animalObservationVersion],
+    limit: 1,
+  );
+  if (applied.isNotEmpty) return;
+
+  final migration = migrations.singleWhere((migration) => migration.version == _animalObservationVersion);
+  final prepared = await _skipExistingColumn(transaction, migration);
+  for (final command in prepared.up) {
+    if (command.statement case final statement?) await transaction.execute(statement);
+  }
+  await transaction.insert('MigrationVersions', {'version': migration.version});
+}
+
 /// Conserva la versión y su reversión cuando la columna ya fue agregada.
-class _AlreadyAppliedMigration extends Migration {
-  _AlreadyAppliedMigration(Migration migration) : super(version: migration.version, up: const [], down: migration.down);
+class _PreparedMigration extends Migration {
+  _PreparedMigration(Migration migration, List<MigrationCommand> up)
+    : super(version: migration.version, up: up, down: migration.down);
 }
 
 class _LivestockSaleCompatibilityMigration extends Migration {

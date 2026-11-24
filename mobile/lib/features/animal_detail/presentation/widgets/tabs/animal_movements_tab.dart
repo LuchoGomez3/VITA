@@ -51,6 +51,8 @@ class _MovementRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final from = entry.fromLotName ?? AnimalDetailStrings.noOrigin;
+    final to = entry.toLotName.isEmpty ? AnimalDetailStrings.unknownMovementLot : entry.toLotName;
+    final isInitialAssignment = entry.fromLotName == null && entry.reason.isEmpty;
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -89,7 +91,7 @@ class _MovementRow extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          '$from → ${entry.toLotName}${entry.isCurrent && entry.syncStatus != MovementSyncStatus.rejected ? ' ${AnimalDetailStrings.currentLot}' : ''}',
+                          '$from → $to${entry.isCurrent && entry.syncStatus != MovementSyncStatus.rejected ? ' ${AnimalDetailStrings.currentLot}' : ''}',
                           style: AppTypography.mediumEmphasis.copyWith(fontWeight: FontWeight.w800),
                         ),
                       ),
@@ -100,7 +102,10 @@ class _MovementRow extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(entry.reason, style: AppTypography.formFieldHelper),
+                  Text(
+                    isInitialAssignment ? AnimalDetailStrings.initialLotAssignment : entry.reason,
+                    style: AppTypography.formFieldHelper,
+                  ),
                   if (entry.syncStatus == MovementSyncStatus.pending) ...[
                     const SizedBox(height: AppSpacing.xxs),
                     const AppStatusChip(
@@ -111,12 +116,19 @@ class _MovementRow extends StatelessWidget {
                   ],
                   if (entry.syncStatus == MovementSyncStatus.rejected) ...[
                     const SizedBox(height: AppSpacing.xxs),
-                    const AppStatusChip(
-                      label: AnimalDetailStrings.movementRejected,
+                    AppStatusChip(
+                      label: isInitialAssignment
+                          ? AnimalDetailStrings.rejectedSyncStatus
+                          : AnimalDetailStrings.movementRejected,
                       tone: AppStatusChipTone.error,
                       showDot: true,
                     ),
-                    const Text(AnimalDetailStrings.movementRejectionHint, style: AppTypography.formFieldHelper),
+                    Text(
+                      isInitialAssignment
+                          ? AnimalDetailStrings.rejectedSyncMessage
+                          : AnimalDetailStrings.movementRejectionHint,
+                      style: AppTypography.formFieldHelper,
+                    ),
                   ],
                 ],
               ),

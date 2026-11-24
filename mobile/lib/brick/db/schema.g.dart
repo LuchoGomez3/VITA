@@ -20,6 +20,7 @@ part '20261122000100.migration.dart';
 part '20261122000200.migration.dart';
 part '20261122234613.migration.dart';
 part '20261123003833.migration.dart';
+part '20261123235738.migration.dart';
 part '20261124055709.migration.dart';
 part '20261124061506.migration.dart';
 
@@ -44,6 +45,7 @@ final migrations = <Migration>{
   const Migration20261122000200(),
   const Migration20261122234613(),
   const Migration20261123003833(),
+  const Migration20261123235738(),
   const Migration20261124055709(),
   const Migration20261124061506(),
 };
@@ -115,6 +117,30 @@ final schema = Schema(
         SchemaColumn('deleted_at', Column.datetime),
         SchemaColumn('sync_status', Column.integer),
         SchemaColumn('sync_error_code', Column.varchar),
+      },
+      indices: <SchemaIndex>{},
+    ),
+    SchemaTable(
+      'BrickAnimalObservationModel',
+      columns: <SchemaColumn>{
+        SchemaColumn(
+          '_brick_id',
+          Column.integer,
+          autoincrement: true,
+          nullable: false,
+          isPrimaryKey: true,
+        ),
+        SchemaColumn('local_id', Column.varchar),
+        SchemaColumn('establishment_id', Column.varchar),
+        SchemaColumn('animal_id', Column.varchar),
+        SchemaColumn('text', Column.varchar),
+        SchemaColumn('date', Column.datetime),
+        SchemaColumn('author_id', Column.varchar),
+        SchemaColumn('sync_status', Column.integer),
+        SchemaColumn('sync_error_code', Column.varchar),
+        SchemaColumn('created_at', Column.datetime),
+        SchemaColumn('updated_at', Column.datetime),
+        SchemaColumn('deleted_at', Column.datetime),
       },
       indices: <SchemaIndex>{},
     ),

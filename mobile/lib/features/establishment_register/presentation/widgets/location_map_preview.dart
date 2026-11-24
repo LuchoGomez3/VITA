@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/satellite_imagery.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/boundary_point.dart';
-import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/satellite_imagery.dart';
 import 'package:latlong2/latlong.dart';
 
 /// Mapa fijo con el punto de referencia del establecimiento y, si se dibujó,

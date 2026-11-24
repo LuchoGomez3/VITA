@@ -13,6 +13,10 @@ import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/retry_a
 import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/watch_animal_location_use_case.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_state.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/strings/animal_detail_strings.dart';
+import 'package:logging/logging.dart';
+
+/// Captura y persiste una foto local, con cancelación sin cambios.
+typedef TakeAnimalPhoto = Future<bool> Function({required String establishmentId, required String animalId});
 
 /// Coordina el estado de carga de la pantalla de detalle de animal.
 class AnimalDetailCubit extends Cubit<AnimalDetailState> {
@@ -22,18 +26,43 @@ class AnimalDetailCubit extends Cubit<AnimalDetailState> {
     required GetAnimalPhotoUseCase getAnimalPhotoUseCase,
     required RetryAnimalSyncUseCase retryAnimalSyncUseCase,
     required WatchAnimalLocationUseCase watchAnimalLocationUseCase,
+    TakeAnimalPhoto? takePhoto,
   }) : _getAnimalDetailUseCase = getAnimalDetailUseCase,
        _getAnimalPhotoUseCase = getAnimalPhotoUseCase,
        _retryAnimalSyncUseCase = retryAnimalSyncUseCase,
        _watchAnimalLocationUseCase = watchAnimalLocationUseCase,
+       _takePhoto = takePhoto,
        super(AnimalDetailState.initial);
 
   final GetAnimalDetailUseCase _getAnimalDetailUseCase;
   final GetAnimalPhotoUseCase _getAnimalPhotoUseCase;
   final RetryAnimalSyncUseCase _retryAnimalSyncUseCase;
   final WatchAnimalLocationUseCase _watchAnimalLocationUseCase;
+  final TakeAnimalPhoto? _takePhoto;
+  bool _takingPhoto = false;
   StreamSubscription<Result<AnimalLocation?>>? _locationSubscription;
   int _loadRevision = 0;
+
+  /// Completa el espacio de la foto y vuelve a leerla después del guardado.
+  Future<bool> capturePhoto() async {
+    final takePhoto = _takePhoto;
+    final detail = state.detail;
+    if (isClosed || _takingPhoto || takePhoto == null || detail is! Data<AnimalDetail>) return true;
+    final revision = _loadRevision;
+    final animal = detail.data;
+    _takingPhoto = true;
+    try {
+      if (await takePhoto(establishmentId: animal.establishmentId, animalId: animal.id)) {
+        await _loadPhoto(animal, revision);
+      }
+      return true;
+    } on Exception catch (error, stackTrace) {
+      Logger('AnimalDetailCubit').warning('No se pudo guardar la foto del animal.', error, stackTrace);
+      return false;
+    } finally {
+      _takingPhoto = false;
+    }
+  }
 
   /// Carga los datos del animal identificado por [animalId].
   Future<void> loadAnimalData(String animalId) async {

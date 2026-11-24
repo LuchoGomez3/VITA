@@ -2,6 +2,24 @@ import 'package:frontend_mayoral/features/field/domain/entities/lot_status.dart'
 
 /// Textos centralizados del flujo de campo y potreros.
 abstract final class FieldStrings {
+  /// Acción para elegir el fondo del establecimiento.
+  static const selectMapPhoto = 'Elegir foto del establecimiento';
+
+  /// Amplía el mapa y los lotes juntos.
+  static const zoomInMap = 'Acercar mapa';
+
+  /// Vuelve al encuadre completo del mapa.
+  static const zoomOutMap = 'Alejar mapa';
+
+  /// Abre el mapa en pantalla completa.
+  static const expandMap = 'Ampliar mapa';
+
+  /// Vuelve a la vista normal del mapa.
+  static const collapseMap = 'Salir de pantalla completa';
+
+  /// Error al cargar una foto desde el dispositivo.
+  static const mapPhotoError = 'No se pudo guardar la foto del establecimiento.';
+
   /// Encabezado para un cambio rechazado por backend.
   static const syncRejectedTitle = 'No se pudo sincronizar este cambio.';
 
@@ -9,6 +27,7 @@ abstract final class FieldStrings {
   static String syncErrorMessage(String? code) => switch (code) {
     'nombre_lote_duplicado' => 'Ya existe un lote con ese nombre.',
     'geometria_lote_invalida' => 'La delimitación del lote no es válida.',
+    'superficie_lote_faltante' => 'Cargá la superficie real del lote para sincronizarlo.',
     'lotes_superpuestos' => 'La delimitación se superpone con otro lote.',
     'lote_con_animales' => 'Mové los animales antes de inactivar o eliminar el lote.',
     'lote_destino_no_disponible' => 'El lote de destino ya no está disponible.',

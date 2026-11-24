@@ -23,6 +23,7 @@ class VisionWeighingPage extends StatelessWidget {
     required this.getAnimalOptions,
     required this.pickPhoto,
     required this.cameraDependencies,
+    this.returnWeight = false,
     super.key,
   });
 
@@ -38,6 +39,9 @@ class VisionWeighingPage extends StatelessWidget {
   /// Provee casos de uso y superficie de cámara para esta sesión.
   final VisionCameraDependencies cameraDependencies;
 
+  /// Devuelve los kilos al formulario al confirmar la estimación.
+  final bool returnWeight;
+
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (_) => createCubit(),
@@ -45,6 +49,7 @@ class VisionWeighingPage extends StatelessWidget {
       getAnimalOptions: getAnimalOptions,
       pickPhoto: pickPhoto,
       cameraDependencies: cameraDependencies,
+      returnWeight: returnWeight,
     ),
   );
 }
@@ -54,11 +59,13 @@ class _VisionWeighingView extends StatefulWidget {
     required this.getAnimalOptions,
     required this.pickPhoto,
     required this.cameraDependencies,
+    required this.returnWeight,
   });
 
   final GetVisionAnimalOptions getAnimalOptions;
   final PickVisionPhoto pickPhoto;
   final VisionCameraDependencies cameraDependencies;
+  final bool returnWeight;
 
   @override
   State<_VisionWeighingView> createState() => _VisionWeighingViewState();
@@ -104,11 +111,15 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
       vsync: this,
       duration: const Duration(milliseconds: 460),
     );
-    unawaited(_cameraLoadingController.forward());
+    if (!widget.returnWeight) unawaited(_cameraLoadingController.forward());
   }
 
   void _finishCameraInitialization() {
     if (!mounted || _closing) return;
+    if (widget.returnWeight) {
+      setState(() => _cameraControlsVisible = true);
+      return;
+    }
     _cameraInitializationCompleted = true;
     _startCameraRevealWhenReady();
   }
@@ -209,17 +220,11 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
   }
 
   @override
-  Widget build(BuildContext context) => PopScope<void>(
-    canPop: _allowPop,
-    onPopInvokedWithResult: (didPop, result) {
-      if (!didPop) {
-        unawaited(_closeCamera());
-      }
-    },
-    child: BlocConsumer<VisionCaptureCubit, ResultState<VisionCaptureViewData>>(
+  Widget build(BuildContext context) {
+    final content = BlocConsumer<VisionCaptureCubit, ResultState<VisionCaptureViewData>>(
       listener: _listenForCaptureError,
-      builder: (context, state) => _buildAnimatedContent(
-        VisionWeighingContent(
+      builder: (context, state) {
+        final body = VisionWeighingContent(
           state: state,
           getAnimalOptions: widget.getAnimalOptions,
           calibration: _calibration,
@@ -236,15 +241,31 @@ class _VisionWeighingViewState extends State<_VisionWeighingView> with TickerPro
             setState(() => _calibration = value);
           },
           cameraDependencies: _cameraDependencies,
-        ),
-      ),
-    ),
-  );
+          onWeightConfirmed: widget.returnWeight ? _returnWeight : null,
+        );
+        return widget.returnWeight ? body : _buildAnimatedContent(body);
+      },
+    );
+    if (widget.returnWeight) return content;
+
+    return PopScope<void>(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) unawaited(_closeCamera());
+      },
+      child: content,
+    );
+  }
+
+  void _returnWeight(double weight) {
+    if (ModalRoute.of(context)?.isCurrent ?? false) Navigator.of(context).pop(weight);
+  }
 
   Future<void> _listenForCaptureError(
     BuildContext context,
     ResultState<VisionCaptureViewData> state,
   ) async {
+    if (!(ModalRoute.of(context)?.isCurrent ?? false)) return;
     if (state case ResultError<VisionCaptureViewData>(:final error)) {
       await showDialog<void>(
         context: context,

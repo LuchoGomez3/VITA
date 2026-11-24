@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +10,7 @@ import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_boundary.dart';
 import 'package:frontend_mayoral/features/field/domain/repositories/lot_repository.dart';
 import 'package:frontend_mayoral/features/field/domain/services/local_lot_boundary_validator.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/field_map_photo_actions.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/save_lot_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/validate_lot_placement_use_case.dart';
 import 'package:frontend_mayoral/features/field/presentation/bloc/lot_editor_bloc.dart';
@@ -65,6 +68,88 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('la foto del establecimiento sigue al dibujo al mover y acercar el mapa', (tester) async {
+    final bytes = base64Decode(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==',
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LotEditorPage(
+          createBloc: createTestLotEditorBloc,
+          loadBackground: () => (photo: Future.value(bytes), location: Future.value()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    _addVertexThroughEditor(tester);
+    await tester.pumpAndSettle();
+
+    final image = find.byType(Image);
+    final marker = find.byType(LotVertexMarker);
+    final editor = find.byType(GeographicLotEditor);
+    final normalHeight = tester.getSize(editor).height;
+    await tester.tap(find.byTooltip(FieldStrings.expandMap));
+    await tester.pumpAndSettle();
+    expect(tester.getSize(editor).height, greaterThan(normalHeight));
+    expect(marker, findsOneWidget);
+    expect(find.byType(TextFormField), findsNothing);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(tester.getSize(editor).height, normalHeight);
+    expect(marker, findsOneWidget);
+    expect(find.byType(TextFormField), findsWidgets);
+
+    final initialImage = tester.getRect(image);
+    final initialMarker = tester.getCenter(marker);
+    final controller = tester.widget<FlutterMap>(find.byType(FlutterMap)).mapController!;
+    final initialCamera = controller.camera;
+    final shiftedCenter = initialCamera.screenOffsetToLatLng(
+      initialCamera.nonRotatedSize.center(const Offset(35, 25)),
+    );
+    controller.move(shiftedCenter, initialCamera.zoom + 0.5);
+    await tester.pumpAndSettle();
+
+    final zoom = controller.camera.getZoomScale(controller.camera.zoom, initialCamera.zoom);
+    final transformedImage = tester.getRect(image);
+    expect(transformedImage.center, isNot(initialImage.center));
+    expect(transformedImage.width, closeTo(initialImage.width * zoom, 0.1));
+    final expectedMarker = transformedImage.center + (initialMarker - initialImage.center) * zoom;
+    expect((tester.getCenter(marker) - expectedMarker).distance, lessThan(1));
+  });
+
+  testWidgets('el satélite cubre todo el visor mientras su cámara sigue al editor', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LotEditorPage(
+          createBloc: createTestLotEditorBloc,
+          loadBackground: () => (
+            photo: Future.value(),
+            location: Future.value(
+              (center: (latitude: -33.13, longitude: -64.35), boundary: const <FieldMapPoint>[]),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final maps = find.byType(FlutterMap);
+    final editor = tester.widget<FlutterMap>(maps.first).mapController!;
+    final satellite = tester.widget<FlutterMap>(maps.last).mapController!;
+    final initialSatellite = satellite.camera;
+    final initialEditor = editor.camera;
+    final nextCenter = initialEditor.screenOffsetToLatLng(
+      initialEditor.nonRotatedSize.center(const Offset(65, 40)),
+    );
+    editor.move(nextCenter, initialEditor.zoom - 1);
+    await tester.pumpAndSettle();
+
+    expect(tester.getRect(maps.last), tester.getRect(maps.first));
+    expect(satellite.camera.center.longitude, greaterThan(initialSatellite.center.longitude));
+    expect(satellite.camera.center.latitude, lessThan(initialSatellite.center.latitude));
+    expect(satellite.camera.zoom, closeTo(initialSatellite.zoom - 1, 0.001));
   });
 
   testWidgets('arrastrar un pin bloquea el desplazamiento de la cámara', (

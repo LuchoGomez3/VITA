@@ -6,6 +6,7 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_detail.dart';
 import 'package:frontend_mayoral/features/animal_detail/domain/entities/animal_photo.dart';
+import 'package:frontend_mayoral/features/animal_detail/domain/use_cases/animal_observations.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_detail_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/animal_feeding_cubit.dart';
 import 'package:frontend_mayoral/features/animal_detail/presentation/cubit/movement_history_cubit.dart';
@@ -44,6 +45,7 @@ class AnimalDetailPage extends StatelessWidget {
     required this.createGenealogyCubit,
     required this.createFeedingCubit,
     this.createHealthReader,
+    this.createObservations,
     super.key,
   });
 
@@ -65,6 +67,9 @@ class AnimalDetailPage extends StatelessWidget {
   /// Crea la lectura sanitaria local al abrir la pestaña.
   final ReadHealthUseCase Function()? createHealthReader;
 
+  /// Conecta el historial y la carga de observaciones locales.
+  final AnimalObservations Function()? createObservations;
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -73,7 +78,11 @@ class AnimalDetailPage extends StatelessWidget {
         BlocProvider(create: (_) => createMovementHistoryCubit()..load(animalId)),
         BlocProvider(create: (_) => createFeedingCubit()..load(animalId)),
       ],
-      child: _AnimalDetailView(createGenealogyCubit: createGenealogyCubit, createHealthReader: createHealthReader),
+      child: _AnimalDetailView(
+        createGenealogyCubit: createGenealogyCubit,
+        createHealthReader: createHealthReader,
+        createObservations: createObservations,
+      ),
     );
   }
 }
@@ -105,16 +114,18 @@ enum AnimalFichaTab {
 }
 
 class _AnimalDetailView extends StatefulWidget {
-  const _AnimalDetailView({required this.createGenealogyCubit, this.createHealthReader});
+  const _AnimalDetailView({required this.createGenealogyCubit, this.createHealthReader, this.createObservations});
 
   final AnimalGenealogyCubitFactory createGenealogyCubit;
   final ReadHealthUseCase Function()? createHealthReader;
+  final AnimalObservations Function()? createObservations;
 
   @override
   State<_AnimalDetailView> createState() => _AnimalDetailViewState();
 }
 
 class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerProviderStateMixin {
+  late final AnimalObservations? _observations = widget.createObservations?.call();
   late final ReadHealthUseCase? _healthReader = widget.createHealthReader?.call();
   late final TabController _tabs = TabController(length: AnimalFichaTab.values.length, vsync: this)
     ..addListener(() {
@@ -172,11 +183,13 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
           children: [
             AnimalGeneralTab(
               animal: data,
+              observationActions: _observations,
               photo: switch (state.photo) {
                 Data<AnimalPhoto?>(:final data) => data,
                 _ => null,
               },
               onRetrySync: () => context.read<AnimalDetailCubit>().retrySync(data.id),
+              onTakePhoto: state.photo is Loading<AnimalPhoto?> ? null : () => _capturePhoto(context),
             ),
             AnimalGenealogyTab(animal: data, createCubit: widget.createGenealogyCubit),
             AnimalWeighingsTab(animal: data),
@@ -222,6 +235,13 @@ class _AnimalDetailViewState extends State<_AnimalDetailView> with SingleTickerP
         _ => null,
       },
     );
+  }
+
+  Future<void> _capturePhoto(BuildContext context) async {
+    final captured = await context.read<AnimalDetailCubit>().capturePhoto();
+    if (!captured && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(AnimalDetailStrings.takePhotoError)));
+    }
   }
 
   /// Abre "Mover animales" con este animal y, al volver, recarga la ficha (el

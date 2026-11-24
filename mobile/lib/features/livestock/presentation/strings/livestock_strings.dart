@@ -1,5 +1,38 @@
 /// Textos centralizados de la pantalla de hacienda.
 abstract final class LivestockStrings {
+  /// Panel de filtros de Hacienda.
+  static const filters = 'Filtros';
+
+  /// Estado productivo del inventario.
+  static const productiveStatus = 'Estado';
+
+  /// Incluye todo el inventario.
+  static const allStatuses = 'Todos';
+
+  /// Filtro de animales activos.
+  static const activeAnimals = 'Activos';
+
+  /// Filtro de animales vendidos.
+  static const soldAnimals = 'Vendidos';
+
+  /// Estado mostrado en una fila de Hacienda.
+  static const soldLabel = 'Vendido';
+
+  /// Filtro de potreros.
+  static const lotFilter = 'Potrero';
+
+  /// Selección sin limitar por potrero.
+  static const allLots = 'Todos los potreros';
+
+  /// Filtro de categorías.
+  static const categoryFilter = 'Categoría';
+
+  /// Selección sin limitar por categoría.
+  static const allCategories = 'Todas las categorías';
+
+  /// Confirma los filtros del panel.
+  static const applyFilters = 'Aplicar filtros';
+
   /// Título de la pantalla.
   static const title = 'Hacienda';
 

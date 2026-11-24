@@ -315,7 +315,9 @@ void main() {
       ).getHistory('a1'),
     );
 
-    expect(history.single.syncStatus, MovementSyncStatus.rejected);
+    expect(history.first.syncStatus, MovementSyncStatus.rejected);
+    expect(history.first.movementId, 'rechazado');
+    expect(history.last.fromLotName, isNull);
   });
 
   test('borrar un potrero vacío conserva su nombre en el historial y lo quita de destinos', () async {
@@ -333,8 +335,9 @@ void main() {
     final history = data(await subject.getHistory('a1'));
     final destinations = data(await subject.getDestinations('campo-1'));
 
-    expect(history.single.fromLotName, 'Origen eliminado');
-    expect(history.single.toLotName, 'Destino');
+    expect(history.first.fromLotName, 'Origen eliminado');
+    expect(history.first.toLotName, 'Destino');
+    expect(history.last.toLotName, 'Origen eliminado');
     expect(destinations.map((lot) => lot.id), ['lote-cumbre']);
   });
 
@@ -364,7 +367,7 @@ void main() {
       ).getHistory('a1'),
     );
 
-    expect(history.map((entry) => entry.movementId), ['rechazado', 'previo', 'retroactivo']);
+    expect(history.map((entry) => entry.movementId), ['rechazado', 'previo', 'retroactivo', 'registration:a1']);
     expect(history.where((entry) => entry.isCurrent).single.movementId, 'retroactivo');
     expect(history.last.toLotName, 'La Cumbre');
   });

@@ -1,5 +1,11 @@
 # Registro de animales
 
+## Peso inicial
+
+En **Datos básicos**, se puede escribir el **Peso** o tocar **+** para abrir el selector de pesaje. Confirmar una carga manual o una estimación por foto completa el campo. Al volver sin confirmar, el formulario conserva el valor anterior. La opción Bluetooth ofrece carga manual mientras la app no pueda leer una balanza.
+
+El alta guarda el peso junto con el animal. Si se edita a mano una estimación devuelta por la cámara, el método pasa a ser manual.
+
 ## Categorías según el sexo
 
 En **Datos básicos**, al elegir el sexo aparecen las categorías compatibles del catálogo global.
