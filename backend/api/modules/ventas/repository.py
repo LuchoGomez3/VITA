@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.modules.animales.models import Animal
+from api.modules.usuarios.models import Usuario
 from api.modules.ventas.models import Venta, VentaCobro, VentaDetalle
 
 
@@ -26,6 +27,10 @@ class VentaRepository:
         """Incluye tombstones para resolver correctamente un reintento offline."""
         return await self.session.get(Venta, venta_id)
 
+    async def get_usuario(self, usuario_id: UUID) -> Usuario | None:
+        """Obtiene la identidad publica usada en la trazabilidad de la venta."""
+        return await self.session.get(Usuario, usuario_id)
+
     async def save_cobro(self, cobro: VentaCobro) -> VentaCobro:
         """Inserta el cobro sin cerrar la transacción de la venta."""
         self.session.add(cobro)
@@ -44,6 +49,36 @@ class VentaRepository:
         )
         monto = await self.session.scalar(consulta)
         return Decimal(str(monto))
+
+    async def list_cobros_activos(self, venta_id: UUID) -> list[VentaCobro]:
+        """Devuelve los cobros vigentes en orden cronologico."""
+        consulta = (
+            select(VentaCobro)
+            .where(
+                VentaCobro.venta_id == venta_id,
+                VentaCobro.deleted_at.is_(None),
+            )
+            .order_by(VentaCobro.fecha_cobro, VentaCobro.created_at, VentaCobro.id)
+        )
+        resultado = await self.session.execute(consulta)
+        return list(resultado.scalars().all())
+
+    async def list_by_establishment(
+        self,
+        establecimiento_id: UUID,
+        *,
+        include_deleted: bool,
+    ) -> list[Venta]:
+        """Lista ventas del tenant para hidratar el historial offline."""
+        consulta = select(Venta).where(Venta.establecimiento_id == establecimiento_id)
+        if not include_deleted:
+            consulta = consulta.where(Venta.deleted_at.is_(None))
+        consulta = consulta.order_by(
+            Venta.fecha_operacion.desc(),
+            Venta.created_at.desc(),
+        )
+        resultado = await self.session.execute(consulta)
+        return list(resultado.scalars().all())
 
     async def add_detalles(self, venta_id: UUID, animal_ids: list[UUID]) -> None:
         """Agrega todos los animales de la venta sin ejecutar un commit."""

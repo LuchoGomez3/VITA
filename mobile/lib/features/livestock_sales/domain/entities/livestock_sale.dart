@@ -156,6 +156,10 @@ sealed class LivestockSale with _$LivestockSale {
     int? pricePerKgMicros,
     String? observations,
     LivestockSaleInitialPayment? initialPayment,
+    int? collectedAmountCents,
+    int? pendingAmountCents,
+    String? registeredById,
+    String? registeredByName,
     String? syncErrorCode,
   }) = _LivestockSale;
 }

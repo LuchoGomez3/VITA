@@ -79,7 +79,7 @@ PrepareInitialDataSyncUseCase createPrepareInitialDataSyncUseCase({
       weighingStore: BrickPesajeStore.instance,
       movementStore: BrickAnimalLotMovementStore.instance,
       syncOperatingExpenseData: operatingExpenseSync.call,
-      syncLivestockSaleData: BrickLivestockSaleStore.instance.pushPendingSales,
+      syncLivestockSaleData: BrickLivestockSaleStore.instance.synchronizeSales,
       onPrepared: () => unawaited(requestHealthSync()),
       sessionIdentity: () => SessionBackendAccessTokenProvider.instance.sessionGeneration,
       persistSessionData: SessionBackendAccessTokenProvider.instance.persistSessionData,

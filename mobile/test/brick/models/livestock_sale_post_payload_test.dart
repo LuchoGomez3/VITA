@@ -44,6 +44,8 @@ void main() {
           'updated_at': timestamp.toIso8601String(),
           'deleted_at': null,
         }),
+        registeredById: 'user-id',
+        registeredByName: 'Franco Productor',
         createdAt: timestamp,
         updatedAt: timestamp,
       ),
@@ -56,6 +58,10 @@ void main() {
     expect(body['precio_por_kg'], '1000.123456');
     expect(body['monto_total'], '10126.24');
     expect(body['animal_ids'], hasLength(2));
+    expect(body.containsKey('registeredById'), isFalse);
+    expect(body.containsKey('registeredByName'), isFalse);
+    expect(body.containsKey('registrada_por_id'), isFalse);
+    expect(body.containsKey('registered_by_id'), isFalse);
     final initialPayment = body['cobro_inicial'] as Map<String, dynamic>;
     expect(initialPayment['monto'], '5000.10');
     expect(initialPayment['medio_cobro'], 'transferencia');

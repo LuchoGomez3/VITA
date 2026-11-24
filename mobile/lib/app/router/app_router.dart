@@ -53,7 +53,9 @@ import 'package:frontend_mayoral/features/home/presentation/strings/home_strings
 import 'package:frontend_mayoral/features/livestock/livestock_composition.dart';
 import 'package:frontend_mayoral/features/livestock/presentation/pages/livestock_page.dart';
 import 'package:frontend_mayoral/features/livestock_sales/livestock_sales_composition.dart';
+import 'package:frontend_mayoral/features/livestock_sales/presentation/pages/livestock_sale_detail_page.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/pages/livestock_sale_flow_page.dart';
+import 'package:frontend_mayoral/features/livestock_sales/presentation/pages/livestock_sale_history_page.dart';
 import 'package:frontend_mayoral/features/livestock_sales/presentation/strings/livestock_sale_strings.dart';
 import 'package:frontend_mayoral/features/operating_expenses/operating_expenses_composition.dart';
 import 'package:frontend_mayoral/features/operating_expenses/presentation/pages/financial_access_denied_page.dart';
@@ -603,6 +605,14 @@ class AppRouter {
           ),
         ),
         GoRoute(
+          path: AppRoutes.livestockSaleDetail,
+          builder: (context, state) => _livestockSaleDetailPage(
+            context,
+            state,
+            getEstablishmentRole,
+          ),
+        ),
+        GoRoute(
           path: AppRoutes.expenseRegister,
           builder: (context, state) => _operatingExpensesPage(
             context,
@@ -635,7 +645,14 @@ class AppRouter {
                 userId: sessionState.session.user.id,
                 establishmentId: establishmentId,
                 returnToPreviousOnSuccess: state.uri.queryParameters['origen'] == AppRoutes.livestockSaleHomeOrigin,
-                createBloc: createLivestockSaleBloc,
+                createBloc: ({required userId, required establishmentId}) {
+                  final user = sessionState.session.user;
+                  return createLivestockSaleBloc(
+                    userId: userId,
+                    userName: '${user.firstName} ${user.lastName}'.trim(),
+                    establishmentId: establishmentId,
+                  );
+                },
               ),
             );
           },
@@ -723,14 +740,85 @@ class AppRouter {
         establishmentName.trim().isEmpty) {
       return const ShellPlaceholderPage(title: OperatingExpenseStrings.requiredEstablishment);
     }
+    final expenseRoute = AppRoutes.expensesForEstablishment(
+      path: AppRoutes.expenseRecords,
+      establishmentId: establishmentId,
+      establishmentName: establishmentName,
+    );
+    final saleRoute = AppRoutes.saleHistoryForEstablishment(
+      establishmentId: establishmentId,
+      establishmentName: establishmentName,
+    );
+    final showSales = state.uri.queryParameters['seccion'] == AppRoutes.livestockSaleHistorySection;
+
     return FinancialRouteGuard(
       establishmentId: establishmentId,
       getEstablishmentRole: getEstablishmentRole,
-      child: OperatingExpenseHistoryPage(
-        establishmentName: establishmentName,
-        createCubit: () => createOperatingExpenseHistoryCubit(
+      child: showSales
+          ? LivestockSaleHistoryPage(
+              establishmentName: establishmentName,
+              createCubit: () => createLivestockSaleHistoryCubit(
+                establishmentId: establishmentId,
+              ),
+              onExpensesSelected: () => context.replace(expenseRoute),
+              onSaleSelected: (saleId) => context.push(
+                AppRoutes.saleDetailForEstablishment(
+                  saleId: saleId,
+                  establishmentId: establishmentId,
+                  establishmentName: establishmentName,
+                ),
+              ),
+            )
+          : OperatingExpenseHistoryPage(
+              establishmentName: establishmentName,
+              createCubit: () => createOperatingExpenseHistoryCubit(
+                establishmentId: establishmentId,
+              ),
+              onSalesSelected: () => context.replace(saleRoute),
+            ),
+    );
+  }
+
+  static Widget _livestockSaleDetailPage(
+    BuildContext context,
+    GoRouterState state,
+    GetEstablishmentRoleUseCase getEstablishmentRole,
+  ) {
+    final saleId = state.pathParameters['saleId'];
+    final establishmentId = state.uri.queryParameters['establecimientoId'];
+    final establishmentName = state.uri.queryParameters['establecimientoNombre'];
+    final sessionState = context.read<AuthSessionCubit>().state;
+    final missingParameters =
+        saleId == null ||
+        saleId.trim().isEmpty ||
+        establishmentId == null ||
+        establishmentId.trim().isEmpty ||
+        establishmentName == null ||
+        establishmentName.trim().isEmpty;
+    if (sessionState is! AuthSessionAuthenticated || missingParameters) {
+      return const ShellPlaceholderPage(
+        title: LivestockSaleStrings.requiredEstablishment,
+      );
+    }
+    final historyRoute = AppRoutes.saleHistoryForEstablishment(
+      establishmentId: establishmentId,
+      establishmentName: establishmentName,
+    );
+    return FinancialRouteGuard(
+      establishmentId: establishmentId,
+      getEstablishmentRole: getEstablishmentRole,
+      child: LivestockSaleDetailPage(
+        createCubit: () => createLivestockSaleDetailCubit(
           establishmentId: establishmentId,
+          saleId: saleId,
         ),
+        onBackPressed: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go(historyRoute);
+          }
+        },
       ),
     );
   }

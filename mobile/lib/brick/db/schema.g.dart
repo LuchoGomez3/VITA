@@ -20,6 +20,8 @@ part '20261122000100.migration.dart';
 part '20261122000200.migration.dart';
 part '20261122234613.migration.dart';
 part '20261123003833.migration.dart';
+part '20261124055709.migration.dart';
+part '20261124061506.migration.dart';
 
 /// All intelligently-generated migrations from all `@Migratable` classes on disk
 final migrations = <Migration>{
@@ -42,11 +44,13 @@ final migrations = <Migration>{
   const Migration20261122000200(),
   const Migration20261122234613(),
   const Migration20261123003833(),
+  const Migration20261124055709(),
+  const Migration20261124061506(),
 };
 
 /// A consumable database structure including the latest generated migration.
 final schema = Schema(
-  20261123003833,
+  20261124061506,
   generatorVersion: 1,
   tables: <SchemaTable>{
     SchemaTable(
@@ -268,6 +272,10 @@ final schema = Schema(
         SchemaColumn('animal_ids_json', Column.varchar),
         SchemaColumn('payment_condition', Column.varchar),
         SchemaColumn('initial_payment_json', Column.varchar),
+        SchemaColumn('collected_amount', Column.varchar),
+        SchemaColumn('pending_amount', Column.varchar),
+        SchemaColumn('registered_by_id', Column.varchar),
+        SchemaColumn('registered_by_name', Column.varchar),
         SchemaColumn('created_at', Column.datetime),
         SchemaColumn('updated_at', Column.datetime),
         SchemaColumn('deleted_at', Column.datetime),

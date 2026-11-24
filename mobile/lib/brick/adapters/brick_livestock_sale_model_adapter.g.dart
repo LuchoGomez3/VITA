@@ -13,18 +13,38 @@ Future<BrickLivestockSaleModel> _$BrickLivestockSaleModelFromRest(
     buyerType: data['tipo_comprador'] as String,
     buyerName: data['nombre_comprador'] as String,
     isCompany: data['es_empresa'] as bool,
-    buyerLastName: data['apellido_comprador'] == null ? null : data['apellido_comprador'] as String?,
+    buyerLastName: data['apellido_comprador'] == null
+        ? null
+        : data['apellido_comprador'] as String?,
     dteNumber: data['nro_dte'] as String,
     saleType: data['tipo_venta'] as String,
-    totalWeightKg: data['peso_total_kg'] == null ? null : data['peso_total_kg'] as String?,
-    pricePerKg: data['precio_por_kg'] == null ? null : data['precio_por_kg'] as String?,
+    totalWeightKg: data['peso_total_kg'] == null
+        ? null
+        : data['peso_total_kg'] as String?,
+    pricePerKg: data['precio_por_kg'] == null
+        ? null
+        : data['precio_por_kg'] as String?,
     totalAmount: data['monto_total'] as String,
-    observations: data['observaciones'] == null ? null : data['observaciones'] as String?,
+    observations: data['observaciones'] == null
+        ? null
+        : data['observaciones'] as String?,
     animalIdsJson: brickLivestockSaleJsonFromBackend(data['animal_ids']),
     paymentCondition: data['condicion_cobro'] as String,
     initialPaymentJson: data['cobro_inicial'] == null
         ? null
         : brickLivestockSaleNullableJsonFromBackend(data['cobro_inicial']),
+    collectedAmount: data['monto_cobrado'] == null
+        ? null
+        : data['monto_cobrado'] as String?,
+    pendingAmount: data['saldo_pendiente'] == null
+        ? null
+        : data['saldo_pendiente'] as String?,
+    registeredById: data['registrada_por_id'] == null
+        ? null
+        : data['registrada_por_id'] as String?,
+    registeredByName: data['registrada_por'] == null
+        ? null
+        : brickLivestockSaleRegisteredByName(data['registrada_por']),
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -77,16 +97,38 @@ Future<BrickLivestockSaleModel> _$BrickLivestockSaleModelFromSqlite(
     buyerType: data['buyer_type'] as String,
     buyerName: data['buyer_name'] as String,
     isCompany: data['is_company'] == 1,
-    buyerLastName: data['buyer_last_name'] == null ? null : data['buyer_last_name'] as String?,
+    buyerLastName: data['buyer_last_name'] == null
+        ? null
+        : data['buyer_last_name'] as String?,
     dteNumber: data['dte_number'] as String,
     saleType: data['sale_type'] as String,
-    totalWeightKg: data['total_weight_kg'] == null ? null : data['total_weight_kg'] as String?,
-    pricePerKg: data['price_per_kg'] == null ? null : data['price_per_kg'] as String?,
+    totalWeightKg: data['total_weight_kg'] == null
+        ? null
+        : data['total_weight_kg'] as String?,
+    pricePerKg: data['price_per_kg'] == null
+        ? null
+        : data['price_per_kg'] as String?,
     totalAmount: data['total_amount'] as String,
-    observations: data['observations'] == null ? null : data['observations'] as String?,
+    observations: data['observations'] == null
+        ? null
+        : data['observations'] as String?,
     animalIdsJson: data['animal_ids_json'] as String,
     paymentCondition: data['payment_condition'] as String,
-    initialPaymentJson: data['initial_payment_json'] == null ? null : data['initial_payment_json'] as String?,
+    initialPaymentJson: data['initial_payment_json'] == null
+        ? null
+        : data['initial_payment_json'] as String?,
+    collectedAmount: data['collected_amount'] == null
+        ? null
+        : data['collected_amount'] as String?,
+    pendingAmount: data['pending_amount'] == null
+        ? null
+        : data['pending_amount'] as String?,
+    registeredById: data['registered_by_id'] == null
+        ? null
+        : data['registered_by_id'] as String?,
+    registeredByName: data['registered_by_name'] == null
+        ? null
+        : data['registered_by_name'] as String?,
     createdAt: DateTime.parse(data['created_at'] as String),
     updatedAt: DateTime.parse(data['updated_at'] as String),
     deletedAt: data['deleted_at'] == null
@@ -95,7 +137,9 @@ Future<BrickLivestockSaleModel> _$BrickLivestockSaleModelFromSqlite(
         ? null
         : DateTime.tryParse(data['deleted_at'] as String),
     syncStatus: BrickLivestockSaleSyncStatus.values[data['sync_status'] as int],
-    syncErrorCode: data['sync_error_code'] == null ? null : data['sync_error_code'] as String?,
+    syncErrorCode: data['sync_error_code'] == null
+        ? null
+        : data['sync_error_code'] as String?,
     pendingAnimalIdsJson: brickLivestockSalePendingIdsFromSqlite(
       data['pending_animal_ids_json'],
     ),
@@ -124,6 +168,10 @@ Future<Map<String, dynamic>> _$BrickLivestockSaleModelToSqlite(
     'animal_ids_json': instance.animalIdsJson,
     'payment_condition': instance.paymentCondition,
     'initial_payment_json': instance.initialPaymentJson,
+    'collected_amount': instance.collectedAmount,
+    'pending_amount': instance.pendingAmount,
+    'registered_by_id': instance.registeredById,
+    'registered_by_name': instance.registeredByName,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
     'deleted_at': instance.deletedAt?.toIso8601String(),
@@ -136,7 +184,8 @@ Future<Map<String, dynamic>> _$BrickLivestockSaleModelToSqlite(
 }
 
 /// Construct a [BrickLivestockSaleModel]
-class BrickLivestockSaleModelAdapter extends OfflineFirstWithRestAdapter<BrickLivestockSaleModel> {
+class BrickLivestockSaleModelAdapter
+    extends OfflineFirstWithRestAdapter<BrickLivestockSaleModel> {
   BrickLivestockSaleModelAdapter();
 
   @override
@@ -242,6 +291,30 @@ class BrickLivestockSaleModelAdapter extends OfflineFirstWithRestAdapter<BrickLi
     'initialPaymentJson': const RuntimeSqliteColumnDefinition(
       association: false,
       columnName: 'initial_payment_json',
+      iterable: false,
+      type: String,
+    ),
+    'collectedAmount': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'collected_amount',
+      iterable: false,
+      type: String,
+    ),
+    'pendingAmount': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'pending_amount',
+      iterable: false,
+      type: String,
+    ),
+    'registeredById': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'registered_by_id',
+      iterable: false,
+      type: String,
+    ),
+    'registeredByName': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'registered_by_name',
       iterable: false,
       type: String,
     ),

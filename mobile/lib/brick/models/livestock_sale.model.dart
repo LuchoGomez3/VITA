@@ -26,6 +26,15 @@ class BrickLivestockSaleRequestTransformer extends RestRequestTransformer {
   /// Endpoint atomico que registra venta, detalle, cobro y baja de stock.
   static const salesPath = '/api/v1/ventas';
 
+  /// Arma la descarga completa del establecimiento, incluyendo tombstones.
+  static RestRequest listByEstablishmentRequest(String establishmentId) {
+    final encodedId = Uri.encodeQueryComponent(establishmentId);
+    return RestRequest(
+      url: '$salesPath?establecimiento_id=$encodedId&include_deleted=true',
+      topLevelKey: 'data',
+    );
+  }
+
   @override
   RestRequest get get => const RestRequest(
     url: salesPath,
@@ -69,6 +78,10 @@ class BrickLivestockSaleModel extends OfflineFirstWithRestModel {
     this.pricePerKg,
     this.observations,
     this.initialPaymentJson,
+    this.collectedAmount,
+    this.pendingAmount,
+    this.registeredById,
+    this.registeredByName,
     this.deletedAt,
     this.syncStatus = BrickLivestockSaleSyncStatus.pending,
     this.syncErrorCode,
@@ -153,6 +166,29 @@ class BrickLivestockSaleModel extends OfflineFirstWithRestModel {
   )
   final String? initialPaymentJson;
 
+  /// Total efectivamente cobrado calculado por backend.
+  @Rest(name: 'monto_cobrado', ignoreTo: true)
+  final String? collectedAmount;
+
+  /// Saldo vigente calculado por backend.
+  @Rest(name: 'saldo_pendiente', ignoreTo: true)
+  final String? pendingAmount;
+
+  /// UUID del usuario autenticado que origino la venta en este dispositivo.
+  ///
+  /// Es una referencia local para consulta offline. El backend determina el
+  /// autor definitivo desde el JWT y nunca confia en este valor del cliente.
+  @Rest(name: 'registrada_por_id', ignoreTo: true)
+  final String? registeredById;
+
+  /// Nombre visible conservado como instantanea para la trazabilidad offline.
+  @Rest(
+    name: 'registrada_por',
+    ignoreTo: true,
+    fromGenerator: 'brickLivestockSaleRegisteredByName(%DATA_PROPERTY%)',
+  )
+  final String? registeredByName;
+
   /// Auditoria generada en el dispositivo para last-write-wins.
   @Rest(name: 'created_at')
   final DateTime createdAt;
@@ -209,6 +245,10 @@ class BrickLivestockSaleModel extends OfflineFirstWithRestModel {
       animalIdsJson: animalIdsJson,
       paymentCondition: paymentCondition,
       initialPaymentJson: initialPaymentJson,
+      collectedAmount: collectedAmount,
+      pendingAmount: pendingAmount,
+      registeredById: registeredById,
+      registeredByName: registeredByName,
       createdAt: createdAt,
       updatedAt: updatedAt,
       deletedAt: deletedAt,
@@ -244,4 +284,13 @@ Object? brickLivestockSaleNullableJsonToBackend(String? encoded) {
 /// Conserva como ausencia un cobro que no existe en el backend.
 String? brickLivestockSaleNullableJsonFromBackend(Object? value) {
   return value == null ? null : jsonEncode(value);
+}
+
+/// Extrae el nombre publico del objeto de auditoria devuelto por backend.
+String? brickLivestockSaleRegisteredByName(Object? data) {
+  if (data is! Map<String, dynamic>) return null;
+  final firstName = data['nombre'] as String? ?? '';
+  final lastName = data['apellido'] as String? ?? '';
+  final fullName = '$firstName $lastName'.trim();
+  return fullName.isEmpty ? data['email'] as String? : fullName;
 }

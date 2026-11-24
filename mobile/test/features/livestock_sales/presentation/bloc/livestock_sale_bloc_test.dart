@@ -469,6 +469,32 @@ void main() {
       expect(suggestions.map((animal) => animal.id), ['available-animal']);
     });
 
+    test('completa diez sugerencias después de excluir un animal seleccionado', () async {
+      animalRepository.suggestions = List.generate(11, (index) {
+        return LivestockSaleAnimal(
+          id: index == 0 ? 'animal-id' : 'animal-$index',
+          establishmentId: 'establishment-id',
+          rfidTagNumber: '9820004${index.toString().padLeft(8, '0')}',
+          visualTag: '${1295 + index}',
+          categoryName: 'Novillo',
+          lotName: 'Lote Norte',
+          status: LivestockSaleAnimalStatus.active,
+        );
+      });
+      await _addAnimal(bloc);
+
+      bloc.add(const LivestockSaleEvent.rfidPrefixChanged('9820004'));
+      await _waitUntil(
+        bloc,
+        (state) => state.rfidSuggestions is Data<List<LivestockSaleAnimal>>,
+      );
+
+      final suggestions = (bloc.state.rfidSuggestions as Data<List<LivestockSaleAnimal>>).data;
+      expect(suggestions, hasLength(10));
+      expect(suggestions.map((animal) => animal.id), contains('animal-10'));
+      expect(suggestions.map((animal) => animal.id), isNot(contains('animal-id')));
+    });
+
     test('conserva todos los campos al avanzar y retroceder', () async {
       await _addAnimal(bloc);
       bloc.add(const LivestockSaleEvent.nextStepRequested());

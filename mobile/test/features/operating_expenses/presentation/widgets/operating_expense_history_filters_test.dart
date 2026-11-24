@@ -21,6 +21,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: OperatingExpenseHistoryPage(
+          onSalesSelected: () {},
           establishmentName: 'Establecimiento Norte',
           createCubit: () => _createCubit(_FilterRepository()),
         ),

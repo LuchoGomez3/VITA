@@ -27,6 +27,8 @@ part 'livestock_sale_bloc.freezed.dart';
 part 'livestock_sale_event.dart';
 part 'livestock_sale_state.dart';
 
+const _maxRfidSuggestions = 10;
+
 /// Coordina el borrador y la navegacion del registro offline de una venta.
 class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
   /// Crea el BLoC con los casos de uso resueltos fuera de presentation.
@@ -326,6 +328,9 @@ class LivestockSaleBloc extends Bloc<LivestockSaleEvent, LivestockSaleState> {
             .where(
               (animal) => animal.status == LivestockSaleAnimalStatus.active && !selectedAnimalIds.contains(animal.id),
             )
+            // Se limita después de quitar los seleccionados para completar
+            // siempre el cupo con las siguientes coincidencias disponibles.
+            .take(_maxRfidSuggestions)
             .toList(growable: false);
         emit(
           state.copyWith(

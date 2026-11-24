@@ -12,6 +12,7 @@ class AppSurfaceCard extends StatelessWidget {
     this.shadowColor,
     this.color,
     this.clipBehavior = Clip.none,
+    this.onTap,
   });
 
   /// Contenido presentado dentro de la tarjeta.
@@ -32,17 +33,21 @@ class AppSurfaceCard extends StatelessWidget {
   /// Recorte aplicado al contenido usando la forma de la tarjeta.
   final Clip clipBehavior;
 
+  /// Accion opcional que vuelve interactiva toda la superficie.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
+    final content = Padding(
+      padding: padding,
+      child: child,
+    );
     return Card(
       elevation: elevation,
       shadowColor: shadowColor,
       color: color,
-      clipBehavior: clipBehavior,
-      child: Padding(
-        padding: padding,
-        child: child,
-      ),
+      clipBehavior: onTap == null || clipBehavior != Clip.none ? clipBehavior : Clip.antiAlias,
+      child: onTap == null ? content : InkWell(onTap: onTap, child: content),
     );
   }
 }

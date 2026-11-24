@@ -22,9 +22,11 @@ from api.modules.ventas.schemas import (
     PRECISION_MONETARIA,
     ZONA_HORARIA_NEGOCIO,
     VentaCreate,
+    VentaCobroInicialRead,
     VentaRead,
+    UsuarioVentaRead,
 )
-from api.shared.enums import EstadoAnimal, EstadoCobro, RolUsuario
+from api.shared.enums import CondicionCobro, EstadoAnimal, EstadoCobro, RolUsuario
 from api.shared.exceptions import EstablecimientoNoAutorizadoError
 from api.shared.sync import as_utc
 
@@ -100,6 +102,21 @@ class VentaService:
             # conflicto definitivo para que Brick no lo deje en cola como 5xx.
             await self.session.rollback()
             raise VentaIntegridadEnConflictoError() from exc
+
+    async def listar(
+        self,
+        usuario: Usuario,
+        establecimiento_id: UUID,
+        *,
+        include_deleted: bool = False,
+    ) -> list[VentaRead]:
+        """Lista el historial autorizado que mobile conservara en SQLite."""
+        await self.exigir_acceso_comercial(usuario, establecimiento_id)
+        ventas = await self.repository.list_by_establishment(
+            establecimiento_id,
+            include_deleted=include_deleted,
+        )
+        return [await self._to_read(venta) for venta in ventas]
 
     async def _crear_nueva(
         self,
@@ -236,9 +253,11 @@ class VentaService:
     async def _to_read(self, venta: Venta) -> VentaRead:
         """Construye saldo y estado desde cobros activos, nunca desde un flag."""
         animal_ids = await self.repository.list_animal_ids(venta.id)
-        monto_cobrado = (await self.repository.get_monto_cobrado(venta.id)).quantize(
-            PRECISION_MONETARIA, rounding=ROUND_DOWN
-        )
+        cobros = await self.repository.list_cobros_activos(venta.id)
+        monto_cobrado = sum(
+            (cobro.monto for cobro in cobros),
+            start=Decimal("0.00"),
+        ).quantize(PRECISION_MONETARIA, rounding=ROUND_DOWN)
         saldo_pendiente = max(
             venta.monto_total - monto_cobrado,
             Decimal("0.00"),
@@ -250,6 +269,16 @@ class VentaService:
             estado_cobro = EstadoCobro.cobrada
         else:
             estado_cobro = EstadoCobro.parcial
+
+        condicion_cobro = {
+            EstadoCobro.pendiente: CondicionCobro.pendiente,
+            EstadoCobro.parcial: CondicionCobro.parcial,
+            EstadoCobro.cobrada: CondicionCobro.total,
+        }[estado_cobro]
+        cobro_inicial = (
+            VentaCobroInicialRead.model_validate(cobros[0]) if cobros else None
+        )
+        registrante = await self.repository.get_usuario(venta.registrada_por_id)
 
         return VentaRead(
             id=venta.id,
@@ -266,10 +295,17 @@ class VentaService:
             monto_total=venta.monto_total,
             observaciones=venta.observaciones,
             registrada_por_id=venta.registrada_por_id,
+            registrada_por=(
+                UsuarioVentaRead.model_validate(registrante)
+                if registrante is not None
+                else None
+            ),
             animal_ids=animal_ids,
             monto_cobrado=monto_cobrado,
             saldo_pendiente=saldo_pendiente,
             estado_cobro=estado_cobro,
+            condicion_cobro=condicion_cobro,
+            cobro_inicial=cobro_inicial,
             created_at=venta.created_at,
             updated_at=venta.updated_at,
             deleted_at=venta.deleted_at,

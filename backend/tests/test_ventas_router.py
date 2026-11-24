@@ -102,6 +102,40 @@ async def test_registra_venta_pendiente_y_actualiza_stock(
 
 
 @pytest.mark.anyio
+async def test_lista_ventas_del_establecimiento_para_sincronizacion(
+    auth_client, escenario_http
+):
+    establecimiento, animales = escenario_http
+    cobro = cobro_inicial("4000.00")
+    alta = await auth_client.post(
+        BASE,
+        json=payload_venta(
+            establecimiento.id,
+            [animales[0].id],
+            condicion_cobro="parcial",
+            cobro_inicial=cobro,
+        ),
+    )
+
+    respuesta = await auth_client.get(
+        BASE,
+        params={
+            "establecimiento_id": str(establecimiento.id),
+            "include_deleted": "true",
+        },
+    )
+
+    assert alta.status_code == 201
+    assert respuesta.status_code == 200
+    ventas = respuesta.json()["data"]
+    assert len(ventas) == 1
+    assert ventas[0]["id"] == alta.json()["data"]["id"]
+    assert ventas[0]["condicion_cobro"] == "parcial"
+    assert ventas[0]["cobro_inicial"]["id"] == cobro["id"]
+    assert ventas[0]["animal_ids"] == [str(animales[0].id)]
+
+
+@pytest.mark.anyio
 async def test_alta_de_venta_eliminada_rechaza_sin_dar_de_baja_el_stock(
     auth_client, session, escenario_http
 ):
@@ -229,6 +263,13 @@ async def test_employee_no_puede_registrar_ventas(
     assert respuesta.status_code == 403
     assert respuesta.json()["errors"][0]["code"] == "acceso_comercial_denegado"
     assert await session.scalar(select(func.count()).select_from(Venta)) == 0
+
+    listado = await auth_client.get(
+        BASE,
+        params={"establecimiento_id": str(establecimiento.id)},
+    )
+    assert listado.status_code == 403
+    assert listado.json()["errors"][0]["code"] == "acceso_comercial_denegado"
 
 
 @pytest.mark.anyio

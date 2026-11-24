@@ -201,9 +201,18 @@ class _FakeSaleStore implements LivestockSaleBrickStore {
   final List<BrickLivestockSaleModel> sales;
 
   @override
+  Stream<void> get changes => const Stream.empty();
+
+  @override
   Future<List<BrickLivestockSaleModel>> getLocalSales(
     String? establishmentId,
   ) async => sales;
+
+  @override
+  Future<void> pullRemoteSales(String establishmentId) async {}
+
+  @override
+  Future<void> synchronizeSales(String establishmentId) async {}
 
   @override
   Future<BrickLivestockSaleModel> saveSale(

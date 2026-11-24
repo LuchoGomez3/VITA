@@ -866,7 +866,7 @@ $LivestockSaleInitialPaymentDraftCopyWith<$Res>? get initialPayment {
 /// @nodoc
 mixin _$LivestockSale {
 
- String get id; String get establishmentId; DateTime get operationDate; LivestockSaleBuyerType get buyerType; String get buyerName; bool get isCompany; String get dteNumber; LivestockSaleType get saleType; int get totalAmountCents; List<String> get animalIds; LivestockSalePaymentCondition get paymentCondition; DateTime get createdAt; DateTime get updatedAt; LivestockSaleSyncStatus get syncStatus; String? get buyerLastName; int? get totalWeightGrams; int? get pricePerKgMicros; String? get observations; LivestockSaleInitialPayment? get initialPayment; String? get syncErrorCode;
+ String get id; String get establishmentId; DateTime get operationDate; LivestockSaleBuyerType get buyerType; String get buyerName; bool get isCompany; String get dteNumber; LivestockSaleType get saleType; int get totalAmountCents; List<String> get animalIds; LivestockSalePaymentCondition get paymentCondition; DateTime get createdAt; DateTime get updatedAt; LivestockSaleSyncStatus get syncStatus; String? get buyerLastName; int? get totalWeightGrams; int? get pricePerKgMicros; String? get observations; LivestockSaleInitialPayment? get initialPayment; int? get collectedAmountCents; int? get pendingAmountCents; String? get registeredById; String? get registeredByName; String? get syncErrorCode;
 /// Create a copy of LivestockSale
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -877,16 +877,16 @@ $LivestockSaleCopyWith<LivestockSale> get copyWith => _$LivestockSaleCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LivestockSale&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.operationDate, operationDate) || other.operationDate == operationDate)&&(identical(other.buyerType, buyerType) || other.buyerType == buyerType)&&(identical(other.buyerName, buyerName) || other.buyerName == buyerName)&&(identical(other.isCompany, isCompany) || other.isCompany == isCompany)&&(identical(other.dteNumber, dteNumber) || other.dteNumber == dteNumber)&&(identical(other.saleType, saleType) || other.saleType == saleType)&&(identical(other.totalAmountCents, totalAmountCents) || other.totalAmountCents == totalAmountCents)&&const DeepCollectionEquality().equals(other.animalIds, animalIds)&&(identical(other.paymentCondition, paymentCondition) || other.paymentCondition == paymentCondition)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.buyerLastName, buyerLastName) || other.buyerLastName == buyerLastName)&&(identical(other.totalWeightGrams, totalWeightGrams) || other.totalWeightGrams == totalWeightGrams)&&(identical(other.pricePerKgMicros, pricePerKgMicros) || other.pricePerKgMicros == pricePerKgMicros)&&(identical(other.observations, observations) || other.observations == observations)&&(identical(other.initialPayment, initialPayment) || other.initialPayment == initialPayment)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LivestockSale&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.operationDate, operationDate) || other.operationDate == operationDate)&&(identical(other.buyerType, buyerType) || other.buyerType == buyerType)&&(identical(other.buyerName, buyerName) || other.buyerName == buyerName)&&(identical(other.isCompany, isCompany) || other.isCompany == isCompany)&&(identical(other.dteNumber, dteNumber) || other.dteNumber == dteNumber)&&(identical(other.saleType, saleType) || other.saleType == saleType)&&(identical(other.totalAmountCents, totalAmountCents) || other.totalAmountCents == totalAmountCents)&&const DeepCollectionEquality().equals(other.animalIds, animalIds)&&(identical(other.paymentCondition, paymentCondition) || other.paymentCondition == paymentCondition)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.buyerLastName, buyerLastName) || other.buyerLastName == buyerLastName)&&(identical(other.totalWeightGrams, totalWeightGrams) || other.totalWeightGrams == totalWeightGrams)&&(identical(other.pricePerKgMicros, pricePerKgMicros) || other.pricePerKgMicros == pricePerKgMicros)&&(identical(other.observations, observations) || other.observations == observations)&&(identical(other.initialPayment, initialPayment) || other.initialPayment == initialPayment)&&(identical(other.collectedAmountCents, collectedAmountCents) || other.collectedAmountCents == collectedAmountCents)&&(identical(other.pendingAmountCents, pendingAmountCents) || other.pendingAmountCents == pendingAmountCents)&&(identical(other.registeredById, registeredById) || other.registeredById == registeredById)&&(identical(other.registeredByName, registeredByName) || other.registeredByName == registeredByName)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
 }
 
 
 @override
-int get hashCode => Object.hashAll([runtimeType,id,establishmentId,operationDate,buyerType,buyerName,isCompany,dteNumber,saleType,totalAmountCents,const DeepCollectionEquality().hash(animalIds),paymentCondition,createdAt,updatedAt,syncStatus,buyerLastName,totalWeightGrams,pricePerKgMicros,observations,initialPayment,syncErrorCode]);
+int get hashCode => Object.hashAll([runtimeType,id,establishmentId,operationDate,buyerType,buyerName,isCompany,dteNumber,saleType,totalAmountCents,const DeepCollectionEquality().hash(animalIds),paymentCondition,createdAt,updatedAt,syncStatus,buyerLastName,totalWeightGrams,pricePerKgMicros,observations,initialPayment,collectedAmountCents,pendingAmountCents,registeredById,registeredByName,syncErrorCode]);
 
 @override
 String toString() {
-  return 'LivestockSale(id: $id, establishmentId: $establishmentId, operationDate: $operationDate, buyerType: $buyerType, buyerName: $buyerName, isCompany: $isCompany, dteNumber: $dteNumber, saleType: $saleType, totalAmountCents: $totalAmountCents, animalIds: $animalIds, paymentCondition: $paymentCondition, createdAt: $createdAt, updatedAt: $updatedAt, syncStatus: $syncStatus, buyerLastName: $buyerLastName, totalWeightGrams: $totalWeightGrams, pricePerKgMicros: $pricePerKgMicros, observations: $observations, initialPayment: $initialPayment, syncErrorCode: $syncErrorCode)';
+  return 'LivestockSale(id: $id, establishmentId: $establishmentId, operationDate: $operationDate, buyerType: $buyerType, buyerName: $buyerName, isCompany: $isCompany, dteNumber: $dteNumber, saleType: $saleType, totalAmountCents: $totalAmountCents, animalIds: $animalIds, paymentCondition: $paymentCondition, createdAt: $createdAt, updatedAt: $updatedAt, syncStatus: $syncStatus, buyerLastName: $buyerLastName, totalWeightGrams: $totalWeightGrams, pricePerKgMicros: $pricePerKgMicros, observations: $observations, initialPayment: $initialPayment, collectedAmountCents: $collectedAmountCents, pendingAmountCents: $pendingAmountCents, registeredById: $registeredById, registeredByName: $registeredByName, syncErrorCode: $syncErrorCode)';
 }
 
 
@@ -897,7 +897,7 @@ abstract mixin class $LivestockSaleCopyWith<$Res>  {
   factory $LivestockSaleCopyWith(LivestockSale value, $Res Function(LivestockSale) _then) = _$LivestockSaleCopyWithImpl;
 @useResult
 $Res call({
- String id, String establishmentId, DateTime operationDate, LivestockSaleBuyerType buyerType, String buyerName, bool isCompany, String dteNumber, LivestockSaleType saleType, int totalAmountCents, List<String> animalIds, LivestockSalePaymentCondition paymentCondition, DateTime createdAt, DateTime updatedAt, LivestockSaleSyncStatus syncStatus, String? buyerLastName, int? totalWeightGrams, int? pricePerKgMicros, String? observations, LivestockSaleInitialPayment? initialPayment, String? syncErrorCode
+ String id, String establishmentId, DateTime operationDate, LivestockSaleBuyerType buyerType, String buyerName, bool isCompany, String dteNumber, LivestockSaleType saleType, int totalAmountCents, List<String> animalIds, LivestockSalePaymentCondition paymentCondition, DateTime createdAt, DateTime updatedAt, LivestockSaleSyncStatus syncStatus, String? buyerLastName, int? totalWeightGrams, int? pricePerKgMicros, String? observations, LivestockSaleInitialPayment? initialPayment, int? collectedAmountCents, int? pendingAmountCents, String? registeredById, String? registeredByName, String? syncErrorCode
 });
 
 
@@ -914,7 +914,7 @@ class _$LivestockSaleCopyWithImpl<$Res>
 
 /// Create a copy of LivestockSale
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? establishmentId = null,Object? operationDate = null,Object? buyerType = null,Object? buyerName = null,Object? isCompany = null,Object? dteNumber = null,Object? saleType = null,Object? totalAmountCents = null,Object? animalIds = null,Object? paymentCondition = null,Object? createdAt = null,Object? updatedAt = null,Object? syncStatus = null,Object? buyerLastName = freezed,Object? totalWeightGrams = freezed,Object? pricePerKgMicros = freezed,Object? observations = freezed,Object? initialPayment = freezed,Object? syncErrorCode = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? establishmentId = null,Object? operationDate = null,Object? buyerType = null,Object? buyerName = null,Object? isCompany = null,Object? dteNumber = null,Object? saleType = null,Object? totalAmountCents = null,Object? animalIds = null,Object? paymentCondition = null,Object? createdAt = null,Object? updatedAt = null,Object? syncStatus = null,Object? buyerLastName = freezed,Object? totalWeightGrams = freezed,Object? pricePerKgMicros = freezed,Object? observations = freezed,Object? initialPayment = freezed,Object? collectedAmountCents = freezed,Object? pendingAmountCents = freezed,Object? registeredById = freezed,Object? registeredByName = freezed,Object? syncErrorCode = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
@@ -935,7 +935,11 @@ as String?,totalWeightGrams: freezed == totalWeightGrams ? _self.totalWeightGram
 as int?,pricePerKgMicros: freezed == pricePerKgMicros ? _self.pricePerKgMicros : pricePerKgMicros // ignore: cast_nullable_to_non_nullable
 as int?,observations: freezed == observations ? _self.observations : observations // ignore: cast_nullable_to_non_nullable
 as String?,initialPayment: freezed == initialPayment ? _self.initialPayment : initialPayment // ignore: cast_nullable_to_non_nullable
-as LivestockSaleInitialPayment?,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
+as LivestockSaleInitialPayment?,collectedAmountCents: freezed == collectedAmountCents ? _self.collectedAmountCents : collectedAmountCents // ignore: cast_nullable_to_non_nullable
+as int?,pendingAmountCents: freezed == pendingAmountCents ? _self.pendingAmountCents : pendingAmountCents // ignore: cast_nullable_to_non_nullable
+as int?,registeredById: freezed == registeredById ? _self.registeredById : registeredById // ignore: cast_nullable_to_non_nullable
+as String?,registeredByName: freezed == registeredByName ? _self.registeredByName : registeredByName // ignore: cast_nullable_to_non_nullable
+as String?,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -1030,10 +1034,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String establishmentId,  DateTime operationDate,  LivestockSaleBuyerType buyerType,  String buyerName,  bool isCompany,  String dteNumber,  LivestockSaleType saleType,  int totalAmountCents,  List<String> animalIds,  LivestockSalePaymentCondition paymentCondition,  DateTime createdAt,  DateTime updatedAt,  LivestockSaleSyncStatus syncStatus,  String? buyerLastName,  int? totalWeightGrams,  int? pricePerKgMicros,  String? observations,  LivestockSaleInitialPayment? initialPayment,  String? syncErrorCode)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String establishmentId,  DateTime operationDate,  LivestockSaleBuyerType buyerType,  String buyerName,  bool isCompany,  String dteNumber,  LivestockSaleType saleType,  int totalAmountCents,  List<String> animalIds,  LivestockSalePaymentCondition paymentCondition,  DateTime createdAt,  DateTime updatedAt,  LivestockSaleSyncStatus syncStatus,  String? buyerLastName,  int? totalWeightGrams,  int? pricePerKgMicros,  String? observations,  LivestockSaleInitialPayment? initialPayment,  int? collectedAmountCents,  int? pendingAmountCents,  String? registeredById,  String? registeredByName,  String? syncErrorCode)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LivestockSale() when $default != null:
-return $default(_that.id,_that.establishmentId,_that.operationDate,_that.buyerType,_that.buyerName,_that.isCompany,_that.dteNumber,_that.saleType,_that.totalAmountCents,_that.animalIds,_that.paymentCondition,_that.createdAt,_that.updatedAt,_that.syncStatus,_that.buyerLastName,_that.totalWeightGrams,_that.pricePerKgMicros,_that.observations,_that.initialPayment,_that.syncErrorCode);case _:
+return $default(_that.id,_that.establishmentId,_that.operationDate,_that.buyerType,_that.buyerName,_that.isCompany,_that.dteNumber,_that.saleType,_that.totalAmountCents,_that.animalIds,_that.paymentCondition,_that.createdAt,_that.updatedAt,_that.syncStatus,_that.buyerLastName,_that.totalWeightGrams,_that.pricePerKgMicros,_that.observations,_that.initialPayment,_that.collectedAmountCents,_that.pendingAmountCents,_that.registeredById,_that.registeredByName,_that.syncErrorCode);case _:
   return orElse();
 
 }
@@ -1051,10 +1055,10 @@ return $default(_that.id,_that.establishmentId,_that.operationDate,_that.buyerTy
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String establishmentId,  DateTime operationDate,  LivestockSaleBuyerType buyerType,  String buyerName,  bool isCompany,  String dteNumber,  LivestockSaleType saleType,  int totalAmountCents,  List<String> animalIds,  LivestockSalePaymentCondition paymentCondition,  DateTime createdAt,  DateTime updatedAt,  LivestockSaleSyncStatus syncStatus,  String? buyerLastName,  int? totalWeightGrams,  int? pricePerKgMicros,  String? observations,  LivestockSaleInitialPayment? initialPayment,  String? syncErrorCode)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String establishmentId,  DateTime operationDate,  LivestockSaleBuyerType buyerType,  String buyerName,  bool isCompany,  String dteNumber,  LivestockSaleType saleType,  int totalAmountCents,  List<String> animalIds,  LivestockSalePaymentCondition paymentCondition,  DateTime createdAt,  DateTime updatedAt,  LivestockSaleSyncStatus syncStatus,  String? buyerLastName,  int? totalWeightGrams,  int? pricePerKgMicros,  String? observations,  LivestockSaleInitialPayment? initialPayment,  int? collectedAmountCents,  int? pendingAmountCents,  String? registeredById,  String? registeredByName,  String? syncErrorCode)  $default,) {final _that = this;
 switch (_that) {
 case _LivestockSale():
-return $default(_that.id,_that.establishmentId,_that.operationDate,_that.buyerType,_that.buyerName,_that.isCompany,_that.dteNumber,_that.saleType,_that.totalAmountCents,_that.animalIds,_that.paymentCondition,_that.createdAt,_that.updatedAt,_that.syncStatus,_that.buyerLastName,_that.totalWeightGrams,_that.pricePerKgMicros,_that.observations,_that.initialPayment,_that.syncErrorCode);}
+return $default(_that.id,_that.establishmentId,_that.operationDate,_that.buyerType,_that.buyerName,_that.isCompany,_that.dteNumber,_that.saleType,_that.totalAmountCents,_that.animalIds,_that.paymentCondition,_that.createdAt,_that.updatedAt,_that.syncStatus,_that.buyerLastName,_that.totalWeightGrams,_that.pricePerKgMicros,_that.observations,_that.initialPayment,_that.collectedAmountCents,_that.pendingAmountCents,_that.registeredById,_that.registeredByName,_that.syncErrorCode);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1068,10 +1072,10 @@ return $default(_that.id,_that.establishmentId,_that.operationDate,_that.buyerTy
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String establishmentId,  DateTime operationDate,  LivestockSaleBuyerType buyerType,  String buyerName,  bool isCompany,  String dteNumber,  LivestockSaleType saleType,  int totalAmountCents,  List<String> animalIds,  LivestockSalePaymentCondition paymentCondition,  DateTime createdAt,  DateTime updatedAt,  LivestockSaleSyncStatus syncStatus,  String? buyerLastName,  int? totalWeightGrams,  int? pricePerKgMicros,  String? observations,  LivestockSaleInitialPayment? initialPayment,  String? syncErrorCode)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String establishmentId,  DateTime operationDate,  LivestockSaleBuyerType buyerType,  String buyerName,  bool isCompany,  String dteNumber,  LivestockSaleType saleType,  int totalAmountCents,  List<String> animalIds,  LivestockSalePaymentCondition paymentCondition,  DateTime createdAt,  DateTime updatedAt,  LivestockSaleSyncStatus syncStatus,  String? buyerLastName,  int? totalWeightGrams,  int? pricePerKgMicros,  String? observations,  LivestockSaleInitialPayment? initialPayment,  int? collectedAmountCents,  int? pendingAmountCents,  String? registeredById,  String? registeredByName,  String? syncErrorCode)?  $default,) {final _that = this;
 switch (_that) {
 case _LivestockSale() when $default != null:
-return $default(_that.id,_that.establishmentId,_that.operationDate,_that.buyerType,_that.buyerName,_that.isCompany,_that.dteNumber,_that.saleType,_that.totalAmountCents,_that.animalIds,_that.paymentCondition,_that.createdAt,_that.updatedAt,_that.syncStatus,_that.buyerLastName,_that.totalWeightGrams,_that.pricePerKgMicros,_that.observations,_that.initialPayment,_that.syncErrorCode);case _:
+return $default(_that.id,_that.establishmentId,_that.operationDate,_that.buyerType,_that.buyerName,_that.isCompany,_that.dteNumber,_that.saleType,_that.totalAmountCents,_that.animalIds,_that.paymentCondition,_that.createdAt,_that.updatedAt,_that.syncStatus,_that.buyerLastName,_that.totalWeightGrams,_that.pricePerKgMicros,_that.observations,_that.initialPayment,_that.collectedAmountCents,_that.pendingAmountCents,_that.registeredById,_that.registeredByName,_that.syncErrorCode);case _:
   return null;
 
 }
@@ -1083,7 +1087,7 @@ return $default(_that.id,_that.establishmentId,_that.operationDate,_that.buyerTy
 
 
 class _LivestockSale implements LivestockSale {
-  const _LivestockSale({required this.id, required this.establishmentId, required this.operationDate, required this.buyerType, required this.buyerName, required this.isCompany, required this.dteNumber, required this.saleType, required this.totalAmountCents, required final  List<String> animalIds, required this.paymentCondition, required this.createdAt, required this.updatedAt, required this.syncStatus, this.buyerLastName, this.totalWeightGrams, this.pricePerKgMicros, this.observations, this.initialPayment, this.syncErrorCode}): _animalIds = animalIds;
+  const _LivestockSale({required this.id, required this.establishmentId, required this.operationDate, required this.buyerType, required this.buyerName, required this.isCompany, required this.dteNumber, required this.saleType, required this.totalAmountCents, required final  List<String> animalIds, required this.paymentCondition, required this.createdAt, required this.updatedAt, required this.syncStatus, this.buyerLastName, this.totalWeightGrams, this.pricePerKgMicros, this.observations, this.initialPayment, this.collectedAmountCents, this.pendingAmountCents, this.registeredById, this.registeredByName, this.syncErrorCode}): _animalIds = animalIds;
   
 
 @override final  String id;
@@ -1111,6 +1115,10 @@ class _LivestockSale implements LivestockSale {
 @override final  int? pricePerKgMicros;
 @override final  String? observations;
 @override final  LivestockSaleInitialPayment? initialPayment;
+@override final  int? collectedAmountCents;
+@override final  int? pendingAmountCents;
+@override final  String? registeredById;
+@override final  String? registeredByName;
 @override final  String? syncErrorCode;
 
 /// Create a copy of LivestockSale
@@ -1123,16 +1131,16 @@ _$LivestockSaleCopyWith<_LivestockSale> get copyWith => __$LivestockSaleCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LivestockSale&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.operationDate, operationDate) || other.operationDate == operationDate)&&(identical(other.buyerType, buyerType) || other.buyerType == buyerType)&&(identical(other.buyerName, buyerName) || other.buyerName == buyerName)&&(identical(other.isCompany, isCompany) || other.isCompany == isCompany)&&(identical(other.dteNumber, dteNumber) || other.dteNumber == dteNumber)&&(identical(other.saleType, saleType) || other.saleType == saleType)&&(identical(other.totalAmountCents, totalAmountCents) || other.totalAmountCents == totalAmountCents)&&const DeepCollectionEquality().equals(other._animalIds, _animalIds)&&(identical(other.paymentCondition, paymentCondition) || other.paymentCondition == paymentCondition)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.buyerLastName, buyerLastName) || other.buyerLastName == buyerLastName)&&(identical(other.totalWeightGrams, totalWeightGrams) || other.totalWeightGrams == totalWeightGrams)&&(identical(other.pricePerKgMicros, pricePerKgMicros) || other.pricePerKgMicros == pricePerKgMicros)&&(identical(other.observations, observations) || other.observations == observations)&&(identical(other.initialPayment, initialPayment) || other.initialPayment == initialPayment)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LivestockSale&&(identical(other.id, id) || other.id == id)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId)&&(identical(other.operationDate, operationDate) || other.operationDate == operationDate)&&(identical(other.buyerType, buyerType) || other.buyerType == buyerType)&&(identical(other.buyerName, buyerName) || other.buyerName == buyerName)&&(identical(other.isCompany, isCompany) || other.isCompany == isCompany)&&(identical(other.dteNumber, dteNumber) || other.dteNumber == dteNumber)&&(identical(other.saleType, saleType) || other.saleType == saleType)&&(identical(other.totalAmountCents, totalAmountCents) || other.totalAmountCents == totalAmountCents)&&const DeepCollectionEquality().equals(other._animalIds, _animalIds)&&(identical(other.paymentCondition, paymentCondition) || other.paymentCondition == paymentCondition)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.syncStatus, syncStatus) || other.syncStatus == syncStatus)&&(identical(other.buyerLastName, buyerLastName) || other.buyerLastName == buyerLastName)&&(identical(other.totalWeightGrams, totalWeightGrams) || other.totalWeightGrams == totalWeightGrams)&&(identical(other.pricePerKgMicros, pricePerKgMicros) || other.pricePerKgMicros == pricePerKgMicros)&&(identical(other.observations, observations) || other.observations == observations)&&(identical(other.initialPayment, initialPayment) || other.initialPayment == initialPayment)&&(identical(other.collectedAmountCents, collectedAmountCents) || other.collectedAmountCents == collectedAmountCents)&&(identical(other.pendingAmountCents, pendingAmountCents) || other.pendingAmountCents == pendingAmountCents)&&(identical(other.registeredById, registeredById) || other.registeredById == registeredById)&&(identical(other.registeredByName, registeredByName) || other.registeredByName == registeredByName)&&(identical(other.syncErrorCode, syncErrorCode) || other.syncErrorCode == syncErrorCode));
 }
 
 
 @override
-int get hashCode => Object.hashAll([runtimeType,id,establishmentId,operationDate,buyerType,buyerName,isCompany,dteNumber,saleType,totalAmountCents,const DeepCollectionEquality().hash(_animalIds),paymentCondition,createdAt,updatedAt,syncStatus,buyerLastName,totalWeightGrams,pricePerKgMicros,observations,initialPayment,syncErrorCode]);
+int get hashCode => Object.hashAll([runtimeType,id,establishmentId,operationDate,buyerType,buyerName,isCompany,dteNumber,saleType,totalAmountCents,const DeepCollectionEquality().hash(_animalIds),paymentCondition,createdAt,updatedAt,syncStatus,buyerLastName,totalWeightGrams,pricePerKgMicros,observations,initialPayment,collectedAmountCents,pendingAmountCents,registeredById,registeredByName,syncErrorCode]);
 
 @override
 String toString() {
-  return 'LivestockSale(id: $id, establishmentId: $establishmentId, operationDate: $operationDate, buyerType: $buyerType, buyerName: $buyerName, isCompany: $isCompany, dteNumber: $dteNumber, saleType: $saleType, totalAmountCents: $totalAmountCents, animalIds: $animalIds, paymentCondition: $paymentCondition, createdAt: $createdAt, updatedAt: $updatedAt, syncStatus: $syncStatus, buyerLastName: $buyerLastName, totalWeightGrams: $totalWeightGrams, pricePerKgMicros: $pricePerKgMicros, observations: $observations, initialPayment: $initialPayment, syncErrorCode: $syncErrorCode)';
+  return 'LivestockSale(id: $id, establishmentId: $establishmentId, operationDate: $operationDate, buyerType: $buyerType, buyerName: $buyerName, isCompany: $isCompany, dteNumber: $dteNumber, saleType: $saleType, totalAmountCents: $totalAmountCents, animalIds: $animalIds, paymentCondition: $paymentCondition, createdAt: $createdAt, updatedAt: $updatedAt, syncStatus: $syncStatus, buyerLastName: $buyerLastName, totalWeightGrams: $totalWeightGrams, pricePerKgMicros: $pricePerKgMicros, observations: $observations, initialPayment: $initialPayment, collectedAmountCents: $collectedAmountCents, pendingAmountCents: $pendingAmountCents, registeredById: $registeredById, registeredByName: $registeredByName, syncErrorCode: $syncErrorCode)';
 }
 
 
@@ -1143,7 +1151,7 @@ abstract mixin class _$LivestockSaleCopyWith<$Res> implements $LivestockSaleCopy
   factory _$LivestockSaleCopyWith(_LivestockSale value, $Res Function(_LivestockSale) _then) = __$LivestockSaleCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String establishmentId, DateTime operationDate, LivestockSaleBuyerType buyerType, String buyerName, bool isCompany, String dteNumber, LivestockSaleType saleType, int totalAmountCents, List<String> animalIds, LivestockSalePaymentCondition paymentCondition, DateTime createdAt, DateTime updatedAt, LivestockSaleSyncStatus syncStatus, String? buyerLastName, int? totalWeightGrams, int? pricePerKgMicros, String? observations, LivestockSaleInitialPayment? initialPayment, String? syncErrorCode
+ String id, String establishmentId, DateTime operationDate, LivestockSaleBuyerType buyerType, String buyerName, bool isCompany, String dteNumber, LivestockSaleType saleType, int totalAmountCents, List<String> animalIds, LivestockSalePaymentCondition paymentCondition, DateTime createdAt, DateTime updatedAt, LivestockSaleSyncStatus syncStatus, String? buyerLastName, int? totalWeightGrams, int? pricePerKgMicros, String? observations, LivestockSaleInitialPayment? initialPayment, int? collectedAmountCents, int? pendingAmountCents, String? registeredById, String? registeredByName, String? syncErrorCode
 });
 
 
@@ -1160,7 +1168,7 @@ class __$LivestockSaleCopyWithImpl<$Res>
 
 /// Create a copy of LivestockSale
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? establishmentId = null,Object? operationDate = null,Object? buyerType = null,Object? buyerName = null,Object? isCompany = null,Object? dteNumber = null,Object? saleType = null,Object? totalAmountCents = null,Object? animalIds = null,Object? paymentCondition = null,Object? createdAt = null,Object? updatedAt = null,Object? syncStatus = null,Object? buyerLastName = freezed,Object? totalWeightGrams = freezed,Object? pricePerKgMicros = freezed,Object? observations = freezed,Object? initialPayment = freezed,Object? syncErrorCode = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? establishmentId = null,Object? operationDate = null,Object? buyerType = null,Object? buyerName = null,Object? isCompany = null,Object? dteNumber = null,Object? saleType = null,Object? totalAmountCents = null,Object? animalIds = null,Object? paymentCondition = null,Object? createdAt = null,Object? updatedAt = null,Object? syncStatus = null,Object? buyerLastName = freezed,Object? totalWeightGrams = freezed,Object? pricePerKgMicros = freezed,Object? observations = freezed,Object? initialPayment = freezed,Object? collectedAmountCents = freezed,Object? pendingAmountCents = freezed,Object? registeredById = freezed,Object? registeredByName = freezed,Object? syncErrorCode = freezed,}) {
   return _then(_LivestockSale(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,establishmentId: null == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
@@ -1181,7 +1189,11 @@ as String?,totalWeightGrams: freezed == totalWeightGrams ? _self.totalWeightGram
 as int?,pricePerKgMicros: freezed == pricePerKgMicros ? _self.pricePerKgMicros : pricePerKgMicros // ignore: cast_nullable_to_non_nullable
 as int?,observations: freezed == observations ? _self.observations : observations // ignore: cast_nullable_to_non_nullable
 as String?,initialPayment: freezed == initialPayment ? _self.initialPayment : initialPayment // ignore: cast_nullable_to_non_nullable
-as LivestockSaleInitialPayment?,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
+as LivestockSaleInitialPayment?,collectedAmountCents: freezed == collectedAmountCents ? _self.collectedAmountCents : collectedAmountCents // ignore: cast_nullable_to_non_nullable
+as int?,pendingAmountCents: freezed == pendingAmountCents ? _self.pendingAmountCents : pendingAmountCents // ignore: cast_nullable_to_non_nullable
+as int?,registeredById: freezed == registeredById ? _self.registeredById : registeredById // ignore: cast_nullable_to_non_nullable
+as String?,registeredByName: freezed == registeredByName ? _self.registeredByName : registeredByName // ignore: cast_nullable_to_non_nullable
+as String?,syncErrorCode: freezed == syncErrorCode ? _self.syncErrorCode : syncErrorCode // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

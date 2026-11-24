@@ -26,6 +26,7 @@ void main() {
   late BrickLivestockSaleStore store;
   late BrickAnimalStore animalStore;
   var remoteAnimals = <BrickAnimalModel>[];
+  var remoteSales = <BrickLivestockSaleModel>[];
   Completer<void>? remotePullStarted;
   Completer<void>? allowRemotePull;
   late Completer<Request> firstRemoteRequest;
@@ -47,6 +48,32 @@ void main() {
       tokenProvider: const _TokenProvider(),
       client: MockClient((request) async {
         if (request.method == 'GET') {
+          if (request.url.path == '/api/v1/ventas') {
+            final adapter = repository.remoteProvider.modelDictionary.adapterFor[BrickLivestockSaleModel]!;
+            final data = <Map<String, dynamic>>[];
+            for (final sale in remoteSales) {
+              data.add(
+                {
+                  ...await adapter.toRest(
+                    sale,
+                    provider: repository.remoteProvider,
+                  ),
+                  'monto_cobrado': sale.collectedAmount,
+                  'saldo_pendiente': sale.pendingAmount,
+                  'registrada_por': {
+                    'nombre': 'Franco',
+                    'apellido': 'Productor',
+                    'email': 'franco@example.test',
+                  },
+                },
+              );
+            }
+            return Response(
+              jsonEncode({'data': data}),
+              200,
+              request: request,
+            );
+          }
           final data = <Map<String, dynamic>>[];
           for (final animal in remoteAnimals) {
             final adapter = repository.remoteProvider.modelDictionary.adapterFor[BrickAnimalModel]!;
@@ -82,6 +109,7 @@ void main() {
 
   setUp(() {
     remoteAnimals = [];
+    remoteSales = [];
     remotePullStarted = null;
     allowRemotePull = null;
   });
@@ -154,6 +182,45 @@ void main() {
       storedSales.where((sale) => sale.localId == 'sale-duplicate'),
       isEmpty,
     );
+  });
+
+  test('descarga ventas remotas sin pisar una venta local pendiente', () async {
+    final pending = _sale('shared-sale', const ['animal-a']);
+    await repository.upsertLocal(pending);
+    remoteSales = [
+      _sale(
+        'remote-sale',
+        const ['animal-b'],
+        collectedAmount: '4000.00',
+        pendingAmount: '6000.00',
+        syncStatus: BrickLivestockSaleSyncStatus.synchronized,
+      ),
+      _sale(
+        'shared-sale',
+        const ['animal-a'],
+        updatedAt: pending.updatedAt.add(const Duration(days: 1)),
+        syncStatus: BrickLivestockSaleSyncStatus.synchronized,
+      ),
+    ];
+
+    await store.pullRemoteSales('establishment-id');
+
+    final stored = await store.getLocalSales('establishment-id');
+    final downloaded = stored.singleWhere(
+      (sale) => sale.localId == 'remote-sale',
+    );
+    final preserved = stored.singleWhere(
+      (sale) => sale.localId == 'shared-sale',
+    );
+    expect(
+      downloaded.syncStatus,
+      BrickLivestockSaleSyncStatus.synchronized,
+    );
+    expect(downloaded.collectedAmount, '4000.00');
+    expect(downloaded.pendingAmount, '6000.00');
+    expect(downloaded.registeredByName, 'Franco Productor');
+    expect(preserved.syncStatus, BrickLivestockSaleSyncStatus.pending);
+    expect(preserved.updatedAt, pending.updatedAt);
   });
 
   test('un pull activo no libera stock de una venta pendiente o rechazada', () async {
@@ -410,6 +477,8 @@ BrickLivestockSaleModel _sale(
   DateTime? operationDate,
   DateTime? updatedAt,
   DateTime? deletedAt,
+  String? collectedAmount,
+  String? pendingAmount,
   String establishmentId = 'establishment-id',
   BrickLivestockSaleSyncStatus syncStatus = BrickLivestockSaleSyncStatus.pending,
 }) {
@@ -427,6 +496,8 @@ BrickLivestockSaleModel _sale(
     totalAmount: '10000.00',
     animalIdsJson: jsonEncode(animalIds),
     paymentCondition: 'pendiente',
+    collectedAmount: collectedAmount,
+    pendingAmount: pendingAmount,
     createdAt: timestamp,
     updatedAt: updatedAt ?? timestamp,
     deletedAt: deletedAt,

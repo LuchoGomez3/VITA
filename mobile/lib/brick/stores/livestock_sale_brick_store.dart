@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:brick_offline_first/brick_offline_first.dart';
+import 'package:brick_rest/brick_rest.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/mappers/livestock_sale_productive_status_mapper.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
@@ -40,6 +42,12 @@ class LivestockSaleLocalException implements Exception {
 
 /// Acceso offline-first a las ventas de hacienda.
 abstract class LivestockSaleBrickStore {
+  /// Notifica cambios confirmados en SQLite sobre ventas de hacienda.
+  ///
+  /// Se publica despues del commit de la transaccion local, tanto al crear una
+  /// venta como al reconciliar su resultado remoto.
+  Stream<void> get changes;
+
   /// Guarda la venta y da de baja sus animales en una sola transaccion local.
   Future<BrickLivestockSaleModel> saveSale(BrickLivestockSaleModel sale);
 
@@ -49,6 +57,12 @@ abstract class LivestockSaleBrickStore {
   Future<List<BrickLivestockSaleModel>> getLocalSales(
     String? establishmentId,
   );
+
+  /// Descarga ventas autorizadas y las reconcilia con la copia local.
+  Future<void> pullRemoteSales(String establishmentId);
+
+  /// Reanuda altas pendientes y actualiza el historial local del tenant.
+  Future<void> synchronizeSales(String establishmentId);
 }
 
 /// Recuperacion de una venta propietaria sin reenviar el alta de su animal.
@@ -78,6 +92,9 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore, LivestockSaleS
   final _enqueuedSaleIds = <String>{};
   static final _logger = Logger('LivestockSaleStore');
   static const _registrationRejected = 'animal_registration_rejected';
+
+  @override
+  Stream<void> get changes => _repository.localChanges.where((type) => type == BrickLivestockSaleModel).map((_) {});
 
   /// Instancia configurada durante el bootstrap de Brick.
   static BrickLivestockSaleStore get instance {
@@ -221,6 +238,65 @@ class BrickLivestockSaleStore implements LivestockSaleBrickStore, LivestockSaleS
     if (updatedComparison != 0) return updatedComparison > 0;
     return candidate.syncStatus != BrickLivestockSaleSyncStatus.synchronized &&
         current.syncStatus == BrickLivestockSaleSyncStatus.synchronized;
+  }
+
+  @override
+  Future<void> pullRemoteSales(String establishmentId) async {
+    final remote = await _repository.remoteProvider.get<BrickLivestockSaleModel>(
+      repository: _repository,
+      query: Query(
+        forProviders: [
+          RestProviderQuery(
+            request: BrickLivestockSaleRequestTransformer.listByEstablishmentRequest(establishmentId),
+          ),
+        ],
+      ),
+    );
+    await _reconcileRemoteSales(remote, establishmentId);
+  }
+
+  Future<void> _reconcileRemoteSales(
+    Iterable<BrickLivestockSaleModel> remoteSales,
+    String establishmentId,
+  ) async {
+    await _repository.runLocalTransaction((transaction) async {
+      final stored = await transaction.getLocal<BrickLivestockSaleModel>();
+      final localById = <String, BrickLivestockSaleModel>{};
+      for (final sale in stored.where(
+        (sale) => sale.establishmentId == establishmentId,
+      )) {
+        final current = localById[sale.localId];
+        if (current == null || _preferSale(sale, current)) {
+          localById[sale.localId] = sale;
+        }
+      }
+
+      for (final remote in remoteSales.where(
+        (sale) => sale.establishmentId == establishmentId,
+      )) {
+        final local = localById[remote.localId];
+        // Un pull nunca pisa un alta que todavia espera ACK ni un rechazo que
+        // el usuario puede reintentar con el mismo UUID y payload original.
+        if (local != null &&
+            (local.syncStatus != BrickLivestockSaleSyncStatus.synchronized ||
+                local.updatedAt.isAfter(remote.updatedAt))) {
+          continue;
+        }
+        final synchronized = remote.copyWith(
+          syncStatus: BrickLivestockSaleSyncStatus.synchronized,
+          syncErrorCode: null,
+          pendingAnimalIdsJson: '[]',
+        )..primaryKey = local?.primaryKey;
+        await transaction.upsert(synchronized);
+        localById[remote.localId] = synchronized;
+      }
+    });
+  }
+
+  @override
+  Future<void> synchronizeSales(String establishmentId) async {
+    await pushPendingSales(establishmentId);
+    await pullRemoteSales(establishmentId);
   }
 
   /// Reanuda pendientes persistidos despues de restaurar la sesion y el tenant.

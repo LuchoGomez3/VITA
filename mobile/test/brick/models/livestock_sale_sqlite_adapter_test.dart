@@ -34,6 +34,10 @@ void main() {
       animalIdsJson: animalIds,
       paymentCondition: 'parcial',
       initialPaymentJson: initialPayment,
+      collectedAmount: '5000.10',
+      pendingAmount: '5126.14',
+      registeredById: 'user-id',
+      registeredByName: 'Franco Productor',
       pendingAnimalIdsJson: animalIds,
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -52,6 +56,10 @@ void main() {
     expect(restored.totalAmount, '10126.24');
     expect(restored.animalIdsJson, animalIds);
     expect(restored.initialPaymentJson, initialPayment);
+    expect(restored.collectedAmount, '5000.10');
+    expect(restored.pendingAmount, '5126.14');
+    expect(restored.registeredById, 'user-id');
+    expect(restored.registeredByName, 'Franco Productor');
     expect(restored.pendingAnimalIdsJson, animalIds);
     expect(restored.syncStatus, BrickLivestockSaleSyncStatus.pending);
 

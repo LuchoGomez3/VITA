@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/core/constants/financial_movement_strings.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/entities/operating_expense_history.dart';
 import 'package:frontend_mayoral/features/operating_expenses/domain/errors/operating_expense_error.dart';
@@ -43,10 +44,8 @@ class OperatingExpenseStrings {
   static const saveError = 'No se pudo guardar el egreso en el dispositivo.';
   static const saveCategoryError = 'No se pudo guardar la categoría en el dispositivo.';
   static const loadCategoriesError = 'No se pudieron leer las categorías disponibles.';
-  static const historyTitle = 'Movimientos';
-  static const expensesTab = 'Egresos';
-  static const incomeTab = 'Ingresos';
-  static const incomeComingSoon = 'Los ingresos operativos se implementarán en una próxima etapa.';
+  static const historyTitle = FinancialMovementStrings.title;
+  static const expensesTab = FinancialMovementStrings.expenses;
   static const totalExpenses = 'Total';
   static const records = 'registros encontrados';
   static const oneRecord = 'registro encontrado';

@@ -11,6 +11,8 @@ class ConfirmLivestockSaleUseCase {
   /// Crea el caso de uso con reloj e identidades inyectables para pruebas.
   ConfirmLivestockSaleUseCase({
     required LivestockSaleRepository repository,
+    this.registeredById,
+    this.registeredByName,
     DateTime Function()? now,
     String Function()? createId,
   }) : _repository = repository,
@@ -18,6 +20,12 @@ class ConfirmLivestockSaleUseCase {
        _createId = createId ?? generateUuidV4;
 
   final LivestockSaleRepository _repository;
+
+  /// Usuario de la sesion que origina la operacion offline.
+  final String? registeredById;
+
+  /// Nombre visible guardado para consultar la auditoria sin conectividad.
+  final String? registeredByName;
   final DateTime Function() _now;
   final String Function() _createId;
 
@@ -66,6 +74,8 @@ class ConfirmLivestockSaleUseCase {
             ),
       createdAt: timestamp,
       updatedAt: timestamp,
+      registeredById: registeredById,
+      registeredByName: registeredByName,
       syncStatus: LivestockSaleSyncStatus.pending,
     );
     return _repository.createSale(sale);
