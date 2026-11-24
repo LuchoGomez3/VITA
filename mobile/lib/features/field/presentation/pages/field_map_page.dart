@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -5,6 +7,7 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/field_map_photo_actions.dart';
 import 'package:frontend_mayoral/features/field/presentation/cubit/lot_overview_cubit.dart';
 import 'package:frontend_mayoral/features/field/presentation/navigation/lot_editor_route_data.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
@@ -12,6 +15,7 @@ import 'package:frontend_mayoral/features/field/presentation/widgets/field_paddo
 import 'package:frontend_mayoral/features/field/presentation/widgets/field_view_toggle.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_overview_canvas.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 
 /// Fábrica inyectable del visor local de lotes.
 typedef LotOverviewCubitFactory = LotOverviewCubit Function();
@@ -19,20 +23,25 @@ typedef LotOverviewCubitFactory = LotOverviewCubit Function();
 /// Vista de los lotes persistidos en el dispositivo.
 class FieldMapPage extends StatelessWidget {
   /// Crea la pantalla con su composición offline.
-  const FieldMapPage({required this.createCubit, super.key});
+  const FieldMapPage({required this.createCubit, this.createPhotoActions, super.key});
 
   /// Construye el estado dueño del catálogo y la colección SQLite.
   final LotOverviewCubitFactory createCubit;
 
+  /// Fuente de la foto privada del establecimiento.
+  final FieldMapPhotoActions Function()? createPhotoActions;
+
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (_) => createCubit()..load(),
-    child: const _FieldMapView(),
+    child: _FieldMapView(photoActions: createPhotoActions?.call()),
   );
 }
 
 class _FieldMapView extends StatelessWidget {
-  const _FieldMapView();
+  const _FieldMapView({this.photoActions});
+
+  final FieldMapPhotoActions? photoActions;
 
   @override
   Widget build(BuildContext context) {
@@ -120,12 +129,12 @@ class _FieldMapView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          // TODO(field-map): reemplazar el fondo esquemático por un proveedor
-          // real sólo cuando se definan permisos, tiles, caché y conversión de
-          // geometrías; este lienzo seguirá siendo el fallback offline.
           Expanded(
             child: state.view == LotOverviewView.schematic
-                ? LotOverviewCanvas(
+                ? _FieldMapWithPhoto(
+                    key: ValueKey(state.selectedEstablishmentId),
+                    establishmentId: state.selectedEstablishmentId!,
+                    actions: photoActions,
                     lots: state.lots,
                     onLotSelected: (lotId) => _openLotDetail(context, lotId),
                   )
@@ -176,6 +185,55 @@ class _FieldMapView extends StatelessWidget {
     if (!context.mounted) return;
     await context.read<LotOverviewCubit>().refresh();
   }
+}
+
+class _FieldMapWithPhoto extends StatefulWidget {
+  const _FieldMapWithPhoto({
+    required this.establishmentId,
+    required this.actions,
+    required this.lots,
+    required this.onLotSelected,
+    super.key,
+  });
+
+  final String establishmentId;
+  final FieldMapPhotoActions? actions;
+  final List<Lot> lots;
+  final ValueChanged<String> onLotSelected;
+
+  @override
+  State<_FieldMapWithPhoto> createState() => _FieldMapWithPhotoState();
+}
+
+class _FieldMapWithPhotoState extends State<_FieldMapWithPhoto> {
+  late Future<Uint8List?>? _photo = widget.actions?.read(widget.establishmentId);
+  bool _selecting = false;
+
+  Future<void> _select() async {
+    setState(() => _selecting = true);
+    try {
+      final bytes = await widget.actions?.select(widget.establishmentId);
+      if (mounted && bytes != null) setState(() => _photo = Future.value(bytes));
+    } on Exception catch (error, stackTrace) {
+      Logger('FieldMapPhoto').warning('No se pudo guardar el fondo local.', error, stackTrace);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(FieldStrings.mapPhotoError)));
+      }
+    } finally {
+      if (mounted) setState(() => _selecting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<Uint8List?>(
+    future: _photo,
+    builder: (context, snapshot) => LotOverviewCanvas(
+      lots: widget.lots,
+      onLotSelected: widget.onLotSelected,
+      photo: snapshot.data,
+      onSelectPhoto: widget.actions == null || _selecting ? null : _select,
+    ),
+  );
 }
 
 class _LotList extends StatelessWidget {

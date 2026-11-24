@@ -567,6 +567,7 @@ class AppRouter {
           path: AppRoutes.field,
           builder: (context, state) => const FieldMapPage(
             createCubit: createLotOverviewCubit,
+            createPhotoActions: createFieldMapPhotoActions,
           ),
         ),
         GoRoute(

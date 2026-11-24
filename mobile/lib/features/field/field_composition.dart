@@ -1,3 +1,4 @@
+import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/brick/core/repository.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/animal_lot_movement_brick_store.dart';
@@ -6,6 +7,7 @@ import 'package:frontend_mayoral/brick/stores/lot_forage_period_brick_store.dart
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/core/utils/uuid_v4.dart';
 import 'package:frontend_mayoral/features/field/data/repositories/field_establishment_repository_impl.dart';
+import 'package:frontend_mayoral/features/field/data/repositories/field_map_photo_repository.dart';
 import 'package:frontend_mayoral/features/field/data/repositories/lot_animal_movement_repository_impl.dart';
 import 'package:frontend_mayoral/features/field/data/repositories/lot_animal_repository_impl.dart';
 import 'package:frontend_mayoral/features/field/data/repositories/lot_forage_period_repository_impl.dart';
@@ -14,6 +16,7 @@ import 'package:frontend_mayoral/features/field/data/services/turf_lot_overlap_v
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/services/local_lot_boundary_validator.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/delete_lot_use_case.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/field_map_photo_actions.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/get_available_destination_lots_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/get_field_establishments_use_case.dart';
 import 'package:frontend_mayoral/features/field/domain/use_cases/get_lot_animal_counts_use_case.dart';
@@ -29,6 +32,12 @@ import 'package:frontend_mayoral/features/field/domain/use_cases/validate_lot_pl
 import 'package:frontend_mayoral/features/field/presentation/bloc/lot_editor_bloc.dart';
 import 'package:frontend_mayoral/features/field/presentation/cubit/lot_detail_cubit.dart';
 import 'package:frontend_mayoral/features/field/presentation/cubit/lot_overview_cubit.dart';
+
+/// Resuelve la foto de fondo de Lotes en el espacio de la sesión actual.
+FieldMapPhotoActions createFieldMapPhotoActions() {
+  final repository = FieldMapPhotoRepository(userId: () => SessionBackendAccessTokenProvider.instance.userId);
+  return (read: repository.read, select: repository.select);
+}
 
 /// Crea el BLoC de la Fase 1 con el adaptador geométrico seleccionado.
 LotEditorBloc createLotEditorBloc({

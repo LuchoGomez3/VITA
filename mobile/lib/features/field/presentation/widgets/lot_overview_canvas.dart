@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
@@ -13,6 +15,8 @@ class LotOverviewCanvas extends StatefulWidget {
   const LotOverviewCanvas({
     required this.lots,
     required this.onLotSelected,
+    this.photo,
+    this.onSelectPhoto,
     super.key,
   });
 
@@ -21,6 +25,12 @@ class LotOverviewCanvas extends StatefulWidget {
 
   /// Notifica el UUID del polígono tocado.
   final ValueChanged<String> onLotSelected;
+
+  /// Foto local dibujada detrás de los polígonos esquemáticos.
+  final Uint8List? photo;
+
+  /// Permite elegir o sustituir el fondo.
+  final VoidCallback? onSelectPhoto;
 
   @override
   State<LotOverviewCanvas> createState() => _LotOverviewCanvasState();
@@ -48,6 +58,15 @@ class _LotOverviewCanvasState extends State<LotOverviewCanvas> {
       borderRadius: BorderRadius.circular(AppRadius.lg),
       child: Stack(
         children: [
+          const Positioned.fill(child: ColoredBox(color: AppColors.backgroundSecondary)),
+          if (widget.photo case final photo?)
+            Positioned.fill(
+              child: Image.memory(
+                photo,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              ),
+            ),
           FlutterMap(
             options: MapOptions(
               crs: const CrsSimple(),
@@ -58,7 +77,7 @@ class _LotOverviewCanvasState extends State<LotOverviewCanvas> {
               ),
               minZoom: -8,
               maxZoom: 3,
-              backgroundColor: AppColors.backgroundSecondary,
+              backgroundColor: Colors.transparent,
             ),
             children: [
               GestureDetector(
@@ -103,6 +122,16 @@ class _LotOverviewCanvasState extends State<LotOverviewCanvas> {
             left: AppSpacing.sm,
             child: _LocalOnlyBadge(),
           ),
+          if (widget.onSelectPhoto case final select?)
+            Positioned(
+              top: AppSpacing.xs,
+              right: AppSpacing.xs,
+              child: IconButton.filledTonal(
+                tooltip: FieldStrings.selectMapPhoto,
+                onPressed: select,
+                icon: const Icon(Icons.add_photo_alternate_outlined),
+              ),
+            ),
         ],
       ),
     );

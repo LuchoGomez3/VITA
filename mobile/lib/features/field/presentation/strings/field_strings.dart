@@ -2,6 +2,12 @@ import 'package:frontend_mayoral/features/field/domain/entities/lot_status.dart'
 
 /// Textos centralizados del flujo de campo y potreros.
 abstract final class FieldStrings {
+  /// Acción para elegir el fondo del establecimiento.
+  static const selectMapPhoto = 'Elegir foto del establecimiento';
+
+  /// Error al cargar una foto desde el dispositivo.
+  static const mapPhotoError = 'No se pudo guardar la foto del establecimiento.';
+
   /// Encabezado para un cambio rechazado por backend.
   static const syncRejectedTitle = 'No se pudo sincronizar este cambio.';
 
