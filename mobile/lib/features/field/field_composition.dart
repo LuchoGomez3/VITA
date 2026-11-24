@@ -33,10 +33,11 @@ import 'package:frontend_mayoral/features/field/presentation/bloc/lot_editor_blo
 import 'package:frontend_mayoral/features/field/presentation/cubit/lot_detail_cubit.dart';
 import 'package:frontend_mayoral/features/field/presentation/cubit/lot_overview_cubit.dart';
 
-/// Resuelve la foto de fondo de Lotes en el espacio de la sesión actual.
+/// Resuelve el fondo de Lotes con el catálogo local y las fotos de la sesión.
 FieldMapPhotoActions createFieldMapPhotoActions() {
   final repository = FieldMapPhotoRepository(userId: () => SessionBackendAccessTokenProvider.instance.userId);
-  return (read: repository.read, select: repository.select);
+  const establishments = FieldEstablishmentRepositoryImpl(FlutterSecureStorageService());
+  return (locate: establishments.getMapLocation, read: repository.read, select: repository.select);
 }
 
 /// Crea el BLoC de la Fase 1 con el adaptador geométrico seleccionado.

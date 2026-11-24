@@ -5,6 +5,18 @@ abstract final class FieldStrings {
   /// Acción para elegir el fondo del establecimiento.
   static const selectMapPhoto = 'Elegir foto del establecimiento';
 
+  /// Amplía el mapa y los lotes juntos.
+  static const zoomInMap = 'Acercar mapa';
+
+  /// Vuelve al encuadre completo del mapa.
+  static const zoomOutMap = 'Alejar mapa';
+
+  /// Abre el mapa en pantalla completa.
+  static const expandMap = 'Ampliar mapa';
+
+  /// Vuelve a la vista normal del mapa.
+  static const collapseMap = 'Salir de pantalla completa';
+
   /// Error al cargar una foto desde el dispositivo.
   static const mapPhotoError = 'No se pudo guardar la foto del establecimiento.';
 

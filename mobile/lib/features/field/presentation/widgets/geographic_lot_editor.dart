@@ -1,16 +1,23 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/satellite_imagery.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/local_point.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/field_map_photo_actions.dart';
 import 'package:frontend_mayoral/features/field/presentation/bloc/lot_editor_bloc.dart';
 import 'package:frontend_mayoral/features/field/presentation/geometry/local_canvas_projection.dart';
 import 'package:frontend_mayoral/features/field/presentation/geometry/local_lot_placement_resolver.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
+import 'package:frontend_mayoral/features/field/presentation/theme/lot_status_visuals.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/field_map_background.dart';
+import 'package:frontend_mayoral/features/field/presentation/widgets/field_map_fullscreen_button.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_vertex_marker.dart';
 import 'package:latlong2/latlong.dart';
 
-/// Viewport geográfico sin tiles para delimitar un lote sobre fondo neutro.
+/// Viewport cartesiano para delimitar un lote sobre el fondo del establecimiento.
 class GeographicLotEditor extends StatefulWidget {
   /// Crea el editor conectado con el estado de presentación.
   const GeographicLotEditor({
@@ -20,6 +27,10 @@ class GeographicLotEditor extends StatefulWidget {
     required this.onVertexMoveStarted,
     required this.onVertexMoved,
     this.existingLots = const [],
+    this.photo,
+    this.location,
+    this.expanded = false,
+    this.onToggleFullscreen,
     super.key,
   });
 
@@ -41,17 +52,30 @@ class GeographicLotEditor extends StatefulWidget {
   /// Lotes locales mostrados como referencia no editable.
   final List<Lot> existingLots;
 
+  /// Foto elegida previamente en el mapa de Lotes.
+  final Uint8List? photo;
+
+  /// Coordenadas usadas para mostrar la misma vista satelital que en Lotes.
+  final FieldMapLocation? location;
+
+  /// Indica si el editor está ampliado.
+  final bool expanded;
+
+  /// Solicita cambiar entre el editor ampliado y el formulario.
+  final VoidCallback? onToggleFullscreen;
+
   @override
   State<GeographicLotEditor> createState() => _GeographicLotEditorState();
 }
 
 class _GeographicLotEditorState extends State<GeographicLotEditor> {
-  static final _canvasBounds = LatLngBounds(
-    const LatLng(0, 0),
-    const LatLng(
-      LocalCanvasProjection.viewportHeight,
-      LocalCanvasProjection.viewportWidth,
+  static final _canvasFit = CameraFit.bounds(
+    bounds: LatLngBounds(
+      const LatLng(0, 0),
+      const LatLng(LocalCanvasProjection.viewportHeight, LocalCanvasProjection.viewportWidth),
     ),
+    padding: const EdgeInsets.all(AppSpacing.md),
+    minZoom: -8,
   );
   final MapController _mapController = MapController();
   bool _isInteractingWithVertex = false;
@@ -65,6 +89,8 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
   @override
   Widget build(BuildContext context) {
     final vertices = widget.state.vertices;
+    final hasImage = widget.photo != null || widget.location != null;
+    final draftOutline = hasImage ? AppColors.onPrimary : AppColors.primary;
     final mapPoints = [
       for (final vertex in vertices) LocalCanvasProjection.toViewport(vertex),
     ];
@@ -77,11 +103,7 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
             mapController: _mapController,
             options: MapOptions(
               crs: const CrsSimple(),
-              initialCameraFit: CameraFit.bounds(
-                bounds: _canvasBounds,
-                padding: const EdgeInsets.all(AppSpacing.md),
-                minZoom: -8,
-              ),
+              initialCameraFit: _canvasFit,
               minZoom: -8,
               maxZoom: 3,
               backgroundColor: AppColors.backgroundSecondary,
@@ -103,6 +125,14 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
               },
             ),
             children: [
+              if (hasImage)
+                Positioned.fill(
+                  child: _EditorMapBackground(
+                    fit: _canvasFit,
+                    photo: widget.photo,
+                    location: widget.location,
+                  ),
+                ),
               if (widget.existingLots.isNotEmpty)
                 PolygonLayer(
                   polygons: [
@@ -111,11 +141,15 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
                         points: [
                           for (final vertex in lot.boundary.vertices) LocalCanvasProjection.toViewport(vertex),
                         ],
-                        color: AppColors.textHint.withValues(alpha: 0.20),
-                        borderColor: AppColors.textHint,
+                        color: hasImage
+                            ? lot.status.color.withValues(alpha: 0.76)
+                            : AppColors.textHint.withValues(alpha: 0.20),
+                        borderColor: hasImage ? AppColors.onPrimary.withValues(alpha: 0.7) : AppColors.textHint,
                         borderStrokeWidth: 2,
                         label: lot.name,
-                        labelStyle: AppTypography.smallEmphasis,
+                        labelStyle: hasImage
+                            ? AppTypography.smallEmphasis.copyWith(color: AppColors.onPrimary)
+                            : AppTypography.smallEmphasis,
                       ),
                   ],
                 ),
@@ -125,9 +159,9 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
                     Polygon(
                       points: mapPoints,
                       color: AppColors.primary.withValues(
-                        alpha: widget.state.isClosed ? 0.30 : 0.18,
+                        alpha: hasImage ? 0.88 : (widget.state.isClosed ? 0.30 : 0.18),
                       ),
-                      borderColor: AppColors.primary,
+                      borderColor: draftOutline,
                       borderStrokeWidth: widget.state.isClosed ? 3 : 2,
                     ),
                   ],
@@ -137,7 +171,7 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
                   polylines: [
                     Polyline(
                       points: mapPoints,
-                      color: AppColors.primary,
+                      color: draftOutline,
                       strokeWidth: 3,
                     ),
                   ],
@@ -176,16 +210,29 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
             right: 52,
             child: _EditorHint(state: widget.state),
           ),
-          const Positioned(
+          Positioned(
             top: AppSpacing.sm,
             right: AppSpacing.sm,
-            child: _NorthIndicator(),
+            child: Column(
+              children: [
+                if (widget.onToggleFullscreen case final toggle?)
+                  FieldMapFullscreenButton(expanded: widget.expanded, onPressed: toggle),
+                const _NorthIndicator(),
+              ],
+            ),
           ),
           const Positioned(
             bottom: AppSpacing.sm,
             left: AppSpacing.sm,
             child: _LocalDraftBadge(),
           ),
+          if (widget.photo == null && widget.location != null)
+            const Positioned(
+              bottom: AppSpacing.xs,
+              right: AppSpacing.xs,
+              left: 120,
+              child: IgnorePointer(child: SatelliteAttribution()),
+            ),
         ],
       ),
     );
@@ -231,6 +278,43 @@ class _GeographicLotEditorState extends State<GeographicLotEditor> {
       ..showSnackBar(
         const SnackBar(content: Text(FieldStrings.vertexInsideLotError)),
       );
+  }
+}
+
+class _EditorMapBackground extends StatelessWidget {
+  const _EditorMapBackground({required this.fit, required this.photo, required this.location});
+
+  final CameraFit fit;
+  final Uint8List? photo;
+  final FieldMapLocation? location;
+
+  @override
+  Widget build(BuildContext context) {
+    final camera = MapCamera.of(context);
+    // Ancla la imagen al encuadre inicial del lienzo para que siga a los vértices.
+    final reference = fit.fit(camera.withRotation(0));
+    final photo = this.photo;
+    if (photo == null) {
+      return FieldMapBackground(
+        location: location,
+        cameraOffset: (
+          pan: reference.projectAtZoom(camera.center) - reference.projectAtZoom(reference.center),
+          zoom: camera.zoom - reference.zoom,
+          rotation: camera.rotation,
+        ),
+      );
+    }
+    final offset = camera.latLngToScreenOffset(reference.center) - camera.nonRotatedSize.center(Offset.zero);
+    return Transform.translate(
+      offset: offset,
+      child: Transform.rotate(
+        angle: camera.rotationRad,
+        child: Transform.scale(
+          scale: camera.getZoomScale(camera.zoom, reference.zoom),
+          child: FieldMapBackground(photo: photo),
+        ),
+      ),
+    );
   }
 }
 

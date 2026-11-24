@@ -589,6 +589,13 @@ class AppRouter {
               );
             }
             return LotEditorPage(
+              loadBackground: () {
+                final actions = createFieldMapPhotoActions();
+                return (
+                  photo: actions.read(data.establishmentId),
+                  location: actions.locate(data.establishmentId),
+                );
+              },
               createBloc: () => createLotEditorBloc(
                 establishmentId: data.establishmentId,
                 existingLots: data.existingLots,
