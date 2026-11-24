@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
@@ -19,6 +21,10 @@ class SenasaReportApiService {
   final String _baseUrl;
   final BackendAccessTokenProvider _tokenProvider;
   final http.Client _client;
+  static const _offline = SenasaReportException(
+    message: 'No se pudo conectar con el servidor. Verificá tu conexión a internet y volvé a intentar.',
+    code: DomainErrorCode.offline,
+  );
 
   /// Consulta las exportaciones del establecimiento seleccionado.
   Future<http.Response> getGeneratedReports(String establishmentId) {
@@ -67,13 +73,12 @@ class SenasaReportApiService {
       return _ensureSuccessful(
         await _client.get(uri, headers: await _headers()),
       );
-    } on SenasaReportException {
-      rethrow;
+    } on SocketException {
+      throw _offline;
     } on http.ClientException {
-      throw const SenasaReportException(
-        message: 'No se pudo conectar con el servidor. Verificá tu conexión.',
-        code: DomainErrorCode.offline,
-      );
+      throw _offline;
+    } on TimeoutException {
+      throw _offline;
     }
   }
 
@@ -86,13 +91,12 @@ class SenasaReportApiService {
           body: jsonEncode(body),
         ),
       );
-    } on SenasaReportException {
-      rethrow;
+    } on SocketException {
+      throw _offline;
     } on http.ClientException {
-      throw const SenasaReportException(
-        message: 'Necesitás conexión para validar, generar o recuperar archivos. El formulario conserva tus datos.',
-        code: DomainErrorCode.offline,
-      );
+      throw _offline;
+    } on TimeoutException {
+      throw _offline;
     }
   }
 

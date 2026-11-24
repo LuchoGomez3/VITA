@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/auth/backend_access_token_provider.dart';
+import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/storage/storage.dart';
 import 'package:frontend_mayoral/features/senasa_report/data/datasources/senasa_establishment_local_data_source.dart';
 import 'package:frontend_mayoral/features/senasa_report/data/datasources/senasa_report_remote_data_source.dart';
@@ -16,6 +18,25 @@ void main() {
   const establishmentId = 'f5ad21ed-6e92-4827-8242-9a18f103ab3a';
 
   group('SenasaReportRepositoryImpl', () {
+    test('explica la falta de conexión al consultar o validar un trámite', () async {
+      final repository = _repository(MockClient((_) async => throw const SocketException('offline')));
+      final offline = isA<SenasaReportException>()
+          .having((error) => error.code, 'code', DomainErrorCode.offline)
+          .having((error) => error.message, 'message', contains('conexión a internet'));
+      await expectLater(repository.getGeneratedReports(establishmentId), throwsA(offline));
+      await expectLater(
+        repository.validateRecords(
+          SenasaReportValidationRequest(
+            establishmentId: establishmentId,
+            from: DateTime.utc(2026, 8),
+            to: DateTime.utc(2026, 8, 8),
+            fileName: 'declaracion',
+          ),
+        ),
+        throwsA(offline),
+      );
+    });
+
     test('obtiene los establecimientos desde el catálogo local', () async {
       final storage = _MemoryStorage(
         jsonEncode([
@@ -223,7 +244,7 @@ void main() {
           isA<SenasaReportException>().having(
             (error) => error.message,
             'message',
-            contains('El formulario conserva tus datos'),
+            contains('Verificá tu conexión a internet'),
           ),
         ),
       );
