@@ -84,39 +84,33 @@ class _AnimalHealthTabState extends State<AnimalHealthTab> {
   }
 
   Future<void> _register() async {
-    final saved = await context.push<bool>(
+    await context.push<bool>(
       AppRoutes.healthRegistration(
         establishmentId: widget.animal.establishmentId,
         animalId: widget.animal.id,
       ),
     );
-    _showSaved(saved);
   }
 
   Future<void> _recordResult(HealthEvent event) async {
     final saved = await context.push<bool>(AppRoutes.healthResult, extra: event);
-    _showSaved(saved);
+    if (mounted && (saved ?? false)) {
+      AppToastHost.show(context, HealthRegistrationStrings.saved, tone: AppToastTone.success);
+    }
   }
 
   Future<void> _correct(HealthEvent event) async {
     try {
       final rejected = await widget.reader.rejectedRegistration(event);
       if (!mounted || rejected == null) return;
-      final saved = await context.push<bool>(
+      await context.push<bool>(
         AppRoutes.healthRegistration(establishmentId: event.establishmentId),
         extra: rejected,
       );
-      _showSaved(saved);
     } on Object {
       if (mounted) {
         AppToastHost.show(context, HealthRegistrationStrings.failed);
       }
-    }
-  }
-
-  void _showSaved(bool? saved) {
-    if (mounted && (saved ?? false)) {
-      AppToastHost.show(context, HealthRegistrationStrings.saved, tone: AppToastTone.success);
     }
   }
 }

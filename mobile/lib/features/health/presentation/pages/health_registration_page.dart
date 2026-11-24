@@ -139,7 +139,10 @@ class _RegistrationFormState extends State<_RegistrationForm> {
     return BlocConsumer<HealthRegistrationCubit, HealthRegistrationState>(
       listenWhen: (previous, current) => previous.submission != current.submission,
       listener: (context, state) {
-        if (state.submission is Data<void>) context.pop(true);
+        if (state.submission is Data<void>) {
+          AppToastHost.show(context, HealthRegistrationStrings.registrationSaved, tone: AppToastTone.success);
+          context.pop(true);
+        }
       },
       builder: (context, state) {
         final catalog = state.catalog;

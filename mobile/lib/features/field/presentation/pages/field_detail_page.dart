@@ -5,7 +5,6 @@ import 'package:frontend_mayoral/core/constants/health_registration_strings.dart
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
-import 'package:frontend_mayoral/core/widgets/app_toast_host.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_forage_period.dart';
@@ -287,13 +286,10 @@ class _LotDetailBody extends StatelessWidget {
   }
 
   Future<void> _registerHealth(BuildContext context, String establishmentId) async {
-    final saved = await context.push<bool>(
+    await context.push<bool>(
       AppRoutes.healthRegistration(establishmentId: establishmentId),
       extra: [for (final animal in state.animals) animal.id],
     );
-    if (context.mounted && (saved ?? false)) {
-      AppToastHost.show(context, HealthRegistrationStrings.saved, tone: AppToastTone.success);
-    }
   }
 
   Future<void> _moveAnimals(BuildContext context) async {

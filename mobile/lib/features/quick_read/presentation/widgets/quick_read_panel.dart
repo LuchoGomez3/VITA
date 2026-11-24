@@ -484,13 +484,10 @@ class _QuickReadPanelViewState extends State<_QuickReadPanelView> {
     try {
       await _readingSource.stopReading();
       if (!mounted) return;
-      final saved = await context.push<bool>(
+      await context.push<bool>(
         AppRoutes.healthRegistration(establishmentId: _cubit.state.establishmentId, capture: capture),
         extra: animalIds,
       );
-      if (mounted && (saved ?? false)) {
-        AppToastHost.show(context, HealthRegistrationStrings.saved, tone: AppToastTone.success);
-      }
     } finally {
       if (mounted) {
         unawaited(_readingSource.startReading());
