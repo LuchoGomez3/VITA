@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
@@ -61,6 +62,10 @@ class AnimalListTile extends StatelessWidget {
                       style: AppTypography.monoValue.copyWith(fontSize: 11, color: AppColors.textHint),
                     ),
                     const SizedBox(height: AppSpacing.xs),
+                    if (animal.productiveStatus == AnimalProductiveStatus.sold) ...[
+                      const AppStatusChip(label: LivestockStrings.soldLabel),
+                      const SizedBox(height: AppSpacing.xs),
+                    ],
                     DefaultTextStyle(
                       style: AppTypography.formFieldHelper.copyWith(color: AppColors.textSecondary),
                       child: Wrap(

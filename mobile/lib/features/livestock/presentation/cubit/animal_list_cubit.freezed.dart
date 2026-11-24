@@ -16,7 +16,10 @@ mixin _$AnimalListState {
 
  ResultState<List<AnimalListEntry>> get animals;/// Texto buscado (caravana, RFID o raza).
  String get query;/// Categoría elegida en los chips, o `null` para "Todos".
- String? get category;/// Establecimientos del usuario, para el selector de la cabecera.
+ String? get category;/// Estado productivo elegido. Nulo incluye todos los estados.
+ AnimalProductiveStatus? get productiveStatus;/// Identificador del potrero elegido.
+ String? get lotId;/// Potreros guardados de cada establecimiento, incluso los vacíos.
+ Map<String, Map<String, String>> get lotsByEstablishment;/// Establecimientos del usuario, para el selector de la cabecera.
  List<EstablishmentMembership> get establishments;/// Establecimiento elegido, o `null` para ver todos.
  String? get establishmentId;
 /// Create a copy of AnimalListState
@@ -29,16 +32,16 @@ $AnimalListStateCopyWith<AnimalListState> get copyWith => _$AnimalListStateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AnimalListState&&(identical(other.animals, animals) || other.animals == animals)&&(identical(other.query, query) || other.query == query)&&(identical(other.category, category) || other.category == category)&&const DeepCollectionEquality().equals(other.establishments, establishments)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AnimalListState&&(identical(other.animals, animals) || other.animals == animals)&&(identical(other.query, query) || other.query == query)&&(identical(other.category, category) || other.category == category)&&(identical(other.productiveStatus, productiveStatus) || other.productiveStatus == productiveStatus)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&const DeepCollectionEquality().equals(other.lotsByEstablishment, lotsByEstablishment)&&const DeepCollectionEquality().equals(other.establishments, establishments)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,animals,query,category,const DeepCollectionEquality().hash(establishments),establishmentId);
+int get hashCode => Object.hash(runtimeType,animals,query,category,productiveStatus,lotId,const DeepCollectionEquality().hash(lotsByEstablishment),const DeepCollectionEquality().hash(establishments),establishmentId);
 
 @override
 String toString() {
-  return 'AnimalListState(animals: $animals, query: $query, category: $category, establishments: $establishments, establishmentId: $establishmentId)';
+  return 'AnimalListState(animals: $animals, query: $query, category: $category, productiveStatus: $productiveStatus, lotId: $lotId, lotsByEstablishment: $lotsByEstablishment, establishments: $establishments, establishmentId: $establishmentId)';
 }
 
 
@@ -49,7 +52,7 @@ abstract mixin class $AnimalListStateCopyWith<$Res>  {
   factory $AnimalListStateCopyWith(AnimalListState value, $Res Function(AnimalListState) _then) = _$AnimalListStateCopyWithImpl;
 @useResult
 $Res call({
- ResultState<List<AnimalListEntry>> animals, String query, String? category, List<EstablishmentMembership> establishments, String? establishmentId
+ ResultState<List<AnimalListEntry>> animals, String query, String? category, AnimalProductiveStatus? productiveStatus, String? lotId, Map<String, Map<String, String>> lotsByEstablishment, List<EstablishmentMembership> establishments, String? establishmentId
 });
 
 
@@ -66,12 +69,15 @@ class _$AnimalListStateCopyWithImpl<$Res>
 
 /// Create a copy of AnimalListState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? animals = null,Object? query = null,Object? category = freezed,Object? establishments = null,Object? establishmentId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? animals = null,Object? query = null,Object? category = freezed,Object? productiveStatus = freezed,Object? lotId = freezed,Object? lotsByEstablishment = null,Object? establishments = null,Object? establishmentId = freezed,}) {
   return _then(_self.copyWith(
 animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
 as ResultState<List<AnimalListEntry>>,query: null == query ? _self.query : query // ignore: cast_nullable_to_non_nullable
 as String,category: freezed == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
-as String?,establishments: null == establishments ? _self.establishments : establishments // ignore: cast_nullable_to_non_nullable
+as String?,productiveStatus: freezed == productiveStatus ? _self.productiveStatus : productiveStatus // ignore: cast_nullable_to_non_nullable
+as AnimalProductiveStatus?,lotId: freezed == lotId ? _self.lotId : lotId // ignore: cast_nullable_to_non_nullable
+as String?,lotsByEstablishment: null == lotsByEstablishment ? _self.lotsByEstablishment : lotsByEstablishment // ignore: cast_nullable_to_non_nullable
+as Map<String, Map<String, String>>,establishments: null == establishments ? _self.establishments : establishments // ignore: cast_nullable_to_non_nullable
 as List<EstablishmentMembership>,establishmentId: freezed == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
@@ -164,10 +170,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<List<AnimalListEntry>> animals,  String query,  String? category,  List<EstablishmentMembership> establishments,  String? establishmentId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ResultState<List<AnimalListEntry>> animals,  String query,  String? category,  AnimalProductiveStatus? productiveStatus,  String? lotId,  Map<String, Map<String, String>> lotsByEstablishment,  List<EstablishmentMembership> establishments,  String? establishmentId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AnimalListState() when $default != null:
-return $default(_that.animals,_that.query,_that.category,_that.establishments,_that.establishmentId);case _:
+return $default(_that.animals,_that.query,_that.category,_that.productiveStatus,_that.lotId,_that.lotsByEstablishment,_that.establishments,_that.establishmentId);case _:
   return orElse();
 
 }
@@ -185,10 +191,10 @@ return $default(_that.animals,_that.query,_that.category,_that.establishments,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<List<AnimalListEntry>> animals,  String query,  String? category,  List<EstablishmentMembership> establishments,  String? establishmentId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ResultState<List<AnimalListEntry>> animals,  String query,  String? category,  AnimalProductiveStatus? productiveStatus,  String? lotId,  Map<String, Map<String, String>> lotsByEstablishment,  List<EstablishmentMembership> establishments,  String? establishmentId)  $default,) {final _that = this;
 switch (_that) {
 case _AnimalListState():
-return $default(_that.animals,_that.query,_that.category,_that.establishments,_that.establishmentId);}
+return $default(_that.animals,_that.query,_that.category,_that.productiveStatus,_that.lotId,_that.lotsByEstablishment,_that.establishments,_that.establishmentId);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -202,10 +208,10 @@ return $default(_that.animals,_that.query,_that.category,_that.establishments,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<List<AnimalListEntry>> animals,  String query,  String? category,  List<EstablishmentMembership> establishments,  String? establishmentId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ResultState<List<AnimalListEntry>> animals,  String query,  String? category,  AnimalProductiveStatus? productiveStatus,  String? lotId,  Map<String, Map<String, String>> lotsByEstablishment,  List<EstablishmentMembership> establishments,  String? establishmentId)?  $default,) {final _that = this;
 switch (_that) {
 case _AnimalListState() when $default != null:
-return $default(_that.animals,_that.query,_that.category,_that.establishments,_that.establishmentId);case _:
+return $default(_that.animals,_that.query,_that.category,_that.productiveStatus,_that.lotId,_that.lotsByEstablishment,_that.establishments,_that.establishmentId);case _:
   return null;
 
 }
@@ -217,7 +223,7 @@ return $default(_that.animals,_that.query,_that.category,_that.establishments,_t
 
 
 class _AnimalListState extends AnimalListState {
-  const _AnimalListState({this.animals = const ResultState<List<AnimalListEntry>>.initial(), this.query = '', this.category, final  List<EstablishmentMembership> establishments = const <EstablishmentMembership>[], this.establishmentId}): _establishments = establishments,super._();
+  const _AnimalListState({this.animals = const ResultState<List<AnimalListEntry>>.initial(), this.query = '', this.category, this.productiveStatus = AnimalProductiveStatus.active, this.lotId, final  Map<String, Map<String, String>> lotsByEstablishment = const <String, Map<String, String>>{}, final  List<EstablishmentMembership> establishments = const <EstablishmentMembership>[], this.establishmentId}): _lotsByEstablishment = lotsByEstablishment,_establishments = establishments,super._();
   
 
 @override@JsonKey() final  ResultState<List<AnimalListEntry>> animals;
@@ -225,6 +231,19 @@ class _AnimalListState extends AnimalListState {
 @override@JsonKey() final  String query;
 /// Categoría elegida en los chips, o `null` para "Todos".
 @override final  String? category;
+/// Estado productivo elegido. Nulo incluye todos los estados.
+@override@JsonKey() final  AnimalProductiveStatus? productiveStatus;
+/// Identificador del potrero elegido.
+@override final  String? lotId;
+/// Potreros guardados de cada establecimiento, incluso los vacíos.
+ final  Map<String, Map<String, String>> _lotsByEstablishment;
+/// Potreros guardados de cada establecimiento, incluso los vacíos.
+@override@JsonKey() Map<String, Map<String, String>> get lotsByEstablishment {
+  if (_lotsByEstablishment is EqualUnmodifiableMapView) return _lotsByEstablishment;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_lotsByEstablishment);
+}
+
 /// Establecimientos del usuario, para el selector de la cabecera.
  final  List<EstablishmentMembership> _establishments;
 /// Establecimientos del usuario, para el selector de la cabecera.
@@ -247,16 +266,16 @@ _$AnimalListStateCopyWith<_AnimalListState> get copyWith => __$AnimalListStateCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AnimalListState&&(identical(other.animals, animals) || other.animals == animals)&&(identical(other.query, query) || other.query == query)&&(identical(other.category, category) || other.category == category)&&const DeepCollectionEquality().equals(other._establishments, _establishments)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AnimalListState&&(identical(other.animals, animals) || other.animals == animals)&&(identical(other.query, query) || other.query == query)&&(identical(other.category, category) || other.category == category)&&(identical(other.productiveStatus, productiveStatus) || other.productiveStatus == productiveStatus)&&(identical(other.lotId, lotId) || other.lotId == lotId)&&const DeepCollectionEquality().equals(other._lotsByEstablishment, _lotsByEstablishment)&&const DeepCollectionEquality().equals(other._establishments, _establishments)&&(identical(other.establishmentId, establishmentId) || other.establishmentId == establishmentId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,animals,query,category,const DeepCollectionEquality().hash(_establishments),establishmentId);
+int get hashCode => Object.hash(runtimeType,animals,query,category,productiveStatus,lotId,const DeepCollectionEquality().hash(_lotsByEstablishment),const DeepCollectionEquality().hash(_establishments),establishmentId);
 
 @override
 String toString() {
-  return 'AnimalListState(animals: $animals, query: $query, category: $category, establishments: $establishments, establishmentId: $establishmentId)';
+  return 'AnimalListState(animals: $animals, query: $query, category: $category, productiveStatus: $productiveStatus, lotId: $lotId, lotsByEstablishment: $lotsByEstablishment, establishments: $establishments, establishmentId: $establishmentId)';
 }
 
 
@@ -267,7 +286,7 @@ abstract mixin class _$AnimalListStateCopyWith<$Res> implements $AnimalListState
   factory _$AnimalListStateCopyWith(_AnimalListState value, $Res Function(_AnimalListState) _then) = __$AnimalListStateCopyWithImpl;
 @override @useResult
 $Res call({
- ResultState<List<AnimalListEntry>> animals, String query, String? category, List<EstablishmentMembership> establishments, String? establishmentId
+ ResultState<List<AnimalListEntry>> animals, String query, String? category, AnimalProductiveStatus? productiveStatus, String? lotId, Map<String, Map<String, String>> lotsByEstablishment, List<EstablishmentMembership> establishments, String? establishmentId
 });
 
 
@@ -284,12 +303,15 @@ class __$AnimalListStateCopyWithImpl<$Res>
 
 /// Create a copy of AnimalListState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? animals = null,Object? query = null,Object? category = freezed,Object? establishments = null,Object? establishmentId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? animals = null,Object? query = null,Object? category = freezed,Object? productiveStatus = freezed,Object? lotId = freezed,Object? lotsByEstablishment = null,Object? establishments = null,Object? establishmentId = freezed,}) {
   return _then(_AnimalListState(
 animals: null == animals ? _self.animals : animals // ignore: cast_nullable_to_non_nullable
 as ResultState<List<AnimalListEntry>>,query: null == query ? _self.query : query // ignore: cast_nullable_to_non_nullable
 as String,category: freezed == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
-as String?,establishments: null == establishments ? _self._establishments : establishments // ignore: cast_nullable_to_non_nullable
+as String?,productiveStatus: freezed == productiveStatus ? _self.productiveStatus : productiveStatus // ignore: cast_nullable_to_non_nullable
+as AnimalProductiveStatus?,lotId: freezed == lotId ? _self.lotId : lotId // ignore: cast_nullable_to_non_nullable
+as String?,lotsByEstablishment: null == lotsByEstablishment ? _self._lotsByEstablishment : lotsByEstablishment // ignore: cast_nullable_to_non_nullable
+as Map<String, Map<String, String>>,establishments: null == establishments ? _self._establishments : establishments // ignore: cast_nullable_to_non_nullable
 as List<EstablishmentMembership>,establishmentId: freezed == establishmentId ? _self.establishmentId : establishmentId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
