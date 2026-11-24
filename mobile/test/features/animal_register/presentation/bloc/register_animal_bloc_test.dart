@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/app/router/registration_weight_capture.dart';
+import 'package:frontend_mayoral/app/router/routes.dart';
 import 'package:frontend_mayoral/core/errors/domain_exception.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
@@ -20,6 +22,10 @@ import 'package:frontend_mayoral/features/animal_register/presentation/bloc/regi
 import 'package:frontend_mayoral/features/animal_register/presentation/strings/register_animal_strings.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/steps/register_animal_basic_data_step.dart';
 import 'package:frontend_mayoral/features/animal_register/presentation/widgets/steps/register_animal_identification_step.dart';
+import 'package:frontend_mayoral/features/weighing/presentation/pages/weighing_page.dart';
+import 'package:frontend_mayoral/features/weighing/presentation/strings/weighing_strings.dart';
+import 'package:frontend_mayoral/features/weighing/presentation/widgets/weighing_tab_selector.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
   group('RegisterAnimalBloc', () {
@@ -28,19 +34,19 @@ void main() {
     late _FakeAnimalRfidRepository rfidRepository;
     late RegisterAnimalBloc bloc;
 
+    RegisterAnimalBloc createBloc() => RegisterAnimalBloc(
+      registerAnimalUseCase: RegisterAnimalUseCase(repository),
+      checkAnimalRfidUseCase: CheckAnimalRfidUseCase(rfidRepository),
+      getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
+      getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(categoryRepository),
+      registrationContext: const _TestAnimalRegistrationContext(),
+    );
+
     setUp(() {
       repository = _FakeAnimalRegistrationRepository();
       categoryRepository = _FakeAnimalCategoryRepository();
       rfidRepository = _FakeAnimalRfidRepository();
-      bloc = RegisterAnimalBloc(
-        registerAnimalUseCase: RegisterAnimalUseCase(repository),
-        checkAnimalRfidUseCase: CheckAnimalRfidUseCase(rfidRepository),
-        getAnimalParentsUseCase: GetAnimalParentsUseCase(_FakeAnimalParentRepository()),
-        getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(
-          categoryRepository,
-        ),
-        registrationContext: const _TestAnimalRegistrationContext(),
-      );
+      bloc = createBloc();
       addTearDown(bloc.close);
     });
 
@@ -140,7 +146,7 @@ void main() {
                 getAnimalCategoriesUseCase: GetAnimalCategoriesUseCase(categoryRepository),
                 registrationContext: const _TestAnimalRegistrationContext(),
               )..add(const RegisterAnimalEvent.categoriesRequested()),
-              child: const RegisterAnimalBasicDataStep(),
+              child: RegisterAnimalBasicDataStep(captureInitialWeight: (_) async => null),
             ),
           ),
         ),
@@ -178,6 +184,137 @@ void main() {
       await tester.pumpAndSettle();
       expect(widgetBloc.state.draft.categoryId, shared.id);
       expect(widgetBloc.state.draft.categoryName, shared.name);
+    });
+
+    Future<void> pumpWeightForm(WidgetTester tester, {TargetPlatform platform = TargetPlatform.android}) async {
+      bloc = createBloc()..add(const RegisterAnimalEvent.categoriesRequested());
+      addTearDown(bloc.close);
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => Scaffold(
+              body: BlocProvider.value(
+                value: bloc,
+                child: const RegisterAnimalBasicDataStep(captureInitialWeight: captureRegistrationWeight),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: AppRoutes.weighing,
+            builder: (context, state) => WeighingPage.capture(initialTab: state.extra! as WeighingCaptureTab),
+          ),
+          GoRoute(
+            path: AppRoutes.visionWeightCapture,
+            builder: (context, state) => Scaffold(
+              appBar: AppBar(),
+              body: TextButton(onPressed: () => context.pop(410.254), child: const Text('Devolver estimación')),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        MaterialApp.router(
+          routerConfig: router,
+          theme: ThemeData(platform: platform),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> openWeightMethod(WidgetTester tester, String method) async {
+      final button = find.byTooltip(AnimalRegisterStrings.captureWeightTooltip);
+      await tester.ensureVisible(button);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(method));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('copia el peso manual y vuelve a Datos básicos con la coma decimal', (tester) async {
+      await pumpWeightForm(tester);
+      expect(find.text(AnimalRegisterStrings.weightLabel), findsOneWidget);
+      expect(find.text('Peso al nacer'), findsNothing);
+      await openWeightMethod(tester, WeighingStrings.methodManual);
+
+      await tester.tap(find.text(WeighingStrings.useWeight));
+      await tester.pumpAndSettle();
+      expect(find.text(WeighingStrings.invalidCapturedWeight), findsOneWidget);
+      for (final key in ['3', '2', ',', '5']) {
+        await tester.ensureVisible(find.text(key));
+        await tester.tap(find.text(key));
+        await tester.pump();
+      }
+      await tester.tap(find.text(WeighingStrings.useWeight));
+      await tester.pumpAndSettle();
+
+      expect(bloc.state.draft.birthWeight, '32,5');
+      expect(tester.widget<TextFormField>(find.byType(TextFormField).last).controller!.text, '32,5');
+      expect(find.text(WeighingStrings.methodSheetTitle), findsNothing);
+    });
+
+    testWidgets('conserva el borrador al arrastrar la hoja o cancelar cualquiera de los tres métodos', (tester) async {
+      await pumpWeightForm(tester);
+      final weightField = find.byType(TextFormField).last;
+      await tester.ensureVisible(weightField);
+      await tester.enterText(weightField, '31,5');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip(AnimalRegisterStrings.captureWeightTooltip));
+      await tester.pumpAndSettle();
+      await tester.drag(find.text(WeighingStrings.methodSheetTitle), const Offset(0, 350));
+      await tester.pumpAndSettle();
+      expect(find.text(WeighingStrings.methodSheetTitle), findsNothing);
+
+      for (final method in [
+        WeighingStrings.methodManual,
+        WeighingStrings.methodBluetooth,
+        WeighingStrings.methodPhoto,
+      ]) {
+        await openWeightMethod(tester, method);
+        if (method == WeighingStrings.methodManual) {
+          await tester.tap(find.text('5'));
+        } else if (method == WeighingStrings.methodBluetooth) {
+          expect(find.text(WeighingStrings.noScaleConnected), findsOneWidget);
+          await tester.tap(find.text(WeighingStrings.methodManual));
+          await tester.pumpAndSettle();
+          expect(find.text(WeighingStrings.useWeight), findsOneWidget);
+        }
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(RegisterAnimalBasicDataStep), findsOneWidget);
+        expect(tester.widget<TextFormField>(weightField).controller!.text, '31,5');
+        expect(bloc.state.draft.birthWeight, '31,5');
+      }
+    });
+
+    testWidgets('vuelve al peso anterior con el gesto lateral de iOS', (tester) async {
+      await pumpWeightForm(tester, platform: TargetPlatform.iOS);
+      await openWeightMethod(tester, WeighingStrings.methodManual);
+      await tester.tap(find.text('5'));
+      await tester.dragFrom(const Offset(2, 300), const Offset(600, 0));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RegisterAnimalBasicDataStep), findsOneWidget);
+      expect(bloc.state.draft.birthWeight, isEmpty);
+    });
+
+    testWidgets('copia la estimación IA y una edición directa vuelve a marcar el peso como manual', (tester) async {
+      await pumpWeightForm(tester);
+      await openWeightMethod(tester, WeighingStrings.methodPhoto);
+      await tester.tap(find.text('Devolver estimación'));
+      await tester.pumpAndSettle();
+
+      expect(bloc.state.draft.birthWeight, '410,25');
+      expect(bloc.state.draft.weighingMethod, AnimalWeighingMethod.artificialIntelligence);
+      final weightField = find.byType(TextFormField).last;
+      expect(tester.widget<TextFormField>(weightField).controller!.text, '410,25');
+
+      await tester.enterText(weightField, '411');
+      await tester.pumpAndSettle();
+      expect(bloc.state.draft.birthWeight, '411');
+      expect(bloc.state.draft.weighingMethod, AnimalWeighingMethod.manual);
     });
 
     test('represents category loading failures with ResultState', () async {
@@ -491,6 +628,7 @@ void main() {
         sex: 'Hembra',
         birthDate: DateTime(2025, 3, 14),
         birthWeight: '32,5',
+        weighingMethod: AnimalWeighingMethod.artificialIntelligence,
         establishmentId: '8b75eb38-8b0f-44dc-979f-89ce2817b63d',
         establishmentName: 'La Sirena',
         destinationId: 'lot-1',
@@ -527,6 +665,7 @@ void main() {
         'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8',
       );
       expect(repository.lastRegistration?.categoryName, 'Ternera');
+      expect(repository.lastRegistration?.weighingMethod, AnimalWeighingMethod.artificialIntelligence);
       expect(repository.lastRegistration?.motherId, '56fb8531-13f7-41c6-a1e1-85ea9b7094fa');
     });
 

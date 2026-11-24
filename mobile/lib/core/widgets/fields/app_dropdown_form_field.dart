@@ -25,9 +25,7 @@ class AppDropdownOption<T> {
 /// default de la app para mantener consistencia visual. El menu queda anclado
 /// debajo del campo, sin desplazarlo segun la opcion seleccionada.
 ///
-/// TODO(forms): definir una estrategia comun de validaciones por tipo de campo.
-/// Hoy se expone `validator` para que cada pantalla pueda consumir validadores
-/// especificos desde `core/validators` o desde su feature.
+/// Cada formulario puede proveer su validación mediante [validator].
 class AppDropdownFormField<T> extends StatelessWidget {
   /// Crea un campo seleccionable reutilizable para formularios de la app.
   const AppDropdownFormField({
@@ -43,6 +41,7 @@ class AppDropdownFormField<T> extends StatelessWidget {
     this.helperText,
     this.errorText,
     this.icon,
+    this.animateMenu = false,
   });
 
   /// Hint del campo.
@@ -78,6 +77,9 @@ class AppDropdownFormField<T> extends StatelessWidget {
   /// Icono del campo.
   final Widget? icon;
 
+  /// Abre el menú anclado con la transición nativa de Material.
+  final bool animateMenu;
+
   @override
   Widget build(BuildContext context) {
     final effectiveTitleStyle = titleStyle ?? AppTypography.secondaryEmphasis;
@@ -100,49 +102,107 @@ class AppDropdownFormField<T> extends StatelessWidget {
           // `expandedInsets` ocupa todo el ancho disponible sin LayoutBuilder:
           // un LayoutBuilder rompe el layout dentro de un AlertDialog, que mide
           // el contenido con anchos intrínsecos (la pantalla quedaba en negro).
-          builder: (field) => DropdownMenu<T>(
-            initialSelection: field.value,
-            enabled: enabled,
-            expandedInsets: EdgeInsets.zero,
-            menuHeight: 280,
-            textStyle: AppTypography.formFieldValue,
-            hintText: hintText,
-            helperText: helperText,
-            errorText: errorText ?? field.errorText,
-            trailingIcon:
-                icon ??
-                const Icon(
-                  Icons.keyboard_arrow_down,
-                  color: AppColors.textSecondary,
+          builder: (field) => animateMenu
+              ? _AnimatedDropdownMenu<T>(input: this, field: field)
+              : DropdownMenu<T>(
+                  initialSelection: field.value,
+                  enabled: enabled,
+                  expandedInsets: EdgeInsets.zero,
+                  menuHeight: 280,
+                  textStyle: AppTypography.formFieldValue,
+                  hintText: hintText,
+                  helperText: helperText,
+                  errorText: errorText ?? field.errorText,
+                  trailingIcon:
+                      icon ??
+                      const Icon(
+                        Icons.keyboard_arrow_down,
+                        color: AppColors.textSecondary,
+                      ),
+                  selectedTrailingIcon:
+                      icon ??
+                      const Icon(
+                        Icons.keyboard_arrow_up,
+                        color: AppColors.textSecondary,
+                      ),
+                  dropdownMenuEntries: options
+                      .map(
+                        (option) => DropdownMenuEntry<T>(
+                          value: option.value,
+                          label: option.label,
+                          labelWidget: Text(
+                            option.label,
+                            style: AppTypography.mediumEmphasis,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onSelected: enabled
+                      ? (value) {
+                          field.didChange(value);
+                          onChanged?.call(value);
+                        }
+                      : null,
                 ),
-            selectedTrailingIcon:
-                icon ??
-                const Icon(
-                  Icons.keyboard_arrow_up,
-                  color: AppColors.textSecondary,
-                ),
-            dropdownMenuEntries: options
-                .map(
-                  (option) => DropdownMenuEntry<T>(
-                    value: option.value,
-                    label: option.label,
-                    labelWidget: Text(
-                      option.label,
-                      style: AppTypography.mediumEmphasis,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                )
-                .toList(),
-            onSelected: enabled
-                ? (value) {
-                    field.didChange(value);
-                    onChanged?.call(value);
-                  }
-                : null,
-          ),
         ),
       ],
+    );
+  }
+}
+
+class _AnimatedDropdownMenu<T> extends StatelessWidget {
+  const _AnimatedDropdownMenu({required this.input, required this.field});
+
+  final AppDropdownFormField<T> input;
+  final FormFieldState<T> field;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = input.options.where((option) => option.value == field.value).firstOrNull;
+    final enabled = input.enabled && input.options.isNotEmpty;
+    return LayoutBuilder(
+      builder: (context, constraints) => MenuAnchor(
+        animated: true,
+        alignmentOffset: const Offset(0, AppSpacing.xxs),
+        crossAxisUnconstrained: false,
+        style: MenuStyle(
+          alignment: AlignmentDirectional.bottomStart,
+          minimumSize: WidgetStatePropertyAll(Size(constraints.maxWidth, 0)),
+          maximumSize: WidgetStatePropertyAll(Size(constraints.maxWidth, 280)),
+          backgroundColor: const WidgetStatePropertyAll(AppColors.surface),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm))),
+        ),
+        menuChildren: [
+          for (final option in input.options)
+            MenuItemButton(
+              trailingIcon: option == selected ? const Icon(Icons.check, size: 18, color: AppColors.primary) : null,
+              onPressed: () {
+                field.didChange(option.value);
+                input.onChanged?.call(option.value);
+              },
+              child: Text(option.label, style: AppTypography.formFieldValue),
+            ),
+        ],
+        builder: (context, menu, child) => InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          onTap: enabled ? () => menu.isOpen ? menu.close() : menu.open() : null,
+          child: InputDecorator(
+            decoration: InputDecoration(
+              enabled: enabled,
+              helperText: input.helperText,
+              errorText: input.errorText ?? field.errorText,
+              suffixIcon: input.icon ?? Icon(menu.isOpen ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down),
+            ),
+            child: Text(
+              selected?.label ?? input.hintText,
+              style: selected == null ? AppTypography.formFieldHint : AppTypography.formFieldValue,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

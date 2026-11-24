@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
+import 'package:frontend_mayoral/core/widgets/satellite_imagery.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/boundary_point.dart';
 import 'package:frontend_mayoral/features/establishment_register/domain/entities/current_location.dart';
@@ -11,7 +12,6 @@ import 'package:frontend_mayoral/features/establishment_register/presentation/bl
 import 'package:frontend_mayoral/features/establishment_register/presentation/bloc/register_establishment_draft_validation.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/strings/establishment_register_strings.dart';
 import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/location_failure_message.dart';
-import 'package:frontend_mayoral/features/establishment_register/presentation/widgets/satellite_imagery.dart';
 import 'package:latlong2/latlong.dart';
 
 /// Paso 4 · Delimitar la superficie del establecimiento.

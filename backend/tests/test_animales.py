@@ -12,7 +12,7 @@ from api.modules.establecimientos.models import (
     UsuarioEstablecimiento,
 )
 from api.modules.pesajes.models import Pesaje
-from api.shared.enums import RolUsuario
+from api.shared.enums import MetodoPesaje, RolUsuario
 from tests.factories import crear_lote
 
 
@@ -63,11 +63,17 @@ def _timestamp_utc(value: str) -> datetime:
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("metodo", "es_estimado"),
+    [(MetodoPesaje.manual, False), (MetodoPesaje.estimacion_ia, True)],
+)
 async def test_alta_crea_animal_y_pesaje_inicial(
-    auth_client, session, establecimiento_con_lote, usuario_actual
+    auth_client, session, establecimiento_con_lote, usuario_actual, metodo, es_estimado
 ):
     est, lote = establecimiento_con_lote
-    resp = await auth_client.post("/api/v1/animales", json=_payload(est.id, lote.id))
+    resp = await auth_client.post(
+        "/api/v1/animales", json=_payload(est.id, lote.id, metodo_pesaje=metodo.value)
+    )
     assert resp.status_code == 201
     data = resp.json()["data"]
     assert data["nro_caravana_rfid"] == "123456789012345"
@@ -78,6 +84,8 @@ async def test_alta_crea_animal_y_pesaje_inicial(
     result = await session.execute(select(Pesaje).where(Pesaje.animal_id == animal_id))
     pesaje = result.scalar_one()
     assert str(pesaje.peso_kg) == "120.500"
+    assert pesaje.metodo == metodo
+    assert pesaje.es_estimado is es_estimado
     assert pesaje.responsable_id == usuario_actual.id
     assert pesaje.establecimiento_id == est.id
 

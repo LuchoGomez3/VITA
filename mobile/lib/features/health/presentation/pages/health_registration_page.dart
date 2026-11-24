@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
+import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
+import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
@@ -197,14 +199,14 @@ class _RegistrationFormState extends State<_RegistrationForm> {
                   _entry(HealthRegistrationStrings.sampleType, _sampleType, enabled: !saving),
               ],
               _entry(HealthRegistrationStrings.notes, _notes, enabled: !saving),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.xs),
               if (widget.capture)
                 HealthMangaCapture(
                   key: ValueKey((state.establishmentId, practice.id)),
                   enabled: !saving,
                   onTag: context.read<HealthRegistrationCubit>().addReading,
                 ),
-              Text(HealthRegistrationStrings.selected(state.recipients.length)),
+              Text(HealthRegistrationStrings.selected(state.recipients.length), style: AppTypography.pageBodyTitle),
               if (state.selectionMessage case final message?) Text(message),
               if (state.recipients.isEmpty) const Text(HealthRegistrationStrings.noAnimals),
             ],
@@ -217,7 +219,6 @@ class _RegistrationFormState extends State<_RegistrationForm> {
         final footer = <Widget>[
           if (catalog != null && practice != null) ...[
             if (state.submission case ResultError<void>(:final error)) Text(error.message),
-            const SizedBox(height: 16),
             AppFilledButton(
               label: HealthRegistrationStrings.confirm,
               onPressed: saving || state.recipients.isEmpty || state.pendingReadings > 0
@@ -233,12 +234,16 @@ class _RegistrationFormState extends State<_RegistrationForm> {
             appBar: AppBar(title: const Text(HealthRegistrationStrings.register)),
             body: SafeArea(
               child: ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.xs, AppSpacing.md, AppSpacing.lg),
                 itemCount: recipientEnd + footer.length,
                 findChildIndexCallback: (key) => key is ValueKey<String> ? recipientIndices[key.value] : null,
                 itemBuilder: (context, index) {
-                  if (index < header.length) return header[index];
-                  if (index >= recipientEnd) return footer[index - recipientEnd];
+                  if (index < header.length || index >= recipientEnd) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: index < header.length ? header[index] : footer[index - recipientEnd],
+                    );
+                  }
                   return _recipient(context, recipients[index - header.length], practice!.kind, enabled: !saving);
                 },
               ),
@@ -251,22 +256,27 @@ class _RegistrationFormState extends State<_RegistrationForm> {
 
   Widget _recipient(BuildContext context, HealthRecipient recipient, HealthPracticeKind kind, {required bool enabled}) {
     final cubit = context.read<HealthRegistrationCubit>();
-    return ListTile(
+    return Card(
       key: ValueKey(recipient.animalId),
-      contentPadding: EdgeInsets.zero,
-      title: Text(recipient.label),
-      subtitle: kind == HealthPracticeKind.sampling
-          ? TextFormField(
-              initialValue: recipient.sampleReference,
-              enabled: enabled,
-              decoration: const InputDecoration(labelText: HealthRegistrationStrings.sampleReference),
-              onChanged: (value) => cubit.updateSampleReference(recipient.animalId, value),
-            )
-          : null,
-      trailing: IconButton(
-        tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
-        onPressed: enabled ? () => cubit.remove(recipient.animalId) : null,
-        icon: const Icon(Icons.close),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: ListTile(
+        title: Text(recipient.label),
+        subtitle: kind == HealthPracticeKind.sampling
+            ? Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.xxs, bottom: AppSpacing.sm),
+                child: TextFormField(
+                  initialValue: recipient.sampleReference,
+                  enabled: enabled,
+                  decoration: const InputDecoration(labelText: HealthRegistrationStrings.sampleReference),
+                  onChanged: (value) => cubit.updateSampleReference(recipient.animalId, value),
+                ),
+              )
+            : null,
+        trailing: IconButton(
+          tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
+          onPressed: enabled ? () => cubit.remove(recipient.animalId) : null,
+          icon: const Icon(Icons.close),
+        ),
       ),
     );
   }
@@ -274,14 +284,23 @@ class _RegistrationFormState extends State<_RegistrationForm> {
   List<Widget> _application(HealthCatalog catalog, HealthPractice practice, {required bool enabled}) {
     final products = catalog.products.where((item) => practice.productIds.contains(item.id));
     return [
+      const Padding(
+        padding: EdgeInsets.only(top: AppSpacing.xs),
+        child: Text(HealthRegistrationStrings.applicationDetails, style: AppTypography.pageBodyTitle),
+      ),
       _select(
         HealthRegistrationStrings.product,
         products.map((item) => (item.id, item.name)),
         products.any((item) => item.id == _productId) ? _productId : null,
         enabled ? (value) => setState(() => _productId = value) : null,
       ),
-      _entry(HealthRegistrationStrings.dose, _dose, enabled: enabled, decimal: true),
-      _entry(HealthRegistrationStrings.unit, _unit, enabled: enabled),
+      Row(
+        children: [
+          Expanded(child: _entry(HealthRegistrationStrings.dose, _dose, enabled: enabled, decimal: true)),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(child: _entry(HealthRegistrationStrings.unit, _unit, enabled: enabled)),
+        ],
+      ),
       _entry(HealthRegistrationStrings.route, _route, enabled: enabled),
       _entry(HealthRegistrationStrings.batch, _batch, enabled: enabled),
       _dateButton(
@@ -297,19 +316,14 @@ class _RegistrationFormState extends State<_RegistrationForm> {
     Iterable<(String, String)> options,
     String? current,
     ValueChanged<String?>? onChanged,
-  ) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: InputDecorator(
-      decoration: InputDecoration(labelText: label),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          isExpanded: true,
-          value: current,
-          items: [for (final (id, name) in options) DropdownMenuItem(value: id, child: Text(name))],
-          onChanged: onChanged,
-        ),
-      ),
-    ),
+  ) => AppDropdownFormField<String>(
+    title: label,
+    hintText: HealthRegistrationStrings.selectOption,
+    options: [for (final (id, name) in options) AppDropdownOption(value: id, label: name)],
+    initialValue: current,
+    enabled: onChanged != null,
+    onChanged: onChanged,
+    animateMenu: true,
   );
 
   Widget _entry(String label, TextEditingController controller, {required bool enabled, bool decimal = false}) =>
@@ -320,9 +334,11 @@ class _RegistrationFormState extends State<_RegistrationForm> {
         decoration: InputDecoration(labelText: label),
       );
 
-  Widget _dateButton(String label, DateTime? value, VoidCallback? onPressed) => OutlinedButton(
+  Widget _dateButton(String label, DateTime? value, VoidCallback? onPressed) => OutlinedButton.icon(
     onPressed: onPressed,
-    child: Text(value == null ? label : '$label · ${MaterialLocalizations.of(context).formatCompactDate(value)}'),
+    icon: const Icon(Icons.calendar_today_outlined, size: 18),
+    label: Text(value == null ? label : '$label · ${DateDisplayFormatter.shortDate(value)}'),
+    style: OutlinedButton.styleFrom(alignment: AlignmentDirectional.centerStart, minimumSize: const Size(0, 48)),
   );
 
   Future<void> _pickDate({bool expiration = false}) async {

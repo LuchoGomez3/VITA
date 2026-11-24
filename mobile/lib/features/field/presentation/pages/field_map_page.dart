@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
@@ -5,6 +7,7 @@ import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/field_map_photo_actions.dart';
 import 'package:frontend_mayoral/features/field/presentation/cubit/lot_overview_cubit.dart';
 import 'package:frontend_mayoral/features/field/presentation/navigation/lot_editor_route_data.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
@@ -12,6 +15,7 @@ import 'package:frontend_mayoral/features/field/presentation/widgets/field_paddo
 import 'package:frontend_mayoral/features/field/presentation/widgets/field_view_toggle.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/lot_overview_canvas.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 
 /// Fábrica inyectable del visor local de lotes.
 typedef LotOverviewCubitFactory = LotOverviewCubit Function();
@@ -19,20 +23,34 @@ typedef LotOverviewCubitFactory = LotOverviewCubit Function();
 /// Vista de los lotes persistidos en el dispositivo.
 class FieldMapPage extends StatelessWidget {
   /// Crea la pantalla con su composición offline.
-  const FieldMapPage({required this.createCubit, super.key});
+  const FieldMapPage({required this.createCubit, this.createPhotoActions, super.key});
 
   /// Construye el estado dueño del catálogo y la colección SQLite.
   final LotOverviewCubitFactory createCubit;
 
+  /// Fuente de la vista satelital y la foto privada del establecimiento.
+  final FieldMapPhotoActions Function()? createPhotoActions;
+
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (_) => createCubit()..load(),
-    child: const _FieldMapView(),
+    child: _FieldMapView(photoActions: createPhotoActions?.call()),
   );
 }
 
-class _FieldMapView extends StatelessWidget {
-  const _FieldMapView();
+class _FieldMapView extends StatefulWidget {
+  const _FieldMapView({this.photoActions});
+
+  final FieldMapPhotoActions? photoActions;
+
+  @override
+  State<_FieldMapView> createState() => _FieldMapViewState();
+}
+
+class _FieldMapViewState extends State<_FieldMapView> {
+  bool _expanded = false;
+
+  void _toggleFullscreen() => setState(() => _expanded = !_expanded);
 
   @override
   Widget build(BuildContext context) {
@@ -42,19 +60,22 @@ class _FieldMapView extends StatelessWidget {
         final establishmentName = selectedId == null
             ? FieldStrings.noEstablishmentTitle
             : state.establishments[selectedId] ?? selectedId;
-        return Scaffold(
-          appBar: AppHeader(
-            title: FieldStrings.title,
-            headline: establishmentName,
+        return PopScope(
+          canPop: !_expanded,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop && _expanded) _toggleFullscreen();
+          },
+          child: Scaffold(
+            appBar: _expanded ? null : AppHeader(title: FieldStrings.title, headline: establishmentName),
+            body: SafeArea(child: _body(context, state)),
+            floatingActionButton: selectedId == null || _expanded
+                ? null
+                : FloatingActionButton.extended(
+                    onPressed: () => _createLot(context, state),
+                    icon: const Icon(Icons.add_location_alt_outlined),
+                    label: const Text(FieldStrings.newLotCta),
+                  ),
           ),
-          body: SafeArea(child: _body(context, state)),
-          floatingActionButton: selectedId == null
-              ? null
-              : FloatingActionButton.extended(
-                  onPressed: () => _createLot(context, state),
-                  icon: const Icon(Icons.add_location_alt_outlined),
-                  label: const Text(FieldStrings.newLotCta),
-                ),
         );
       },
     );
@@ -86,10 +107,10 @@ class _FieldMapView extends StatelessWidget {
       );
     }
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: _expanded ? EdgeInsets.zero : const EdgeInsets.all(AppSpacing.md),
       child: Column(
         children: [
-          if (state.establishments.length > 1) ...[
+          if (!_expanded && state.establishments.length > 1) ...[
             AppDropdownFormField<String>(
               initialValue: state.selectedEstablishmentId,
               title: FieldStrings.establishmentSelectorLabel,
@@ -104,30 +125,34 @@ class _FieldMapView extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
-          Row(
-            children: [
-              AppStatusChip(
-                label: FieldStrings.localLotCount(state.lots.length),
-                tone: AppStatusChipTone.success,
-                showDot: true,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              AppStatusChip(
-                label: FieldStrings.totalHectaresChip(
-                  state.totalHectares.toStringAsFixed(1),
+          if (!_expanded)
+            Row(
+              children: [
+                AppStatusChip(
+                  label: FieldStrings.localLotCount(state.lots.length),
+                  tone: AppStatusChipTone.success,
+                  showDot: true,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          // TODO(field-map): reemplazar el fondo esquemático por un proveedor
-          // real sólo cuando se definan permisos, tiles, caché y conversión de
-          // geometrías; este lienzo seguirá siendo el fallback offline.
+                const SizedBox(width: AppSpacing.xs),
+                AppStatusChip(
+                  label: FieldStrings.totalHectaresChip(
+                    state.totalHectares.toStringAsFixed(1),
+                  ),
+                ),
+              ],
+            ),
+          if (!_expanded) const SizedBox(height: AppSpacing.sm),
           Expanded(
+            key: const ValueKey('field-map-content'),
             child: state.view == LotOverviewView.schematic
-                ? LotOverviewCanvas(
+                ? _FieldMapWithPhoto(
+                    key: ValueKey(state.selectedEstablishmentId),
+                    establishmentId: state.selectedEstablishmentId!,
+                    actions: widget.photoActions,
                     lots: state.lots,
                     onLotSelected: (lotId) => _openLotDetail(context, lotId),
+                    expanded: _expanded,
+                    onToggleFullscreen: _toggleFullscreen,
                   )
                 : _LotList(
                     lots: state.lots,
@@ -135,19 +160,20 @@ class _FieldMapView extends StatelessWidget {
                     onLotSelected: (lotId) => _openLotDetail(context, lotId),
                   ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: FieldViewToggle(
-              isMapActive: state.view == LotOverviewView.schematic,
-              onMapSelected: () => context.read<LotOverviewCubit>().showView(
-                LotOverviewView.schematic,
-              ),
-              onListSelected: () => context.read<LotOverviewCubit>().showView(
-                LotOverviewView.list,
+          if (!_expanded) const SizedBox(height: AppSpacing.sm),
+          if (!_expanded)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FieldViewToggle(
+                isMapActive: state.view == LotOverviewView.schematic,
+                onMapSelected: () => context.read<LotOverviewCubit>().showView(
+                  LotOverviewView.schematic,
+                ),
+                onListSelected: () => context.read<LotOverviewCubit>().showView(
+                  LotOverviewView.list,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -176,6 +202,66 @@ class _FieldMapView extends StatelessWidget {
     if (!context.mounted) return;
     await context.read<LotOverviewCubit>().refresh();
   }
+}
+
+class _FieldMapWithPhoto extends StatefulWidget {
+  const _FieldMapWithPhoto({
+    required this.establishmentId,
+    required this.actions,
+    required this.lots,
+    required this.onLotSelected,
+    required this.expanded,
+    required this.onToggleFullscreen,
+    super.key,
+  });
+
+  final String establishmentId;
+  final FieldMapPhotoActions? actions;
+  final List<Lot> lots;
+  final ValueChanged<String> onLotSelected;
+  final bool expanded;
+  final VoidCallback onToggleFullscreen;
+
+  @override
+  State<_FieldMapWithPhoto> createState() => _FieldMapWithPhotoState();
+}
+
+class _FieldMapWithPhotoState extends State<_FieldMapWithPhoto> {
+  late final Future<FieldMapLocation?>? _location = widget.actions?.locate(widget.establishmentId);
+  late Future<Uint8List?>? _photo = widget.actions?.read(widget.establishmentId);
+  bool _selecting = false;
+
+  Future<void> _select() async {
+    setState(() => _selecting = true);
+    try {
+      final bytes = await widget.actions?.select(widget.establishmentId);
+      if (mounted && bytes != null) setState(() => _photo = Future.value(bytes));
+    } on Exception catch (error, stackTrace) {
+      Logger('FieldMapPhoto').warning('No se pudo guardar el fondo local.', error, stackTrace);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text(FieldStrings.mapPhotoError)));
+      }
+    } finally {
+      if (mounted) setState(() => _selecting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<FieldMapLocation?>(
+    future: _location,
+    builder: (context, location) => FutureBuilder<Uint8List?>(
+      future: _photo,
+      builder: (context, photo) => LotOverviewCanvas(
+        lots: widget.lots,
+        onLotSelected: widget.onLotSelected,
+        location: location.data,
+        photo: photo.data,
+        onSelectPhoto: widget.actions == null || _selecting ? null : _select,
+        expanded: widget.expanded,
+        onToggleFullscreen: widget.onToggleFullscreen,
+      ),
+    ),
+  );
 }
 
 class _LotList extends StatelessWidget {

@@ -78,6 +78,50 @@ void main() {
     }
   });
 
+  test('repara lotes anteriores sin perder geometría ni enviar una superficie desconocida', () async {
+    final database = await databaseFactoryFfi.openDatabase(sqlitePath);
+    const boundary = '{"type":"LocalPolygon"}';
+    const timestamp = '2026-08-28T16:30:00.000Z';
+    final oldRow = {
+      'local_id': 'legacy-lot',
+      'establishment_id': 'legacy-establishment',
+      'name': 'Potrero anterior',
+      'boundary_json': boundary,
+      'created_at': timestamp,
+      'updated_at': timestamp,
+    };
+    await database.insert('BrickLotModel', oldRow);
+    await database.insert('BrickLotModel', {
+      ...oldRow,
+      'local_id': 'existing-lot',
+      'surface_tenths': 457,
+      'status_code': 'descanso',
+      'has_water': 1,
+      'sync_status': BrickLotSyncStatus.synchronized.index,
+    });
+
+    await repository.migrate();
+    await repository.migrate();
+    await lotStore.pushPendingLots('legacy-establishment');
+    final lots = await lotStore.getLocalLots('legacy-establishment');
+    final oldLot = lots.singleWhere((lot) => lot.localId == 'legacy-lot');
+    expect(oldLot.name, 'Potrero anterior');
+    expect(oldLot.boundaryJson, boundary);
+    expect(oldLot.updatedAt, DateTime.parse(timestamp));
+    expect(oldLot.geometryMode, 'local_schematic');
+    expect(oldLot.surfaceTenths, 0);
+    expect(oldLot.syncStatus, BrickLotSyncStatus.rejected);
+    expect(oldLot.syncErrorCode, 'superficie_lote_faltante');
+
+    final existing = lots.singleWhere((lot) => lot.localId == 'existing-lot');
+    expect(existing.geometryMode, 'local_schematic');
+    expect(existing.surfaceTenths, 457);
+    expect(existing.statusCode, 'descanso');
+    expect(existing.hasWater, isTrue);
+    expect(existing.syncStatus, BrickLotSyncStatus.synchronized);
+    expect(await repository.hasQueuedCreate('/api/v1/lotes', oldLot.localId), isFalse);
+  });
+
   test('editar el mismo UUID conserva una sola fila SQLite', () async {
     await lotStore.upsertLocalLot(_lot(id: 'lot-upsert', name: 'Original'));
 
@@ -95,6 +139,55 @@ void main() {
     final matches = stored.where((lot) => lot.localId == 'lot-upsert');
     expect(matches, hasLength(1));
     expect(matches.single.name, 'Editado');
+  });
+
+  test('el historial muestra el lote del alta antes y después de un traslado', () async {
+    final history = AnimalMovementRepositoryImpl(
+      animalStore: BrickAnimalStore.instance,
+      lotStore: lotStore,
+      categoryStore: BrickCategoriaStore.instance,
+      movementStore: movementStore,
+      localChanges: repository.localChanges,
+    );
+    final animal = await repository.upsertLocal(_animal(id: 'animal-initial-lot', lotId: 'initial-history-lot'));
+    await repository.upsertLocal(_lot(id: animal.lotId, name: 'Primer potrero'));
+
+    final result = await history.getHistory(animal.localId) as Success<List<MovementHistoryEntry>>;
+    final initial = result.data.single;
+    expect(initial.fromLotName, isNull);
+    expect(initial.toLotName, 'Primer potrero');
+    expect(initial.occurredAt, animal.createdAt);
+    expect(initial.isCurrent, isTrue);
+    expect(initial.syncStatus, MovementSyncStatus.pending);
+
+    await repository.upsertLocal(animal.copyWith(lotId: 'destination-lot'));
+    await repository.upsertLocal(
+      _movement(id: 'first-after-initial', animalId: animal.localId, sourceLotId: animal.lotId),
+    );
+    final moved = await history.getHistory(animal.localId) as Success<List<MovementHistoryEntry>>;
+    expect(moved.data.map((entry) => entry.movementId), ['first-after-initial', initial.movementId]);
+    expect(moved.data.last.toLotName, 'Primer potrero');
+    expect(moved.data.last.isCurrent, isFalse);
+    expect(moved.data.first.isCurrent, isTrue);
+  });
+
+  test('el historial evita duplicar una asignación sin origen que ya está registrada', () async {
+    final history = AnimalMovementRepositoryImpl(
+      animalStore: BrickAnimalStore.instance,
+      lotStore: lotStore,
+      categoryStore: BrickCategoriaStore.instance,
+      movementStore: movementStore,
+      localChanges: repository.localChanges,
+    );
+    const animalId = 'animal-with-real-assignment';
+    final animal = await repository.upsertLocal(_animal(id: animalId, lotId: ''));
+    final unassigned = await history.getHistory(animalId) as Success<List<MovementHistoryEntry>>;
+    expect(unassigned.data, isEmpty);
+
+    await repository.upsertLocal(animal.copyWith(lotId: 'destination-lot'));
+    await repository.upsertLocal(_movement(id: 'recorded-assignment', animalId: animalId, sourceLotId: null));
+    final assigned = await history.getHistory(animalId) as Success<List<MovementHistoryEntry>>;
+    expect(assigned.data.single.movementId, 'recorded-assignment');
   });
 
   for (final synchronized in [true, false]) {
@@ -470,6 +563,7 @@ BrickAnimalModel _animal({required String id, required String lotId}) {
 
 BrickAnimalLotMovementModel _movement({
   required String id,
+  String? sourceLotId = 'source-lot',
   String destinationLotId = 'destination-lot',
   DateTime? createdAt,
   BrickAnimalLotMovementSyncStatus syncStatus = BrickAnimalLotMovementSyncStatus.pending,
@@ -482,7 +576,7 @@ BrickAnimalLotMovementModel _movement({
   return BrickAnimalLotMovementModel(
     localId: id,
     establishmentId: establishmentId,
-    sourceLotId: 'source-lot',
+    sourceLotId: sourceLotId,
     destinationLotId: destinationLotId,
     animalIdsJson: '["$animalId"]',
     occurredAt: timestamp,

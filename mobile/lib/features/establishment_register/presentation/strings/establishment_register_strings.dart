@@ -303,9 +303,6 @@ class EstablishmentRegisterStrings {
   static const stepFourSatelliteUnavailable =
       'Sin imagen satelital. Podés recorrer el campo y marcar cada esquina con el GPS.';
 
-  /// Atribucion obligatoria de la imagen satelital.
-  static const stepFourSatelliteAttribution = '© Esri, Maxar, Earthstar Geographics';
-
   /// Titulo del panel de superficie cargada a mano.
   static const stepFourManualSurfaceTitle = '¿No podés dibujarlo ahora?';
 

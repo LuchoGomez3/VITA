@@ -1,5 +1,12 @@
 # Detalle animal
 
+## Observaciones
+
+Desde **General** se pueden agregar notas independientes del texto histórico.
+Brick las guarda primero en SQLite y encola el envío a
+`/api/v1/observaciones_animales`. El historial se limita al animal y su
+establecimiento y conserva las notas pendientes al recibir datos remotos.
+
 ## Foto local del animal
 
 La foto es un dato privado de la instalación mobile. Se guarda en el directorio
@@ -134,6 +141,10 @@ confundirlos. La llegada marcada como actual corresponde al potrero local del
 animal; las filas siguen ordenadas por fecha efectiva aunque un movimiento
 retroactivo aparezca después. Los nombres se resuelven incluyendo lotes con
 tombstone, que permanecen excluidos de las opciones de destino.
+
+La ficha muestra la asignación inicial con la fecha de alta. Si hubo traslados,
+usa el origen del primero registrado para recuperar el lote inicial. Si ese
+primer movimiento ya figura sin origen, se muestra una sola vez.
 
 Al volver del traslado, incluso tras guardar solo algunos orígenes, se recargan
 la ficha y el historial. La confirmación utiliza los destinos del resumen

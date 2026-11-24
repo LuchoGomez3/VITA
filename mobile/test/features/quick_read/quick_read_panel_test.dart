@@ -178,18 +178,20 @@ void main() {
     expect(find.text(QuickReadStrings.whatToDo), findsOneWidget);
   });
 
-  testWidgets('a mano: una caravana desconocida muestra el error; descartar vuelve a esperar', (tester) async {
+  testWidgets('a mano: filtra y limita el RFID a 15 dígitos', (tester) async {
     await pumpPanel(tester);
 
     await tester.tap(find.text(QuickReadStrings.manualEntry));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '123');
-    await tester.tap(find.text(QuickReadStrings.add));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('No hay ningún animal activo'), findsOneWidget);
+    await tester.pump();
+    final add = find.widgetWithText(FilledButton, QuickReadStrings.add);
+    expect(tester.widget<FilledButton>(add).onPressed, isNull);
 
-    await tester.enterText(find.byType(TextField), _rfidA1);
-    await tester.tap(find.text(QuickReadStrings.add));
+    await tester.enterText(find.byType(TextField), 'a98 2000-412884005999');
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, _rfidA1);
+    await tester.tap(add);
     await tester.pumpAndSettle();
     expect(find.text('004 0028'), findsOneWidget);
 
@@ -198,7 +200,7 @@ void main() {
     expect(find.text(QuickReadStrings.waitingTitle), findsOneWidget);
   });
 
-  testWidgets('tocar el fondo cierra el panel solo si no hay caravanas leídas', (tester) async {
+  testWidgets('tocar el fondo solicita cerrar el panel aunque haya caravanas leídas', (tester) async {
     await pumpPanel(tester);
 
     await tester.tapAt(const Offset(20, 20));
@@ -207,7 +209,7 @@ void main() {
     await readWithStick(tester, _rfidA1);
     await tester.tapAt(const Offset(20, 20));
     await tester.pumpAndSettle();
-    expect(closed, 1);
+    expect(closed, 2);
     expect(find.text('004 0028'), findsOneWidget);
   });
 }

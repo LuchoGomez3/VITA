@@ -26,6 +26,7 @@ sealed class RegisterAnimalDraft with _$RegisterAnimalDraft {
     required String breed,
     required String sex,
     required String birthWeight,
+    @Default(AnimalWeighingMethod.manual) AnimalWeighingMethod weighingMethod,
     DateTime? birthDate,
     String? categoryId,
     String? categoryName,

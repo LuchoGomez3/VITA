@@ -43,7 +43,7 @@ sealed class GroupMovementPreparation with _$GroupMovementPreparation {
 /// Un paso del historial de potreros de un animal.
 @freezed
 sealed class MovementHistoryEntry with _$MovementHistoryEntry {
-  /// Crea la entrada; el origen es nulo en la primera asignación.
+  /// Crea la entrada. El origen y el motivo quedan vacíos al proyectar el alta.
   const factory MovementHistoryEntry({
     required String movementId,
     required String? fromLotName,

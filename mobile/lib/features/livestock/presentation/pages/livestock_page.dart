@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/app/router/routes.dart';
+import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
@@ -202,7 +203,7 @@ class _Filters extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<AnimalListCubit>();
-    final total = context.select((AnimalListCubit c) => c.state.allAnimals.length);
+    final total = context.select((AnimalListCubit c) => c.state.statusAndLotAnimals.length);
     final categories = context.select((AnimalListCubit c) => c.state.categories);
     final selected = context.select((AnimalListCubit c) => c.state.category);
 
@@ -214,24 +215,36 @@ class _Filters extends StatelessWidget {
       ),
       child: Column(
         children: [
-          TextField(
-            onChanged: cubit.search,
-            textInputAction: TextInputAction.search,
-            style: AppTypography.formFieldValue,
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: LivestockStrings.searchHint,
-              hintStyle: AppTypography.formFieldHint,
-              prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.textHint),
-              filled: true,
-              fillColor: AppColors.backgroundTertiary,
-              contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              // El tema de los formularios dibuja un borde; en el diseño el
-              // buscador es una píldora sin borde.
-              border: _pillBorder,
-              enabledBorder: _pillBorder,
-              focusedBorder: _pillBorder,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  onChanged: cubit.search,
+                  textInputAction: TextInputAction.search,
+                  style: AppTypography.formFieldValue,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: LivestockStrings.searchHint,
+                    hintStyle: AppTypography.formFieldHint,
+                    prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.textHint),
+                    filled: true,
+                    fillColor: AppColors.backgroundTertiary,
+                    contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                    // El tema de los formularios dibuja un borde; en el diseño el
+                    // buscador es una píldora sin borde.
+                    border: _pillBorder,
+                    enabledBorder: _pillBorder,
+                    focusedBorder: _pillBorder,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              IconButton(
+                tooltip: LivestockStrings.filters,
+                icon: const Icon(Icons.tune),
+                onPressed: () => _openFilters(context, cubit),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.sm),
           SizedBox(
@@ -256,6 +269,80 @@ class _Filters extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _openFilters(BuildContext context, AnimalListCubit cubit) async {
+    final state = cubit.state;
+    final lotOptions = state.lotOptions;
+    final categories = state.categories;
+    var status = state.productiveStatus;
+    var lot = lotOptions.containsKey(state.lotId) ? state.lotId : null;
+    var category = categories.contains(state.category) ? state.category : null;
+    final applied = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, update) => SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(LivestockStrings.filters, style: AppTypography.pageTitle),
+                const SizedBox(height: AppSpacing.md),
+                AppDropdownFormField<String>(
+                  title: LivestockStrings.productiveStatus,
+                  hintText: LivestockStrings.allStatuses,
+                  initialValue: status?.name ?? '',
+                  options: [
+                    const AppDropdownOption(value: '', label: LivestockStrings.allStatuses),
+                    AppDropdownOption(value: AnimalProductiveStatus.active.name, label: LivestockStrings.activeAnimals),
+                    AppDropdownOption(value: AnimalProductiveStatus.sold.name, label: LivestockStrings.soldAnimals),
+                  ],
+                  onChanged: (value) => update(
+                    () => status = AnimalProductiveStatus.values.where((item) => item.name == value).firstOrNull,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                AppDropdownFormField<String>(
+                  title: LivestockStrings.lotFilter,
+                  hintText: LivestockStrings.allLots,
+                  initialValue: lot ?? '',
+                  options: [
+                    const AppDropdownOption(value: '', label: LivestockStrings.allLots),
+                    for (final entry in lotOptions.entries) AppDropdownOption(value: entry.key, label: entry.value),
+                  ],
+                  onChanged: (value) => update(() => lot = value == '' ? null : value),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                AppDropdownFormField<String>(
+                  title: LivestockStrings.categoryFilter,
+                  hintText: LivestockStrings.allCategories,
+                  initialValue: category ?? '',
+                  options: [
+                    const AppDropdownOption(value: '', label: LivestockStrings.allCategories),
+                    for (final name in categories) AppDropdownOption(value: name, label: name),
+                  ],
+                  onChanged: (value) => update(() => category = value == '' ? null : value),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppFilledButton(
+                  label: LivestockStrings.applyFilters,
+                  onPressed: () => Navigator.of(context).pop(true),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (applied ?? false) {
+      if (context.mounted && cubit.state.establishmentId == state.establishmentId) {
+        cubit.applyFilters(status: status, lotId: lot, category: category);
+      }
+    }
   }
 }
 
@@ -295,6 +382,7 @@ class _AnimalList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AnimalListCubit>().state;
+    final visibleAnimals = state.visibleAnimals;
 
     final body = switch (state.animals) {
       ResultError<List<AnimalListEntry>>(:final error) => _Message(text: error.message),
@@ -302,17 +390,17 @@ class _AnimalList extends StatelessWidget {
         title: LivestockStrings.emptyTitle,
         text: LivestockStrings.emptyDescription,
       ),
-      Data<List<AnimalListEntry>>() when state.visibleAnimals.isEmpty => const _ScrollableMessage(
+      Data<List<AnimalListEntry>>() when visibleAnimals.isEmpty => const _ScrollableMessage(
         text: LivestockStrings.noResults,
       ),
       Data<List<AnimalListEntry>>() => ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
         // Deja lugar para que el botón flotante no tape la última fila.
         padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 96),
-        itemCount: state.visibleAnimals.length,
+        itemCount: visibleAnimals.length,
         separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
         itemBuilder: (context, index) {
-          final animal = state.visibleAnimals[index];
+          final animal = visibleAnimals[index];
           return AnimalListTile(
             animal: animal,
             onTap: () => _openAndReload(context, AppRoutes.animalDetailById(animal.id)),

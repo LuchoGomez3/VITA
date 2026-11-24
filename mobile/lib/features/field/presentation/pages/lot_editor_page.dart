@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
@@ -5,6 +7,7 @@ import 'package:frontend_mayoral/core/widgets/widgets.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/forage_resource.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot.dart';
 import 'package:frontend_mayoral/features/field/domain/entities/lot_status.dart';
+import 'package:frontend_mayoral/features/field/domain/use_cases/field_map_photo_actions.dart';
 import 'package:frontend_mayoral/features/field/presentation/bloc/lot_editor_bloc.dart';
 import 'package:frontend_mayoral/features/field/presentation/strings/field_strings.dart';
 import 'package:frontend_mayoral/features/field/presentation/widgets/geographic_lot_editor.dart';
@@ -16,13 +19,19 @@ import 'package:go_router/go_router.dart';
 /// Fábrica inyectable del BLoC del editor local.
 typedef LotEditorBlocFactory = LotEditorBloc Function();
 
-/// Pantalla de Fase 1 para delimitar un lote sin persistencia ni mapa base.
+/// Lecturas independientes de la ubicación y la foto local del establecimiento.
+typedef LotEditorBackgroundLoader = ({Future<Uint8List?> photo, Future<FieldMapLocation?> location}) Function();
+
+/// Pantalla para delimitar un lote y completar sus datos.
 class LotEditorPage extends StatelessWidget {
   /// Crea la pantalla con sus dependencias resueltas fuera de presentation.
-  const LotEditorPage({required this.createBloc, super.key});
+  const LotEditorPage({required this.createBloc, this.loadBackground, super.key});
 
   /// Crea el BLoC cuando la ruta abre la pantalla.
   final LotEditorBlocFactory createBloc;
+
+  /// Lee el fondo del establecimiento sin bloquear el editor.
+  final LotEditorBackgroundLoader? loadBackground;
 
   @override
   Widget build(BuildContext context) {
@@ -34,161 +43,170 @@ class LotEditorPage extends StatelessWidget {
           final saved = state.savedLot;
           if (saved != null) context.pop<Lot>(saved);
         },
-        child: const _LotEditorView(),
+        child: _LotEditorView(loadBackground: loadBackground),
       ),
     );
   }
 }
 
-class _LotEditorView extends StatelessWidget {
-  const _LotEditorView();
+class _LotEditorView extends StatefulWidget {
+  const _LotEditorView({required this.loadBackground});
+
+  final LotEditorBackgroundLoader? loadBackground;
+
+  @override
+  State<_LotEditorView> createState() => _LotEditorViewState();
+}
+
+class _LotEditorViewState extends State<_LotEditorView> {
+  bool _expanded = false;
+
+  void _toggleFullscreen() {
+    FocusScope.of(context).unfocus();
+    setState(() => _expanded = !_expanded);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text(FieldStrings.newLotTitle)),
-      body: SafeArea(
-        child: BlocBuilder<LotEditorBloc, LotEditorState>(
-          builder: (context, state) {
-            final bloc = context.read<LotEditorBloc>();
-            if (state.step == LotEditorStep.details) {
-              return _LotDetailsStep(state: state, bloc: bloc);
-            }
-            final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
-            return Column(
-              children: [
-                Expanded(
-                  flex: keyboardVisible ? 1 : 3,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md,
-                      AppSpacing.sm,
-                      AppSpacing.md,
-                      0,
-                    ),
-                    child: GeographicLotEditor(
-                      state: state,
-                      existingLots: state.existingLots,
-                      onVertexAdded: (point) => bloc.add(
-                        LotEditorEvent.vertexAdded(point),
-                      ),
-                      onVertexSelected: (index) => bloc.add(
-                        LotEditorEvent.vertexSelected(index),
-                      ),
-                      onVertexMoveStarted: (index) => bloc.add(
-                        LotEditorEvent.vertexMoveStarted(index),
-                      ),
-                      onVertexMoved: (index, point) => bloc.add(
-                        LotEditorEvent.vertexMoved(index, point),
+    return PopScope<Lot>(
+      canPop: !_expanded,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _expanded) _toggleFullscreen();
+      },
+      child: Scaffold(
+        appBar: _expanded ? null : AppBar(title: const Text(FieldStrings.newLotTitle)),
+        body: SafeArea(
+          child: BlocBuilder<LotEditorBloc, LotEditorState>(
+            builder: (context, state) {
+              final bloc = context.read<LotEditorBloc>();
+              if (state.step == LotEditorStep.details) {
+                return _LotDetailsStep(state: state, bloc: bloc);
+              }
+              final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+              return Column(
+                children: [
+                  Expanded(
+                    flex: keyboardVisible ? 1 : 3,
+                    child: Padding(
+                      padding: _expanded
+                          ? EdgeInsets.zero
+                          : const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+                      child: _LotEditorMap(
+                        state: state,
+                        bloc: bloc,
+                        loadBackground: widget.loadBackground,
+                        expanded: _expanded,
+                        onToggleFullscreen: _toggleFullscreen,
                       ),
                     ),
                   ),
-                ),
-                Offstage(
-                  offstage: keyboardVisible,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.xs,
-                    ),
-                    child: LotEditorToolbar(
-                      canUndo: state.canUndo,
-                      canRedo: state.canRedo,
-                      canDelete: state.selectedVertexIndex != null,
-                      canClear: state.vertices.isNotEmpty,
-                      onUndo: () => bloc.add(
-                        const LotEditorEvent.undoRequested(),
+                  Offstage(
+                    offstage: keyboardVisible || _expanded,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.xs,
                       ),
-                      onRedo: () => bloc.add(
-                        const LotEditorEvent.redoRequested(),
-                      ),
-                      onDelete: () => bloc.add(
-                        const LotEditorEvent.selectedVertexDeleted(),
-                      ),
-                      onClear: () async {
-                        final shouldClear = await _confirmClear(context);
-                        if (shouldClear && context.mounted) {
-                          bloc.add(const LotEditorEvent.clearRequested());
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                Flexible(
-                  flex: keyboardVisible ? 4 : 2,
-                  child: SingleChildScrollView(
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: DecoratedBox(
-                        decoration: const BoxDecoration(
-                          color: AppColors.surface,
-                          border: Border(
-                            top: BorderSide(color: AppColors.border),
-                          ),
+                      child: LotEditorToolbar(
+                        canUndo: state.canUndo,
+                        canRedo: state.canRedo,
+                        canDelete: state.selectedVertexIndex != null,
+                        canClear: state.vertices.isNotEmpty,
+                        onUndo: () => bloc.add(
+                          const LotEditorEvent.undoRequested(),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                            AppSpacing.md,
-                            AppSpacing.sm,
-                            AppSpacing.md,
-                            AppSpacing.md,
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              LotDraftSummary(
-                                state: state,
-                                onNameChanged: (name) => bloc.add(
-                                  LotEditorEvent.nameChanged(name),
-                                ),
-                                onSurfaceChanged: (value) => bloc.add(
-                                  LotEditorEvent.surfaceChanged(value),
-                                ),
+                        onRedo: () => bloc.add(
+                          const LotEditorEvent.redoRequested(),
+                        ),
+                        onDelete: () => bloc.add(
+                          const LotEditorEvent.selectedVertexDeleted(),
+                        ),
+                        onClear: () async {
+                          final shouldClear = await _confirmClear(context);
+                          if (shouldClear && context.mounted) {
+                            bloc.add(const LotEditorEvent.clearRequested());
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  if (!_expanded)
+                    Flexible(
+                      flex: keyboardVisible ? 4 : 2,
+                      child: SingleChildScrollView(
+                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: DecoratedBox(
+                            decoration: const BoxDecoration(
+                              color: AppColors.surface,
+                              border: Border(
+                                top: BorderSide(color: AppColors.border),
                               ),
-                              if (state.showValidationErrors && state.validation.issues.isNotEmpty) ...[
-                                const SizedBox(height: AppSpacing.xs),
-                                LotValidationMessage(
-                                  issue: state.validation.issues.first,
-                                ),
-                              ],
-                              if (state.errorMessage case final message?) ...[
-                                const SizedBox(height: AppSpacing.xs),
-                                Text(
-                                  message,
-                                  style: AppTypography.errorBody,
-                                ),
-                              ],
-                              const SizedBox(height: AppSpacing.sm),
-                              AppFilledButton(
-                                label: state.isClosed
-                                    ? FieldStrings.continueLotDetailsCta
-                                    : FieldStrings.closeLotBoundaryCta,
-                                icon: Icon(
-                                  state.isClosed ? Icons.check : Icons.polyline_outlined,
-                                ),
-                                onPressed: state.isClosed
-                                    ? state.canContinue
-                                          ? () => bloc.add(
-                                              const LotEditorEvent.detailsStepRequested(),
-                                            )
-                                          : null
-                                    : state.vertices.length >= 3
-                                    ? () => bloc.add(
-                                        const LotEditorEvent.boundaryCloseRequested(),
-                                      )
-                                    : null,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.md,
+                                AppSpacing.sm,
+                                AppSpacing.md,
+                                AppSpacing.md,
                               ),
-                            ],
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  LotDraftSummary(
+                                    state: state,
+                                    onNameChanged: (name) => bloc.add(
+                                      LotEditorEvent.nameChanged(name),
+                                    ),
+                                    onSurfaceChanged: (value) => bloc.add(
+                                      LotEditorEvent.surfaceChanged(value),
+                                    ),
+                                  ),
+                                  if (state.showValidationErrors && state.validation.issues.isNotEmpty) ...[
+                                    const SizedBox(height: AppSpacing.xs),
+                                    LotValidationMessage(
+                                      issue: state.validation.issues.first,
+                                    ),
+                                  ],
+                                  if (state.errorMessage case final message?) ...[
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      message,
+                                      style: AppTypography.errorBody,
+                                    ),
+                                  ],
+                                  const SizedBox(height: AppSpacing.sm),
+                                  AppFilledButton(
+                                    label: state.isClosed
+                                        ? FieldStrings.continueLotDetailsCta
+                                        : FieldStrings.closeLotBoundaryCta,
+                                    icon: Icon(
+                                      state.isClosed ? Icons.check : Icons.polyline_outlined,
+                                    ),
+                                    onPressed: state.isClosed
+                                        ? state.canContinue
+                                              ? () => bloc.add(
+                                                  const LotEditorEvent.detailsStepRequested(),
+                                                )
+                                              : null
+                                        : state.vertices.length >= 3
+                                        ? () => bloc.add(
+                                            const LotEditorEvent.boundaryCloseRequested(),
+                                          )
+                                        : null,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -213,6 +231,53 @@ class _LotEditorView extends StatelessWidget {
           ),
         ) ??
         false;
+  }
+}
+
+class _LotEditorMap extends StatefulWidget {
+  const _LotEditorMap({
+    required this.state,
+    required this.bloc,
+    required this.loadBackground,
+    required this.expanded,
+    required this.onToggleFullscreen,
+  });
+
+  final LotEditorState state;
+  final LotEditorBloc bloc;
+  final LotEditorBackgroundLoader? loadBackground;
+  final bool expanded;
+  final VoidCallback onToggleFullscreen;
+
+  @override
+  State<_LotEditorMap> createState() => _LotEditorMapState();
+}
+
+class _LotEditorMapState extends State<_LotEditorMap> {
+  late final ({Future<Uint8List?> photo, Future<FieldMapLocation?> location})? _background = widget.loadBackground
+      ?.call();
+
+  @override
+  Widget build(BuildContext context) {
+    final bloc = widget.bloc;
+    return FutureBuilder<FieldMapLocation?>(
+      future: _background?.location,
+      builder: (context, location) => FutureBuilder<Uint8List?>(
+        future: _background?.photo,
+        builder: (context, photo) => GeographicLotEditor(
+          state: widget.state,
+          existingLots: widget.state.existingLots,
+          photo: photo.data,
+          location: location.data,
+          expanded: widget.expanded,
+          onToggleFullscreen: widget.onToggleFullscreen,
+          onVertexAdded: (point) => bloc.add(LotEditorEvent.vertexAdded(point)),
+          onVertexSelected: (index) => bloc.add(LotEditorEvent.vertexSelected(index)),
+          onVertexMoveStarted: (index) => bloc.add(LotEditorEvent.vertexMoveStarted(index)),
+          onVertexMoved: (index, point) => bloc.add(LotEditorEvent.vertexMoved(index, point)),
+        ),
+      ),
+    );
   }
 }
 

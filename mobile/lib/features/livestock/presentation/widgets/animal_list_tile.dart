@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 import 'package:frontend_mayoral/core/formatters/date_display_formatter.dart';
 import 'package:frontend_mayoral/core/theme/theme.dart';
 import 'package:frontend_mayoral/core/widgets/widgets.dart';
@@ -49,11 +50,21 @@ class AnimalListTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.mediumEmphasis.copyWith(fontWeight: FontWeight.w800),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.mediumEmphasis.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                        if (animal.productiveStatus == AnimalProductiveStatus.sold) ...[
+                          const SizedBox(width: AppSpacing.xs),
+                          const _SoldBadge(),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: AppSpacing.xxxs),
                     Text(
@@ -114,4 +125,30 @@ class AnimalListTile extends StatelessWidget {
   }
 
   static String _weight(double kg) => kg.toStringAsFixed(kg.truncateToDouble() == kg ? 0 : 1);
+}
+
+class _SoldBadge extends StatelessWidget {
+  const _SoldBadge();
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: AppColors.backgroundPositiveContainer,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.sell_outlined, size: 12, color: AppColors.positiveText),
+          const SizedBox(width: AppSpacing.xxxs),
+          Text(
+            LivestockStrings.soldLabel,
+            style: AppTypography.smallEmphasis.copyWith(color: AppColors.positiveText),
+          ),
+        ],
+      ),
+    ),
+  );
 }

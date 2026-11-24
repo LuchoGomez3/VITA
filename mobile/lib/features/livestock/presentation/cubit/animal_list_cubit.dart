@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
 import 'package:frontend_mayoral/core/result/result_state.dart';
@@ -15,12 +16,15 @@ class AnimalListCubit extends Cubit<AnimalListState> {
   AnimalListCubit({
     required GetAnimalListUseCase getAnimalListUseCase,
     required GetAnimalListEstablishmentsUseCase getEstablishmentsUseCase,
+    Future<Map<String, String>> Function(String establishmentId)? getLotOptions,
   }) : _getAnimalListUseCase = getAnimalListUseCase,
        _getEstablishmentsUseCase = getEstablishmentsUseCase,
+       _getLotOptions = getLotOptions,
        super(const AnimalListState());
 
   final GetAnimalListUseCase _getAnimalListUseCase;
   final GetAnimalListEstablishmentsUseCase _getEstablishmentsUseCase;
+  final Future<Map<String, String>> Function(String establishmentId)? _getLotOptions;
 
   /// Lee los animales guardados en el celular.
   ///
@@ -34,7 +38,17 @@ class AnimalListCubit extends Cubit<AnimalListState> {
     final result = await _getAnimalListUseCase();
     switch (result) {
       case Success<List<AnimalListEntry>>(:final data):
-        emit(state.copyWith(animals: ResultState.data(data)));
+        final getOptions = _getLotOptions;
+        final lots = getOptions == null
+            ? const <String, Map<String, String>>{}
+            : Map.fromEntries(
+                await Future.wait([
+                  for (final establishment in state.establishments)
+                    getOptions(establishment.id).then((options) => MapEntry(establishment.id, options)),
+                ]),
+              );
+        if (isClosed) return;
+        emit(state.copyWith(animals: ResultState.data(data), lotsByEstablishment: lots));
       case Failure<List<AnimalListEntry>>(:final error):
         emit(state.copyWith(animals: ResultState.error(error)));
     }
@@ -62,11 +76,15 @@ class AnimalListCubit extends Cubit<AnimalListState> {
   /// Elige un establecimiento, o `null` para ver todos. Limpia la categoría,
   /// que puede no existir en el otro campo.
   void selectEstablishment(String? establishmentId) =>
-      emit(state.copyWith(establishmentId: establishmentId, category: null));
+      emit(state.copyWith(establishmentId: establishmentId, category: null, lotId: null));
 
   /// Actualiza el texto buscado.
   void search(String query) => emit(state.copyWith(query: query));
 
   /// Elige una categoría, o `null` para ver todos.
   void selectCategory(String? category) => emit(state.copyWith(category: category));
+
+  /// Aplica los filtros combinados del panel.
+  void applyFilters({AnimalProductiveStatus? status, String? lotId, String? category}) =>
+      emit(state.copyWith(productiveStatus: status, lotId: lotId, category: category));
 }

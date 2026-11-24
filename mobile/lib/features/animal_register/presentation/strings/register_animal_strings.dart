@@ -181,10 +181,13 @@ class AnimalRegisterStrings {
   /// Validacion cuando el productor no selecciono una categoria.
   static const categoryRequired = 'Seleccioná una categoría antes de guardar.';
 
-  /// Titulo del campo de peso al nacer.
-  static const stepTwoBirthWeightTitle = 'Peso al nacer';
+  /// Etiqueta del peso inicial en el formulario y su resumen.
+  static const weightLabel = 'Peso';
 
-  /// Ejemplo de formato para el peso al nacer.
+  /// Describe la acción del botón al final del campo.
+  static const captureWeightTooltip = 'Cargar peso';
+
+  /// Ejemplo de formato para el peso inicial.
   static const stepTwoBirthWeightHint = '32,5';
 
   /// Texto del boton que vuelve al paso anterior.
@@ -265,9 +268,6 @@ class AnimalRegisterStrings {
 
   /// Label del campo categoria.
   static const stepFourCategoryLabel = 'Categoría';
-
-  /// Label del campo peso al nacer.
-  static const stepFourBirthWeightLabel = 'Peso al nacer';
 
   /// Label del campo madre.
   static const stepFourMotherLabel = 'Madre';

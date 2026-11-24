@@ -82,7 +82,7 @@ class RegisterAnimalReviewStep extends StatelessWidget {
                 value: draft.categoryName ?? AnimalRegisterStrings.stepFourNoDataValue,
               ),
               RegisterAnimalReviewRow(
-                label: AnimalRegisterStrings.stepFourBirthWeightLabel,
+                label: AnimalRegisterStrings.weightLabel,
                 value: draft.birthWeight,
               ),
             ],

@@ -37,7 +37,7 @@ class MainLayoutPage extends StatefulWidget {
   State<MainLayoutPage> createState() => _MainLayoutPageState();
 }
 
-class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProviderStateMixin {
+class _MainLayoutPageState extends State<MainLayoutPage> with TickerProviderStateMixin {
   // Altura exterior de la barra; modificar este valor cambia su grosor real.
   static const double _navigationBarHeight = AppNavigationDimensions.bottomBarHeight;
 
@@ -47,6 +47,7 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
   /// cerrar el panel o cambiar de pestaña.
   QuickReadCubit? _readerCubit;
   late final AnimationController _indicatorController;
+  late final AnimationController _readerController;
   late int _indicatorFromIndex;
   late int _indicatorToIndex;
 
@@ -60,6 +61,11 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
       duration: const Duration(milliseconds: 450),
       value: 1,
     );
+    _readerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+      reverseDuration: const Duration(milliseconds: 240),
+    )..addStatusListener(_onReaderAnimationStatusChanged);
   }
 
   @override
@@ -79,6 +85,7 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
   @override
   void dispose() {
     _indicatorController.dispose();
+    _readerController.dispose();
     _readerCubit?.close();
     super.dispose();
   }
@@ -103,11 +110,12 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
       body: Stack(
         children: [
           Positioned.fill(child: widget.navigationShell),
-          if (_isReading)
+          if (_isReading || !_readerController.isDismissed)
             Positioned.fill(
               child: QuickReadPanel(
                 cubit: _readerSession,
                 onClose: _closeReader,
+                animationController: _readerController,
               ),
             ),
         ],
@@ -234,12 +242,26 @@ class _MainLayoutPageState extends State<MainLayoutPage> with SingleTickerProvid
 
   QuickReadCubit get _readerSession => _readerCubit ??= widget.createReaderCubit()..start();
 
-  void _toggleReader() => setState(() => _isReading = !_isReading);
+  void _toggleReader() {
+    if (_isReading) {
+      _closeReader();
+      return;
+    }
+    setState(() => _isReading = true);
+    _readerController.animateTo(1, curve: Curves.easeOutCubic);
+  }
 
   void _closeReader() {
-    if (_isReading) {
-      setState(() => _isReading = false);
+    if (!_isReading) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _isReading = false);
+    if (_readerController.status != AnimationStatus.reverse) {
+      _readerController.animateBack(0, curve: Curves.easeInCubic);
     }
+  }
+
+  void _onReaderAnimationStatusChanged(AnimationStatus status) {
+    if (status == AnimationStatus.dismissed && !_isReading) setState(() {});
   }
 }
 

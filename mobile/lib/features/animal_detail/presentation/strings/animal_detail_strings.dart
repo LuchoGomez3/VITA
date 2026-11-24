@@ -71,6 +71,30 @@ class AnimalDetailStrings {
   /// Etiqueta de observaciones.
   static const observationsLabel = 'Observaciones';
 
+  /// Abre el formulario para agregar una nota.
+  static const addObservation = 'Agregar observación';
+
+  /// Acción corta en la sección de la ficha.
+  static const addObservationAction = 'Agregar';
+
+  /// Texto del formulario de observaciones.
+  static const observationHint = 'Escribí una observación';
+
+  /// Confirma una nota nueva.
+  static const saveObservation = 'Guardar';
+
+  /// Cierra la edición sin guardar el borrador.
+  static const cancelObservation = 'Cancelar';
+
+  /// Mensaje de la tarjeta cuando todavía no hay notas.
+  static const noObservations = 'Todavía no hay observaciones.';
+
+  /// Error de almacenamiento de una nota.
+  static const observationSaveError = 'No se pudo guardar la observación.';
+
+  /// Error de lectura del historial de notas.
+  static const observationReadError = 'No se pudieron leer las observaciones.';
+
   /// Metodo de pesaje manual.
   static const manualWeighingMethod = 'Manual';
 
@@ -174,6 +198,12 @@ class AnimalDetailStrings {
   /// Placeholder de la foto del animal.
   static const photoPlaceholder = 'Sin foto del animal';
 
+  /// Acceso a la cámara desde el espacio vacío de la foto.
+  static const takePhoto = 'Sacar foto';
+
+  /// Error recuperable al abrir la cámara o guardar la captura.
+  static const takePhotoError = 'No se pudo sacar o guardar la foto. Revisá el permiso de cámara y volvé a intentar.';
+
   /// Pestaña que todavía no está desarrollada.
   static const comingSoonTitle = 'Próximamente';
 
@@ -256,6 +286,12 @@ class AnimalDetailStrings {
 
   /// Origen de la primera asignación.
   static const noOrigin = '—';
+
+  /// Primer lote asignado al registrar el animal.
+  static const initialLotAssignment = 'Asignación inicial';
+
+  /// Lote del historial cuyo nombre todavía no está disponible localmente.
+  static const unknownMovementLot = 'Potrero sin nombre';
 
   /// Movimiento que todavía no llegó al servidor.
   static const pendingSync = 'Pendiente de sincronizar';

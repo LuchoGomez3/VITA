@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/constants/health_registration_strings.dart';
+import 'package:frontend_mayoral/core/widgets/fields/app_dropdown_form_field.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_catalog.dart';
 import 'package:frontend_mayoral/features/health/domain/entities/health_event.dart';
 import 'package:frontend_mayoral/features/health/domain/repositories/health_repository.dart';
@@ -46,7 +47,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      final dropdown = find.byType(DropdownButton<String>).first;
+      final dropdown = find.byType(MenuAnchor).first;
 
       Future<void> choose(String name) async {
         await tester.tap(dropdown);
@@ -59,7 +60,10 @@ void main() {
       await tester.tap(find.text(HealthRegistrationStrings.refresh));
       await tester.pump();
       await choose('Campo B');
-      expect(tester.widget<DropdownButton<String>>(dropdown).value, 'farm-b');
+      expect(
+        tester.widget<AppDropdownFormField<String>>(find.byType(AppDropdownFormField<String>).first).initialValue,
+        'farm-b',
+      );
       if (returnToOriginal) {
         await choose('Campo A');
         expect(find.text(HealthRegistrationStrings.catalogUnavailable), findsOneWidget);
@@ -72,7 +76,10 @@ void main() {
       refresh.complete();
       await tester.pumpAndSettle();
 
-      expect(tester.widget<DropdownButton<String>>(dropdown).value, returnToOriginal ? 'farm-a' : 'farm-b');
+      expect(
+        tester.widget<AppDropdownFormField<String>>(find.byType(AppDropdownFormField<String>).first).initialValue,
+        returnToOriginal ? 'farm-a' : 'farm-b',
+      );
       expect(find.text(HealthRegistrationStrings.catalogUnavailable), findsNothing);
       expect(cubit.state.recipients, returnToOriginal ? isEmpty : [_animal]);
     });
@@ -154,7 +161,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.tap(find.byType(MenuAnchor));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sangrado').last);
     await tester.pumpAndSettle();
@@ -215,7 +222,7 @@ void main() {
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.tap(find.text('Ficha'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.tap(find.byType(MenuAnchor));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sangrado').last);
     await tester.pumpAndSettle();
@@ -261,7 +268,7 @@ void main() {
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.tap(find.text('Lote'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.tap(find.byType(MenuAnchor));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sangrado').last);
     await tester.pumpAndSettle();

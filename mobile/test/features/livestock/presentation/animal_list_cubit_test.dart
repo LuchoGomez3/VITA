@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend_mayoral/core/animals/animal_productive_status.dart';
 import 'package:frontend_mayoral/core/authentication/establishment_membership.dart';
 import 'package:frontend_mayoral/core/authentication/user_role.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
+import 'package:frontend_mayoral/core/result/result_state.dart';
 import 'package:frontend_mayoral/features/livestock/domain/entities/animal_list_entry.dart';
 import 'package:frontend_mayoral/features/livestock/domain/repositories/animal_list_repository.dart';
 import 'package:frontend_mayoral/features/livestock/domain/use_cases/get_animal_list_use_case.dart';
@@ -44,9 +46,9 @@ void main() {
     final subject = cubit([_sirena, _ombu]);
     addTearDown(subject.close);
     await subject.load();
-    subject.selectCategory('Vaca');
-
-    subject.selectEstablishment('ombu');
+    subject
+      ..selectCategory('Vaca')
+      ..selectEstablishment('ombu');
 
     expect(subject.state.category, isNull);
     expect(subject.state.visibleAnimals, hasLength(1));
@@ -70,6 +72,33 @@ void main() {
 
     subject.search('982000412884712');
     expect(subject.state.visibleAnimals.map((animal) => animal.visualTag), ['003 1284']);
+  });
+
+  test('arranca en activos y combina vendidos, categoría, lote y búsqueda', () {
+    final sold = _animals[1].copyWith(lotId: 'bajo', productiveStatus: AnimalProductiveStatus.sold);
+    final active = _animals.first.copyWith(lotId: 'bajo');
+    final state = AnimalListState(
+      animals: ResultState.data([active, sold]),
+      lotsByEstablishment: const {
+        'sirena': {'bajo': 'El Bajo', 'empty': 'Potrero vacío'},
+      },
+    );
+
+    expect(state.visibleAnimals, [active]);
+    expect(state.lotOptions.keys, contains('empty'));
+    expect(state.copyWith(productiveStatus: null).visibleAnimals, [active, sold]);
+    expect(
+      state
+          .copyWith(
+            productiveStatus: AnimalProductiveStatus.sold,
+            lotId: 'bajo',
+            category: 'Novillo',
+            query: 'Hereford',
+          )
+          .visibleAnimals,
+      [sold],
+    );
+    expect(state.copyWith(productiveStatus: AnimalProductiveStatus.sold, lotId: 'empty').visibleAnimals, isEmpty);
   });
 }
 
