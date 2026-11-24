@@ -67,9 +67,45 @@ class _LivestockSaleReviewStepState extends State<LivestockSaleReviewStep> {
             const SizedBox(height: AppSpacing.lg),
             // Bloque 4: adapta el detalle a la condicion de cobro elegida.
             _PaymentSummary(form: form, amounts: state.amounts),
+            if (form.observations.trim().isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.lg),
+              _ObservationsSummary(observations: form.observations.trim()),
+            ],
           ],
         );
       },
+    );
+  }
+}
+
+/// Muestra la nota opcional sin ocupar espacio cuando la venta no la incluye.
+class _ObservationsSummary extends StatelessWidget {
+  const _ObservationsSummary({required this.observations});
+
+  final String observations;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SummarySectionTitle(
+          label: LivestockSaleStrings.summaryObservationsSection,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        AppSurfaceCard(
+          key: const Key('livestockSaleReviewObservations'),
+          padding: const EdgeInsets.all(AppSpacing.md),
+          elevation: 0,
+          child: SizedBox(
+            width: double.infinity,
+            child: Text(
+              observations,
+              style: AppTypography.formFieldValue,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

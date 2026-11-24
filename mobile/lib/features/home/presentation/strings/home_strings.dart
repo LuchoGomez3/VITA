@@ -44,8 +44,8 @@ abstract final class HomeStrings {
   /// Titulo del resumen economico operativo.
   static const operatingBalance = 'Balance operativo';
 
-  /// Etiqueta del valor estimado del stock.
-  static const estimatedStock = 'Stock estimado';
+  /// Etiqueta del total registrado mediante ventas de hacienda.
+  static const salesIncome = 'Ingresos por venta';
 
   /// Etiqueta de los gastos operativos.
   static const operatingExpenses = 'Gastos';
@@ -67,6 +67,9 @@ abstract final class HomeStrings {
 
   /// Accion para iniciar el registro de un ingreso.
   static const registerIncome = 'Registrar ingreso';
+
+  /// Accion para iniciar el registro de una venta de hacienda.
+  static const registerSale = 'Registrar venta';
 
   /// Accion para consultar ingresos y egresos.
   static const movements = 'Movimientos';

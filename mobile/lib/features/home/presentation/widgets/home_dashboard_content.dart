@@ -50,7 +50,7 @@ class HomeDashboardContent extends StatelessWidget {
             HomeOperatingBalanceCard(
               dashboard: dashboard,
               onRegisterExpense: () => _openExpenses(context, AppRoutes.expenseRegister),
-              onRegisterIncome: () => context.push(AppRoutes.incomeRegister),
+              onRegisterSale: () => _openSale(context),
               onViewMovements: () => _openExpenses(context, AppRoutes.expenseRecords),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -71,19 +71,43 @@ class HomeDashboardContent extends StatelessWidget {
     );
   }
 
-  void _openExpenses(BuildContext context, String path) {
-    final state = context.read<HomeDashboardCubit>().state;
+  Future<void> _openExpenses(BuildContext context, String path) async {
+    final cubit = context.read<HomeDashboardCubit>();
+    final state = cubit.state;
     final id = state.selectedEstablishmentId;
     if (id == null) {
       onEstablishmentSelectionRequested();
       return;
     }
-    context.push(
+    await context.push<void>(
       AppRoutes.expensesForEstablishment(
         path: path,
         establishmentId: id,
         establishmentName: state.establishments[id]?.name ?? id,
       ),
     );
+    if (context.mounted) {
+      // El egreso ya esta en SQLite. Esta recarga no espera el POST remoto y
+      // conserva el resto del tablero hasta emitir el nuevo calculo completo.
+      await cubit.reloadFromCache();
+    }
+  }
+
+  Future<void> _openSale(BuildContext context) async {
+    final cubit = context.read<HomeDashboardCubit>();
+    final establishmentId = cubit.state.selectedEstablishmentId;
+    if (establishmentId == null) {
+      onEstablishmentSelectionRequested();
+      return;
+    }
+
+    await context.push<void>(
+      AppRoutes.livestockSaleFromHome(establishmentId),
+    );
+    if (context.mounted) {
+      // La venta ya quedo confirmada en SQLite; recalcular desde la cache evita
+      // condicionar la actualizacion de Inicio a una conexion disponible.
+      await cubit.reloadFromCache();
+    }
   }
 }

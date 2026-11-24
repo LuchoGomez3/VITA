@@ -116,6 +116,9 @@ class AppRoutes {
   /// Ruta raiz del registro de una venta de hacienda.
   static const livestockSaleRegister = '/registrar-venta';
 
+  /// Query que identifica una venta abierta desde Inicio.
+  static const livestockSaleHomeOrigin = 'inicio';
+
   /// Construye la ruta de egresos con el establecimiento activo explicito.
   static String expensesForEstablishment({
     required String path,
@@ -129,6 +132,12 @@ class AppRoutes {
   static String livestockSaleForEstablishment(String establishmentId) {
     return '$livestockSaleRegister?establecimientoId='
         '${Uri.encodeQueryComponent(establishmentId)}';
+  }
+
+  /// Construye la venta que debe regresar a la instancia previa de Inicio.
+  static String livestockSaleFromHome(String establishmentId) {
+    return '${livestockSaleForEstablishment(establishmentId)}'
+        '&origen=$livestockSaleHomeOrigin';
   }
 
   /// Ruta del menu principal de reportes SENASA.

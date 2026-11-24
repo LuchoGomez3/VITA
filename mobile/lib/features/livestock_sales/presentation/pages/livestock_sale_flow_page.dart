@@ -31,6 +31,7 @@ class LivestockSaleFlowPage extends StatelessWidget {
     required this.userId,
     required this.establishmentId,
     required this.createBloc,
+    this.returnToPreviousOnSuccess = false,
     super.key,
   });
 
@@ -43,6 +44,9 @@ class LivestockSaleFlowPage extends StatelessWidget {
   /// Construye el BLoC con dependencias resueltas por composition.
   final LivestockSaleBlocFactory createBloc;
 
+  /// Cierra la ruta confirmada cuando fue abierta desde una pantalla previa.
+  final bool returnToPreviousOnSuccess;
+
   @override
   Widget build(BuildContext context) {
     // El provider se ubica sobre los tres pasos para conservar un solo borrador
@@ -52,13 +56,19 @@ class LivestockSaleFlowPage extends StatelessWidget {
         userId: userId,
         establishmentId: establishmentId,
       ),
-      child: const _LivestockSaleFlowView(),
+      child: _LivestockSaleFlowView(
+        returnToPreviousOnSuccess: returnToPreviousOnSuccess,
+      ),
     );
   }
 }
 
 class _LivestockSaleFlowView extends StatelessWidget {
-  const _LivestockSaleFlowView();
+  const _LivestockSaleFlowView({
+    required this.returnToPreviousOnSuccess,
+  });
+
+  final bool returnToPreviousOnSuccess;
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +120,7 @@ class _LivestockSaleFlowView extends StatelessWidget {
             return PopScope(
               canPop: false,
               onPopInvokedWithResult: (didPop, result) {
-                if (!didPop) context.go(AppRoutes.home);
+                if (!didPop) _finishSuccess(context);
               },
               child: Scaffold(
                 body: LivestockSaleSuccessView(
@@ -119,7 +129,7 @@ class _LivestockSaleFlowView extends StatelessWidget {
                     context,
                     state.form.establishmentId,
                   ),
-                  onBackHome: () => context.go(AppRoutes.home),
+                  onBackHome: () => _finishSuccess(context),
                 ),
               ),
             );
@@ -188,6 +198,14 @@ class _LivestockSaleFlowView extends StatelessWidget {
         },
       ),
     );
+  }
+
+  void _finishSuccess(BuildContext context) {
+    if (returnToPreviousOnSuccess && context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.go(AppRoutes.home);
   }
 
   void _showError(BuildContext context, DomainException error) {

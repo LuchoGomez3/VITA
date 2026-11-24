@@ -13,6 +13,14 @@ void main() {
     );
   });
 
+  test('builds the livestock sale route opened from Home', () {
+    expect(
+      AppRoutes.livestockSaleFromHome('field/id'),
+      '${AppRoutes.livestockSaleRegister}?establecimientoId=field%2Fid'
+      '&origen=${AppRoutes.livestockSaleHomeOrigin}',
+    );
+  });
+
   test('builds the RFID selector route for a livestock sale', () {
     expect(
       AppRoutes.rfidScanForLivestockSale('field/id'),

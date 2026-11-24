@@ -154,6 +154,12 @@ abstract final class LivestockSaleStrings {
   /// Instrumento tarjeta.
   static const card = 'Tarjeta';
 
+  /// Label de la nota libre asociada a la operacion.
+  static const observations = 'Observaciones (opcional)';
+
+  /// Ayuda para describir informacion adicional de la venta.
+  static const observationsHint = 'Agregá información relevante de la operación';
+
   /// Presenta el calculo sin ocultar los valores ingresados.
   static String amountCalculation(String weight, String price) => '$weight kg × \$$price/kg';
 
@@ -168,6 +174,9 @@ abstract final class LivestockSaleStrings {
 
   /// Encabezado del cobro en el resumen.
   static const summaryPaymentSection = 'COBRO';
+
+  /// Encabezado de la nota opcional en el resumen.
+  static const summaryObservationsSection = 'OBSERVACIONES';
 
   /// Label compacto del DTe en el resumen.
   static const summaryDte = 'DTe Nº';

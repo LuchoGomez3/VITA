@@ -173,6 +173,47 @@ void main() {
     expect(find.text(r'$ 10.000,00'), findsWidgets);
     expect(find.text(LivestockSaleStrings.paymentMethod), findsNothing);
   });
+
+  testWidgets('muestra las observaciones solo cuando fueron ingresadas', (
+    tester,
+  ) async {
+    final bloc = await _createReviewBloc(
+      animalCount: 1,
+      form: _form(
+        observations: 'Retiro coordinado para el viernes.',
+      ),
+    );
+    addTearDown(bloc.close);
+    await tester.pumpWidget(_TestApp(bloc: bloc));
+
+    final observations = find.byKey(
+      const Key('livestockSaleReviewObservations'),
+    );
+    await tester.scrollUntilVisible(
+      observations,
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text(LivestockSaleStrings.summaryObservationsSection), findsOneWidget);
+    expect(find.text('Retiro coordinado para el viernes.'), findsOneWidget);
+  });
+
+  testWidgets('omite la seccion de observaciones cuando esta vacia', (
+    tester,
+  ) async {
+    final bloc = await _createReviewBloc(
+      animalCount: 1,
+      form: _form(observations: '   '),
+    );
+    addTearDown(bloc.close);
+    await tester.pumpWidget(_TestApp(bloc: bloc));
+
+    expect(
+      find.byKey(const Key('livestockSaleReviewObservations')),
+      findsNothing,
+    );
+  });
 }
 
 Future<LivestockSaleBloc> _createReviewBloc({
@@ -223,6 +264,7 @@ LivestockSaleFormDraft _form({
   LivestockSalePaymentCondition paymentCondition = LivestockSalePaymentCondition.total,
   LivestockSalePaymentMethod paymentMethod = LivestockSalePaymentMethod.cash,
   String amountToCollect = '',
+  String observations = '',
 }) {
   return LivestockSaleFormDraft(
     establishmentId: 'establishment-id',
@@ -240,7 +282,7 @@ LivestockSaleFormDraft _form({
     paymentMethod: paymentMethod,
     amountToCollect: amountToCollect,
     paymentDate: DateTime(2026, 8, 24),
-    observations: '',
+    observations: observations,
     paymentObservations: '',
   );
 }

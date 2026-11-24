@@ -5,33 +5,36 @@ import 'package:frontend_mayoral/features/home/presentation/strings/home_strings
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_operating_balance_card.dart';
 
 void main() {
-  testWidgets('muestra gastos reales sin inventar un balance ni valor de stock', (tester) async {
+  testWidgets('muestra ingresos, gastos y balance operativo reales', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: HomeOperatingBalanceCard(
             dashboard: _dashboard,
             onRegisterExpense: () {},
-            onRegisterIncome: () {},
+            onRegisterSale: () {},
             onViewMovements: () {},
           ),
         ),
       ),
     );
 
-    expect(find.text(HomeStrings.noData), findsNWidgets(2));
+    expect(find.text(HomeStrings.salesIncome), findsOneWidget);
+    expect(find.text(r'$ 2.500,45'), findsOneWidget);
     expect(find.text(r'- $ 1.230,45'), findsOneWidget);
+    expect(find.text(r'$ 1.270,00'), findsOneWidget);
   });
 
   testWidgets('delega las acciones mediante callbacks', (tester) async {
     var expenseRequests = 0;
+    var saleRequests = 0;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: HomeOperatingBalanceCard(
             dashboard: _dashboard,
             onRegisterExpense: () => expenseRequests++,
-            onRegisterIncome: () {},
+            onRegisterSale: () => saleRequests++,
             onViewMovements: () {},
           ),
         ),
@@ -39,8 +42,34 @@ void main() {
     );
 
     await tester.tap(find.text(HomeStrings.registerExpense));
+    await tester.tap(find.text(HomeStrings.registerSale));
 
     expect(expenseRequests, 1);
+    expect(saleRequests, 1);
+  });
+
+  testWidgets('muestra venta primero y conserva completas las etiquetas', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: HomeOperatingBalanceCard(
+            dashboard: _dashboard,
+            onRegisterExpense: () {},
+            onRegisterSale: () {},
+            onViewMovements: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getCenter(find.text(HomeStrings.registerSale)).dx,
+      lessThan(tester.getCenter(find.text(HomeStrings.registerExpense)).dx),
+    );
+    expect(find.text(HomeStrings.movements), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
 
@@ -54,4 +83,5 @@ const _dashboard = HomeDashboard(
   categories: [],
   lots: [],
   operatingExpensesCents: 123045,
+  salesIncomeCents: 250045,
 );

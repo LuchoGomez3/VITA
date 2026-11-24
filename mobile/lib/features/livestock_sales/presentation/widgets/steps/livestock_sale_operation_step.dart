@@ -32,6 +32,7 @@ class _LivestockSaleOperationStepState extends State<LivestockSaleOperationStep>
   late final TextEditingController _totalWeightController;
   late final TextEditingController _pricePerKilogramController;
   late final TextEditingController _amountToCollectController;
+  late final TextEditingController _observationsController;
   late final ScrollController _scrollController;
   late final FocusNode _buyerNameFocusNode;
   late final FocusNode _buyerLastNameFocusNode;
@@ -51,10 +52,17 @@ class _LivestockSaleOperationStepState extends State<LivestockSaleOperationStep>
     _buyerNameController = TextEditingController(text: form.buyerName);
     _buyerLastNameController = TextEditingController(text: form.buyerLastName);
     _dteNumberController = TextEditingController(text: form.dteNumber);
-    _bulkTotalController = TextEditingController(text: form.bulkTotalAmount);
+    _bulkTotalController = TextEditingController(
+      text: _groupMoney(form.bulkTotalAmount, scale: 2),
+    );
     _totalWeightController = TextEditingController(text: form.totalWeight);
-    _pricePerKilogramController = TextEditingController(text: form.pricePerKg);
-    _amountToCollectController = TextEditingController(text: form.amountToCollect);
+    _pricePerKilogramController = TextEditingController(
+      text: _groupMoney(form.pricePerKg, scale: 6),
+    );
+    _amountToCollectController = TextEditingController(
+      text: _groupMoney(form.amountToCollect, scale: 2),
+    );
+    _observationsController = TextEditingController(text: form.observations);
     _scrollController = ScrollController();
     _buyerNameFocusNode = FocusNode();
     _buyerLastNameFocusNode = FocusNode();
@@ -74,6 +82,7 @@ class _LivestockSaleOperationStepState extends State<LivestockSaleOperationStep>
     _totalWeightController.dispose();
     _pricePerKilogramController.dispose();
     _amountToCollectController.dispose();
+    _observationsController.dispose();
     _scrollController.dispose();
     _buyerNameFocusNode.dispose();
     _buyerLastNameFocusNode.dispose();
@@ -265,9 +274,16 @@ class _LivestockSaleOperationStepState extends State<LivestockSaleOperationStep>
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  inputFormatters: [ScaledDecimalInputFormatter(scale: 2)],
+                  inputFormatters: [
+                    ScaledDecimalInputFormatter(
+                      scale: 2,
+                      groupThousands: true,
+                    ),
+                  ],
                   onChanged: (value) => _changeForm(
-                    (current) => current.copyWith(bulkTotalAmount: value),
+                    (current) => current.copyWith(
+                      bulkTotalAmount: _normalizeMoney(value),
+                    ),
                   ),
                 )
               else ...[
@@ -298,9 +314,16 @@ class _LivestockSaleOperationStepState extends State<LivestockSaleOperationStep>
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  inputFormatters: [ScaledDecimalInputFormatter(scale: 6)],
+                  inputFormatters: [
+                    ScaledDecimalInputFormatter(
+                      scale: 6,
+                      groupThousands: true,
+                    ),
+                  ],
                   onChanged: (value) => _changeForm(
-                    (current) => current.copyWith(pricePerKg: value),
+                    (current) => current.copyWith(
+                      pricePerKg: _normalizeMoney(value),
+                    ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -332,9 +355,16 @@ class _LivestockSaleOperationStepState extends State<LivestockSaleOperationStep>
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  inputFormatters: [ScaledDecimalInputFormatter(scale: 2)],
+                  inputFormatters: [
+                    ScaledDecimalInputFormatter(
+                      scale: 2,
+                      groupThousands: true,
+                    ),
+                  ],
                   onChanged: (value) => _changeForm(
-                    (current) => current.copyWith(amountToCollect: value),
+                    (current) => current.copyWith(
+                      amountToCollect: _normalizeMoney(value),
+                    ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -357,6 +387,19 @@ class _LivestockSaleOperationStepState extends State<LivestockSaleOperationStep>
                   ),
                 ),
               ],
+              const SizedBox(height: AppSpacing.lg),
+              AppTextFormField(
+                key: const Key('livestockSaleObservations'),
+                controller: _observationsController,
+                title: LivestockSaleStrings.observations,
+                hintText: LivestockSaleStrings.observationsHint,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                maxLines: 4,
+                onChanged: (value) => _changeForm(
+                  (current) => current.copyWith(observations: value),
+                ),
+              ),
               const SizedBox(height: AppSpacing.lg),
             ],
           );
@@ -502,6 +545,13 @@ class _LivestockSaleOperationStepState extends State<LivestockSaleOperationStep>
       (current) => current.copyWith(paymentCondition: condition),
     );
   }
+
+  static String _groupMoney(String value, {required int scale}) => ScaledDecimalInputFormatter.formatGroupedCanonical(
+    value,
+    scale: scale,
+  );
+
+  static String _normalizeMoney(String value) => ScaledDecimalInputFormatter.normalizeGrouped(value);
 }
 
 class _SectionTitle extends StatelessWidget {

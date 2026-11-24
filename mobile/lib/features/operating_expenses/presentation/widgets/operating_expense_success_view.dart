@@ -146,7 +146,15 @@ class _SuccessContent extends StatelessWidget {
         AppOutlinedButton(
           label: OperatingExpenseStrings.backHome,
           icon: const Icon(Icons.home_outlined),
-          onPressed: () => context.go(AppRoutes.home),
+          onPressed: () {
+            // Desde Inicio la ruta fue apilada con push: al cerrarla se
+            // conserva el Home existente para que recalcule su cache local.
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoutes.home);
+            }
+          },
         ),
       ],
     );

@@ -7,15 +7,12 @@ import 'package:frontend_mayoral/features/home/presentation/strings/home_strings
 import 'package:frontend_mayoral/features/home/presentation/widgets/home_asset_icon.dart';
 
 /// Resume el balance operativo y ofrece accesos a sus movimientos.
-///
-/// Los importes son temporales hasta que stock, ingresos y egresos cuenten con
-/// sus fuentes de datos definitivas.
 class HomeOperatingBalanceCard extends StatelessWidget {
   /// Crea el bloque superior del balance operativo.
   const HomeOperatingBalanceCard({
     required this.dashboard,
     required this.onRegisterExpense,
-    required this.onRegisterIncome,
+    required this.onRegisterSale,
     required this.onViewMovements,
     super.key,
   });
@@ -26,8 +23,8 @@ class HomeOperatingBalanceCard extends StatelessWidget {
   /// Abre el alta de un egreso.
   final VoidCallback onRegisterExpense;
 
-  /// Abre el alta de un ingreso.
-  final VoidCallback onRegisterIncome;
+  /// Abre el registro de una venta de hacienda.
+  final VoidCallback onRegisterSale;
 
   /// Abre el historial de movimientos.
   final VoidCallback onViewMovements;
@@ -45,14 +42,18 @@ class HomeOperatingBalanceCard extends StatelessWidget {
             HomeStrings.operatingBalance,
             style: AppTypography.pageTitle,
           ),
-          const Text(
-            HomeStrings.noData,
+          Text(
+            ArgentineCurrencyInputFormatter.formatCents(
+              dashboard.operatingBalanceCents,
+            ),
             style: AppTypography.balanceValue,
           ),
           const SizedBox(height: AppSpacing.md),
-          const _BalanceRow(
-            label: HomeStrings.estimatedStock,
-            value: HomeStrings.noData,
+          _BalanceRow(
+            label: HomeStrings.salesIncome,
+            value: ArgentineCurrencyInputFormatter.formatCents(
+              dashboard.salesIncomeCents,
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           _BalanceRow(
@@ -62,7 +63,7 @@ class HomeOperatingBalanceCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           _OperatingActions(
             onRegisterExpense: onRegisterExpense,
-            onRegisterIncome: onRegisterIncome,
+            onRegisterSale: onRegisterSale,
             onViewMovements: onViewMovements,
           ),
         ],
@@ -71,51 +72,46 @@ class HomeOperatingBalanceCard extends StatelessWidget {
   }
 }
 
-/// Distribuye los accesos compactos de ingreso, egreso y movimientos.
+/// Distribuye los accesos compactos de venta, egreso y movimientos.
 class _OperatingActions extends StatelessWidget {
   const _OperatingActions({
     required this.onRegisterExpense,
-    required this.onRegisterIncome,
+    required this.onRegisterSale,
     required this.onViewMovements,
   });
 
   final VoidCallback onRegisterExpense;
-  final VoidCallback onRegisterIncome;
+  final VoidCallback onRegisterSale;
   final VoidCallback onViewMovements;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableButtonSize = (constraints.maxWidth - AppSpacing.sm * 2) / 3;
-        final buttonSize = availableButtonSize > AppSpacing.xxxl ? AppSpacing.xxxl : availableButtonSize; // es 83
-
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _OperatingActionButton(
-              size: buttonSize,
-              label: HomeStrings.registerExpense,
-              assetPath: 'assets/icons/money_send.svg',
-              onPressed: onRegisterExpense,
-            ),
-            const SizedBox(width: AppSpacing.md),
-            _OperatingActionButton(
-              size: buttonSize,
-              label: HomeStrings.registerIncome,
-              assetPath: 'assets/icons/money_receive.svg',
-              onPressed: onRegisterIncome,
-            ),
-            const SizedBox(width: AppSpacing.md),
-            _OperatingActionButton(
-              size: buttonSize,
-              label: HomeStrings.movements,
-              assetPath: 'assets/icons/money.svg',
-              onPressed: onViewMovements,
-            ),
-          ],
-        );
-      },
+    return Row(
+      children: [
+        Expanded(
+          child: _OperatingActionButton(
+            label: HomeStrings.registerSale,
+            assetPath: 'assets/icons/money_receive.svg',
+            onPressed: onRegisterSale,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: _OperatingActionButton(
+            label: HomeStrings.registerExpense,
+            assetPath: 'assets/icons/money_send.svg',
+            onPressed: onRegisterExpense,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: _OperatingActionButton(
+            label: HomeStrings.movements,
+            assetPath: 'assets/icons/money.svg',
+            onPressed: onViewMovements,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -145,21 +141,19 @@ class _BalanceRow extends StatelessWidget {
 
 class _OperatingActionButton extends StatelessWidget {
   const _OperatingActionButton({
-    required this.size,
     required this.label,
     required this.assetPath,
     required this.onPressed,
   });
 
-  final double size;
   final String label;
   final String assetPath;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.square(
-      dimension: size,
+    return SizedBox(
+      height: AppSpacing.xxl + AppSpacing.md,
       child: Material(
         color: AppColors.backgroundSecondaryLight,
         borderRadius: BorderRadius.circular(AppRadius.md),

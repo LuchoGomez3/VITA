@@ -82,7 +82,7 @@ LivestockSaleSavedDraft _draft() {
     paymentMethod: LivestockSalePaymentMethod.cash,
     amountToCollect: '',
     paymentDate: date,
-    observations: '',
+    observations: 'Entrega acordada en el establecimiento.',
     paymentObservations: '',
     selectedRfidTagNumbers: const ['982000000001295'],
     currentStep: LivestockSaleDraftStep.animals,
