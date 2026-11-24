@@ -2,11 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_mayoral/brick/models/animal.model.dart';
 import 'package:frontend_mayoral/brick/models/categoria.model.dart';
 import 'package:frontend_mayoral/brick/models/livestock_sale.model.dart';
+import 'package:frontend_mayoral/brick/models/lot.model.dart';
 import 'package:frontend_mayoral/brick/models/operating_expense.model.dart';
 import 'package:frontend_mayoral/brick/models/pesaje.model.dart';
 import 'package:frontend_mayoral/brick/stores/animal_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/categoria_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/livestock_sale_brick_store.dart';
+import 'package:frontend_mayoral/brick/stores/lot_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/operating_expense_brick_store.dart';
 import 'package:frontend_mayoral/brick/stores/pesaje_brick_store.dart';
 import 'package:frontend_mayoral/core/result/result.dart';
@@ -16,16 +18,30 @@ import 'package:frontend_mayoral/features/home/domain/entities/home_dashboard.da
 import 'package:frontend_mayoral/features/home/domain/use_cases/get_home_dashboard_use_case.dart';
 
 void main() {
-  test('stock metrics include only active animals', () async {
+  test('el stock agrupa por lote local aunque el animal sincronizado solo tenga el ID', () async {
     final repository = HomeDashboardRepositoryImpl(
       animalStore: _FakeAnimalStore([
-        _animal('active', BrickAnimalProductiveStatus.active),
+        _animal('active', BrickAnimalProductiveStatus.active).copyWith(lotName: ''),
+        _animal('unassigned', BrickAnimalProductiveStatus.active).copyWith(lotId: '', lotName: ''),
         _animal('sold', BrickAnimalProductiveStatus.sold),
         _animal('dead', BrickAnimalProductiveStatus.dead),
         _animal('removed', BrickAnimalProductiveStatus.removed),
         _animal('unknown', BrickAnimalProductiveStatus.unknown),
       ]),
       categoryStore: const _FakeCategoryStore(),
+      lotStore: _FakeLotStore([
+        BrickLotModel(
+          localId: 'lot-id',
+          establishmentId: 'establishment-id',
+          name: 'Lote norte',
+          boundaryJson: '[]',
+          surfaceTenths: 100,
+          hasWater: true,
+          statusCode: 'activo',
+          createdAt: DateTime.utc(2026, 8),
+          updatedAt: DateTime.utc(2026, 8),
+        ),
+      ]),
       pesajeStore: const _FakeWeighingStore(),
       secureStorage: _FakeSecureStorage(),
       operatingExpenseStore: const _FakeExpenseStore(),
@@ -42,9 +58,9 @@ void main() {
 
     expect(result, isA<Success<HomeDashboard>>());
     final dashboard = (result as Success<HomeDashboard>).data;
-    expect(dashboard.activeAnimals, 1);
-    expect(dashboard.categories.single.animals, 1);
-    expect(dashboard.lots.single.animals, 1);
+    expect(dashboard.activeAnimals, 2);
+    expect(dashboard.categories.single.animals, 2);
+    expect({for (final lot in dashboard.lots) lot.name: lot.animals}, {'Lote norte': 1, null: 1});
     expect(dashboard.monthlyRemovals, 3);
   });
 
@@ -52,6 +68,7 @@ void main() {
     final repository = HomeDashboardRepositoryImpl(
       animalStore: const _FakeAnimalStore([]),
       categoryStore: const _FakeCategoryStore(),
+      lotStore: const _FakeLotStore([]),
       pesajeStore: const _FakeWeighingStore(),
       secureStorage: _FakeSecureStorage(),
       operatingExpenseStore: _FakeExpenseStore([
@@ -73,6 +90,31 @@ void main() {
     expect(dashboard.operatingExpensesCents, 25050);
     expect(dashboard.operatingBalanceCents, 125050);
   });
+}
+
+class _FakeLotStore implements LotBrickStore {
+  const _FakeLotStore(this.lots);
+
+  final List<BrickLotModel> lots;
+
+  @override
+  Future<List<BrickLotModel>> getLocalLots(String establishmentId, {bool includeDeleted = false}) async =>
+      lots.where((lot) => lot.establishmentId == establishmentId).toList();
+
+  @override
+  Future<BrickLotModel?> getLocalLot(String lotId) => throw UnimplementedError();
+
+  @override
+  Future<void> pullRemoteLots(String establishmentId) => throw UnimplementedError();
+
+  @override
+  Future<void> pushPendingLots(String establishmentId) => throw UnimplementedError();
+
+  @override
+  Future<void> setLocalForageResource(String lotId, String? forageResourceCode) => throw UnimplementedError();
+
+  @override
+  Future<BrickLotModel> upsertLocalLot(BrickLotModel lot) => throw UnimplementedError();
 }
 
 BrickAnimalModel _animal(
