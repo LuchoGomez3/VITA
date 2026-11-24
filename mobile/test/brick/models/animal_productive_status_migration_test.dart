@@ -74,8 +74,8 @@ void main() {
         await database.insert('BrickHealthOperationModel', {'local_id': 'pending-operation'});
       }
 
-      await upgradePreMergeHealthDatabase(provider);
-      await provider.migrate(manager.migrationsSince(await provider.lastMigrationVersion()));
+      final prepared = MigrationManager(await prepareAppBrickMigrations(provider));
+      await provider.migrate(prepared.migrationsSince(await provider.lastMigrationVersion()));
 
       final animal = (await database.query('BrickAnimalModel')).single;
       expect(animal['local_id'], 'legacy-animal');
@@ -85,6 +85,50 @@ void main() {
       expect(operations.map((row) => row['local_id']), preMergeHealth ? ['pending-operation'] : isEmpty);
       expect(await database.query('BrickFoodModel'), isEmpty);
       expect(await database.query('BrickLivestockSaleModel'), isEmpty);
+      expect(await provider.lastMigrationVersion(), schema.version);
+    });
+  }
+
+  for (final (version, legacyVersion, table, column, value) in [
+    (20261122000200, 20261108032415, 'BrickLivestockSaleModel', 'pending_animal_ids_json', '["pending-animal"]'),
+    (20261123003833, 20261005112458, 'BrickCategoriaModel', 'allowed_sex', 'hembra'),
+    (20261123003833, null, 'BrickCategoriaModel', 'allowed_sex', 'hembra'),
+  ]) {
+    test('conserva $column al migrar $version desde ${legacyVersion ?? 'un arranque interrumpido'}', () async {
+      sqfliteFfiInit();
+      final database = await databaseFactoryFfi.openDatabase(inMemoryDatabasePath);
+      addTearDown(database.close);
+      final provider = SqliteProvider(
+        inMemoryDatabasePath,
+        databaseFactory: databaseFactoryFfi,
+        modelDictionary: sqliteModelDictionary,
+      );
+      final manager = MigrationManager(appBrickMigrations);
+      final previousMigrations = manager
+          .migrationsSince(-1)
+          .where(
+            (migration) => migration.version < (legacyVersion ?? version),
+          );
+      await provider.migrate(previousMigrations.toList());
+
+      // Recrea las columnas de las ramas originales o un ALTER ya confirmado
+      // por SQLite cuyo número de versión Brick aún no alcanzó a guardar.
+      if (table == 'BrickLivestockSaleModel') {
+        final sale = appBrickMigrations.singleWhere((migration) => migration.version == 20261122000100);
+        await database.execute(sale.upStatement);
+      }
+      await database.execute('ALTER TABLE $table ADD $column VARCHAR');
+      if (legacyVersion != null) {
+        await database.insert('MigrationVersions', {'version': legacyVersion});
+      }
+      await database.insert(table, {'local_id': 'existing-row', column: value});
+
+      final prepared = MigrationManager(await prepareAppBrickMigrations(provider));
+      await provider.migrate(prepared.migrationsSince(await provider.lastMigrationVersion()));
+
+      final row = (await database.query(table)).single;
+      expect(row['local_id'], 'existing-row');
+      expect(row[column], value);
       expect(await provider.lastMigrationVersion(), schema.version);
     });
   }

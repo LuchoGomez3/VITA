@@ -9,6 +9,9 @@ Future<BrickCategoriaModel> _$BrickCategoriaModelFromRest(
   return BrickCategoriaModel(
     localId: data['id'] as String,
     name: data['nombre'] as String,
+    allowedSex: data['sexo_permitido'] == null
+        ? null
+        : data['sexo_permitido'] as String?,
     description: data['descripcion'] == null
         ? null
         : data['descripcion'] as String?,
@@ -30,6 +33,7 @@ Future<Map<String, dynamic>> _$BrickCategoriaModelToRest(
   return {
     'id': instance.localId,
     'nombre': instance.name,
+    'sexo_permitido': instance.allowedSex,
     'descripcion': instance.description,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
@@ -45,6 +49,9 @@ Future<BrickCategoriaModel> _$BrickCategoriaModelFromSqlite(
   return BrickCategoriaModel(
     localId: data['local_id'] as String,
     name: data['name'] as String,
+    allowedSex: data['allowed_sex'] == null
+        ? null
+        : data['allowed_sex'] as String?,
     description: data['description'] == null
         ? null
         : data['description'] as String?,
@@ -66,6 +73,7 @@ Future<Map<String, dynamic>> _$BrickCategoriaModelToSqlite(
   return {
     'local_id': instance.localId,
     'name': instance.name,
+    'allowed_sex': instance.allowedSex,
     'description': instance.description,
     'created_at': instance.createdAt.toIso8601String(),
     'updated_at': instance.updatedAt.toIso8601String(),
@@ -97,6 +105,12 @@ class BrickCategoriaModelAdapter
     'name': const RuntimeSqliteColumnDefinition(
       association: false,
       columnName: 'name',
+      iterable: false,
+      type: String,
+    ),
+    'allowedSex': const RuntimeSqliteColumnDefinition(
+      association: false,
+      columnName: 'allowed_sex',
       iterable: false,
       type: String,
     ),

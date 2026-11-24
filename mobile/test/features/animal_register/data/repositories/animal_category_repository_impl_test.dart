@@ -11,7 +11,16 @@ void main() {
   group('AnimalCategoryRepositoryImpl', () {
     test('maps the cached Brick catalog to domain categories', () async {
       final repository = AnimalCategoryRepositoryImpl(
-        store: _FakeCategoriaBrickStore(categories: [_category]),
+        store: _FakeCategoriaBrickStore(
+          categories: [
+            _category('category-id', 'Categoría compartida', allowedSex: 'ambos'),
+            _category('d37e62fb-96db-4ff1-a26b-0e3b2c3b36d8', 'Ternera'),
+            _category('41da4271-bd25-4ba0-ba34-24dc6586f0f2', 'Novillo'),
+            _category('550e8400-e29b-41d4-a716-446655440034', 'Engorde Rápido'),
+            _category('other-id', 'Engorde rapido', allowedSex: 'ambos'),
+            _category('stale-id', 'Ternero'),
+          ],
+        ),
       );
 
       final result = await repository.getCategories();
@@ -19,7 +28,17 @@ void main() {
       expect(
         result,
         const Result<List<AnimalCategory>>.success([
-          AnimalCategory(id: 'category-id', name: 'Ternera'),
+          AnimalCategory(id: 'category-id', name: 'Categoría compartida', allowedSex: AnimalCategorySex.both),
+          AnimalCategory(
+            id: 'd37e62fb-96db-4ff1-a26b-0e3b2c3b36d8',
+            name: 'Ternera',
+            allowedSex: AnimalCategorySex.female,
+          ),
+          AnimalCategory(
+            id: '41da4271-bd25-4ba0-ba34-24dc6586f0f2',
+            name: 'Novillo',
+            allowedSex: AnimalCategorySex.male,
+          ),
         ]),
       );
     });
@@ -54,9 +73,10 @@ void main() {
   });
 }
 
-final _category = BrickCategoriaModel(
-  localId: 'category-id',
-  name: 'Ternera',
+BrickCategoriaModel _category(String id, String name, {String? allowedSex}) => BrickCategoriaModel(
+  localId: id,
+  name: name,
+  allowedSex: allowedSex,
   createdAt: DateTime.utc(2026),
   updatedAt: DateTime.utc(2026),
 );

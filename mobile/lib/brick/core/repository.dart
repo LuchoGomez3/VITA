@@ -137,7 +137,7 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
       sqliteProvider: sqliteProvider,
       restProvider: restProvider,
       backendClient: restClient,
-      migrations: appBrickMigrations,
+      migrations: await prepareAppBrickMigrations(sqliteProvider),
       syncResults: syncResults,
       authRejections: authRejections,
       offlineQueueManager: RestRequestSqliteCacheManager(
@@ -149,7 +149,6 @@ class AppBrickRepository extends OfflineFirstWithRestRepository<OfflineFirstWith
       reattemptForStatusCodes: const [500, 501, 502, 503, 504],
     );
 
-    await upgradePreMergeHealthDatabase(sqliteProvider);
     // initialize() aplica migraciones de la DB principal y de la cola offline.
     await repository.initialize();
     _instance = repository;
